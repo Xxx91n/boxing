@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>Qlearly — Settings</title>
+  <link rel="stylesheet" href="../ntp/design-system.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="options">
+    <header class="options__head">
+      <h1 class="options__title">Settings</h1>
+      <p class="options__subtitle">Customize your Qlearly experience</p>
+    </header>
+
+    <div class="options__container">
+      <!-- === THEME === -->
+      <section class="options__section">
+        <h2 class="options__section-title">Theme</h2>
+        <div class="options__group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="dark-mode" aria-describedby="dark-desc">
+            <span class="checkbox-label__text">Dark mode</span>
+          </label>
+          <p class="options__hint" id="dark-desc">Reduce eye strain with dark background (coming soon)</p>
+        </div>
+      </section>
+
+      <!-- === DISPLAY === -->
+      <section class="options__section">
+        <h2 class="options__section-title">Display</h2>
+        <div class="options__group">
+          <label for="font-size" class="options__label">Font size</label>
+          <div class="options__row">
+            <input type="range" id="font-size" min="12" max="18" value="14" step="1" aria-describedby="font-desc">
+            <span id="font-size-value" class="options__value">14px</span>
+          </div>
+          <p class="options__hint" id="font-desc">Default: 14px</p>
+        </div>
+
+        <div class="options__group">
+          <label for="grid-cols" class="options__label">Grid columns</label>
+          <div class="options__row">
+            <input type="range" id="grid-cols" min="3" max="8" value="6" step="1" aria-describedby="grid-desc">
+            <span id="grid-cols-value" class="options__value">6</span>
+          </div>
+          <p class="options__hint" id="grid-desc">Default: 6 columns</p>
+        </div>
+      </section>
+
+      <!-- === DATA === -->
+      <section class="options__section">
+        <h2 class="options__section-title">Data & Backup</h2>
+        <div class="options__group">
+          <button id="export-btn" class="btn btn--secondary" aria-label="Export bookmarks as JSON">
+            <span aria-hidden="true">↓</span>
+            Export Bookmarks
+          </button>
+          <p class="options__hint">Save your bookmarks as a JSON file</p>
+        </div>
+
+        <div class="options__group">
+          <button id="import-btn" class="btn btn--secondary" aria-label="Import bookmarks from JSON">
+            <span aria-hidden="true">↑</span>
+            Import Bookmarks
+          </button>
+          <input type="file" id="import-file" accept=".json" style="display: none;">
+          <p class="options__hint">Import previously exported bookmarks</p>
+        </div>
+      </section>
+
+      <!-- === ABOUT === -->
+      <section class="options__section">
+        <h2 class="options__section-title">About</h2>
+        <div class="options__group">
+          <p class="options__hint">
+            <strong>Qlearly v1.0.0</strong><br>
+            A beige, minimal bookmark manager for Chrome & Firefox.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <footer class="options__footer">
+      <button id="save-btn" class="btn btn--primary" aria-label="Save all changes">
+        Save Settings
+      </button>
+    </footer>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>

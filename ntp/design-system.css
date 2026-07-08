@@ -1,0 +1,101 @@
+/* Qlearly Bookmark — design system (beige, modern, minimal) */
+:root {
+  /* Canvas — warm beige / clay */
+  --color-canvas: #F4EFE5;
+  --color-canvas-2: #EFE9DC;
+  --color-surface: #FBF7EF;
+  --color-elevated: #FFFFFF;
+  --color-card-edge: #E5DCC9;
+  --color-hairline: rgba(42, 37, 32, 0.08);
+  --color-hairline-strong: rgba(42, 37, 32, 0.14);
+
+  /* Ink */
+  --color-ink: #2A2520;
+  --color-ink-soft: #3B342C;
+  --color-muted: #7B7167;
+  --color-faint: #A89F92;
+
+  /* Accents — terracotta clay */
+  --color-accent: #B05D3C;
+  --color-accent-ink: #8C3F22;
+  --color-accent-soft: rgba(176, 93, 60, 0.10);
+  --color-accent-soft-2: rgba(176, 93, 60, 0.18);
+  --color-focus: #C77E5A;
+
+  /* Radii / spacing */
+  --radius-card: 18px;
+  --radius-tile: 12px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Type */
+  --font-display: "Fraunces", "Source Serif Pro", "Songti SC", ui-serif, Georgia, serif;
+  --font-stack-ui: "Inter", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-stack-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 360ms;
+
+  /* Shadow */
+  --shadow-1: 0 1px 2px rgba(42, 37, 32, 0.04), 0 1px 1px rgba(42, 37, 32, 0.03);
+  --shadow-2: 0 6px 18px rgba(42, 37, 32, 0.08), 0 2px 6px rgba(42, 37, 32, 0.04);
+  --shadow-pop: 0 18px 48px rgba(42, 37, 32, 0.16);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-stack-ui);
+  color: var(--color-ink);
+  background:
+    radial-gradient(1100px 700px at 12% -10%, rgba(254, 245, 230, 0.85), transparent 70%),
+    radial-gradient(900px 600px at 100% 0%, rgba(231, 214, 188, 0.55), transparent 65%),
+    var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv11";
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--color-accent-soft-2);
+  color: var(--color-ink);
+}
+
+/* Helpers */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Qlearly</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<link rel="stylesheet" href="../ntp/design-system.css">
+<link rel="stylesheet" href="../ntp/ntp.css">
+</head>
+<body>
+  <main id="app" class="ntp" aria-label="New tab dashboard">
+    <header class="ntp__bar" role="banner">
+      <div class="brand">
+        <div class="brand__mark" aria-hidden="true"></div>
+        <div class="brand__label">
+          <span class="brand__name">Qlearly</span>
+          <span class="brand__sub">a quiet place for your bookmarks</span>
+        </div>
+      </div>
+      <form class="search" role="search" aria-label="Search bookmarks">
+        <span class="search__icon" aria-hidden="true">⌕</span>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search every bookmark…" aria-label="Search bookmarks">
+        <kbd class="search__hint" aria-hidden="true">/</kbd>
+      </form>
+      <nav class="actions" aria-label="Page actions">
+        <a class="btn btn--ghost" href="../options/options.html" data-action="options">Settings</a>
+      </nav>
+    </header>
+
+    <section class="hero" aria-label="Pinned folders">
+      <div class="hero__eyebrow">Pinned</div>
+      <ol id="pin-bar" class="pin-bar" role="list"></ol>
+    </section>
+
+    <section class="library" aria-label="Bookmarks">
+      <div class="library__head">
+        <h2 class="library__title" id="crumb"></h2>
+        <p class="library__caption" id="caption"></p>
+      </div>
+      <div id="grid" class="grid" role="list"></div>
+    </section>
+
+    <footer class="foot">
+      <span class="foot__dot" aria-hidden="true"></span>
+      <span class="foot__txt">Press <kbd>/</kbd> to search · <kbd>Enter</kbd> to open selected · <kbd>Esc</kbd> to clear</span>
+    </footer>
+  </main>
+
+  <div id="empty" class="empty sr-only" aria-live="polite"></div>
+
+  <script src="../ntp/ntp.js" defer></script>
+</body>
+</html>

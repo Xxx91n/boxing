@@ -1,0 +1,46 @@
+# Build & Distribution
+dist/
+.output/
+build/
+*.zip
+*.xpi
+
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+secrets/
+
+# OS
+.DS_Store
+desktop.ini
+
+# Playwright
+.playwright/
+browsers/
+
+# WXT (if used)
+.wxt/
