@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Qlearly</title>
+<title>Boxing</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
 <link rel="stylesheet" href="../ntp/design-system.css">
@@ -11,11 +11,14 @@
 <body>
   <main id="app" class="ntp" aria-label="New tab dashboard">
     <header class="ntp__bar" role="banner">
+      <button id="back-btn" class="btn btn--ghost btn--icon" aria-label="Go back to parent level" title="Back (right-click anywhere)">
+        <span aria-hidden="true">←</span>
+      </button>
       <div class="brand">
         <div class="brand__mark" aria-hidden="true"></div>
         <div class="brand__label">
-          <span class="brand__name">Qlearly</span>
-          <span class="brand__sub">a quiet place for your bookmarks</span>
+          <span class="brand__name" data-i18n="brandName">Boxing</span>
+          <span class="brand__sub" data-i18n="brandSub">organize bookmarks hierarchically</span>
         </div>
       </div>
       <form class="search" role="search" aria-label="Search bookmarks">
@@ -24,26 +27,60 @@
         <kbd class="search__hint" aria-hidden="true">/</kbd>
       </form>
       <nav class="actions" aria-label="Page actions">
-        <a class="btn btn--ghost" href="../options/options.html" data-action="options">Settings</a>
+        <button id="view-toggle" class="btn btn--ghost" aria-label="Toggle list or grid view" title="Toggle list/grid">
+          <span class="view-toggle__icon" aria-hidden="true">▤</span>
+          <span class="view-toggle__label" data-i18n="viewList">List</span>
+        </button>
+        <button id="add-box" class="btn btn--ghost" aria-label="Add new large box" title="Add large box">
+          <span aria-hidden="true">＋</span>
+        </button>
+        <button id="settings-btn" class="btn btn--ghost" aria-label="Open settings">
+          <span aria-hidden="true">⚙</span>
+        </button>
       </nav>
     </header>
 
     <section class="hero" aria-label="Pinned folders">
-      <div class="hero__eyebrow">Pinned</div>
+      <div class="hero__eyebrow" data-i18n="pinnedHeader">Pinned</div>
       <ol id="pin-bar" class="pin-bar" role="list"></ol>
     </section>
 
-    <section class="library" aria-label="Bookmarks">
+    <section class="library" aria-label="Library">
       <div class="library__head">
-        <h2 class="library__title" id="crumb"></h2>
+        <div class="crumbs" id="crumbs" aria-label="Breadcrumb"></div>
         <p class="library__caption" id="caption"></p>
       </div>
-      <div id="grid" class="grid" role="list"></div>
+
+      <!-- Canvas mode: top-level large boxes -->
+      <div id="canvas" class="canvas" role="region" aria-label="Infinite canvas with large boxes">
+        <div id="canvas-surface" class="canvas__surface"></div>
+        <div id="canvas-empty" class="canvas__empty">
+          <div class="canvas__empty-icon" aria-hidden="true">📦</div>
+          <div class="canvas__empty-title" data-i18n="emptyCanvasTitle">No large boxes yet</div>
+          <div class="canvas__empty-hint" data-i18n="emptyCanvasHint">Click ＋ to create your first large box</div>
+        </div>
+      </div>
+
+      <!-- Drill-in mode: small boxes within a large box -->
+      <div id="inner" class="inner" hidden>
+        <div class="inner__head">
+          <span class="inner__title" id="inner-title"></span>
+          <div class="inner__actions">
+            <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box" title="Add small box">
+              <span aria-hidden="true">＋</span>
+            </button>
+            <button id="inner-view-toggle" class="btn btn--ghost btn--icon" aria-label="Toggle inner view" title="Toggle list/grid">
+              <span aria-hidden="true">▤</span>
+            </button>
+          </div>
+        </div>
+        <div id="inner-surface" class="inner__surface"></div>
+      </div>
     </section>
 
     <footer class="foot">
       <span class="foot__dot" aria-hidden="true"></span>
-      <span class="foot__txt">Press <kbd>/</kbd> to search · <kbd>Enter</kbd> to open selected · <kbd>Esc</kbd> to clear</span>
+      <span class="foot__txt" data-i18n="footerHint">Right-click to return · / to search · Enter to open</span>
     </footer>
   </main>
 

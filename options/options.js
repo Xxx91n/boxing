@@ -1,4 +1,4 @@
-/** Qlearly Options — Settings manager */
+/** Boxing Options — Settings manager */
 (async () => {
   const api = (typeof browser !== "undefined" ? browser :
     typeof chrome !== "undefined" ? chrome : null) || null;

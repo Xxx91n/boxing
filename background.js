@@ -1,4 +1,4 @@
-// Qlearly Bookmark — MV3 Service Worker
+// Boxing — MV3 Service Worker
 // Cross-browser guard for chrome.* / browser.*
 (() => {
   const api = (typeof browser !== "undefined" ? browser :

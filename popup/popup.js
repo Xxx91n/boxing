@@ -1,4 +1,4 @@
-/** Qlearly Popup — Quick access to recent bookmarks */
+/** Boxing Popup — Quick access to recent bookmarks */
 (async () => {
   const api = (typeof browser !== "undefined" ? browser :
     typeof chrome !== "undefined" ? chrome : null) || null;
