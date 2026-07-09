@@ -15,10 +15,6 @@
     "message": "返回",
     "description": "返回按钮提示"
   },
-  "switchViewTooltip": {
-    "message": "切换列表/网格",
-    "description": "视图切换提示"
-  },
   "addLargeBoxTooltip": {
     "message": "添加大盒子",
     "description": "添加大盒子提示"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "添加小盒子",
     "description": "添加小盒子提示"
-  },
-  "switchInnerViewTooltip": {
-    "message": "切换内部视图",
-    "description": "内部视图切换提示"
   },
   "emptyCanvasTitle": {
     "message": "暂无大盒子",
@@ -68,8 +60,7 @@
     "description": "打开大盒子提示"
   },
   "footerHint": {
-    "message": "右键返回 · / 搜索 · 双击画布添加",
-    "description": "底部键盘提示"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "画布",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "取消固定",
     "description": "取消固定按钮提示"
-  },
-  "viewList": {
-    "message": "列表",
-    "description": "列表视图标签"
-  },
-  "viewGrid": {
-    "message": "网格",
-    "description": "网格视图标签"
-  },
-  "switchToList": {
-    "message": "切换到列表视图",
-    "description": "切换到列表提示"
-  },
-  "switchToGrid": {
-    "message": "切换到网格视图",
-    "description": "切换到网格提示"
   },
   "largeBoxesCount": {
     "message": "$1$ 个大盒子",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "双击创建",
     "description": "小盒子双击创建提示"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

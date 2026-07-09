@@ -15,7 +15,6 @@
       <span aria-hidden="true">←</span>
     </button>
     <div class="brand">
-      <div class="brand__mark" aria-hidden="true"></div>
       <div class="brand__label">
         <span class="brand__name" data-i18n="brandName">Boxing</span>
         <span class="brand__sub" data-i18n="brandSub">organize bookmarks hierarchically</span>
@@ -27,10 +26,6 @@
       <kbd class="search__hint" aria-hidden="true">/</kbd>
     </form>
     <nav class="actions" aria-label="Page actions">
-      <button id="view-toggle" class="btn btn--ghost" aria-label="Toggle list/grid" data-i18n-title="switchViewTooltip">
-        <span class="view-toggle__icon" aria-hidden="true">▤</span>
-        <span class="view-toggle__label" data-i18n="viewList">List</span>
-      </button>
       <button id="add-box" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
         <span aria-hidden="true">+</span>
       </button>
@@ -71,9 +66,6 @@
           <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box" data-i18n-title="addSmallBoxTooltip">
             <span aria-hidden="true">+</span>
           </button>
-          <button id="inner-view-toggle" class="btn btn--ghost btn--icon" aria-label="Toggle inner view" data-i18n-title="switchInnerViewTooltip">
-            <span aria-hidden="true">▤</span>
-          </button>
         </div>
       </div>
       <div id="inner-surface" class="inner__surface"></div>
@@ -87,7 +79,7 @@
 
   <footer class="foot">
     <span class="foot__dot" aria-hidden="true"></span>
-    <span class="foot__txt" data-i18n="footerHint">Right-click to return · / to search · Dblclick canvas to add</span>
+    <span class="foot__txt" data-i18n="footerHint">Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add</span>
   </footer>
 </main>
 
@@ -125,6 +117,13 @@
         <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new tabs</p>
       </section>
       <section class="modal__section">
+        <label class="modal__label" for="font-slider" data-i18n="fontSizeLabel">Font Size</label>
+        <div class="modal__row">
+          <input type="range" id="font-slider" min="11" max="20" value="14" step="1">
+          <span id="font-slider-value" class="modal__value">14px</span>
+        </div>
+      </section>
+      <section class="modal__section">
         <label class="modal__label" for="zoom-slider" data-i18n="zoomLabel">Zoom</label>
         <div class="modal__row">
           <input type="range" id="zoom-slider" min="50" max="150" value="100" step="5">
@@ -133,7 +132,7 @@
       </section>
     </div>
     <div class="modal__foot">
-      <p class="modal__version">Boxing v3.0.0</p>
+      <p class="modal__version">Boxing v3.1.0</p>
     </div>
   </div>
 </div>

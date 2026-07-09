@@ -15,10 +15,6 @@
     "message": "Quay lại",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "Danh sách/Lưới",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "Thêm hộp lớn",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "Thêm hộp nhỏ",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "Chuyển đổi chế độ xem trong",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "Chưa có hộp lớn",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Nhấp phải quay lại · / tìm · Nhấp đúp thêm",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "Khung vẽ",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "Bỏ ghim",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "Danh sách",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "Lưới",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "Chuyển sang danh sách",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "Chuyển sang lưới",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "$1$ hộp lớn",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "Nhấp đúp để tạo",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

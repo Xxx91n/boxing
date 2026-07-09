@@ -15,10 +15,6 @@
     "message": "वापस",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "सूची/ग्रिड",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "बड़ा बॉक्स जोड़ें",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "छोटा बॉक्स जोड़ें",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "आंतरिक दृश्य बदलें",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "कोई बड़ा बॉक्स नहीं",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "राइट-क्लिक वापस · / खोज · डबल-क्लिक जोड़ें",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "कैनवास",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "पिन हटाएं",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "सूची",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "ग्रिड",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "सूची में बदलें",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "ग्रिड में बदलें",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "$1$ बड़े बॉक्स",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "बनाने के लिए डबल-क्लिक करें",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

@@ -15,10 +15,6 @@
     "message": "Volver",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "Lista/Cuadrícula",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "Añadir caja grande",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "Añadir caja pequeña",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "Cambiar vista interna",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "Sin cajas grandes",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Clic derecho volver · / buscar · Doble clic añadir",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "Lienzo",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "Desfijar",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "Lista",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "Cuadrícula",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "Cambiar a lista",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "Cambiar a cuadrícula",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "$1$ cajas grandes",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "Doble clic para crear",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

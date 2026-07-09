@@ -15,10 +15,6 @@
     "message": "뒤로",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "목록/그리드 전환",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "대형 박스 추가",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "소형 박스 추가",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "내부 보기 전환",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "대형 박스 없음",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "오른쪽 클릭으로 뒤로 · / 검색 · 더블클릭으로 추가",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "캔버스",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "고정 해제",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "목록",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "그리드",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "목록 보기로 전환",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "그리드 보기로 전환",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "대형 박스 $1$개",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "더블클릭으로 생성",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

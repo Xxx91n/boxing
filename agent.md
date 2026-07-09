@@ -327,3 +327,67 @@ export default defineConfig({
 | Popup UI | Open toolbar action popup | Popup opens without layout overflow or console errors. |
 | Options UI | Open options page if enabled | Options page opens without console errors. |
 | Visual inspection | Use browser screenshot/DOM/CSS inspection when available | Screenshot/DOM/CSS inspection confirms high whitespace and card hierarchy. |
+
+
+---
+
+# Boxing Project Specialization
+
+## Applicability
+
+| Field | Value |
+|---|---|
+| Project path | D:\Aworker\crx\boxing |
+| Current extension | Boxing v3.1.0 |
+| Current manifest | Manifest V3 |
+| Target browsers | Chrome + Firefox |
+| Main UI surface | New tab override: ntp/index.html, ntp/ntp.css, ntp/ntp.js |
+
+## i18n Requirements
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-I18N-001 | MUST | All 13 supported languages (en, zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi) must have complete translations for every i18n key used in the UI. |
+| BX-I18N-002 | MUST | New i18n keys must be added to _locales/<lang>/messages.json for all 13 languages before claiming completion. |
+| BX-I18N-003 | MUST | Keys with $1$ or $2$ must include a placeholders object: { "1": { "content": "$1" } }. |
+| BX-I18N-004 | MUST | Chrome i18n API (chrome.i18n.getMessage) is NOT used; the custom i18n store in ntp.js loads messages.json via fetch. |
+| BX-I18N-005 | MUST | English fallback (I18N_FALLBACK) in ntp.js must cover every i18n key in case fetch fails. |
+| BX-I18N-006 | MUST | data-i18n, data-i18n-title, data-i18n-placeholder attributes in HTML must match a real key. |
+
+## Development Rules
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-001 | MUST | Use Obsidian-style CSS transform (translate + scale) for infinite canvas pan/zoom. |
+| BX-DEV-002 | MUST | Drag uses mousedown/mousemove/mouseup (manual drag), NOT HTML5 drag-and-drop API. |
+| BX-DEV-003 | MUST | Title editing zones (.large-box__title, .small-box__title) must block mousedown propagation to prevent drag and click-through. |
+| BX-DEV-004 | MUST | Elastic snap on drag-end: collision detection -> find nearest non-overlapping edge -> snap. |
+| BX-DEV-005 | MUST | Canvas pan via left-click-drag on empty canvas area; Ctrl+scroll zooms at cursor point. |
+| BX-DEV-006 | MUST | Zoom controls in canvas bottom-right corner are fixed-position, unaffected by canvas transform. |
+| BX-DEV-007 | MUST | Settings modal is an in-page overlay (not a separate options page). |
+| BX-DEV-008 | MUST | Small boxes use list mode only; grid/list toggle removed. |
+| BX-DEV-009 | MUST | Bookmark rows are editable via three-dots edit button (inline popup for title+URL). |
+| BX-DEV-010 | MUST | Font size adjustable via CSS variable --font-size-base controlled by settings. |
+| BX-DEV-011 | MUST NOT | Do not add shadcn/ui, Tailwind, React, Vue, or npm dependencies. |
+| BX-DEV-012 | MUST NOT | Do not use brand__mark brown color block (removed). |
+
+## CSS Token Baseline (Boxing v3.1)
+
+| Token | Value | Purpose |
+|---|---|---|
+| --color-canvas | #F7F3ED | Main warm-neutral canvas. |
+| --color-surface | #F3EFE7 | Card surface. |
+| --color-elevated | #F0EBE2 | Hover/selected/elevated layer. |
+| --color-ink | #2A2520 | Primary near-black text. |
+| --color-accent | #A08060 | Muted warm earth accent. |
+| --font-size-base | 14px | Adjustable base font size. |
+
+## Architecture (v3.1)
+
+- Infinite canvas: CSS transform(translateX, translateY) scale(Z) on canvas__surface
+- Pan: drag empty canvas area (mousedown+mousemove)
+- Zoom: Ctrl+scroll at point, Ctrl+/- step zoom, zoom buttons
+- Nodes (boxes): absolute positioning in world coordinates
+- Dual-level: Canvas (large boxes) -> Inner canvas (small boxes inside one large box)
+- Bookmarks: list rows with favicon + three-dots edit button (inline popup for title+URL)
+- No grid/list toggle — small boxes are always list mode

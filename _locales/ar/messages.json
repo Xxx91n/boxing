@@ -15,10 +15,6 @@
     "message": "رجوع",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "قائمة/شبكة",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "إضافة صندوق كبير",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "إضافة صندوق صغير",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "تبديل العرض الداخلي",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "لا توجد صناديق كبيرة",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "نقرة يمين للرجوع · / بحث · نقرة مزدوجة للإضافة",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "اللوحة",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "إلغاء التثبيت",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "قائمة",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "شبكة",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "التبديل للقائمة",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "التبديل للشبكة",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "$1$ صناديق كبيرة",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "نقر مزدوج للإنشاء",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

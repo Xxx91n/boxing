@@ -15,10 +15,6 @@
     "message": "ย้อนกลับ",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "รายการ/ตาราง",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "เพิ่มกล่องใหญ่",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "เพิ่มกล่องเล็ก",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "สลับมุมมองภายใน",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "ไม่มีกล่องใหญ่",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "คลิกขวาย้อนกลับ · / ค้นหา · ดับเบิลคลิกเพิ่ม",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "ผืนผ้าใบ",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "เลิกปักหมุด",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "รายการ",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "ตาราง",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "เปลี่ยนเป็นรายการ",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "เปลี่ยนเป็นตาราง",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "กล่องใหญ่ $1$ กล่อง",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "ดับเบิลคลิกเพื่อสร้าง",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

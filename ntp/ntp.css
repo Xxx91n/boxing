@@ -1,4 +1,4 @@
-/* Boxing — NTP Styles (Beige, Modern, Minimal) */
+/* Boxing — NTP Styles (Warm Neutral, Modern, Minimal) */
 * { box-sizing: border-box; }
 
 html, body {
@@ -7,7 +7,7 @@ html, body {
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-stack-ui);
-  font-size: 16px;
+  font-size: var(--font-size-base);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -40,14 +40,6 @@ html, body {
   order: 1;
 }
 
-.brand__mark {
-  width: 28px;
-  height: 28px;
-  background: var(--color-accent);
-  border-radius: var(--radius-tile);
-  box-shadow: var(--shadow-1);
-}
-
 .brand__label { display: flex; flex-direction: column; }
 .brand__name { font-size: 17px; font-weight: 600; letter-spacing: -0.4px; }
 .brand__sub  { font-size: 11px; color: var(--color-muted); }
@@ -61,7 +53,6 @@ html, body {
   align-items: center;
   background: var(--color-elevated);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-tile);
   padding: var(--space-2) var(--space-3);
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
@@ -83,7 +74,6 @@ html, body {
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-tile);
   background: var(--color-elevated);
   color: var(--color-ink);
   font-size: 13px;
@@ -156,7 +146,6 @@ html, body {
   background: var(--color-elevated);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-1);
   overflow: hidden;
   transition: box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
   user-select: none;
@@ -259,23 +248,6 @@ html, body {
   margin-top: auto;
 }
 
-/* === MAGNET GUIDE LINE OVERLAY === */
-.canvas__guides {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-out);
-}
-.canvas__guides[data-show="1"] { opacity: 1; }
-.canvas__guide {
-  position: absolute;
-  background: var(--color-accent);
-  opacity: .6;
-}
-.canvas__guide--v { top: 0; bottom: 0; width: 1px; }
-.canvas__guide--h { left: 0; right: 0; height: 1px; }
-
 /* === INNER (DRILL-IN) VIEW === */
 .inner {
   display: flex;
@@ -318,14 +290,12 @@ html, body {
 /* === SMALL BOX (fixed, second-level container) === */
 .small-box {
   position: absolute;
-  width: 280px;
-  height: 220px;
+  width: 320px;
+  height: 340px;
   display: flex;
   flex-direction: column;
   background: var(--color-elevated);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-tile);
-  box-shadow: var(--shadow-1);
   overflow: hidden;
   transition: box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
   user-select: none;
@@ -526,7 +496,6 @@ html, body {
   padding: var(--space-2) var(--space-3);
   background: var(--color-elevated);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-tile);
   font-size: 14px;
   cursor: pointer;
 }
@@ -554,7 +523,6 @@ html, body {
   -webkit-appearance: none;
   width: 18px; height: 18px;
   border-radius: 50%;
-  background: var(--color-accent);
   cursor: pointer;
 }
 .modal__value {
@@ -599,10 +567,8 @@ html, body {
   gap: 2px;
   background: var(--color-elevated);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-tile);
   padding: 2px 4px;
   z-index: 2;
-  box-shadow: var(--shadow-1);
 }
 .zoom-btn {
   background: transparent;
@@ -661,7 +627,6 @@ body.box-resizing {
 }
 .bm-add-row input::placeholder { color: var(--color-faint); font-style: italic; }
 .bm-add-row button {
-  background: var(--color-accent);
   color: #F4EFE5;
   border: 0;
   border-radius: 4px;
@@ -692,3 +657,20 @@ body.box-resizing {
   .large-box { width: 280px; }
   .small-box { width: 240px; height: 180px; }
 }
+
+/* === BOOKMARK FAVICON & EDIT === */
+.bm-row__favicon { width: 16px; height: 16px; flex-shrink: 0; border-radius: 2px; }
+.bm-row__edit-btn { background: transparent; border: 0; cursor: pointer; font-size: 14px; color: var(--color-muted); padding: 0 4px; flex-shrink: 0; opacity: 0.4; transition: opacity var(--dur-fast); }
+.bm-row:hover .bm-row__edit-btn { opacity: 1; }
+.bm-row__edit-btn:hover { color: var(--color-ink); }
+
+/* === BOOKMARK EDIT POPUP === */
+.bm-edit-popup input { padding: 4px 8px; border: 1px solid var(--color-hairline); border-radius: 4px; font-size: 12px; background: var(--color-surface); color: var(--color-ink); }
+.bm-edit-popup input:focus { border-color: var(--color-focus); outline: none; }
+.bm-edit-popup button:hover { opacity: 0.9; }
+
+/* === OBSIDIAN-STYLE CANVAS === */
+.canvas { overflow: hidden; cursor: grab; }
+.canvas:active { cursor: grabbing; }
+.inner__surface { overflow: hidden; cursor: grab; }
+.inner__surface:active { cursor: grabbing; }

@@ -15,10 +15,6 @@
     "message": "Retour",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "Liste/Grille",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "Ajouter une grande boîte",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "Ajouter une petite boîte",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "Changer la vue interne",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "Aucune grande boîte",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Clic droit pour revenir · / rechercher · Double-clic pour ajouter",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "Canevas",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "Désépingler",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "Liste",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "Grille",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "Passer en liste",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "Passer en grille",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "$1$ grandes boîtes",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "Double-cliquer pour créer",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

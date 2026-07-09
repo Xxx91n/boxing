@@ -15,10 +15,6 @@
     "message": "Go back",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "Toggle list/grid",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "Add large box",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "Add small box",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "Toggle inner view",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "No large boxes yet",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Right-click to return · / to search · Dblclick canvas to add",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "Canvas",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "Unpin",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "List",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "Grid",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "Switch to list view",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "Switch to grid view",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "$1$ large boxes",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "Double-click to create",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }

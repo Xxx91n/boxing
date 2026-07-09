@@ -1,4 +1,4 @@
-# Boxing v3 — Hierarchical Bookmark Organizer
+# Boxing v3.1 — Hierarchical Bookmark Organizer
 
 A beige, minimalist browser extension (Chrome & Firefox) that organizes bookmarks into hierarchical boxes with an infinite-canvas layout. MV3-native, zero dependencies.
 
@@ -157,7 +157,7 @@ MIT
 
 ## Changelog
 
-### v3.0.0 (2026-07-09)
+### v3.1.0 (2026-07-09)
 - Full NTP rewrite: settings modal, zoom controls, resize handles, dblclick create
 - Custom i18n store supporting 13 languages with runtime switching
 - Auto-numbered box naming, remember-last-position
@@ -171,3 +171,18 @@ MIT
 
 ### v1.0.0
 - Initial scaffold: beige design system, MV3 skeleton
+
+
+
+### v3.1.0 — July 2026
+- **Obsidian-style infinite canvas**: CSS transform(translate+scale) pan/zoom; left-drag pan, Ctrl+scroll zoom at point, Ctrl+/- step zoom
+- **Manual drag**: Replaced HTML5 drag API with mousedown/mousemove/mouseup for real-time mouse-following (no jump-to-corner bug)
+- **Title-only edit zone**: Title bars block drag and click-through; only text editing allowed on titles
+- **Elastic snap**: Box collision detection sorts to nearest non-overlapping edge rather than returning to original position
+- **Font size control**: Settings slider adjusts --font-size-base CSS variable (11–20px)
+- **Bookmark CRUD**: Each bookmark row has a three-dots edit button (inline popup for title+URL editing); + button adds new bookmarks
+- **Removed list/grid toggle**: Small boxes always use list mode
+- **Redesigned color palette**: Lower saturation warm-neutral (less red-brown, higher clarity)
+- **Removed brand__mark**: Deleted the brown color block from the header
+- **i18n sync**: All 13 languages updated with new keys (fontSizeLabel, editBookmarkLabel, bookmarkTitlePlaceholder, bookmarkUrlPlaceholder, smallBoxCountLabel)
+- **Agent.md**: Added Boxing Project Specialization with i18n and development rules

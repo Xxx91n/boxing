@@ -15,10 +15,6 @@
     "message": "Voltar",
     "description": "Back button tooltip"
   },
-  "switchViewTooltip": {
-    "message": "Lista/Grade",
-    "description": "View toggle tooltip"
-  },
   "addLargeBoxTooltip": {
     "message": "Adicionar caixa grande",
     "description": "Add large box tooltip"
@@ -30,10 +26,6 @@
   "addSmallBoxTooltip": {
     "message": "Adicionar caixa pequena",
     "description": "Add small box tooltip"
-  },
-  "switchInnerViewTooltip": {
-    "message": "Alternar visualização interna",
-    "description": "Inner view toggle tooltip"
   },
   "emptyCanvasTitle": {
     "message": "Nenhuma caixa grande",
@@ -68,8 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Clique direito voltar · / buscar · Duplo clique adicionar",
-    "description": "Footer keyboard hints"
+    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "Tela",
@@ -119,22 +110,6 @@
   "unpin": {
     "message": "Desafixar",
     "description": "Unpin button tooltip"
-  },
-  "viewList": {
-    "message": "Lista",
-    "description": "List view label"
-  },
-  "viewGrid": {
-    "message": "Grade",
-    "description": "Grid view label"
-  },
-  "switchToList": {
-    "message": "Mudar para lista",
-    "description": "Switch to list tooltip"
-  },
-  "switchToGrid": {
-    "message": "Mudar para grade",
-    "description": "Switch to grid tooltip"
   },
   "largeBoxesCount": {
     "message": "$1$ caixas grandes",
@@ -206,5 +181,25 @@
   "doubleClickToCreateHint": {
     "message": "Clique duplo para criar",
     "description": "Double-click hint for small box"
+  },
+  "fontSizeLabel": {
+    "message": "Font Size"
+  },
+  "editBookmarkLabel": {
+    "message": "Edit bookmark"
+  },
+  "bookmarkTitlePlaceholder": {
+    "message": "Bookmark title"
+  },
+  "bookmarkUrlPlaceholder": {
+    "message": "https://…"
+  },
+  "smallBoxCountLabel": {
+    "message": "\\$ small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   }
 }
