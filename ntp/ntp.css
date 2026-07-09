@@ -144,6 +144,7 @@ html, body {
 .canvas__empty-icon { font-size: 36px; opacity: .5; }
 .canvas__empty-title { font-size: 14px; font-weight: 600; color: var(--color-ink); }
 .canvas__empty-hint { font-size: 12px; }
+.canvas__empty[hidden] { display: none; }
 
 /* === LARGE BOX (draggable, fixed size) === */
 .large-box {

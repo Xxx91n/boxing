@@ -3,18 +3,27 @@
 
 (async () => {
   // ── cross-browser API ──────────────────────────────────
-  const api = (typeof browser !== 'undefined' ? browser
-    : typeof chrome !== 'undefined' ? chrome : null);
-  if (!api) return;
+  let api = (typeof browser !== 'undefined' ? browser : typeof chrome !== 'undefined' ? chrome : null);
+  // fallback for file:// / non-extension environments: mock chrome.storage with localStorage
+  if (!api) {
+    const mock = {
+      storage: { sync: {
+        get: async (_keys) => { try { const v = localStorage.getItem('boxingLayout'); return v ? { boxingLayout: JSON.parse(v) } : { boxingLayout: null }; } catch (_) { return { boxingLayout: null }; } },
+        set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (_) {} }
+      }}, runtime: { getURL: (p) => p } // file:// — relative path resolves fine
+    };
+    api = mock;
+    self.chrome = mock; self.browser = mock;
+  }
 
   // ── constants ──────────────────────────────────────────
   const CANVAS_GRID = 24;
   const INNER_GRID  = 16;
   const RESIZE_SNAP = 5;
   const LARGE_DEF_W = 320, LARGE_DEF_H = 220;
-  const SMALL_DEF_W  = 280, SMALL_DEF_H = 220;
+  const SMALL_DEF_W  = 320, SMALL_DEF_H = 300;
   const LARGE_MIN_W = 200, LARGE_MIN_H = 120;
-  const SMALL_MIN_W  = 140, SMALL_MIN_H = 100;
+  const SMALL_MIN_W  = 180, SMALL_MIN_H = 160;
   const MAX_LARGE_BOXES = 1000;
   const MAX_SMALL_BOXES = 500;
   const MAX_BOOKMARKS = 50;
@@ -28,12 +37,34 @@
 
   // ── i18n store ─────────────────────────────────────────
   let i18nStore = {};
+  // hardcoded English fallback (minimal set for core UI)
+  const I18N_FALLBACK = {
+    brandName: 'Boxing', brandSub: 'organize bookmarks hierarchically',
+    searchPlaceholder: 'Search bookmarks…', settingsTitle: 'Settings',
+    closeSettings: 'Close', settingsLanguage: 'Language / 语言',
+    rememberLastPos: 'Remember last position', rememberLastPosHint: 'Automatically reopen last visited large box on new tabs',
+    zoomLabel: 'Zoom', zoomOut: 'Zoom out', zoomIn: 'Zoom in',
+    emptyCanvasTitle: 'No large boxes yet', dblclickHint: 'Double-click canvas to add a large box',
+    clickPlusHint: 'or click + above', emptyLargeHint: 'Click to add small boxes',
+    emptyInnerHint: 'Click + to add your first small box', emptySmallHint: 'No bookmarks yet',
+    clickToOpen: 'Click to open →', footerHint: 'Right-click to return · / to search · Dblclick canvas to add',
+    canvasRoot: 'Canvas', untitledBox: 'Untitled box', untitledLargeBox: 'Untitled large box',
+    untitledSmallBox: 'Untitled small box', newLargeBox: 'Box $1$', newSmallBox: 'New small box',
+    deleteBox: 'Delete box', confirmDeleteLarge: 'Delete this large box and all its small boxes?',
+    confirmDeleteSmall: 'Delete this small box?', pin: 'Pin', unpin: 'Unpin',
+    viewList: 'List', viewGrid: 'Grid', switchToList: 'Switch to list view', switchToGrid: 'Switch to grid view',
+    largeBoxesCount: '$1$ large boxes', smallBoxesCount: '$1$ small boxes', searchResults: '$1$ results',
+    backTooltip: 'Go back', switchViewTooltip: 'Toggle list/grid', addLargeBoxTooltip: 'Add large box',
+    settingsTooltip: 'Open settings', addSmallBoxTooltip: 'Add small box',
+    switchInnerViewTooltip: 'Toggle inner view', addBookmarkPlaceholder: 'Paste URL…',
+    addBookmarkBtn: 'Add', doubleClickToCreateHint: 'Double-click to create'
+  };
   let currentLang = 'en';
   const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi'];
 
   async function loadI18nStore(lang) {
     try {
-      const url = `_locales/${lang}/messages.json`;
+      const url = api.runtime?.getURL?.(`_locales/${lang}/messages.json`) || `_locales/${lang}/messages.json`;
       const resp = await fetch(url);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const raw = await resp.json();
@@ -47,12 +78,17 @@
       applyI18n();
     } catch (e) {
       debugErr('i18n load failed, falling back to en', e);
-      if (lang !== 'en') await loadI18nStore('en');
+      // populate i18nStore with hardcoded English fallback
+      i18nStore = { ...I18N_FALLBACK };
+      currentLang = 'en';
+      applyI18n();
     }
   }
 
   function i18n(key, placeholders) {
     let msg = i18nStore[key] || key;
+    // fallback to hardcoded English if store is empty
+    if (!msg || msg === key) msg = I18N_FALLBACK[key] || key;
     if (placeholders && Array.isArray(placeholders)) {
       for (let i = 0; i < placeholders.length; i++) {
         msg = msg.replace(`$${i + 1}$`, placeholders[i]);
@@ -711,7 +747,7 @@
       const box = getLargeBox(id);
       if (!box) { dragState = null; return; }
       finalPos = resolveCanvasCollision(box, snapped);
-      finalPos = clampToEdge(finalPos.x, finalPos.y, box.width || LARGE_DEF_W, box.height || LARGE_DEF_H, Infinity, Infinity);
+      finalPos = clampToEdge(finalPos.x, finalPos.y, box.width || LARGE_DEF_W, box.height || LARGE_DEF_H, window.innerWidth / canvasZoom, window.innerHeight / canvasZoom);
       box.x = finalPos.x;
       box.y = finalPos.y;
     } else {
@@ -719,7 +755,7 @@
       const sb = getSmallBox(id.largeId, id.smallId);
       if (!sb) { dragState = null; return; }
       finalPos = resolveInnerCollision(id.largeId, sb, snapped);
-      finalPos = clampToEdge(finalPos.x, finalPos.y, sb.width || SMALL_DEF_W, sb.height || SMALL_DEF_H, Infinity, Infinity);
+      finalPos = clampToEdge(finalPos.x, finalPos.y, sb.width || SMALL_DEF_W, sb.height || SMALL_DEF_H, window.innerWidth / innerZoom, window.innerHeight / innerZoom);
       sb.x = finalPos.x;
       sb.y = finalPos.y;
     }
@@ -801,7 +837,7 @@
     let x = (clientX - surfaceRect.left) / canvasZoom - LARGE_DEF_W / 2;
     let y = (clientY - surfaceRect.top) / canvasZoom - LARGE_DEF_H / 2;
     const snapped = snapCanvas(x, y);
-    const clamped = clampToEdge(snapped.x, snapped.y, LARGE_DEF_W, LARGE_DEF_H, Infinity, Infinity);
+    const clamped = clampToEdge(snapped.x, snapped.y, LARGE_DEF_W, LARGE_DEF_H, window.innerWidth / canvasZoom, window.innerHeight / canvasZoom);
 
     const index = layout.nextLargeIndex || (layout.boxes.length + 1);
     layout.nextLargeIndex = index + 1;
@@ -1032,9 +1068,9 @@
     backBtn.addEventListener('click', exitToCanvas);
     viewToggle.addEventListener('click', toggleViewMode);
     if (innerViewToggle) innerViewToggle.addEventListener('click', toggleInnerViewMode);
-    addLargeBtn.addEventListener('click', addLargeBox);
+    if (addLargeBtn) addLargeBtn.addEventListener('click', addLargeBox);
     if (addSmallBtn) addSmallBtn.addEventListener('click', addSmallBox);
-    settingsBtn.addEventListener('click', openSettingsModal);
+    if (settingsBtn) settingsBtn.addEventListener('click', openSettingsModal);
     if (modalClose) modalClose.addEventListener('click', closeSettingsModal);
     // close modal on backdrop click
     settingsModal.addEventListener('click', e => {
