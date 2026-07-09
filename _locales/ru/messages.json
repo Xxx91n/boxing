@@ -1,0 +1,205 @@
+{
+  "brandName": {
+    "message": "Boxing",
+    "description": "Extension brand name"
+  },
+  "brandSub": {
+    "message": "иерархическая организация закладок",
+    "description": "Subtitle under brand name"
+  },
+  "searchPlaceholder": {
+    "message": "Поиск закладок…",
+    "description": "Search input placeholder"
+  },
+  "backTooltip": {
+    "message": "Назад",
+    "description": "Back button tooltip"
+  },
+  "switchViewTooltip": {
+    "message": "Список/Сетка",
+    "description": "View toggle tooltip"
+  },
+  "addLargeBoxTooltip": {
+    "message": "Добавить большой контейнер",
+    "description": "Add large box tooltip"
+  },
+  "settingsTooltip": {
+    "message": "Настройки",
+    "description": "Settings button tooltip"
+  },
+  "addSmallBoxTooltip": {
+    "message": "Добавить малый контейнер",
+    "description": "Add small box tooltip"
+  },
+  "switchInnerViewTooltip": {
+    "message": "Сменить внутренний вид",
+    "description": "Inner view toggle tooltip"
+  },
+  "emptyCanvasTitle": {
+    "message": "Нет больших контейнеров",
+    "description": "Empty canvas title"
+  },
+  "emptyCanvasHint": {
+    "message": "Нажмите ＋ для первого контейнера",
+    "description": "Empty canvas hint (legacy)"
+  },
+  "dblclickHint": {
+    "message": "Двойной клик на холсте для добавления",
+    "description": "Double-click canvas hint"
+  },
+  "clickPlusHint": {
+    "message": "или нажмите ＋ сверху",
+    "description": "or click plus above hint"
+  },
+  "emptyLargeHint": {
+    "message": "Нажмите чтобы добавить малые контейнеры",
+    "description": "Empty large box hint"
+  },
+  "emptyInnerHint": {
+    "message": "Нажмите ＋ для первого малого",
+    "description": "Empty inner canvas hint"
+  },
+  "emptySmallHint": {
+    "message": "Нет закладок",
+    "description": "Empty small box hint"
+  },
+  "clickToOpen": {
+    "message": "Нажмите чтобы открыть →",
+    "description": "Hint to open large box"
+  },
+  "footerHint": {
+    "message": "Правый клик назад · / поиск · Двойной клик добавить",
+    "description": "Footer keyboard hints"
+  },
+  "canvasRoot": {
+    "message": "Холст",
+    "description": "Breadcrumb root label"
+  },
+  "untitledBox": {
+    "message": "Безымянный контейнер",
+    "description": "Default box title"
+  },
+  "untitledLargeBox": {
+    "message": "Безымянный большой",
+    "description": "Default large box title"
+  },
+  "untitledSmallBox": {
+    "message": "Безымянный малый",
+    "description": "Default small box title"
+  },
+  "newLargeBox": {
+    "message": "Контейнер $1$",
+    "description": "Default new large box title with auto-numbering"
+  },
+  "newSmallBox": {
+    "message": "Новый малый контейнер",
+    "description": "Default new small box title"
+  },
+  "deleteBox": {
+    "message": "Удалить",
+    "description": "Delete button tooltip"
+  },
+  "confirmDeleteLarge": {
+    "message": "Удалить этот большой контейнер и все его малые?",
+    "description": "Confirm delete large box"
+  },
+  "confirmDeleteSmall": {
+    "message": "Удалить этот малый контейнер?",
+    "description": "Confirm delete small box"
+  },
+  "pin": {
+    "message": "Закрепить",
+    "description": "Pin button tooltip"
+  },
+  "unpin": {
+    "message": "Открепить",
+    "description": "Unpin button tooltip"
+  },
+  "viewList": {
+    "message": "Список",
+    "description": "List view label"
+  },
+  "viewGrid": {
+    "message": "Сетка",
+    "description": "Grid view label"
+  },
+  "switchToList": {
+    "message": "Переключить на список",
+    "description": "Switch to list tooltip"
+  },
+  "switchToGrid": {
+    "message": "Переключить на сетку",
+    "description": "Switch to grid tooltip"
+  },
+  "largeBoxesCount": {
+    "message": "$1$ больших контейнеров",
+    "description": "Count of large boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "smallBoxesCount": {
+    "message": "$1$ малых контейнеров",
+    "description": "Count of small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "searchResults": {
+    "message": "$1$ результатов",
+    "description": "Search result count",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsTitle": {
+    "message": "Настройки",
+    "description": "Settings modal title"
+  },
+  "closeSettings": {
+    "message": "Закрыть",
+    "description": "Close settings button"
+  },
+  "settingsLanguage": {
+    "message": "Язык / Language",
+    "description": "Language selector label"
+  },
+  "rememberLastPos": {
+    "message": "Запомнить позицию",
+    "description": "Remember last position toggle label"
+  },
+  "rememberLastPosHint": {
+    "message": "Автоматически открывать последний контейнер в новых вкладках",
+    "description": "Remember last position hint"
+  },
+  "zoomLabel": {
+    "message": "Масштаб",
+    "description": "Zoom slider label"
+  },
+  "zoomOut": {
+    "message": "Уменьшить",
+    "description": "Zoom out button tooltip"
+  },
+  "zoomIn": {
+    "message": "Увеличить",
+    "description": "Zoom in button tooltip"
+  },
+  "addBookmarkPlaceholder": {
+    "message": "Вставить URL…",
+    "description": "Add bookmark input placeholder"
+  },
+  "addBookmarkBtn": {
+    "message": "Добавить",
+    "description": "Add bookmark button text"
+  },
+  "doubleClickToCreateHint": {
+    "message": "Двойной клик для создания",
+    "description": "Double-click hint for small box"
+  }
+}

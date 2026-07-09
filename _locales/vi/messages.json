@@ -1,0 +1,205 @@
+{
+  "brandName": {
+    "message": "Boxing",
+    "description": "Extension brand name"
+  },
+  "brandSub": {
+    "message": "tổ chức dấu trang theo cấp bậc",
+    "description": "Subtitle under brand name"
+  },
+  "searchPlaceholder": {
+    "message": "Tìm dấu trang…",
+    "description": "Search input placeholder"
+  },
+  "backTooltip": {
+    "message": "Quay lại",
+    "description": "Back button tooltip"
+  },
+  "switchViewTooltip": {
+    "message": "Danh sách/Lưới",
+    "description": "View toggle tooltip"
+  },
+  "addLargeBoxTooltip": {
+    "message": "Thêm hộp lớn",
+    "description": "Add large box tooltip"
+  },
+  "settingsTooltip": {
+    "message": "Cài đặt",
+    "description": "Settings button tooltip"
+  },
+  "addSmallBoxTooltip": {
+    "message": "Thêm hộp nhỏ",
+    "description": "Add small box tooltip"
+  },
+  "switchInnerViewTooltip": {
+    "message": "Chuyển đổi chế độ xem trong",
+    "description": "Inner view toggle tooltip"
+  },
+  "emptyCanvasTitle": {
+    "message": "Chưa có hộp lớn",
+    "description": "Empty canvas title"
+  },
+  "emptyCanvasHint": {
+    "message": "Nhấp ＋ để tạo hộp lớn đầu tiên",
+    "description": "Empty canvas hint (legacy)"
+  },
+  "dblclickHint": {
+    "message": "Nhấp đúp vào khung để thêm",
+    "description": "Double-click canvas hint"
+  },
+  "clickPlusHint": {
+    "message": "hoặc nhấp ＋ bên trên",
+    "description": "or click plus above hint"
+  },
+  "emptyLargeHint": {
+    "message": "Nhấp để thêm hộp nhỏ",
+    "description": "Empty large box hint"
+  },
+  "emptyInnerHint": {
+    "message": "Nhấp ＋ để thêm hộp nhỏ đầu tiên",
+    "description": "Empty inner canvas hint"
+  },
+  "emptySmallHint": {
+    "message": "Chưa có dấu trang",
+    "description": "Empty small box hint"
+  },
+  "clickToOpen": {
+    "message": "Nhấp để mở →",
+    "description": "Hint to open large box"
+  },
+  "footerHint": {
+    "message": "Nhấp phải quay lại · / tìm · Nhấp đúp thêm",
+    "description": "Footer keyboard hints"
+  },
+  "canvasRoot": {
+    "message": "Khung vẽ",
+    "description": "Breadcrumb root label"
+  },
+  "untitledBox": {
+    "message": "Hộp chưa đặt tên",
+    "description": "Default box title"
+  },
+  "untitledLargeBox": {
+    "message": "Hộp lớn chưa đặt tên",
+    "description": "Default large box title"
+  },
+  "untitledSmallBox": {
+    "message": "Hộp nhỏ chưa đặt tên",
+    "description": "Default small box title"
+  },
+  "newLargeBox": {
+    "message": "Hộp $1$",
+    "description": "Default new large box title with auto-numbering"
+  },
+  "newSmallBox": {
+    "message": "Hộp nhỏ mới",
+    "description": "Default new small box title"
+  },
+  "deleteBox": {
+    "message": "Xóa hộp",
+    "description": "Delete button tooltip"
+  },
+  "confirmDeleteLarge": {
+    "message": "Xóa hộp lớn này và tất cả hộp nhỏ trong đó?",
+    "description": "Confirm delete large box"
+  },
+  "confirmDeleteSmall": {
+    "message": "Xóa hộp nhỏ này?",
+    "description": "Confirm delete small box"
+  },
+  "pin": {
+    "message": "Ghim",
+    "description": "Pin button tooltip"
+  },
+  "unpin": {
+    "message": "Bỏ ghim",
+    "description": "Unpin button tooltip"
+  },
+  "viewList": {
+    "message": "Danh sách",
+    "description": "List view label"
+  },
+  "viewGrid": {
+    "message": "Lưới",
+    "description": "Grid view label"
+  },
+  "switchToList": {
+    "message": "Chuyển sang danh sách",
+    "description": "Switch to list tooltip"
+  },
+  "switchToGrid": {
+    "message": "Chuyển sang lưới",
+    "description": "Switch to grid tooltip"
+  },
+  "largeBoxesCount": {
+    "message": "$1$ hộp lớn",
+    "description": "Count of large boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "smallBoxesCount": {
+    "message": "$1$ hộp nhỏ",
+    "description": "Count of small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "searchResults": {
+    "message": "$1$ kết quả",
+    "description": "Search result count",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsTitle": {
+    "message": "Cài đặt",
+    "description": "Settings modal title"
+  },
+  "closeSettings": {
+    "message": "Đóng",
+    "description": "Close settings button"
+  },
+  "settingsLanguage": {
+    "message": "Ngôn ngữ / Language",
+    "description": "Language selector label"
+  },
+  "rememberLastPos": {
+    "message": "Nhớ vị trí cuối",
+    "description": "Remember last position toggle label"
+  },
+  "rememberLastPosHint": {
+    "message": "Tự động mở lại hộp lớn cuối cùng trong tab mới",
+    "description": "Remember last position hint"
+  },
+  "zoomLabel": {
+    "message": "Thu phóng",
+    "description": "Zoom slider label"
+  },
+  "zoomOut": {
+    "message": "Thu nhỏ",
+    "description": "Zoom out button tooltip"
+  },
+  "zoomIn": {
+    "message": "Phóng to",
+    "description": "Zoom in button tooltip"
+  },
+  "addBookmarkPlaceholder": {
+    "message": "Dán URL…",
+    "description": "Add bookmark input placeholder"
+  },
+  "addBookmarkBtn": {
+    "message": "Thêm",
+    "description": "Add bookmark button text"
+  },
+  "doubleClickToCreateHint": {
+    "message": "Nhấp đúp để tạo",
+    "description": "Double-click hint for small box"
+  }
+}

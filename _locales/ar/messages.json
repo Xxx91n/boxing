@@ -1,0 +1,205 @@
+{
+  "brandName": {
+    "message": "Boxing",
+    "description": "Extension brand name"
+  },
+  "brandSub": {
+    "message": "تنظيم الإشارات المرجعية بشكل هرمي",
+    "description": "Subtitle under brand name"
+  },
+  "searchPlaceholder": {
+    "message": "بحث…",
+    "description": "Search input placeholder"
+  },
+  "backTooltip": {
+    "message": "رجوع",
+    "description": "Back button tooltip"
+  },
+  "switchViewTooltip": {
+    "message": "قائمة/شبكة",
+    "description": "View toggle tooltip"
+  },
+  "addLargeBoxTooltip": {
+    "message": "إضافة صندوق كبير",
+    "description": "Add large box tooltip"
+  },
+  "settingsTooltip": {
+    "message": "الإعدادات",
+    "description": "Settings button tooltip"
+  },
+  "addSmallBoxTooltip": {
+    "message": "إضافة صندوق صغير",
+    "description": "Add small box tooltip"
+  },
+  "switchInnerViewTooltip": {
+    "message": "تبديل العرض الداخلي",
+    "description": "Inner view toggle tooltip"
+  },
+  "emptyCanvasTitle": {
+    "message": "لا توجد صناديق كبيرة",
+    "description": "Empty canvas title"
+  },
+  "emptyCanvasHint": {
+    "message": "انقر ＋ لإنشاء أول صندوق كبير",
+    "description": "Empty canvas hint (legacy)"
+  },
+  "dblclickHint": {
+    "message": "انقر مرتين لإضافة صندوق كبير",
+    "description": "Double-click canvas hint"
+  },
+  "clickPlusHint": {
+    "message": "أو انقر ＋ أعلاه",
+    "description": "or click plus above hint"
+  },
+  "emptyLargeHint": {
+    "message": "انقر لإضافة صناديق صغيرة",
+    "description": "Empty large box hint"
+  },
+  "emptyInnerHint": {
+    "message": "انقر ＋ لأول صندوق صغير",
+    "description": "Empty inner canvas hint"
+  },
+  "emptySmallHint": {
+    "message": "لا توجد إشارات",
+    "description": "Empty small box hint"
+  },
+  "clickToOpen": {
+    "message": "انقر للفتح →",
+    "description": "Hint to open large box"
+  },
+  "footerHint": {
+    "message": "نقرة يمين للرجوع · / بحث · نقرة مزدوجة للإضافة",
+    "description": "Footer keyboard hints"
+  },
+  "canvasRoot": {
+    "message": "اللوحة",
+    "description": "Breadcrumb root label"
+  },
+  "untitledBox": {
+    "message": "صندوق بدون اسم",
+    "description": "Default box title"
+  },
+  "untitledLargeBox": {
+    "message": "صندوق كبير بدون اسم",
+    "description": "Default large box title"
+  },
+  "untitledSmallBox": {
+    "message": "صندوق صغير بدون اسم",
+    "description": "Default small box title"
+  },
+  "newLargeBox": {
+    "message": "صندوق $1$",
+    "description": "Default new large box title with auto-numbering"
+  },
+  "newSmallBox": {
+    "message": "صندوق صغير جديد",
+    "description": "Default new small box title"
+  },
+  "deleteBox": {
+    "message": "حذف",
+    "description": "Delete button tooltip"
+  },
+  "confirmDeleteLarge": {
+    "message": "حذف هذا الصندوق الكبير وجميع صناديقه الصغيرة؟",
+    "description": "Confirm delete large box"
+  },
+  "confirmDeleteSmall": {
+    "message": "حذف هذا الصندوق الصغير؟",
+    "description": "Confirm delete small box"
+  },
+  "pin": {
+    "message": "تثبيت",
+    "description": "Pin button tooltip"
+  },
+  "unpin": {
+    "message": "إلغاء التثبيت",
+    "description": "Unpin button tooltip"
+  },
+  "viewList": {
+    "message": "قائمة",
+    "description": "List view label"
+  },
+  "viewGrid": {
+    "message": "شبكة",
+    "description": "Grid view label"
+  },
+  "switchToList": {
+    "message": "التبديل للقائمة",
+    "description": "Switch to list tooltip"
+  },
+  "switchToGrid": {
+    "message": "التبديل للشبكة",
+    "description": "Switch to grid tooltip"
+  },
+  "largeBoxesCount": {
+    "message": "$1$ صناديق كبيرة",
+    "description": "Count of large boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "smallBoxesCount": {
+    "message": "$1$ صناديق صغيرة",
+    "description": "Count of small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "searchResults": {
+    "message": "$1$ نتائج",
+    "description": "Search result count",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsTitle": {
+    "message": "الإعدادات",
+    "description": "Settings modal title"
+  },
+  "closeSettings": {
+    "message": "إغلاق",
+    "description": "Close settings button"
+  },
+  "settingsLanguage": {
+    "message": "اللغة / Language",
+    "description": "Language selector label"
+  },
+  "rememberLastPos": {
+    "message": "تذكر آخر موضع",
+    "description": "Remember last position toggle label"
+  },
+  "rememberLastPosHint": {
+    "message": "إعادة فتح آخر صندوق كبير تلقائياً",
+    "description": "Remember last position hint"
+  },
+  "zoomLabel": {
+    "message": "تكبير",
+    "description": "Zoom slider label"
+  },
+  "zoomOut": {
+    "message": "تصغير",
+    "description": "Zoom out button tooltip"
+  },
+  "zoomIn": {
+    "message": "تكبير",
+    "description": "Zoom in button tooltip"
+  },
+  "addBookmarkPlaceholder": {
+    "message": "لصق الرابط…",
+    "description": "Add bookmark input placeholder"
+  },
+  "addBookmarkBtn": {
+    "message": "إضافة",
+    "description": "Add bookmark button text"
+  },
+  "doubleClickToCreateHint": {
+    "message": "نقر مزدوج للإنشاء",
+    "description": "Double-click hint for small box"
+  }
+}

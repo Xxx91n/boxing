@@ -44,3 +44,6 @@ browsers/
 
 # WXT (if used)
 .wxt/
+
+# Codegraph
+.codegraph/

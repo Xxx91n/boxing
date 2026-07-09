@@ -26,12 +26,20 @@
       recentListEl.innerHTML = '';
       recent.forEach(bookmark => {
         const li = document.createElement('li');
-        li.innerHTML = `
-          <a class="popup__item" href="${bookmark.url}" target="_blank" rel="noopener">
-            <span class="popup__icon" aria-hidden="true">🔖</span>
-            <span class="popup__label">${bookmark.title || 'Untitled'}</span>
-          </a>
-        `;
+        const a = document.createElement('a');
+        a.className = 'popup__item';
+        a.href = bookmark.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        const icon = document.createElement('span');
+        icon.className = 'popup__icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = '🔖';
+        const label = document.createElement('span');
+        label.className = 'popup__label';
+        label.textContent = bookmark.title || 'Untitled';
+        a.append(icon, label);
+        li.appendChild(a);
         li.querySelector('a').addEventListener('click', (e) => {
           e.preventDefault();
           api.tabs?.create?.({ url: bookmark.url, active: true });

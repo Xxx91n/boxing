@@ -5,87 +5,141 @@
 <title>Boxing</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light">
-<link rel="stylesheet" href="../ntp/design-system.css">
-<link rel="stylesheet" href="../ntp/ntp.css">
+<link rel="stylesheet" href="design-system.css">
+<link rel="stylesheet" href="ntp.css">
 </head>
 <body>
-  <main id="app" class="ntp" aria-label="New tab dashboard">
-    <header class="ntp__bar" role="banner">
-      <button id="back-btn" class="btn btn--ghost btn--icon" aria-label="Go back to parent level" title="Back (right-click anywhere)">
-        <span aria-hidden="true">←</span>
+<main id="app" class="ntp" aria-label="New tab dashboard">
+  <header class="ntp__bar" role="banner">
+    <button id="back-btn" class="btn btn--ghost btn--icon" aria-label="Go back" data-i18n-title="backTooltip">
+      <span aria-hidden="true">←</span>
+    </button>
+    <div class="brand">
+      <div class="brand__mark" aria-hidden="true"></div>
+      <div class="brand__label">
+        <span class="brand__name" data-i18n="brandName">Boxing</span>
+        <span class="brand__sub" data-i18n="brandSub">organize bookmarks hierarchically</span>
+      </div>
+    </div>
+    <form class="search" role="search" aria-label="Search bookmarks">
+      <span class="search__icon" aria-hidden="true">⌕</span>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search bookmarks…" aria-label="Search bookmarks" data-i18n-placeholder="searchPlaceholder">
+      <kbd class="search__hint" aria-hidden="true">/</kbd>
+    </form>
+    <nav class="actions" aria-label="Page actions">
+      <button id="view-toggle" class="btn btn--ghost" aria-label="Toggle list/grid" data-i18n-title="switchViewTooltip">
+        <span class="view-toggle__icon" aria-hidden="true">▤</span>
+        <span class="view-toggle__label" data-i18n="viewList">List</span>
       </button>
-      <div class="brand">
-        <div class="brand__mark" aria-hidden="true"></div>
-        <div class="brand__label">
-          <span class="brand__name" data-i18n="brandName">Boxing</span>
-          <span class="brand__sub" data-i18n="brandSub">organize bookmarks hierarchically</span>
+      <button id="add-box" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
+        <span aria-hidden="true">+</span>
+      </button>
+      <button id="settings-btn" class="btn btn--ghost" aria-label="Open settings" data-i18n-title="settingsTooltip">
+        <span aria-hidden="true">⚙</span>
+      </button>
+    </nav>
+  </header>
+
+  <section class="library" aria-label="Library">
+    <div class="library__head">
+      <div class="crumbs" id="crumbs" aria-label="Breadcrumb"></div>
+      <p class="library__caption" id="caption"></p>
+    </div>
+
+    <div id="canvas" class="canvas" role="region" aria-label="Infinite canvas">
+      <div id="canvas-surface" class="canvas__surface"></div>
+      <div id="canvas-empty" class="canvas__empty">
+        <div class="canvas__empty-icon" aria-hidden="true">📦</div>
+        <div class="canvas__empty-title" data-i18n="emptyCanvasTitle">No large boxes yet</div>
+        <div class="canvas__empty-hint">
+          <span data-i18n="dblclickHint">Double-click canvas to add a large box</span>
+          <span>&nbsp;·&nbsp;</span>
+          <span data-i18n="clickPlusHint">or click + above</span>
         </div>
       </div>
-      <form class="search" role="search" aria-label="Search bookmarks">
-        <span class="search__icon" aria-hidden="true">⌕</span>
-        <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search every bookmark…" aria-label="Search bookmarks">
-        <kbd class="search__hint" aria-hidden="true">/</kbd>
-      </form>
-      <nav class="actions" aria-label="Page actions">
-        <button id="view-toggle" class="btn btn--ghost" aria-label="Toggle list or grid view" title="Toggle list/grid">
-          <span class="view-toggle__icon" aria-hidden="true">▤</span>
-          <span class="view-toggle__label" data-i18n="viewList">List</span>
-        </button>
-        <button id="add-box" class="btn btn--ghost" aria-label="Add new large box" title="Add large box">
-          <span aria-hidden="true">＋</span>
-        </button>
-        <button id="settings-btn" class="btn btn--ghost" aria-label="Open settings">
-          <span aria-hidden="true">⚙</span>
-        </button>
-      </nav>
-    </header>
-
-    <section class="hero" aria-label="Pinned folders">
-      <div class="hero__eyebrow" data-i18n="pinnedHeader">Pinned</div>
-      <ol id="pin-bar" class="pin-bar" role="list"></ol>
-    </section>
-
-    <section class="library" aria-label="Library">
-      <div class="library__head">
-        <div class="crumbs" id="crumbs" aria-label="Breadcrumb"></div>
-        <p class="library__caption" id="caption"></p>
+      <div class="zoom-controls" id="canvas-zoom">
+        <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut">◂</button>
+        <span class="zoom-value" id="canvas-zoom-value">100%</span>
+        <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn">▸</button>
       </div>
+    </div>
 
-      <!-- Canvas mode: top-level large boxes -->
-      <div id="canvas" class="canvas" role="region" aria-label="Infinite canvas with large boxes">
-        <div id="canvas-surface" class="canvas__surface"></div>
-        <div id="canvas-empty" class="canvas__empty">
-          <div class="canvas__empty-icon" aria-hidden="true">📦</div>
-          <div class="canvas__empty-title" data-i18n="emptyCanvasTitle">No large boxes yet</div>
-          <div class="canvas__empty-hint" data-i18n="emptyCanvasHint">Click ＋ to create your first large box</div>
+    <div id="inner" class="inner" hidden>
+      <div class="inner__head">
+        <span class="inner__title" id="inner-title" contenteditable="true" spellcheck="false"></span>
+        <div class="inner__actions">
+          <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box" data-i18n-title="addSmallBoxTooltip">
+            <span aria-hidden="true">+</span>
+          </button>
+          <button id="inner-view-toggle" class="btn btn--ghost btn--icon" aria-label="Toggle inner view" data-i18n-title="switchInnerViewTooltip">
+            <span aria-hidden="true">▤</span>
+          </button>
         </div>
       </div>
-
-      <!-- Drill-in mode: small boxes within a large box -->
-      <div id="inner" class="inner" hidden>
-        <div class="inner__head">
-          <span class="inner__title" id="inner-title"></span>
-          <div class="inner__actions">
-            <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box" title="Add small box">
-              <span aria-hidden="true">＋</span>
-            </button>
-            <button id="inner-view-toggle" class="btn btn--ghost btn--icon" aria-label="Toggle inner view" title="Toggle list/grid">
-              <span aria-hidden="true">▤</span>
-            </button>
-          </div>
-        </div>
-        <div id="inner-surface" class="inner__surface"></div>
+      <div id="inner-surface" class="inner__surface"></div>
+      <div class="zoom-controls" id="inner-zoom">
+        <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut">◂</button>
+        <span class="zoom-value" id="inner-zoom-value">100%</span>
+        <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn">▸</button>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <footer class="foot">
-      <span class="foot__dot" aria-hidden="true"></span>
-      <span class="foot__txt" data-i18n="footerHint">Right-click to return · / to search · Enter to open</span>
-    </footer>
-  </main>
+  <footer class="foot">
+    <span class="foot__dot" aria-hidden="true"></span>
+    <span class="foot__txt" data-i18n="footerHint">Right-click to return · / to search · Dblclick canvas to add</span>
+  </footer>
+</main>
 
-  <div id="empty" class="empty sr-only" aria-live="polite"></div>
+<!-- Settings modal (in-page overlay) -->
+<div id="settings-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="modal">
+    <div class="modal__head">
+      <h2 class="modal__title" data-i18n="settingsTitle">Settings</h2>
+      <button class="modal__close btn btn--ghost btn--icon" aria-label="Close" data-i18n-title="closeSettings">&times;</button>
+    </div>
+    <div class="modal__body">
+      <section class="modal__section">
+        <label class="modal__label" for="lang-select" data-i18n="settingsLanguage">Language / 语言</label>
+        <select id="lang-select" class="modal__select">
+          <option value="en">English</option>
+          <option value="zh_CN">中文</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+          <option value="pt_BR">Português (BR)</option>
+          <option value="ru">Русский</option>
+          <option value="ar">العربية</option>
+          <option value="hi">हिन्दी</option>
+          <option value="th">ไทย</option>
+          <option value="vi">Tiếng Việt</option>
+        </select>
+      </section>
+      <section class="modal__section">
+        <label class="checkbox-label">
+          <input type="checkbox" id="remember-last-pos" checked>
+          <span class="checkbox-label__text" data-i18n="rememberLastPos">Remember last position</span>
+        </label>
+        <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new tabs</p>
+      </section>
+      <section class="modal__section">
+        <label class="modal__label" for="zoom-slider" data-i18n="zoomLabel">Zoom</label>
+        <div class="modal__row">
+          <input type="range" id="zoom-slider" min="50" max="150" value="100" step="5">
+          <span id="zoom-slider-value" class="modal__value">100%</span>
+        </div>
+      </section>
+    </div>
+    <div class="modal__foot">
+      <p class="modal__version">Boxing v3.0.0</p>
+    </div>
+  </div>
+</div>
 
-  <script src="../ntp/ntp.js" defer></script>
+<div id="empty" class="sr-only" aria-live="polite"></div>
+
+<script src="ntp.js" defer></script>
 </body>
 </html>

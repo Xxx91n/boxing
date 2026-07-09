@@ -1,0 +1,205 @@
+{
+  "brandName": {
+    "message": "Boxing",
+    "description": "Extension brand name"
+  },
+  "brandSub": {
+    "message": "Lesezeichen hierarchisch organisieren",
+    "description": "Subtitle under brand name"
+  },
+  "searchPlaceholder": {
+    "message": "Lesezeichen suchen…",
+    "description": "Search input placeholder"
+  },
+  "backTooltip": {
+    "message": "Zurück",
+    "description": "Back button tooltip"
+  },
+  "switchViewTooltip": {
+    "message": "Liste/Raster",
+    "description": "View toggle tooltip"
+  },
+  "addLargeBoxTooltip": {
+    "message": "Große Box hinzufügen",
+    "description": "Add large box tooltip"
+  },
+  "settingsTooltip": {
+    "message": "Einstellungen",
+    "description": "Settings button tooltip"
+  },
+  "addSmallBoxTooltip": {
+    "message": "Kleine Box hinzufügen",
+    "description": "Add small box tooltip"
+  },
+  "switchInnerViewTooltip": {
+    "message": "Innenansicht wechseln",
+    "description": "Inner view toggle tooltip"
+  },
+  "emptyCanvasTitle": {
+    "message": "Keine großen Boxen",
+    "description": "Empty canvas title"
+  },
+  "emptyCanvasHint": {
+    "message": "＋ klicken für erste große Box",
+    "description": "Empty canvas hint (legacy)"
+  },
+  "dblclickHint": {
+    "message": "Doppelklick auf Leinwand für große Box",
+    "description": "Double-click canvas hint"
+  },
+  "clickPlusHint": {
+    "message": "oder ＋ oben klicken",
+    "description": "or click plus above hint"
+  },
+  "emptyLargeHint": {
+    "message": "Klicken für kleine Boxen",
+    "description": "Empty large box hint"
+  },
+  "emptyInnerHint": {
+    "message": "＋ klicken für erste kleine Box",
+    "description": "Empty inner canvas hint"
+  },
+  "emptySmallHint": {
+    "message": "Keine Lesezeichen",
+    "description": "Empty small box hint"
+  },
+  "clickToOpen": {
+    "message": "Zum Öffnen klicken →",
+    "description": "Hint to open large box"
+  },
+  "footerHint": {
+    "message": "Rechtsklick zurück · / Suche · Doppelklick hinzufügen",
+    "description": "Footer keyboard hints"
+  },
+  "canvasRoot": {
+    "message": "Leinwand",
+    "description": "Breadcrumb root label"
+  },
+  "untitledBox": {
+    "message": "Unbenannte Box",
+    "description": "Default box title"
+  },
+  "untitledLargeBox": {
+    "message": "Unbenannte große Box",
+    "description": "Default large box title"
+  },
+  "untitledSmallBox": {
+    "message": "Unbenannte kleine Box",
+    "description": "Default small box title"
+  },
+  "newLargeBox": {
+    "message": "Box $1$",
+    "description": "Default new large box title with auto-numbering"
+  },
+  "newSmallBox": {
+    "message": "Neue kleine Box",
+    "description": "Default new small box title"
+  },
+  "deleteBox": {
+    "message": "Box löschen",
+    "description": "Delete button tooltip"
+  },
+  "confirmDeleteLarge": {
+    "message": "Diese große Box und alle kleinen Boxen löschen?",
+    "description": "Confirm delete large box"
+  },
+  "confirmDeleteSmall": {
+    "message": "Diese kleine Box löschen?",
+    "description": "Confirm delete small box"
+  },
+  "pin": {
+    "message": "Anheften",
+    "description": "Pin button tooltip"
+  },
+  "unpin": {
+    "message": "Lösen",
+    "description": "Unpin button tooltip"
+  },
+  "viewList": {
+    "message": "Liste",
+    "description": "List view label"
+  },
+  "viewGrid": {
+    "message": "Raster",
+    "description": "Grid view label"
+  },
+  "switchToList": {
+    "message": "Zur Liste wechseln",
+    "description": "Switch to list tooltip"
+  },
+  "switchToGrid": {
+    "message": "Zum Raster wechseln",
+    "description": "Switch to grid tooltip"
+  },
+  "largeBoxesCount": {
+    "message": "$1$ große Boxen",
+    "description": "Count of large boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "smallBoxesCount": {
+    "message": "$1$ kleine Boxen",
+    "description": "Count of small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "searchResults": {
+    "message": "$1$ Ergebnisse",
+    "description": "Search result count",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsTitle": {
+    "message": "Einstellungen",
+    "description": "Settings modal title"
+  },
+  "closeSettings": {
+    "message": "Schließen",
+    "description": "Close settings button"
+  },
+  "settingsLanguage": {
+    "message": "Sprache / Language",
+    "description": "Language selector label"
+  },
+  "rememberLastPos": {
+    "message": "Letzte Position merken",
+    "description": "Remember last position toggle label"
+  },
+  "rememberLastPosHint": {
+    "message": "Letzte große Box bei neuen Tabs automatisch öffnen",
+    "description": "Remember last position hint"
+  },
+  "zoomLabel": {
+    "message": "Zoom",
+    "description": "Zoom slider label"
+  },
+  "zoomOut": {
+    "message": "Verkleinern",
+    "description": "Zoom out button tooltip"
+  },
+  "zoomIn": {
+    "message": "Vergrößern",
+    "description": "Zoom in button tooltip"
+  },
+  "addBookmarkPlaceholder": {
+    "message": "URL einfügen…",
+    "description": "Add bookmark input placeholder"
+  },
+  "addBookmarkBtn": {
+    "message": "Hinzufügen",
+    "description": "Add bookmark button text"
+  },
+  "doubleClickToCreateHint": {
+    "message": "Doppelklick zum Erstellen",
+    "description": "Double-click hint for small box"
+  }
+}

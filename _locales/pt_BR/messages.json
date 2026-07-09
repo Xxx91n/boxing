@@ -1,0 +1,205 @@
+{
+  "brandName": {
+    "message": "Boxing",
+    "description": "Extension brand name"
+  },
+  "brandSub": {
+    "message": "organizar favoritos hierarquicamente",
+    "description": "Subtitle under brand name"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar favoritos…",
+    "description": "Search input placeholder"
+  },
+  "backTooltip": {
+    "message": "Voltar",
+    "description": "Back button tooltip"
+  },
+  "switchViewTooltip": {
+    "message": "Lista/Grade",
+    "description": "View toggle tooltip"
+  },
+  "addLargeBoxTooltip": {
+    "message": "Adicionar caixa grande",
+    "description": "Add large box tooltip"
+  },
+  "settingsTooltip": {
+    "message": "Configurações",
+    "description": "Settings button tooltip"
+  },
+  "addSmallBoxTooltip": {
+    "message": "Adicionar caixa pequena",
+    "description": "Add small box tooltip"
+  },
+  "switchInnerViewTooltip": {
+    "message": "Alternar visualização interna",
+    "description": "Inner view toggle tooltip"
+  },
+  "emptyCanvasTitle": {
+    "message": "Nenhuma caixa grande",
+    "description": "Empty canvas title"
+  },
+  "emptyCanvasHint": {
+    "message": "Clique ＋ para criar primeira caixa grande",
+    "description": "Empty canvas hint (legacy)"
+  },
+  "dblclickHint": {
+    "message": "Clique duplo na tela para adicionar caixa grande",
+    "description": "Double-click canvas hint"
+  },
+  "clickPlusHint": {
+    "message": "ou clique ＋ acima",
+    "description": "or click plus above hint"
+  },
+  "emptyLargeHint": {
+    "message": "Clique para adicionar caixas pequenas",
+    "description": "Empty large box hint"
+  },
+  "emptyInnerHint": {
+    "message": "Clique ＋ para primeira caixa pequena",
+    "description": "Empty inner canvas hint"
+  },
+  "emptySmallHint": {
+    "message": "Nenhum favorito",
+    "description": "Empty small box hint"
+  },
+  "clickToOpen": {
+    "message": "Clique para abrir →",
+    "description": "Hint to open large box"
+  },
+  "footerHint": {
+    "message": "Clique direito voltar · / buscar · Duplo clique adicionar",
+    "description": "Footer keyboard hints"
+  },
+  "canvasRoot": {
+    "message": "Tela",
+    "description": "Breadcrumb root label"
+  },
+  "untitledBox": {
+    "message": "Caixa sem nome",
+    "description": "Default box title"
+  },
+  "untitledLargeBox": {
+    "message": "Caixa grande sem nome",
+    "description": "Default large box title"
+  },
+  "untitledSmallBox": {
+    "message": "Caixa pequena sem nome",
+    "description": "Default small box title"
+  },
+  "newLargeBox": {
+    "message": "Caixa $1$",
+    "description": "Default new large box title with auto-numbering"
+  },
+  "newSmallBox": {
+    "message": "Nova caixa pequena",
+    "description": "Default new small box title"
+  },
+  "deleteBox": {
+    "message": "Excluir caixa",
+    "description": "Delete button tooltip"
+  },
+  "confirmDeleteLarge": {
+    "message": "Excluir esta caixa grande e todas suas caixas pequenas?",
+    "description": "Confirm delete large box"
+  },
+  "confirmDeleteSmall": {
+    "message": "Excluir esta caixa pequena?",
+    "description": "Confirm delete small box"
+  },
+  "pin": {
+    "message": "Fixar",
+    "description": "Pin button tooltip"
+  },
+  "unpin": {
+    "message": "Desafixar",
+    "description": "Unpin button tooltip"
+  },
+  "viewList": {
+    "message": "Lista",
+    "description": "List view label"
+  },
+  "viewGrid": {
+    "message": "Grade",
+    "description": "Grid view label"
+  },
+  "switchToList": {
+    "message": "Mudar para lista",
+    "description": "Switch to list tooltip"
+  },
+  "switchToGrid": {
+    "message": "Mudar para grade",
+    "description": "Switch to grid tooltip"
+  },
+  "largeBoxesCount": {
+    "message": "$1$ caixas grandes",
+    "description": "Count of large boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "smallBoxesCount": {
+    "message": "$1$ caixas pequenas",
+    "description": "Count of small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "searchResults": {
+    "message": "$1$ resultados",
+    "description": "Search result count",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsTitle": {
+    "message": "Configurações",
+    "description": "Settings modal title"
+  },
+  "closeSettings": {
+    "message": "Fechar",
+    "description": "Close settings button"
+  },
+  "settingsLanguage": {
+    "message": "Idioma / Language",
+    "description": "Language selector label"
+  },
+  "rememberLastPos": {
+    "message": "Lembrar última posição",
+    "description": "Remember last position toggle label"
+  },
+  "rememberLastPosHint": {
+    "message": "Reabrir automaticamente última caixa grande em novas abas",
+    "description": "Remember last position hint"
+  },
+  "zoomLabel": {
+    "message": "Zoom",
+    "description": "Zoom slider label"
+  },
+  "zoomOut": {
+    "message": "Reduzir",
+    "description": "Zoom out button tooltip"
+  },
+  "zoomIn": {
+    "message": "Ampliar",
+    "description": "Zoom in button tooltip"
+  },
+  "addBookmarkPlaceholder": {
+    "message": "Colar URL…",
+    "description": "Add bookmark input placeholder"
+  },
+  "addBookmarkBtn": {
+    "message": "Adicionar",
+    "description": "Add bookmark button text"
+  },
+  "doubleClickToCreateHint": {
+    "message": "Clique duplo para criar",
+    "description": "Double-click hint for small box"
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "brandName": {
+    "message": "Boxing",
+    "description": "Extension brand name"
+  },
+  "brandSub": {
+    "message": "북마크 계층 관리",
+    "description": "Subtitle under brand name"
+  },
+  "searchPlaceholder": {
+    "message": "북마크 검색…",
+    "description": "Search input placeholder"
+  },
+  "backTooltip": {
+    "message": "뒤로",
+    "description": "Back button tooltip"
+  },
+  "switchViewTooltip": {
+    "message": "목록/그리드 전환",
+    "description": "View toggle tooltip"
+  },
+  "addLargeBoxTooltip": {
+    "message": "대형 박스 추가",
+    "description": "Add large box tooltip"
+  },
+  "settingsTooltip": {
+    "message": "설정 열기",
+    "description": "Settings button tooltip"
+  },
+  "addSmallBoxTooltip": {
+    "message": "소형 박스 추가",
+    "description": "Add small box tooltip"
+  },
+  "switchInnerViewTooltip": {
+    "message": "내부 보기 전환",
+    "description": "Inner view toggle tooltip"
+  },
+  "emptyCanvasTitle": {
+    "message": "대형 박스 없음",
+    "description": "Empty canvas title"
+  },
+  "emptyCanvasHint": {
+    "message": "＋를 클릭하여 첫 대형 박스 생성",
+    "description": "Empty canvas hint (legacy)"
+  },
+  "dblclickHint": {
+    "message": "캔버스 더블클릭으로 대형 박스 추가",
+    "description": "Double-click canvas hint"
+  },
+  "clickPlusHint": {
+    "message": "또는 위의 ＋ 클릭",
+    "description": "or click plus above hint"
+  },
+  "emptyLargeHint": {
+    "message": "클릭하여 소형 박스 추가",
+    "description": "Empty large box hint"
+  },
+  "emptyInnerHint": {
+    "message": "＋를 클릭하여 첫 소형 박스 추가",
+    "description": "Empty inner canvas hint"
+  },
+  "emptySmallHint": {
+    "message": "북마크 없음",
+    "description": "Empty small box hint"
+  },
+  "clickToOpen": {
+    "message": "클릭하여 열기 →",
+    "description": "Hint to open large box"
+  },
+  "footerHint": {
+    "message": "오른쪽 클릭으로 뒤로 · / 검색 · 더블클릭으로 추가",
+    "description": "Footer keyboard hints"
+  },
+  "canvasRoot": {
+    "message": "캔버스",
+    "description": "Breadcrumb root label"
+  },
+  "untitledBox": {
+    "message": "무제 박스",
+    "description": "Default box title"
+  },
+  "untitledLargeBox": {
+    "message": "무제 대형 박스",
+    "description": "Default large box title"
+  },
+  "untitledSmallBox": {
+    "message": "무제 소형 박스",
+    "description": "Default small box title"
+  },
+  "newLargeBox": {
+    "message": "박스 $1$",
+    "description": "Default new large box title with auto-numbering"
+  },
+  "newSmallBox": {
+    "message": "새 소형 박스",
+    "description": "Default new small box title"
+  },
+  "deleteBox": {
+    "message": "박스 삭제",
+    "description": "Delete button tooltip"
+  },
+  "confirmDeleteLarge": {
+    "message": "이 대형 박스와 모든 소형 박스를 삭제할까요?",
+    "description": "Confirm delete large box"
+  },
+  "confirmDeleteSmall": {
+    "message": "이 소형 박스를 삭제할까요?",
+    "description": "Confirm delete small box"
+  },
+  "pin": {
+    "message": "고정",
+    "description": "Pin button tooltip"
+  },
+  "unpin": {
+    "message": "고정 해제",
+    "description": "Unpin button tooltip"
+  },
+  "viewList": {
+    "message": "목록",
+    "description": "List view label"
+  },
+  "viewGrid": {
+    "message": "그리드",
+    "description": "Grid view label"
+  },
+  "switchToList": {
+    "message": "목록 보기로 전환",
+    "description": "Switch to list tooltip"
+  },
+  "switchToGrid": {
+    "message": "그리드 보기로 전환",
+    "description": "Switch to grid tooltip"
+  },
+  "largeBoxesCount": {
+    "message": "대형 박스 $1$개",
+    "description": "Count of large boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "smallBoxesCount": {
+    "message": "소형 박스 $1$개",
+    "description": "Count of small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "searchResults": {
+    "message": "$1$개 결과",
+    "description": "Search result count",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsTitle": {
+    "message": "설정",
+    "description": "Settings modal title"
+  },
+  "closeSettings": {
+    "message": "닫기",
+    "description": "Close settings button"
+  },
+  "settingsLanguage": {
+    "message": "언어 / Language",
+    "description": "Language selector label"
+  },
+  "rememberLastPos": {
+    "message": "마지막 위치 기억",
+    "description": "Remember last position toggle label"
+  },
+  "rememberLastPosHint": {
+    "message": "새 탭에서 마지막 방문 대형 박스 자동 열기",
+    "description": "Remember last position hint"
+  },
+  "zoomLabel": {
+    "message": "확대",
+    "description": "Zoom slider label"
+  },
+  "zoomOut": {
+    "message": "축소",
+    "description": "Zoom out button tooltip"
+  },
+  "zoomIn": {
+    "message": "확대",
+    "description": "Zoom in button tooltip"
+  },
+  "addBookmarkPlaceholder": {
+    "message": "URL 붙여넣기…",
+    "description": "Add bookmark input placeholder"
+  },
+  "addBookmarkBtn": {
+    "message": "추가",
+    "description": "Add bookmark button text"
+  },
+  "doubleClickToCreateHint": {
+    "message": "더블클릭으로 생성",
+    "description": "Double-click hint for small box"
+  }
+}

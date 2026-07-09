@@ -1,0 +1,205 @@
+{
+  "brandName": {
+    "message": "Boxing",
+    "description": "Extension brand name"
+  },
+  "brandSub": {
+    "message": "จัดระเบียบบุ๊กมาร์กตามลำดับชั้น",
+    "description": "Subtitle under brand name"
+  },
+  "searchPlaceholder": {
+    "message": "ค้นหาบุ๊กมาร์ก…",
+    "description": "Search input placeholder"
+  },
+  "backTooltip": {
+    "message": "ย้อนกลับ",
+    "description": "Back button tooltip"
+  },
+  "switchViewTooltip": {
+    "message": "รายการ/ตาราง",
+    "description": "View toggle tooltip"
+  },
+  "addLargeBoxTooltip": {
+    "message": "เพิ่มกล่องใหญ่",
+    "description": "Add large box tooltip"
+  },
+  "settingsTooltip": {
+    "message": "ตั้งค่า",
+    "description": "Settings button tooltip"
+  },
+  "addSmallBoxTooltip": {
+    "message": "เพิ่มกล่องเล็ก",
+    "description": "Add small box tooltip"
+  },
+  "switchInnerViewTooltip": {
+    "message": "สลับมุมมองภายใน",
+    "description": "Inner view toggle tooltip"
+  },
+  "emptyCanvasTitle": {
+    "message": "ไม่มีกล่องใหญ่",
+    "description": "Empty canvas title"
+  },
+  "emptyCanvasHint": {
+    "message": "คลิก ＋ เพื่อสร้างกล่องใหญ่แรก",
+    "description": "Empty canvas hint (legacy)"
+  },
+  "dblclickHint": {
+    "message": "ดับเบิลคลิกเพื่อเพิ่มกล่องใหญ่",
+    "description": "Double-click canvas hint"
+  },
+  "clickPlusHint": {
+    "message": "หรือคลิก ＋ ด้านบน",
+    "description": "or click plus above hint"
+  },
+  "emptyLargeHint": {
+    "message": "คลิกเพื่อเพิ่มกล่องเล็ก",
+    "description": "Empty large box hint"
+  },
+  "emptyInnerHint": {
+    "message": "คลิก ＋ เพื่อเพิ่มกล่องเล็กแรก",
+    "description": "Empty inner canvas hint"
+  },
+  "emptySmallHint": {
+    "message": "ไม่มีบุ๊กมาร์ก",
+    "description": "Empty small box hint"
+  },
+  "clickToOpen": {
+    "message": "คลิกเพื่อเปิด →",
+    "description": "Hint to open large box"
+  },
+  "footerHint": {
+    "message": "คลิกขวาย้อนกลับ · / ค้นหา · ดับเบิลคลิกเพิ่ม",
+    "description": "Footer keyboard hints"
+  },
+  "canvasRoot": {
+    "message": "ผืนผ้าใบ",
+    "description": "Breadcrumb root label"
+  },
+  "untitledBox": {
+    "message": "กล่องไม่มีชื่อ",
+    "description": "Default box title"
+  },
+  "untitledLargeBox": {
+    "message": "กล่องใหญ่ไม่มีชื่อ",
+    "description": "Default large box title"
+  },
+  "untitledSmallBox": {
+    "message": "กล่องเล็กไม่มีชื่อ",
+    "description": "Default small box title"
+  },
+  "newLargeBox": {
+    "message": "กล่อง $1$",
+    "description": "Default new large box title with auto-numbering"
+  },
+  "newSmallBox": {
+    "message": "กล่องเล็กใหม่",
+    "description": "Default new small box title"
+  },
+  "deleteBox": {
+    "message": "ลบกล่อง",
+    "description": "Delete button tooltip"
+  },
+  "confirmDeleteLarge": {
+    "message": "ลบกล่องใหญ่นี้และกล่องเล็กทั้งหมด?",
+    "description": "Confirm delete large box"
+  },
+  "confirmDeleteSmall": {
+    "message": "ลบกล่องเล็กนี้?",
+    "description": "Confirm delete small box"
+  },
+  "pin": {
+    "message": "ปักหมุด",
+    "description": "Pin button tooltip"
+  },
+  "unpin": {
+    "message": "เลิกปักหมุด",
+    "description": "Unpin button tooltip"
+  },
+  "viewList": {
+    "message": "รายการ",
+    "description": "List view label"
+  },
+  "viewGrid": {
+    "message": "ตาราง",
+    "description": "Grid view label"
+  },
+  "switchToList": {
+    "message": "เปลี่ยนเป็นรายการ",
+    "description": "Switch to list tooltip"
+  },
+  "switchToGrid": {
+    "message": "เปลี่ยนเป็นตาราง",
+    "description": "Switch to grid tooltip"
+  },
+  "largeBoxesCount": {
+    "message": "กล่องใหญ่ $1$ กล่อง",
+    "description": "Count of large boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "smallBoxesCount": {
+    "message": "กล่องเล็ก $1$ กล่อง",
+    "description": "Count of small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "searchResults": {
+    "message": "$1$ ผลลัพธ์",
+    "description": "Search result count",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsTitle": {
+    "message": "ตั้งค่า",
+    "description": "Settings modal title"
+  },
+  "closeSettings": {
+    "message": "ปิด",
+    "description": "Close settings button"
+  },
+  "settingsLanguage": {
+    "message": "ภาษา / Language",
+    "description": "Language selector label"
+  },
+  "rememberLastPos": {
+    "message": "จดจำตำแหน่งล่าสุด",
+    "description": "Remember last position toggle label"
+  },
+  "rememberLastPosHint": {
+    "message": "เปิดกล่องใหญ่ล่าสุดโดยอัตโนมัติในแท็บใหม่",
+    "description": "Remember last position hint"
+  },
+  "zoomLabel": {
+    "message": "ซูม",
+    "description": "Zoom slider label"
+  },
+  "zoomOut": {
+    "message": "ซูมออก",
+    "description": "Zoom out button tooltip"
+  },
+  "zoomIn": {
+    "message": "ซูมเข้า",
+    "description": "Zoom in button tooltip"
+  },
+  "addBookmarkPlaceholder": {
+    "message": "วาง URL…",
+    "description": "Add bookmark input placeholder"
+  },
+  "addBookmarkBtn": {
+    "message": "เพิ่ม",
+    "description": "Add bookmark button text"
+  },
+  "doubleClickToCreateHint": {
+    "message": "ดับเบิลคลิกเพื่อสร้าง",
+    "description": "Double-click hint for small box"
+  }
+}
