@@ -89,7 +89,12 @@
   },
   "newLargeBox": {
     "message": "बॉक्स $1$",
-    "description": "Default new large box title with auto-numbering"
+    "description": "Default new large box title with auto-numbering",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "newSmallBox": {
     "message": "नया छोटा बॉक्स",

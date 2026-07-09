@@ -1,49 +1,210 @@
 {
-  "brandName": { "message": "Boxing", "description": "Extension brand name" },
-  "brandSub": { "message": "organize bookmarks hierarchically", "description": "Subtitle under brand name" },
-  "searchPlaceholder": { "message": "Search bookmarks…", "description": "Search input placeholder" },
-  "backTooltip": { "message": "Go back", "description": "Back button tooltip" },
-  "switchViewTooltip": { "message": "Toggle list/grid", "description": "View toggle tooltip" },
-  "addLargeBoxTooltip": { "message": "Add large box", "description": "Add large box tooltip" },
-  "settingsTooltip": { "message": "Open settings", "description": "Settings button tooltip" },
-  "addSmallBoxTooltip": { "message": "Add small box", "description": "Add small box tooltip" },
-  "switchInnerViewTooltip": { "message": "Toggle inner view", "description": "Inner view toggle tooltip" },
-  "emptyCanvasTitle": { "message": "No large boxes yet", "description": "Empty canvas title" },
-  "emptyCanvasHint": { "message": "Click + to create your first large box", "description": "Empty canvas hint (legacy)" },
-  "dblclickHint": { "message": "Double-click canvas to add a large box", "description": "Double-click canvas hint" },
-  "clickPlusHint": { "message": "or click + above", "description": "or click plus above hint" },
-  "emptyLargeHint": { "message": "Click to add small boxes", "description": "Empty large box hint" },
-  "emptyInnerHint": { "message": "Click + to add your first small box", "description": "Empty inner canvas hint" },
-  "emptySmallHint": { "message": "No bookmarks yet", "description": "Empty small box hint" },
-  "clickToOpen": { "message": "Click to open →", "description": "Hint to open large box" },
-  "footerHint": { "message": "Right-click to return · / to search · Dblclick canvas to add", "description": "Footer keyboard hints" },
-  "canvasRoot": { "message": "Canvas", "description": "Breadcrumb root label" },
-  "untitledBox": { "message": "Untitled box", "description": "Default box title" },
-  "untitledLargeBox": { "message": "Untitled large box", "description": "Default large box title" },
-  "untitledSmallBox": { "message": "Untitled small box", "description": "Default small box title" },
-  "newLargeBox": { "message": "Box $1$", "description": "Default new large box title with auto-numbering" },
-  "newSmallBox": { "message": "New small box", "description": "Default new small box title" },
-  "deleteBox": { "message": "Delete box", "description": "Delete button tooltip" },
-  "confirmDeleteLarge": { "message": "Delete this large box and all its small boxes?", "description": "Confirm delete large box" },
-  "confirmDeleteSmall": { "message": "Delete this small box?", "description": "Confirm delete small box" },
-  "pin": { "message": "Pin", "description": "Pin button tooltip" },
-  "unpin": { "message": "Unpin", "description": "Unpin button tooltip" },
-  "viewList": { "message": "List", "description": "List view label" },
-  "viewGrid": { "message": "Grid", "description": "Grid view label" },
-  "switchToList": { "message": "Switch to list view", "description": "Switch to list tooltip" },
-  "switchToGrid": { "message": "Switch to grid view", "description": "Switch to grid tooltip" },
-  "largeBoxesCount": { "message": "$1$ large boxes", "description": "Count of large boxes", "placeholders": { "1": { "content": "$1" } } },
-  "smallBoxesCount": { "message": "$1$ small boxes", "description": "Count of small boxes", "placeholders": { "1": { "content": "$1" } } },
-  "searchResults": { "message": "$1$ results", "description": "Search result count", "placeholders": { "1": { "content": "$1" } } },
-  "settingsTitle": { "message": "Settings", "description": "Settings modal title" },
-  "closeSettings": { "message": "Close", "description": "Close settings button" },
-  "settingsLanguage": { "message": "Language / 语言", "description": "Language selector label" },
-  "rememberLastPos": { "message": "Remember last position", "description": "Remember last position toggle label" },
-  "rememberLastPosHint": { "message": "Automatically reopen last visited large box on new tabs", "description": "Remember last position hint" },
-  "zoomLabel": { "message": "Zoom", "description": "Zoom slider label" },
-  "zoomOut": { "message": "Zoom out", "description": "Zoom out button tooltip" },
-  "zoomIn": { "message": "Zoom in", "description": "Zoom in button tooltip" },
-  "addBookmarkPlaceholder": { "message": "Paste URL…", "description": "Add bookmark input placeholder" },
-  "addBookmarkBtn": { "message": "Add", "description": "Add bookmark button text" },
-  "doubleClickToCreateHint": { "message": "Double-click to create", "description": "Double-click hint for small box" }
+  "brandName": {
+    "message": "Boxing",
+    "description": "Extension brand name"
+  },
+  "brandSub": {
+    "message": "organize bookmarks hierarchically",
+    "description": "Subtitle under brand name"
+  },
+  "searchPlaceholder": {
+    "message": "Search bookmarks…",
+    "description": "Search input placeholder"
+  },
+  "backTooltip": {
+    "message": "Go back",
+    "description": "Back button tooltip"
+  },
+  "switchViewTooltip": {
+    "message": "Toggle list/grid",
+    "description": "View toggle tooltip"
+  },
+  "addLargeBoxTooltip": {
+    "message": "Add large box",
+    "description": "Add large box tooltip"
+  },
+  "settingsTooltip": {
+    "message": "Open settings",
+    "description": "Settings button tooltip"
+  },
+  "addSmallBoxTooltip": {
+    "message": "Add small box",
+    "description": "Add small box tooltip"
+  },
+  "switchInnerViewTooltip": {
+    "message": "Toggle inner view",
+    "description": "Inner view toggle tooltip"
+  },
+  "emptyCanvasTitle": {
+    "message": "No large boxes yet",
+    "description": "Empty canvas title"
+  },
+  "emptyCanvasHint": {
+    "message": "Click + to create your first large box",
+    "description": "Empty canvas hint (legacy)"
+  },
+  "dblclickHint": {
+    "message": "Double-click canvas to add a large box",
+    "description": "Double-click canvas hint"
+  },
+  "clickPlusHint": {
+    "message": "or click + above",
+    "description": "or click plus above hint"
+  },
+  "emptyLargeHint": {
+    "message": "Click to add small boxes",
+    "description": "Empty large box hint"
+  },
+  "emptyInnerHint": {
+    "message": "Click + to add your first small box",
+    "description": "Empty inner canvas hint"
+  },
+  "emptySmallHint": {
+    "message": "No bookmarks yet",
+    "description": "Empty small box hint"
+  },
+  "clickToOpen": {
+    "message": "Click to open →",
+    "description": "Hint to open large box"
+  },
+  "footerHint": {
+    "message": "Right-click to return · / to search · Dblclick canvas to add",
+    "description": "Footer keyboard hints"
+  },
+  "canvasRoot": {
+    "message": "Canvas",
+    "description": "Breadcrumb root label"
+  },
+  "untitledBox": {
+    "message": "Untitled box",
+    "description": "Default box title"
+  },
+  "untitledLargeBox": {
+    "message": "Untitled large box",
+    "description": "Default large box title"
+  },
+  "untitledSmallBox": {
+    "message": "Untitled small box",
+    "description": "Default small box title"
+  },
+  "newLargeBox": {
+    "message": "Box $1$",
+    "description": "Default new large box title with auto-numbering",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "newSmallBox": {
+    "message": "New small box",
+    "description": "Default new small box title"
+  },
+  "deleteBox": {
+    "message": "Delete box",
+    "description": "Delete button tooltip"
+  },
+  "confirmDeleteLarge": {
+    "message": "Delete this large box and all its small boxes?",
+    "description": "Confirm delete large box"
+  },
+  "confirmDeleteSmall": {
+    "message": "Delete this small box?",
+    "description": "Confirm delete small box"
+  },
+  "pin": {
+    "message": "Pin",
+    "description": "Pin button tooltip"
+  },
+  "unpin": {
+    "message": "Unpin",
+    "description": "Unpin button tooltip"
+  },
+  "viewList": {
+    "message": "List",
+    "description": "List view label"
+  },
+  "viewGrid": {
+    "message": "Grid",
+    "description": "Grid view label"
+  },
+  "switchToList": {
+    "message": "Switch to list view",
+    "description": "Switch to list tooltip"
+  },
+  "switchToGrid": {
+    "message": "Switch to grid view",
+    "description": "Switch to grid tooltip"
+  },
+  "largeBoxesCount": {
+    "message": "$1$ large boxes",
+    "description": "Count of large boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "smallBoxesCount": {
+    "message": "$1$ small boxes",
+    "description": "Count of small boxes",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "searchResults": {
+    "message": "$1$ results",
+    "description": "Search result count",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "settingsTitle": {
+    "message": "Settings",
+    "description": "Settings modal title"
+  },
+  "closeSettings": {
+    "message": "Close",
+    "description": "Close settings button"
+  },
+  "settingsLanguage": {
+    "message": "Language / 语言",
+    "description": "Language selector label"
+  },
+  "rememberLastPos": {
+    "message": "Remember last position",
+    "description": "Remember last position toggle label"
+  },
+  "rememberLastPosHint": {
+    "message": "Automatically reopen last visited large box on new tabs",
+    "description": "Remember last position hint"
+  },
+  "zoomLabel": {
+    "message": "Zoom",
+    "description": "Zoom slider label"
+  },
+  "zoomOut": {
+    "message": "Zoom out",
+    "description": "Zoom out button tooltip"
+  },
+  "zoomIn": {
+    "message": "Zoom in",
+    "description": "Zoom in button tooltip"
+  },
+  "addBookmarkPlaceholder": {
+    "message": "Paste URL…",
+    "description": "Add bookmark input placeholder"
+  },
+  "addBookmarkBtn": {
+    "message": "Add",
+    "description": "Add bookmark button text"
+  },
+  "doubleClickToCreateHint": {
+    "message": "Double-click to create",
+    "description": "Double-click hint for small box"
+  }
 }
