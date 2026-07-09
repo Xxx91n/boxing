@@ -20,6 +20,7 @@
   },
   "background": {
     "service_worker": "background.js"
+    ,"scripts": ["background.js"]
   },
   "chrome_url_overrides": {
     "newtab": "ntp/index.html"
