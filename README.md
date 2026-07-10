@@ -78,3 +78,17 @@ MIT
 - **Removed brand__mark**: Deleted the brown color block from the header
 - **i18n sync**: All 13 languages updated with new keys (fontSizeLabel, editBookmarkLabel, bookmarkTitlePlaceholder, bookmarkUrlPlaceholder, smallBoxCountLabel)
 - **Agent.md**: Added Boxing Project Specialization with i18n and development rules
+
+### v3.3.0 — July 2026
+- **Browser language auto-detect**: Detects navigator.language on first run and sets preferred locale automatically
+- **Header auto-hide on scroll**: Pin button (○/⊙) in header toggles auto-hide; scroll down hides header, scroll up reveals it
+- **Pin/expand buttons redesigned**: Clean typographic symbols (○⊙⊟⊞) replace emoji; both default to OFF
+- **Elastic snap now iterative**: Handles all overlapping boxes in single pass instead of first-match return
+- **Box index recycling**: Deleting a large box recalculates nextLargeIndex from remaining boxes
+- **Auto-expand transition**: 0.3s CSS transition on max-height; expandBtn toggles ⊟/⊞
+- **Small box default size doubled**: 640×420 (was 320×340)
+- **Larger title bars**: large-box__bar 12px/16px padding; small-box__bar 4px/10px, min-height 32px
+- **Inner caption real-time**: smallBoxesCount updates immediately after add/delete small box
+- **i18n additions**: headerPinOff key in all 13 locales; fontSizeLabel translated in 12 non-en locales
+- **smallBoxCountLabel fix**: Placeholder restored to $1$ small boxes (was broken in all locales)
+- **Agent.md v3.3 rules**: 8 new development rules (BX-DEV-013 through BX-DEV-020)

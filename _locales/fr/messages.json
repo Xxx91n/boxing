@@ -183,7 +183,7 @@
     "description": "Double-click hint for small box"
   },
   "fontSizeLabel": {
-    "message": "Font Size"
+    "message": "Taille de police"
   },
   "editBookmarkLabel": {
     "message": "Edit bookmark"
@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$ small boxes",
+    "message": "\\$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -213,5 +213,8 @@
   },
   "headerPinOn": {
     "message": "En-tête épinglé"
+  },
+  "headerPinOff": {
+    "message": "En-tête libéré"
   }
 }

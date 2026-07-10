@@ -414,3 +414,41 @@ export default defineConfig({
 - Dual-level: Canvas (large boxes) -> Inner canvas (small boxes inside one large box)
 - Bookmarks: list rows with favicon + three-dots edit button (inline popup for title+URL)
 - No grid/list toggle — small boxes are always list mode
+
+## v3.3 Features (2026-07-10)
+
+| Feature | Description |
+|---|---|
+| Browser language auto-detect | On first run (no explicit user selection), detects navigator.language and matches to a supported locale.
+| Header auto-hide on scroll | Button `○` in header toggles auto-hide mode: scroll down hides header, scroll up shows it.
+| Pin/expand buttons redesigned | Emoji replaced with clean typographic symbols: `○`/`⊙` for pin, `⊟`/`⊞` for expand. Default state is OFF.
+| Elastic snap iterative | elasticSnap now iterates through all overlapping boxes (while-loop style) instead of single-pass return.
+| Box index recycling | Deleting a large box recalculates nextLargeIndex from remaining boxes.
+| Auto-expand transition | Collapse/expand uses CSS transition on max-height (0.3s ease). expandBtn toggles between ⊟ (collapsed) and ⊞ (expanded).
+| Small box default size | Increased from 320x340 to 640x420 (2x width).
+| Bar dimensions | large-box__bar padding increased to 12px 16px; small-box__bar padding 4px 10px, min-height 32px.
+| Inner caption real-time | updateInnerCaption() refreshes caption (smallBoxesCount) after add/delete small box.
+| key headerPinOff | Added to all 13 locales for header unpinned state.
+| key fontSizeLabel | Now translated in all non-English locales.
+
+## Development Rules (v3.3 additions)
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-013 | MUST | elasticSnap must handle all overlapping boxes iteratively; single-pass return is a bug.
+| BX-DEV-014 | MUST | Box indices recalculate on delete: nextLargeIndex = max(all titles' numeric suffix) + 1.
+| BX-DEV-015 | MUST | Browser language auto-detection on first run (layout.settings.selectedLanguage === 'en' and never manually changed).
+| BX-DEV-016 | MUST | Pin/expand buttons use clean typographic symbols (○⊙⊟⊞), not emoji. Default state is OFF (unpinned, always-expanded).
+| BX-DEV-017 | MUST | Auto-expand uses CSS transition on max-height; body collapses upward (not hidden text).
+| BX-DEV-018 | MUST | Small box default width = 640px, height = 420px.
+| BX-DEV-019 | MUST | updateInnerCaption() called after every small box add/delete to keep caption accurate.
+| BX-DEV-020 | MUST | Screenshots for debugging must be saved to cache dir (not project directory). Path: D:/Aworker/crx/.cache/screenshots/.
+| BX-DEV-021 | MUST NOT | Do not save screenshots, debug images, or visual assets into the project directory. Use D:/Aworker/crx/.cache/screenshots/ exclusively.
+| BX-DEV-022 | MUST | When viewing/displaying screenshots, load them from D:/Aworker/crx/.cache/screenshots/ via absolute path; never embed image files into the project workspace.
+
+## i18n Key Reference (v3.3 additions)
+
+| Key | en | Usage |
+|---|---|---|
+| headerPinOff | Header unpinned | Header pin toggle OFF state tooltip
+| fontSizeLabel | Font Size | Settings slider label (translated in 12 non-en locales)

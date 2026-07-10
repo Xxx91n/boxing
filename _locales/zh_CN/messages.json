@@ -183,7 +183,7 @@
     "description": "小盒子双击创建提示"
   },
   "fontSizeLabel": {
-    "message": "Font Size"
+    "message": "字体大小"
   },
   "editBookmarkLabel": {
     "message": "Edit bookmark"
@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$ small boxes",
+    "message": "\\$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -213,5 +213,8 @@
   },
   "headerPinOn": {
     "message": "顶栏已固定"
+  },
+  "headerPinOff": {
+    "message": "顶栏未固定"
   }
 }

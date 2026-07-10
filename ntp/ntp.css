@@ -28,6 +28,22 @@ html, body {
   gap: var(--space-3);
   padding: var(--space-2) 0;
   border-bottom: 1px solid var(--color-hairline);
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+/* Header auto-hide mode: scroll down hides header */
+.ntp--autohide .ntp__bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--color-canvas);
+}
+.ntp--autohide.scrolled .ntp__bar {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.ntp--autohide .library {
+  padding-top: 0;
 }
 
 #back-btn { order: 0; margin-right: auto; display: none; }
@@ -167,8 +183,8 @@ html, body {
 .large-box__bar {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-hairline);
   cursor: grab;
@@ -206,6 +222,15 @@ html, body {
   flex-shrink: 0;
 }
 
+/* pin + expand buttons — minimal icons */
+.box-pin-btn, .box-expand-btn {
+  font-family: inherit;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+}
+.box-pin-btn { font-size: 12px; }
+.box-expand-btn { font-size: 13px; }
+
 .large-box__delete {
   background: transparent;
   border: 0;
@@ -231,12 +256,32 @@ html, body {
 .box--pinned .box-pin-btn { opacity: 0.9; }
 
 /* Hover-expand: collapse body by default, expand on hover */
-.box--hover-expand.box--collapsed .large-box__body { max-height: 0; overflow: hidden; padding: 0; }
-.box--hover-expand.box--collapsed .small-box__body { max-height: 0; overflow: hidden; padding: 0; }
+.box--hover-expand.box--collapsed .large-box__body {
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+.box--hover-expand.box--collapsed .small-box__body {
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
 .box--hover-expand.box--collapsed:hover .large-box__body,
-.box--hover-expand.box--collapsed .large-box__body:hover { max-height: 600px; padding: var(--space-3); }
+.box--hover-expand.box--collapsed .large-box__body:hover,
+.box--hover-expand.box--collapsed:focus-within .large-box__body {
+  max-height: 800px;
+  padding: var(--space-3);
+}
 .box--hover-expand.box--collapsed:hover .small-box__body,
-.box--hover-expand.box--collapsed .small-box__body:hover { max-height: 600px; padding: 4px 6px; }
+.box--hover-expand.box--collapsed .small-box__body:hover,
+.box--hover-expand.box--collapsed:focus-within .small-box__body {
+  max-height: 800px;
+  padding: 4px 10px;
+}
 
 .large-box__body {
   flex: 1;
@@ -349,13 +394,13 @@ html, body {
 .small-box__bar {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 2px 6px;
+  gap: 6px;
+  padding: 4px 10px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-hairline);
   cursor: grab;
   flex-shrink: 0;
-  min-height: 24px;
+  min-height: 32px;
 }
 .small-box--dragging .small-box__bar { cursor: grabbing; }
 

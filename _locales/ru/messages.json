@@ -183,7 +183,7 @@
     "description": "Double-click hint for small box"
   },
   "fontSizeLabel": {
-    "message": "Font Size"
+    "message": "Размер шрифта"
   },
   "editBookmarkLabel": {
     "message": "Edit bookmark"
@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$ small boxes",
+    "message": "\\$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -213,5 +213,8 @@
   },
   "headerPinOn": {
     "message": "Заголовок закреплен"
+  },
+  "headerPinOff": {
+    "message": "Заголовок откреплен"
   }
 }

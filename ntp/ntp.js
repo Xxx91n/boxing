@@ -19,7 +19,7 @@
   const INNER_GRID  = 16;
   const RESIZE_SNAP = 5;
   const LARGE_DEF_W = 320, LARGE_DEF_H = 220;
-  const SMALL_DEF_W  = 320, SMALL_DEF_H = 340;
+  const SMALL_DEF_W  = 640, SMALL_DEF_H = 420;
   const LARGE_MIN_W = 200, LARGE_MIN_H = 120;
   const SMALL_MIN_W  = 180, SMALL_MIN_H = 200;
   const MAX_LARGE_BOXES = 1000;
@@ -216,6 +216,12 @@
   }
 
   async function loadSettings() {
+    // Auto-detect browser language on first run (English default means not user-selected)
+    if (!layout.settings.selectedLanguage || layout.settings.selectedLanguage === 'en') {
+      const bl = (navigator.language || navigator.userLanguage || '').replace('-', '_');
+      if (SUPPORTED_LANGS.includes(bl)) layout.settings.selectedLanguage = bl;
+      else { const short = bl.split('_')[0]; const match = SUPPORTED_LANGS.find(l => l.startsWith(short)); if (match) layout.settings.selectedLanguage = match; }
+    }
     const lang = layout.settings.selectedLanguage || 'en';
     if (!SUPPORTED_LANGS.includes(lang)) layout.settings.selectedLanguage = 'en';
     await loadI18nStore(layout.settings.selectedLanguage);
@@ -271,9 +277,8 @@
           if (dist < bestDist) { bestDist = dist; best = c; }
         }
       }
-      if (best) return snapFn(best.x, best.y);
+      if (best) { x = best.x; y = best.y; } else { x += grid; }
     }
-    // No overlap — just snap to grid
     return snapFn(x, y);
   }
 
@@ -393,29 +398,32 @@
     const pinBtn = document.createElement('button');
     pinBtn.className = 'box-pin-btn';
     pinBtn.title = i18n('pin');
-    pinBtn.textContent = '📌';
+    pinBtn.textContent = '⊙';
+    pinBtn.title = box.pinned ? i18n('unpin') : i18n('pin');
     pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;';
     pinBtn.addEventListener('click', e => {
       e.stopPropagation();
       box.pinned = !box.pinned;
       pinBtn.title = box.pinned ? i18n('unpin') : i18n('pin');
       pinBtn.style.opacity = box.pinned ? '0.9' : '0.4';
+      pinBtn.textContent = box.pinned ? '⊙' : '○';
       el.classList.toggle('box--pinned', box.pinned);
       saveLayout();
     });
-    if (box.pinned) { pinBtn.style.opacity = '0.9'; el.classList.add('box--pinned'); }
 
     // ── auto-expand button (hover vs always)
     const expandBtn = document.createElement('button');
     expandBtn.className = 'box-expand-btn';
     expandBtn.title = i18n('autoExpand');
-    expandBtn.textContent = '↕';
+    expandBtn.textContent = '⊟';
+    expandBtn.title = box.collapseHover ? 'Hover to expand' : i18n('autoExpand');
     expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       box.collapseHover = !box.collapseHover;
       expandBtn.title = box.collapseHover ? 'Hover to expand' : i18n('autoExpand');
       expandBtn.style.opacity = box.collapseHover ? '0.9' : '0.4';
+      expandBtn.textContent = box.collapseHover ? '⊞' : '⊟';
       el.classList.toggle('box--hover-expand', box.collapseHover);
       if (box.collapseHover) {
         el.classList.add('box--collapsed');
@@ -424,7 +432,6 @@
       }
       saveLayout();
     });
-    if (box.collapseHover) { expandBtn.style.opacity = '0.9'; el.classList.add('box--hover-expand', 'box--collapsed'); }
 
     bar.append(icon, title, meta, pinBtn, expandBtn, delBtn);
 
@@ -511,6 +518,7 @@
     };
 
     renderInnerSurface(lb);
+    updateInnerCaption(lb);
     applyInnerTransform();
     updateCaption();
   }
@@ -603,29 +611,31 @@
     const pinBtn = document.createElement('button');
     pinBtn.className = 'box-pin-btn';
     pinBtn.title = i18n('pin');
-    pinBtn.textContent = '📌';
+    pinBtn.textContent = '⊙';
+    pinBtn.title = sb.pinned ? i18n('unpin') : i18n('pin');
     pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;';
     pinBtn.addEventListener('click', e => {
       e.stopPropagation();
       sb.pinned = !sb.pinned;
       pinBtn.title = sb.pinned ? i18n('unpin') : i18n('pin');
       pinBtn.style.opacity = sb.pinned ? '0.9' : '0.4';
+      pinBtn.textContent = sb.pinned ? '⊙' : '○';
       el.classList.toggle('box--pinned', sb.pinned);
       saveLayout();
     });
-    if (sb.pinned) { pinBtn.style.opacity = '0.9'; el.classList.add('box--pinned'); }
-
     // ── auto-expand button
     const expandBtn = document.createElement('button');
     expandBtn.className = 'box-expand-btn';
     expandBtn.title = i18n('autoExpand');
-    expandBtn.textContent = '↕';
+    expandBtn.textContent = '⊟';
+    expandBtn.title = sb.collapseHover ? 'Hover to expand' : i18n('autoExpand');
     expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       sb.collapseHover = !sb.collapseHover;
       expandBtn.title = sb.collapseHover ? 'Hover to expand' : i18n('autoExpand');
       expandBtn.style.opacity = sb.collapseHover ? '0.9' : '0.4';
+      expandBtn.textContent = sb.collapseHover ? '⊞' : '⊟';
       el.classList.toggle('box--hover-expand', sb.collapseHover);
       if (sb.collapseHover) {
         el.classList.add('box--collapsed');
@@ -634,7 +644,6 @@
       }
       saveLayout();
     });
-    if (sb.collapseHover) { expandBtn.style.opacity = '0.9'; el.classList.add('box--hover-expand', 'box--collapsed'); }
 
     bar.append(title, pinBtn, expandBtn, delBtn);
 
@@ -1133,10 +1142,14 @@
     await saveLayout();
     renderCanvas();
   }
-
+function updateInnerCaption(lb) {
+    const captionEl = document.getElementById('caption');
+    if (captionEl) captionEl.textContent = i18n('smallBoxesCount', [lb?.children?.length || 0]);
+  }
   function deleteLargeBox(id) {
     if (!confirm(i18n('confirmDeleteLarge'))) return;
     layout.boxes = layout.boxes.filter(b => b.id !== id);
+    layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title||'').match(/\d+/)||[0])||0)+1), 1);
     if (currentLargeBoxId === id) exitToCanvas();
     saveLayout();
     renderCanvas();
@@ -1314,6 +1327,34 @@
       else updateCaption();
     });
     backBtn.addEventListener('click', exitToCanvas);
+
+  // ── header auto-hide on scroll ──────────────────────
+  let headerPinned = true;
+  const headerPinBtn = $('#header-pin-btn');
+  const appEl = $('#app');
+  let scrollTimeout;
+  function onLibraryScroll() {
+    if (!headerPinned) {
+      appEl.classList.add('scrolled');
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => appEl.classList.remove('scrolled'), 1200);
+    }
+  }
+  const libraryEl = document.querySelector('.library');
+  if (libraryEl) libraryEl.addEventListener('scroll', onLibraryScroll, { passive: true });
+  if (headerPinBtn) {
+    headerPinBtn.addEventListener('click', () => {
+      headerPinned = !headerPinned;
+      const span = headerPinBtn.querySelector('span');
+      if (span) span.textContent = headerPinned ? '○' : '⊙';
+      headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
+      appEl.classList.toggle('ntp--autohide', !headerPinned);
+      appEl.classList.remove('scrolled');
+    });
+    headerPinBtn.title = i18n('headerPin');
+    appEl.classList.add('ntp--autohide');
+  }
+
     if (addLargeBtn) addLargeBtn.addEventListener('click', addLargeBox);
     if (addSmallBtn) addSmallBtn.addEventListener('click', addSmallBox);
     if (settingsBtn) settingsBtn.addEventListener('click', openSettingsModal);
