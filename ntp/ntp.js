@@ -118,12 +118,13 @@
   const canvasZoomIn   = $('#canvas-zoom [data-zoom="in"]');
   const canvasZoomVal  = $('#canvas-zoom-value');
   const canvasZoomCtrl = $('#canvas-zoom');
-  const innerContainer = $('#inner');
   const innerSurface   = $('#inner-surface');
   const innerZoomOut   = $('#inner-zoom [data-zoom="out"]');
   const innerZoomIn    = $('#inner-zoom [data-zoom="in"]');
   const innerZoomVal   = $('#inner-zoom-value');
   const innerZoomCtrl  = $('#inner-zoom');
+  const innerWrapper   = $('#inner');
+  const innerCanvas    = $('#inner-canvas');
   const innerTitle     = $('#inner-title');
   const crumbsEl       = $('#crumbs');
   const captionEl      = $('#caption');
@@ -322,7 +323,7 @@
 
   // ── render canvas (top-level large boxes) ───────────────
   function renderCanvas() {
-    innerContainer.hidden = true;
+    innerWrapper.hidden = true;
     canvasContainer.hidden = false;
     backBtn.dataset.show = '0';
 
@@ -495,7 +496,7 @@
     if (!lb) { exitToCanvas(); return; }
 
     canvasContainer.hidden = true;
-    innerContainer.hidden = false;
+    innerWrapper.hidden = false;
     backBtn.dataset.show = '1';
 
     renderCrumbs(lb);
@@ -521,22 +522,35 @@
   }
 
   function renderCrumbs(lb) {
-    crumbsEl.innerHTML = '';
+    // crumbs now render inline into inner__head area
+    const innerHead = $('#inner .inner__head');
+    // remove any existing crumbs
+    const existing = innerHead?.parentNode?.querySelector('.crumbs--inner');
+    existing?.remove();
+    
+    const crumbsDiv = document.createElement('div');
+    crumbsDiv.className = 'crumbs crumbs--inner';
+    
     const root = document.createElement('span');
     root.className = 'crumbs__item';
     root.textContent = i18n('canvasRoot');
     root.addEventListener('click', exitToCanvas);
-    crumbsEl.appendChild(root);
+    crumbsDiv.appendChild(root);
 
     const sep = document.createElement('span');
     sep.className = 'crumbs__sep';
     sep.textContent = '/';
-    crumbsEl.appendChild(sep);
+    crumbsDiv.appendChild(sep);
 
     const cur = document.createElement('span');
     cur.className = 'crumbs__item crumbs__item--current';
     cur.textContent = lb.title || i18n('untitledBox');
-    crumbsEl.appendChild(cur);
+    crumbsDiv.appendChild(cur);
+    
+    // insert before inner__head
+    if (innerHead) {
+      innerHead.parentNode.insertBefore(crumbsDiv, innerHead);
+    }
   }
 
   function renderInnerSurface(lb) {
@@ -856,7 +870,7 @@
     e.stopPropagation();
 
     const rect = el.getBoundingClientRect();
-    const container = type === 'large' ? canvasContainer : innerContainer;
+    const container = type === 'large' ? canvasContainer : innerCanvas;
     const zoom = type === 'large' ? canvasZoom : innerZoom;
     const panX = type === 'large' ? canvasPanX : innerPanX;
     const panY = type === 'large' ? canvasPanY : innerPanY;
@@ -979,7 +993,7 @@
       origPanX: innerPanX,
       origPanY: innerPanY
     };
-    innerContainer.style.cursor = 'grabbing';
+    innerCanvas.style.cursor = 'grabbing';
     document.addEventListener('mousemove', onInnerPanMove);
     document.addEventListener('mouseup', onInnerPanEnd);
     e.preventDefault();
@@ -997,7 +1011,7 @@
   function onInnerPanEnd(e) {
     document.removeEventListener('mousemove', onInnerPanMove);
     document.removeEventListener('mouseup', onInnerPanEnd);
-    innerContainer.style.cursor = '';
+    innerCanvas.style.cursor = '';
     panState = null;
   }
 
@@ -1020,7 +1034,7 @@
     if (e.ctrlKey) {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
-      const result = zoomAtPoint(innerContainer, innerZoom, innerPanX, innerPanY, e.clientX, e.clientY, factor);
+      const result = zoomAtPoint(innerCanvas, innerZoom, innerPanX, innerPanY, e.clientX, e.clientY, factor);
       innerZoom = result.zoom;
       innerPanX = result.panX;
       innerPanY = result.panY;
@@ -1156,7 +1170,7 @@
     if (!currentLargeBoxId) return;
     const lb = getLargeBox(currentLargeBoxId);
     if (!lb || (lb.children?.length || 0) >= MAX_SMALL_BOXES) return;
-    const world = screenToWorld(clientX, clientY, innerContainer, innerPanX, innerPanY, innerZoom);
+    const world = screenToWorld(clientX, clientY, innerCanvas, innerPanX, innerPanY, innerZoom);
     const snapped = snapInner(world.x - SMALL_DEF_W / 2, world.y - SMALL_DEF_H / 2);
     const idx = lb.nextSmallIndex++;
     lb.children = lb.children || [];
@@ -1319,7 +1333,7 @@
     // Inner canvas: no pan — only zoom. Small boxes are fixed in place.
     innerSurface.addEventListener('click', onInnerClick);
     innerSurface.addEventListener('dblclick', onInnerDblClick);
-    innerContainer.addEventListener('wheel', onInnerWheel, { passive: false });
+    innerCanvas.addEventListener('wheel', onInnerWheel, { passive: false });
 
     // Ensure inner surface also gets wheel events
     innerSurface.addEventListener('wheel', onInnerWheel, { passive: false });

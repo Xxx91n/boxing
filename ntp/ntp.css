@@ -283,6 +283,21 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  flex: 1;
+  min-height: 0;
+}
+
+/* inner surface — mirrors canvas for true infinite canvas */
+.inner__canvas {
+  position: relative;
+  flex: 1;
+  min-height: 440px;
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px,
+    var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  overflow: hidden;
 }
 .inner__head {
   display: flex;
@@ -307,14 +322,11 @@ html, body {
 .inner__actions { display: flex; gap: var(--space-1); }
 
 .inner__surface {
-  position: relative;
-  background:
-    radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px,
-    var(--color-canvas-2);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-card);
-  min-height: 360px;
-  padding: var(--space-3);
+  position: absolute;
+  inset: 0;
+  min-width: 100%;
+  min-height: 100%;
+  cursor: default;
 }
 
 /* === SMALL BOX (fixed, second-level container) === */
@@ -703,5 +715,3 @@ body.box-resizing {
 /* === OBSIDIAN-STYLE CANVAS === */
 .canvas { overflow: hidden; cursor: grab; }
 .canvas:active { cursor: grabbing; }
-.inner__surface { overflow: hidden; cursor: grab; }
-.inner__surface:active { cursor: grabbing; }
