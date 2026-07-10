@@ -252,5 +252,32 @@
   },
   "dblclickCreateHint": {
     "message": "ดับเบิลคลิกเพื่อสร้าง"
+  },
+  "bookmarkSave": {
+    "message": "บันทึก"
+  },
+  "bookmarkDelete": {
+    "message": "ลบ"
+  },
+  "bookmarkEditTitle": {
+    "message": "แก้ไขบุ๊กมาร์ก"
+  },
+  "backupNow": {
+    "message": "สำรองข้อมูลตอนนี้"
+  },
+  "backupNowHint": {
+    "message": "สร้างข้อมูลสำรองพร้อมประทับเวลา"
+  },
+  "autoBackupInterval": {
+    "message": "ช่วงสำรองข้อมูลอัตโนมัติ"
+  },
+  "syncProvider": {
+    "message": "ผู้ให้บริการซิงค์"
+  },
+  "squareCorners": {
+    "message": "มุมเหลี่ยม"
+  },
+  "squareCornersHint": {
+    "message": "ใช้มุมแหลมแทนมุมมน"
   }
 }

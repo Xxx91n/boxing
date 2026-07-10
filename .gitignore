@@ -40,3 +40,6 @@ npm-debug.log*
 # Temp
 *.tmp
 tmp/
+
+# Development fix scripts
+tools/

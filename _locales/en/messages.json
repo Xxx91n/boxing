@@ -264,5 +264,32 @@
   "dblclickCreateHint": {
     "message": "Double-click to create",
     "description": "Dblclick hint"
+  },
+  "bookmarkSave": {
+    "message": "Save"
+  },
+  "bookmarkDelete": {
+    "message": "Delete"
+  },
+  "bookmarkEditTitle": {
+    "message": "Edit Bookmark"
+  },
+  "backupNow": {
+    "message": "Backup Now"
+  },
+  "backupNowHint": {
+    "message": "Create a timestamped backup of all layout data"
+  },
+  "autoBackupInterval": {
+    "message": "Auto-Backup Interval"
+  },
+  "syncProvider": {
+    "message": "Sync Provider"
+  },
+  "squareCorners": {
+    "message": "Square Corners"
+  },
+  "squareCornersHint": {
+    "message": "Use sharp square corners instead of rounded"
   }
 }

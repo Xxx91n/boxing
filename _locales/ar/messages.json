@@ -252,5 +252,32 @@
   },
   "dblclickCreateHint": {
     "message": "انقر مرتين للإنشاء"
+  },
+  "bookmarkSave": {
+    "message": "حفظ"
+  },
+  "bookmarkDelete": {
+    "message": "حذف"
+  },
+  "bookmarkEditTitle": {
+    "message": "تحرير الإشارة المرجعية"
+  },
+  "backupNow": {
+    "message": "نسخ احتياطي الآن"
+  },
+  "backupNowHint": {
+    "message": "إنشاء نسخة احتياطية كاملة مع طابع زمني"
+  },
+  "autoBackupInterval": {
+    "message": "فاصل النسخ الاحتياطي التلقائي"
+  },
+  "syncProvider": {
+    "message": "موفر المزامنة"
+  },
+  "squareCorners": {
+    "message": "زوايا مربعة"
+  },
+  "squareCornersHint": {
+    "message": "استخدام زوايا حادة بدلاً من المستديرة"
   }
 }

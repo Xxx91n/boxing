@@ -497,7 +497,58 @@ tp--autohide active). Footer hidden in autohide mode. |
 | importFailed | Import failed: invalid data format | Import failed toast |
 | dblclickCreateHint | Double-click to create | Dblclick hint |
 
-## Updated CSS Tokens (v3.4)
+## 
+## v3.5 Features (2026-07-10)
+
+| Feature | Description |
+|---|---|
+| Canvas boundary clamp | Pan constrained at 10% zoom; boxes cannot exceed virtual canvas bounds |
+| Inner canvas pan | Small-box canvas now supports drag-pan like large canvas |
+| Dark mode comprehensive | Full UI dark adaptation: every element (body, header, box bars, modals, zoom, bookmarks, popup) inverts correctly |
+| Header autohide fullscreen | Unpinned mode: header + footer disappear, only canvas + zoom + floating pin button remain. Full immersive canvas. |
+| Settings tabbed layout | Side-category navigation: General / Appearance / Data / Sync & Backup. Modal wider for future settings. |
+| Backup sync | Backup Now button with timestamped JSON download. Auto-backup interval (daily/weekly). Sync provider selector. |
+| Bookmark edit i18n | Save/Delete/Cancel buttons in bookmark editing popup now use i18n translations |
+| Bookmark right-click edit | Right-clicking a bookmark row opens the edit popup instead of exiting the canvas |
+| URL open fix | Bookmark click uses direct URL without moz-extension prefix; supports Chrome/Firefox/LibreWolf |
+| Square corners option | Setting toggle for sharp square corners vs rounded (default: rounded). CSS class .ntp--square-corners |
+| Import immediate render | Import replaces layout and force-renders without needing refresh |
+| Small box bar enlarged | small-box__bar padding unified with large box (12px 16px), min-height 40px, title font 13px |
+| 9 new i18n keys | bookmarkSave, bookmarkDelete, bookmarkEditTitle, backupNow, backupNowHint, autoBackupInterval, syncProvider, squareCorners, squareCornersHint — all 13 locales translated |
+| Version bump | 3.4.0 → 3.5.0 |
+
+## Development Rules (v3.5 additions)
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-029 | MUST | Canvas pan must be clamped: at 10% zoom, max pan range ≈ 10x container. clampCanvasPan/clampInnerPan enforce this boundary. |
+| BX-DEV-030 | MUST | Inner canvas must support drag-pan (onInnerPanStart/onInnerPanMove/onInnerPanEnd bound to innerCanvas mousedown). |
+| BX-DEV-031 | MUST | Dark mode (.ntp--dark) must cover ALL visible elements: body, header, search, buttons, modals, canvas, boxes, bookmarks, popups, crumbs, zoom controls, resize handles. No white gaps. |
+| BX-DEV-032 | MUST | Header autohide fullscreen mode: when headerPinned=false, .ntp__bar display:none, .foot display:none, headerPinBtn becomes fixed floating button at top-right. Only canvas + zoom controls visible. |
+| BX-DEV-033 | MUST | Settings modal uses tabbed layout: side nav (settings-nav) + content panels (settings-tab). Clicking a nav item hides other tabs and shows the selected one. |
+| BX-DEV-034 | MUST | Bookmark edit popup buttons (Save/Delete/Cancel) must use i18n() with keys bookmarkSave, bookmarkDelete, confirmCancel. |
+| BX-DEV-035 | MUST | Right-click on bm-row opens edit popup (trigger the three-dots editBtn click). Only right-click on empty inner canvas goes back. |
+| BX-DEV-036 | MUST | Bookmark URL opens via api.tabs.create with direct URL; failover to window.open for environments without tabs API. |
+| BX-DEV-037 | MUST | Small box header bar (.small-box__bar) must match large box bar dimensions: padding 12px 16px, gap spacing-3, min-height 40px, title font-size 13px with -0.2px letter-spacing. |
+| BX-DEV-038 | MUST | Square corners toggle: layout.settings.squareCorners, CSS class .ntp--square-corners on #app, checkbox #square-corners-cb in Appearance tab. Applied on load. |
+| BX-DEV-039 | MUST | Import must exitToCanvas() before renderCanvas() to clear any drill-in state, then apply both canvas + inner transforms immediately. |
+| BX-DEV-040 | MUST | Backup Now creates timestamped JSON download via Blob + URL.createObjectURL. Auto-backup interval stored in layout.settings.autoBackupInterval. |
+
+## i18n Key Reference (v3.5 additions)
+
+| Key | en | Usage |
+|---|---|---|
+| bookmarkSave | Save | Bookmark edit popup save button |
+| bookmarkDelete | Delete | Bookmark edit popup delete button |
+| bookmarkEditTitle | Edit Bookmark | Bookmark edit popup title |
+| backupNow | Backup Now | Backup button in settings |
+| backupNowHint | Create a timestamped backup of all layout data | Backup hint |
+| autoBackupInterval | Auto-Backup Interval | Auto-backup selector label |
+| syncProvider | Sync Provider | Sync provider selector label |
+| squareCorners | Square Corners | Square corners checkbox label |
+| squareCornersHint | Use sharp square corners instead of rounded | Square corners hint |
+
+Updated CSS Tokens (v3.4)
 
 | Token | Old Value | New Value | Rationale |
 |---|---|---|---|

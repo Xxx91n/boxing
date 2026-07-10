@@ -93,7 +93,7 @@ MIT
 - **smallBoxCountLabel fix**: Placeholder restored to $1$ small boxes (was broken in all locales)
 - **Agent.md v3.3 rules**: 8 new development rules (BX-DEV-013 through BX-DEV-020)
 
-### v3.4.0 — July 2026
+### v3.5.0 — July 2026
 - **Background clarity**: Canvas colors shifted lighter/less saturated (canvas #F1EEE8, surface #EEE9E1, elevated #EBE5DB) — less red-brown, higher readability
 - **Dark mode**: Full dark theme via .ntp--dark class with toggle button (☀/☽) in header bar and checkbox in settings. Dark palette preserves design warmth (ink #E8E4DB, canvas #1E1C1A, accent #C4A882)
 - **In-page delete confirmation**: Custom modal overlay replaces browser confirm() dialog. Syncs to all 13 locales.

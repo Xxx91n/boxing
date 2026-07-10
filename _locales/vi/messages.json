@@ -252,5 +252,32 @@
   },
   "dblclickCreateHint": {
     "message": "Nhấp đúp để tạo"
+  },
+  "bookmarkSave": {
+    "message": "Lưu"
+  },
+  "bookmarkDelete": {
+    "message": "Xóa"
+  },
+  "bookmarkEditTitle": {
+    "message": "Chỉnh sửa dấu trang"
+  },
+  "backupNow": {
+    "message": "Sao lưu ngay"
+  },
+  "backupNowHint": {
+    "message": "Tạo bản sao lưu đầy đủ với dấu thời gian"
+  },
+  "autoBackupInterval": {
+    "message": "Khoảng thời gian sao lưu tự động"
+  },
+  "syncProvider": {
+    "message": "Nhà cung cấp đồng bộ hóa"
+  },
+  "squareCorners": {
+    "message": "Góc vuông"
+  },
+  "squareCornersHint": {
+    "message": "Sử dụng góc nhọn thay vì góc bo tròn"
   }
 }

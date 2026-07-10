@@ -59,6 +59,11 @@
     addBookmarkPlaceholder: 'Paste URL…', bookmarkTitlePlaceholder: 'Bookmark title',
     bookmarkUrlPlaceholder: 'https://…',
     dblclickCreateHint: 'Double-click to create',
+    bookmarkSave: 'Save', bookmarkDelete: 'Delete',
+    bookmarkEditTitle: 'Edit Bookmark',
+    backupNow: 'Backup Now', backupNowHint: 'Create a timestamped backup of all layout data',
+    autoBackupInterval: 'Auto-Backup Interval', syncProvider: 'Sync Provider',
+    squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded',
     smallBoxCountLabel: '$1$ small boxes',
     autoExpand: 'Auto expand', autoExpandHover: 'Hover to expand',
     headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Header unpinned'
@@ -69,7 +74,12 @@
     darkMode: 'Dark Mode', darkModeHint: 'Switch between light and dark appearance',
     exportData: 'Export Data', importData: 'Import Data',
     importSuccess: 'Data imported successfully', importFailed: 'Import failed: invalid data format',
-    dblclickCreateHint: 'Double-click to create'
+    dblclickCreateHint: 'Double-click to create',
+    bookmarkSave: 'Save', bookmarkDelete: 'Delete',
+    bookmarkEditTitle: 'Edit Bookmark',
+    backupNow: 'Backup Now', backupNowHint: 'Create a timestamped backup of all layout data',
+    autoBackupInterval: 'Auto-Backup Interval', syncProvider: 'Sync Provider',
+    squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded'
   };
   let currentLang = 'en';
   const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi'];
@@ -170,7 +180,7 @@
 
   // ── state ──────────────────────────────────────────────
   let layout = {
-    version: 3.1,
+    version: 3.5,
     boxes: [],
     nextLargeIndex: 1,
     lastLargeBoxId: null,
@@ -213,7 +223,7 @@
 
   function defaultLayout() {
     return {
-      version: 3.1, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
+      version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
       settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14 }
     };
   }
@@ -223,7 +233,7 @@
     if (raw.version >= 3) return raw;
     if (raw.version === 2) {
       return {
-        version: 3.1,
+        version: 3.5,
         boxes: (raw.boxes || []).map(b => ({
           ...b, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H,
           nextSmallIndex: (b.children?.length || 0) + 1,
@@ -258,6 +268,11 @@
     // dark mode
     if (layout.settings.darkMode) {
       document.getElementById('app').classList.add('ntp--dark');
+      if (darkModeBtn) darkModeBtn.querySelector('span').textContent = '☽';
+    }
+    // square corners
+    if (layout.settings.squareCorners) {
+      document.getElementById('app').classList.add('ntp--square-corners');
     }
   }
 
@@ -279,6 +294,32 @@
     return {
       x: Math.max(0, Math.min(x, Math.max(viewW - w, 0))),
       y: Math.max(0, Math.min(y, Math.max(viewH - h, 0)))
+    };
+  }
+
+  // Canvas pan boundary: at 10% zoom, max pan range = 10x screen size
+  function clampCanvasPan(panX, panY, zoom) {
+    const container = canvasContainer;
+    const w = container.clientWidth, h = container.clientHeight;
+    // Max virtual canvas size at 10% zoom = 10x container
+    const maxRange = 10;
+    const maxPanX = Math.max(0, (maxRange * w - w) * zoom / maxRange);
+    const maxPanY = Math.max(0, (maxRange * h - h) * zoom / maxRange);
+    return {
+      x: Math.max(-maxPanX, Math.min(maxPanX, panX)),
+      y: Math.max(-maxPanY, Math.min(maxPanY, panY))
+    };
+  }
+
+  function clampInnerPan(panX, panY, zoom) {
+    const container = innerCanvas;
+    const w = container.clientWidth, h = container.clientHeight;
+    const maxRange = 10;
+    const maxPanX = Math.max(0, (maxRange * w - w) * zoom / maxRange);
+    const maxPanY = Math.max(0, (maxRange * h - h) * zoom / maxRange);
+    return {
+      x: Math.max(-maxPanX, Math.min(maxPanX, panX)),
+      y: Math.max(-maxPanY, Math.min(maxPanY, panY))
     };
   }
 
@@ -707,7 +748,13 @@
       row.style.cursor = 'pointer';
       row.addEventListener('click', e => {
         if (e.target.closest('.bm-row__edit-btn')) return;
-        api.tabs?.create?.({ url: bm.url, active: true });
+        (function(url) {
+        if (api.tabs?.create) {
+          api.tabs.create({ url: url, active: true });
+        } else {
+          window.open(url, '_blank');
+        }
+      })(bm.url);
       });
 
       const dot = document.createElement('span');
@@ -788,7 +835,7 @@
     btnRow.style.cssText = 'display:flex;gap:4px;justify-content:flex-end;';
 
     const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Save';
+    saveBtn.textContent = i18n('bookmarkSave');
     saveBtn.style.cssText = 'padding:4px 12px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:12px;cursor:pointer;';
     saveBtn.addEventListener('click', e => {
       e.stopPropagation();
@@ -801,7 +848,7 @@
     });
 
     const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'Delete';
+    deleteBtn.textContent = i18n('bookmarkDelete');
     deleteBtn.style.cssText = 'padding:4px 12px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
     deleteBtn.addEventListener('click', e => {
       e.stopPropagation();
@@ -813,7 +860,7 @@
     });
 
     const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Cancel';
+    cancelBtn.textContent = i18n('confirmCancel');
     cancelBtn.style.cssText = 'padding:4px 12px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
     cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); });
 
@@ -877,7 +924,7 @@
     });
 
     const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = 'Cancel';
+    cancelBtn.textContent = i18n('confirmCancel');
     cancelBtn.style.cssText = 'padding:5px 14px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
     cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); });
 
@@ -1009,8 +1056,10 @@
     if (!panState) return;
     const dx = e.clientX - panState.startMouseX;
     const dy = e.clientY - panState.startMouseY;
-    canvasPanX = panState.origPanX + dx;
-    canvasPanY = panState.origPanY + dy;
+    const raw = { x: panState.origPanX + dx, y: panState.origPanY + dy };
+    const clamped = clampCanvasPan(raw.x, raw.y, canvasZoom);
+    canvasPanX = clamped.x;
+    canvasPanY = clamped.y;
     applyCanvasTransform();
   }
 
@@ -1042,8 +1091,10 @@
     if (!panState) return;
     const dx = e.clientX - panState.startMouseX;
     const dy = e.clientY - panState.startMouseY;
-    innerPanX = panState.origPanX + dx;
-    innerPanY = panState.origPanY + dy;
+    const raw = { x: panState.origPanX + dx, y: panState.origPanY + dy };
+    const clamped = clampInnerPan(raw.x, raw.y, innerZoom);
+    innerPanX = clamped.x;
+    innerPanY = clamped.y;
     applyInnerTransform();
   }
 
@@ -1253,6 +1304,12 @@ function updateInnerCaption(lb) {
     zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
     fontSlider.value = layout.settings.fontSize || 14;
     fontSliderVal.textContent = (layout.settings.fontSize || 14) + 'px';
+    // square corners
+    const squareCB = document.getElementById('square-corners-cb');
+    if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
+    // Show General tab by default
+    const firstTab = document.querySelector('.settings-nav__item');
+    if (firstTab) firstTab.click();
   }
 
   function closeSettingsModal() { settingsModal.hidden = true; }
@@ -1382,31 +1439,56 @@ function updateInnerCaption(lb) {
     });
     backBtn.addEventListener('click', exitToCanvas);
 
-  // ── header auto-hide on scroll ──────────────────────
+  // ── header auto-hide ON by default: fullscreen immersive canvas ──
   let headerPinned = false;  // default: autohide ON (fullscreen canvas)
   const headerPinBtn = $('#header-pin-btn');
   const appEl = $('#app');
   let scrollTimeout;
-  function onLibraryScroll() {
+
+  // In fullscreen autohide mode: header + search bar completely hidden
+  // Only canvas, zoom controls, and floating pin button remain visible
+  function updateAutohideUI() {
     if (!headerPinned) {
-      appEl.classList.add('scrolled');
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => appEl.classList.remove('scrolled'), 1200);
+      appEl.classList.add('ntp--autohide');
+      document.querySelector('.ntp__bar').style.display = 'none';
+      document.querySelector('.foot').style.display = 'none';
+      // Make header pin button a floating widget at top-right
+      if (headerPinBtn) {
+        headerPinBtn.style.position = 'fixed';
+        headerPinBtn.style.top = '12px';
+        headerPinBtn.style.right = '16px';
+        headerPinBtn.style.zIndex = '200';
+        headerPinBtn.style.background = 'var(--color-elevated)';
+        headerPinBtn.style.borderRadius = 'var(--radius-tile)';
+        headerPinBtn.style.boxShadow = 'var(--shadow-2)';
+        headerPinBtn.style.padding = '6px 10px';
+      }
+    } else {
+      appEl.classList.remove('ntp--autohide');
+      document.querySelector('.ntp__bar').style.display = '';
+      document.querySelector('.foot').style.display = '';
+      if (headerPinBtn) {
+        headerPinBtn.style.position = '';
+        headerPinBtn.style.top = '';
+        headerPinBtn.style.right = '';
+        headerPinBtn.style.zIndex = '';
+        headerPinBtn.style.background = '';
+        headerPinBtn.style.borderRadius = '';
+        headerPinBtn.style.boxShadow = '';
+        headerPinBtn.style.padding = '';
+      }
     }
   }
-  const libraryEl = document.querySelector('.library');
-  if (libraryEl) libraryEl.addEventListener('scroll', onLibraryScroll, { passive: true });
   if (headerPinBtn) {
     headerPinBtn.addEventListener('click', () => {
       headerPinned = !headerPinned;
       const span = headerPinBtn.querySelector('span');
       if (span) span.textContent = headerPinned ? '⊙' : '○';
       headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
-      appEl.classList.toggle('ntp--autohide', !headerPinned);
-      appEl.classList.remove('scrolled');
+      updateAutohideUI();
     });
     headerPinBtn.title = i18n('headerPinOff');
-    appEl.classList.add('ntp--autohide');  // autohide ON by default
+    updateAutohideUI();  // autohide ON by default
   }
 
     if (addLargeBtn) addLargeBtn.addEventListener('click', addLargeBox);
@@ -1425,9 +1507,10 @@ function updateInnerCaption(lb) {
     canvasContainer.addEventListener('wheel', onCanvasWheel, { passive: false });
 
     // Inner mouse events
-    // Inner canvas: no pan — only zoom. Small boxes are fixed in place.
+    // Inner canvas: pan (drag empty area) + zoom
     innerSurface.addEventListener('click', onInnerClick);
     innerSurface.addEventListener('dblclick', onInnerDblClick);
+    innerCanvas.addEventListener('mousedown', onInnerPanStart);
     innerCanvas.addEventListener('wheel', onInnerWheel, { passive: false });
 
     // Ensure inner surface also gets wheel events
@@ -1456,6 +1539,18 @@ function updateInnerCaption(lb) {
     });
 
     // Settings modal controls
+    // ── Settings tab switching ────────────────────
+    document.querySelectorAll('.settings-nav__item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.settings-nav__item').forEach(b => b.classList.remove('settings-nav__item--active'));
+        btn.classList.add('settings-nav__item--active');
+        const tabId = btn.dataset.tab;
+        document.querySelectorAll('.settings-tab').forEach(t => t.hidden = true);
+        const tab = document.getElementById('tab-' + tabId);
+        if (tab) tab.hidden = false;
+      });
+    });
+
     langSelect?.addEventListener('change', async () => {
       layout.settings.selectedLanguage = langSelect.value;
       await loadI18nStore(langSelect.value);
@@ -1500,6 +1595,18 @@ function updateInnerCaption(lb) {
       saveLayout();
     });
 
+    // Square corners toggle
+    const squareCB = document.getElementById('square-corners-cb');
+    squareCB?.addEventListener('change', () => {
+      layout.settings.squareCorners = squareCB.checked;
+      appEl.classList.toggle('ntp--square-corners', squareCB.checked);
+      saveLayout();
+    });
+    // apply square corners on load
+    if (layout.settings.squareCorners) {
+      appEl.classList.add('ntp--square-corners');
+    }
+
     if (darkModeBtn) {
       darkModeBtn.addEventListener('click', () => {
         layout.settings.darkMode = !layout.settings.darkMode;
@@ -1508,6 +1615,29 @@ function updateInnerCaption(lb) {
         darkModeBtn.querySelector('span').textContent = layout.settings.darkMode ? '☽' : '☀';
         saveLayout();
       });
+    }
+
+    // Backup Now button
+    const backupNowBtn = document.getElementById('backup-now-btn');
+    backupNowBtn?.addEventListener('click', () => {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const backup = JSON.stringify(layout, null, 2);
+      const blob = new Blob([backup], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'boxing-backup-' + timestamp + '.json';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+
+    // Auto-backup interval
+    const autoBackupSelect = document.getElementById('auto-backup-interval');
+    autoBackupSelect?.addEventListener('change', () => {
+      layout.settings.autoBackupInterval = parseInt(autoBackupSelect.value, 10) || 0;
+      saveLayout();
+    });
+    if (layout.settings.autoBackupInterval) {
+      if (autoBackupSelect) autoBackupSelect.value = String(layout.settings.autoBackupInterval);
     }
 
     // Export / Import
@@ -1533,8 +1663,13 @@ function updateInnerCaption(lb) {
         layout = migrateLayout(data);
         await saveLayout();
         if (currentLargeBoxId) exitToCanvas();
+        exitToCanvas();  // force exit any drill-in state
         renderCanvas();
-        try { alert(i18n('importSuccess')); } catch(_) {}
+        applyCanvasTransform();
+        applyInnerTransform();
+        updateCaption();
+        try { /* silent success — no alert needed */ } catch(_) {}
+        debug('Import succeeded, layout replaced');
       } catch (_) { try { alert(i18n('importFailed')); } catch(_) {} }
       importFile.value = '';
     });
@@ -1557,8 +1692,8 @@ function updateInnerCaption(lb) {
     }
 
     renderCanvas();
-    debug('init complete v3.1', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize });
-    debug('init complete v3.4', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, darkMode: layout.settings.darkMode });
+    debug('init complete v3.5', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize });
+    debug('init complete v3.5', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, darkMode: layout.settings.darkMode });
   }
 
   await init();

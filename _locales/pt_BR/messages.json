@@ -252,5 +252,32 @@
   },
   "dblclickCreateHint": {
     "message": "Clique duplo para criar"
+  },
+  "bookmarkSave": {
+    "message": "Salvar"
+  },
+  "bookmarkDelete": {
+    "message": "Excluir"
+  },
+  "bookmarkEditTitle": {
+    "message": "Editar favorito"
+  },
+  "backupNow": {
+    "message": "Fazer backup agora"
+  },
+  "backupNowHint": {
+    "message": "Criar backup completo com carimbo de data/hora"
+  },
+  "autoBackupInterval": {
+    "message": "Intervalo de backup automático"
+  },
+  "syncProvider": {
+    "message": "Provedor de sincronização"
+  },
+  "squareCorners": {
+    "message": "Cantos quadrados"
+  },
+  "squareCornersHint": {
+    "message": "Usar cantos afiados em vez de arredondados"
   }
 }

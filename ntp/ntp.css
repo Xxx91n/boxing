@@ -20,6 +20,7 @@ html, body {
   padding: var(--space-5) var(--space-6) var(--space-4);
   gap: var(--space-4);
 }
+.ntp--autohide.ntp { padding: 0; }
 
 /* === HEADER === */
 .ntp__bar {
@@ -42,8 +43,11 @@ html, body {
   opacity: 0;
   pointer-events: none;
 }
+.ntp--autohide .ntp { padding: 0; }
 .ntp--autohide .library {
-  margin-top: -48px;  /* expand canvas upward into header space */
+  flex: 1;
+  margin: 0;
+  /* full-bleed canvas — no header, no footer */
 }
 .ntp--autohide .foot {
   display: none;  /* hide footer when header auto-hides */
@@ -397,20 +401,19 @@ html, body {
 .small-box__bar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-hairline);
   cursor: grab;
   flex-shrink: 0;
-  min-height: 32px;
+  min-height: 40px;
 }
-.small-box--dragging .small-box__bar { cursor: grabbing; }
-
 .small-box__title {
   flex: 1;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
+  letter-spacing: -0.2px;
   color: var(--color-ink);
   outline: none;
   cursor: text;
@@ -419,11 +422,8 @@ html, body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.small-box__title[contenteditable="true"]:focus {
-  background: var(--color-elevated);
-  padding: 2px 4px;
-  text-overflow: clip;
-}
+.small-box--dragging .small-box__bar { cursor: grabbing; }
+
 
 .small-box__mode {
   background: transparent;
@@ -700,6 +700,17 @@ body.box-resizing {
   user-select: none !important;
 }
 
+/* Corner style: square corners override */
+.ntp--square-corners .large-box,
+.ntp--square-corners .small-box,
+.ntp--square-corners .canvas,
+.ntp--square-corners .inner__canvas,
+.ntp--square-corners .inner__head,
+.ntp--square-corners .modal,
+.ntp--square-corners .zoom-controls {
+  border-radius: 0 !important;
+}
+
 /* === BOOKMARK ADD INPUT === */
 .bm-add-row {
   display: flex;
@@ -775,3 +786,106 @@ body.box-resizing {
 
 /* === MODAL EXTENDED (v3.4 wider) === */
 .modal__section .btn { margin: 0; }
+
+/* ══════════════════════════════════════════════
+   Dark Mode — comprehensive UI adaptation
+   Every visible element must invert for dark theme
+   ══════════════════════════════════════════════ */
+.ntp--dark body, .ntp--dark html { background: var(--color-canvas); }
+.ntp--dark .ntp { background: var(--color-canvas); }
+.ntp--dark .ntp__bar { background: var(--color-canvas); border-bottom-color: var(--color-hairline); }
+.ntp--dark .brand__name { color: var(--color-ink); }
+.ntp--dark .brand__sub { color: var(--color-muted); }
+.ntp--dark .search { background: var(--color-elevated); border-color: var(--color-hairline); }
+.ntp--dark .search input { color: var(--color-ink); }
+.ntp--dark .search input::placeholder { color: var(--color-muted); }
+.ntp--dark .search__icon { color: var(--color-muted); }
+.ntp--dark .search__hint { background: var(--color-surface); color: var(--color-muted); }
+.ntp--dark .btn { background: var(--color-elevated); border-color: var(--color-hairline); color: var(--color-ink); }
+.ntp--dark .btn:hover { background: var(--color-surface); border-color: var(--color-card-edge); }
+.ntp--dark .btn--ghost { color: var(--color-muted); background: transparent; border-color: transparent; }
+.ntp--dark .btn--ghost:hover { background: var(--color-surface); color: var(--color-ink); border-color: var(--color-hairline); }
+.ntp--dark .header-count { color: var(--color-muted); }
+.ntp--dark .modal { background: var(--color-surface); border-color: var(--color-hairline); }
+.ntp--dark .modal__title { color: var(--color-ink); }
+.ntp--dark .modal__label { color: var(--color-ink-soft); }
+.ntp--dark .modal__hint { color: var(--color-muted); }
+.ntp--dark .modal__select { background: var(--color-elevated); color: var(--color-ink); border-color: var(--color-hairline); }
+.ntp--dark .modal__row input[type="range"] { background: var(--color-elevated); }
+.ntp--dark .modal__value { color: var(--color-accent-ink); }
+.ntp--dark .modal__version { color: var(--color-faint); }
+.ntp--dark .modal-overlay { background: rgba(24, 22, 20, 0.85); }
+.ntp--dark .confirm-modal { background: var(--color-surface); }
+.ntp--dark .confirm-modal .modal__title { color: var(--color-ink); }
+.ntp--dark .confirm-modal .modal__body { color: var(--color-ink); }
+.ntp--dark .checkbox-label__text { color: var(--color-ink); }
+.ntp--dark .canvas { background: radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 24px 24px, var(--color-surface); border-color: var(--color-hairline); }
+.ntp--dark .canvas__empty { color: var(--color-muted); }
+.ntp--dark .canvas__empty-title { color: var(--color-ink); }
+.ntp--dark .large-box { background: var(--color-elevated); border-color: var(--color-hairline); }
+.ntp--dark .large-box__bar { background: var(--color-surface); border-bottom-color: var(--color-hairline); }
+.ntp--dark .large-box__title { color: var(--color-ink); }
+.ntp--dark .large-box__title[contenteditable="true"]:focus { background: var(--color-elevated); }
+.ntp--dark .large-box__meta { color: var(--color-muted); }
+.ntp--dark .large-box__chip { background: var(--color-surface); border-color: var(--color-hairline); color: var(--color-muted); }
+.ntp--dark .large-box__empty-hint { color: var(--color-muted); }
+.ntp--dark .large-box__open-hint { color: var(--color-faint); }
+.ntp--dark .large-box__delete:hover { color: var(--color-accent-ink); background: var(--color-accent-soft); }
+.ntp--dark .inner__canvas { background: radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px, var(--color-surface); border-color: var(--color-hairline); }
+.ntp--dark .inner__head { background: var(--color-elevated); border-color: var(--color-hairline); }
+.ntp--dark .inner__title { color: var(--color-ink); }
+.ntp--dark .inner__title[contenteditable="true"]:focus { background: var(--color-surface); }
+.ntp--dark .small-box { background: var(--color-elevated); border-color: var(--color-hairline); }
+.ntp--dark .small-box__bar { background: var(--color-surface); border-bottom-color: var(--color-hairline); }
+.ntp--dark .small-box__title { color: var(--color-ink); }
+.ntp--dark .small-box__title[contenteditable="true"]:focus { background: var(--color-elevated); }
+.ntp--dark .small-box__mode { color: var(--color-faint); }
+.ntp--dark .small-box__mode:hover { color: var(--color-accent-ink); background: var(--color-accent-soft); }
+.ntp--dark .small-box__delete:hover { color: var(--color-accent-ink); background: var(--color-accent-soft); }
+.ntp--dark .bm-row { color: var(--color-ink); }
+.ntp--dark .bm-row:hover { background: var(--color-surface); }
+.ntp--dark .bm-row__dot { background: var(--color-card-edge); }
+.ntp--dark .bm-empty { color: var(--color-muted); }
+.ntp--dark .bm-add-row input { background: var(--color-canvas-2); color: var(--color-ink); }
+.ntp--dark .bm-add-row input::placeholder { color: var(--color-faint); }
+.ntp--dark .bm-add-row button { background: var(--color-accent); color: var(--color-ink); }
+.ntp--dark .bm-edit-popup { background: var(--color-elevated); border-color: var(--color-hairline); }
+.ntp--dark .bm-edit-popup input { background: var(--color-surface); color: var(--color-ink); border-color: var(--color-hairline); }
+.ntp--dark .bm-edit-popup input:focus { border-color: var(--color-focus); }
+.ntp--dark .zoom-controls { background: var(--color-elevated); border-color: var(--color-hairline); }
+.ntp--dark .zoom-value { color: var(--color-muted); }
+.ntp--dark .zoom-btn { color: var(--color-ink-soft); }
+.ntp--dark .zoom-btn:hover { background: var(--color-surface); color: var(--color-ink); }
+.ntp--dark .box-resize-handle { background: linear-gradient(135deg, transparent calc(50% - 1px), var(--color-muted) calc(50% - 1px), var(--color-muted) calc(50% + 1px), transparent calc(50% + 1px)); }
+.ntp--dark .foot { border-top-color: var(--color-hairline); color: var(--color-muted); }
+.ntp--dark .kbd { background: var(--color-elevated); border-color: var(--color-hairline); color: var(--color-ink); }
+.ntp--dark .crumbs { color: var(--color-ink); }
+.ntp--dark .crumbs__item { color: var(--color-ink); }
+.ntp--dark .crumbs__item:hover { background: var(--color-surface); }
+.ntp--dark .crumbs__item--current { color: var(--color-accent-ink); }
+.ntp--dark .crumbs__sep { color: var(--color-faint); }
+.ntp--dark #confirm-delete-btn { background: var(--color-accent-ink); color: var(--color-canvas); border-color: var(--color-accent-ink); }
+.ntp--dark .box-pin-btn:hover { background: var(--color-accent-soft); }
+.ntp--dark .box-expand-btn:hover { background: var(--color-accent-soft); }
+
+/* ══════════════════════════════════════════════
+   Settings Tabbed Layout
+   ══════════════════════════════════════════════ */
+.settings-body { flex-direction: row; gap: 0; padding: 0 !important; }
+.settings-nav { display: flex; flex-direction: column; min-width: 160px; padding: var(--space-4) var(--space-3); border-right: 1px solid var(--color-hairline); gap: var(--space-1); }
+.settings-nav__item { background: transparent; border: 0; border-radius: var(--radius-tile); padding: var(--space-2) var(--space-3); font-size: 13px; font-weight: 500; color: var(--color-muted); text-align: left; cursor: pointer; transition: background var(--dur-fast), color var(--dur-fast); }
+.settings-nav__item:hover { background: var(--color-surface); color: var(--color-ink); }
+.settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); font-weight: 600; }
+.settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; }
+.settings-tab { display: flex; flex-direction: column; gap: var(--space-6); }
+.settings-tab[hidden] { display: none; }
+.ntp--dark .settings-nav { border-right-color: var(--color-hairline); }
+.ntp--dark .settings-nav__item { color: var(--color-muted); }
+.ntp--dark .settings-nav__item:hover { background: var(--color-surface); color: var(--color-ink); }
+.ntp--dark .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); }
+
+/* ══════════════════════════════════════════════
+   Header Pin Float Button
+   ══════════════════════════════════════════════ */
+.header-pin-float { position: relative; }
+.ntp--autohide .header-pin-float { position: fixed; top: 12px; right: 16px; z-index: 200; background: var(--color-elevated); border-radius: var(--radius-tile); box-shadow: var(--shadow-2); padding: 6px 10px; }

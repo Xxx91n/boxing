@@ -252,5 +252,32 @@
   },
   "dblclickCreateHint": {
     "message": "더블 클릭으로 만들기"
+  },
+  "bookmarkSave": {
+    "message": "저장"
+  },
+  "bookmarkDelete": {
+    "message": "삭제"
+  },
+  "bookmarkEditTitle": {
+    "message": "북마크 편집"
+  },
+  "backupNow": {
+    "message": "지금 백업"
+  },
+  "backupNowHint": {
+    "message": "타임스탬프가 포함된 전체 백업 생성"
+  },
+  "autoBackupInterval": {
+    "message": "자동 백업 간격"
+  },
+  "syncProvider": {
+    "message": "동기화 제공자"
+  },
+  "squareCorners": {
+    "message": "사각 모서리"
+  },
+  "squareCornersHint": {
+    "message": "둥근 모서리 대신 직각 사용"
   }
 }

@@ -252,5 +252,32 @@
   },
   "dblclickCreateHint": {
     "message": "बनाने के लिए डबल-क्लिक करें"
+  },
+  "bookmarkSave": {
+    "message": "सहेजें"
+  },
+  "bookmarkDelete": {
+    "message": "हटाएं"
+  },
+  "bookmarkEditTitle": {
+    "message": "बुकमार्क संपादित करें"
+  },
+  "backupNow": {
+    "message": "अभी बैकअप लें"
+  },
+  "backupNowHint": {
+    "message": "टाइमस्टैम्प के साथ पूर्ण बैकअप बनाएं"
+  },
+  "autoBackupInterval": {
+    "message": "स्वतः बैकअप अंतराल"
+  },
+  "syncProvider": {
+    "message": "सिंक प्रदाता"
+  },
+  "squareCorners": {
+    "message": "चौकोर कोने"
+  },
+  "squareCornersHint": {
+    "message": "गोल कोनों के बजाय नुकीले कोनों का उपयोग करें"
   }
 }

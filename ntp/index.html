@@ -36,10 +36,10 @@
       <button id="dark-mode-btn" class="btn btn--ghost" aria-label="Dark mode" data-i18n-title="darkMode" style="font-size:14px;">
         <span aria-hidden="true">☀</span>
       </button>
-      <button id="header-pin-btn" class="btn btn--ghost" aria-label="Pin header" data-i18n-title="headerPin" style="font-size:14px;">
-        <span aria-hidden="true">○</span>
-      </button>
     </nav>
+    <button id="header-pin-btn" class="btn btn--ghost header-pin-float" aria-label="Pin header" data-i18n-title="headerPinOff" style="font-size:14px;">
+      <span aria-hidden="true">○</span>
+    </button>
   </header>
 
   <section class="library" aria-label="Library">
@@ -94,63 +94,111 @@
       <h2 class="modal__title" data-i18n="settingsTitle">Settings</h2>
       <button class="modal__close btn btn--ghost btn--icon" aria-label="Close" data-i18n-title="closeSettings">&times;</button>
     </div>
-    <div class="modal__body">
-      <section class="modal__section">
-        <label class="modal__label" for="lang-select" data-i18n="settingsLanguage">Language / 语言</label>
-        <select id="lang-select" class="modal__select">
-          <option value="en">English</option>
-          <option value="zh_CN">中文</option>
-          <option value="ja">日本語</option>
-          <option value="ko">한국어</option>
-          <option value="fr">Français</option>
-          <option value="de">Deutsch</option>
-          <option value="es">Español</option>
-          <option value="pt_BR">Português (BR)</option>
-          <option value="ru">Русский</option>
-          <option value="ar">العربية</option>
-          <option value="hi">हिन्दी</option>
-          <option value="th">ไทย</option>
-          <option value="vi">Tiếng Việt</option>
-        </select>
-      </section>
-      <section class="modal__section">
-        <label class="checkbox-label">
-          <input type="checkbox" id="remember-last-pos" checked>
-          <span class="checkbox-label__text" data-i18n="rememberLastPos">Remember last position</span>
-        </label>
-        <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new tabs</p>
-      </section>
-      <section class="modal__section">
-        <label class="checkbox-label">
-          <input type="checkbox" id="dark-mode-cb">
-          <span class="checkbox-label__text" data-i18n="darkMode">Dark Mode</span>
-        </label>
-        <p class="modal__hint" data-i18n="darkModeHint">Switch between light and dark appearance</p>
-      </section>
-      <section class="modal__section">
-        <label class="modal__label" for="font-slider" data-i18n="fontSizeLabel">Font Size</label>
-        <div class="modal__row">
-          <input type="range" id="font-slider" min="11" max="20" value="14" step="1">
-          <span id="font-slider-value" class="modal__value">14px</span>
+    <div class="modal__body settings-body">
+      <nav class="settings-nav">
+        <button class="settings-nav__item settings-nav__item--active" data-tab="general">General</button>
+        <button class="settings-nav__item" data-tab="appearance">Appearance</button>
+        <button class="settings-nav__item" data-tab="data">Data</button>
+        <button class="settings-nav__item" data-tab="sync">Sync & Backup</button>
+      </nav>
+      <div class="settings-content">
+        <!-- General tab -->
+        <div class="settings-tab" id="tab-general">
+          <section class="modal__section">
+            <label class="modal__label" for="lang-select" data-i18n="settingsLanguage">Language / 语言</label>
+            <select id="lang-select" class="modal__select">
+              <option value="en">English</option>
+              <option value="zh_CN">中文</option>
+              <option value="ja">日本語</option>
+              <option value="ko">한국어</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="es">Español</option>
+              <option value="pt_BR">Português (BR)</option>
+              <option value="ru">Русский</option>
+              <option value="ar">العربية</option>
+              <option value="hi">हिन्दी</option>
+              <option value="th">ไทย</option>
+              <option value="vi">Tiếng Việt</option>
+            </select>
+          </section>
+          <section class="modal__section">
+            <label class="checkbox-label">
+              <input type="checkbox" id="remember-last-pos" checked>
+              <span class="checkbox-label__text" data-i18n="rememberLastPos">Remember last position</span>
+            </label>
+            <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new tabs</p>
+          </section>
         </div>
-      </section>
-      <section class="modal__section">
-        <label class="modal__label" for="zoom-slider" data-i18n="zoomLabel">Zoom</label>
-        <div class="modal__row">
-          <input type="range" id="zoom-slider" min="50" max="150" value="100" step="5">
-          <span id="zoom-slider-value" class="modal__value">100%</span>
+        <!-- Appearance tab -->
+        <div class="settings-tab" id="tab-appearance" hidden>
+          <section class="modal__section">
+            <label class="checkbox-label">
+              <input type="checkbox" id="dark-mode-cb">
+              <span class="checkbox-label__text" data-i18n="darkMode">Dark Mode</span>
+            </label>
+            <p class="modal__hint" data-i18n="darkModeHint">Switch between light and dark appearance</p>
+          </section>
+          <section class="modal__section">
+            <label class="modal__label" for="font-slider" data-i18n="fontSizeLabel">Font Size</label>
+            <div class="modal__row">
+              <input type="range" id="font-slider" min="11" max="20" value="14" step="1">
+              <span id="font-slider-value" class="modal__value">14px</span>
+            </div>
+          </section>
+          <section class="modal__section">
+            <label class="modal__label" for="zoom-slider" data-i18n="zoomLabel">Zoom</label>
+            <div class="modal__row">
+              <input type="range" id="zoom-slider" min="50" max="150" value="100" step="5">
+              <span id="zoom-slider-value" class="modal__value">100%</span>
+            </div>
+          </section>
+          <section class="modal__section">
+            <label class="checkbox-label">
+              <input type="checkbox" id="square-corners-cb">
+              <span class="checkbox-label__text">Square Corners</span>
+            </label>
+            <p class="modal__hint">Use sharp square corners instead of rounded</p>
+          </section>
         </div>
-      </section>
-      <section class="modal__section">
-        <div style="display:flex;gap:8px;">
-          <button id="export-data-btn" class="btn" data-i18n="exportData">Export Data</button>
-          <button id="import-data-btn" class="btn" data-i18n="importData">Import Data</button>
-          <input type="file" id="import-file-input" accept=".json" hidden>
+        <!-- Data tab -->
+        <div class="settings-tab" id="tab-data" hidden>
+          <section class="modal__section">
+            <div style="display:flex;gap:8px;">
+              <button id="export-data-btn" class="btn" data-i18n="exportData">Export Data</button>
+              <button id="import-data-btn" class="btn" data-i18n="importData">Import Data</button>
+              <input type="file" id="import-file-input" accept=".json" hidden>
+            </div>
+          </section>
         </div>
-      </section>
+        <!-- Sync & Backup tab -->
+        <div class="settings-tab" id="tab-sync" hidden>
+          <section class="modal__section">
+            <label class="modal__label" for="sync-provider">Sync Provider</label>
+            <select id="sync-provider" class="modal__select">
+              <option value="local">Local Only</option>
+              <option value="chrome">Chrome Sync</option>
+              <option value="firefox">Firefox Sync</option>
+            </select>
+            <p class="modal__hint">Boxing stores data in browser sync storage. Choose your provider.</p>
+          </section>
+          <section class="modal__section">
+            <button id="backup-now-btn" class="btn">Backup Now</button>
+            <p class="modal__hint">Create a timestamped backup of all layout data</p>
+          </section>
+          <section class="modal__section">
+            <label class="modal__label">Auto-Backup Interval</label>
+            <select id="auto-backup-interval" class="modal__select">
+              <option value="0">Disabled</option>
+              <option value="86400">Daily</option>
+              <option value="604800">Weekly</option>
+            </select>
+          </section>
+        </div>
+      </div>
     </div>
     <div class="modal__foot">
-      <p class="modal__version">Boxing v3.4.0</p>
+      <p class="modal__version">Boxing v3.5.0</p>
     </div>
   </div>
 </div>

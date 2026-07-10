@@ -252,5 +252,32 @@
   },
   "dblclickCreateHint": {
     "message": "Двойной клик для создания"
+  },
+  "bookmarkSave": {
+    "message": "Сохранить"
+  },
+  "bookmarkDelete": {
+    "message": "Удалить"
+  },
+  "bookmarkEditTitle": {
+    "message": "Редактировать закладку"
+  },
+  "backupNow": {
+    "message": "Создать резервную копию"
+  },
+  "backupNowHint": {
+    "message": "Создать полную резервную копию с отметкой времени"
+  },
+  "autoBackupInterval": {
+    "message": "Интервал авторезервирования"
+  },
+  "syncProvider": {
+    "message": "Поставщик синхронизации"
+  },
+  "squareCorners": {
+    "message": "Квадратные углы"
+  },
+  "squareCornersHint": {
+    "message": "Использовать острые углы вместо скругленных"
   }
 }

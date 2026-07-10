@@ -255,5 +255,32 @@
   },
   "dblclickCreateHint": {
     "message": "双击创建盒子"
+  },
+  "bookmarkSave": {
+    "message": "保存"
+  },
+  "bookmarkDelete": {
+    "message": "删除"
+  },
+  "bookmarkEditTitle": {
+    "message": "编辑书签"
+  },
+  "backupNow": {
+    "message": "立即备份"
+  },
+  "backupNowHint": {
+    "message": "创建带时间戳的完整备份"
+  },
+  "autoBackupInterval": {
+    "message": "自动备份间隔"
+  },
+  "syncProvider": {
+    "message": "同步方式"
+  },
+  "squareCorners": {
+    "message": "方形角"
+  },
+  "squareCornersHint": {
+    "message": "使用尖角代替圆角"
   }
 }

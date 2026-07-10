@@ -252,5 +252,32 @@
   },
   "dblclickCreateHint": {
     "message": "ダブルクリックで作成"
+  },
+  "bookmarkSave": {
+    "message": "保存"
+  },
+  "bookmarkDelete": {
+    "message": "削除"
+  },
+  "bookmarkEditTitle": {
+    "message": "ブックマークを編集"
+  },
+  "backupNow": {
+    "message": "今すぐバックアップ"
+  },
+  "backupNowHint": {
+    "message": "タイムスタンプ付きの完全バックアップを作成"
+  },
+  "autoBackupInterval": {
+    "message": "自動バックアップ間隔"
+  },
+  "syncProvider": {
+    "message": "同期プロバイダー"
+  },
+  "squareCorners": {
+    "message": "スクエアコーナー"
+  },
+  "squareCornersHint": {
+    "message": "角丸の代わりに鋭角を使用"
   }
 }
