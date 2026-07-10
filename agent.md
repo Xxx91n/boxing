@@ -557,3 +557,20 @@ Updated CSS Tokens (v3.4)
 | --color-elevated | #F0EBE2 | #EBE5DB | Lower saturation |
 | --color-card-edge | #E8E0D4 | #E0D8CB | Lower saturation |
 | --color-hairline | rgba(42,37,32,0.07) | rgba(42,37,32,0.06) | Subtler borders |
+
+
+## Security Audit (v3.5 post-release)
+
+| Date | 2026-07-10 |
+|---|---|
+| Report | [SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md) |
+| Result | No Critical/High findings. 2 Medium (manifest fix applied), 4 Low (background.js fix applied). |
+| XSS | All 6 candidates verified safe (textContent used throughout). |
+| Secrets | 0 hardcoded keys/tokens found. |
+| Dependencies | 0 packages (pure vanilla JS). |
+
+### Audit fixes applied
+- M-001: Removed duplicate ersion field in manifest.json
+- M-002: Added ookmarks permission to manifest.json
+- L-002: Renamed __qlearly_last_install__ → __boxing_last_install__
+- L-003: Catch blocks now log to console.error instead of silent swallow

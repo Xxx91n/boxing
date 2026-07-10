@@ -10,16 +10,16 @@
 
   api.runtime?.onInstalled?.addListener(async (details) => {
     try {
-      root.__qlearly_last_install__ = { reason: details?.reason || "unknown", at: Date.now() };
-    } catch (_) {}
+      root.__boxing_last_install__ = { reason: details?.reason || "unknown", at: Date.now() };
+    } catch (e) { console.error('[Boxing BG] onInstalled:', e); }
   });
 
   api.action?.onClicked?.addListener(async (tab) => {
     if (api.action && typeof api.action.openPopup === "function") {
-      try { await api.action.openPopup(); return; } catch (_) {}
+      try { await api.action.openPopup(); return; } catch (e) { console.error('[Boxing BG] openPopup:', e); }
     }
     if (api.tabs && typeof api.tabs.create === "function") {
-      try { await api.tabs.create({ url: api.runtime.getURL("popup/popup.html") }); } catch (_) {}
+      try { await api.tabs.create({ url: api.runtime.getURL("popup/popup.html") }); } catch (e) { console.error('[Boxing BG] tabs.create:', e); }
     }
   });
 })();
