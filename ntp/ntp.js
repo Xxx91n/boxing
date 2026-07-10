@@ -314,25 +314,26 @@
   function clampCanvasPan(panX, panY, zoom) {
     const container = canvasContainer;
     const w = container.clientWidth, h = container.clientHeight;
-    // Max virtual canvas size at 10% zoom = 10x container
-    const maxRange = 3.333;  // 30% zoom = ~3.33x container
-    const maxPanX = Math.max(0, (maxRange * w - w) * zoom / maxRange);
-    const maxPanY = Math.max(0, (maxRange * h - h) * zoom / maxRange);
+    // Virtual world: [0, containerW/0.3]. Screen = world*zoom + pan.
+    // Constraint: visible world must stay within [0, containerW/0.3].
+    // Left: world=0 at screen pan → pan <= 0 (no blank left of origin)
+    // Right: worldEdge*zoom+pan >= containerW → pan >= containerW*(1 - zoom/0.3)
+    const minPanX = w * (1.0 - zoom / 0.3);
+    const minPanY = h * (1.0 - zoom / 0.3);
     return {
-      x: Math.max(-maxPanX, Math.min(maxPanX, panX)),
-      y: Math.max(-maxPanY, Math.min(maxPanY, panY))
+      x: Math.max(minPanX, Math.min(0, panX)),
+      y: Math.max(minPanY, Math.min(0, panY))
     };
   }
 
   function clampInnerPan(panX, panY, zoom) {
     const container = innerCanvas;
     const w = container.clientWidth, h = container.clientHeight;
-    const maxRange = 3.333;  // 30% zoom = ~3.33x container
-    const maxPanX = Math.max(0, (maxRange * w - w) * zoom / maxRange);
-    const maxPanY = Math.max(0, (maxRange * h - h) * zoom / maxRange);
+    const minPanX = w * (1.0 - zoom / 0.3);
+    const minPanY = h * (1.0 - zoom / 0.3);
     return {
-      x: Math.max(-maxPanX, Math.min(maxPanX, panX)),
-      y: Math.max(-maxPanY, Math.min(maxPanY, panY))
+      x: Math.max(minPanX, Math.min(0, panX)),
+      y: Math.max(minPanY, Math.min(0, panY))
     };
   }
 
@@ -1040,9 +1041,9 @@
       const others = layout.boxes.filter(b => b.id !== box.id);
       // elastic snap
       const snapped = elasticSnap({ x: finalX, y: finalY }, w, h, others, CANVAS_GRID, snapCanvas);
-      // clamp to visible canvas area (30% zoom boundary: 3.333x container in world coords)
-      const worldMaxX = (canvasContainer.clientWidth * 3.333 / canvasZoom) - w;
-      const worldMaxY = (canvasContainer.clientHeight * 3.333 / canvasZoom) - h;
+      // clamp to virtual canvas boundary (world extends to containerW / MIN_ZOOM)
+      const worldMaxX = (canvasContainer.clientWidth / 0.3) - w;
+      const worldMaxY = (canvasContainer.clientHeight / 0.3) - h;
       const clamped = { x: Math.max(0, Math.min(snapped.x, worldMaxX)), y: Math.max(0, Math.min(snapped.y, worldMaxY)) };
       box.x = clamped.x; box.y = clamped.y;
       el.style.left = box.x + 'px';
@@ -1054,9 +1055,9 @@
       const others = (lb?.children || []).filter(s => s.id !== sb.id);
       const w = sb.width || SMALL_DEF_W, h = sb.height || SMALL_DEF_H;
       const snapped = elasticSnap({ x: finalX, y: finalY }, w, h, others, INNER_GRID, snapInner);
-      // clamp to visible inner canvas area (30% zoom boundary)
-      const worldMaxX2 = (innerCanvas.clientWidth * 3.333 / innerZoom) - w;
-      const worldMaxY2 = (innerCanvas.clientHeight * 3.333 / innerZoom) - h;
+      // clamp to virtual inner canvas boundary
+      const worldMaxX2 = (innerCanvas.clientWidth / 0.3) - w;
+      const worldMaxY2 = (innerCanvas.clientHeight / 0.3) - h;
       sb.x = Math.max(0, Math.min(snapped.x, worldMaxX2));
       sb.y = Math.max(0, Math.min(snapped.y, worldMaxY2));
       el.style.left = sb.x + 'px';
