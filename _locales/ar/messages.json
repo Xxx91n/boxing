@@ -189,13 +189,13 @@
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "Bookmark title"
+    "message": "عنوان الإشارة"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "https://…"
+    "message": "رابط الويب"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$1$ صناديق صغيرة",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -279,5 +279,20 @@
   },
   "squareCornersHint": {
     "message": "استخدام زوايا حادة بدلاً من المستديرة"
+  },
+  "settingsNavGeneral": {
+    "message": "عام"
+  },
+  "settingsNavAppearance": {
+    "message": "المظهر"
+  },
+  "settingsNavData": {
+    "message": "البيانات"
+  },
+  "settingsNavSync": {
+    "message": "المزامنة والنسخ الاحتياطي"
+  },
+  "syncProviderHint": {
+    "message": "Boxing يخزن البيانات في تخزين المزامنة للمتصفح. اختر مزودك."
   }
 }

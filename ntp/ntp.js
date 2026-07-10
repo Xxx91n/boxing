@@ -81,6 +81,14 @@
     autoBackupInterval: 'Auto-Backup Interval', syncProvider: 'Sync Provider',
     squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded'
   };
+  // Add new v3.6 keys to I18N_FALLBACK
+  I18N_FALLBACK.settingsNavGeneral = 'General';
+  I18N_FALLBACK.settingsNavAppearance = 'Appearance';
+  I18N_FALLBACK.settingsNavData = 'Data';
+  I18N_FALLBACK.settingsNavSync = 'Sync & Backup';
+  I18N_FALLBACK.lastPositionLabel = 'Last position';
+  I18N_FALLBACK.lastZoomLabel = 'Last zoom';
+  I18N_FALLBACK.lastPageLabel = 'Last page';
   let currentLang = 'en';
   const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi'];
 
@@ -184,6 +192,8 @@
     boxes: [],
     nextLargeIndex: 1,
     lastLargeBoxId: null,
+    lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
+    lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
     settings: {
       selectedLanguage: 'en',
       rememberLastPos: true,
@@ -224,6 +234,8 @@
   function defaultLayout() {
     return {
       version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
+      lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
+      lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
       settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14 }
     };
   }
@@ -268,6 +280,7 @@
     // dark mode
     if (layout.settings.darkMode) {
       document.getElementById('app').classList.add('ntp--dark');
+      document.body.classList.add('ntp--dark');
       if (darkModeBtn) darkModeBtn.querySelector('span').textContent = '☽';
     }
     // square corners
@@ -323,32 +336,34 @@
     };
   }
 
-  // Elastic snap: find nearest edge alignment with other boxes
+  // Elastic snap: iterative while-loop to resolve all overlaps (BX-DEV-013)
   function elasticSnap(pos, w, h, others, grid, snapFn) {
     let { x, y } = pos;
-    for (const other of others) {
-      const ow = other.width || LARGE_DEF_W, oh = other.height || LARGE_DEF_H;
-      // Check overlap
-      if (!rectsOverlap({ x, y, w, h }, { x: other.x, y: other.y, w: ow, h: oh })) continue;
-
-      // Try 4 sides: right, left, below, above
-      const candidates = [
-        { x: other.x + ow + grid, y },
-        { x: other.x - w - grid, y: y },
-        { x, y: other.y + oh + grid },
-        { x, y: other.y - h - grid }
-      ];
-      let best = null, bestDist = Infinity;
-      for (const c of candidates) {
-        if (c.x < 0 || c.y < 0) continue;
-        const collides = others.some(o =>
-          rectsOverlap({ x: c.x, y: c.y, w, h }, { x: o.x, y: o.y, w: ow, h: oh }));
-        if (!collides) {
-          const dist = Math.abs(c.x - x) + Math.abs(c.y - y);
-          if (dist < bestDist) { bestDist = dist; best = c; }
+    let maxIter = 50;
+    let movedThisPass = true;
+    while (movedThisPass && maxIter-- > 0) {
+      movedThisPass = false;
+      for (const other of others) {
+        const ow = other.width || LARGE_DEF_W, oh = other.height || LARGE_DEF_H;
+        if (!rectsOverlap({ x, y, w, h }, { x: other.x, y: other.y, w: ow, h: oh })) continue;
+        const candidates = [
+          { x: other.x + ow + grid, y },
+          { x: other.x - w - grid, y: y },
+          { x, y: other.y + oh + grid },
+          { x, y: other.y - h - grid }
+        ];
+        let best = null, bestDist = Infinity;
+        for (const c of candidates) {
+          if (c.x < 0 || c.y < 0) continue;
+          const collides = others.some(o =>
+            rectsOverlap({ x: c.x, y: c.y, w, h }, { x: o.x, y: o.y, w: ow, h: oh }));
+          if (!collides) {
+            const dist = Math.abs(c.x - x) + Math.abs(c.y - y);
+            if (dist < bestDist) { bestDist = dist; best = c; }
+          }
         }
+        if (best) { x = best.x; y = best.y; movedThisPass = true; } else { x += grid; movedThisPass = true; }
       }
-      if (best) { x = best.x; y = best.y; } else { x += grid; }
     }
     return snapFn(x, y);
   }
@@ -570,6 +585,10 @@
   function enterLargeBox(id) {
     currentLargeBoxId = id;
     layout.lastLargeBoxId = id;
+    // Save current canvas zoom and pan for restore later
+    layout.lastZoom = canvasZoom;
+    layout.lastPanX = canvasPanX;
+    layout.lastPanY = canvasPanY;
     const lb = getLargeBox(id);
     if (!lb) { exitToCanvas(); return; }
 
@@ -590,12 +609,20 @@
 
     renderInnerSurface(lb);
     updateInnerCaption(lb);
+    // Restore saved inner zoom and pan from last session
+    if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
+    if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
+    if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
     applyInnerTransform();
     updateCaption();
   }
 
   function exitToCanvas() {
     currentLargeBoxId = null;
+    // Save current inner zoom and pan for restore later
+    layout.lastInnerZoom = innerZoom;
+    layout.lastInnerPanX = innerPanX;
+    layout.lastInnerPanY = innerPanY;
     innerPanX = 0; innerPanY = 0; innerZoom = 1.0;
     renderCanvas();
   }
@@ -1013,8 +1040,10 @@
       const others = layout.boxes.filter(b => b.id !== box.id);
       // elastic snap
       const snapped = elasticSnap({ x: finalX, y: finalY }, w, h, others, CANVAS_GRID, snapCanvas);
-      // clamp to container (canvas is infinite, no clamping needed — but clamp to avoid negative)
-      const clamped = clampToEdge(snapped.x, snapped.y, w, h, Infinity, Infinity);
+      // clamp to visible canvas area (30% zoom boundary: 3.333x container in world coords)
+      const worldMaxX = (canvasContainer.clientWidth * 3.333 / canvasZoom) - w;
+      const worldMaxY = (canvasContainer.clientHeight * 3.333 / canvasZoom) - h;
+      const clamped = { x: Math.max(0, Math.min(snapped.x, worldMaxX)), y: Math.max(0, Math.min(snapped.y, worldMaxY)) };
       box.x = clamped.x; box.y = clamped.y;
       el.style.left = box.x + 'px';
       el.style.top = box.y + 'px';
@@ -1025,7 +1054,11 @@
       const others = (lb?.children || []).filter(s => s.id !== sb.id);
       const w = sb.width || SMALL_DEF_W, h = sb.height || SMALL_DEF_H;
       const snapped = elasticSnap({ x: finalX, y: finalY }, w, h, others, INNER_GRID, snapInner);
-      sb.x = snapped.x; sb.y = snapped.y;
+      // clamp to visible inner canvas area (30% zoom boundary)
+      const worldMaxX2 = (innerCanvas.clientWidth * 3.333 / innerZoom) - w;
+      const worldMaxY2 = (innerCanvas.clientHeight * 3.333 / innerZoom) - h;
+      sb.x = Math.max(0, Math.min(snapped.x, worldMaxX2));
+      sb.y = Math.max(0, Math.min(snapped.y, worldMaxY2));
       el.style.left = sb.x + 'px';
       el.style.top = sb.y + 'px';
     }
@@ -1440,7 +1473,7 @@ function updateInnerCaption(lb) {
     backBtn.addEventListener('click', exitToCanvas);
 
   // ── header auto-hide ON by default: fullscreen immersive canvas ──
-  let headerPinned = false;  // default: autohide ON (fullscreen canvas)
+  let headerPinned = true;  // default: header pinned ON (header visible, button on bar)
   const headerPinBtn = $('#header-pin-btn');
   const appEl = $('#app');
   let scrollTimeout;
@@ -1450,8 +1483,8 @@ function updateInnerCaption(lb) {
   function updateAutohideUI() {
     if (!headerPinned) {
       appEl.classList.add('ntp--autohide');
-      // Hide header and footer via CSS class (preserves layout, no display:none)
-      // The header-pin-btn is now a standalone floating element — always visible
+      // Animate: header fades out, canvas expands to full viewport
+      // The header-pin-btn floats at top-right when unpinned
     } else {
       appEl.classList.remove('ntp--autohide');
     }
@@ -1468,12 +1501,12 @@ function updateInnerCaption(lb) {
       headerPinned = !headerPinned;
       updateAutohideUI();
     });
-    headerPinBtn.title = i18n('headerPinOff');
+    headerPinBtn.title = i18n('headerPin');  // default pinned = header visible
     // Move button out of header to body level so it's never hidden by header display:none
     if (headerPinBtn.parentElement?.classList.contains('ntp__bar')) {
       document.getElementById('app').appendChild(headerPinBtn);
     }
-    updateAutohideUI();  // autohide ON by default
+    updateAutohideUI();  // default: header pinned ON
   }
 
     if (addLargeBtn) addLargeBtn.addEventListener('click', addLargeBox);
@@ -1577,6 +1610,7 @@ function updateInnerCaption(lb) {
     darkModeCB?.addEventListener('change', () => {
       layout.settings.darkMode = darkModeCB.checked;
       appEl.classList.toggle('ntp--dark', darkModeCB.checked);
+      document.body.classList.toggle('ntp--dark', darkModeCB.checked);
       saveLayout();
     });
 
@@ -1596,6 +1630,7 @@ function updateInnerCaption(lb) {
       darkModeBtn.addEventListener('click', () => {
         layout.settings.darkMode = !layout.settings.darkMode;
         appEl.classList.toggle('ntp--dark', layout.settings.darkMode);
+        document.body.classList.toggle('ntp--dark', layout.settings.darkMode);
         if (darkModeCB) darkModeCB.checked = layout.settings.darkMode;
         darkModeBtn.querySelector('span').textContent = layout.settings.darkMode ? '☽' : '☀';
         saveLayout();
@@ -1673,6 +1708,11 @@ function updateInnerCaption(lb) {
     // remember last position
     if (layout.settings.rememberLastPos && layout.lastLargeBoxId) {
       const lb = getLargeBox(layout.lastLargeBoxId);
+      // Restore saved canvas zoom and pan
+      canvasZoom = layout.lastZoom || 1.0;
+      canvasPanX = layout.lastPanX || 0;
+      canvasPanY = layout.lastPanY || 0;
+      applyCanvasTransform();
       if (lb) { enterLargeBox(layout.lastLargeBoxId); return; }
     }
 
@@ -1683,3 +1723,4 @@ function updateInnerCaption(lb) {
 
   await init();
 })();
+  I18N_FALLBACK.syncProviderHint = 'Boxing stores data in browser sync storage. Choose your provider.';

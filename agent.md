@@ -574,3 +574,46 @@ Updated CSS Tokens (v3.4)
 - M-002: Added ookmarks permission to manifest.json
 - L-002: Renamed __qlearly_last_install__ → __boxing_last_install__
 - L-003: Catch blocks now log to console.error instead of silent swallow
+
+
+## v3.6 Features (2026-07-10)
+
+| Feature | Description |
+|---|---|
+| Box drag clamp | Large and small boxes clamp to visible canvas area (30% zoom boundary); edge-snap prevents lost boxes |
+| Elastic snap iterative (fixed) | Rewrote elasticSnap with while-loop for complete overlap resolution (BX-DEV-013) |
+| Dark mode comprehensive (fixed) | body+html gets .ntp--dark class via JS toggle; CSS covers all edges, canvas surfaces, settings modal, header bar when pinned |
+| Header pin default ON | Default: header visible, pin button sits on header bar (not floating). Unpinned: header fades out (0.35s animate), canvas fills viewport, pin button floats at top-right |
+| smallBoxCountLabel i18n (fixed) | All 12 non-English locales now use real translations (e.g. zh_CN: "小盒子") instead of English "small boxes" |
+| Bookmark placeholder i18n (fixed) | bookmarkTitlePlaceholder and bookmarkUrlPlaceholder translated in all 13 locales |
+| Settings nav i18n (fixed) | settings-nav buttons use data-i18n keys (settingsNavGeneral/Appearance/Data/Sync) with translations in all locales |
+| Small box rounded corners | .small-box now uses border-radius: var(--radius-card) (18px) by default, keeping UI unified |
+| Remember last position enhanced | Now saves/restores canvas zoom+pan AND inner zoom+pan in addition to last box ID |
+| New i18n keys (v3.6) | settingsNavGeneral, settingsNavAppearance, settingsNavData, settingsNavSync, syncProviderHint, lastPositionLabel, lastZoomLabel, lastPageLabel — all 13 locales translated |
+| Tests updated | boxing-v3.spec.ts: 10 tests all passing; updated for current CSS tokens (#F1EEE8), box sizes, bookmarks permission |
+| .gitignore updated | Added .codegraph/ entry |
+
+## Development Rules (v3.6 additions)
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-041 | MUST | Box drag clamp: large boxes clamp to worldMaxX/Y = canvasContainer.clientWidth*3.333/canvasZoom - width. Small boxes similarly for inner canvas. |
+| BX-DEV-042 | MUST | Dark mode must be applied to both #app AND document.body via classList.toggle('ntp--dark', val). CSS must cover .ntp padding area, .ntp__bar when pinned, .canvas__surface, .inner__surface, .settings-content, all modal elements. |
+| BX-DEV-043 | MUST | Header pin defaults ON (headerPinned=true). Button sits on header bar. When toggled OFF: header fades with 0.35s animation, canvas fills viewport, pin button floats at fixed top-right (class .header-pin--floating). |
+| BX-DEV-044 | MUST | Small boxes (.small-box) must have border-radius: var(--radius-card) matching large boxes and canvas. Square corners toggle applies to both. |
+| BX-DEV-045 | MUST | Remember-last-position also saves/restores lastZoom, lastPanX/Y, lastInnerZoom, lastInnerPanX/Y in layout. Restore on init (canvas) and enterLargeBox (inner). |
+| BX-DEV-046 | MUST | All settings nav items (settings-nav__item) must have data-i18n attribute for language switching. |
+| BX-DEV-047 | MUST | All hardcoded English text in bookmark popup placeholders, setting labels, sync provider hints must be i18n-covered across all 13 locales. |
+
+## i18n Key Reference (v3.6 additions)
+
+| Key | en | Usage |
+|---|---|---|
+| settingsNavGeneral | General | Settings side nav category |
+| settingsNavAppearance | Appearance | Settings side nav category |
+| settingsNavData | Data | Settings side nav category |
+| settingsNavSync | Sync & Backup | Settings side nav category |
+| syncProviderHint | Boxing stores data... | Sync provider description |
+| lastPositionLabel | Last position | (reserved for future UI) |
+| lastZoomLabel | Last zoom | (reserved for future UI) |
+| lastPageLabel | Last page | (reserved for future UI) |

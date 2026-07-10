@@ -29,25 +29,25 @@ html, body {
   border-bottom: 1px solid var(--color-hairline);
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
-/* Header auto-hide mode: scroll down hides header */
+/* Header auto-hide mode: when unpinned, header fades out and canvas fills viewport */
 .ntp--autohide .ntp__bar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: var(--color-canvas);
-}
-.ntp--autohide.scrolled .ntp__bar {
-  transform: translateY(-100%);
   opacity: 0;
   pointer-events: none;
+  transform: translateY(-100%);
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  border-bottom-width: 0;
+  transition: opacity 0.35s cubic-bezier(0.22,1,0.36,1), transform 0.35s cubic-bezier(0.22,1,0.36,1), max-height 0.35s cubic-bezier(0.22,1,0.36,1);
 }
 .ntp--autohide .ntp { padding: 0; }
 .ntp--autohide .library {
   flex: 1;
-  /* canvas fills available space naturally */
+  margin: 0;
+  padding: 0;
 }
 .ntp--autohide .foot {
-  display: none;  /* hide footer when header auto-hides */
+  display: none;
 }
 
 #back-btn { order: 0; margin-right: auto; display: none; }
@@ -387,6 +387,7 @@ html, body {
   flex-direction: column;
   background: var(--color-elevated);
   border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
   overflow: hidden;
   transition: box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
   user-select: none;
@@ -864,6 +865,28 @@ body.box-resizing {
 .ntp--dark #confirm-delete-btn { background: var(--color-accent-ink); color: var(--color-canvas); border-color: var(--color-accent-ink); }
 .ntp--dark .box-pin-btn:hover { background: var(--color-accent-soft); }
 .ntp--dark .box-expand-btn:hover { background: var(--color-accent-soft); }
+
+/* --- dark mode: ntp container + body background --- */
+.ntp--dark body, body.ntp--dark { background: var(--color-canvas); }
+.ntp--dark html, html.ntp--dark { background: var(--color-canvas); }
+/* dark mode pinned header bar */
+.ntp--dark .ntp__bar { background: var(--color-canvas); border-bottom-color: var(--color-hairline); }
+/* dark mode canvas surface */
+.ntp--dark .canvas__surface { background: transparent; }
+/* dark mode inner surface */
+.ntp--dark .inner__surface { background: transparent; }
+/* dark mode settings nav */
+.ntp--dark .settings-nav { border-right-color: var(--color-hairline); }
+.ntp--dark .settings-nav__item { color: var(--color-muted); }
+.ntp--dark .settings-nav__item:hover { background: var(--color-surface); color: var(--color-ink); }
+.ntp--dark .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); }
+/* dark mode settings label + checkbox */
+.ntp--dark .modal__label { color: var(--color-ink-soft); }
+.ntp--dark .checkbox-label__text { color: var(--color-ink); }
+/* dark mode font-size slider value */
+.ntp--dark #font-slider-value, .ntp--dark #zoom-slider-value { color: var(--color-accent-ink); }
+/* dark mode square corners checkbox label */
+.ntp--dark #square-corners-cb + .checkbox-label__text { color: var(--color-ink); }
 
 /* ══════════════════════════════════════════════
    Settings Tabbed Layout

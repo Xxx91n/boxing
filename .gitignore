@@ -32,6 +32,7 @@ playwright/.cache/
 # OMX / Codex
 .omx/
 .codex/
+.codegraph/
 
 # Logs
 *.log

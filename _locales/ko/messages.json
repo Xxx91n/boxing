@@ -189,13 +189,13 @@
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "Bookmark title"
+    "message": "북마크 제목"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "https://…"
+    "message": "웹 링크"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$1$ 작은 상자",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -279,5 +279,20 @@
   },
   "squareCornersHint": {
     "message": "둥근 모서리 대신 직각 사용"
+  },
+  "settingsNavGeneral": {
+    "message": "일반"
+  },
+  "settingsNavAppearance": {
+    "message": "디자인"
+  },
+  "settingsNavData": {
+    "message": "데이터"
+  },
+  "settingsNavSync": {
+    "message": "동기화 및 백업"
+  },
+  "syncProviderHint": {
+    "message": "Boxing은 브라우저 동기화 저장소에 데이터를 저장합니다. 제공자를 선택하세요."
   }
 }

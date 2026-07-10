@@ -189,13 +189,13 @@
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "Bookmark title"
+    "message": "Titre du favori"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "https://…"
+    "message": "Lien web"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$1$ petites boîtes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -279,5 +279,20 @@
   },
   "squareCornersHint": {
     "message": "Utiliser des coins pointus au lieu de coins arrondis"
+  },
+  "settingsNavGeneral": {
+    "message": "Général"
+  },
+  "settingsNavAppearance": {
+    "message": "Apparence"
+  },
+  "settingsNavData": {
+    "message": "Données"
+  },
+  "settingsNavSync": {
+    "message": "Synchronisation et sauvegarde"
+  },
+  "syncProviderHint": {
+    "message": "Boxing stocke les données dans le stockage de synchronisation du navigateur. Choisissez votre fournisseur."
   }
 }

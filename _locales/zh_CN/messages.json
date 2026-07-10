@@ -189,13 +189,13 @@
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "Bookmark title"
+    "message": "书签标题"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "https://…"
+    "message": "网页链接"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$1$ 小盒子",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -282,5 +282,20 @@
   },
   "squareCornersHint": {
     "message": "使用尖角代替圆角"
+  },
+  "settingsNavGeneral": {
+    "message": "通用"
+  },
+  "settingsNavAppearance": {
+    "message": "外观"
+  },
+  "settingsNavData": {
+    "message": "数据"
+  },
+  "settingsNavSync": {
+    "message": "同步与备份"
+  },
+  "syncProviderHint": {
+    "message": "Boxing 将数据存储在浏览器同步存储中。选择您的同步方式。"
   }
 }

@@ -189,13 +189,13 @@
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "Bookmark title"
+    "message": "बुकमार्क शीर्षक"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "https://…"
+    "message": "वेब लिंक"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$1$ छोटे बॉक्स",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -279,5 +279,20 @@
   },
   "squareCornersHint": {
     "message": "गोल कोनों के बजाय नुकीले कोनों का उपयोग करें"
+  },
+  "settingsNavGeneral": {
+    "message": "सामान्य"
+  },
+  "settingsNavAppearance": {
+    "message": "दिखावट"
+  },
+  "settingsNavData": {
+    "message": "डेटा"
+  },
+  "settingsNavSync": {
+    "message": "सिंक और बैकअप"
+  },
+  "syncProviderHint": {
+    "message": "Boxing ब्राउज़र सिंक स्टोरेज में डेटा संग्रहीत करता है। अपना प्रदाता चुनें।"
   }
 }

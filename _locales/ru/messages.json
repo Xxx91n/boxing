@@ -189,13 +189,13 @@
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "Bookmark title"
+    "message": "Название закладки"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "https://…"
+    "message": "Веб-ссылка"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$1$ маленькие боксы",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -279,5 +279,20 @@
   },
   "squareCornersHint": {
     "message": "Использовать острые углы вместо скругленных"
+  },
+  "settingsNavGeneral": {
+    "message": "Общие"
+  },
+  "settingsNavAppearance": {
+    "message": "Оформление"
+  },
+  "settingsNavData": {
+    "message": "Данные"
+  },
+  "settingsNavSync": {
+    "message": "Синхронизация и бэкап"
+  },
+  "syncProviderHint": {
+    "message": "Boxing хранит данные в синхронизированном хранилище браузера. Выберите провайдера."
   }
 }

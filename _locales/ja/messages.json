@@ -189,13 +189,13 @@
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "Bookmark title"
+    "message": "ブックマーク名"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "https://…"
+    "message": "ウェブリンク"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$1$ スモールボックス",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -279,5 +279,20 @@
   },
   "squareCornersHint": {
     "message": "角丸の代わりに鋭角を使用"
+  },
+  "settingsNavGeneral": {
+    "message": "一般"
+  },
+  "settingsNavAppearance": {
+    "message": "外観"
+  },
+  "settingsNavData": {
+    "message": "データ"
+  },
+  "settingsNavSync": {
+    "message": "同期とバックアップ"
+  },
+  "syncProviderHint": {
+    "message": "Boxingはブラウザの同期ストレージにデータを保存します。プロバイダーを選択してください。"
   }
 }

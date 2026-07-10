@@ -189,13 +189,13 @@
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "Bookmark title"
+    "message": "Tiêu đề bookmark"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "https://…"
+    "message": "Liên kết web"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$1$ hộp nhỏ",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -279,5 +279,20 @@
   },
   "squareCornersHint": {
     "message": "Sử dụng góc nhọn thay vì góc bo tròn"
+  },
+  "settingsNavGeneral": {
+    "message": "Chung"
+  },
+  "settingsNavAppearance": {
+    "message": "Giao diện"
+  },
+  "settingsNavData": {
+    "message": "Dữ liệu"
+  },
+  "settingsNavSync": {
+    "message": "Đồng bộ và sao lưu"
+  },
+  "syncProviderHint": {
+    "message": "Boxing lưu trữ dữ liệu trong bộ nhớ đồng bộ của trình duyệt. Chọn nhà cung cấp của bạn."
   }
 }

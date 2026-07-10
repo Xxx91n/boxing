@@ -96,10 +96,10 @@
     </div>
     <div class="modal__body settings-body">
       <nav class="settings-nav">
-        <button class="settings-nav__item settings-nav__item--active" data-tab="general">General</button>
-        <button class="settings-nav__item" data-tab="appearance">Appearance</button>
-        <button class="settings-nav__item" data-tab="data">Data</button>
-        <button class="settings-nav__item" data-tab="sync">Sync & Backup</button>
+        <button class="settings-nav__item settings-nav__item--active" data-tab="general" data-i18n="settingsNavGeneral">General</button>
+        <button class="settings-nav__item" data-tab="appearance" data-i18n="settingsNavAppearance">Appearance</button>
+        <button class="settings-nav__item" data-tab="data" data-i18n="settingsNavData">Data</button>
+        <button class="settings-nav__item" data-tab="sync" data-i18n="settingsNavSync">Sync & Backup</button>
       </nav>
       <div class="settings-content">
         <!-- General tab -->
@@ -156,9 +156,9 @@
           <section class="modal__section">
             <label class="checkbox-label">
               <input type="checkbox" id="square-corners-cb">
-              <span class="checkbox-label__text">Square Corners</span>
+              <span class="checkbox-label__text" data-i18n="squareCorners">Square Corners</span>
             </label>
-            <p class="modal__hint">Use sharp square corners instead of rounded</p>
+            <p class="modal__hint" data-i18n="squareCornersHint">Use sharp square corners instead of rounded</p>
           </section>
         </div>
         <!-- Data tab -->
@@ -174,20 +174,20 @@
         <!-- Sync & Backup tab -->
         <div class="settings-tab" id="tab-sync" hidden>
           <section class="modal__section">
-            <label class="modal__label" for="sync-provider">Sync Provider</label>
+            <label class="modal__label" for="sync-provider" data-i18n="syncProvider">Sync Provider</label>
             <select id="sync-provider" class="modal__select">
               <option value="local">Local Only</option>
               <option value="chrome">Chrome Sync</option>
               <option value="firefox">Firefox Sync</option>
             </select>
-            <p class="modal__hint">Boxing stores data in browser sync storage. Choose your provider.</p>
+            <p class="modal__hint" data-i18n="syncProviderHint">Boxing stores data in browser sync storage. Choose your provider.</p>
           </section>
           <section class="modal__section">
-            <button id="backup-now-btn" class="btn">Backup Now</button>
-            <p class="modal__hint">Create a timestamped backup of all layout data</p>
+<button id="backup-now-btn" class="btn" data-i18n="backupNow">Backup Now</button>
+            <p class="modal__hint" data-i18n="backupNowHint">Create a timestamped backup of all layout data</p>
           </section>
           <section class="modal__section">
-            <label class="modal__label">Auto-Backup Interval</label>
+            <label class="modal__label" data-i18n="autoBackupInterval">Auto-Backup Interval</label>
             <select id="auto-backup-interval" class="modal__select">
               <option value="0">Disabled</option>
               <option value="86400">Daily</option>

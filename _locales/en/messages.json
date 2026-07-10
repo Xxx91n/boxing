@@ -291,5 +291,20 @@
   },
   "squareCornersHint": {
     "message": "Use sharp square corners instead of rounded"
+  },
+  "settingsNavGeneral": {
+    "message": "General"
+  },
+  "settingsNavAppearance": {
+    "message": "Appearance"
+  },
+  "settingsNavData": {
+    "message": "Data"
+  },
+  "settingsNavSync": {
+    "message": "Sync & Backup"
+  },
+  "syncProviderHint": {
+    "message": "Boxing stores data in browser sync storage. Choose your provider."
   }
 }
