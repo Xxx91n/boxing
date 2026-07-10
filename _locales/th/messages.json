@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+เลื่อนเพื่อซูม · / ค้นหา · ดับเบิลคลิกเพื่อเพิ่ม"
   },
   "canvasRoot": {
     "message": "ผืนผ้าใบ",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "ขยายอัตโนมัติ"
+  },
+  "autoExpandHover": {
+    "message": "โฮเวอร์เพื่อขยาย"
+  },
+  "headerPin": {
+    "message": "ปักหมุดส่วนหัว"
+  },
+  "headerPinOn": {
+    "message": "ปักหมุดส่วนหัวแล้ว"
   }
 }

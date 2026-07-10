@@ -25,6 +25,7 @@
       <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search bookmarks…" aria-label="Search bookmarks" data-i18n-placeholder="searchPlaceholder">
       <kbd class="search__hint" aria-hidden="true">/</kbd>
     </form>
+    <span class="header-count" id="caption"></span>
     <nav class="actions" aria-label="Page actions">
       <button id="add-box" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
         <span aria-hidden="true">+</span>
@@ -36,11 +37,6 @@
   </header>
 
   <section class="library" aria-label="Library">
-    <div class="library__head">
-      <div class="crumbs" id="crumbs" aria-label="Breadcrumb"></div>
-      <p class="library__caption" id="caption"></p>
-    </div>
-
     <div id="canvas" class="canvas" role="region" aria-label="Infinite canvas">
       <div id="canvas-surface" class="canvas__surface"></div>
       <div id="canvas-empty" class="canvas__empty">
@@ -60,6 +56,7 @@
     </div>
 
     <div id="inner" class="inner" hidden>
+      <div class="crumbs" id="crumbs" aria-label="Breadcrumb"></div>
       <div class="inner__head">
         <span class="inner__title" id="inner-title" contenteditable="true" spellcheck="false"></span>
         <div class="inner__actions">

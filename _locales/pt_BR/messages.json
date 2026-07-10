@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+rolagem para zoom · / pesquisar · Clique duplo para adicionar"
   },
   "canvasRoot": {
     "message": "Tela",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "Expandir auto"
+  },
+  "autoExpandHover": {
+    "message": "Passar o mouse para expandir"
+  },
+  "headerPin": {
+    "message": "Fixar cabeçalho"
+  },
+  "headerPinOn": {
+    "message": "Cabeçalho fixado"
   }
 }

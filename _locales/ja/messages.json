@@ -60,7 +60,7 @@
     "description": "大ボックスを開くヒント"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+スクロールでズーム · / 検索 · ダブルクリックで追加"
   },
   "canvasRoot": {
     "message": "キャンバス",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "自動展開"
+  },
+  "autoExpandHover": {
+    "message": "ホバーで展開"
+  },
+  "headerPin": {
+    "message": "ヘッダーを固定"
+  },
+  "headerPinOn": {
+    "message": "ヘッダー固定済"
   }
 }

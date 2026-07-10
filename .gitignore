@@ -1,49 +1,42 @@
-# Build & Distribution
-dist/
-.output/
-build/
-*.zip
-*.xpi
-
 # Dependencies
 node_modules/
-pnpm-lock.yaml
-package-lock.json
-yarn.lock
 
-# IDE & Editor
+# Build artifacts
+*.crx
+*.pem
+dist/
+build/
+.zip
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*.swn
-*.sublime-project
-*.sublime-workspace
-.DS_Store
-Thumbs.db
-
-# Testing & Coverage
-coverage/
-.nyc_output/
-test-results/
-playwright-report/
-
-# Environment & Secrets
-.env
-.env.local
-.env.*.local
-secrets/
+*~
 
 # OS
 .DS_Store
-desktop.ini
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Debug screenshots
+debug_*.png
+debug_*.jpg
 
 # Playwright
-.playwright/
-browsers/
+playwright/node_modules/
+playwright/.cache/
 
-# WXT (if used)
-.wxt/
+# OMX / Codex
+.omx/
+.codex/
 
-# Codegraph
-.codegraph/
+# Logs
+*.log
+npm-debug.log*
+
+# Temp
+*.tmp
+tmp/

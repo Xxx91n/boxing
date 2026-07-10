@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+scroll to zoom · / to search · Dblclick to add"
   },
   "canvasRoot": {
     "message": "Canvas",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "Auto expand"
+  },
+  "autoExpandHover": {
+    "message": "Hover to expand"
+  },
+  "headerPin": {
+    "message": "Pin header"
+  },
+  "headerPinOn": {
+    "message": "Header pinned"
   }
 }

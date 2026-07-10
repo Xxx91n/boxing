@@ -371,6 +371,29 @@ export default defineConfig({
 | BX-DEV-011 | MUST NOT | Do not add shadcn/ui, Tailwind, React, Vue, or npm dependencies. |
 | BX-DEV-012 | MUST NOT | Do not use brand__mark brown color block (removed). |
 
+
+
+## i18n Development Requirements
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-I18N-DEV-001 | MUST | Every UI string visible to users must use the i18n(key) function, never hard-coded English/Chinese text. |
+| BX-I18N-DEV-002 | MUST | All 13 supported languages (en, zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi) must have translations for every i18n key. |
+| BX-I18N-DEV-003 | MUST | When adding a new i18n key, add it to _locales/en/messages.json first, then copy to all 12 other locale files with proper translations. |
+| BX-I18N-DEV-004 | MUST | I18N_FALLBACK in ntp.js must contain every i18n key as a fallback for when fetch fails. |
+| BX-I18N-DEV-005 | MUST | All data-i18n, data-i18n-title, data-i18n-placeholder attributes in HTML must match an existing key in messages.json. |
+| BX-I18N-DEV-006 | MUST | Keys with placeholders ($1$, $2$) in messages.json must include a "placeholders" object per Chrome i18n spec. |
+| BX-I18N-DEV-007 | MUST | The custom i18n loader in ntp.js fetches _locales/<lang>/messages.json; chrome.i18n.getMessage API is NOT used. |
+| BX-I18N-DEV-008 | MUST NOT | Never add hardcoded language strings in JS or HTML that bypass the i18n(key) function. |
+| BX-I18N-DEV-009 | MUST | After changing language in settings, re-render all visible UI (canvas, inner surface, crumbs, caption) to reflect new language immediately. |
+
+## Debug Development
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEBUG-001 | INFO | Set DEBUG = true in ntp.js during development; all [Boxing] prefixed console logs help trace issues. |
+| BX-DEBUG-002 | MUST | Use Playwright (D:\Aworker\crx\playwright) for automated e2e testing during development. |
+| BX-DEBUG-003 | MUST | After each major change, run "node --check ntp.js" to verify syntax before testing in browser. |
 ## CSS Token Baseline (Boxing v3.1)
 
 | Token | Value | Purpose |

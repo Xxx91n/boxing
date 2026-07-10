@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+스크롤 확대 · / 검색 · 더블클릭 추가"
   },
   "canvasRoot": {
     "message": "캔버스",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "자동 확장"
+  },
+  "autoExpandHover": {
+    "message": "호버하여 확장"
+  },
+  "headerPin": {
+    "message": "헤더 고정"
+  },
+  "headerPinOn": {
+    "message": "헤더 고정됨"
   }
 }

@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+rueda para zoom · / buscar · Doble clic para añadir"
   },
   "canvasRoot": {
     "message": "Lienzo",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "Auto expandir"
+  },
+  "autoExpandHover": {
+    "message": "Pasar el cursor para expandir"
+  },
+  "headerPin": {
+    "message": "Fijar encabezado"
+  },
+  "headerPinOn": {
+    "message": "Encabezado fijado"
   }
 }

@@ -60,7 +60,7 @@
     "description": "打开大盒子提示"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+滚轮缩放 · / 搜索 · 双击添加盒子"
   },
   "canvasRoot": {
     "message": "画布",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "自动展开"
+  },
+  "autoExpandHover": {
+    "message": "悬停展开"
+  },
+  "headerPin": {
+    "message": "固定顶栏"
+  },
+  "headerPinOn": {
+    "message": "顶栏已固定"
   }
 }

@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+स्क्रॉल ज़ूम · / खोजें · डबल-क्लिक जोड़ें"
   },
   "canvasRoot": {
     "message": "कैनवास",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "ऑटो विस्तार"
+  },
+  "autoExpandHover": {
+    "message": "होवर करके विस्तार करें"
+  },
+  "headerPin": {
+    "message": "हेडर पिन करें"
+  },
+  "headerPinOn": {
+    "message": "हेडर पिन किया गया"
   }
 }

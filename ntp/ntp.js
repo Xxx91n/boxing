@@ -46,7 +46,7 @@
     emptyCanvasTitle: 'No large boxes yet', dblclickHint: 'Double-click canvas to add a large box',
     clickPlusHint: 'or click + above', emptyLargeHint: 'Click to add small boxes',
     emptyInnerHint: 'Click + to add your first small box', emptySmallHint: 'No bookmarks yet',
-    clickToOpen: 'Click to open →', footerHint: 'Right-click to return · / to search · Dblclick canvas to add',
+    clickToOpen: 'Click to open →', footerHint: 'Ctrl+scroll to zoom · / to search · Dblclick to add',
     canvasRoot: 'Canvas', untitledBox: 'Untitled box',
     newLargeBox: 'Box $1$', newSmallBox: 'New small box',
     deleteBox: 'Delete box', confirmDeleteLarge: 'Delete this large box and all its small boxes?',
@@ -58,7 +58,9 @@
     addBookmarkPlaceholder: 'Paste URL…', bookmarkTitlePlaceholder: 'Bookmark title',
     bookmarkUrlPlaceholder: 'https://…',
     dblclickCreateHint: 'Double-click to create',
-    smallBoxCountLabel: '$1$ small boxes'
+    smallBoxCountLabel: '$1$ small boxes',
+    autoExpand: 'Auto expand', autoExpandHover: 'Hover to expand',
+    headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Header unpinned'
   };
   let currentLang = 'en';
   const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi'];
@@ -385,17 +387,67 @@
     delBtn.textContent = '×';
     delBtn.addEventListener('click', e => { e.stopPropagation(); deleteLargeBox(box.id); });
 
-    bar.append(icon, title, meta, delBtn);
+
+    // ── pin button (lock box position)
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'box-pin-btn';
+    pinBtn.title = i18n('pin');
+    pinBtn.textContent = '📌';
+    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;';
+    pinBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      box.pinned = !box.pinned;
+      pinBtn.title = box.pinned ? i18n('unpin') : i18n('pin');
+      pinBtn.style.opacity = box.pinned ? '0.9' : '0.4';
+      el.classList.toggle('box--pinned', box.pinned);
+      saveLayout();
+    });
+    if (box.pinned) { pinBtn.style.opacity = '0.9'; el.classList.add('box--pinned'); }
+
+    // ── auto-expand button (hover vs always)
+    const expandBtn = document.createElement('button');
+    expandBtn.className = 'box-expand-btn';
+    expandBtn.title = i18n('autoExpand');
+    expandBtn.textContent = '↕';
+    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;';
+    expandBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      box.collapseHover = !box.collapseHover;
+      expandBtn.title = box.collapseHover ? 'Hover to expand' : i18n('autoExpand');
+      expandBtn.style.opacity = box.collapseHover ? '0.9' : '0.4';
+      el.classList.toggle('box--hover-expand', box.collapseHover);
+      if (box.collapseHover) {
+        el.classList.add('box--collapsed');
+      } else {
+        el.classList.remove('box--collapsed');
+      }
+      saveLayout();
+    });
+    if (box.collapseHover) { expandBtn.style.opacity = '0.9'; el.classList.add('box--hover-expand', 'box--collapsed'); }
+
+    bar.append(icon, title, meta, pinBtn, expandBtn, delBtn);
 
     // body — click to enter
     const body = document.createElement('div');
     body.className = 'large-box__body';
-    body.addEventListener('click', () => enterLargeBox(box.id));
-    body.addEventListener('mousedown', e => {
-      // allow mousedown on body but NOT on title area (already blocked)
-      if (e.target.closest('.large-box__title')) return;
-    });
 
+    // Track if this box was being dragged to prevent click-from-drag entering
+    let wasDragging = false;
+    // Monitor bar mousedown to catch drags
+    const origBarMD = bar.onmousedown;
+    bar.addEventListener('mousedown', e => {
+      wasDragging = false;
+      if (!e.target.closest('.large-box__title') && !e.target.closest('.large-box__delete')) {
+        const onUp = () => { wasDragging = true; document.removeEventListener('mouseup', onUp, true); };
+        document.addEventListener('mouseup', onUp, { once: true, capture: true });
+      }
+    });
+    body.addEventListener('click', (ev) => {
+      if (wasDragging) { wasDragging = false; return; }
+      // Don't enter if clicking resize handle or delete
+      if (ev.target.closest('.box-resize-handle') || ev.target.closest('.large-box__delete')) return;
+      enterLargeBox(box.id);
+    });
     if (childCount) {
       const chips = document.createElement('div');
       chips.className = 'large-box__chips';
@@ -532,7 +584,45 @@
     delBtn.textContent = '×';
     delBtn.addEventListener('click', e => { e.stopPropagation(); deleteSmallBox(largeId, sb.id); });
 
-    bar.append(title, delBtn);
+
+    // ── pin button
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'box-pin-btn';
+    pinBtn.title = i18n('pin');
+    pinBtn.textContent = '📌';
+    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;';
+    pinBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      sb.pinned = !sb.pinned;
+      pinBtn.title = sb.pinned ? i18n('unpin') : i18n('pin');
+      pinBtn.style.opacity = sb.pinned ? '0.9' : '0.4';
+      el.classList.toggle('box--pinned', sb.pinned);
+      saveLayout();
+    });
+    if (sb.pinned) { pinBtn.style.opacity = '0.9'; el.classList.add('box--pinned'); }
+
+    // ── auto-expand button
+    const expandBtn = document.createElement('button');
+    expandBtn.className = 'box-expand-btn';
+    expandBtn.title = i18n('autoExpand');
+    expandBtn.textContent = '↕';
+    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;';
+    expandBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      sb.collapseHover = !sb.collapseHover;
+      expandBtn.title = sb.collapseHover ? 'Hover to expand' : i18n('autoExpand');
+      expandBtn.style.opacity = sb.collapseHover ? '0.9' : '0.4';
+      el.classList.toggle('box--hover-expand', sb.collapseHover);
+      if (sb.collapseHover) {
+        el.classList.add('box--collapsed');
+      } else {
+        el.classList.remove('box--collapsed');
+      }
+      saveLayout();
+    });
+    if (sb.collapseHover) { expandBtn.style.opacity = '0.9'; el.classList.add('box--hover-expand', 'box--collapsed'); }
+
+    bar.append(title, pinBtn, expandBtn, delBtn);
 
     // body — bookmark list (always list mode, no grid)
     const body = document.createElement('div');
@@ -597,37 +687,21 @@
       body.appendChild(row);
     }
 
-    // add bookmark row
+    // add bookmark button — opens popup for title+URL
     const addRow = document.createElement('div');
     addRow.className = 'bm-add-row';
     addRow.addEventListener('mousedown', e => e.stopPropagation());
 
-    const addInput = document.createElement('input');
-    addInput.type = 'text';
-    addInput.placeholder = i18n('addBookmarkPlaceholder');
-    addInput.spellcheck = false;
-
     const addBtn = document.createElement('button');
     addBtn.textContent = '+';
+    addBtn.title = i18n('addBookmarkBtn');
+    addBtn.style.cssText = 'width:100%;text-align:center;background:transparent;border:1px dashed var(--color-hairline);color:var(--color-muted);font-size:13px;padding:4px;border-radius:4px;cursor:pointer;';
     addBtn.addEventListener('click', e => {
       e.stopPropagation();
-      const url = addInput.value.trim();
-      if (!url) return;
-      let title = url.replace(/^https?:\/\//, '').split('/')[0] || url;
-      if (url.startsWith('http')) {
-        try { const u = new URL(url); title = u.hostname + (u.pathname !== '/' ? u.pathname.substring(0, 20) : ''); } catch (_) {}
-      }
-      sb.bookmarks = sb.bookmarks || [];
-      if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
-      sb.bookmarks.push({ id: 'bm-' + Date.now(), title, url });
-      addInput.value = '';
-      saveLayout();
-      renderBookmarks(body, largeId, sb);
+      showAddBookmarkPopup(sb, largeId);
     });
-    addInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addBtn.click(); } });
-    addInput.addEventListener('mousedown', e => e.stopPropagation());
 
-    addRow.append(addInput, addBtn);
+    addRow.appendChild(addBtn);
     body.appendChild(addRow);
   }
 
@@ -711,9 +785,73 @@
     titleInput.focus();
   }
 
+  // Add bookmark popup (title + URL)
+  function showAddBookmarkPopup(sb, largeId) {
+    document.querySelectorAll('.bm-edit-popup').forEach(p => p.remove());
+
+    const popup = document.createElement('div');
+    popup.className = 'bm-edit-popup';
+    popup.style.cssText = 'position:fixed;z-index:200;background:var(--color-elevated);border:1px solid var(--color-hairline);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);min-width:300px;';
+
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.placeholder = i18n('bookmarkTitlePlaceholder');
+    titleInput.style.cssText = 'padding:6px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:13px;background:var(--color-surface);color:var(--color-ink);outline:none;';
+
+    const urlInput = document.createElement('input');
+    urlInput.type = 'text';
+    urlInput.placeholder = i18n('bookmarkUrlPlaceholder');
+    urlInput.style.cssText = 'padding:6px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:13px;background:var(--color-surface);color:var(--color-ink);outline:none;';
+
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:4px;justify-content:flex-end;';
+
+    const addBtn = document.createElement('button');
+    addBtn.textContent = i18n('addBookmarkBtn');
+    addBtn.style.cssText = 'padding:5px 14px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;';
+    addBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const title = titleInput.value.trim();
+      const url = urlInput.value.trim();
+      if (!url) return;
+      sb.bookmarks = sb.bookmarks || [];
+      if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
+      sb.bookmarks.push({ id: 'bm-' + Date.now(), title: title || url.replace(/^https?:\/\//, '').split('/')[0] || url, url });
+      saveLayout();
+      const lb = getLargeBox(largeId);
+      if (lb) renderInnerSurface(lb);
+      popup.remove();
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.cssText = 'padding:5px 14px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
+    cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); });
+
+    btnRow.append(addBtn, cancelBtn);
+    popup.append(titleInput, urlInput, btnRow);
+
+    popup.style.left = Math.max(40, (window.innerWidth - 320) / 2) + 'px';
+    popup.style.top = Math.max(40, (window.innerHeight - 180) / 2) + 'px';
+
+    document.body.appendChild(popup);
+
+    const closeHandler = (ev) => {
+      if (!popup.contains(ev.target)) {
+        popup.remove();
+        document.removeEventListener('click', closeHandler);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeHandler), 50);
+    titleInput.focus();
+  }
+
+
   // ── Manual Drag (real-time, no jump) ─────────────────
   function onBoxDragStart(e, type, id, el) {
     if (e.button !== 0) return; // left button only
+    // Don't drag if box is pinned
+    if (el.classList.contains('box--pinned')) return;
     e.preventDefault();
     e.stopPropagation();
 
@@ -964,17 +1102,17 @@
 
   async function addLargeBox() {
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
-    let x = 20, y = 20;
-    for (const box of layout.boxes) {
-      x += (box.width || LARGE_DEF_W) + CANVAS_GRID;
-      if (x > 1200) { x = 20; y += (box.height || LARGE_DEF_H) + CANVAS_GRID; }
-    }
-    const snapped = snapCanvas(x, y);
     const index = layout.nextLargeIndex++;
+    const others = layout.boxes.map(b => ({ x: b.x, y: b.y, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H }));
+    // Start at default offset, then elastic-snap to avoid overlap
+    let candidate = { x: 20, y: 20 };
+    const snapped = snapCanvas(candidate.x, candidate.y);
+    candidate = elasticSnap(snapped, LARGE_DEF_W, LARGE_DEF_H, others, CANVAS_GRID, snapCanvas);
     const newBox = {
       id: 'large-' + Date.now(), type: 'large',
       title: i18n('newLargeBox', [index]),
-      x: snapped.x, y: snapped.y, width: LARGE_DEF_W, height: LARGE_DEF_H,
+      x: Math.max(0, candidate.x), y: Math.max(0, candidate.y),
+      width: LARGE_DEF_W, height: LARGE_DEF_H,
       nextSmallIndex: 1, children: []
     };
     layout.boxes.push(newBox);
@@ -996,18 +1134,17 @@
     if (!lb) return;
     if ((lb.children?.length || 0) >= MAX_SMALL_BOXES) { debug('max small boxes'); return; }
 
-    let x = 20, y = 20;
-    for (const sb of lb.children || []) {
-      x += (sb.width || SMALL_DEF_W) + INNER_GRID;
-      if (x > 800) { x = 20; y += (sb.height || SMALL_DEF_H) + INNER_GRID; }
-    }
-    const snapped = snapInner(x, y);
-    const idx = lb.nextSmallIndex++;
     lb.children = lb.children || [];
+    const others = lb.children.map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
+    let candidate = { x: 20, y: 20 };
+    const snapped = snapInner(candidate.x, candidate.y);
+    candidate = elasticSnap(snapped, SMALL_DEF_W, SMALL_DEF_H, others, INNER_GRID, snapInner);
+    lb.nextSmallIndex = lb.nextSmallIndex || 1;
+    const idx = lb.nextSmallIndex++;
     lb.children.push({
       id: 'small-' + Date.now(), type: 'small',
       title: i18n('newSmallBox'),
-      x: snapped.x, y: snapped.y,
+      x: Math.max(0, candidate.x), y: Math.max(0, candidate.y),
       width: SMALL_DEF_W, height: SMALL_DEF_H,
       pinned: true, bookmarks: []
     });
@@ -1113,23 +1250,14 @@
 
   // ── dblclick create (also single-click two-quick for new boxes) ─
   function onCanvasClick(e) {
-    const now = Date.now();
+    // Single clicks on boxes are handled by the body click handler
+    // Clicks on empty canvas are ignored — use dblclick to create
     const target = e.target.closest('.large-box');
     if (target) {
-      // Enter large box on single click
-      enterLargeBox(target.dataset.id);
-      lastClickTime = 0;
+      // Don't enter from canvas single click — only body click enters
       return;
     }
-    // Check for double-click (two quick clicks on canvas empty)
-    if (now - lastClickTime < 400 && lastClickTarget === 'canvas') {
-      addLargeBoxAt(e.clientX, e.clientY);
-      lastClickTime = 0;
-      lastClickTarget = null;
-      return;
-    }
-    lastClickTime = now;
-    lastClickTarget = 'canvas';
+    // Click on empty canvas — no action (dblclick handles creation)
   }
 
   function onCanvasDblClick(e) {
@@ -1145,14 +1273,7 @@
     const now = Date.now();
     const target = e.target.closest('.small-box');
     if (target) { lastClickTime = 0; return; }
-    if (now - lastClickTime < 400 && lastClickTarget === 'inner') {
-      addSmallBoxAt(e.clientX, e.clientY);
-      lastClickTime = 0;
-      lastClickTarget = null;
-      return;
-    }
-    lastClickTime = now;
-    lastClickTarget = 'inner';
+    // Click on empty inner — no action (dblclick handles creation)
   }
 
   function onInnerDblClick(e) {
@@ -1195,7 +1316,7 @@
     canvasContainer.addEventListener('wheel', onCanvasWheel, { passive: false });
 
     // Inner mouse events
-    innerContainer.addEventListener('mousedown', onInnerPanStart);
+    // Inner canvas: no pan — only zoom. Small boxes are fixed in place.
     innerSurface.addEventListener('click', onInnerClick);
     innerSurface.addEventListener('dblclick', onInnerDblClick);
     innerContainer.addEventListener('wheel', onInnerWheel, { passive: false });

@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+molette pour zoomer · / rechercher · Double-clic pour ajouter"
   },
   "canvasRoot": {
     "message": "Canevas",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "Expansion auto"
+  },
+  "autoExpandHover": {
+    "message": "Survoler pour agrandir"
+  },
+  "headerPin": {
+    "message": "Épingler l'en-tête"
+  },
+  "headerPinOn": {
+    "message": "En-tête épinglé"
   }
 }

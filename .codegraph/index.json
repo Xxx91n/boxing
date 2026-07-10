@@ -1,0 +1,1977 @@
+{
+  "version": "3.2",
+  "generated": "2026-07-09T23:58:04.020Z",
+  "root": "D:/Aworker/crx/boxing",
+  "files": [
+    {
+      "path": ".codegraph/index.json",
+      "size": 8763,
+      "modified": "2026-07-09T01:14:53.880Z",
+      "type": "json"
+    },
+    {
+      "path": ".git/COMMIT_EDITMSG",
+      "size": 77,
+      "modified": "2026-07-09T15:58:00.719Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/config",
+      "size": 356,
+      "modified": "2026-07-09T12:04:08.822Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/description",
+      "size": 73,
+      "modified": "2026-07-07T23:36:08.069Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/HEAD",
+      "size": 21,
+      "modified": "2026-07-07T23:36:08.090Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/hooks/applypatch-msg.sample",
+      "size": 478,
+      "modified": "2026-07-07T23:36:08.070Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/commit-msg.sample",
+      "size": 896,
+      "modified": "2026-07-07T23:36:08.072Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/fsmonitor-watchman.sample",
+      "size": 4726,
+      "modified": "2026-07-07T23:36:08.073Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/post-update.sample",
+      "size": 189,
+      "modified": "2026-07-07T23:36:08.074Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/pre-applypatch.sample",
+      "size": 424,
+      "modified": "2026-07-07T23:36:08.074Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/pre-commit.sample",
+      "size": 1649,
+      "modified": "2026-07-07T23:36:08.075Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/pre-merge-commit.sample",
+      "size": 416,
+      "modified": "2026-07-07T23:36:08.075Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/pre-push.sample",
+      "size": 1374,
+      "modified": "2026-07-07T23:36:08.076Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/pre-rebase.sample",
+      "size": 4898,
+      "modified": "2026-07-07T23:36:08.077Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/pre-receive.sample",
+      "size": 544,
+      "modified": "2026-07-07T23:36:08.077Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/prepare-commit-msg.sample",
+      "size": 1492,
+      "modified": "2026-07-07T23:36:08.078Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/push-to-checkout.sample",
+      "size": 2783,
+      "modified": "2026-07-07T23:36:08.079Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/sendemail-validate.sample",
+      "size": 2308,
+      "modified": "2026-07-07T23:36:08.080Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/hooks/update.sample",
+      "size": 3650,
+      "modified": "2026-07-07T23:36:08.081Z",
+      "type": "sample"
+    },
+    {
+      "path": ".git/index",
+      "size": 9222,
+      "modified": "2026-07-09T16:34:52.420Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/info/exclude",
+      "size": 240,
+      "modified": "2026-07-07T23:36:08.082Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/logs/HEAD",
+      "size": 3350,
+      "modified": "2026-07-09T16:34:52.355Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/logs/refs/heads/main",
+      "size": 3350,
+      "modified": "2026-07-09T16:34:52.355Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/logs/refs/remotes/origin/main",
+      "size": 306,
+      "modified": "2026-07-09T12:03:42.983Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/00/36f73efa64e92bd29e59a1d9dc90a1c6da2789",
+      "size": 113,
+      "modified": "2026-07-08T14:12:59.972Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/01/b3334800e4d0996ca5eeba44a0fcc42dbb8454",
+      "size": 6346,
+      "modified": "2026-07-08T07:36:52.343Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/01/ecc8c2f2d4c96324491047f096c5d3b0cf5f36",
+      "size": 2833,
+      "modified": "2026-07-09T01:16:29.277Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/02/c808f9b932003319a44123b22d5a2b38ed553a",
+      "size": 10666,
+      "modified": "2026-07-09T01:16:29.295Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/03/74dd57cbd3525ab14fc81f6b679eb16b0bf75c",
+      "size": 70,
+      "modified": "2026-07-08T07:36:52.601Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/04/6f4e032bbc0dc5d8faabd5d6d4bbdf2fc9f6bf",
+      "size": 256,
+      "modified": "2026-07-09T15:52:07.801Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/06/e8d7bc09ed02ed59080cfc8c12350083f0238b",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.987Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/07/647c3f94dd904311a6b0b6732516525560795f",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.972Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/07/6a3e401dd074a649ce581d9153384d0336033a",
+      "size": 5757,
+      "modified": "2026-07-08T07:36:52.425Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/0a/4cbd04b6952fdc5e72ea4891ad47bbc9c2cef9",
+      "size": 99,
+      "modified": "2026-07-08T10:41:54.321Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/0a/9db85df352de068eb166324928d2ea10cbf8c9",
+      "size": 1350,
+      "modified": "2026-07-08T07:40:49.675Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/0b/ee73389227ea5f558b7f0192980a99a1dc8980",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.264Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/0d/79dfb0510c0de2a0c44657c91e65038026e873",
+      "size": 496,
+      "modified": "2026-07-09T15:52:07.786Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/0d/c23f35661581f342e79873ebdf2b2dda3b09bc",
+      "size": 49,
+      "modified": "2026-07-08T07:36:52.580Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/0d/ff3e12bdcc6461ff9f977a1d114738ec78602b",
+      "size": 53,
+      "modified": "2026-07-08T07:36:52.577Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/12/494bfd4eaf5e986f082e6bdb31023f4c051e17",
+      "size": 534,
+      "modified": "2026-07-08T07:36:52.522Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/13/e4ef963ebc7c3f0fb5ad81b456e13f36ab4b9f",
+      "size": 4544,
+      "modified": "2026-07-09T01:16:29.292Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/14/615578c280fb0d42118f82850cf6c26f3345d8",
+      "size": 62,
+      "modified": "2026-07-08T07:36:52.582Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/14/cf0cb8421cc6c598fd0740929f84fb8dc40f50",
+      "size": 1586,
+      "modified": "2026-07-09T11:50:40.185Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/16/903a9e5940c85c9a2fbd48c3f5b6eaf4b070fe",
+      "size": 1523,
+      "modified": "2026-07-09T02:32:28.923Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/16/ac4246ea968ab9f1b286845be789e216e8adc9",
+      "size": 1373,
+      "modified": "2026-07-08T07:36:52.515Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/18/78008c34a32d192de91e508af49135c028235a",
+      "size": 512,
+      "modified": "2026-07-08T07:36:52.440Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/1a/4802292580f113733437d45a42971aaea96623",
+      "size": 531,
+      "modified": "2026-07-08T07:36:52.505Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/1a/ccd41abdb89caeb1c2f31acbc58526f4832ef0",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.286Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/1d/bb8488866b4cbecd67049bf8e68ca1b9d4c94c",
+      "size": 1372,
+      "modified": "2026-07-09T11:50:40.192Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/1e/63e052f6fe34c3d86eaf46171dc3b20653367c",
+      "size": 3837,
+      "modified": "2026-07-08T10:41:54.251Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/21/5dddf22d7805d30276d8af45222f4882bf317e",
+      "size": 8583,
+      "modified": "2026-07-08T07:36:52.400Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/22/1b26aec1eaf423030031ebc9db8cf26fa0abd2",
+      "size": 14402,
+      "modified": "2026-07-09T15:57:03.341Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/23/358cda89f82140a88214a612b6effb8dc5f073",
+      "size": 1441,
+      "modified": "2026-07-09T02:32:28.905Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/23/9118e3da5218f60f8513456020a840dd474f55",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.989Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/24/8548f9f4fbc43e198cab52d38be07e2ca21d50",
+      "size": 2275,
+      "modified": "2026-07-08T07:36:52.403Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/24/f996dc2e57f398c67da17cf5bc16e688a70059",
+      "size": 465,
+      "modified": "2026-07-08T07:40:49.672Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/25/9ecd569fb6895b97768a6859e741f2dad4534d",
+      "size": 14194,
+      "modified": "2026-07-09T15:55:15.481Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/25/e1c1487be815a2bbd745d1698e8dcb9820b184",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.871Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/26/48e22ef50b2806f43d8510e109123770481440",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.979Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/26/92a785c0dcc09e29766b86dee73ae3b7da4dc8",
+      "size": 2935,
+      "modified": "2026-07-08T07:36:52.349Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/26/b48e0c6871a258ed7178c7e4b2df619c963fac",
+      "size": 1690,
+      "modified": "2026-07-09T01:16:29.324Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/26/e96d6c41b5390a3dfb3d39beaba56546163ca6",
+      "size": 1410,
+      "modified": "2026-07-09T02:32:28.926Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/27/614e393e2f5a0e494dd794b2aac5b071b5f775",
+      "size": 40186,
+      "modified": "2026-07-08T07:36:52.460Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/27/e4c1c492a0d13e891bed5ceaa43c603d28ca9d",
+      "size": 4289,
+      "modified": "2026-07-08T07:36:52.326Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/28/2fe2ed36cd4bfd18513d2e6cdc6a15d6bf6ce1",
+      "size": 2923,
+      "modified": "2026-07-08T07:36:52.444Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2a/507c46f1c08f9e00bb9c0dce57f612fbd003b5",
+      "size": 151,
+      "modified": "2026-07-09T02:21:09.035Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2b/a6ee7b40b4b879ec4aa7b67a103c3981f38084",
+      "size": 55131,
+      "modified": "2026-07-08T07:36:52.464Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2c/28d7bbcb2f0c2da38a1072d3f735a2258e1e65",
+      "size": 151,
+      "modified": "2026-07-09T01:16:41.887Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2c/9fd23faf9a7d541728b2c5b56bd1df1d8c236b",
+      "size": 7783,
+      "modified": "2026-07-09T11:50:40.204Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2c/ba7bd90f9b41f50b85f443752aeeef3534fc8e",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.969Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2e/1ea6882f54bd28b80d57168e7683e9fdbf77e5",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.876Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2e/595c74b515dedfe91dd132a3f89a2efed3c53a",
+      "size": 58,
+      "modified": "2026-07-08T10:41:54.319Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2e/e8bbe5e130b8b1149b3841a0c50252444a0118",
+      "size": 207,
+      "modified": "2026-07-09T15:58:00.720Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2f/2d04ce3415cb6d14a9ab99e261c42b7df8f50a",
+      "size": 1921,
+      "modified": "2026-07-08T07:36:52.357Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/2f/696d54d17136243bffff3e4dfb0f50bd6ea1cf",
+      "size": 53,
+      "modified": "2026-07-08T07:36:52.582Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/30/f1385544f617c8349c163de4b5710b0fd46dcd",
+      "size": 112,
+      "modified": "2026-07-08T10:41:54.328Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/32/9f00be1a8dcc13ea5758d365a85e3ca63003cb",
+      "size": 205554,
+      "modified": "2026-07-08T07:36:52.434Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/34/bc17e8c2202414887685c4a419a392b6a3602b",
+      "size": 1316,
+      "modified": "2026-07-08T07:36:52.355Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/35/a147e099d4d240c9e6d216ffd8e2f58cedf895",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.287Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/35/e6377846687dfd66d0188075ce8b82c5fe7065",
+      "size": 959,
+      "modified": "2026-07-08T07:40:49.679Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/36/c4c3fbdb9df1bb84dd898740d2ca59fe155ee6",
+      "size": 1309,
+      "modified": "2026-07-09T02:32:28.899Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/36/e8c125f60c474802c53b6eff9368b30d362046",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.284Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/36/e94456b2d14fd1a1facc2ac4aec8144eb49667",
+      "size": 7235,
+      "modified": "2026-07-08T10:41:54.257Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/37/59e1f9f56462ddb9dde80b2b1cd8f69376d01f",
+      "size": 3255,
+      "modified": "2026-07-08T07:36:52.499Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/37/d25ccd89496d745627057ae2c566f911f21120",
+      "size": 1452,
+      "modified": "2026-07-09T11:50:40.198Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/39/3daace1324ef9aa78bae64357bc836e649e20e",
+      "size": 83,
+      "modified": "2026-07-08T07:36:52.588Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/3a/d289193ddda9d4937a0f4ab8f300a9758707ea",
+      "size": 112,
+      "modified": "2026-07-08T07:36:52.605Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/3a/dbd7edf138a60f1fc146e56ab659a7f22d1672",
+      "size": 470,
+      "modified": "2026-07-08T07:36:52.345Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/3b/0037912828cc97b7b902643614376eae8fe13d",
+      "size": 1519,
+      "modified": "2026-07-09T01:16:29.326Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/3e/cf473c48cfe5c3f8b8d5f50386eb7e5178deb4",
+      "size": 109,
+      "modified": "2026-07-08T10:41:54.329Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/3e/d38db2b0b258505f2ed538bf5ed6db3c81be7a",
+      "size": 205545,
+      "modified": "2026-07-08T07:36:52.486Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/40/30111bce662785ad77c75559e7d3c5e43336b8",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.985Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/41/75de74a425d7dde994377173df32edb37b8a4a",
+      "size": 57,
+      "modified": "2026-07-09T02:32:28.970Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/42/57525fbf6a5d259c4be8f6b156fcb4ac4b2921",
+      "size": 58,
+      "modified": "2026-07-08T10:41:54.317Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/42/ffe6d96f68af36be4671bff071ff99561e31b4",
+      "size": 109,
+      "modified": "2026-07-09T01:16:41.888Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/45/d73f9e39e4b389af1b2bd35e1c8052ab438e63",
+      "size": 3087,
+      "modified": "2026-07-08T07:36:52.438Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/46/9c9d26f3195e3dc3ded18852616228ba1011f5",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.259Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/49/09ff78686f315a050dc72df3dcfc3948f81182",
+      "size": 1382,
+      "modified": "2026-07-09T11:50:40.183Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/49/eafa5fc0b6de444b6c1e6b11ee0271a0c7bc4d",
+      "size": 5545,
+      "modified": "2026-07-08T07:36:52.495Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/4a/541f1df5da6f8aa9132480131a22a8fab7dab9",
+      "size": 1442,
+      "modified": "2026-07-08T10:41:54.253Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/4b/5bed5c8e8eeef5cc0a7a80ea03ce4aef535ee1",
+      "size": 152,
+      "modified": "2026-07-08T07:36:52.605Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/4b/e561f221b77e0ceaf16af33b6fa16a8821e6c8",
+      "size": 1441,
+      "modified": "2026-07-09T01:16:29.304Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/4c/69aff9a46c702a5841715e0b06046c784338b2",
+      "size": 245,
+      "modified": "2026-07-09T02:21:09.043Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/4d/2845af49cfc9d52ac7c91b9d8d420088a31b6b",
+      "size": 7476,
+      "modified": "2026-07-08T14:12:59.910Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/4e/2e573cb70f2a3a957f6015693ecbaa60bd2094",
+      "size": 4429,
+      "modified": "2026-07-08T07:36:52.330Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/4e/e12664ea66cdd2e6c792e1b9a0cb345ff67fa7",
+      "size": 1666,
+      "modified": "2026-07-09T02:32:28.908Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/4e/f14b8d48cdcbd2174be4b15a6d07b2731e6b74",
+      "size": 2203,
+      "modified": "2026-07-09T11:50:40.208Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/50/f6916e3cb1c2e40ebd98bbaa806797fe53a93f",
+      "size": 1446,
+      "modified": "2026-07-09T02:32:28.903Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/52/18cfd107403ad8e77cbb038374a2868a250cc8",
+      "size": 1438,
+      "modified": "2026-07-09T01:16:29.322Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/55/ce484c72a8b2b2646914d946b0a499c9001f8f",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.261Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/56/748a15a727dccf74edd9952b820147ad1c2137",
+      "size": 75,
+      "modified": "2026-07-08T07:36:52.575Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/56/a0284e8a03460ea33d6ade17bf0c3e5712bd19",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.976Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/59/77b82d99d1bc41b8d79125962cf98fa0aef516",
+      "size": 850,
+      "modified": "2026-07-08T10:41:54.273Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/59/7a1c28c86078bb79a3c7dd6559aa1b240e32c2",
+      "size": 13732,
+      "modified": "2026-07-09T15:52:07.702Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/59/fbaae1dda37c8137cac0ac9ced4a92f871af68",
+      "size": 57,
+      "modified": "2026-07-09T11:50:40.272Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/5b/1335e8bc2da1d88c7c2d5dbee9ac67a8fc6124",
+      "size": 3525,
+      "modified": "2026-07-08T07:36:52.332Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/5c/e8855dac2a367fde4647c18c2f0021319e1e45",
+      "size": 262,
+      "modified": "2026-07-09T11:50:40.302Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/5e/1322ea7cb31eaeca61359c71c627baa5417eab",
+      "size": 535,
+      "modified": "2026-07-08T10:41:54.266Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/5e/39a3a4a9f33616840f390cbd09945f63cd9f96",
+      "size": 495,
+      "modified": "2026-07-09T02:21:09.037Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/5f/ebdf68b918804eb8874f3b453b19d4d236fd4d",
+      "size": 3959,
+      "modified": "2026-07-08T07:36:52.501Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/60/0a0a2af92c534abec10c6dab6e12027252d39d",
+      "size": 30074,
+      "modified": "2026-07-08T07:36:52.369Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/62/3bc9d62ba5ee8ffa815cd3c5c2760f56fd2846",
+      "size": 1492,
+      "modified": "2026-07-09T02:32:28.914Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/64/7a6fa4f2ae00470b2f2001b0446474fc754ffa",
+      "size": 48,
+      "modified": "2026-07-08T07:36:52.591Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/65/38dfcb914730abe8da8fa2df1946a6c60d94bf",
+      "size": 1435,
+      "modified": "2026-07-09T01:16:29.316Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/65/4d2527df89c704060781c4873f21cd9720e279",
+      "size": 1425,
+      "modified": "2026-07-09T02:32:28.896Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/65/ee41d7bd339bf974965760c2a9428bb1b35008",
+      "size": 1683,
+      "modified": "2026-07-09T01:16:29.323Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/66/979a00c645101ba01705375a0af66dd1e91dd2",
+      "size": 267,
+      "modified": "2026-07-08T14:27:17.336Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/68/9297535876025ff8ed508906168bdfbc360e09",
+      "size": 151,
+      "modified": "2026-07-08T14:27:17.330Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/68/958a52d5064b485ea710c4b96d78a006fd0f85",
+      "size": 988,
+      "modified": "2026-07-08T10:41:54.264Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/69/cf0506c7938ef409544fd220bb6f845926e70f",
+      "size": 67,
+      "modified": "2026-07-08T07:36:52.573Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/6e/4d304ff4275078f7e4ff5e3d60f55a03ea89ae",
+      "size": 1368,
+      "modified": "2026-07-09T01:16:29.285Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/6e/cfdd47d338b25e727ed7a0acc2585ed6050dca",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.865Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/73/81c0d3ec065cb1e87561d738c2a195c90cac99",
+      "size": 60,
+      "modified": "2026-07-08T07:36:52.579Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/74/ad35a359f525b0032914068b0e1a7bd373a6c5",
+      "size": 11755,
+      "modified": "2026-07-09T02:21:08.973Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/75/82315cd1209984c9c00102b29909fbd013473a",
+      "size": 87,
+      "modified": "2026-07-08T07:36:52.492Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/76/c7dc251a41e77075c6b22b7bfd6013a2002e47",
+      "size": 109,
+      "modified": "2026-07-08T07:36:52.606Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/77/eb3e329e0bf698b2442266392bbbe5db6c211b",
+      "size": 1051,
+      "modified": "2026-07-08T07:36:52.476Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/78/3641900ad4b17ff77d4951e4bd05a7144875ae",
+      "size": 204,
+      "modified": "2026-07-09T15:55:15.543Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/78/cb3b912cabea96e1845a79f1532abf1066b00c",
+      "size": 224,
+      "modified": "2026-07-09T02:32:28.999Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/79/cf8484ce1d0659b1083757ae0eb2697344fa1e",
+      "size": 742,
+      "modified": "2026-07-08T07:36:52.359Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/7f/9a915864bee4d871a5de9f9c308a1337268d15",
+      "size": 6759,
+      "modified": "2026-07-08T07:36:52.347Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/81/8fe45ea24ec0e6e26dc6744ad128c3d906f6bf",
+      "size": 3650,
+      "modified": "2026-07-08T07:36:52.497Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/81/984ed52a9f48d73364540dab595c0bac5de8d5",
+      "size": 1352,
+      "modified": "2026-07-08T14:27:17.288Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/82/e5d0998be4d89355ae50033f839458a7b1d6f1",
+      "size": 496,
+      "modified": "2026-07-09T15:55:15.539Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/83/6b1c58c0a943680d8ea6b2627b78f89b900dd4",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.881Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/84/d589ddd746eb0a199a9bb91143012514987ab3",
+      "size": 1565,
+      "modified": "2026-07-09T01:16:29.301Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/85/2828d980df4e00d0f12388daa40de78d026859",
+      "size": 3777,
+      "modified": "2026-07-08T07:41:57.067Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/86/8c18514af58e4d3c5e15eca434539b92f21869",
+      "size": 496,
+      "modified": "2026-07-09T15:57:17.150Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/87/1ff7c93508a5284a7aacbaca7b431d5d8e808e",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.862Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/88/1b3ff902ff0c2cee2c46dcf5349da1ceadf564",
+      "size": 363,
+      "modified": "2026-07-09T01:16:41.884Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/88/207cdac5d7b32396e2297d878767ddbfd18a51",
+      "size": 152,
+      "modified": "2026-07-08T10:41:54.326Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8a/8bac8e5e36fb386e97d64626a1942a7852f040",
+      "size": 2323,
+      "modified": "2026-07-08T07:40:49.683Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8a/cedcddbaf726e39ae8f2858e0684f1f5da9236",
+      "size": 495,
+      "modified": "2026-07-09T02:26:32.675Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8b/f8448e0d563cdf4282de08ae03951d709e8abf",
+      "size": 1431,
+      "modified": "2026-07-09T11:50:40.190Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8c/279308e9ddf0431ca8daf79ff6d5d129a20f86",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.878Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8c/b7693a8647deea26da1efb639fb9da3342a7cd",
+      "size": 1570,
+      "modified": "2026-07-09T02:32:28.894Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8d/2694e62247010746bc0b067824a33de30c0c7f",
+      "size": 872,
+      "modified": "2026-07-08T07:36:52.508Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8d/4303340e9aa6f1ed984e61d3ec6cfc57711bf3",
+      "size": 658,
+      "modified": "2026-07-08T07:36:52.325Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8d/6423921eb9b111638e4a32c65416f111c86700",
+      "size": 1813,
+      "modified": "2026-07-08T07:36:52.474Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/8e/80f1da32f91454c88d986dff7155f911411f35",
+      "size": 45,
+      "modified": "2026-07-08T07:36:52.593Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/90/00e8d448ff88ae17f92afdac2e7579bc951887",
+      "size": 129098,
+      "modified": "2026-07-08T07:36:52.450Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/90/610496913caca04d80b72b69c27e64d7047221",
+      "size": 48,
+      "modified": "2026-07-08T07:36:52.599Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/91/8631c9c08f299f3134b8da9745cc8d4a8ee0ec",
+      "size": 969,
+      "modified": "2026-07-08T10:41:54.268Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/93/05f0e3bced22deb5edacea64721b55178f2ed3",
+      "size": 1324,
+      "modified": "2026-07-08T07:36:52.519Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/93/307ce0ec9b0bec429078f36fcf692dcdda00b1",
+      "size": 13770,
+      "modified": "2026-07-09T11:50:40.215Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/93/6f1581bdead91779117058acc57cdbe956ad21",
+      "size": 48085,
+      "modified": "2026-07-08T07:36:52.472Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/94/ba66864920a6c6e5395fefd2d698a53e253080",
+      "size": 3472,
+      "modified": "2026-07-09T11:50:40.170Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/94/c8f3933cd069f8be2b6e511e263dc7353205ea",
+      "size": 4258,
+      "modified": "2026-07-08T07:36:52.490Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/94/dbfed72f7d43a8e81e5c7e5705c671bdf8b9b5",
+      "size": 4552,
+      "modified": "2026-07-09T02:21:08.970Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/94/e28b6656598c24946a3247465f410125e708d9",
+      "size": 2268,
+      "modified": "2026-07-08T07:40:49.681Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/94/fe08242b4705a06be8461d410d7dabb9d4bbf2",
+      "size": 63488,
+      "modified": "2026-07-08T07:36:52.394Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/95/8133be9c500c198c3a78b4589c76bd375394c4",
+      "size": 48,
+      "modified": "2026-07-08T07:36:52.584Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/95/e8ef2a16c4872e0a4e5922693822133e44a57d",
+      "size": 26865,
+      "modified": "2026-07-08T07:36:52.456Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/96/34ce8501b600affe9344d9b659546a84326be9",
+      "size": 208,
+      "modified": "2026-07-09T15:57:17.154Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/96/9443a9cb52173f58f8f77748cc8abc329a20a0",
+      "size": 14823,
+      "modified": "2026-07-09T15:58:00.668Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/97/1e64c71f35b52a3a887b501c44995746f5ef0f",
+      "size": 62,
+      "modified": "2026-07-08T07:36:52.595Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/98/d47489c48d6d6c5559a5527f07a71d5bedda31",
+      "size": 495,
+      "modified": "2026-07-09T01:16:41.890Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/9b/da3e05559b50b4b4ee07d9a46e2dc9f8e5ec11",
+      "size": 151,
+      "modified": "2026-07-09T15:55:15.537Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/9c/9fd5b4e4621bff63368105b1648413b26a72bc",
+      "size": 1324,
+      "modified": "2026-07-08T10:41:54.262Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/9d/d2bce6fd7c8214449d9a2d41b814edcdb7ffc8",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.282Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/9e/7c745ada5c58beb9eb2851b103f51508690a9b",
+      "size": 1445,
+      "modified": "2026-07-09T02:32:28.917Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/9f/f5214569d750b0c9c4e1bff0f4ef6c10956c79",
+      "size": 45,
+      "modified": "2026-07-08T07:36:52.601Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a0/20bdb67632a5692eba10dd0c592a11ac6ed92f",
+      "size": 1492,
+      "modified": "2026-07-09T11:50:40.172Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a0/ba59beea803e7121e69edd1faf0dc7e3ce5fa6",
+      "size": 253633,
+      "modified": "2026-07-08T07:36:52.417Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a2/c9220ae5260729613624a6344b0d2b9cce4b61",
+      "size": 1025,
+      "modified": "2026-07-09T01:16:29.299Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a3/f3628cbbf2c718fd980ad7f44347ab5c23cdd0",
+      "size": 1372,
+      "modified": "2026-07-09T11:50:40.201Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a4/7cc0f82eebb7c5e2dc8f51e9abc23e3d843b43",
+      "size": 531,
+      "modified": "2026-07-08T07:36:52.454Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a5/86036bc9da950ffe0bcb0e4acdcc6742568edc",
+      "size": 58,
+      "modified": "2026-07-08T10:41:54.320Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a6/8f1ad81babc460af10da85ae1f70d14173b8a8",
+      "size": 1488,
+      "modified": "2026-07-09T01:16:29.320Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a7/976ec0381210525e52299bbf16a019ab4f9797",
+      "size": 118,
+      "modified": "2026-07-08T10:41:54.323Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/a9/540a347c6a99d293e0e14e55664fc5ec632536",
+      "size": 60,
+      "modified": "2026-07-08T07:36:52.591Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/aa/96a03c6b83e9e1a540297f028fef0fc13ef275",
+      "size": 1015,
+      "modified": "2026-07-08T07:36:52.398Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ab/91786d83f8f91b497f4017dbfb04e7461fb6bc",
+      "size": 2408,
+      "modified": "2026-07-08T07:36:52.340Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ab/f78db60b0fc52ac3140279ebd7c69004801fde",
+      "size": 53,
+      "modified": "2026-07-08T10:41:54.325Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ac/1cd63395597c99ca8e35f299f24a01a43919f2",
+      "size": 1359,
+      "modified": "2026-07-08T07:36:52.506Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ac/bf08fa87958afd3873bdf8385a728462ac62a1",
+      "size": 3954,
+      "modified": "2026-07-09T15:52:07.694Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ad/968e7049ccc219da519f7d3b855e984677ee97",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.870Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ae/724825387e99a3a6676dab7291d5f40ac044c0",
+      "size": 49026,
+      "modified": "2026-07-08T07:36:52.466Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/af/240cf74dc4d4e8f53fef639132560cea7ce7b5",
+      "size": 2526,
+      "modified": "2026-07-08T07:36:52.328Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b3/863c4505248de7313d0968917e865fa79337bf",
+      "size": 1574,
+      "modified": "2026-07-09T11:50:40.187Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b3/bc529c16a6237699c9713bdfc5fcfbb0416bdc",
+      "size": 2069,
+      "modified": "2026-07-08T07:36:52.512Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b3/d9f33e19232866d8a97f51d37cef4654a6299e",
+      "size": 3100,
+      "modified": "2026-07-08T07:36:52.438Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b4/2778f35e17ff532b99f06e681471ddbe20a0d8",
+      "size": 495,
+      "modified": "2026-07-08T14:27:17.332Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b4/2b951ffe0b7f46660f0a41cf51f54dfe960f2b",
+      "size": 772,
+      "modified": "2026-07-08T07:36:52.599Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b4/909280f8e7275df05c4a2662475864b4299916",
+      "size": 312,
+      "modified": "2026-07-08T07:36:52.322Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b4/97477b403229205abb3bfa4c790976c312c170",
+      "size": 57,
+      "modified": "2026-07-09T11:50:40.289Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b7/316ca39f5e0b9a861b4e434b8fc7b3db0fceea",
+      "size": 76,
+      "modified": "2026-07-08T10:41:54.324Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b7/4370644ffb0cd787c06e4f1b955825d4600072",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.874Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b7/5c8ab2a69617f0a823493fdb468e12ad264445",
+      "size": 326,
+      "modified": "2026-07-09T01:16:29.273Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b8/8c6094640bdceebcef59c04969826256f269a8",
+      "size": 193,
+      "modified": "2026-07-08T07:36:52.612Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b9/c07e3c04f9fe99bed310134b72ca27711af4b2",
+      "size": 526,
+      "modified": "2026-07-08T10:41:54.331Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/b9/ffc6a49ba590c5cd920d5c9921de7438870af8",
+      "size": 1263,
+      "modified": "2026-07-09T11:50:40.177Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ba/3aa5dd3f21a251b3693f12f3e4f9b5c6421d9b",
+      "size": 151,
+      "modified": "2026-07-09T15:52:07.782Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/bb/12ef7ef9203797c028f458275f43612235fd3a",
+      "size": 54874,
+      "modified": "2026-07-08T07:36:52.389Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/bb/3eb05d422c9620b3b1f76d1c0a08fce46d3a6d",
+      "size": 1285,
+      "modified": "2026-07-09T01:16:29.280Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/bc/8d8048c6e5f1de57483e61f9f1e89f5784c07f",
+      "size": 1166,
+      "modified": "2026-07-08T10:41:54.259Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/bd/5542c413eb1c74c81bd918d4db195b59203209",
+      "size": 3660,
+      "modified": "2026-07-08T07:36:52.423Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/bd/67e296554d0b8faa3840a514137881c7860ebc",
+      "size": 988,
+      "modified": "2026-07-08T07:36:52.521Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c0/ac0af55d3d1239b7e5482c79734ec66361ab87",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.983Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c2/86578fed653d62ed70251fb0f14599f0e9fbdf",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.980Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c2/acb549a0f10a3e23e0a4c9dbbf3e1f1c4e8239",
+      "size": 1600,
+      "modified": "2026-07-09T11:50:40.196Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c2/b178fc1f45b1c3edbc9fcaa8b0fadaf762537e",
+      "size": 57,
+      "modified": "2026-07-09T11:50:40.279Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c4/4a25297cdabeab34cd2e6b0c6ca8cc741bc429",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.866Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c4/64c71af951d62107e0b30dc499fff48c76ee8c",
+      "size": 175,
+      "modified": "2026-07-08T07:36:52.571Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c5/1d401cc0a993a7939afe7ea08027b683f04bdb",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.868Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c5/a496afa19e0814e4022036258f3c4de95bfdce",
+      "size": 495,
+      "modified": "2026-07-09T02:26:32.714Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c6/71821216a091c8e61b93feeb8431361d11893d",
+      "size": 267,
+      "modified": "2026-07-08T07:36:52.595Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c6/75f68bc43758f5283225bfd7c6a58f3152df33",
+      "size": 45,
+      "modified": "2026-07-08T07:36:52.586Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c7/e776d0228ff9676df235b6f119980e41cc34f1",
+      "size": 77,
+      "modified": "2026-07-08T14:12:59.973Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c8/51ef526428b35bab9839ff795ed1c665dd4afa",
+      "size": 492,
+      "modified": "2026-07-08T07:36:52.608Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c9/43d952f91289fe4c16821d5af1763dd2d90790",
+      "size": 2259,
+      "modified": "2026-07-09T01:16:29.290Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/c9/4d92a30f45a1d96cd5fd094e5b78fb061f2271",
+      "size": 9603,
+      "modified": "2026-07-08T07:36:52.442Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/cb/fbdd554e15dc0ab9f92f4449f5b1ad3e06b715",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.863Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/cc/e1c2eaf4efb577592ea07f14cd62690a709285",
+      "size": 969,
+      "modified": "2026-07-08T07:36:52.525Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/cd/498cc09b5a46b8d4268b478e5ce33d46a40fe6",
+      "size": 1688,
+      "modified": "2026-07-09T02:32:28.919Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/cd/fc8fb18fc38b5f27452badca74860f7ccfeaaa",
+      "size": 1380,
+      "modified": "2026-07-09T11:50:40.180Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/d0/62cb56664c4bc93ca521341fe67220ec287918",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.275Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/d1/a82d73873cbe88aa3f85a70f85a5f6d0d4b86f",
+      "size": 3556,
+      "modified": "2026-07-08T07:36:52.497Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/d2/975881ac78f99e3b8b229fa858255c9f3cd116",
+      "size": 234,
+      "modified": "2026-07-08T10:41:54.334Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/d5/c631c94cb23a8f527f61b6a191a0056650abe6",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.977Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/d8/22fc330111768fa60cdfc0e992db46e47cda11",
+      "size": 643,
+      "modified": "2026-07-09T01:16:41.895Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/d8/68dc32c0daabaf62322a0e9732a5cd0a534b24",
+      "size": 151,
+      "modified": "2026-07-09T15:58:00.713Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/d8/a6a052d05283936c4db6b3bcf2250ccaf8fb2a",
+      "size": 199,
+      "modified": "2026-07-09T02:26:32.720Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/db/056354f0a551ced1495eea9fd0790bd6c5726b",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.262Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/db/9dc7927d990a1714d4e8d0cdb258fb89bc8539",
+      "size": 152,
+      "modified": "2026-07-09T11:50:40.294Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/db/ec0efc73bbac8612e6d60edecbfccd53f865d3",
+      "size": 496,
+      "modified": "2026-07-09T11:50:40.297Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/dd/8813fcc2a623d1b960daa29bed231d80369994",
+      "size": 198,
+      "modified": "2026-07-08T14:12:59.985Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/de/1d289319b443b25e7fe68cdf63935e51144ce6",
+      "size": 781,
+      "modified": "2026-07-08T10:41:54.269Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/de/43a6910b97aefdb1c654796c47f8a75841c7e3",
+      "size": 4043,
+      "modified": "2026-07-08T07:36:52.495Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/de/e048a5d338c8e78fd62af16df904115ed5ebac",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.880Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/de/e1cd85ed0e342ba662a8cb6fd9154d8962d39f",
+      "size": 525,
+      "modified": "2026-07-08T14:12:59.978Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/df/862faf6884bad9489b7b8ef0cc220cfc15d1f5",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.991Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e0/ea1c2381cd4c128d0c6bb76035c347549b0b33",
+      "size": 364,
+      "modified": "2026-07-09T11:50:40.293Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e1/17ae2634df4a83e6e9d2d19521b8ce96f566b1",
+      "size": 1642,
+      "modified": "2026-07-09T02:32:28.912Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e1/5d519d818f360620ef87f677db4a62fc75a37e",
+      "size": 105,
+      "modified": "2026-07-08T07:36:52.363Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e1/dbef3cf3f2a18848871996f19475af8b457bf1",
+      "size": 54632,
+      "modified": "2026-07-08T07:36:52.375Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e2/11e44df52dddf658499a20e2e8bfea44a1d239",
+      "size": 58,
+      "modified": "2026-07-09T02:32:28.974Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e3/94ebc3ff522d86a877e1464fc9b936c9902cff",
+      "size": 1596,
+      "modified": "2026-07-09T01:16:29.283Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e4/e00f5eacb3635aeb0082bcd9432569501d87d8",
+      "size": 2235,
+      "modified": "2026-07-09T15:52:07.690Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e7/5a2e44aa7c0d60c286f103f95e7cec8d79a485",
+      "size": 596,
+      "modified": "2026-07-08T07:36:52.492Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e7/61fd7d8e34f3ec0d6ff6fc20edf320dd284873",
+      "size": 1167,
+      "modified": "2026-07-08T07:36:52.517Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e7/a2ff166b4f4d544dfaaed7282981a932c6b3d9",
+      "size": 1007,
+      "modified": "2026-07-08T10:41:54.271Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e8/48ff0ade70038e8b42d9ef928da6dcb27754d0",
+      "size": 66338,
+      "modified": "2026-07-08T07:36:52.383Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e8/bfd480f8a0934672b9156fd8fb4ab7b80f5083",
+      "size": 233,
+      "modified": "2026-07-08T07:36:52.352Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/e8/f428b3f29c4c6e8a4d7efe12fb3ef5a45b36f3",
+      "size": 481,
+      "modified": "2026-07-08T14:27:17.286Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/eb/6f7f462416eba684a9a26f7bee806a328e8ffb",
+      "size": 1368,
+      "modified": "2026-07-09T02:21:08.966Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ec/ac0651adfb0925656d66bb3c6075ea127b1849",
+      "size": 53,
+      "modified": "2026-07-08T14:12:59.975Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ec/e54ee69619081cee75b72877d09002b43bb7fc",
+      "size": 4527,
+      "modified": "2026-07-08T07:36:52.419Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ed/2f400ba4aadebc0753061059bb52c74f7327d1",
+      "size": 58,
+      "modified": "2026-07-09T11:50:40.290Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/ee/508111b60fb130fce48a97a8dcade34d33bcb8",
+      "size": 70,
+      "modified": "2026-07-08T07:36:52.588Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f0/776520c7a7d3aa754889d8ca86b8b9bc0284e7",
+      "size": 4629,
+      "modified": "2026-07-09T11:50:40.211Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f1/30e289b9e530f2f7a75ff80197293c700d8b71",
+      "size": 58,
+      "modified": "2026-07-09T01:16:41.873Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f1/dc22d9a5d1cc8e9a5edc8e294be609757eadd5",
+      "size": 496,
+      "modified": "2026-07-09T15:58:00.715Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f2/6a2fd04204d2880b56102eced64d4948f5241b",
+      "size": 242,
+      "modified": "2026-07-08T07:36:52.513Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f2/810d724225dcf064eba2ad39efba797d9a9c15",
+      "size": 495,
+      "modified": "2026-07-09T02:32:28.994Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f2/94fe572465e26ec37687476020a7e43c755a38",
+      "size": 1420,
+      "modified": "2026-07-09T01:16:29.303Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f3/1f780e9ba03d5d53d35fbdcd4d3e32fa5d8f6e",
+      "size": 1660,
+      "modified": "2026-07-09T01:16:29.318Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f4/c77420ddd395e640cfdb5bf9dae67bd1218f89",
+      "size": 3918,
+      "modified": "2026-07-08T07:36:52.421Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f5/f11c0e54ddb122b45d8f440a00e56745ffbc51",
+      "size": 76,
+      "modified": "2026-07-08T07:36:52.577Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f6/7ffa0b44bf56b787cc3b79ee664768dbc4053a",
+      "size": 1348,
+      "modified": "2026-07-09T11:50:40.206Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f7/0a642a9964becdf41951c412e5990d06293762",
+      "size": 1367,
+      "modified": "2026-07-09T11:50:40.175Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f7/3901497f503a11cb8936a951b33b5b64c41557",
+      "size": 142,
+      "modified": "2026-07-08T07:36:52.336Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f7/cff1cb433b282c770bb799836822ddb3cd0882",
+      "size": 1605,
+      "modified": "2026-07-09T11:50:40.195Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f9/0c41083020f4d575343b83fce2da8cdfd17aa4",
+      "size": 482,
+      "modified": "2026-07-09T01:16:29.288Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f9/66d90388fde18f36cd17ecf36af26360abb995",
+      "size": 361,
+      "modified": "2026-07-08T07:36:52.597Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/f9/c879d4aadf882d86741378768f1ca607c3b258",
+      "size": 3624,
+      "modified": "2026-07-08T10:41:54.255Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/fb/851aa95871197fd98f70c3dad0b83d973dbfc5",
+      "size": 360,
+      "modified": "2026-07-09T02:32:28.993Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/fb/9aea2591773dfa135621b5d18d1013ee0e785e",
+      "size": 151,
+      "modified": "2026-07-09T15:57:17.147Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/fc/8eacc7e85639cc7113618cb46aac99050b02f9",
+      "size": 1693,
+      "modified": "2026-07-09T02:32:28.922Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/fd/9a7240fd8f4b06d5f639a0afe63de0cbbc3038",
+      "size": 2217,
+      "modified": "2026-07-08T07:36:52.510Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/fe/0efef7fae9c91fbded45274b598459ae6f8669",
+      "size": 45,
+      "modified": "2026-07-08T07:36:52.580Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/fe/26bcad72f237a2d60e4f74fd242e6034f4a2a8",
+      "size": 2867,
+      "modified": "2026-07-08T07:36:52.499Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/objects/fe/76bdec269a5cadfe83f9b604f672a647553cdc",
+      "size": 8779,
+      "modified": "2026-07-08T07:36:52.476Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/ORIG_HEAD",
+      "size": 41,
+      "modified": "2026-07-09T16:34:52.353Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/refs/heads/main",
+      "size": 41,
+      "modified": "2026-07-09T16:34:52.355Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".git/refs/remotes/origin/main",
+      "size": 41,
+      "modified": "2026-07-09T12:03:42.982Z",
+      "type": "unknown"
+    },
+    {
+      "path": ".gitignore",
+      "size": 346,
+      "modified": "2026-07-09T23:57:42.671Z",
+      "type": "unknown"
+    },
+    {
+      "path": "agent.md",
+      "size": 21960,
+      "modified": "2026-07-09T23:52:06.908Z",
+      "type": "md"
+    },
+    {
+      "path": "background.js",
+      "size": 927,
+      "modified": "2026-07-08T07:40:38.920Z",
+      "type": "js"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-08-agent-md.md",
+      "size": 18582,
+      "modified": "2026-07-07T18:13:39.134Z",
+      "type": "md"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-07-08-boxing-comprehensive-plan.md",
+      "size": 8359,
+      "modified": "2026-07-08T10:38:59.958Z",
+      "type": "md"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-08-agents-md-design.md",
+      "size": 7410,
+      "modified": "2026-07-07T18:23:57.825Z",
+      "type": "md"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-08-boxing-v3-redesign.md",
+      "size": 15486,
+      "modified": "2026-07-08T14:12:05.112Z",
+      "type": "md"
+    },
+    {
+      "path": "icons/icon_128.png",
+      "size": 2286,
+      "modified": "2026-07-05T04:03:39.886Z",
+      "type": "png"
+    },
+    {
+      "path": "icons/icon_48.png",
+      "size": 722,
+      "modified": "2026-07-05T04:03:39.885Z",
+      "type": "png"
+    },
+    {
+      "path": "LICENSE",
+      "size": 1076,
+      "modified": "2026-07-08T07:36:01.267Z",
+      "type": "unknown"
+    },
+    {
+      "path": "manifest.json",
+      "size": 973,
+      "modified": "2026-07-09T02:24:27.186Z",
+      "type": "json"
+    },
+    {
+      "path": "ntp/design-system.css",
+      "size": 2881,
+      "modified": "2026-07-09T10:09:55.494Z",
+      "type": "css"
+    },
+    {
+      "path": "ntp/index.html",
+      "size": 6555,
+      "modified": "2026-07-09T17:06:45.733Z",
+      "type": "html"
+    },
+    {
+      "path": "ntp/ntp.css",
+      "size": 19456,
+      "modified": "2026-07-09T23:54:20.002Z",
+      "type": "css"
+    },
+    {
+      "path": "ntp/ntp.js",
+      "size": 56579,
+      "modified": "2026-07-09T23:53:24.245Z",
+      "type": "js"
+    },
+    {
+      "path": "popup/popup.css",
+      "size": 2799,
+      "modified": "2026-07-08T08:05:52.699Z",
+      "type": "css"
+    },
+    {
+      "path": "popup/popup.html",
+      "size": 1008,
+      "modified": "2026-07-08T08:05:52.773Z",
+      "type": "html"
+    },
+    {
+      "path": "popup/popup.js",
+      "size": 2350,
+      "modified": "2026-07-08T17:54:54.655Z",
+      "type": "js"
+    },
+    {
+      "path": "README.md",
+      "size": 6845,
+      "modified": "2026-07-09T11:49:04.175Z",
+      "type": "md"
+    },
+    {
+      "path": "_locales/ar/messages.json",
+      "size": 5754,
+      "modified": "2026-07-09T23:55:14.710Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/de/messages.json",
+      "size": 5410,
+      "modified": "2026-07-09T23:55:14.708Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/en/messages.json",
+      "size": 5285,
+      "modified": "2026-07-09T23:55:14.703Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/es/messages.json",
+      "size": 5437,
+      "modified": "2026-07-09T23:55:14.708Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/fr/messages.json",
+      "size": 5474,
+      "modified": "2026-07-09T23:55:14.707Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/hi/messages.json",
+      "size": 6549,
+      "modified": "2026-07-09T23:55:14.711Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/ja/messages.json",
+      "size": 6236,
+      "modified": "2026-07-09T23:55:14.705Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/ko/messages.json",
+      "size": 5440,
+      "modified": "2026-07-09T23:55:14.706Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/pt_BR/messages.json",
+      "size": 5454,
+      "modified": "2026-07-09T23:55:14.709Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/ru/messages.json",
+      "size": 6207,
+      "modified": "2026-07-09T23:55:14.710Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/th/messages.json",
+      "size": 6541,
+      "modified": "2026-07-09T23:55:14.711Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/vi/messages.json",
+      "size": 5499,
+      "modified": "2026-07-09T23:55:14.712Z",
+      "type": "json"
+    },
+    {
+      "path": "_locales/zh_CN/messages.json",
+      "size": 5149,
+      "modified": "2026-07-09T23:55:14.703Z",
+      "type": "json"
+    }
+  ],
+  "fileCount": 328,
+  "totalSize": 1989005
+}

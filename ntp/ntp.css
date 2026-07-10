@@ -67,6 +67,16 @@ html, body {
 
 /* === ACTIONS === */
 .actions { order: 3; display: flex; gap: var(--space-1); }
+.header-count {
+  order: 2;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-muted);
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
 
 .btn {
   display: inline-flex;
@@ -91,8 +101,8 @@ html, body {
 
 /* === LIBRARY === */
 .library { display: flex; flex-direction: column; gap: var(--space-3); flex: 1; min-height: 360px; }
-.library__head { display: flex; flex-direction: column; gap: var(--space-1); }
-.crumbs { display: flex; align-items: center; gap: var(--space-1); font-size: 13px; font-weight: 500; }
+/* library__head removed — crumbs moved to inner view */
+.crumbs { display: flex; align-items: center; gap: var(--space-1); font-size: 13px; font-weight: 500; padding: var(--space-2) 0; }
 .crumbs__item { padding: 2px 4px; border-radius: 4px; cursor: pointer; color: var(--color-ink); }
 .crumbs__item:hover { background: var(--color-surface); }
 .crumbs__item--current { color: var(--color-accent-ink); cursor: default; }
@@ -206,7 +216,27 @@ html, body {
   border-radius: 4px;
   line-height: 1;
 }
+
 .large-box__delete:hover { color: var(--color-accent-ink); background: var(--color-accent-soft); }
+
+/* === BOX PIN & AUTO-EXPAND BUTTONS === */
+.box-pin-btn { background: transparent; border: 0; cursor: pointer; flex-shrink: 0; }
+.box-pin-btn:hover { opacity: 0.9 !important; background: var(--color-accent-soft); border-radius: 3px; }
+.box-expand-btn { background: transparent; border: 0; cursor: pointer; flex-shrink: 0; }
+.box-expand-btn:hover { opacity: 0.9 !important; background: var(--color-accent-soft); border-radius: 3px; }
+
+/* Pinned box: no drag */
+.box--pinned .large-box__bar { cursor: default; }
+.box--pinned .small-box__bar { cursor: default; }
+.box--pinned .box-pin-btn { opacity: 0.9; }
+
+/* Hover-expand: collapse body by default, expand on hover */
+.box--hover-expand.box--collapsed .large-box__body { max-height: 0; overflow: hidden; padding: 0; }
+.box--hover-expand.box--collapsed .small-box__body { max-height: 0; overflow: hidden; padding: 0; }
+.box--hover-expand.box--collapsed:hover .large-box__body,
+.box--hover-expand.box--collapsed .large-box__body:hover { max-height: 600px; padding: var(--space-3); }
+.box--hover-expand.box--collapsed:hover .small-box__body,
+.box--hover-expand.box--collapsed .small-box__body:hover { max-height: 600px; padding: 4px 6px; }
 
 .large-box__body {
   flex: 1;
@@ -252,7 +282,7 @@ html, body {
 .inner {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 .inner__head {
   display: flex;
@@ -307,18 +337,19 @@ html, body {
 .small-box__bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
+  gap: 2px;
+  padding: 2px 6px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-hairline);
   cursor: grab;
   flex-shrink: 0;
+  min-height: 24px;
 }
 .small-box--dragging .small-box__bar { cursor: grabbing; }
 
 .small-box__title {
   flex: 1;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--color-ink);
   outline: none;
@@ -350,8 +381,8 @@ html, body {
   border: 0;
   color: var(--color-faint);
   cursor: pointer;
-  font-size: 12px;
-  padding: 0 4px;
+  font-size: 11px;
+  padding: 0 2px;
   border-radius: 4px;
   line-height: 1;
 }

@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add"
+    "message": "Ctrl+cuộn để zoom · / tìm kiếm · Nhấp đúp để thêm"
   },
   "canvasRoot": {
     "message": "Khung vẽ",
@@ -201,5 +201,17 @@
         "content": "$1"
       }
     }
+  },
+  "autoExpand": {
+    "message": "Tự động mở rộng"
+  },
+  "autoExpandHover": {
+    "message": "Di chuột để mở rộng"
+  },
+  "headerPin": {
+    "message": "Ghim tiêu đề"
+  },
+  "headerPinOn": {
+    "message": "Tiêu đề đã ghim"
   }
 }
