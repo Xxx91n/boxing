@@ -302,7 +302,7 @@
     const container = canvasContainer;
     const w = container.clientWidth, h = container.clientHeight;
     // Max virtual canvas size at 10% zoom = 10x container
-    const maxRange = 10;
+    const maxRange = 3.333;  // 30% zoom = ~3.33x container
     const maxPanX = Math.max(0, (maxRange * w - w) * zoom / maxRange);
     const maxPanY = Math.max(0, (maxRange * h - h) * zoom / maxRange);
     return {
@@ -314,7 +314,7 @@
   function clampInnerPan(panX, panY, zoom) {
     const container = innerCanvas;
     const w = container.clientWidth, h = container.clientHeight;
-    const maxRange = 10;
+    const maxRange = 3.333;  // 30% zoom = ~3.33x container
     const maxPanX = Math.max(0, (maxRange * w - w) * zoom / maxRange);
     const maxPanY = Math.max(0, (maxRange * h - h) * zoom / maxRange);
     return {
@@ -1450,44 +1450,29 @@ function updateInnerCaption(lb) {
   function updateAutohideUI() {
     if (!headerPinned) {
       appEl.classList.add('ntp--autohide');
-      document.querySelector('.ntp__bar').style.display = 'none';
-      document.querySelector('.foot').style.display = 'none';
-      // Make header pin button a floating widget at top-right
-      if (headerPinBtn) {
-        headerPinBtn.style.position = 'fixed';
-        headerPinBtn.style.top = '12px';
-        headerPinBtn.style.right = '16px';
-        headerPinBtn.style.zIndex = '200';
-        headerPinBtn.style.background = 'var(--color-elevated)';
-        headerPinBtn.style.borderRadius = 'var(--radius-tile)';
-        headerPinBtn.style.boxShadow = 'var(--shadow-2)';
-        headerPinBtn.style.padding = '6px 10px';
-      }
+      // Hide header and footer via CSS class (preserves layout, no display:none)
+      // The header-pin-btn is now a standalone floating element — always visible
     } else {
       appEl.classList.remove('ntp--autohide');
-      document.querySelector('.ntp__bar').style.display = '';
-      document.querySelector('.foot').style.display = '';
-      if (headerPinBtn) {
-        headerPinBtn.style.position = '';
-        headerPinBtn.style.top = '';
-        headerPinBtn.style.right = '';
-        headerPinBtn.style.zIndex = '';
-        headerPinBtn.style.background = '';
-        headerPinBtn.style.borderRadius = '';
-        headerPinBtn.style.boxShadow = '';
-        headerPinBtn.style.padding = '';
-      }
+    }
+    // Update pin button visual state
+    if (headerPinBtn) {
+      const span = headerPinBtn.querySelector('span');
+      if (span) span.textContent = headerPinned ? '⊙' : '○';
+      headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
+      headerPinBtn.classList.toggle('header-pin--floating', !headerPinned);
     }
   }
   if (headerPinBtn) {
     headerPinBtn.addEventListener('click', () => {
       headerPinned = !headerPinned;
-      const span = headerPinBtn.querySelector('span');
-      if (span) span.textContent = headerPinned ? '⊙' : '○';
-      headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
       updateAutohideUI();
     });
     headerPinBtn.title = i18n('headerPinOff');
+    // Move button out of header to body level so it's never hidden by header display:none
+    if (headerPinBtn.parentElement?.classList.contains('ntp__bar')) {
+      document.getElementById('app').appendChild(headerPinBtn);
+    }
     updateAutohideUI();  // autohide ON by default
   }
 

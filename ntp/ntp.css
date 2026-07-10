@@ -20,8 +20,6 @@ html, body {
   padding: var(--space-5) var(--space-6) var(--space-4);
   gap: var(--space-4);
 }
-.ntp--autohide.ntp { padding: 0; }
-
 /* === HEADER === */
 .ntp__bar {
   display: flex;
@@ -46,8 +44,7 @@ html, body {
 .ntp--autohide .ntp { padding: 0; }
 .ntp--autohide .library {
   flex: 1;
-  margin: 0;
-  /* full-bleed canvas — no header, no footer */
+  /* canvas fills available space naturally */
 }
 .ntp--autohide .foot {
   display: none;  /* hide footer when header auto-hides */
@@ -887,5 +884,22 @@ body.box-resizing {
 /* ══════════════════════════════════════════════
    Header Pin Float Button
    ══════════════════════════════════════════════ */
-.header-pin-float { position: relative; }
-.ntp--autohide .header-pin-float { position: fixed; top: 12px; right: 16px; z-index: 200; background: var(--color-elevated); border-radius: var(--radius-tile); box-shadow: var(--shadow-2); padding: 6px 10px; }
+.header-pin-float {
+  /* Default: part of header bar (relative) */
+}
+.header-pin--floating {
+  position: fixed !important;
+  top: 12px;
+  right: 16px;
+  z-index: 200;
+  background: var(--color-elevated);
+  border-radius: var(--radius-tile);
+  box-shadow: var(--shadow-2);
+  padding: 6px 10px;
+  transition: opacity 0.2s ease;
+}
+/* Dark mode floating pin */
+.ntp--dark .header-pin--floating {
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-2);
+}
