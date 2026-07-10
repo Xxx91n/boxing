@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "Заголовок откреплен"
+  },
+  "confirmDeleteTitle": {
+    "message": "Подтверждение удаления"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "Удалить этот большой бокс и все его маленькие боксы? Это действие нельзя отменить."
+  },
+  "confirmDeleteSmallBody": {
+    "message": "Удалить этот маленький бокс и все его закладки? Это действие нельзя отменить."
+  },
+  "confirmYes": {
+    "message": "Удалить"
+  },
+  "confirmCancel": {
+    "message": "Отмена"
+  },
+  "darkMode": {
+    "message": "Тёмный режим"
+  },
+  "darkModeHint": {
+    "message": "Переключение между светлым и тёмным оформлением"
+  },
+  "exportData": {
+    "message": "Экспорт данных"
+  },
+  "importData": {
+    "message": "Импорт данных"
+  },
+  "importSuccess": {
+    "message": "Данные успешно импортированы"
+  },
+  "importFailed": {
+    "message": "Ошибка импорта: неверный формат данных"
+  },
+  "dblclickCreateHint": {
+    "message": "Двойной клик для создания"
   }
 }

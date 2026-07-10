@@ -48,6 +48,7 @@
     emptyInnerHint: 'Click + to add your first small box', emptySmallHint: 'No bookmarks yet',
     clickToOpen: 'Click to open →', footerHint: 'Ctrl+scroll to zoom · / to search · Dblclick to add',
     canvasRoot: 'Canvas', untitledBox: 'Untitled box',
+    untitledLargeBox: 'Untitled large box', untitledSmallBox: 'Untitled small box',
     newLargeBox: 'Box $1$', newSmallBox: 'New small box',
     deleteBox: 'Delete box', confirmDeleteLarge: 'Delete this large box and all its small boxes?',
     confirmDeleteSmall: 'Delete this small box?', pin: 'Pin', unpin: 'Unpin',
@@ -61,6 +62,14 @@
     smallBoxCountLabel: '$1$ small boxes',
     autoExpand: 'Auto expand', autoExpandHover: 'Hover to expand',
     headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Header unpinned'
+    ,
+    confirmDeleteTitle: 'Confirm Delete', confirmYes: 'Delete', confirmCancel: 'Cancel',
+    confirmDeleteLargeBody: 'Delete this large box and all its small boxes? This action cannot be undone.',
+    confirmDeleteSmallBody: 'Delete this small box and all its bookmarks? This action cannot be undone.',
+    darkMode: 'Dark Mode', darkModeHint: 'Switch between light and dark appearance',
+    exportData: 'Export Data', importData: 'Import Data',
+    importSuccess: 'Data imported successfully', importFailed: 'Import failed: invalid data format',
+    dblclickCreateHint: 'Double-click to create'
   };
   let currentLang = 'en';
   const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi'];
@@ -142,6 +151,22 @@
   const zoomSlider     = $('#zoom-slider');
   const zoomSliderVal  = $('#zoom-slider-value');
   const emptyEl        = $('#empty');
+
+  // confirm modal
+  const confirmModal   = $('#confirm-modal');
+  const confirmTitle   = $('#confirm-title');
+  const confirmBody    = $('#confirm-body');
+  const confirmCancel  = $('#confirm-cancel-btn');
+  const confirmDelete  = $('#confirm-delete-btn');
+
+  // dark mode
+  const darkModeBtn    = $('#dark-mode-btn');
+  const darkModeCB     = $('#dark-mode-cb');
+
+  // import/export
+  const exportBtn      = $('#export-data-btn');
+  const importBtn      = $('#import-data-btn');
+  const importFile     = $('#import-file-input');
 
   // ── state ──────────────────────────────────────────────
   let layout = {
@@ -229,6 +254,11 @@
     innerZoom = layout.settings.zoomLevel || 1.0;
     const fs = layout.settings.fontSize || 14;
     document.documentElement.style.setProperty('--font-size-base', fs + 'px');
+
+    // dark mode
+    if (layout.settings.darkMode) {
+      document.getElementById('app').classList.add('ntp--dark');
+    }
   }
 
   // ── helpers ────────────────────────────────────────────
@@ -1147,7 +1177,10 @@ function updateInnerCaption(lb) {
     if (captionEl) captionEl.textContent = i18n('smallBoxesCount', [lb?.children?.length || 0]);
   }
   function deleteLargeBox(id) {
-    if (!confirm(i18n('confirmDeleteLarge'))) return;
+    openConfirmModal('large', id);
+  }
+
+  function _execDeleteLargeBox(id) {
     layout.boxes = layout.boxes.filter(b => b.id !== id);
     layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title||'').match(/\d+/)||[0])||0)+1), 1);
     if (currentLargeBoxId === id) exitToCanvas();
@@ -1199,7 +1232,10 @@ function updateInnerCaption(lb) {
   }
 
   function deleteSmallBox(largeId, smallId) {
-    if (!confirm(i18n('confirmDeleteSmall'))) return;
+    openConfirmModal('small', smallId, largeId);
+  }
+
+  function _execDeleteSmallBox(largeId, smallId) {
     const lb = getLargeBox(largeId);
     if (!lb) return;
     lb.children = lb.children.filter(s => s.id !== smallId);
@@ -1212,6 +1248,7 @@ function updateInnerCaption(lb) {
     settingsModal.hidden = false;
     langSelect.value = layout.settings.selectedLanguage || 'en';
     rememberCheck.checked = layout.settings.rememberLastPos !== false;
+    darkModeCB.checked = layout.settings.darkMode === true;
     zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
     zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
     fontSlider.value = layout.settings.fontSize || 14;
@@ -1219,6 +1256,23 @@ function updateInnerCaption(lb) {
   }
 
   function closeSettingsModal() { settingsModal.hidden = true; }
+
+  // ── confirm modal (in-page, replaces browser confirm()) ──
+  let confirmCallback = null;
+  function openConfirmModal(type, id, largeId) {
+    confirmModal.hidden = false;
+    confirmTitle.textContent = i18n('confirmDeleteTitle');
+    const bodyText = type === 'large' ? i18n('confirmDeleteLargeBody') : i18n('confirmDeleteSmallBody');
+    confirmBody.textContent = bodyText;
+    confirmCallback = () => {
+      if (type === 'large') _execDeleteLargeBox(id);
+      else _execDeleteSmallBox(largeId, id);
+    };
+  }
+  function closeConfirmModal() {
+    confirmModal.hidden = true;
+    confirmCallback = null;
+  }
 
   // ── search / caption ───────────────────────────────────
   function updateCaption() {
@@ -1329,7 +1383,7 @@ function updateInnerCaption(lb) {
     backBtn.addEventListener('click', exitToCanvas);
 
   // ── header auto-hide on scroll ──────────────────────
-  let headerPinned = true;
+  let headerPinned = false;  // default: autohide ON (fullscreen canvas)
   const headerPinBtn = $('#header-pin-btn');
   const appEl = $('#app');
   let scrollTimeout;
@@ -1346,13 +1400,13 @@ function updateInnerCaption(lb) {
     headerPinBtn.addEventListener('click', () => {
       headerPinned = !headerPinned;
       const span = headerPinBtn.querySelector('span');
-      if (span) span.textContent = headerPinned ? '○' : '⊙';
+      if (span) span.textContent = headerPinned ? '⊙' : '○';
       headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
       appEl.classList.toggle('ntp--autohide', !headerPinned);
       appEl.classList.remove('scrolled');
     });
-    headerPinBtn.title = i18n('headerPin');
-    appEl.classList.add('ntp--autohide');
+    headerPinBtn.title = i18n('headerPinOff');
+    appEl.classList.add('ntp--autohide');  // autohide ON by default
   }
 
     if (addLargeBtn) addLargeBtn.addEventListener('click', addLargeBox);
@@ -1439,6 +1493,60 @@ function updateInnerCaption(lb) {
       saveLayout();
     });
 
+    // Dark mode toggle
+    darkModeCB?.addEventListener('change', () => {
+      layout.settings.darkMode = darkModeCB.checked;
+      appEl.classList.toggle('ntp--dark', darkModeCB.checked);
+      saveLayout();
+    });
+
+    if (darkModeBtn) {
+      darkModeBtn.addEventListener('click', () => {
+        layout.settings.darkMode = !layout.settings.darkMode;
+        appEl.classList.toggle('ntp--dark', layout.settings.darkMode);
+        if (darkModeCB) darkModeCB.checked = layout.settings.darkMode;
+        darkModeBtn.querySelector('span').textContent = layout.settings.darkMode ? '☽' : '☀';
+        saveLayout();
+      });
+    }
+
+    // Export / Import
+    exportBtn?.addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(layout, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'boxing-backup.json';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+
+    let importPending = false;
+    importBtn?.addEventListener('click', () => { importPending = true; importFile?.click(); });
+    importFile?.addEventListener('change', async () => {
+      if (!importPending) return; importPending = false;
+      const file = importFile.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (!data || !Array.isArray(data.boxes)) throw new Error('invalid');
+        layout = migrateLayout(data);
+        await saveLayout();
+        if (currentLargeBoxId) exitToCanvas();
+        renderCanvas();
+        try { alert(i18n('importSuccess')); } catch(_) {}
+      } catch (_) { try { alert(i18n('importFailed')); } catch(_) {} }
+      importFile.value = '';
+    });
+
+    // Confirm modal events
+    confirmDelete?.addEventListener('click', () => {
+      if (confirmCallback) confirmCallback();
+      closeConfirmModal();
+    });
+    confirmCancel?.addEventListener('click', closeConfirmModal);
+    confirmModal?.addEventListener('click', e => { if (e.target === confirmModal) closeConfirmModal(); });
+
     // Window resize
     window.addEventListener('resize', onWindowResize);
 
@@ -1450,6 +1558,7 @@ function updateInnerCaption(lb) {
 
     renderCanvas();
     debug('init complete v3.1', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize });
+    debug('init complete v3.4', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, darkMode: layout.settings.darkMode });
   }
 
   await init();

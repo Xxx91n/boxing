@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "En-tête libéré"
+  },
+  "confirmDeleteTitle": {
+    "message": "Confirmer la suppression"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "Supprimer cette grande boîte et toutes ses petites boîtes ? Cette action est irréversible."
+  },
+  "confirmDeleteSmallBody": {
+    "message": "Supprimer cette petite boîte et tous ses favoris ? Cette action est irréversible."
+  },
+  "confirmYes": {
+    "message": "Supprimer"
+  },
+  "confirmCancel": {
+    "message": "Annuler"
+  },
+  "darkMode": {
+    "message": "Mode sombre"
+  },
+  "darkModeHint": {
+    "message": "Basculer entre l'apparence claire et sombre"
+  },
+  "exportData": {
+    "message": "Exporter les données"
+  },
+  "importData": {
+    "message": "Importer les données"
+  },
+  "importSuccess": {
+    "message": "Données importées avec succès"
+  },
+  "importFailed": {
+    "message": "Échec de l'importation : format de données invalide"
+  },
+  "dblclickCreateHint": {
+    "message": "Double-clic pour créer"
   }
 }

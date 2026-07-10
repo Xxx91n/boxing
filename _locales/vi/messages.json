@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "Tiêu đề đã tháo ghim"
+  },
+  "confirmDeleteTitle": {
+    "message": "Xác nhận xóa"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "Xóa hộp lớn này và tất cả hộp nhỏ? Hành động này không thể hoàn tác."
+  },
+  "confirmDeleteSmallBody": {
+    "message": "Xóa hộp nhỏ này và tất cả dấu trang? Hành động này không thể hoàn tác."
+  },
+  "confirmYes": {
+    "message": "Xóa"
+  },
+  "confirmCancel": {
+    "message": "Hủy"
+  },
+  "darkMode": {
+    "message": "Chế độ tối"
+  },
+  "darkModeHint": {
+    "message": "Chuyển đổi giữa giao diện sáng và tối"
+  },
+  "exportData": {
+    "message": "Xuất dữ liệu"
+  },
+  "importData": {
+    "message": "Nhập dữ liệu"
+  },
+  "importSuccess": {
+    "message": "Nhập dữ liệu thành công"
+  },
+  "importFailed": {
+    "message": "Nhập thất bại: định dạng dữ liệu không hợp lệ"
+  },
+  "dblclickCreateHint": {
+    "message": "Nhấp đúp để tạo"
   }
 }

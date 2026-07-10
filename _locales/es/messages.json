@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "Encabezado liberado"
+  },
+  "confirmDeleteTitle": {
+    "message": "Confirmar eliminación"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "¿Eliminar esta caja grande y todas sus cajas pequeñas? Esta acción no se puede deshacer."
+  },
+  "confirmDeleteSmallBody": {
+    "message": "¿Eliminar esta caja pequeña y todos sus marcadores? Esta acción no se puede deshacer."
+  },
+  "confirmYes": {
+    "message": "Eliminar"
+  },
+  "confirmCancel": {
+    "message": "Cancelar"
+  },
+  "darkMode": {
+    "message": "Modo oscuro"
+  },
+  "darkModeHint": {
+    "message": "Cambiar entre apariencia clara y oscura"
+  },
+  "exportData": {
+    "message": "Exportar datos"
+  },
+  "importData": {
+    "message": "Importar datos"
+  },
+  "importSuccess": {
+    "message": "Datos importados correctamente"
+  },
+  "importFailed": {
+    "message": "Importación fallida: formato de datos no válido"
+  },
+  "dblclickCreateHint": {
+    "message": "Doble clic para crear"
   }
 }

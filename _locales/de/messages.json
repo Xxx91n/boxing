@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "Header gelöst"
+  },
+  "confirmDeleteTitle": {
+    "message": "Löschen bestätigen"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "Diese große Box und alle ihre kleinen Boxen löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+  },
+  "confirmDeleteSmallBody": {
+    "message": "Diese kleine Box und alle ihre Lesezeichen löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+  },
+  "confirmYes": {
+    "message": "Löschen"
+  },
+  "confirmCancel": {
+    "message": "Abbrechen"
+  },
+  "darkMode": {
+    "message": "Dunkelmodus"
+  },
+  "darkModeHint": {
+    "message": "Zwischen hellem und dunklem Erscheinungsbild wechseln"
+  },
+  "exportData": {
+    "message": "Daten exportieren"
+  },
+  "importData": {
+    "message": "Daten importieren"
+  },
+  "importSuccess": {
+    "message": "Daten erfolgreich importiert"
+  },
+  "importFailed": {
+    "message": "Import fehlgeschlagen: ungültiges Datenformat"
+  },
+  "dblclickCreateHint": {
+    "message": "Doppelklick zum Erstellen"
   }
 }

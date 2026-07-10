@@ -1,12 +1,12 @@
 /* Boxing — design system (warm neutral, modern, minimal, high readability) */
 :root {
   /* Canvas — warm neutral (less red-brown, higher clarity) */
-  --color-canvas: #F7F3ED;
-  --color-canvas-2: #F2EDE4;
-  --color-surface: #F3EFE7;
-  --color-elevated: #F0EBE2;
-  --color-card-edge: #E8E0D4;
-  --color-hairline: rgba(42, 37, 32, 0.07);
+  --color-canvas: #F1EEE8;
+  --color-canvas-2: #ECE8E0;
+  --color-surface: #EEE9E1;
+  --color-elevated: #EBE5DB;
+  --color-card-edge: #E0D8CB;
+  --color-hairline: rgba(42, 37, 32, 0.06);
   --color-hairline-strong: rgba(42, 37, 32, 0.12);
 
   /* Ink */
@@ -57,6 +57,48 @@
   --shadow-2: 0 6px 18px rgba(42, 37, 32, 0.08), 0 2px 6px rgba(42, 37, 32, 0.04);
   --shadow-pop: 0 18px 48px rgba(42, 37, 32, 0.16);
 }
+
+/* ── Dark mode ────────────────────────────────────────── */
+.ntp--dark {
+  --color-canvas: #1E1C1A;
+  --color-canvas-2: #252320;
+  --color-surface: #2A2724;
+  --color-elevated: #302D29;
+  --color-card-edge: #3E3A34;
+  --color-hairline: rgba(255, 255, 255, 0.06);
+  --color-hairline-strong: rgba(255, 255, 255, 0.10);
+
+  --color-ink: #E8E4DB;
+  --color-ink-soft: #C8C2B6;
+  --color-muted: #9A9285;
+  --color-faint: #6A6356;
+
+  --color-accent: #C4A882;
+  --color-accent-ink: #D4B88C;
+  --color-accent-soft: rgba(196, 168, 130, 0.12);
+  --color-accent-soft-2: rgba(196, 168, 130, 0.20);
+  --color-focus: #C4A882;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 1px rgba(0, 0, 0, 0.12);
+  --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.30), 0 2px 6px rgba(0, 0, 0, 0.16);
+  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.40);
+}
+.ntp--dark .canvas {
+  background:
+    radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--color-surface);
+}
+.ntp--dark .inner__canvas {
+  background:
+    radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px,
+    var(--color-surface);
+}
+/* Dark mode bookmark add button */
+.ntp--dark .bm-add-row button { background: #3E3A34; color: #E8E4DB; }
+/* Dark mode modal overlay */
+.ntp--dark .modal-overlay { background: rgba(24, 22, 20, 0.82); }
+/* Dark mode kbd */
+.ntp--dark .kbd { background: var(--color-elevated); border-color: var(--color-hairline); }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }

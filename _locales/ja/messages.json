@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "ヘッダー固定解除"
+  },
+  "confirmDeleteTitle": {
+    "message": "削除の確認"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "この大ボックスとそのすべての小ボックスを削除しますか？この操作は元に戻せません。"
+  },
+  "confirmDeleteSmallBody": {
+    "message": "この小ボックスとそのすべてのブックマークを削除しますか？この操作は元に戻せません。"
+  },
+  "confirmYes": {
+    "message": "削除"
+  },
+  "confirmCancel": {
+    "message": "キャンセル"
+  },
+  "darkMode": {
+    "message": "ダークモード"
+  },
+  "darkModeHint": {
+    "message": "ライトとダークの外観を切り替えます"
+  },
+  "exportData": {
+    "message": "データをエクスポート"
+  },
+  "importData": {
+    "message": "データをインポート"
+  },
+  "importSuccess": {
+    "message": "データのインポートに成功しました"
+  },
+  "importFailed": {
+    "message": "インポート失敗：データ形式が無効です"
+  },
+  "dblclickCreateHint": {
+    "message": "ダブルクリックで作成"
   }
 }

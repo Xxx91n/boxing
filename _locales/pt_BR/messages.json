@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "Cabeçalho liberado"
+  },
+  "confirmDeleteTitle": {
+    "message": "Confirmar exclusão"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "Excluir esta caixa grande e todas as suas caixas pequenas? Esta ação não pode ser desfeita."
+  },
+  "confirmDeleteSmallBody": {
+    "message": "Excluir esta caixa pequena e todos os seus favoritos? Esta ação não pode ser desfeita."
+  },
+  "confirmYes": {
+    "message": "Excluir"
+  },
+  "confirmCancel": {
+    "message": "Cancelar"
+  },
+  "darkMode": {
+    "message": "Modo escuro"
+  },
+  "darkModeHint": {
+    "message": "Alternar entre aparência clara e escura"
+  },
+  "exportData": {
+    "message": "Exportar dados"
+  },
+  "importData": {
+    "message": "Importar dados"
+  },
+  "importSuccess": {
+    "message": "Dados importados com sucesso"
+  },
+  "importFailed": {
+    "message": "Falha na importação: formato de dados inválido"
+  },
+  "dblclickCreateHint": {
+    "message": "Clique duplo para criar"
   }
 }

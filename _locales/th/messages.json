@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "เลิกปักหมุดส่วนหัว"
+  },
+  "confirmDeleteTitle": {
+    "message": "ยืนยันการลบ"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "ลบกล่องใหญ่และกล่องเล็กทั้งหมด? การกระทำนี้ไม่สามารถยกเลิกได้"
+  },
+  "confirmDeleteSmallBody": {
+    "message": "ลบกล่องเล็กและบุ๊กมาร์กทั้งหมด? การกระทำนี้ไม่สามารถยกเลิกได้"
+  },
+  "confirmYes": {
+    "message": "ลบ"
+  },
+  "confirmCancel": {
+    "message": "ยกเลิก"
+  },
+  "darkMode": {
+    "message": "โหมดมืด"
+  },
+  "darkModeHint": {
+    "message": "สลับระหว่างลักษณะสว่างและมืด"
+  },
+  "exportData": {
+    "message": "ส่งออกข้อมูล"
+  },
+  "importData": {
+    "message": "นำเข้าข้อมูล"
+  },
+  "importSuccess": {
+    "message": "นำเข้าข้อมูลสำเร็จ"
+  },
+  "importFailed": {
+    "message": "นำเข้าล้มเหลว: รูปแบบข้อมูลไม่ถูกต้อง"
+  },
+  "dblclickCreateHint": {
+    "message": "ดับเบิลคลิกเพื่อสร้าง"
   }
 }

@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "تم تحرير الرأس"
+  },
+  "confirmDeleteTitle": {
+    "message": "تأكيد الحذف"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "حذف هذا الصندوق الكبير وجميع صناديقه الصغيرة؟ لا يمكن التراجع عن هذا الإجراء."
+  },
+  "confirmDeleteSmallBody": {
+    "message": "حذف هذا الصندوق الصغير وجميع إشاراته المرجعية؟ لا يمكن التراجع عن هذا الإجراء."
+  },
+  "confirmYes": {
+    "message": "حذف"
+  },
+  "confirmCancel": {
+    "message": "إلغاء"
+  },
+  "darkMode": {
+    "message": "الوضع الداكن"
+  },
+  "darkModeHint": {
+    "message": "التبديل بين المظهر الفاتح والداكن"
+  },
+  "exportData": {
+    "message": "تصدير البيانات"
+  },
+  "importData": {
+    "message": "استيراد البيانات"
+  },
+  "importSuccess": {
+    "message": "تم استيراد البيانات بنجاح"
+  },
+  "importFailed": {
+    "message": "فشل الاستيراد: تنسيق بيانات غير صالح"
+  },
+  "dblclickCreateHint": {
+    "message": "انقر مرتين للإنشاء"
   }
 }

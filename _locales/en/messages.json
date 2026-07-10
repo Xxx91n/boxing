@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,53 @@
   },
   "headerPinOff": {
     "message": "Header unpinned"
+  },
+  "confirmDeleteTitle": {
+    "message": "Confirm Delete",
+    "description": "Delete confirmation modal title"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "Delete this large box and all its small boxes? This action cannot be undone.",
+    "description": "Large box delete confirm body"
+  },
+  "confirmDeleteSmallBody": {
+    "message": "Delete this small box and all its bookmarks? This action cannot be undone.",
+    "description": "Small box delete confirm body"
+  },
+  "confirmYes": {
+    "message": "Delete",
+    "description": "Confirm delete yes button"
+  },
+  "confirmCancel": {
+    "message": "Cancel",
+    "description": "Confirm cancel button"
+  },
+  "darkMode": {
+    "message": "Dark Mode",
+    "description": "Dark mode toggle label"
+  },
+  "darkModeHint": {
+    "message": "Switch between light and dark appearance",
+    "description": "Dark mode hint"
+  },
+  "exportData": {
+    "message": "Export Data",
+    "description": "Export button"
+  },
+  "importData": {
+    "message": "Import Data",
+    "description": "Import button"
+  },
+  "importSuccess": {
+    "message": "Data imported successfully",
+    "description": "Import success toast"
+  },
+  "importFailed": {
+    "message": "Import failed: invalid data format",
+    "description": "Import failed toast"
+  },
+  "dblclickCreateHint": {
+    "message": "Double-click to create",
+    "description": "Dblclick hint"
   }
 }

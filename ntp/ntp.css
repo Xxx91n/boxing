@@ -43,7 +43,10 @@ html, body {
   pointer-events: none;
 }
 .ntp--autohide .library {
-  padding-top: 0;
+  margin-top: -48px;  /* expand canvas upward into header space */
+}
+.ntp--autohide .foot {
+  display: none;  /* hide footer when header auto-hides */
 }
 
 #back-btn { order: 0; margin-right: auto; display: none; }
@@ -542,7 +545,7 @@ html, body {
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-pop);
-  width: min(440px, 92vw);
+  width: min(600px, 94vw);
   max-height: 85vh;
   overflow-y: auto;
   display: flex;
@@ -760,3 +763,15 @@ body.box-resizing {
 /* === OBSIDIAN-STYLE CANVAS === */
 .canvas { overflow: hidden; cursor: grab; }
 .canvas:active { cursor: grabbing; }
+
+/* === CONFIRM MODAL === */
+.confirm-modal { width: min(420px, 90vw); }
+.confirm-modal .modal__body { padding: var(--space-5) var(--space-5) var(--space-3); }
+#confirm-delete-btn:hover { opacity: 0.85; }
+
+/* === DARK MODE TOGGLE BUTTON === */
+#dark-mode-btn { font-size: 15px; }
+#dark-mode-btn span { transition: transform 0.25s ease; }
+
+/* === MODAL EXTENDED (v3.4 wider) === */
+.modal__section .btn { margin: 0; }

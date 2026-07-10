@@ -452,3 +452,57 @@ export default defineConfig({
 |---|---|---|
 | headerPinOff | Header unpinned | Header pin toggle OFF state tooltip
 | fontSizeLabel | Font Size | Settings slider label (translated in 12 non-en locales)
+
+## v3.4 Features (2026-07-10)
+
+| Feature | Description |
+|---|---|
+| Background clarity | Canvas colors shifted lighter/less saturated: canvas #F1EEE8, surface #EEE9E1, elevated #EBE5DB |
+| Dark mode | Full dark theme via .ntp--dark class. Toggle button in header bar (☀/☽) and checkbox in settings. Dark palette: ink #E8E4DB, canvas #1E1C1A, accent #C4A882 |
+| In-page delete confirm | Replaced browser confirm() with a custom <div> modal overlay. Supports large and small box delete with cancel. Confirms sync to all 13 locales. |
+| smallBoxCountLabel fix | Removed stray backslash from smallBoxCountLabel in all 13 locales. Now displays "0 small boxes" not "\\0 small boxes" |
+| Settings modal enlarged | Width from 440px to 600px to accommodate more settings |
+| Export / Import data | Settings modal now has Export button (downloads oxing-backup.json) and Import button (file picker, validates & replaces layout) |
+| Header autohide default ON | Default: header auto-hides (fullscreen canvas). Pin button toggles. Footer hidden when autohide active. |
+| Dark mode in settings | Checkbox synchronized with header bar toggle button |
+| 12 new i18n keys | confirmDeleteTitle, confirmDeleteLargeBody, confirmDeleteSmallBody, confirmYes, confirmCancel, darkMode, darkModeHint, exportData, importData, importSuccess, importFailed, dblclickCreateHint |
+| All 13 locales updated | New keys translated for zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi. JSON parse-valid for all 13. |
+
+## Development Rules (v3.4 additions)
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-023 | MUST | Deletion confirmation must use the in-page modal (confirm-modal element), NOT browser confirm()/lert(). |
+| BX-DEV-024 | MUST | Dark mode toggle must sync: header button AND settings checkbox always reflect the same layout.settings.darkMode value. |
+| BX-DEV-025 | MUST | Export creates a JSON blob with layout (version, boxes, settings); Import validates oxes array before replacing. |
+| BX-DEV-026 | MUST | Header autohide defaults ON (headerPinned = false, 
+tp--autohide active). Footer hidden in autohide mode. |
+| BX-DEV-027 | MUST | All locale messages.json files must be valid JSON parseable by JSON.parse. Run a parse check after any locale edit. |
+| BX-DEV-028 | MUST | smallBoxCountLabel must NOT contain a backslash escape in any locale. Value format: $1$ small boxes. |
+
+## i18n Key Reference (v3.4 additions)
+
+| Key | en | Usage |
+|---|---|---|
+| confirmDeleteTitle | Confirm Delete | Delete confirmation modal title |
+| confirmDeleteLargeBody | Delete this large box and all its small boxes? This action cannot be undone. | Large box delete confirm body |
+| confirmDeleteSmallBody | Delete this small box and all its bookmarks? This action cannot be undone. | Small box delete confirm body |
+| confirmYes | Delete | Confirm yes button |
+| confirmCancel | Cancel | Confirm cancel button |
+| darkMode | Dark Mode | Dark mode toggle label |
+| darkModeHint | Switch between light and dark appearance | Dark mode hint |
+| exportData | Export Data | Export button |
+| importData | Import Data | Import button |
+| importSuccess | Data imported successfully | Import success toast |
+| importFailed | Import failed: invalid data format | Import failed toast |
+| dblclickCreateHint | Double-click to create | Dblclick hint |
+
+## Updated CSS Tokens (v3.4)
+
+| Token | Old Value | New Value | Rationale |
+|---|---|---|---|
+| --color-canvas | #F7F3ED | #F1EEE8 | Less red-brown, higher clarity |
+| --color-surface | #F3EFE7 | #EEE9E1 | Lower saturation |
+| --color-elevated | #F0EBE2 | #EBE5DB | Lower saturation |
+| --color-card-edge | #E8E0D4 | #E0D8CB | Lower saturation |
+| --color-hairline | rgba(42,37,32,0.07) | rgba(42,37,32,0.06) | Subtler borders |

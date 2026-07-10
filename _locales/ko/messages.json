@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "헤더 고정 해제"
+  },
+  "confirmDeleteTitle": {
+    "message": "삭제 확인"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "이 대형 상자와 모든 소형 상자를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다."
+  },
+  "confirmDeleteSmallBody": {
+    "message": "이 소형 상자와 모든 북마크를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다."
+  },
+  "confirmYes": {
+    "message": "삭제"
+  },
+  "confirmCancel": {
+    "message": "취소"
+  },
+  "darkMode": {
+    "message": "다크 모드"
+  },
+  "darkModeHint": {
+    "message": "밝은 모드와 어두운 모드 전환"
+  },
+  "exportData": {
+    "message": "데이터 내보내기"
+  },
+  "importData": {
+    "message": "데이터 가져오기"
+  },
+  "importSuccess": {
+    "message": "데이터 가져오기 성공"
+  },
+  "importFailed": {
+    "message": "가져오기 실패: 잘못된 데이터 형식"
+  },
+  "dblclickCreateHint": {
+    "message": "더블 클릭으로 만들기"
   }
 }

@@ -195,7 +195,7 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "\\$1$ small boxes",
+    "message": "$1$ small boxes",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -216,5 +216,41 @@
   },
   "headerPinOff": {
     "message": "हेडर अनपिन किया गया"
+  },
+  "confirmDeleteTitle": {
+    "message": "हटाने की पुष्टि"
+  },
+  "confirmDeleteLargeBody": {
+    "message": "इस बड़े बॉक्स और इसके सभी छोटे बॉक्स को हटाएं? यह क्रिया पूर्ववत नहीं की जा सकती।"
+  },
+  "confirmDeleteSmallBody": {
+    "message": "इस छोटे बॉक्स और इसके सभी बुकमार्क को हटाएं? यह क्रिया पूर्ववत नहीं की जा सकती।"
+  },
+  "confirmYes": {
+    "message": "हटाएं"
+  },
+  "confirmCancel": {
+    "message": "रद्द करें"
+  },
+  "darkMode": {
+    "message": "डार्क मोड"
+  },
+  "darkModeHint": {
+    "message": "लाइट और डार्क उपस्थिति के बीच स्विच करें"
+  },
+  "exportData": {
+    "message": "डेटा निर्यात करें"
+  },
+  "importData": {
+    "message": "डेटा आयात करें"
+  },
+  "importSuccess": {
+    "message": "डेटा सफलतापूर्वक आयात किया गया"
+  },
+  "importFailed": {
+    "message": "आयात विफल: अमान्य डेटा प्रारूप"
+  },
+  "dblclickCreateHint": {
+    "message": "बनाने के लिए डबल-क्लिक करें"
   }
 }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Boxing</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="design-system.css">
 <link rel="stylesheet" href="ntp.css">
 </head>
@@ -32,6 +32,9 @@
       </button>
       <button id="settings-btn" class="btn btn--ghost" aria-label="Open settings" data-i18n-title="settingsTooltip">
         <span aria-hidden="true">⚙</span>
+      </button>
+      <button id="dark-mode-btn" class="btn btn--ghost" aria-label="Dark mode" data-i18n-title="darkMode" style="font-size:14px;">
+        <span aria-hidden="true">☀</span>
       </button>
       <button id="header-pin-btn" class="btn btn--ghost" aria-label="Pin header" data-i18n-title="headerPin" style="font-size:14px;">
         <span aria-hidden="true">○</span>
@@ -118,6 +121,13 @@
         <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new tabs</p>
       </section>
       <section class="modal__section">
+        <label class="checkbox-label">
+          <input type="checkbox" id="dark-mode-cb">
+          <span class="checkbox-label__text" data-i18n="darkMode">Dark Mode</span>
+        </label>
+        <p class="modal__hint" data-i18n="darkModeHint">Switch between light and dark appearance</p>
+      </section>
+      <section class="modal__section">
         <label class="modal__label" for="font-slider" data-i18n="fontSizeLabel">Font Size</label>
         <div class="modal__row">
           <input type="range" id="font-slider" min="11" max="20" value="14" step="1">
@@ -131,9 +141,32 @@
           <span id="zoom-slider-value" class="modal__value">100%</span>
         </div>
       </section>
+      <section class="modal__section">
+        <div style="display:flex;gap:8px;">
+          <button id="export-data-btn" class="btn" data-i18n="exportData">Export Data</button>
+          <button id="import-data-btn" class="btn" data-i18n="importData">Import Data</button>
+          <input type="file" id="import-file-input" accept=".json" hidden>
+        </div>
+      </section>
     </div>
     <div class="modal__foot">
-      <p class="modal__version">Boxing v3.3.0</p>
+      <p class="modal__version">Boxing v3.4.0</p>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm delete modal (in-page overlay) -->
+<div id="confirm-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-label="Confirm">
+  <div class="modal confirm-modal">
+    <div class="modal__head">
+      <h2 class="modal__title" id="confirm-title">Confirm Delete</h2>
+    </div>
+    <div class="modal__body">
+      <p id="confirm-body" style="margin:0;font-size:14px;line-height:1.6;"></p>
+    </div>
+    <div class="modal__foot" style="justify-content:space-between;">
+      <button id="confirm-cancel-btn" class="btn" data-i18n="confirmCancel">Cancel</button>
+      <button id="confirm-delete-btn" class="btn" style="background:var(--color-accent-ink);color:#F4EFE5;border-color:var(--color-accent-ink);" data-i18n="confirmYes">Delete</button>
     </div>
   </div>
 </div>

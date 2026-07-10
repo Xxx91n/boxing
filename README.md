@@ -1,7 +1,7 @@
 # 🥊 Boxing — Hierarchical Bookmark Manager
 
 **v3.2** · Chrome Extension (MV3) · Firefox compatible
-
+**v3.4** · Chrome Extension (MV3) · Firefox compatible
 Boxing organizes your bookmarks in a two-level infinite canvas — large boxes hold small boxes, small boxes hold bookmarks. Think Obsidian canvas meets bookmarks.
 
 ## ✨ Features (v3.2)
@@ -92,3 +92,16 @@ MIT
 - **i18n additions**: headerPinOff key in all 13 locales; fontSizeLabel translated in 12 non-en locales
 - **smallBoxCountLabel fix**: Placeholder restored to $1$ small boxes (was broken in all locales)
 - **Agent.md v3.3 rules**: 8 new development rules (BX-DEV-013 through BX-DEV-020)
+
+### v3.4.0 — July 2026
+- **Background clarity**: Canvas colors shifted lighter/less saturated (canvas #F1EEE8, surface #EEE9E1, elevated #EBE5DB) — less red-brown, higher readability
+- **Dark mode**: Full dark theme via .ntp--dark class with toggle button (☀/☽) in header bar and checkbox in settings. Dark palette preserves design warmth (ink #E8E4DB, canvas #1E1C1A, accent #C4A882)
+- **In-page delete confirmation**: Custom modal overlay replaces browser confirm() dialog. Syncs to all 13 locales.
+- **smallBoxCountLabel fix**: Removed stray backslash from smallBoxCountLabel in all 13 locales. Now displays "0 small boxes" without leading backslash.
+- **Settings modal enlarged**: Width increased from 440px to 600px to support more settings options
+- **Export / Import data**: Settings modal now includes Export button (downloads oxing-backup.json) and Import button (file picker validates & replaces layout)
+- **Header autohide default ON**: Header now auto-hides by default for fullscreen canvas experience. Footer hidden when autohide active. Pin button toggles.
+- **Dark mode sync**: Header bar toggle button and settings checkbox always in sync
+- **12 new i18n keys**: confirmDeleteTitle, confirmDeleteLargeBody, confirmDeleteSmallBody, confirmYes, confirmCancel, darkMode, darkModeHint, exportData, importData, importSuccess, importFailed, dblclickCreateHint
+- **All 13 locales updated**: New keys translated for zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with JSON parse validation
+- **Agent.md v3.4 rules**: 6 new development rules (BX-DEV-023 through BX-DEV-028)
