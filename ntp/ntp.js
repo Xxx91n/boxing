@@ -539,6 +539,16 @@
     updateCaption();
   }
 
+  // BX-DEV-105: measure body scrollHeight and set CSS --body-max-height for precise drawer animation
+  function setBodyExpandHeight(el) {
+    const body = el.querySelector('.large-box__body') || el.querySelector('.small-box__body');
+    if (!body) return;
+    requestAnimationFrame(() => {
+      const h = body.scrollHeight;
+      if (h > 0) body.style.setProperty('--body-max-height', h + 'px');
+    });
+  }
+
   function createLargeBoxEl(box) {
     const w = box.width || LARGE_DEF_W;
     const h = box.height || LARGE_DEF_H;
@@ -700,6 +710,7 @@
     resizeHandle.className = 'box-resize-handle';
     resizeHandle.addEventListener('mousedown', e => onResizeStart(e, 'large', box.id, el));
     el.appendChild(resizeHandle);
+
 
     return el;
   }
@@ -892,6 +903,7 @@
     resizeHandle.className = 'box-resize-handle';
     resizeHandle.addEventListener('mousedown', e => onResizeStart(e, 'small', { largeId, smallId: sb.id }, el));
     el.appendChild(resizeHandle);
+
 
     return el;
   }

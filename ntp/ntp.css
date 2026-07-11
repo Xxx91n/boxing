@@ -280,24 +280,24 @@ html, body {
   max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
-  transition: max-height 0.4s cubic-bezier(0.22,1,0.36,1),
-              padding 0.25s ease;
+  transition: max-height 0.35s ease-out,
+              padding 0.35s ease-out;
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
 .box--hover-expand.box--collapsed .large-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .large-box__body {
-  max-height: 600px;
+  max-height: var(--body-max-height, 600px);
   padding: var(--space-3);
-  transition: max-height 0.45s cubic-bezier(0.22,1,0.36,1),
-              padding 0.25s ease;
+  transition: max-height 0.35s ease-out,
+              padding 0.35s ease-out 0.05s;
 }
 .box--hover-expand.box--collapsed:hover .small-box__body,
 .box--hover-expand.box--collapsed .small-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .small-box__body {
-  max-height: 500px;
+  max-height: var(--body-max-height, 400px);
   padding: 4px 10px;
-  transition: max-height 0.45s cubic-bezier(0.22,1,0.36,1),
-              padding 0.25s ease;
+  transition: max-height 0.35s ease-out,
+              padding 0.35s ease-out 0.05s;
 }
 
 .large-box__body {
