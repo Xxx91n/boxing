@@ -7,6 +7,14 @@ node_modules/
 dist/
 build/
 .zip
+package/*.crx
+package/*.zip
+package/*.xpi
+*.xpi
+
+# META-INF (Firefox signing artifacts — never commit)
+META-INF/
+_metadata/
 
 # IDE
 .vscode/
@@ -42,5 +50,7 @@ npm-debug.log*
 *.tmp
 tmp/
 
+# Package output
+package/
+
 # Development fix scripts
-tools/

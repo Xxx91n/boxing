@@ -1,4 +1,7 @@
 /** Boxing Popup — Quick access to recent bookmarks */
+const POPUP_LOG_PREFIX = '[Boxing:Popup]';
+function popupLog(...a) { console.log(POPUP_LOG_PREFIX, ...a); }
+function popupErr(...a) { console.error(POPUP_LOG_PREFIX, ...a); }
 (async () => {
   const api = (typeof browser !== "undefined" ? browser :
     typeof chrome !== "undefined" ? chrome : null) || null;
@@ -48,7 +51,7 @@
         recentListEl.appendChild(li);
       });
     } catch (err) {
-      console.error('Error loading recent bookmarks:', err);
+      popupErr('Error loading recent bookmarks:', err);
       recentListEl.innerHTML = '<div class="empty-msg">Error loading bookmarks</div>';
     }
   }

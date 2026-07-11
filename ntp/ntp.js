@@ -31,9 +31,32 @@
   const DEBUG = true;
 
   // ── debug ──────────────────────────────────────────────
-  function debug(...args) { if (DEBUG) console.log('[Boxing]', ...args); }
-  function debugErr(...args) { if (DEBUG) console.error('[Boxing]', ...args); }
-  function debugWarn(...args) { if (DEBUG) console.warn('[Boxing]', ...args); }
+  function debug(...args) { if (window.__BOXING_DEBUG__) console.log('[Boxing]', ...args); }
+  function debugErr(...args) { if (window.__BOXING_DEBUG__) console.error('[Boxing]', ...args); }
+  function debugWarn(...args) { if (window.__BOXING_DEBUG__) console.warn('[Boxing]', ...args); }
+
+  // ── Enhanced debug system (v3.6.5+) ─────────────────
+  // DEBUG=true enables all logs. Set DEBUG=false for production.
+  // URL param ?debug=1 enables debug regardless of DEBUG constant.
+  // URL param ?debug=0 disables debug regardless of DEBUG constant.
+  // URL param ?debug=verbose adds stack traces and timing info.
+  (function initDebugMode() {
+    const params = new URLSearchParams(location.search);
+    const flag = params.get('debug');
+    if (flag === '1') { window.__BOXING_DEBUG__ = true; window.__BOXING_VERBOSE__ = false; }
+    else if (flag === '0') { window.__BOXING_DEBUG__ = false; window.__BOXING_VERBOSE__ = false; }
+    else if (flag === 'verbose') { window.__BOXING_DEBUG__ = true; window.__BOXING_VERBOSE__ = true; }
+    else { window.__BOXING_DEBUG__ = DEBUG; window.__BOXING_VERBOSE__ = false; }
+    debug('[debug] mode=' + (window.__BOXING_DEBUG__ ? 'on' : 'off') + ' verbose=' + (window.__BOXING_VERBOSE__ ? 'on' : 'off'));
+  })();
+
+  // Expose debug API for extension DevTools console inspection
+  window.__boxingDebug = {
+    state() { return { boxes: layout.boxes.length, currentLargeBoxId, canvasZoom, innerZoom, headerPinned, darkMode: layout.settings.darkMode, lang: currentLang, fontSize: layout.settings.fontSize }; },
+    dumpLayout() { console.table(layout.boxes.map(b => ({ id: b.id, title: b.title, x: b.x, y: b.y, w: b.width, h: b.height, children: b.children?.length||0 }))); },
+    dumpStorage() { api.storage?.sync?.get?.(null).then(d => console.log('[Boxing] storage:', d)).catch(e => console.error('[Boxing] storage read:', e)); },
+    triggerGC() { if (typeof gc === 'function') gc(); else console.log('[Boxing] gc not available (not in --js-flags=--expose-gc mode)'); },
+  };
   // Log mock usage (must be after DEBUG init)
   if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');
 
