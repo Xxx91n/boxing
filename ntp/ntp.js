@@ -60,6 +60,16 @@
   // Log mock usage (must be after DEBUG init)
   if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');
 
+  // ── Debug Address System ──────────────────
+  // Open boxing with ?debug to enable overlay HUD + detailed logging
+  // Open boxing with ?debug=verbose for ultra-detailed logs
+  if (new URLSearchParams(location.search).has('debug')) {
+    window.__BOXING_DEBUG__ = true;
+    window.__BOXING_VERBOSE__ = new URLSearchParams(location.search).get('debug') === 'verbose';
+    debug(`Debug mode activated via URL param (verbose=${window.__BOXING_VERBOSE__})`);
+  }
+
+
   // ── i18n store ─────────────────────────────────────────
   let i18nStore = {};
   const I18N_FALLBACK = {
@@ -273,12 +283,14 @@
       version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
       lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
       lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, urlOpenMode: 'newTab' }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, urlOpenMode: 'newTab', squareCorners: false, autoBackupInterval: 0 }
     };
   }
 
   function migrateLayout(raw) {
     if (!raw) return defaultLayout();
+    // BX-DEV-085: Data integrity — version >= 3 returns as-is; no data loss on downgrade.
+    // Unknown future versions (>= 4) are still accepted to prevent upgrade-then-downgrade data loss.
     if (raw.version >= 3) return raw;
     if (raw.version === 2) {
       return {
@@ -715,6 +727,7 @@
   }
 
   function exitToCanvas() {
+    debug(`exitToCanvas: leaving box, back to canvas`);
     currentLargeBoxId = null;
     // Save current inner zoom and pan for restore later
     layout.lastInnerZoom = innerZoom;
@@ -900,7 +913,7 @@
       const grip = document.createElement('span');
       grip.className = 'bm-row__grip';
       grip.textContent = '⋮⋮';
-      grip.title = 'Drag to reorder';
+      grip.title = i18n('dragToReorder');
       grip.style.cssText = 'cursor:grab;color:var(--color-muted);font-size:10px;padding:0 3px;flex-shrink:0;line-height:1;user-select:none;opacity:0.5;';
       grip.addEventListener('mouseenter', () => { grip.style.opacity = '1'; });
       grip.addEventListener('mouseleave', () => { grip.style.opacity = '0.5'; });
@@ -1706,8 +1719,10 @@ function updateInnerCaption(lb) {
     return (isPrivate ? 'http://' : 'https://') + trimmed;
   }
   function onWindowResize() {
+    debug(`window resize: ${window.innerWidth}x${window.innerHeight}`);
     applyCanvasTransform();
     applyInnerTransform();
+    debug(`window resize done`);
   }
 
   // ── init ───────────────────────────────────────────────

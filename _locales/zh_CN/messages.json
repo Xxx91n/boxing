@@ -60,7 +60,7 @@
     "description": "打开大盒子提示"
   },
   "footerHint": {
-    "message": "Ctrl+滚轮缩放 · / 搜索 · 双击添加盒子"
+    "message": "Ctrl+滚轮缩放 · 拖拽空白区域平移 · / 搜索 · 双击创建盒子 · 右键返回 · Esc退出 · Ctrl+S保存 · Ctrl+Z撤销 · 拖拽标题栏移动"
   },
   "canvasRoot": {
     "message": "画布",
@@ -309,5 +309,141 @@
   },
   "urlOpenModeHint": {
     "message": "选择点击书签时打开的位置"
+  },
+  "dragToReorder": {
+    "message": "拖动以重新排序",
+    "description": "Tooltip for bookmark reorder grip"
+  },
+  "startDragHint": {
+    "message": "拖拽标题栏以移动盒子",
+    "description": "Hint for box drag interaction"
+  },
+  "searchShortcut": {
+    "message": "/ 或 Ctrl+F",
+    "description": "Search shortcut hint"
+  },
+  "addBoxShortcut": {
+    "message": "双击空白区域",
+    "description": "Add box shortcut hint"
+  },
+  "zoomShortcut": {
+    "message": "Ctrl+滚轮",
+    "description": "Zoom shortcut hint"
+  },
+  "panShortcut": {
+    "message": "左键拖拽空白区域",
+    "description": "Pan shortcut hint"
+  },
+  "returnShortcut": {
+    "message": "右键或Esc返回",
+    "description": "Return shortcut hint"
+  },
+  "undoShortcut": {
+    "message": "Ctrl+Z撤销",
+    "description": "Undo shortcut hint"
+  },
+  "accessibilityLabel": {
+    "message": "支持键盘操作 · 兼容屏幕阅读器",
+    "description": "A11y label"
+  },
+  "rightClickReturnHint": {
+    "message": "右键返回画布",
+    "description": "Right click return tooltip"
+  },
+  "escReturnHint": {
+    "message": "按Esc返回画布",
+    "description": "Esc return hint"
+  },
+  "ctrlScrollZoom": {
+    "message": "Ctrl+滚轮缩放",
+    "description": "Zoom shortcut label"
+  },
+  "dragPanCanvas": {
+    "message": "拖拽平移画布",
+    "description": "Pan canvas label"
+  },
+  "dblclickAddBox": {
+    "message": "双击添加盒子",
+    "description": "Add box shortcut label"
+  },
+  "searchSlash": {
+    "message": "/ 键搜索",
+    "description": "Search shortcut label"
+  },
+  "noBookmarksYet": {
+    "message": "暂无书签。点击＋添加。",
+    "description": "Empty bookmarks hint"
+  },
+  "emptyBoxDragHint": {
+    "message": "双击或点击+添加盒子",
+    "description": "Empty box action hint"
+  },
+  "bookmarkReorderHint": {
+    "message": "拖动左侧手柄重新排序书签",
+    "description": "Bookmark reorder hint"
+  },
+  "deleteConfirmMessage": {
+    "message": "此操作不可撤销。内部所有书签将被移除。",
+    "description": "Delete confirmation detail"
+  },
+  "settingsCategoryGeneral": {
+    "message": "通用",
+    "description": "Settings category"
+  },
+  "settingsCategoryAppearance": {
+    "message": "外观",
+    "description": "Settings category"
+  },
+  "settingsCategoryData": {
+    "message": "数据",
+    "description": "Settings category"
+  },
+  "settingsCategorySync": {
+    "message": "同步与备份",
+    "description": "Settings category"
+  },
+  "langAutoDetect": {
+    "message": "自动检测（浏览器语言）",
+    "description": "Auto-detect language option"
+  },
+  "fontSizeSmall": {
+    "message": "小",
+    "description": "Font size label"
+  },
+  "fontSizeNormal": {
+    "message": "中",
+    "description": "Font size label"
+  },
+  "fontSizeLarge": {
+    "message": "大",
+    "description": "Font size label"
+  },
+  "debugModeOn": {
+    "message": "调试：开启",
+    "description": "Debug mode status"
+  },
+  "debugModeOff": {
+    "message": "调试：关闭",
+    "description": "Debug mode status"
+  },
+  "canvasBoundaryHint": {
+    "message": "画布在30%缩放级别时有边界限制",
+    "description": "Canvas boundary hint"
+  },
+  "lastOpenedBox": {
+    "message": "上次打开的盒子",
+    "description": "Remember last position label"
+  },
+  "storedDataFound": {
+    "message": "找到已存储的数据",
+    "description": "Data status"
+  },
+  "backupSaved": {
+    "message": "备份已保存",
+    "description": "Backup confirmation"
+  },
+  "allLanguages": {
+    "message": "已翻译全部13种语言",
+    "description": "Locale completeness note"
   }
 }

@@ -372,7 +372,6 @@ export default defineConfig({
 | BX-DEV-012 | MUST NOT | Do not use brand__mark brown color block (removed). |
 
 
-
 ## i18n Development Requirements
 
 | Rule ID | Type | Rule |

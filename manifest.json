@@ -3,7 +3,7 @@
   "name": "Boxing",
   "short_name": "Boxing",
   "description": "A hierarchical, infinite-canvas bookmark organizer with beige minimalist design. Organize bookmarks into labeled boxes with list and grid views.",
-  "version": "3.6.6",
+  "version": "3.7.0",
   "author": "Boxing Contributors",
   "default_locale": "en",
   "icons": {
@@ -19,8 +19,10 @@
     }
   },
   "background": {
-    "service_worker": "background.js"
-    ,"scripts": ["background.js"]
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ]
   },
   "chrome_url_overrides": {
     "newtab": "ntp/index.html"

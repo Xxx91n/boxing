@@ -2,8 +2,16 @@
 // Cross-browser guard for chrome.* / browser.*
 // Debug: open chrome://extensions → Inspect views: service worker → console
 const BG_LOG_PREFIX = '[Boxing:BG]';
-function bgLog(...a) { console.log(BG_LOG_PREFIX, ...a); }
-function bgErr(...a) { console.error(BG_LOG_PREFIX, ...a); }
+// Debug mode toggle — set boxing_debug_mode in storage.sync to enable
+let BG_DEBUG_ENABLED = false;
+function bgLog(...a) { if (BG_DEBUG_ENABLED) console.log(BG_LOG_PREFIX, ...a); }
+function bgErr(...a) { console.error(BG_LOG_PREFIX, ...a); } // errors always log
+try {
+  chrome.storage?.sync?.get?.('boxing_debug_mode', r => {
+    BG_DEBUG_ENABLED = !!(r && r.boxing_debug_mode);
+    bgLog('background debug:', BG_DEBUG_ENABLED ? 'enabled' : 'disabled');
+  });
+} catch(_) {}
 (() => {
   const api = (typeof browser !== "undefined" ? browser :
     typeof chrome !== "undefined" ? chrome : null) || null;

@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+เลื่อนเพื่อซูม · / ค้นหา · ดับเบิลคลิกเพื่อเพิ่ม"
+    "message": "Ctrl+เลื่อนซูม · ลากพื้นที่ว่างเลื่อน · / ค้นหา · ดับเบิลคลิกเพิ่ม · คลิกขวากลับ · Esc ออก"
   },
   "canvasRoot": {
     "message": "ผืนผ้าใบ",
@@ -306,5 +306,141 @@
   },
   "urlOpenModeHint": {
     "message": "เลือกตำแหน่งที่จะเปิดบุ๊กมาร์กเมื่อคลิก"
+  },
+  "dragToReorder": {
+    "message": "จัดเรียงใหม่",
+    "description": "Tooltip for bookmark reorder grip"
+  },
+  "startDragHint": {
+    "message": "ลากแถบชื่อเพื่อย้าย",
+    "description": "Hint for box drag interaction"
+  },
+  "searchShortcut": {
+    "message": "/ or Ctrl+F",
+    "description": "Search shortcut hint"
+  },
+  "addBoxShortcut": {
+    "message": "Double-click empty area",
+    "description": "Add box shortcut hint"
+  },
+  "zoomShortcut": {
+    "message": "Ctrl+scroll wheel",
+    "description": "Zoom shortcut hint"
+  },
+  "panShortcut": {
+    "message": "Left-drag empty area",
+    "description": "Pan shortcut hint"
+  },
+  "returnShortcut": {
+    "message": "Right-click or Esc to return",
+    "description": "Return shortcut hint"
+  },
+  "undoShortcut": {
+    "message": "Ctrl+Z to undo",
+    "description": "Undo shortcut hint"
+  },
+  "accessibilityLabel": {
+    "message": "Keyboard accessible · Screen reader friendly",
+    "description": "A11y label"
+  },
+  "rightClickReturnHint": {
+    "message": "Right-click to go back to canvas",
+    "description": "Right click return tooltip"
+  },
+  "escReturnHint": {
+    "message": "Press Esc to return to canvas",
+    "description": "Esc return hint"
+  },
+  "ctrlScrollZoom": {
+    "message": "Ctrl+scroll to zoom",
+    "description": "Zoom shortcut label"
+  },
+  "dragPanCanvas": {
+    "message": "Drag to pan canvas",
+    "description": "Pan canvas label"
+  },
+  "dblclickAddBox": {
+    "message": "Double-click to add box",
+    "description": "Add box shortcut label"
+  },
+  "searchSlash": {
+    "message": "/ to search",
+    "description": "Search shortcut label"
+  },
+  "noBookmarksYet": {
+    "message": "No bookmarks yet. Click + to add one.",
+    "description": "Empty bookmarks hint"
+  },
+  "emptyBoxDragHint": {
+    "message": "ดับเบิลคลิกหรือ + เพื่อเพิ่ม",
+    "description": "Empty box action hint"
+  },
+  "bookmarkReorderHint": {
+    "message": "Drag the grip to reorder bookmarks",
+    "description": "Bookmark reorder hint"
+  },
+  "deleteConfirmMessage": {
+    "message": "This action cannot be undone. All bookmarks inside will be removed.",
+    "description": "Delete confirmation detail"
+  },
+  "settingsCategoryGeneral": {
+    "message": "General",
+    "description": "Settings category"
+  },
+  "settingsCategoryAppearance": {
+    "message": "Appearance",
+    "description": "Settings category"
+  },
+  "settingsCategoryData": {
+    "message": "Data",
+    "description": "Settings category"
+  },
+  "settingsCategorySync": {
+    "message": "Sync & Backup",
+    "description": "Settings category"
+  },
+  "langAutoDetect": {
+    "message": "Auto-detect (browser language)",
+    "description": "Auto-detect language option"
+  },
+  "fontSizeSmall": {
+    "message": "Small",
+    "description": "Font size label"
+  },
+  "fontSizeNormal": {
+    "message": "Normal",
+    "description": "Font size label"
+  },
+  "fontSizeLarge": {
+    "message": "Large",
+    "description": "Font size label"
+  },
+  "debugModeOn": {
+    "message": "Debug: ON",
+    "description": "Debug mode status"
+  },
+  "debugModeOff": {
+    "message": "Debug: OFF",
+    "description": "Debug mode status"
+  },
+  "canvasBoundaryHint": {
+    "message": "Canvas has boundaries at 30% zoom level",
+    "description": "Canvas boundary hint"
+  },
+  "lastOpenedBox": {
+    "message": "Last opened box",
+    "description": "Remember last position label"
+  },
+  "storedDataFound": {
+    "message": "Stored data found",
+    "description": "Data status"
+  },
+  "backupSaved": {
+    "message": "Backup saved",
+    "description": "Backup confirmation"
+  },
+  "allLanguages": {
+    "message": "All 13 languages translated",
+    "description": "Locale completeness note"
   }
 }

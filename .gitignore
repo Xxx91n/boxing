@@ -54,3 +54,22 @@ tmp/
 package/
 
 # Development fix scripts
+
+# Build outputs (single file)
+package.json
+package-lock.json
+# Screenshots (any path)
+**/debug_*.png
+**/debug_*.jpg
+**/screenshot*.png
+**/screenshot*.jpg
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+# Backup files
+*.bak
+*.backup
+# Tools (temp fix scripts)
+tools/*.py
+!tools/v370_refactor.py
