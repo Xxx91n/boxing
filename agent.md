@@ -695,3 +695,29 @@ Updated CSS Tokens (v3.4)
 2. **Never place IIFE-scoped code outside the IIFE closing `})();`.** External references to `I18N_FALLBACK` etc throw ReferenceError and halt execution.
 3. **Function hoisting does NOT mean safe to call before `let`/`const` init.** Functions referencing `let`/`const` variables in their closure will throw TDZ errors if called before the variable declaration executes.
 4. **When debugging "all box creation broken", check console errors FIRST.** Two TDZ errors (`I18N_FALLBACK is not defined`, `Cannot access 'DEBUG' before initialization`) caused the entire init to fail silently — no functions were defined, no events were bound.
+
+## v3.6.5 Features (2026-07-11)
+
+| Feature | Description |
+|---|---|
+| Drag-click fix v3 | `lastDragEndTime` global timestamp (60ms window). After any box drag ends, clicks within 60ms are ignored to prevent drag-then-accidental-enter. Fixes the "move box then first click does nothing" bug. |
+| Autohide overflow fix | `.ntp--autohide` adds `overflow:hidden` on `.ntp` and `.library` to prevent browser scroll. JS also sets `document.body.style.overflow='hidden'` when header unpinned. |
+| Autohide smoother animation | Transition timing kept at 0.35s cubic-bezier(0.22,1,0.36,1). CSS `overflow:hidden` prevents jarring scroll jank during transition. |
+| Small box width | Default width reduced from 480px → 360px. |
+| Footer hint updated | Added "Left-drag to pan" to footerHint in I18N_FALLBACK and en locale. Now reads: "Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add" |
+| Bookmark drag-click fix | After bookmark drag (grip handle), `setTimeout` blocks the subsequent click event with a capture-phase once-listener. Fix: dragging to reorder no longer opens the bookmark URL. |
+| Pin button default | Large and small box pin buttons now default to UNPINNED (○ icon, opacity 0.4, title "Pin"). `box.pinned` normalized with `=== true`. Previously they showed ⊙ (pinned) icon but opacity 0.4 (contradiction). |
+| Auto-expand redesign v2 | Changed from `max-height` animation to `scaleY(0→1)` with `transform-origin:top center`. Natural pull-down-from-title-bar effect. Transition 0.35s cubic-bezier(0.22,1,0.36,1). |
+| Duplicate `let headerPinned` removed | Second declaration at line ~1627 was a TDZ duplicate. Only the early declaration at line ~226 remains. |
+| Version bump | 3.6.4 → 3.6.5 |
+
+## Development Rules (v3.6.5 additions)
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-065 | MUST | After any box drag end (onBoxDragEnd), set `lastDragEndTime = Date.now()`. All box body click handlers check `Date.now() - lastDragEndTime < 60` and skip entry if true. |
+| BX-DEV-066 | MUST | After bookmark reorder drag, use `setTimeout(() => row.addEventListener('click', blocker, {once:true, capture:true}), 0)` to prevent the lift-off click from triggering bookmark open. |
+| BX-DEV-067 | MUST | When headerPinned=false (autohide), both `document.body.style.overflow` and `document.documentElement.style.overflow` must be set to `'hidden'` to prevent browser page scroll. Restored to `''` when pinned. |
+| BX-DEV-068 | MUST | Box pin buttons must default to UNPINNED state: ○ icon, opacity 0.4, title "Pin". `box.pinned` (or `sb.pinned`) normalized with `=== true` check. |
+| BX-DEV-069 | MUST | Auto-expand must use `transform: scaleY(0→1)` with `transform-origin: top center` for natural pull-down effect. NOT max-height animation. Transition: 0.35s cubic-bezier(0.22,1,0.36,1). |
+| BX-DEV-070 | MUST | No duplicate `let`/`const` declarations in the same scope. Each state variable declared exactly once in early declarations block.

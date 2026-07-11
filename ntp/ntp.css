@@ -42,12 +42,14 @@ html, body {
 }
 .ntp--autohide .ntp {
   padding: 0;
+  overflow: hidden;  /* prevent browser scroll when header is hidden */
   transition: padding 0.35s cubic-bezier(0.22,1,0.36,1);
 }
 .ntp--autohide .library {
   flex: 1;
   margin: 0;
   padding: 0;
+  overflow: hidden;  /* canvas fills viewport, no scroll */
   transition: margin 0.35s cubic-bezier(0.22,1,0.36,1), padding 0.35s cubic-bezier(0.22,1,0.36,1);
 }
 .ntp--autohide .foot {
@@ -267,33 +269,31 @@ html, body {
 .box--pinned .box-pin-btn { opacity: 0.9; }
 
 /* Auto-expand: vertical slide-down from under title bar (BX-DEV-050) */
+/* Auto-expand: scaleY(0→1) with transform-origin:top for natural pull-down effect (BX-DEV-050 v2) */
 .box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
-  max-height: 0;
   overflow: hidden;
+  transform: scaleY(0);
+  transform-origin: top center;
   opacity: 0;
   padding-top: 0;
   padding-bottom: 0;
-  transform: translateY(-8px);
-  transition: max-height 0.4s cubic-bezier(0.22,1,0.36,1),
-              opacity 0.35s ease,
-              transform 0.4s cubic-bezier(0.22,1,0.36,1),
-              padding 0.3s ease;
+  transition: transform 0.35s cubic-bezier(0.22,1,0.36,1),
+              opacity 0.25s ease,
+              padding 0.25s ease;
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
 .box--hover-expand.box--collapsed .large-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .large-box__body {
-  max-height: 2000px;
+  transform: scaleY(1);
   opacity: 1;
-  transform: translateY(0);
   padding: var(--space-3);
 }
 .box--hover-expand.box--collapsed:hover .small-box__body,
 .box--hover-expand.box--collapsed .small-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .small-box__body {
-  max-height: 2000px;
+  transform: scaleY(1);
   opacity: 1;
-  transform: translateY(0);
   padding: 4px 10px;
 }
 

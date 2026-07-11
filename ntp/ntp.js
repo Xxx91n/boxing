@@ -20,7 +20,7 @@
   const INNER_GRID  = 16;
   const RESIZE_SNAP = 5;
   const LARGE_DEF_W = 320, LARGE_DEF_H = 220;
-  const SMALL_DEF_W  = 480, SMALL_DEF_H = 340;
+  const SMALL_DEF_W  = 360, SMALL_DEF_H = 340;
   const LARGE_MIN_W = 200, LARGE_MIN_H = 120;
   const SMALL_MIN_W  = 180, SMALL_MIN_H = 200;
   const MAX_LARGE_BOXES = 1000;
@@ -49,7 +49,7 @@
     emptyCanvasTitle: 'No large boxes yet', dblclickHint: 'Double-click canvas to add a large box',
     clickPlusHint: 'or click + above', emptyLargeHint: 'Click to add small boxes',
     emptyInnerHint: 'Click + to add your first small box', emptySmallHint: 'No bookmarks yet',
-    clickToOpen: 'Click to open →', footerHint: 'Ctrl+scroll to zoom · / to search · Dblclick to add',
+    clickToOpen: 'Click to open →', footerHint: 'Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add',
     canvasRoot: 'Canvas', untitledBox: 'Untitled box',
     untitledLargeBox: 'Untitled large box', untitledSmallBox: 'Untitled small box',
     newLargeBox: 'Box $1$', newSmallBox: 'New small box',
@@ -221,6 +221,7 @@
   // double-click detection
   let lastClickTime = 0;
   let lastClickTarget = null;
+  let lastDragEndTime = 0;  // skip click if within 60ms of drag end (BX-DEV-065)
 
   // header auto-hide state (must be declared before functions that reference it)
   let headerPinned = true;  // default: pinned ON, header visible, button sits on header bar
@@ -505,6 +506,11 @@
     pinBtn.textContent = '⊙';
     pinBtn.title = box.pinned ? i18n('unpin') : i18n('pin');
     pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;';
+    // Default: NOT pinned
+    box.pinned = box.pinned === true;  // normalize
+    pinBtn.textContent = box.pinned ? '⊙' : '○';
+    pinBtn.style.opacity = box.pinned ? '0.9' : '0.4';
+    pinBtn.title = box.pinned ? i18n('unpin') : i18n('pin');
     pinBtn.addEventListener('click', e => {
       e.stopPropagation();
       box.pinned = !box.pinned;
@@ -562,6 +568,8 @@
         barDownWasDragZone = false;
         if (dx > 3 || dy > 3) return;
       }
+      // Skip click if drag just ended within 60ms (BX-DEV-065)
+      if (Date.now() - lastDragEndTime < 60) { debug('skip click: drag just ended'); return; }
       enterLargeBox(box.id);
     });
     if (childCount) {
@@ -735,6 +743,11 @@
     pinBtn.textContent = '⊙';
     pinBtn.title = sb.pinned ? i18n('unpin') : i18n('pin');
     pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;';
+    // Default: NOT pinned
+    sb.pinned = sb.pinned === true;  // normalize
+    pinBtn.textContent = sb.pinned ? '⊙' : '○';
+    pinBtn.style.opacity = sb.pinned ? '0.9' : '0.4';
+    pinBtn.title = sb.pinned ? i18n('unpin') : i18n('pin');
     pinBtn.addEventListener('click', e => {
       e.stopPropagation();
       sb.pinned = !sb.pinned;
@@ -1059,6 +1072,8 @@
       }
     };
     const onUp = (ev) => {
+      // Prevent click-from-drag on bookmark row (BX-DEV-065)
+      const moved = Math.abs(ev.clientY - startY) > 4;
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
       document.body.style.cursor = '';
@@ -1066,6 +1081,14 @@
       row.style.opacity = origOpacity;
       row.style.zIndex = '';
       rows.forEach(r => r.style.outline = 'none');
+      if (moved) {
+        // Block the subsequent click event that would open the bookmark
+        ev.preventDefault(); ev.stopPropagation();
+        setTimeout(() => {
+          const blocker = (ce) => { ce.stopPropagation(); row.removeEventListener('click', blocker, true); };
+          row.addEventListener('click', blocker, { once: true, capture: true });
+        }, 0);
+      }
       let targetIdx = dragIdx;
       const rects = rows.map(r => r.getBoundingClientRect());
       for (let i = 0; i < rects.length; i++) {
@@ -1172,6 +1195,7 @@
 
     saveLayout();
     dragState = null;
+    lastDragEndTime = Date.now();  // prevent click-from-drag (BX-DEV-065)
   }
 
   // ── Canvas Pan (left-drag empty area) ────────────────
@@ -1624,15 +1648,15 @@ function updateInnerCaption(lb) {
     backBtn.addEventListener('click', exitToCanvas);
 
   // ── header auto-hide ON by default: fullscreen immersive canvas ──
-  let headerPinned = true;  // default: pinned ON, header visible, button sits on header bar
   const headerPinBtn = $('#header-pin-btn');
   const appEl = $('#app');
-  let scrollTimeout;
 
   // headerPinBtn stays in .ntp__bar when pinned; moves to canvas-relative when floating
   function updateAutohideUI() {
     if (!headerPinned) {
       appEl.classList.add('ntp--autohide');
+      document.body.style.overflow = 'hidden';  // prevent scroll when autohiding
+      document.documentElement.style.overflow = 'hidden';
       // Move pin button to canvas layer for floating positioning
       if (headerPinBtn && headerPinBtn.parentElement) {
         headerPinBtn.parentElement.removeChild(headerPinBtn);
@@ -1642,6 +1666,8 @@ function updateInnerCaption(lb) {
       }
     } else {
       appEl.classList.remove('ntp--autohide');
+      document.body.style.overflow = '';  // restore scroll
+      document.documentElement.style.overflow = '';
       // Move pin button back to header bar
       if (headerPinBtn && headerPinBtn.parentElement) {
         headerPinBtn.parentElement.removeChild(headerPinBtn);
