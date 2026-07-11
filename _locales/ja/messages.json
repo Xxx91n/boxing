@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "ブックマークをクリックした時に開く場所を選択"
-  },
-  "ntpNavModeLabel": {
-    "message": "NTP ナビゲーション"
-  },
-  "ntpNavModeNewTab": {
-    "message": "新しいタブ"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "現在のタブ"
-  },
-  "ntpNavModeHint": {
-    "message": "ブラウザのブックマークやアドレスバーがBoxing NTPから離れる時"
   }
 }

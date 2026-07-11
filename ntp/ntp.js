@@ -192,7 +192,6 @@
   const langSelect     = $('#lang-select');
   const rememberCheck  = $('#remember-last-pos');
   const urlOpenSelect  = $('#url-open-mode');
-  const ntpNavSelect   = $('#ntp-nav-mode');
   const fontSlider     = $('#font-slider');
   const fontSliderVal  = $('#font-slider-value');
   const zoomSlider     = $('#zoom-slider');
@@ -228,7 +227,6 @@
       rememberLastPos: true,
       zoomLevel: 1.0,
       urlOpenMode: 'newTab',
-      ntpNavMode: 'newTab',
       darkMode: false,
       fontSize: 14
     }
@@ -275,7 +273,7 @@
       version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
       lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
       lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, urlOpenMode: 'newTab', ntpNavMode: 'newTab' }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, urlOpenMode: 'newTab' }
     };
   }
 
@@ -1278,7 +1276,7 @@
   // ── Canvas Pan (left-drag empty area) ────────────────
   function onCanvasPanStart(e) {
     // Only pan if clicking empty canvas (not on a box)
-    if (e.target.closest('.large-box') || e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-btn')) return;
+    if (e.target.closest('.large-box') || e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float')) return;
     if (e.button !== 0) return;
 
     panState = {
@@ -1313,7 +1311,7 @@
 
   // Inner canvas pan
   function onInnerPanStart(e) {
-    if (e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-btn')) return;
+    if (e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float')) return;
     if (e.button !== 0) return;
 
     panState = {
@@ -1564,7 +1562,6 @@ function updateInnerCaption(lb) {
     langSelect.value = layout.settings.selectedLanguage || 'en';
     rememberCheck.checked = layout.settings.rememberLastPos !== false;
     urlOpenSelect.value = layout.settings.urlOpenMode || 'newTab';
-    ntpNavSelect.value = layout.settings.ntpNavMode || 'newTab';
     darkModeCB.checked = layout.settings.darkMode === true;
     zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
     zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';

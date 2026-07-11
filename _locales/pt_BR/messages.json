@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "Escolha onde os favoritos são abertos ao clicar"
-  },
-  "ntpNavModeLabel": {
-    "message": "Navegação NTP"
-  },
-  "ntpNavModeNewTab": {
-    "message": "Nova aba"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "Aba atual"
-  },
-  "ntpNavModeHint": {
-    "message": "Quando favoritos ou barra de endereços saem da página Boxing NTP"
   }
 }

@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "Chọn nơi mở dấu trang khi nhấp"
-  },
-  "ntpNavModeLabel": {
-    "message": "Điều hướng NTP"
-  },
-  "ntpNavModeNewTab": {
-    "message": "Tab mới"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "Tab hiện tại"
-  },
-  "ntpNavModeHint": {
-    "message": "Khi dấu trang hoặc thanh địa chỉ rời khỏi trang Boxing NTP"
   }
 }

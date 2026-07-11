@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "Choisissez où ouvrir les marque-pages"
-  },
-  "ntpNavModeLabel": {
-    "message": "Navigation NTP"
-  },
-  "ntpNavModeNewTab": {
-    "message": "Nouvel onglet"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "Onglet actuel"
-  },
-  "ntpNavModeHint": {
-    "message": "Quand les marque-pages ou la barre d'adresse quittent la page Boxing NTP"
   }
 }

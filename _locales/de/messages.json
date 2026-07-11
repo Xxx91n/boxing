@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "Wählen Sie, wo Lesezeichen geöffnet werden"
-  },
-  "ntpNavModeLabel": {
-    "message": "NTP-Navigation"
-  },
-  "ntpNavModeNewTab": {
-    "message": "Neuer Tab"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "Aktueller Tab"
-  },
-  "ntpNavModeHint": {
-    "message": "Wenn Browser-Lesezeichen oder Adressleiste die Boxing-NTP-Seite verlassen"
   }
 }

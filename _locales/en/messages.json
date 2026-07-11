@@ -318,17 +318,5 @@
   },
   "urlOpenModeHint": {
     "message": "Choose where bookmarks open when clicked"
-  },
-  "ntpNavModeLabel": {
-    "message": "NTP Navigation"
-  },
-  "ntpNavModeNewTab": {
-    "message": "New Tab"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "Current Tab"
-  },
-  "ntpNavModeHint": {
-    "message": "When browser bookmarks or address bar navigate away from Boxing NTP"
   }
 }

@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "북마크를 클릭할 때 열 위치를 선택하세요"
-  },
-  "ntpNavModeLabel": {
-    "message": "NTP 탐색"
-  },
-  "ntpNavModeNewTab": {
-    "message": "새 탭"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "현재 탭"
-  },
-  "ntpNavModeHint": {
-    "message": "브라우저 북마크나 주소 표시줄이 Boxing NTP에서 벗어날 때"
   }
 }

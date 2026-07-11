@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "चुनें कि क्लिक करने पर बुकमार्क कहां खुलें"
-  },
-  "ntpNavModeLabel": {
-    "message": "NTP नेविगेशन"
-  },
-  "ntpNavModeNewTab": {
-    "message": "नया टैब"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "वर्तमान टैब"
-  },
-  "ntpNavModeHint": {
-    "message": "जब ब्राउज़र बुकमार्क या पता बार Boxing NTP से बाहर जाते हैं"
   }
 }

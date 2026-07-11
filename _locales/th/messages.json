@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "เลือกตำแหน่งที่จะเปิดบุ๊กมาร์กเมื่อคลิก"
-  },
-  "ntpNavModeLabel": {
-    "message": "การนำทาง NTP"
-  },
-  "ntpNavModeNewTab": {
-    "message": "แท็บใหม่"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "แท็บปัจจุบัน"
-  },
-  "ntpNavModeHint": {
-    "message": "เมื่อบุ๊กมาร์กของเบราว์เซอร์หรือแถบที่อยู่ออกจากหน้า Boxing NTP"
   }
 }

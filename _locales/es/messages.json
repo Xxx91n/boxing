@@ -306,17 +306,5 @@
   },
   "urlOpenModeHint": {
     "message": "Elija dónde abrir los marcadores al hacer clic"
-  },
-  "ntpNavModeLabel": {
-    "message": "Navegación NTP"
-  },
-  "ntpNavModeNewTab": {
-    "message": "Nueva pestaña"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "Pestaña actual"
-  },
-  "ntpNavModeHint": {
-    "message": "Cuando los marcadores o la barra de direcciones salen de Boxing NTP"
   }
 }

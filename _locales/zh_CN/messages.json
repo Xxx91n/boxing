@@ -309,17 +309,5 @@
   },
   "urlOpenModeHint": {
     "message": "选择点击书签时打开的位置"
-  },
-  "ntpNavModeLabel": {
-    "message": "NTP 导航"
-  },
-  "ntpNavModeNewTab": {
-    "message": "新标签页"
-  },
-  "ntpNavModeCurrentTab": {
-    "message": "当前标签页"
-  },
-  "ntpNavModeHint": {
-    "message": "当浏览器书签或地址栏导航离开 Boxing NTP 时"
   }
 }
