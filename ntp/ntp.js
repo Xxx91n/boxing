@@ -191,6 +191,7 @@
   const modalClose     = $('#settings-modal .modal__close');
   const langSelect     = $('#lang-select');
   const rememberCheck  = $('#remember-last-pos');
+  const urlOpenSelect  = $('#url-open-mode');
   const fontSlider     = $('#font-slider');
   const fontSliderVal  = $('#font-slider-value');
   const zoomSlider     = $('#zoom-slider');
@@ -225,6 +226,7 @@
       selectedLanguage: 'en',
       rememberLastPos: true,
       zoomLevel: 1.0,
+      urlOpenMode: 'newTab',
       darkMode: false,
       fontSize: 14
     }
@@ -245,6 +247,7 @@
   let lastClickTime = 0;
   let lastClickTarget = null;
   let lastDragEndTime = 0;  // skip click if within 60ms of drag end (BX-DEV-065)
+  let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click (BX-DEV-077)
 
   // header auto-hide state (must be declared before functions that reference it)
   let headerPinned = true;  // default: pinned ON, header visible, button sits on header bar
@@ -270,7 +273,7 @@
       version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
       lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
       lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14 }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, urlOpenMode: 'newTab' }
     };
   }
 
@@ -448,12 +451,50 @@
   }
 
   // ── render canvas (top-level large boxes) ───────────────
+  const headerPinBtn = $('#header-pin-btn');
+  const appEl = $('#app');
+  // BX-DEV-059: Pin button must always stay on the active canvas (not header bar).
+  // headerPinned controls only overflow lock + floating CSS class; button DOM never leaves canvas.
+  function updateAutohideUI() {
+    // Always reposition button to the currently visible canvas
+    const activeCanvas = canvasContainer.hidden ? innerCanvas : canvasContainer;
+    if (headerPinBtn && headerPinBtn.parentElement !== activeCanvas) {
+      if (headerPinBtn.parentElement) headerPinBtn.parentElement.removeChild(headerPinBtn);
+      activeCanvas.appendChild(headerPinBtn);
+    }
+    // Overflow / autohide class management
+    if (!headerPinned) {
+      appEl.classList.add('ntp--autohide');
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      appEl.classList.remove('ntp--autohide');
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    // Visual state toggle
+    if (headerPinBtn) {
+      const span = headerPinBtn.querySelector('span');
+      if (span) span.textContent = headerPinned ? '⊙' : '○';
+      headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
+      headerPinBtn.classList.toggle('header-pin--floating', !headerPinned);
+    }
+  }
+  if (headerPinBtn) {
+    headerPinBtn.addEventListener('click', () => {
+      headerPinned = !headerPinned;
+      updateAutohideUI();
+    });
+    headerPinBtn.title = i18n('headerPin');  // default pinned
+    // Ensure button starts on active canvas (not header bar) - BX-DEV-078
+    updateAutohideUI();  // default: header pinned ON, button on canvas
+  }
   function renderCanvas() {
     debug('renderCanvas start, boxCount=' + layout.boxes.length + ' hidden=' + canvasContainer.hidden);
     innerWrapper.hidden = true;
     canvasContainer.hidden = false;
     backBtn.dataset.show = '0';
-    if (!headerPinned) updateAutohideUI(); // move pin back to canvas
+    updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
 
     const hasBoxes = layout.boxes.length > 0;
     canvasEmpty.hidden = hasBoxes;
@@ -593,6 +634,7 @@
       }
       // Skip click if drag just ended within 60ms (BX-DEV-065)
       if (Date.now() - lastDragEndTime < 60) { debug('skip click: drag just ended'); return; }
+      if (lastDragEndId === box.id) { lastDragEndId = null; barDownWasDragZone = false; }
       enterLargeBox(box.id);
     });
     if (childCount) {
@@ -648,7 +690,7 @@
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
     backBtn.dataset.show = '1';
-    if (!headerPinned) updateAutohideUI(); // move pin to inner canvas
+    updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
 
     renderCrumbs(lb);
     innerTitle.textContent = lb.title || i18n('untitledBox');
@@ -835,10 +877,18 @@
       row.addEventListener('click', e => {
         if (e.target.closest('.bm-row__edit-btn') || e.target.closest('.bm-row__grip')) return;
         (function(url) {
+        const mode = layout.settings.urlOpenMode || 'newTab';
         if (api.tabs?.create) {
-          api.tabs.create({ url: url, active: true });
+          if (mode === 'currentTab') {
+            api.tabs.query({ active: true, currentWindow: true }, tabs => {
+              if (tabs && tabs[0]) api.tabs.update(tabs[0].id, { url: url });
+              else api.tabs.create({ url: url, active: true });
+            });
+          } else {
+            api.tabs.create({ url: url, active: true });
+          }
         } else {
-          window.open(url, '_blank');
+          window.open(url, mode === 'currentTab' ? '_self' : '_blank');
         }
       })(ensureHttpsUrl(bm.url));
       });
@@ -1219,6 +1269,7 @@
     saveLayout();
     dragState = null;
     lastDragEndTime = Date.now();  // prevent click-from-drag (BX-DEV-065)
+    if (type === "large") lastDragEndId = id;  // signal large box to clear barDownWasDragZone on next click (BX-DEV-077)
   }
 
   // ── Canvas Pan (left-drag empty area) ────────────────
@@ -1509,6 +1560,7 @@ function updateInnerCaption(lb) {
     debug('openSettingsModal set hidden=false, now=' + settingsModal.hidden + ' display=' + getComputedStyle(settingsModal).display);
     langSelect.value = layout.settings.selectedLanguage || 'en';
     rememberCheck.checked = layout.settings.rememberLastPos !== false;
+    urlOpenSelect.value = layout.settings.urlOpenMode || 'newTab';
     darkModeCB.checked = layout.settings.darkMode === true;
     zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
     zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
@@ -1671,55 +1723,6 @@ function updateInnerCaption(lb) {
     backBtn.addEventListener('click', exitToCanvas);
 
   // ── header auto-hide ON by default: fullscreen immersive canvas ──
-  const headerPinBtn = $('#header-pin-btn');
-  const appEl = $('#app');
-
-  // headerPinBtn stays in .ntp__bar when pinned; moves to canvas-relative when floating
-  function updateAutohideUI() {
-    if (!headerPinned) {
-      appEl.classList.add('ntp--autohide');
-      document.body.style.overflow = 'hidden';  // prevent scroll when autohiding
-      document.documentElement.style.overflow = 'hidden';
-      // Move pin button to canvas layer for floating positioning
-      if (headerPinBtn && headerPinBtn.parentElement) {
-        headerPinBtn.parentElement.removeChild(headerPinBtn);
-        // Append to whichever canvas is currently visible
-        const activeCanvas = canvasContainer.hidden ? innerCanvas : canvasContainer;
-        activeCanvas.appendChild(headerPinBtn);
-      }
-    } else {
-      appEl.classList.remove('ntp--autohide');
-      document.body.style.overflow = '';  // restore scroll
-      document.documentElement.style.overflow = '';
-      // Move pin button back to header bar
-      if (headerPinBtn && headerPinBtn.parentElement) {
-        headerPinBtn.parentElement.removeChild(headerPinBtn);
-        const bar = appEl.querySelector('.ntp__bar');
-        if (bar) bar.appendChild(headerPinBtn);
-      }
-    }
-    // Update pin button visual state
-    if (headerPinBtn) {
-      const span = headerPinBtn.querySelector('span');
-      if (span) span.textContent = headerPinned ? '⊙' : '○';
-      headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
-      headerPinBtn.classList.toggle('header-pin--floating', !headerPinned);
-    }
-  }
-  if (headerPinBtn) {
-    headerPinBtn.addEventListener('click', () => {
-      headerPinned = !headerPinned;
-      updateAutohideUI();
-    });
-    headerPinBtn.title = i18n('headerPin');  // default pinned
-    // Ensure button starts in header bar
-    const bar = appEl.querySelector('.ntp__bar');
-    if (bar && headerPinBtn.parentElement !== bar) {
-      if (headerPinBtn.parentElement) headerPinBtn.parentElement.removeChild(headerPinBtn);
-      bar.appendChild(headerPinBtn);
-    }
-    updateAutohideUI();  // default: header pinned ON
-  }
 
     if (addLargeBtn) addLargeBtn.addEventListener('click', addLargeBox);
     if (addSmallBtn) addSmallBtn.addEventListener('click', addSmallBox);

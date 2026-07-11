@@ -294,5 +294,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing lưu trữ dữ liệu trong bộ nhớ đồng bộ của trình duyệt. Chọn nhà cung cấp của bạn."
+  },
+  "urlOpenModeLabel": {
+    "message": "Mở dấu trang trong"
+  },
+  "urlOpenModeNewTab": {
+    "message": "Tab mới"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "Tab hiện tại"
+  },
+  "urlOpenModeHint": {
+    "message": "Chọn nơi mở dấu trang khi nhấp"
   }
 }

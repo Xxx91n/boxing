@@ -294,5 +294,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing speichert Daten im Browser-Synchronisationsspeicher. Wählen Sie Ihren Anbieter."
+  },
+  "urlOpenModeLabel": {
+    "message": "Lesezeichen öffnen in"
+  },
+  "urlOpenModeNewTab": {
+    "message": "Neuer Tab"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "Aktueller Tab"
+  },
+  "urlOpenModeHint": {
+    "message": "Wählen Sie, wo Lesezeichen geöffnet werden"
   }
 }

@@ -294,5 +294,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing يخزن البيانات في تخزين المزامنة للمتصفح. اختر مزودك."
+  },
+  "urlOpenModeLabel": {
+    "message": "فتح الإشارات المرجعية في"
+  },
+  "urlOpenModeNewTab": {
+    "message": "علامة تبويب جديدة"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "علامة التبويب الحالية"
+  },
+  "urlOpenModeHint": {
+    "message": "اختر مكان فتح الإشارات المرجعية عند النقر"
   }
 }

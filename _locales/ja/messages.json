@@ -294,5 +294,17 @@
   },
   "syncProviderHint": {
     "message": "Boxingはブラウザの同期ストレージにデータを保存します。プロバイダーを選択してください。"
+  },
+  "urlOpenModeLabel": {
+    "message": "ブックマークを開く場所"
+  },
+  "urlOpenModeNewTab": {
+    "message": "新しいタブ"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "現在のタブ"
+  },
+  "urlOpenModeHint": {
+    "message": "ブックマークをクリックした時に開く場所を選択"
   }
 }

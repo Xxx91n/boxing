@@ -306,5 +306,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing stores data in browser sync storage. Choose your provider."
+  },
+  "urlOpenModeLabel": {
+    "message": "Open bookmarks in"
+  },
+  "urlOpenModeNewTab": {
+    "message": "New Tab"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "Current Tab"
+  },
+  "urlOpenModeHint": {
+    "message": "Choose where bookmarks open when clicked"
   }
 }

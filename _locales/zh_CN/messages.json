@@ -297,5 +297,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing 将数据存储在浏览器同步存储中。选择您的同步方式。"
+  },
+  "urlOpenModeLabel": {
+    "message": "在以下位置打开书签"
+  },
+  "urlOpenModeNewTab": {
+    "message": "新标签页"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "当前标签页"
+  },
+  "urlOpenModeHint": {
+    "message": "选择点击书签时打开的位置"
   }
 }

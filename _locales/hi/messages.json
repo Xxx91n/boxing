@@ -294,5 +294,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing ब्राउज़र सिंक स्टोरेज में डेटा संग्रहीत करता है। अपना प्रदाता चुनें।"
+  },
+  "urlOpenModeLabel": {
+    "message": "बुकमार्क खोलें"
+  },
+  "urlOpenModeNewTab": {
+    "message": "नया टैब"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "वर्तमान टैब"
+  },
+  "urlOpenModeHint": {
+    "message": "चुनें कि क्लिक करने पर बुकमार्क कहां खुलें"
   }
 }

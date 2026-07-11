@@ -294,5 +294,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing stocke les données dans le stockage de synchronisation du navigateur. Choisissez votre fournisseur."
+  },
+  "urlOpenModeLabel": {
+    "message": "Ouvrir les marque-pages dans"
+  },
+  "urlOpenModeNewTab": {
+    "message": "Nouvel onglet"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "Onglet actuel"
+  },
+  "urlOpenModeHint": {
+    "message": "Choisissez où ouvrir les marque-pages"
   }
 }

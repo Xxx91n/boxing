@@ -294,5 +294,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing armazena dados no armazenamento de sincronização do navegador. Escolha seu provedor."
+  },
+  "urlOpenModeLabel": {
+    "message": "Abrir favoritos em"
+  },
+  "urlOpenModeNewTab": {
+    "message": "Nova aba"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "Aba atual"
+  },
+  "urlOpenModeHint": {
+    "message": "Escolha onde os favoritos são abertos ao clicar"
   }
 }

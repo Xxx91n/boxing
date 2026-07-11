@@ -294,5 +294,17 @@
   },
   "syncProviderHint": {
     "message": "Boxing เก็บข้อมูลในที่เก็บข้อมูลซิงค์ของเบราว์เซอร์ เลือกผู้ให้บริการของคุณ"
+  },
+  "urlOpenModeLabel": {
+    "message": "เปิดบุ๊กมาร์กใน"
+  },
+  "urlOpenModeNewTab": {
+    "message": "แท็บใหม่"
+  },
+  "urlOpenModeCurrentTab": {
+    "message": "แท็บปัจจุบัน"
+  },
+  "urlOpenModeHint": {
+    "message": "เลือกตำแหน่งที่จะเปิดบุ๊กมาร์กเมื่อคลิก"
   }
 }
