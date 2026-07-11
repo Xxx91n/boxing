@@ -306,5 +306,17 @@
   },
   "urlOpenModeHint": {
     "message": "Выберите, где открывать закладки при нажатии"
+  },
+  "ntpNavModeLabel": {
+    "message": "Навигация NTP"
+  },
+  "ntpNavModeNewTab": {
+    "message": "Новая вкладка"
+  },
+  "ntpNavModeCurrentTab": {
+    "message": "Текущая вкладка"
+  },
+  "ntpNavModeHint": {
+    "message": "Когда закладки браузера или адресная строка уходят со страницы Boxing NTP"
   }
 }

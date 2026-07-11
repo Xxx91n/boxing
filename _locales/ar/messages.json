@@ -306,5 +306,17 @@
   },
   "urlOpenModeHint": {
     "message": "اختر مكان فتح الإشارات المرجعية عند النقر"
+  },
+  "ntpNavModeLabel": {
+    "message": "تنقل NTP"
+  },
+  "ntpNavModeNewTab": {
+    "message": "علامة تبويب جديدة"
+  },
+  "ntpNavModeCurrentTab": {
+    "message": "علامة التبويب الحالية"
+  },
+  "ntpNavModeHint": {
+    "message": "عندما تغادر الإشارات المرجعية أو شريط العناوين صفحة Boxing NTP"
   }
 }
