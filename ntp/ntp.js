@@ -460,44 +460,61 @@
     return current;
   }
 
-  // ── render canvas (top-level large boxes) ───────────────
   const headerPinBtn = $('#header-pin-btn');
   const appEl = $('#app');
-  // BX-DEV-059: Pin button must always stay on the active canvas (not header bar).
-  // headerPinned controls only overflow lock + floating CSS class; button DOM never leaves canvas.
+  const headerBar = $('.ntp__bar');
+
+  // ── Header Pin: two-position strategy (v3.7.2) ──────────────────────────
+  // Pinned (default): button lives in header bar, header visible.
+  // Floating (unpinned): header hidden, button moved into canvas as absolute overlay.
+  // This prevents canvas__surface from intercepting pointer events (stacking context bug).
   function updateAutohideUI() {
-    // Always reposition button to the currently visible canvas
     const activeCanvas = canvasContainer.hidden ? innerCanvas : canvasContainer;
-    if (headerPinBtn && headerPinBtn.parentElement !== activeCanvas) {
-      if (headerPinBtn.parentElement) headerPinBtn.parentElement.removeChild(headerPinBtn);
-      activeCanvas.appendChild(headerPinBtn);
-    }
-    // Overflow / autohide class management
-    if (!headerPinned) {
-      appEl.classList.add('ntp--autohide');
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    } else {
+
+    if (headerPinned) {
+      // Pinned: button belongs in the header bar
+      if (headerPinBtn && headerPinBtn.parentElement !== headerBar) {
+        if (headerPinBtn.parentElement) headerPinBtn.parentElement.removeChild(headerPinBtn);
+        headerBar.appendChild(headerPinBtn);
+      }
+      if (headerBar) headerBar.style.display = '';
       appEl.classList.remove('ntp--autohide');
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
+    } else {
+      // Unpinned: hide header bar, move button onto canvas as floating absolute overlay
+      if (headerPinBtn && headerPinBtn.parentElement !== activeCanvas) {
+        if (headerPinBtn.parentElement) headerPinBtn.parentElement.removeChild(headerPinBtn);
+        activeCanvas.appendChild(headerPinBtn);
+      }
+      if (headerBar) headerBar.style.display = 'none';
+      appEl.classList.add('ntp--autohide');
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     }
-    // Visual state toggle
+
+    // Toggle floating visual class + force z-index above canvas__surface stacking context
     if (headerPinBtn) {
       const span = headerPinBtn.querySelector('span');
       if (span) span.textContent = headerPinned ? '⊙' : '○';
       headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
       headerPinBtn.classList.toggle('header-pin--floating', !headerPinned);
+      headerPinBtn.style.zIndex = headerPinned ? '10' : '1000';
     }
   }
   if (headerPinBtn) {
-    headerPinBtn.addEventListener('click', () => {
+    headerPinBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
       headerPinned = !headerPinned;
       updateAutohideUI();
+      // When repinning: header reappears, canvas layout changes — reapply transforms
+      if (headerPinned) { applyCanvasTransform(); applyInnerTransform(); }
+      if (currentLargeBoxId) updateCaption(); else updateCaption();
+      saveLayout();
     });
     headerPinBtn.title = i18n('headerPin');  // default pinned
-    // Ensure button starts on active canvas (not header bar) - BX-DEV-078
-    updateAutohideUI();  // default: header pinned ON, button on canvas
+    updateAutohideUI();  // button stays in header bar by default
   }
   function renderCanvas() {
     debug('renderCanvas start, boxCount=' + layout.boxes.length + ' hidden=' + canvasContainer.hidden);
@@ -697,6 +714,7 @@
     layout.lastPanY = canvasPanY;
     const lb = getLargeBox(id);
     if (!lb) { exitToCanvas(); return; }
+    saveLayout();  // BX-DEV-097: persist navigation state immediately, prevent ghost empty on refresh
 
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
@@ -732,6 +750,7 @@
     layout.lastInnerPanX = innerPanX;
     layout.lastInnerPanY = innerPanY;
     innerPanX = 0; innerPanY = 0; innerZoom = 1.0;
+    saveLayout();  // BX-DEV-097: persist exit state immediately
     renderCanvas();
   }
 
@@ -888,13 +907,20 @@
       row.style.cursor = 'pointer';
       row.addEventListener('click', e => {
         if (e.target.closest('.bm-row__edit-btn') || e.target.closest('.bm-row__grip')) return;
-        (function(url) {
-        // BX-DEV-093: Always open in new tab via browser API — follows browser default behavior.
-        // Compatible with Chrome (chrome.tabs.create) and Firefox (browser.tabs.create via api polyfill).
-        if (api.tabs?.create) {
-          api.tabs.create({ url: url, active: true });
+        (async function(url) {
+        // BX-DEV-096: Follow browser default open-bookmark behavior.
+        // Firefox: respect openBookmarksInNewTabs setting; Chrome: fallback to current tab.
+        let openInNewTab = false;
+        try { if (typeof browser !== 'undefined' && browser.browserSettings?.openBookmarksInNewTabs) {
+          const s = await browser.browserSettings.openBookmarksInNewTabs.get({});
+          openInNewTab = s.value;
+        }} catch(_) {}
+        if (openInNewTab) {
+          api.tabs?.create ? api.tabs.create({ url, active: true }) : window.open(url, '_blank');
         } else {
-          window.open(url, '_blank');
+          // Open in current tab: use tabs.update (replace this NTP) or window.location fallback
+          if (api.tabs?.update) { api.tabs.update({ url }); }
+          else { window.location.href = url; }
         }
       })(ensureHttpsUrl(bm.url));
       });
@@ -1928,13 +1954,19 @@ function updateInnerCaption(lb) {
     // Window resize
     window.addEventListener('resize', onWindowResize);
 
-    // remember last position
-    if (layout.settings.rememberLastPos && layout.lastLargeBoxId) {
+    // BX-DEV-097: Remember last position — only restore on NEW TAB navigation, not refresh/F5.
+    // Detect refresh vs new-tab: Navigation Timing API type 0 = navigate, 1 = reload.
+    const isNewTab = !(window.performance?.navigation?.type === 1 || window.performance?.getEntriesByType?.('navigation')?.[0]?.type === 'reload');
+    if (isNewTab && layout.settings.rememberLastPos && layout.lastLargeBoxId) {
       const lb = getLargeBox(layout.lastLargeBoxId);
       // Restore saved canvas zoom and pan
       canvasZoom = layout.lastZoom || 1.0;
       canvasPanX = layout.lastPanX || 0;
       canvasPanY = layout.lastPanY || 0;
+      // Restore inner position if last session was inside a box
+      if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
+      if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
+      if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
       applyCanvasTransform();
       if (lb) { enterLargeBox(layout.lastLargeBoxId); return; }
     }

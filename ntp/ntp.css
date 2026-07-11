@@ -944,6 +944,9 @@ body.box-resizing {
    Header Pin Float Button (v3.6.2 — canvas-relative)
    ══════════════════════════════════════════════ */
 /* Default state: button sits inline in header bar, no special positioning */
+/* Base: always above canvas__surface stacking context to prevent pointer-event interception */
+#header-pin-btn { position: relative; z-index: 10; cursor: pointer !important; }
+#header-pin-btn:hover { background: var(--color-surface); border-color: var(--color-hairline); color: var(--color-ink); }
 .header-pin--floating {
   position: absolute !important;
   top: 12px;
