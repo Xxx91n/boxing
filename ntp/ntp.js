@@ -20,7 +20,7 @@
   const INNER_GRID  = 16;
   const RESIZE_SNAP = 5;
   const LARGE_DEF_W = 320, LARGE_DEF_H = 220;
-  const SMALL_DEF_W  = 360, SMALL_DEF_H = 340;
+  const SMALL_DEF_W  = 300, SMALL_DEF_H = 340;
   const LARGE_MIN_W = 200, LARGE_MIN_H = 120;
   const SMALL_MIN_W  = 180, SMALL_MIN_H = 200;
   const MAX_LARGE_BOXES = 1000;
@@ -528,12 +528,14 @@
 
     canvasSurface.innerHTML = '';
     debug('renderCanvas creating DOM for ' + layout.boxes.length + ' boxes');
+    const frag = document.createDocumentFragment();
     for (const box of layout.boxes) {
       debug('renderCanvas creating largeBox DOM for', box.id, box.title);
       try {
-      canvasSurface.appendChild(createLargeBoxEl(box));
+      frag.appendChild(createLargeBoxEl(box));
       } catch(e) { debugErr('createLargeBoxEl failed for', box.id, e); }
     }
+    canvasSurface.appendChild(frag);
     debug('renderCanvas done, surface children=' + canvasSurface.children.length);
     applyCanvasTransform();
     updateCaption();
@@ -801,9 +803,11 @@
 
   function renderInnerSurface(lb) {
     innerSurface.innerHTML = '';
+    const frag = document.createDocumentFragment();
     for (const sb of lb.children || []) {
-      innerSurface.appendChild(createSmallBoxEl(lb.id, sb));
+      frag.appendChild(createSmallBoxEl(lb.id, sb));
     }
+    innerSurface.appendChild(frag);
   }
 
   function createSmallBoxEl(largeId, sb) {
@@ -959,10 +963,15 @@
 
       const fav = document.createElement('img');
       fav.className = 'bm-row__favicon';
-      fav.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(bm.url)}&sz=16`;
+      // BX-DEV-107: multi-source async favicon with session cache
+      fav.src = '';  // placeholder, loaded async below
       fav.width = 16; fav.height = 16;
       fav.style.flexShrink = '0';
+      fav.style.display = 'none';  // hidden until loaded
+      fav.onload = () => { fav.style.display = ''; };
       fav.onerror = () => { fav.style.display = 'none'; };
+      // async load, non-blocking
+      loadFavicon(fav, bm.url);
 
       const tEl = document.createElement('span');
       tEl.className = 'bm-row__title';
@@ -1486,10 +1495,14 @@
     const newBox = {
       id: 'large-' + Date.now(), type: 'large',
       title: i18n('newLargeBox', [index]),
-      x: Math.max(0, snapped.x), y: Math.max(0, snapped.y),
+      x: 0, y: 0,
       width: LARGE_DEF_W, height: LARGE_DEF_H,
       nextSmallIndex: 1, children: []
     };
+    // BX-DEV-106: elastic-snap to avoid overlapping existing boxes
+    const others = layout.boxes.map(b => ({ x: b.x, y: b.y, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H }));
+    const unsnapped = elasticSnap({ x: snapped.x, y: snapped.y }, LARGE_DEF_W, LARGE_DEF_H, others, CANVAS_GRID, snapCanvas);
+    newBox.x = Math.max(0, unsnapped.x); newBox.y = Math.max(0, unsnapped.y);
     layout.boxes.push(newBox);
     debug('addLargeBoxAt pushed, count=' + layout.boxes.length);
     await saveLayout();
@@ -1577,10 +1590,15 @@ function updateInnerCaption(lb) {
     lb.children.push({
       id: 'small-' + Date.now(), type: 'small',
       title: i18n('newSmallBox'),
-      x: Math.max(0, snapped.x), y: Math.max(0, snapped.y),
+      x: 0, y: 0,
       width: SMALL_DEF_W, height: SMALL_DEF_H,
       pinned: true, bookmarks: []
     });
+    // BX-DEV-106: elastic-snap to avoid overlapping existing small boxes
+    const others = lb.children.filter(s => s.id !== lb.children[lb.children.length-1].id).map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
+    const last = lb.children[lb.children.length - 1];
+    const unsnapped = elasticSnap({ x: snapped.x, y: snapped.y }, SMALL_DEF_W, SMALL_DEF_H, others, INNER_GRID, snapInner);
+    last.x = Math.max(0, unsnapped.x); last.y = Math.max(0, unsnapped.y);
     saveLayout();
     renderInnerSurface(lb);
   }
@@ -1616,7 +1634,8 @@ function updateInnerCaption(lb) {
     if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
     // Show General tab by default
     const firstTab = document.querySelector('.settings-nav__item');
-    if (firstTab) firstTab.click();
+    // Use rAF to let modal paint first, then switch tab — eliminates visual flicker
+    if (firstTab) { requestAnimationFrame(() => requestAnimationFrame(() => firstTab.click())); }
   }
 
   function closeSettingsModal() { settingsModal.hidden = true; }
@@ -1992,3 +2011,40 @@ function updateInnerCaption(lb) {
 
   await init();
 })();
+
+  // BX-DEV-107: multi-source favicon with sessionStorage cache (clears on browser restart)
+  function getFaviconUrl(url) {
+    try { const host = new URL(url).hostname; if (!host) return null; } catch(_) { return null; }
+    const host = new URL(url).hostname;
+    // DuckDuckGo first (CN-friendly, global CDN)
+    return `https://icons.duckduckgo.com/ip3/${host}.ico`;
+  }
+
+  const faviconCache = new Map(); // volatile: cleared on browser restart (session-scoped)
+  async function loadFavicon(img, url) {
+    const host = (() => { try { return new URL(url).hostname; } catch(_) { return null; } })();
+    if (!host) { img.style.display = 'none'; return; }
+    // Check cache
+    if (faviconCache.has(host)) { const cached = faviconCache.get(host); if (cached === null) { img.style.display = 'none'; return; } img.src = cached; return; }
+    // Sources in priority order: DuckDuckGo → Google S2 → direct /favicon.ico
+    const sources = [
+      `https://icons.duckduckgo.com/ip3/${host}.ico`,
+      `https://www.google.com/s2/favicons?domain=${host}&sz=32`,
+      `https://${host}/favicon.ico`
+    ];
+    for (const src of sources) {
+      try {
+        await new Promise((resolve, reject) => {
+          const probe = new Image();
+          probe.onload = () => { faviconCache.set(host, src); img.src = src; resolve(); };
+          probe.onerror = () => reject(new Error('fail'));
+          probe.src = src;
+          setTimeout(() => reject(new Error('timeout')), 3000);
+        });
+        return; // success — img.src already set
+      } catch(_) { continue; }
+    }
+    // All sources failed — cache as null and hide
+    faviconCache.set(host, null);
+    img.style.display = 'none';
+  }

@@ -272,32 +272,39 @@ html, body {
 .box--pinned .box-pin-btn { opacity: 0.9; }
 
 /* Auto-expand: max-height drawer slide-down from under title bar (BX-DEV-099) */
-/* Uses max-height instead of scaleY for natural 'pull-down tissue' effect.
-   Body transitions max-height from 0 → enough to show content, with overflow:hidden clip. */
+/* Uses scaleY(0→1) with transform-origin: top for real 'tissue pull-down' body-panel animation.
+   Entire __body panel scales out from under the title bar, not just internal text appearing. */
 .box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
   overflow: hidden;
+  transform: scaleY(0);
+  transform-origin: top center;
   max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
-  transition: max-height 0.35s ease-out,
+  transition: transform 0.35s ease-out,
+              max-height 0.35s ease-out,
               padding 0.35s ease-out;
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
 .box--hover-expand.box--collapsed .large-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .large-box__body {
+  transform: scaleY(1);
   max-height: var(--body-max-height, 600px);
   padding: var(--space-3);
-  transition: max-height 0.35s ease-out,
-              padding 0.35s ease-out 0.05s;
+  transition: transform 0.35s ease-out,
+              max-height 0.35s ease-out,
+              padding 0.35s ease-out;
 }
 .box--hover-expand.box--collapsed:hover .small-box__body,
 .box--hover-expand.box--collapsed .small-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .small-box__body {
+  transform: scaleY(1);
   max-height: var(--body-max-height, 400px);
   padding: 4px 10px;
-  transition: max-height 0.35s ease-out,
-              padding 0.35s ease-out 0.05s;
+  transition: transform 0.35s ease-out,
+              max-height 0.35s ease-out,
+              padding 0.35s ease-out;
 }
 
 .large-box__body {
@@ -403,7 +410,7 @@ html, body {
 /* === SMALL BOX (fixed, second-level container) === */
 .small-box {
   position: absolute;
-  width: 320px;
+  width: 300px;
   height: 340px;
   display: flex;
   flex-direction: column;
@@ -951,7 +958,10 @@ body.box-resizing {
 .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); font-weight: 600; }
 .settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; }
 .settings-tab { display: flex; flex-direction: column; gap: var(--space-6); }
-.settings-tab[hidden] { display: none; }
+/* Smooth tab transition: use opacity instead of display:none to eliminate flicker */
+.settings-tab[hidden] { display: flex; opacity: 0; pointer-events: none; position: absolute; visibility: hidden; }
+.settings-tab { transition: opacity 0.12s ease; }
+.settings-content { position: relative; }
 .ntp--dark .settings-nav { border-right-color: var(--color-hairline); }
 .ntp--dark .settings-nav__item { color: var(--color-muted); }
 .ntp--dark .settings-nav__item:hover { background: var(--color-surface); color: var(--color-ink); }
@@ -986,5 +996,5 @@ body.box-resizing {
 
 /* Inner canvas (small-box page): pin button must clear inner__canvas-head bar (~40px) */
 .inner__canvas .header-pin--floating {
-  top: 54px !important;
+  top: 64px !important;  /* BX-DEV-108: below inner-canvas-head + spacer */
 }
