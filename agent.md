@@ -605,6 +605,33 @@ Updated CSS Tokens (v3.4)
 | BX-DEV-046 | MUST | All settings nav items (settings-nav__item) must have data-i18n attribute for language switching. |
 | BX-DEV-047 | MUST | All hardcoded English text in bookmark popup placeholders, setting labels, sync provider hints must be i18n-covered across all 13 locales. |
 
+## v3.6.2 Features (2026-07-10)
+
+| Feature | Description |
+|---|---|
+| Drag-click fix | Track actual movement distance (3px threshold) for wasDragging, not just any mousedown+mouseup |
+| Header pin button relocation | When pinned: button sits on header bar. When unpinned: button moves to canvas container (absolute-positioned at canvas top-right), not page-fixed |
+| Zoom pan clamp immediate | clampCanvasPan/clampInnerPan called RIGHT AFTER zoomAtPoint in wheel zoom and keyboard Ctrl+/Ctrl- zoom, preventing flash-snap on next move |
+| Bookmark URL scheme fix | ensureHttpsUrl() adds https:// to bare domains (fixes moz-extension prefix bug on Firefox/LibreWolf) |
+| Header autohide animation | Footer fades out with transition; header bar uses 0.35s cubic-bezier slide-up; canvas expands with matching timing |
+| Floating pin button | Absolute-positioned inside canvas container, not page-fixed. Top-right of canvas viewport regardless of zoom/pan |
+| Small box default size | Width reduced from 640→480px, height 420→340px |
+| Auto-expand redesign | Uses translateY slide-down from title bar with opacity+fade; cubic-bezier(0.22,1,0.36,1) for natural pull-down feel |
+| Settings modal min-height | Added min-height:460px to prevent size jumping when switching between tabs |
+| Version bump | 3.6.1 → 3.6.2 |
+
+## Development Rules (v3.6.2 additions)
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-048 | MUST | wasDragging must track actual movement distance (3px threshold), not just any mousedown+mouseup pair. First click after drag must work immediately. |
+| BX-DEV-049 | MUST | clampCanvasPan/clampInnerPan must be called immediately after zoomAtPoint in wheel and keyboard zoom handlers. Unclamped intermediate pan values cause a flash-snap when next pan move triggers clamp. |
+| BX-DEV-050 | MUST | Auto-expand must use translateY + opacity + max-height transition with cubic-bezier(0.22,1,0.36,1) for a natural slide-down-from-title-bar animation. Previous max-height-only approach was visually jarring. |
+| BX-DEV-051 | MUST | Floating pin button must be positioned inside canvas container (absolute), not page-fixed. This ensures it stays at canvas top-right regardless of viewport changes. |
+| BX-DEV-052 | MUST | Bookmark URLs must be normalized with ensureHttpsUrl() before opening or saving. Bare domain names (www.baidu.com) get https:// prefix to prevent moz-extension prefix bugs on Firefox/LibreWolf. |
+| BX-DEV-053 | MUST | Settings modal must have min-height to prevent size jumping between tabs. Minimum 460px ensures consistent presentation across all settings categories. |
+| BX-DEV-054 | MUST | Small box default width = 480px, default height = 340px. This is wide enough for bookmark content but not overly wide. |
+
 ## i18n Key Reference (v3.6 additions)
 
 | Key | en | Usage |

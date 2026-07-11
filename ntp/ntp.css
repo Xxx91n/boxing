@@ -27,9 +27,9 @@ html, body {
   gap: var(--space-3);
   padding: var(--space-2) 0;
   border-bottom: 1px solid var(--color-hairline);
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: opacity 0.35s cubic-bezier(0.22,1,0.36,1), transform 0.35s cubic-bezier(0.22,1,0.36,1);
 }
-/* Header auto-hide mode: when unpinned, header fades out and canvas fills viewport */
+/* Header auto-hide mode: header slides up & fades out, canvas fills viewport */
 .ntp--autohide .ntp__bar {
   opacity: 0;
   pointer-events: none;
@@ -40,14 +40,21 @@ html, body {
   border-bottom-width: 0;
   transition: opacity 0.35s cubic-bezier(0.22,1,0.36,1), transform 0.35s cubic-bezier(0.22,1,0.36,1), max-height 0.35s cubic-bezier(0.22,1,0.36,1);
 }
-.ntp--autohide .ntp { padding: 0; }
+.ntp--autohide .ntp {
+  padding: 0;
+  transition: padding 0.35s cubic-bezier(0.22,1,0.36,1);
+}
 .ntp--autohide .library {
   flex: 1;
   margin: 0;
   padding: 0;
+  transition: margin 0.35s cubic-bezier(0.22,1,0.36,1), padding 0.35s cubic-bezier(0.22,1,0.36,1);
 }
 .ntp--autohide .foot {
-  display: none;
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
 #back-btn { order: 0; margin-right: auto; display: none; }
@@ -259,31 +266,34 @@ html, body {
 .box--pinned .small-box__bar { cursor: default; }
 .box--pinned .box-pin-btn { opacity: 0.9; }
 
-/* Hover-expand: collapse body by default, expand on hover */
-.box--hover-expand.box--collapsed .large-box__body {
-  max-height: 0;
-  overflow: hidden;
-  padding-top: 0;
-  padding-bottom: 0;
-  transition: max-height 0.3s ease, padding 0.3s ease;
-}
+/* Auto-expand: vertical slide-down from under title bar (BX-DEV-050) */
+.box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
   max-height: 0;
   overflow: hidden;
+  opacity: 0;
   padding-top: 0;
   padding-bottom: 0;
-  transition: max-height 0.3s ease, padding 0.3s ease;
+  transform: translateY(-8px);
+  transition: max-height 0.4s cubic-bezier(0.22,1,0.36,1),
+              opacity 0.35s ease,
+              transform 0.4s cubic-bezier(0.22,1,0.36,1),
+              padding 0.3s ease;
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
 .box--hover-expand.box--collapsed .large-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .large-box__body {
-  max-height: 800px;
+  max-height: 2000px;
+  opacity: 1;
+  transform: translateY(0);
   padding: var(--space-3);
 }
 .box--hover-expand.box--collapsed:hover .small-box__body,
 .box--hover-expand.box--collapsed .small-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .small-box__body {
-  max-height: 800px;
+  max-height: 2000px;
+  opacity: 1;
+  transform: translateY(0);
   padding: 4px 10px;
 }
 
@@ -544,6 +554,7 @@ html, body {
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-pop);
   width: min(600px, 94vw);
+  min-height: 460px;
   max-height: 85vh;
   overflow-y: auto;
   display: flex;
@@ -905,23 +916,23 @@ body.box-resizing {
 .ntp--dark .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); }
 
 /* ══════════════════════════════════════════════
-   Header Pin Float Button
+   Header Pin Float Button (v3.6.2 — canvas-relative)
    ══════════════════════════════════════════════ */
-.header-pin-float {
-  /* Default: part of header bar (relative) */
-}
+/* Default state: button sits inline in header bar, no special positioning */
 .header-pin--floating {
-  position: fixed !important;
+  position: absolute !important;
   top: 12px;
   right: 16px;
-  z-index: 200;
+  z-index: 50;
   background: var(--color-elevated);
   border-radius: var(--radius-tile);
   box-shadow: var(--shadow-2);
-  padding: 6px 10px;
-  transition: opacity 0.2s ease;
+  padding: 4px 8px;
+  transition: opacity 0.3s ease, box-shadow 0.3s ease;
 }
-/* Dark mode floating pin */
+.header-pin--floating:hover {
+  box-shadow: var(--shadow-3);
+}
 .ntp--dark .header-pin--floating {
   background: var(--color-elevated);
   box-shadow: var(--shadow-2);

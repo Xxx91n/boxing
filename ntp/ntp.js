@@ -19,7 +19,7 @@
   const INNER_GRID  = 16;
   const RESIZE_SNAP = 5;
   const LARGE_DEF_W = 320, LARGE_DEF_H = 220;
-  const SMALL_DEF_W  = 640, SMALL_DEF_H = 420;
+  const SMALL_DEF_W  = 480, SMALL_DEF_H = 340;
   const LARGE_MIN_W = 200, LARGE_MIN_H = 120;
   const SMALL_MIN_W  = 180, SMALL_MIN_H = 200;
   const MAX_LARGE_BOXES = 1000;
@@ -526,20 +526,20 @@
     const body = document.createElement('div');
     body.className = 'large-box__body';
 
-    // Track if this box was being dragged to prevent click-from-drag entering
-    let wasDragging = false;
-    // Monitor bar mousedown to catch drags
-    const origBarMD = bar.onmousedown;
+    // Track actual drag distance to prevent click-from-drag entering (BX-DEV-048)
+    let dragStartX = 0, dragStartY = 0, dragMoved = false;
     bar.addEventListener('mousedown', e => {
-      wasDragging = false;
-      if (!e.target.closest('.large-box__title') && !e.target.closest('.large-box__delete')) {
-        const onUp = () => { wasDragging = true; document.removeEventListener('mouseup', onUp, true); };
+      if (!e.target.closest('.large-box__title') && !e.target.closest('.large-box__delete')
+          && !e.target.closest('.box-pin-btn') && !e.target.closest('.box-expand-btn')) {
+        dragStartX = e.clientX; dragStartY = e.clientY; dragMoved = false;
+        const onMove = (ev) => { if (Math.abs(ev.clientX - dragStartX) > 3 || Math.abs(ev.clientY - dragStartY) > 3) dragMoved = true; };
+        const onUp = () => { document.removeEventListener('mousemove', onMove, true); document.removeEventListener('mouseup', onUp, true); };
+        document.addEventListener('mousemove', onMove, { capture: true });
         document.addEventListener('mouseup', onUp, { once: true, capture: true });
       }
     });
     body.addEventListener('click', (ev) => {
-      if (wasDragging) { wasDragging = false; return; }
-      // Don't enter if clicking resize handle or delete
+      if (dragMoved) { dragMoved = false; return; }
       if (ev.target.closest('.box-resize-handle') || ev.target.closest('.large-box__delete')) return;
       enterLargeBox(box.id);
     });
@@ -782,7 +782,7 @@
         } else {
           window.open(url, '_blank');
         }
-      })(bm.url);
+      })(ensureHttpsUrl(bm.url));
       });
 
       const dot = document.createElement('span');
@@ -868,7 +868,7 @@
     saveBtn.addEventListener('click', e => {
       e.stopPropagation();
       bm.title = titleInput.value.trim() || bm.url;
-      bm.url = urlInput.value.trim() || bm.url;
+      bm.url = ensureHttpsUrl(urlInput.value.trim()) || bm.url;
       saveLayout();
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
@@ -1146,8 +1146,10 @@
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
       const result = zoomAtPoint(canvasContainer, canvasZoom, canvasPanX, canvasPanY, e.clientX, e.clientY, factor);
       canvasZoom = result.zoom;
-      canvasPanX = result.panX;
-      canvasPanY = result.panY;
+      // Clamp pan immediately to prevent flash-back on next move (BX-DEV-049)
+      const clampedZoomPan = clampCanvasPan(result.panX, result.panY, canvasZoom);
+      canvasPanX = clampedZoomPan.x;
+      canvasPanY = clampedZoomPan.y;
       layout.settings.zoomLevel = canvasZoom;
       applyCanvasTransform();
       saveLayout();
@@ -1160,8 +1162,9 @@
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
       const result = zoomAtPoint(innerCanvas, innerZoom, innerPanX, innerPanY, e.clientX, e.clientY, factor);
       innerZoom = result.zoom;
-      innerPanX = result.panX;
-      innerPanY = result.panY;
+      const clampedInnerPan = clampInnerPan(result.panX, result.panY, innerZoom);
+      innerPanX = clampedInnerPan.x;
+      innerPanY = clampedInnerPan.y;
       applyInnerTransform();
     }
   }
@@ -1398,9 +1401,11 @@ function updateInnerCaption(lb) {
       e.preventDefault();
       if (currentLargeBoxId) {
         innerZoom = zoomStep(innerZoom, 'in');
+        const ci = clampInnerPan(innerPanX, innerPanY, innerZoom); innerPanX = ci.x; innerPanY = ci.y;
         applyInnerTransform();
       } else {
         canvasZoom = zoomStep(canvasZoom, 'in');
+        const cc = clampCanvasPan(canvasPanX, canvasPanY, canvasZoom); canvasPanX = cc.x; canvasPanY = cc.y;
         layout.settings.zoomLevel = canvasZoom;
         applyCanvasTransform();
         saveLayout();
@@ -1410,9 +1415,11 @@ function updateInnerCaption(lb) {
       e.preventDefault();
       if (currentLargeBoxId) {
         innerZoom = zoomStep(innerZoom, 'out');
+        const ci = clampInnerPan(innerPanX, innerPanY, innerZoom); innerPanX = ci.x; innerPanY = ci.y;
         applyInnerTransform();
       } else {
         canvasZoom = zoomStep(canvasZoom, 'out');
+        const cc = clampCanvasPan(canvasPanX, canvasPanY, canvasZoom); canvasPanX = cc.x; canvasPanY = cc.y;
         layout.settings.zoomLevel = canvasZoom;
         applyCanvasTransform();
         saveLayout();
@@ -1455,6 +1462,17 @@ function updateInnerCaption(lb) {
   }
 
   // ── window resize → refresh canvas transform ───────────
+
+  // Ensure URL has https:// scheme to prevent moz-extension prefix bug (BX-DEV-048)
+  function ensureHttpsUrl(url) {
+    if (!url) return 'https://www.google.com';
+    const trimmed = url.trim();
+    if (/^(https?:|ftp:|moz-extension:|chrome-extension:|edge:)/i.test(trimmed)) {
+      return trimmed;
+    }
+    // Add https:// prefix for bare domains like www.baidu.com
+    return 'https://' + trimmed;
+  }
   function onWindowResize() {
     applyCanvasTransform();
     applyInnerTransform();
@@ -1474,20 +1492,28 @@ function updateInnerCaption(lb) {
     backBtn.addEventListener('click', exitToCanvas);
 
   // ── header auto-hide ON by default: fullscreen immersive canvas ──
-  let headerPinned = true;  // default: header pinned ON (header visible, button on bar)
+  let headerPinned = true;  // default: pinned ON, header visible, button sits on header bar
   const headerPinBtn = $('#header-pin-btn');
   const appEl = $('#app');
   let scrollTimeout;
 
-  // In fullscreen autohide mode: header + search bar completely hidden
-  // Only canvas, zoom controls, and floating pin button remain visible
+  // headerPinBtn stays in .ntp__bar when pinned; moves to canvas-relative when floating
   function updateAutohideUI() {
     if (!headerPinned) {
       appEl.classList.add('ntp--autohide');
-      // Animate: header fades out, canvas expands to full viewport
-      // The header-pin-btn floats at top-right when unpinned
+      // Move pin button to canvas layer for floating positioning
+      if (headerPinBtn && headerPinBtn.parentElement) {
+        headerPinBtn.parentElement.removeChild(headerPinBtn);
+        canvasContainer.appendChild(headerPinBtn);
+      }
     } else {
       appEl.classList.remove('ntp--autohide');
+      // Move pin button back to header bar
+      if (headerPinBtn && headerPinBtn.parentElement) {
+        headerPinBtn.parentElement.removeChild(headerPinBtn);
+        const bar = appEl.querySelector('.ntp__bar');
+        if (bar) bar.appendChild(headerPinBtn);
+      }
     }
     // Update pin button visual state
     if (headerPinBtn) {
@@ -1502,10 +1528,12 @@ function updateInnerCaption(lb) {
       headerPinned = !headerPinned;
       updateAutohideUI();
     });
-    headerPinBtn.title = i18n('headerPin');  // default pinned = header visible
-    // Move button out of header to body level so it's never hidden by header display:none
-    if (headerPinBtn.parentElement?.classList.contains('ntp__bar')) {
-      document.getElementById('app').appendChild(headerPinBtn);
+    headerPinBtn.title = i18n('headerPin');  // default pinned
+    // Ensure button starts in header bar
+    const bar = appEl.querySelector('.ntp__bar');
+    if (bar && headerPinBtn.parentElement !== bar) {
+      if (headerPinBtn.parentElement) headerPinBtn.parentElement.removeChild(headerPinBtn);
+      bar.appendChild(headerPinBtn);
     }
     updateAutohideUI();  // default: header pinned ON
   }
