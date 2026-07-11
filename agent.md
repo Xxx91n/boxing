@@ -729,7 +729,7 @@ Updated CSS Tokens (v3.4)
 |---|---|
 | META-INF removed | Firefox signing artifacts — never in source repo. Added to .gitignore. |
 | fonts/ + images/ removed | Legacy junk: element-ui node_modules, remotestorage-widget scraps, old NTP assets (~40 unused PNGs). No code references existed. |
-| manifest.json fix | Removed `"scripts": ["background.js"]` — MV3 uses only `service_worker`. |
+| manifest.json dual-background | Uses BOTH `service_worker` AND `scripts` pointing to same `background.js`. Chromium uses service_worker; Firefox falls back to scripts when `extensions.backgroundServiceWorker.enabled=false`. This is the only cross-browser MV3 strategy. |
 | Debug system upgraded | `window.__BOXING_DEBUG__` runtime flag (URL params: `?debug=1`, `?debug=0`, `?debug=verbose`). `window.__boxingDebug` API (`.state()`, `.dumpLayout()`, `.dumpStorage()`, `.triggerGC()`) for DevTools console inspection. |
 | background.js + popup.js logging | Unified `bgLog/bgErr` and `popupLog/popupErr` with `[Boxing:BG]` / `[Boxing:Popup]` prefixes. |
 | Build script | `tools/build.ps1` — universal PowerShell build (Chromium .zip, Firefox .zip, .crx via Chrome). Zero hardcoded paths. CI/CD-ready. |
@@ -743,7 +743,7 @@ Updated CSS Tokens (v3.4)
 |---|---|---|
 | BX-DEV-071 | MUST | All debug logging must use `window.__BOXING_DEBUG__` runtime flag, not `const DEBUG`. URL params `?debug=1`/`?debug=0`/`?debug=verbose` override. `window.__boxingDebug` API must be exposed on `window` for DevTools inspection. |
 | BX-DEV-072 | MUST | `background.js` and `popup.js` must use unified log helpers (`bgLog/bgErr`, `popupLog/popupErr`) with consistent prefixes `[Boxing:BG]` / `[Boxing:Popup]`. |
-| BX-DEV-073 | MUST | `manifest.json` must NOT contain `background.scripts` — MV3 rejects it. Only `background.service_worker` is valid. |
+| BX-DEV-073 | MUST | `manifest.json` must contain BOTH `background.service_worker` AND `background.scripts` pointing to same file. Chromium uses service_worker; Firefox falls back to scripts when extensions.backgroundServiceWorker.enabled=false. This dual-key pattern is the only cross-browser MV3 strategy. |
 | BX-DEV-074 | MUST | No META-INF, _metadata, or Firefox signing artifacts in source repo. Added to .gitignore permanently. |
 | BX-DEV-075 | MUST | Build/packaging must use `tools/build.ps1` (no hardcoded paths). Output in `package/` (gitignored). Compatible with CI/CD agents (Windows). |
 | BX-DEV-076 | MUST | Project must stay lean: no unused fonts/images/node_modules in source tree. Any asset added must have a code reference.
