@@ -938,72 +938,6 @@
 
   // Add bookmark popup (title + URL)
   function showAddBookmarkPopup(sb, largeId) {
-
-  // Bookmark row drag-to-reorder (BX-DEV-056)
-  // Drag grip on left of each bm-row; drag swaps positions
-  function onBmRowDragStart(e, row, sb, largeId) {
-    const body = row.parentElement;
-    const rows = [...body.querySelectorAll('.bm-row')];
-    const dragIdx = rows.indexOf(row);
-    if (dragIdx < 0) return;
-    const startY = e.clientY;
-    const origOpacity = row.style.opacity;
-    row.style.opacity = '0.5';
-    row.style.zIndex = '10';
-    document.body.style.cursor = 'grabbing';
-
-    const onMove = (ev) => {
-      const dy = ev.clientY - startY;
-      row.style.transform = `translateY(${dy}px)`;
-      // Determine target index based on position
-      const rects = rows.map(r => r.getBoundingClientRect());
-      const midY = ev.clientY;
-      for (let i = 0; i < rects.length; i++) {
-        if (i !== dragIdx && midY < rects[i].bottom && midY > rects[i].top) {
-          // Visual hint: highlight the target row
-          rows.forEach(r => r.style.outline = 'none');
-          rows[i].style.outline = '2px dashed var(--color-accent)';
-          rows[i].style.outlineOffset = '-2px';
-          break;
-        }
-      }
-    };
-
-    const onUp = (ev) => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      document.body.style.cursor = '';
-      row.style.transform = '';
-      row.style.opacity = origOpacity;
-      row.style.zIndex = '';
-      rows.forEach(r => r.style.outline = 'none');
-
-      // Find target position
-      let targetIdx = dragIdx;
-      const midY = ev.clientY;
-      const rects = rows.map(r => r.getBoundingClientRect());
-      for (let i = 0; i < rects.length; i++) {
-        if (i !== dragIdx && midY < rects[i].bottom && midY > rects[i].top) {
-          targetIdx = i;
-          break;
-        }
-      }
-
-      if (targetIdx !== dragIdx) {
-        // Swap bookmark positions in array
-        const bms = sb.bookmarks;
-        const item = bms[dragIdx];
-        bms.splice(dragIdx, 1);
-        bms.splice(targetIdx, 0, item);
-        saveLayout();
-        const lb = getLargeBox(largeId);
-        if (lb) renderInnerSurface(lb);
-      }
-    };
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  }
     document.querySelectorAll('.bm-edit-popup').forEach(p => p.remove());
 
     const popup = document.createElement('div');
@@ -1083,6 +1017,55 @@
 
 
   // ── Manual Drag (real-time, no jump) ─────────────────
+
+  // Bookmark row drag-to-reorder (BX-DEV-056)
+  // Drag grip on left of each bm-row; drag swaps positions in array
+  function onBmRowDragStart(e, row, sb, largeId) {
+    const body = row.parentElement;
+    const rows = [...body.querySelectorAll('.bm-row')];
+    const dragIdx = rows.indexOf(row);
+    if (dragIdx < 0) return;
+    const startY = e.clientY;
+    const origOpacity = row.style.opacity;
+    row.style.opacity = '0.5';
+    row.style.zIndex = '10';
+    document.body.style.cursor = 'grabbing';
+    const onMove = (ev) => {
+      row.style.transform = `translateY(${ev.clientY - startY}px)`;
+      const rects = rows.map(r => r.getBoundingClientRect());
+      rows.forEach(r => r.style.outline = 'none');
+      for (let i = 0; i < rects.length; i++) {
+        if (i !== dragIdx && ev.clientY < rects[i].bottom && ev.clientY > rects[i].top) {
+          rows[i].style.outline = '2px dashed var(--color-accent)';
+          rows[i].style.outlineOffset = '-2px';
+          break;
+        }
+      }
+    };
+    const onUp = (ev) => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      row.style.transform = '';
+      row.style.opacity = origOpacity;
+      row.style.zIndex = '';
+      rows.forEach(r => r.style.outline = 'none');
+      let targetIdx = dragIdx;
+      const rects = rows.map(r => r.getBoundingClientRect());
+      for (let i = 0; i < rects.length; i++) {
+        if (i !== dragIdx && ev.clientY < rects[i].bottom && ev.clientY > rects[i].top) { targetIdx = i; break; }
+      }
+      if (targetIdx !== dragIdx) {
+        const bms = sb.bookmarks, item = bms[dragIdx];
+        bms.splice(dragIdx, 1); bms.splice(targetIdx, 0, item);
+        saveLayout();
+        const lb = getLargeBox(largeId); if (lb) renderInnerSurface(lb);
+      }
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
   function onBoxDragStart(e, type, id, el) {
     if (e.button !== 0) return; // left button only
     // Don't drag if box is pinned

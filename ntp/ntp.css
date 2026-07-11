@@ -657,7 +657,21 @@ html, body {
 .checkbox-label input[type="checkbox"] {
   width: 18px; height: 18px;
   cursor: pointer;
-  accent-color: var(--color-accent);
+  appearance: none; -webkit-appearance: none;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-card-edge);
+  border-radius: 4px;
+  display: grid; place-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.checkbox-label input[type="checkbox"]:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.checkbox-label input[type="checkbox"]:checked::after {
+  content: ''; width: 5px; height: 10px;
+  border: solid #F7F3ED; border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
 }
 
 /* === ZOOM CONTROLS === */
@@ -831,6 +845,14 @@ body.box-resizing {
 .ntp--dark .confirm-modal .modal__title { color: var(--color-ink); }
 .ntp--dark .confirm-modal .modal__body { color: var(--color-ink); }
 .ntp--dark .checkbox-label__text { color: var(--color-ink); }
+.ntp--dark .checkbox-label input[type="checkbox"] {
+  background: var(--color-elevated);
+  border-color: var(--color-hairline);
+}
+.ntp--dark .checkbox-label input[type="checkbox"]:checked {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
 .ntp--dark .canvas { background: radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 24px 24px, var(--color-surface); border-color: var(--color-hairline); }
 .ntp--dark .canvas__empty { color: var(--color-muted); }
 .ntp--dark .canvas__empty-title { color: var(--color-ink); }
