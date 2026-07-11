@@ -1,7 +1,14 @@
 /** Boxing Popup — Quick access to recent bookmarks */
 const POPUP_LOG_PREFIX = '[Boxing:Popup]';
-function popupLog(...a) { console.log(POPUP_LOG_PREFIX, ...a); }
+let POPUP_DEBUG_ENABLED = false;
+function popupLog(...a) { if (POPUP_DEBUG_ENABLED) console.log(POPUP_LOG_PREFIX, ...a); }
 function popupErr(...a) { console.error(POPUP_LOG_PREFIX, ...a); }
+try {
+  chrome.storage?.sync?.get?.('boxing_debug_mode', r => {
+    POPUP_DEBUG_ENABLED = !!(r && r.boxing_debug_mode);
+    popupLog('popup debug:', POPUP_DEBUG_ENABLED ? 'enabled' : 'disabled');
+  });
+} catch(_) {}
 (async () => {
   const api = (typeof browser !== "undefined" ? browser :
     typeof chrome !== "undefined" ? chrome : null) || null;
