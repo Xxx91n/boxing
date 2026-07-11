@@ -189,7 +189,7 @@
   const innerZoomCtrl  = $('#inner-zoom');
   const innerWrapper   = $('#inner');
   const innerCanvas    = $('#inner-canvas');
-  const innerTitle     = $('#inner-title');
+  const innerCrumbTitle = $('#inner-crumb-title');
   const crumbsEl       = $('#crumbs');
   const captionEl      = $('#caption');
   const searchInput    = $('#q');
@@ -722,13 +722,13 @@
     updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
 
     renderCrumbs(lb);
-    innerTitle.textContent = lb.title || i18n('untitledBox');
-    innerTitle.contentEditable = 'true';
-    innerTitle.spellcheck = false;
+    innerCrumbTitle.textContent = lb.title || i18n('untitledBox');
+    innerCrumbTitle.contentEditable = 'true';
+    innerCrumbTitle.spellcheck = false;
     // Inner title: no drag allowed
-    innerTitle.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); });
-    innerTitle.onblur = () => {
-      const t = innerTitle.textContent.trim() || i18n('untitledBox');
+    innerCrumbTitle.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); });
+    innerCrumbTitle.onblur = () => {
+      const t = innerCrumbTitle.textContent.trim() || i18n('untitledBox');
       if (t !== lb.title) { lb.title = t; saveLayout(); renderCrumbs(lb); }
     };
 
@@ -756,9 +756,9 @@
 
   function renderCrumbs(lb) {
     // crumbs now render inline into inner__head area
-    const innerHead = $('#inner .inner__head');
+    const innerCanvasHead = $('#inner-canvas-head');
     // remove any existing crumbs
-    const existing = innerHead?.parentNode?.querySelector('.crumbs--inner');
+    const existing = innerCanvasHead?.parentNode?.querySelector('.crumbs--inner');
     existing?.remove();
     
     const crumbsDiv = document.createElement('div');
@@ -780,9 +780,9 @@
     cur.textContent = lb.title || i18n('untitledBox');
     crumbsDiv.appendChild(cur);
     
-    // insert before inner__head
-    if (innerHead) {
-      innerHead.parentNode.insertBefore(crumbsDiv, innerHead);
+    // insert before inner-canvas-head
+    if (innerCanvasHead) {
+      innerCanvasHead.parentNode.insertBefore(crumbsDiv, innerCanvasHead);
     }
   }
 

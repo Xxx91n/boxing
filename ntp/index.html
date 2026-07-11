@@ -62,15 +62,13 @@
     </div>
 
     <div id="inner" class="inner" hidden>
-      <div class="inner__head">
-        <span class="inner__title" id="inner-title" contenteditable="true" spellcheck="false"></span>
-        <div class="inner__actions">
-          <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box" data-i18n-title="addSmallBoxTooltip">
+      <div id="inner-canvas" class="inner__canvas">
+        <div id="inner-canvas-head" class="inner__canvas-head">
+          <span class="inner__crumb-title" id="inner-crumb-title" contenteditable="true" spellcheck="false"></span>
+          <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box" data-i18n-title="addSmallBoxTooltip" style="font-size:18px;">
             <span aria-hidden="true">+</span>
           </button>
         </div>
-      </div>
-      <div id="inner-canvas" class="inner__canvas">
         <div id="inner-surface" class="inner__surface"></div>
         <div class="zoom-controls" id="inner-zoom">
           <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut">◂</button>

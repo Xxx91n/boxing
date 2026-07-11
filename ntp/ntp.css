@@ -49,8 +49,9 @@ html, body {
   flex: 1;
   margin: 0;
   padding: 0;
+  height: 100vh;  /* extend canvas to fill entire viewport including footer space */
   overflow: hidden;  /* canvas fills viewport, no scroll */
-  transition: margin 0.35s cubic-bezier(0.22,1,0.36,1), padding 0.35s cubic-bezier(0.22,1,0.36,1);
+  transition: margin 0.35s cubic-bezier(0.22,1,0.36,1), padding 0.35s cubic-bezier(0.22,1,0.36,1), height 0.35s cubic-bezier(0.22,1,0.36,1);
 }
 .ntp--autohide .foot {
   opacity: 0;
@@ -268,33 +269,39 @@ html, body {
 .box--pinned .small-box__bar { cursor: default; }
 .box--pinned .box-pin-btn { opacity: 0.9; }
 
-/* Auto-expand: vertical slide-down from under title bar (BX-DEV-050) */
-/* Auto-expand: scaleY(0→1) with transform-origin:top for natural pull-down effect (BX-DEV-050 v2) */
+/* Auto-expand: max-height drawer slide-down from under title bar (BX-DEV-099) */
+/* Uses max-height instead of scaleY for natural 'pull-down tissue' effect.
+   Body transitions max-height from 0 → enough to show content, with overflow:hidden clip. */
 .box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
   overflow: hidden;
-  transform: scaleY(0);
-  transform-origin: top center;
-  opacity: 0;
+  max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
-  transition: transform 0.35s cubic-bezier(0.22,1,0.36,1),
-              opacity 0.25s ease,
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.22,1,0.36,1),
+              opacity 0.25s ease 0.15s,
               padding 0.25s ease;
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
 .box--hover-expand.box--collapsed .large-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .large-box__body {
-  transform: scaleY(1);
+  max-height: 600px;
   opacity: 1;
   padding: var(--space-3);
+  transition: max-height 0.45s cubic-bezier(0.22,1,0.36,1),
+              opacity 0.2s ease,
+              padding 0.25s ease;
 }
 .box--hover-expand.box--collapsed:hover .small-box__body,
 .box--hover-expand.box--collapsed .small-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .small-box__body {
-  transform: scaleY(1);
+  max-height: 500px;
   opacity: 1;
   padding: 4px 10px;
+  transition: max-height 0.45s cubic-bezier(0.22,1,0.36,1),
+              opacity 0.2s ease,
+              padding 0.25s ease;
 }
 
 .large-box__body {
@@ -358,33 +365,42 @@ html, body {
   border: 1px solid var(--color-hairline);
   overflow: hidden;
 }
-.inner__head {
+/* inner__canvas-head: lightweight bar inside canvas (v3.7.3 - replaced inner__head) */
+.inner__canvas-head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
+  padding: 6px 12px;
   background: var(--color-elevated);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-card);
+  border-bottom: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
 }
-.inner__title {
-  font-size: 18px;
+.inner__crumb-title {
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.3px;
   outline: none;
   cursor: text;
   min-width: 0;
   border-radius: 4px;
-  padding: 2px 4px;
+  padding: 2px 6px;
 }
-.inner__title[contenteditable="true"]:focus { background: var(--color-surface); }
-.inner__actions { display: flex; gap: var(--space-1); }
+.inner__crumb-title[contenteditable="true"]:focus { background: var(--color-surface); }
+.inner__canvas-head .btn { flex-shrink: 0; }
 
 .inner__surface {
   position: absolute;
-  inset: 0;
+  top: 40px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   min-width: 100%;
-  min-height: 100%;
+  min-height: calc(100% - 40px);
   cursor: default;
 }
 
@@ -731,7 +747,7 @@ body.box-resizing {
 .ntp--square-corners .small-box,
 .ntp--square-corners .canvas,
 .ntp--square-corners .inner__canvas,
-.ntp--square-corners .inner__head,
+.ntp--square-corners .inner__canvas-head,
 .ntp--square-corners .modal,
 .ntp--square-corners .zoom-controls {
   border-radius: 0 !important;
@@ -866,7 +882,7 @@ body.box-resizing {
 .ntp--dark .large-box__open-hint { color: var(--color-faint); }
 .ntp--dark .large-box__delete:hover { color: var(--color-accent-ink); background: var(--color-accent-soft); }
 .ntp--dark .inner__canvas { background: radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px, var(--color-surface); border-color: var(--color-hairline); }
-.ntp--dark .inner__head { background: var(--color-elevated); border-color: var(--color-hairline); }
+.ntp--dark .inner__canvas-head { background: var(--color-elevated); border-color: var(--color-hairline); }
 .ntp--dark .inner__title { color: var(--color-ink); }
 .ntp--dark .inner__title[contenteditable="true"]:focus { background: var(--color-surface); }
 .ntp--dark .small-box { background: var(--color-elevated); border-color: var(--color-hairline); }
