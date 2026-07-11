@@ -668,3 +668,30 @@ Updated CSS Tokens (v3.4)
 | BX-DEV-058 | MUST | Settings modal: .modal must use overflow:hidden; .modal__body must use flex:1 + overflow-y:auto + min-height:0 so footer stays at bottom without scrolling away. |
 | BX-DEV-059 | MUST | Floating header pin button must move to the currently active canvas (innerCanvas when on inner page, canvasContainer when on canvas page). updateAutohideUI must be called after every enterLargeBox/exitToCanvas transition. |
 | BX-DEV-060 | MUST | Box drag vs click detection: compare mousedown position on bar with click position on body. Distance >3px → was drag, skip enter. No persistent state — comparison is per-event so first click always works. |
+
+## v3.6.4 Hotfix (2026-07-11) — TDZ Fixes
+
+| Feature | Description |
+|---|---|
+| API mock condition fix | `!api` → `!api \|\| !api.storage \|\| !api.storage.sync`. In file:/// or non-extension contexts, chrome/browser may exist but storage is unavailable. Mock now activates correctly. |
+| DEBUG TDZ fix | `debug('Using localStorage mock')` moved from line 15 (before `const DEBUG`) to after DEBUG init. Was causing `Cannot access 'DEBUG' before initialization`. |
+| I18N_FALLBACK external reference fix | `I18N_FALLBACK.syncProviderHint = ...` was outside IIFE, causing `I18N_FALLBACK is not defined`. Moved inside IIFE into object literal. |
+| headerPinned TDZ fix | `let headerPinned` moved from line 1619 (inside init) to line ~222 (early declarations). Functions referencing it (renderCanvas, enterLargeBox) run before it was initialized. |
+| window._boxingOpenSettings exposure | Exposed `openSettingsModal` and `addLargeBox` on `window` for Playwright testability in file:/// mode. |
+| Version bump | 3.6.3 → 3.6.4 |
+
+## Development Rules (v3.6.4 additions)
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-061 | MUST | API detection must check `!api \|\| !api.storage \|\| !api.storage.sync`, not just `!api`. In file:/// or non-extension contexts where chrome/browser exists but storage is unavailable, localStorage mock must activate. |
+| BX-DEV-062 | MUST | All `const`/`let` declarations must appear before any function that references them can be called. This includes `DEBUG` (before any `debug()` call), `headerPinned` (before renderCanvas/enterLargeBox), and I18N_FALLBACK (must stay within IIFE). |
+| BX-DEV-063 | MUST | I18N_FALLBACK and all i18n fallback extensions must remain INSIDE the IIFE scope. No external references to IIFE-scoped variables. |
+| BX-DEV-064 | MUST | Key debug/test functions must be exposed on `window` (e.g., `window._boxingOpenSettings`) for Playwright testing in file:/// mode where button clicks may be blocked by canvas event handlers. |
+
+## Critical Lessons Learned
+
+1. **Never place executable code before `const`/`let` declarations it references.** `debug()` calling before `const DEBUG` causes TDZ ReferenceError that silently breaks the entire IIFE execution — all subsequent functions and DOM bindings are never defined.
+2. **Never place IIFE-scoped code outside the IIFE closing `})();`.** External references to `I18N_FALLBACK` etc throw ReferenceError and halt execution.
+3. **Function hoisting does NOT mean safe to call before `let`/`const` init.** Functions referencing `let`/`const` variables in their closure will throw TDZ errors if called before the variable declaration executes.
+4. **When debugging "all box creation broken", check console errors FIRST.** Two TDZ errors (`I18N_FALLBACK is not defined`, `Cannot access 'DEBUG' before initialization`) caused the entire init to fail silently — no functions were defined, no events were bound.

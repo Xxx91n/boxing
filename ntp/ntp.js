@@ -4,7 +4,8 @@
 (async () => {
   // ── cross-browser API ──────────────────────────────────
   let api = (typeof browser !== 'undefined' ? browser : typeof chrome !== 'undefined' ? chrome : null);
-  if (!api) {
+  // In file:/// or non-extension contexts, chrome/browser may exist but storage is unavailable.
+  if (!api || !api.storage || !api.storage.sync) {
     const mock = {
       storage: { sync: {
         get: async (_keys) => { try { const v = localStorage.getItem('boxingLayout'); return v ? { boxingLayout: JSON.parse(v) } : { boxingLayout: null }; } catch (_) { return { boxingLayout: null }; } },
@@ -33,6 +34,8 @@
   function debug(...args) { if (DEBUG) console.log('[Boxing]', ...args); }
   function debugErr(...args) { if (DEBUG) console.error('[Boxing]', ...args); }
   function debugWarn(...args) { if (DEBUG) console.warn('[Boxing]', ...args); }
+  // Log mock usage (must be after DEBUG init)
+  if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');
 
   // ── i18n store ─────────────────────────────────────────
   let i18nStore = {};
@@ -63,6 +66,7 @@
     bookmarkEditTitle: 'Edit Bookmark',
     backupNow: 'Backup Now', backupNowHint: 'Create a timestamped backup of all layout data',
     autoBackupInterval: 'Auto-Backup Interval', syncProvider: 'Sync Provider',
+    syncProviderHint: 'Boxing stores data in browser sync storage. Choose your provider.',
     squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded',
     smallBoxCountLabel: '$1$ small boxes',
     autoExpand: 'Auto expand', autoExpandHover: 'Hover to expand',
@@ -218,6 +222,10 @@
   let lastClickTime = 0;
   let lastClickTarget = null;
 
+  // header auto-hide state (must be declared before functions that reference it)
+  let headerPinned = true;  // default: pinned ON, header visible, button sits on header bar
+  let scrollTimeout;
+
   // ── storage ────────────────────────────────────────────
   async function loadLayout() {
     try {
@@ -228,7 +236,9 @@
   }
 
   async function saveLayout() {
+    debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
     try { await api.storage.sync.set({ boxingLayout: layout }); } catch (e) { debugWarn('saveLayout', e); }
+    debug('saveLayout done');
   }
 
   function defaultLayout() {
@@ -415,6 +425,7 @@
 
   // ── render canvas (top-level large boxes) ───────────────
   function renderCanvas() {
+    debug('renderCanvas start, boxCount=' + layout.boxes.length + ' hidden=' + canvasContainer.hidden);
     innerWrapper.hidden = true;
     canvasContainer.hidden = false;
     backBtn.dataset.show = '0';
@@ -424,9 +435,14 @@
     canvasEmpty.hidden = hasBoxes;
 
     canvasSurface.innerHTML = '';
+    debug('renderCanvas creating DOM for ' + layout.boxes.length + ' boxes');
     for (const box of layout.boxes) {
+      debug('renderCanvas creating largeBox DOM for', box.id, box.title);
+      try {
       canvasSurface.appendChild(createLargeBoxEl(box));
+      } catch(e) { debugErr('createLargeBoxEl failed for', box.id, e); }
     }
+    debug('renderCanvas done, surface children=' + canvasSurface.children.length);
     applyCanvasTransform();
     updateCaption();
   }
@@ -1315,10 +1331,14 @@
 
   // ── create / delete ────────────────────────────────────
   async function addLargeBoxAt(clientX, clientY) {
+    debug('addLargeBoxAt called', {clientX, clientY, boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex});
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
     const world = screenToWorld(clientX, clientY, canvasContainer, canvasPanX, canvasPanY, canvasZoom);
+    debug('addLargeBoxAt world', world);
     const snapped = snapCanvas(world.x - LARGE_DEF_W / 2, world.y - LARGE_DEF_H / 2);
+    debug('addLargeBoxAt snapped', snapped);
     const index = layout.nextLargeIndex++;
+    debug('addLargeBoxAt making index', index);
     const newBox = {
       id: 'large-' + Date.now(), type: 'large',
       title: i18n('newLargeBox', [index]),
@@ -1327,18 +1347,26 @@
       nextSmallIndex: 1, children: []
     };
     layout.boxes.push(newBox);
+    debug('addLargeBoxAt pushed, count=' + layout.boxes.length);
     await saveLayout();
+    debug('addLargeBoxAt saved, calling renderCanvas');
     renderCanvas();
+    debug('addLargeBoxAt done, surface children=' + canvasSurface.children.length);
   }
 
   async function addLargeBox() {
+  window._boxingAddLargeBox = addLargeBox;
+    debug('addLargeBox (button) called', {boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex});
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
     const index = layout.nextLargeIndex++;
+    debug('addLargeBox index', index);
     const others = layout.boxes.map(b => ({ x: b.x, y: b.y, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H }));
     // Start at default offset, then elastic-snap to avoid overlap
     let candidate = { x: 20, y: 20 };
     const snapped = snapCanvas(candidate.x, candidate.y);
+    debug('addLargeBox snapped', snapped);
     candidate = elasticSnap(snapped, LARGE_DEF_W, LARGE_DEF_H, others, CANVAS_GRID, snapCanvas);
+    debug('addLargeBox after elasticSnap', candidate);
     const newBox = {
       id: 'large-' + Date.now(), type: 'large',
       title: i18n('newLargeBox', [index]),
@@ -1347,9 +1375,13 @@
       nextSmallIndex: 1, children: []
     };
     layout.boxes.push(newBox);
+    debug('addLargeBox pushed, count=' + layout.boxes.length);
     await saveLayout();
+    debug('addLargeBox saved, calling renderCanvas');
     renderCanvas();
+    debug('addLargeBox done, surface children=' + canvasSurface.children.length);
   }
+  debug('addLargeBox function defined');
 function updateInnerCaption(lb) {
     const captionEl = document.getElementById('caption');
     if (captionEl) captionEl.textContent = i18n('smallBoxesCount', [lb?.children?.length || 0]);
@@ -1423,7 +1455,11 @@ function updateInnerCaption(lb) {
 
   // ── settings modal ─────────────────────────────────────
   function openSettingsModal() {
+    debug('openSettingsModal called, current hidden=' + settingsModal.hidden);
+    // Expose for testing
+    debug('openSettingsModal called, current hidden=' + settingsModal.hidden);
     settingsModal.hidden = false;
+    debug('openSettingsModal set hidden=false, now=' + settingsModal.hidden + ' display=' + getComputedStyle(settingsModal).display);
     langSelect.value = layout.settings.selectedLanguage || 'en';
     rememberCheck.checked = layout.settings.rememberLastPos !== false;
     darkModeCB.checked = layout.settings.darkMode === true;
@@ -1440,6 +1476,8 @@ function updateInnerCaption(lb) {
   }
 
   function closeSettingsModal() { settingsModal.hidden = true; }
+  // Expose for Playwright testing
+  window._boxingOpenSettings = openSettingsModal;
 
   // ── confirm modal (in-page, replaces browser confirm()) ──
   let confirmCallback = null;
@@ -1530,11 +1568,14 @@ function updateInnerCaption(lb) {
   }
 
   function onCanvasDblClick(e) {
+    debug('onCanvasDblClick', {clientX: e.clientX, clientY: e.clientY, target: e.target.tagName, className: e.target.className});
     const targetBox = e.target.closest('.large-box');
     if (targetBox) {
+      debug('onCanvasDblClick on existing box, entering', targetBox.dataset.id);
       enterLargeBox(targetBox.dataset.id);
       return;
     }
+    debug('onCanvasDblClick on empty area, calling addLargeBoxAt');
     addLargeBoxAt(e.clientX, e.clientY);
   }
 
@@ -1634,6 +1675,7 @@ function updateInnerCaption(lb) {
     if (addLargeBtn) addLargeBtn.addEventListener('click', addLargeBox);
     if (addSmallBtn) addSmallBtn.addEventListener('click', addSmallBox);
     if (settingsBtn) settingsBtn.addEventListener('click', openSettingsModal);
+    debug('settingsBtn listener attached, settingsBtn=', !!settingsBtn);
     if (modalClose) modalClose.addEventListener('click', closeSettingsModal);
     settingsModal.addEventListener('click', e => { if (e.target === settingsModal) closeSettingsModal(); });
 
@@ -1845,4 +1887,3 @@ function updateInnerCaption(lb) {
 
   await init();
 })();
-  I18N_FALLBACK.syncProviderHint = 'Boxing stores data in browser sync storage. Choose your provider.';
