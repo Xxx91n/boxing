@@ -418,6 +418,7 @@
     innerWrapper.hidden = true;
     canvasContainer.hidden = false;
     backBtn.dataset.show = '0';
+    if (!headerPinned) updateAutohideUI(); // move pin back to canvas
 
     const hasBoxes = layout.boxes.length > 0;
     canvasEmpty.hidden = hasBoxes;
@@ -527,20 +528,24 @@
     body.className = 'large-box__body';
 
     // Track actual drag distance to prevent click-from-drag entering (BX-DEV-048)
-    let dragStartX = 0, dragStartY = 0, dragMoved = false;
+    // Track mousedown position on bar; compare click distance to detect drag (BX-DEV-048 v2)
+    let barDownX = 0, barDownY = 0, barDownWasDragZone = false;
     bar.addEventListener('mousedown', e => {
-      if (!e.target.closest('.large-box__title') && !e.target.closest('.large-box__delete')
-          && !e.target.closest('.box-pin-btn') && !e.target.closest('.box-expand-btn')) {
-        dragStartX = e.clientX; dragStartY = e.clientY; dragMoved = false;
-        const onMove = (ev) => { if (Math.abs(ev.clientX - dragStartX) > 3 || Math.abs(ev.clientY - dragStartY) > 3) dragMoved = true; };
-        const onUp = () => { document.removeEventListener('mousemove', onMove, true); document.removeEventListener('mouseup', onUp, true); };
-        document.addEventListener('mousemove', onMove, { capture: true });
-        document.addEventListener('mouseup', onUp, { once: true, capture: true });
-      }
-    });
+      barDownX = e.clientX; barDownY = e.clientY;
+      const tgt = e.target;
+      barDownWasDragZone = tgt && !tgt.closest('.large-box__title') && !tgt.closest('.large-box__delete')
+        && !tgt.closest('.box-pin-btn') && !tgt.closest('.box-expand-btn')
+        && !tgt.closest('.box-resize-handle');
+    }, true); // capture: fires before onBoxDragStart
     body.addEventListener('click', (ev) => {
-      if (dragMoved) { dragMoved = false; return; }
       if (ev.target.closest('.box-resize-handle') || ev.target.closest('.large-box__delete')) return;
+      // If mousedown was on drag zone and click moved >3px, treat as drag
+      if (barDownWasDragZone) {
+        const dx = Math.abs(ev.clientX - barDownX);
+        const dy = Math.abs(ev.clientY - barDownY);
+        barDownWasDragZone = false;
+        if (dx > 3 || dy > 3) return;
+      }
       enterLargeBox(box.id);
     });
     if (childCount) {
@@ -596,6 +601,7 @@
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
     backBtn.dataset.show = '1';
+    if (!headerPinned) updateAutohideUI(); // move pin to inner canvas
 
     renderCrumbs(lb);
     innerTitle.textContent = lb.title || i18n('untitledBox');
@@ -775,7 +781,7 @@
       // click bookmark → open tab
       row.style.cursor = 'pointer';
       row.addEventListener('click', e => {
-        if (e.target.closest('.bm-row__edit-btn')) return;
+        if (e.target.closest('.bm-row__edit-btn') || e.target.closest('.bm-row__grip')) return;
         (function(url) {
         if (api.tabs?.create) {
           api.tabs.create({ url: url, active: true });
@@ -786,6 +792,20 @@
       });
 
       const dot = document.createElement('span');
+
+      // Drag grip (⊛⋮) — leftmost handle for reordering bookmarks (BX-DEV-056)
+      const grip = document.createElement('span');
+      grip.className = 'bm-row__grip';
+      grip.textContent = '⋮⋮';
+      grip.title = 'Drag to reorder';
+      grip.style.cssText = 'cursor:grab;color:var(--color-muted);font-size:10px;padding:0 3px;flex-shrink:0;line-height:1;user-select:none;opacity:0.5;';
+      grip.addEventListener('mouseenter', () => { grip.style.opacity = '1'; });
+      grip.addEventListener('mouseleave', () => { grip.style.opacity = '0.5'; });
+      grip.addEventListener('mousedown', e => {
+        e.stopPropagation(); e.preventDefault();
+        onBmRowDragStart(e, row, sb, largeId);
+      });
+
       dot.className = 'bm-row__dot';
       dot.setAttribute('aria-hidden', 'true');
 
@@ -811,7 +831,7 @@
         showBookmarkEditPopup(bm, i, sb, largeId);
       });
 
-      row.append(dot, fav, tEl, editBtn);
+      row.append(grip, dot, fav, tEl, editBtn);
       body.appendChild(row);
     }
 
@@ -874,6 +894,9 @@
       if (lb) renderInnerSurface(lb);
       popup.remove();
     });
+    // Enter key to save (BX-DEV-057)
+    titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); } });
+    urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); } });
 
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = i18n('bookmarkDelete');
@@ -915,6 +938,72 @@
 
   // Add bookmark popup (title + URL)
   function showAddBookmarkPopup(sb, largeId) {
+
+  // Bookmark row drag-to-reorder (BX-DEV-056)
+  // Drag grip on left of each bm-row; drag swaps positions
+  function onBmRowDragStart(e, row, sb, largeId) {
+    const body = row.parentElement;
+    const rows = [...body.querySelectorAll('.bm-row')];
+    const dragIdx = rows.indexOf(row);
+    if (dragIdx < 0) return;
+    const startY = e.clientY;
+    const origOpacity = row.style.opacity;
+    row.style.opacity = '0.5';
+    row.style.zIndex = '10';
+    document.body.style.cursor = 'grabbing';
+
+    const onMove = (ev) => {
+      const dy = ev.clientY - startY;
+      row.style.transform = `translateY(${dy}px)`;
+      // Determine target index based on position
+      const rects = rows.map(r => r.getBoundingClientRect());
+      const midY = ev.clientY;
+      for (let i = 0; i < rects.length; i++) {
+        if (i !== dragIdx && midY < rects[i].bottom && midY > rects[i].top) {
+          // Visual hint: highlight the target row
+          rows.forEach(r => r.style.outline = 'none');
+          rows[i].style.outline = '2px dashed var(--color-accent)';
+          rows[i].style.outlineOffset = '-2px';
+          break;
+        }
+      }
+    };
+
+    const onUp = (ev) => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      row.style.transform = '';
+      row.style.opacity = origOpacity;
+      row.style.zIndex = '';
+      rows.forEach(r => r.style.outline = 'none');
+
+      // Find target position
+      let targetIdx = dragIdx;
+      const midY = ev.clientY;
+      const rects = rows.map(r => r.getBoundingClientRect());
+      for (let i = 0; i < rects.length; i++) {
+        if (i !== dragIdx && midY < rects[i].bottom && midY > rects[i].top) {
+          targetIdx = i;
+          break;
+        }
+      }
+
+      if (targetIdx !== dragIdx) {
+        // Swap bookmark positions in array
+        const bms = sb.bookmarks;
+        const item = bms[dragIdx];
+        bms.splice(dragIdx, 1);
+        bms.splice(targetIdx, 0, item);
+        saveLayout();
+        const lb = getLargeBox(largeId);
+        if (lb) renderInnerSurface(lb);
+      }
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
     document.querySelectorAll('.bm-edit-popup').forEach(p => p.remove());
 
     const popup = document.createElement('div');
@@ -950,6 +1039,24 @@
       if (lb) renderInnerSurface(lb);
       popup.remove();
     });
+
+    // Enter key in either input = add bookmark (BX-DEV-057)
+    const addBmAction = () => {
+      const title = titleInput.value.trim();
+      const url = urlInput.value.trim();
+      if (!url) return;
+      sb.bookmarks = sb.bookmarks || [];
+      if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
+      sb.bookmarks.push({ id: 'bm-' + Date.now(), title: title || url.replace(/^https?:\/\//, '').split('/')[0] || url, url });
+      saveLayout();
+      const lb = getLargeBox(largeId);
+      if (lb) renderInnerSurface(lb);
+      popup.remove();
+    };
+    // Update addBtn click to delegate:
+    // Already handled above; add Enter key listeners:
+    titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addBmAction(); } });
+    urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addBmAction(); } });
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = i18n('confirmCancel');
@@ -1470,8 +1577,9 @@ function updateInnerCaption(lb) {
     if (/^(https?:|ftp:|moz-extension:|chrome-extension:|edge:)/i.test(trimmed)) {
       return trimmed;
     }
-    // Add https:// prefix for bare domains like www.baidu.com
-    return 'https://' + trimmed;
+    // Detect intranet / private IP (BX-DEV-055): 10.x, 172.16-31.x, 192.168.x, 127.x, localhost → http
+    const isPrivate = /^(10\.\d+\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.\d+\.\d+\.|localhost)/i.test(trimmed);
+    return (isPrivate ? 'http://' : 'https://') + trimmed;
   }
   function onWindowResize() {
     applyCanvasTransform();
@@ -1504,7 +1612,9 @@ function updateInnerCaption(lb) {
       // Move pin button to canvas layer for floating positioning
       if (headerPinBtn && headerPinBtn.parentElement) {
         headerPinBtn.parentElement.removeChild(headerPinBtn);
-        canvasContainer.appendChild(headerPinBtn);
+        // Append to whichever canvas is currently visible
+        const activeCanvas = canvasContainer.hidden ? innerCanvas : canvasContainer;
+        activeCanvas.appendChild(headerPinBtn);
       }
     } else {
       appEl.classList.remove('ntp--autohide');

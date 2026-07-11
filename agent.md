@@ -644,3 +644,27 @@ Updated CSS Tokens (v3.4)
 | lastPositionLabel | Last position | (reserved for future UI) |
 | lastZoomLabel | Last zoom | (reserved for future UI) |
 | lastPageLabel | Last page | (reserved for future UI) |
+
+
+## v3.6.3 Features (2026-07-11)
+
+| Feature | Description |
+|---|---|
+| Drag-click fix v2 | wasDragging replaced with bar-down-position vs click-position comparison. No persistent state — comparisons are per-event. First click after ANY drag (even from previous lifetime) now works. |
+| Floating pin on inner canvas | headerPinBtn moves to innerCanvas (not just canvasContainer) when inner page is active. updateAutohideUI called on enterLargeBox/exitToCanvas transitions. |
+| Intranet URL scheme | ensureHttpsUrl detects private IPs (10.x, 172.16-31.x, 192.168.x, 127.x, localhost) and uses http:// instead of https://. |
+| Settings footer fixed | .modal uses overflow:hidden; .modal__body gets flex:1 + overflow-y:auto + min-height:0. Footer stays at bottom regardless of content length. |
+| Bookmark drag-to-reorder | Each bm-row has a grip handle (⋮⋮) on the left. Drag up/down to reorder bookmarks within a small box. Visual dashed outline on target row. |
+| Enter key to add/save bookmark | Both add-bookmark popup and edit-bookmark popup respond to Enter key in title/url inputs as save action. |
+| Version bump | 3.6.2 → 3.6.3 |
+
+## Development Rules (v3.6.3 additions)
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-DEV-055 | MUST | ensureHttpsUrl must detect private/intranet IP ranges (10.x, 172.16-31.x, 192.168.x, 127.x, localhost) and use http:// for those. All other bare domains get https://. |
+| BX-DEV-056 | MUST | Bookmark rows must have a left-side grip handle (bm-row__grip) for drag-to-reorder. Drag swaps positions in sb.bookmarks array. Visual dashed outline indicates target row during drag. |
+| BX-DEV-057 | MUST | Both add-bookmark and edit-bookmark input fields must respond to Enter key as the submit action (equivalent to clicking Save/Add button). |
+| BX-DEV-058 | MUST | Settings modal: .modal must use overflow:hidden; .modal__body must use flex:1 + overflow-y:auto + min-height:0 so footer stays at bottom without scrolling away. |
+| BX-DEV-059 | MUST | Floating header pin button must move to the currently active canvas (innerCanvas when on inner page, canvasContainer when on canvas page). updateAutohideUI must be called after every enterLargeBox/exitToCanvas transition. |
+| BX-DEV-060 | MUST | Box drag vs click detection: compare mousedown position on bar with click position on body. Distance >3px → was drag, skip enter. No persistent state — comparison is per-event so first click always works. |

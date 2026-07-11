@@ -555,10 +555,10 @@ html, body {
   box-shadow: var(--shadow-pop);
   width: min(600px, 94vw);
   min-height: 460px;
-  max-height: 85vh;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  max-height: 85vh;
+  overflow: hidden; // body handles scrolling; head+foot stay fixed
 }
 .modal__head {
   display: flex;
@@ -579,6 +579,9 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; // allow flex shrink for overflow scroll
 }
 .modal__section {
   display: flex;
