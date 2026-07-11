@@ -719,6 +719,7 @@
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
     backBtn.dataset.show = '1';
+    if (addLargeBtn) addLargeBtn.style.display = 'none';  // BX-DEV-101: inner view hides header + button
     updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
 
     renderCrumbs(lb);
@@ -751,6 +752,7 @@
     layout.lastInnerPanY = innerPanY;
     innerPanX = 0; innerPanY = 0; innerZoom = 1.0;
     saveLayout();  // BX-DEV-097: persist exit state immediately
+    if (addLargeBtn) addLargeBtn.style.display = '';  // BX-DEV-101: restore + button
     renderCanvas();
   }
 
