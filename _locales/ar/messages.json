@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+عجلة للتكبير · اسحب فارغ للتحريك · / للبحث · نقر مزدوج إضافة · نقر يمين رجوع · Esc خروج"
+    "message": "Ctrl+عجلة تكبير · اسحب فارغ تحريك · نقر مزدوج إضافة · نقر يمين رجوع · اسحب عنوان نقل · زر ⊙ أعلى اليمين: إلغاء التثبيت للشاشة الكاملة"
   },
   "canvasRoot": {
     "message": "اللوحة",
@@ -296,16 +296,20 @@
     "message": "Boxing يخزن البيانات في تخزين المزامنة للمتصفح. اختر مزودك."
   },
   "urlOpenModeLabel": {
-    "message": "فتح الإشارات المرجعية في"
+    "message": "فتح الإشارات المرجعية في",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "علامة تبويب جديدة"
+    "message": "علامة تبويب جديدة",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "علامة التبويب الحالية"
+    "message": "علامة التبويب الحالية",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "اختر مكان فتح الإشارات المرجعية عند النقر"
+    "message": "اختر مكان فتح الإشارات المرجعية عند النقر",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "إعادة ترتيب",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "زر ⊙ أعلى اليمين: مثبت = شريط مرئي، غير مثبت = شاشة كاملة",
+    "description": "Header pin button usage guide"
   }
 }

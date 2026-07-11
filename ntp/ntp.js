@@ -201,7 +201,6 @@
   const modalClose     = $('#settings-modal .modal__close');
   const langSelect     = $('#lang-select');
   const rememberCheck  = $('#remember-last-pos');
-  const urlOpenSelect  = $('#url-open-mode');
   const fontSlider     = $('#font-slider');
   const fontSliderVal  = $('#font-slider-value');
   const zoomSlider     = $('#zoom-slider');
@@ -236,7 +235,6 @@
       selectedLanguage: 'en',
       rememberLastPos: true,
       zoomLevel: 1.0,
-      urlOpenMode: 'newTab',
       darkMode: false,
       fontSize: 14
     }
@@ -283,7 +281,7 @@
       version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
       lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
       lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, urlOpenMode: 'newTab', squareCorners: false, autoBackupInterval: 0 }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 0 }
     };
   }
 
@@ -891,18 +889,12 @@
       row.addEventListener('click', e => {
         if (e.target.closest('.bm-row__edit-btn') || e.target.closest('.bm-row__grip')) return;
         (function(url) {
-        const mode = layout.settings.urlOpenMode || 'newTab';
+        // BX-DEV-093: Always open in new tab via browser API — follows browser default behavior.
+        // Compatible with Chrome (chrome.tabs.create) and Firefox (browser.tabs.create via api polyfill).
         if (api.tabs?.create) {
-          if (mode === 'currentTab') {
-            api.tabs.query({ active: true, currentWindow: true }, tabs => {
-              if (tabs && tabs[0]) api.tabs.update(tabs[0].id, { url: url });
-              else api.tabs.create({ url: url, active: true });
-            });
-          } else {
-            api.tabs.create({ url: url, active: true });
-          }
+          api.tabs.create({ url: url, active: true });
         } else {
-          window.open(url, mode === 'currentTab' ? '_self' : '_blank');
+          window.open(url, '_blank');
         }
       })(ensureHttpsUrl(bm.url));
       });
@@ -1289,7 +1281,7 @@
   // ── Canvas Pan (left-drag empty area) ────────────────
   function onCanvasPanStart(e) {
     // Only pan if clicking empty canvas (not on a box)
-    if (e.target.closest('.large-box') || e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float')) return;
+    if (e.target.closest('.large-box') || e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float') || e.target.id === 'header-pin-btn' || e.target.closest('#header-pin-btn')) return;
     if (e.button !== 0) return;
 
     panState = {
@@ -1324,7 +1316,7 @@
 
   // Inner canvas pan
   function onInnerPanStart(e) {
-    if (e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float')) return;
+    if (e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float') || e.target.id === 'header-pin-btn' || e.target.closest('#header-pin-btn')) return;
     if (e.button !== 0) return;
 
     panState = {
@@ -1574,7 +1566,6 @@ function updateInnerCaption(lb) {
     debug('openSettingsModal set hidden=false, now=' + settingsModal.hidden + ' display=' + getComputedStyle(settingsModal).display);
     langSelect.value = layout.settings.selectedLanguage || 'en';
     rememberCheck.checked = layout.settings.rememberLastPos !== false;
-    urlOpenSelect.value = layout.settings.urlOpenMode || 'newTab';
     darkModeCB.checked = layout.settings.darkMode === true;
     zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
     zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';

@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+स्क्रॉल ज़ूम · खाली खींचें पैन · / खोजें · डबल-क्लिक जोड़ें · राइट-क्लिक वापस · Esc बाहर"
+    "message": "Ctrl+स्क्रॉल ज़ूम · खाली खींचें पैन · डबल-क्लिक जोड़ें · राइट-क्लिक वापस · शीर्षक खींचें · ⊙ बटन ऊपर दाएं: अनपिन करें फुलस्क्रीन"
   },
   "canvasRoot": {
     "message": "कैनवास",
@@ -296,16 +296,20 @@
     "message": "Boxing ब्राउज़र सिंक स्टोरेज में डेटा संग्रहीत करता है। अपना प्रदाता चुनें।"
   },
   "urlOpenModeLabel": {
-    "message": "बुकमार्क खोलें"
+    "message": "बुकमार्क खोलें",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "नया टैब"
+    "message": "नया टैब",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "वर्तमान टैब"
+    "message": "वर्तमान टैब",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "चुनें कि क्लिक करने पर बुकमार्क कहां खुलें"
+    "message": "चुनें कि क्लिक करने पर बुकमार्क कहां खुलें",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "पुनर्व्यवस्थित करें",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "⊙ बटन ऊपर दाएं: पिन किया = बार दिखाई, अनपिन = फुलस्क्रीन",
+    "description": "Header pin button usage guide"
   }
 }

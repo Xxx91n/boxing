@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+cuộn để thu phóng · Kéo vùng trống để di chuyển · / tìm kiếm · Nhấp đúp thêm · Nhấp phải quay lại · Esc thoát"
+    "message": "Ctrl+cuộn thu phóng · Kéo vùng trống di chuyển · Nhấp đúp thêm · Nhấp phải quay lại · Kéo tiêu đề di chuyển · Nút ⊙ góc trên phải: bỏ ghim để toàn màn hình"
   },
   "canvasRoot": {
     "message": "Khung vẽ",
@@ -296,16 +296,20 @@
     "message": "Boxing lưu trữ dữ liệu trong bộ nhớ đồng bộ của trình duyệt. Chọn nhà cung cấp của bạn."
   },
   "urlOpenModeLabel": {
-    "message": "Mở dấu trang trong"
+    "message": "Mở dấu trang trong",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "Tab mới"
+    "message": "Tab mới",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "Tab hiện tại"
+    "message": "Tab hiện tại",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "Chọn nơi mở dấu trang khi nhấp"
+    "message": "Chọn nơi mở dấu trang khi nhấp",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "Sắp xếp lại",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "Nút ⊙ góc trên phải: ghim = thanh hiển thị, bỏ ghim = toàn màn hình",
+    "description": "Header pin button usage guide"
   }
 }

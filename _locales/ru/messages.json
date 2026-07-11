@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+колесо масштаб · Перетащить пустое панорама · / поиск · Двойной клик добавить · Правый клик назад · Esc выход"
+    "message": "Ctrl+колесо масштаб · Перетащить пустое панорама · Двойной клик добавить · Правый клик назад · Перетащить заголовок · Кнопка ⊙ справа вверху: открепить для полного экрана"
   },
   "canvasRoot": {
     "message": "Холст",
@@ -296,16 +296,20 @@
     "message": "Boxing хранит данные в синхронизированном хранилище браузера. Выберите провайдера."
   },
   "urlOpenModeLabel": {
-    "message": "Открывать закладки в"
+    "message": "Открывать закладки в",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "Новая вкладка"
+    "message": "Новая вкладка",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "Текущая вкладка"
+    "message": "Текущая вкладка",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "Выберите, где открывать закладки при нажатии"
+    "message": "Выберите, где открывать закладки при нажатии",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "Переупорядочить",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "Кнопка ⊙ справа вверху: закреплено = панель видна, откреплено = полный экран",
+    "description": "Header pin button usage guide"
   }
 }

@@ -60,7 +60,7 @@
     "description": "打开大盒子提示"
   },
   "footerHint": {
-    "message": "Ctrl+滚轮缩放 · 拖拽空白区域平移 · / 搜索 · 双击创建盒子 · 右键返回 · Esc退出 · Ctrl+S保存 · Ctrl+Z撤销 · 拖拽标题栏移动"
+    "message": "Ctrl+滚轮缩放 · 拖拽空白平移 · 双击创建盒子 · 右键返回 · 拖拽标题栏移动 · 画布右上角⊙按钮：取消固定进入全屏模式"
   },
   "canvasRoot": {
     "message": "画布",
@@ -299,16 +299,20 @@
     "message": "Boxing 将数据存储在浏览器同步存储中。选择您的同步方式。"
   },
   "urlOpenModeLabel": {
-    "message": "在以下位置打开书签"
+    "message": "在以下位置打开书签",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "新标签页"
+    "message": "新标签页",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "当前标签页"
+    "message": "当前标签页",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "选择点击书签时打开的位置"
+    "message": "选择点击书签时打开的位置",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "拖动以重新排序",
@@ -445,5 +449,9 @@
   "allLanguages": {
     "message": "已翻译全部13种语言",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "点击画布右上角⊙按钮：固定时顶栏可见，取消固定进入全屏模式",
+    "description": "Header pin button usage guide"
   }
 }

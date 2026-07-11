@@ -60,7 +60,7 @@
     "description": "大ボックスを開くヒント"
   },
   "footerHint": {
-    "message": "Ctrl+スクロールでズーム · 空白をドラッグでパン · / で検索 · ダブルクリックで追加 · 右クリックで戻る · Escで終了"
+    "message": "Ctrl+スクロールでズーム · 空白ドラッグでパン · ダブルクリックで追加 · 右クリックで戻る · タイトルバーをドラッグで移動 · 右上の⊙ボタン：固定解除でフルスクリーン"
   },
   "canvasRoot": {
     "message": "キャンバス",
@@ -296,16 +296,20 @@
     "message": "Boxingはブラウザの同期ストレージにデータを保存します。プロバイダーを選択してください。"
   },
   "urlOpenModeLabel": {
-    "message": "ブックマークを開く場所"
+    "message": "ブックマークを開く場所",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "新しいタブ"
+    "message": "新しいタブ",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "現在のタブ"
+    "message": "現在のタブ",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "ブックマークをクリックした時に開く場所を選択"
+    "message": "ブックマークをクリックした時に開く場所を選択",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "並べ替え",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "右上の⊙ボタン：固定でトップバー表示、解除でフルスクリーン",
+    "description": "Header pin button usage guide"
   }
 }

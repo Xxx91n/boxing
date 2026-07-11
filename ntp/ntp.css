@@ -948,7 +948,7 @@ body.box-resizing {
   position: absolute !important;
   top: 12px;
   right: 16px;
-  z-index: 50;
+  z-index: 1000 !important;
   background: var(--color-elevated);
   border-radius: var(--radius-tile);
   box-shadow: var(--shadow-2);
@@ -957,6 +957,7 @@ body.box-resizing {
 }
 .header-pin--floating:hover {
   box-shadow: var(--shadow-3);
+  cursor: pointer;
 }
 .ntp--dark .header-pin--floating {
   background: var(--color-elevated);

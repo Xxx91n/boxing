@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+rueda para zoom · Arrastrar vacío para mover · / buscar · Doble clic añadir · Clic derecho volver · Esc salir"
+    "message": "Ctrl+rueda zoom · Arrastrar vacío mover · Doble clic añadir · Clic derecho volver · Arrastrar título mover · Botón ⊙ arriba derecha: desanclar para pantalla completa"
   },
   "canvasRoot": {
     "message": "Lienzo",
@@ -296,16 +296,20 @@
     "message": "Boxing almacena datos en el almacenamiento de sincronización del navegador. Elija su proveedor."
   },
   "urlOpenModeLabel": {
-    "message": "Abrir marcadores en"
+    "message": "Abrir marcadores en",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "Nueva pestaña"
+    "message": "Nueva pestaña",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "Pestaña actual"
+    "message": "Pestaña actual",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "Elija dónde abrir los marcadores al hacer clic"
+    "message": "Elija dónde abrir los marcadores al hacer clic",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "Reordenar",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "Botón ⊙ arriba derecha: anclado = barra visible, desanclado = pantalla completa",
+    "description": "Header pin button usage guide"
   }
 }

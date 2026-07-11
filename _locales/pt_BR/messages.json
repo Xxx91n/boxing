@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+rolagem zoom · Arrastar vazio mover · / buscar · Clique duplo adicionar · Clique direito voltar · Esc sair"
+    "message": "Ctrl+rolagem zoom · Arrastar vazio mover · Clique duplo adicionar · Clique direito voltar · Arrastar título mover · Botão ⊙ canto superior direito: desafixar para tela cheia"
   },
   "canvasRoot": {
     "message": "Tela",
@@ -296,16 +296,20 @@
     "message": "Boxing armazena dados no armazenamento de sincronização do navegador. Escolha seu provedor."
   },
   "urlOpenModeLabel": {
-    "message": "Abrir favoritos em"
+    "message": "Abrir favoritos em",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "Nova aba"
+    "message": "Nova aba",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "Aba atual"
+    "message": "Aba atual",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "Escolha onde os favoritos são abertos ao clicar"
+    "message": "Escolha onde os favoritos são abertos ao clicar",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "Reordenar",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "Botão ⊙ canto superior direito: fixado = barra visível, desafixado = tela cheia",
+    "description": "Header pin button usage guide"
   }
 }

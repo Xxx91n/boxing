@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+Scrollen zoomen · Leere Fläche ziehen verschieben · / suchen · Doppelklick hinzufügen · Rechtsklick zurück · Esc verlassen"
+    "message": "Ctrl+Scrollen zoomen · Leere Fläche ziehen verschieben · Doppelklick hinzufügen · Rechtsklick zurück · Titelleiste ziehen verschieben · ⊙-Button oben rechts: lösen für Vollbild"
   },
   "canvasRoot": {
     "message": "Leinwand",
@@ -296,16 +296,20 @@
     "message": "Boxing speichert Daten im Browser-Synchronisationsspeicher. Wählen Sie Ihren Anbieter."
   },
   "urlOpenModeLabel": {
-    "message": "Lesezeichen öffnen in"
+    "message": "Lesezeichen öffnen in",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "Neuer Tab"
+    "message": "Neuer Tab",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "Aktueller Tab"
+    "message": "Aktueller Tab",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "Wählen Sie, wo Lesezeichen geöffnet werden"
+    "message": "Wählen Sie, wo Lesezeichen geöffnet werden",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "Neu anordnen",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "⊙-Button oben rechts: angeheftet = Leiste sichtbar, gelöst = Vollbild",
+    "description": "Header pin button usage guide"
   }
 }

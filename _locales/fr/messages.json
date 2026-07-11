@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+molette pour zoomer · Glisser zone vide pour panoramique · / rechercher · Double-clic ajouter · Clic droit retour · Esc quitter"
+    "message": "Ctrl+molette zoomer · Glisser zone vide panoramique · Double-clic ajouter · Clic droit retour · Glisser titre déplacer · Bouton ⊙ en haut à droite : désépingler pour plein écran"
   },
   "canvasRoot": {
     "message": "Canevas",
@@ -296,16 +296,20 @@
     "message": "Boxing stocke les données dans le stockage de synchronisation du navigateur. Choisissez votre fournisseur."
   },
   "urlOpenModeLabel": {
-    "message": "Ouvrir les marque-pages dans"
+    "message": "Ouvrir les marque-pages dans",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "Nouvel onglet"
+    "message": "Nouvel onglet",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "Onglet actuel"
+    "message": "Onglet actuel",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "Choisissez où ouvrir les marque-pages"
+    "message": "Choisissez où ouvrir les marque-pages",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "Réorganiser",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "Bouton ⊙ en haut à droite : épinglé = barre visible, désépinglé = plein écran",
+    "description": "Header pin button usage guide"
   }
 }

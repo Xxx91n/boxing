@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+เลื่อนซูม · ลากพื้นที่ว่างเลื่อน · / ค้นหา · ดับเบิลคลิกเพิ่ม · คลิกขวากลับ · Esc ออก"
+    "message": "Ctrl+เลื่อนซูม · ลากพื้นที่ว่างเลื่อน · ดับเบิลคลิกเพิ่ม · คลิกขวากลับ · ลากชื่อย้าย · ปุ่ม ⊙ มุมขวาบน: ถอนหมุดเพื่อเต็มหน้าจอ"
   },
   "canvasRoot": {
     "message": "ผืนผ้าใบ",
@@ -296,16 +296,20 @@
     "message": "Boxing เก็บข้อมูลในที่เก็บข้อมูลซิงค์ของเบราว์เซอร์ เลือกผู้ให้บริการของคุณ"
   },
   "urlOpenModeLabel": {
-    "message": "เปิดบุ๊กมาร์กใน"
+    "message": "เปิดบุ๊กมาร์กใน",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "แท็บใหม่"
+    "message": "แท็บใหม่",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "แท็บปัจจุบัน"
+    "message": "แท็บปัจจุบัน",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "เลือกตำแหน่งที่จะเปิดบุ๊กมาร์กเมื่อคลิก"
+    "message": "เลือกตำแหน่งที่จะเปิดบุ๊กมาร์กเมื่อคลิก",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "จัดเรียงใหม่",
@@ -442,5 +446,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "ปุ่ม ⊙ มุมขวาบน: ปักหมุด = แถบมองเห็น, ถอนหมุด = เต็มหน้าจอ",
+    "description": "Header pin button usage guide"
   }
 }

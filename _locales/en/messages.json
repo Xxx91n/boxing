@@ -60,7 +60,7 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Drag empty area to pan · / to search · Double-click to add box · Right-click to return · Esc to exit · Ctrl+S to save · Ctrl+Z undo · Drag titlebar to move",
+    "message": "Ctrl+scroll to zoom · Drag empty area to pan · Double-click to add box · Right-click to return · Drag titlebar to move · Pin header button (⊙) in top-right of canvas — unpin to go fullscreen",
     "description": "Comprehensive shortcut/action guide in page footer"
   },
   "canvasRoot": {
@@ -309,16 +309,20 @@
     "message": "Boxing stores data in browser sync storage. Choose your provider."
   },
   "urlOpenModeLabel": {
-    "message": "Open bookmarks in"
+    "message": "Open bookmarks in",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "New Tab"
+    "message": "New Tab",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "Current Tab"
+    "message": "Current Tab",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "Choose where bookmarks open when clicked"
+    "message": "Choose where bookmarks open when clicked",
+    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
     "message": "Drag to reorder",
@@ -455,5 +459,9 @@
   "allLanguages": {
     "message": "All 13 languages translated",
     "description": "Locale completeness note"
+  },
+  "headerPinUsage": {
+    "message": "Click ⊙ in canvas top-right: pinned keeps top bar visible, unpinned goes fullscreen",
+    "description": "Header pin button usage guide"
   }
 }

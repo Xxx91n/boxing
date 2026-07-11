@@ -102,42 +102,34 @@
         <button class="settings-nav__item" data-tab="sync" data-i18n="settingsNavSync">Sync & Backup</button>
       </nav>
       <div class="settings-content">
-        <!-- General tab -->
-        <div class="settings-tab" id="tab-general">
-          <section class="modal__section">
-            <label class="modal__label" for="lang-select" data-i18n="settingsLanguage">Language / 语言</label>
-            <select id="lang-select" class="modal__select">
-              <option value="en">English</option>
-              <option value="zh_CN">中文</option>
-              <option value="ja">日本語</option>
-              <option value="ko">한국어</option>
-              <option value="fr">Français</option>
-              <option value="de">Deutsch</option>
-              <option value="es">Español</option>
-              <option value="pt_BR">Português (BR)</option>
-              <option value="ru">Русский</option>
-              <option value="ar">العربية</option>
-              <option value="hi">हिन्दी</option>
-              <option value="th">ไทย</option>
-              <option value="vi">Tiếng Việt</option>
-            </select>
-          </section>
-          <section class="modal__section">
-            <label class="checkbox-label">
-              <input type="checkbox" id="remember-last-pos" checked>
-              <span class="checkbox-label__text" data-i18n="rememberLastPos">Remember last position</span>
-            </label>
-            <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new tabs</p>
-          </section>
-          <section class="modal__section">
-            <label class="modal__label" for="url-open-mode" data-i18n="urlOpenModeLabel">Open bookmarks in</label>
-            <select id="url-open-mode" class="modal__select">
-              <option value="newTab" data-i18n="urlOpenModeNewTab">New Tab</option>
-              <option value="currentTab" data-i18n="urlOpenModeCurrentTab">Current Tab</option>
-            </select>
-            <p class="modal__hint" data-i18n="urlOpenModeHint">Choose where bookmarks open when clicked</p>
-          </section>
-        </div>
+          <!-- General tab -->
+          <div class="settings-tab" id="tab-general">
+            <section class="modal__section">
+              <label class="modal__label" for="lang-select" data-i18n="settingsLanguage">Language / 语言</label>
+              <select id="lang-select" class="modal__select">
+                <option value="en">English</option>
+                <option value="zh_CN">中文</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="es">Español</option>
+                <option value="pt_BR">Português (BR)</option>
+                <option value="ru">Русский</option>
+                <option value="ar">العربية</option>
+                <option value="hi">हिन्दी</option>
+                <option value="th">ไทย</option>
+                <option value="vi">Tiếng Việt</option>
+              </select>
+            </section>
+            <section class="modal__section">
+              <label class="checkbox-label">
+                <input type="checkbox" id="remember-last-pos" checked>
+                <span class="checkbox-label__text" data-i18n="rememberLastPos">Remember last position</span>
+              </label>
+              <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new tabs</p>
+            </section>
+          </div>
         <!-- Appearance tab -->
         <div class="settings-tab" id="tab-appearance" hidden>
           <section class="modal__section">
