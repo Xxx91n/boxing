@@ -277,41 +277,38 @@ html, body {
    including background, borders, and content, is hidden cleanly under the title bar.
    On hover, body slides down with its full measured height.
    No scaleY — that squishes content; this pulls the entire panel out like a tissue drawer. */
+/* BX-DEV-111 v2: Real tissue-pull drawer.
+   Strategy: collapsed = box shrinks to bar-only height via max-height on the BOX itself.
+   Body & resize-handle hidden. On hover: box max-height expands, body fades in.
+   The whole box panel (including background/border) grows/shrinks — true drawer. */
+
+.box--hover-expand.box--collapsed {
+  height: auto !important;  /* override JS inline style */
+  max-height: 52px;  /* bar-only: tight */
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+}
 .box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
-  overflow: hidden;
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  border-top-width: 0;
-  margin-top: 0;
   opacity: 0;
-  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2),
-              padding 0.4s ease-out,
-              opacity 0.2s ease-out,
-              margin 0.4s ease-out;
+  transition: opacity 0.25s ease-out;
+}
+.box--hover-expand.box--collapsed .box-resize-handle {
+  display: none;  /* hide grip when collapsed */
+}
+
+/* Hover: pull drawer open — box expands to full height, body fades in */
+.box--hover-expand.box--collapsed:hover {
+  max-height: 800px;  /* big enough for any box */
+  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.0);
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
-.box--hover-expand.box--collapsed .large-box__body:hover,
-.box--hover-expand.box--collapsed:focus-within .large-box__body {
-  max-height: var(--body-max-height, 600px);
-  padding: var(--space-3);
+.box--hover-expand.box--collapsed:hover .small-box__body {
   opacity: 1;
-  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.0),
-              padding 0.4s ease-out,
-              opacity 0.35s ease-out 0.05s,
-              margin 0.4s ease-out;
+  transition: opacity 0.35s ease-out 0.1s;
 }
-.box--hover-expand.box--collapsed:hover .small-box__body,
-.box--hover-expand.box--collapsed .small-box__body:hover,
-.box--hover-expand.box--collapsed:focus-within .small-box__body {
-  max-height: var(--body-max-height, 400px);
-  padding: 4px 10px;
-  opacity: 1;
-  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.0),
-              padding 0.4s ease-out,
-              opacity 0.35s ease-out 0.05s,
-              margin 0.4s ease-out;
+.box--hover-expand.box--collapsed:hover .box-resize-handle {
+  display: block;
 }
 
 .large-box__body {

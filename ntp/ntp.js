@@ -258,7 +258,7 @@
   let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click (BX-DEV-077)
 
   // header auto-hide state (must be declared before functions that reference it)
-  let headerPinned = layout.settings.headerPinned !== false;  // BX-DEV-111: persist from layout
+  let headerPinned = true;  // BX-DEV-111: set after loadLayout reads persisted value
   let scrollTimeout;
 
   // ── storage ────────────────────────────────────────────
@@ -267,6 +267,13 @@
       const data = await api.storage.sync.get({ boxingLayout: null });
       if (data.boxingLayout) layout = migrateLayout(data.boxingLayout);
       else layout = defaultLayout();
+      // BX-DEV-111: Emergency restore from localStorage if sync storage was stale
+      // (happens when beforeunload couldn't finish async storage.sync.set)
+      const em = localStorage.getItem('boxingEmergencyBackup');
+      if (em) {
+        try { const emLayout = JSON.parse(em); if (emLayout.boxes && emLayout.boxes.length > 0) { layout = migrateLayout(emLayout); debug('loadLayout: restored from emergency backup'); } } catch(_) {}
+        localStorage.removeItem('boxingEmergencyBackup');
+      }
     } catch (e) { debugErr('loadLayout', e); layout = defaultLayout(); }
   }
 
@@ -1418,6 +1425,8 @@
     document.removeEventListener('mouseup', onInnerPanEnd);
     innerCanvas.style.cursor = '';
     panState = null;
+    // BX-DEV-111: persist inner pan position
+    layout.lastInnerPanX = innerPanX; layout.lastInnerPanY = innerPanY; saveLayout();
   }
 
   // ── Ctrl+scroll zoom ────────────────────────────────────
@@ -1447,6 +1456,7 @@
       innerPanX = clampedInnerPan.x;
       innerPanY = clampedInnerPan.y;
       applyInnerTransform();
+      saveLayout();  // BX-DEV-111: persist inner zoom
     }
   }
 
@@ -1802,6 +1812,9 @@ function updateInnerCaption(lb) {
     await loadLayout();
     await loadSettings();
 
+    // BX-DEV-111: Now that layout is loaded, restore headerPinned from persisted state
+    headerPinned = layout.settings.headerPinned !== false;  // true if not explicitly set to false
+
     // events
     searchInput.addEventListener('input', e => {
       // simple caption update; full search TBD
@@ -2022,7 +2035,10 @@ function updateInnerCaption(lb) {
         layout.lastPanY = canvasPanY;
       }
       layout.settings.headerPinned = headerPinned;
-      try { api.storage.sync.set({ boxingLayout: layout }); } catch(_) {}
+      // BX-DEV-111: async storage.sync.set() won't complete in beforeunload.
+      // Fallback: serialize to localStorage as emergency backup.
+      // On next init, loadLayout will check localStorage if sync storage is stale.
+      try { localStorage.setItem('boxingEmergencyBackup', JSON.stringify(layout)); } catch(_) {}
     });
 
     // BX-DEV-111: On REFRESH, restore canvas position (pan+zoom) from last saved state.
