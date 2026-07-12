@@ -282,30 +282,32 @@ html, body {
    Body & resize-handle hidden. On hover: box max-height expands, body fades in.
    The whole box panel (including background/border) grows/shrinks — true drawer. */
 
+/* Collapsed state: box shrinks to bar-only, body hidden */
 .box--hover-expand.box--collapsed {
-  height: auto !important;  /* override JS inline style */
-  max-height: 52px;  /* bar-only: tight */
+  height: auto !important; /* override JS inline style */
+  max-height: 54px;        /* bar + padding, tightly clipped */
   overflow: hidden;
-  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Material deceleration — smooth collapse */
 }
 .box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
   opacity: 0;
-  transition: opacity 0.25s ease-out;
+  transition: opacity 0.2s ease-out;
 }
 .box--hover-expand.box--collapsed .box-resize-handle {
-  display: none;  /* hide grip when collapsed */
+  display: none;
 }
 
-/* Hover: pull drawer open — box expands to full height, body fades in */
+/* Hover: tissue-pull expand — box grows to measured height, body fades in */
 .box--hover-expand.box--collapsed:hover {
-  max-height: 800px;  /* big enough for any box */
-  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.0);
+  max-height: var(--expand-height, 800px); /* JS-measured exact content height, avoids empty-range animation */
+  overflow: visible;
+  transition: max-height 0.35s cubic-bezier(0, 0, 0.2, 1); /* Material acceleration — crisp expand */
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
 .box--hover-expand.box--collapsed:hover .small-box__body {
   opacity: 1;
-  transition: opacity 0.35s ease-out 0.1s;
+  transition: opacity 0.3s ease-out 0.08s;
 }
 .box--hover-expand.box--collapsed:hover .box-resize-handle {
   display: block;

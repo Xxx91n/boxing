@@ -557,6 +557,8 @@
     }
     canvasSurface.appendChild(frag);
     debug('renderCanvas done, surface children=' + canvasSurface.children.length);
+    // BX-DEV-111 v2: measure each collapsed box for precise expand animation
+    canvasSurface.querySelectorAll('.large-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
     applyCanvasTransform();
     updateCaption();
   }
@@ -566,8 +568,17 @@
     const body = el.querySelector('.large-box__body') || el.querySelector('.small-box__body');
     if (!body) return;
     requestAnimationFrame(() => {
-      const h = body.scrollHeight;
-      if (h > 0) body.style.setProperty('--body-max-height', h + 'px');
+      // BX-DEV-111 v2: measure FULL box scrollHeight (bar+body+resize) for expand target
+      // Temporarily remove max-height constraint to measure natural height
+      const wasCollapsed = el.classList.contains('box--collapsed');
+      const savedMaxH = el.style.maxHeight;
+      el.style.maxHeight = 'none';
+      const fullH = el.scrollHeight;
+      el.style.maxHeight = savedMaxH;
+      if (fullH > 0) el.style.setProperty('--expand-height', fullH + 'px');
+      // Also keep --body-max-height for compatibility
+      const bh = body.scrollHeight;
+      if (bh > 0) body.style.setProperty('--body-max-height', bh + 'px');
     });
   }
 
@@ -731,6 +742,11 @@
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'box-resize-handle';
     resizeHandle.addEventListener('mousedown', e => onResizeStart(e, 'large', box.id, el));
+
+    // BX-DEV-111: restore persisted pinned & auto-expand state
+    el.classList.toggle('box--pinned', box.pinned === true);
+    if (box.collapseHover) { el.classList.add('box--hover-expand'); el.classList.add('box--collapsed'); }
+
     el.appendChild(resizeHandle);
 
 
@@ -828,6 +844,8 @@
       frag.appendChild(createSmallBoxEl(lb.id, sb));
     }
     innerSurface.appendChild(frag);
+    // BX-DEV-111 v2: measure each collapsed small box for precise expand animation
+    innerSurface.querySelectorAll('.small-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
   }
 
   function createSmallBoxEl(largeId, sb) {
@@ -927,6 +945,10 @@
     resizeHandle.className = 'box-resize-handle';
     resizeHandle.addEventListener('mousedown', e => onResizeStart(e, 'small', { largeId, smallId: sb.id }, el));
     el.appendChild(resizeHandle);
+
+    // BX-DEV-111: restore persisted pinned & auto-expand state for small boxes
+    el.classList.toggle('box--pinned', sb.pinned === true);
+    if (sb.collapseHover) { el.classList.add('box--hover-expand'); el.classList.add('box--collapsed'); }
 
 
     return el;
@@ -2060,6 +2082,18 @@ function updateInnerCaption(lb) {
       applyInnerTransform();
     }
 
+    // BX-DEV-111: On REFRESH, also restore inner view if last page was inside a large box
+    // currentLargeBoxId is null on init but layout.lastLargeBoxId holds persisted state
+    if (!isNewTab && layout.lastLargeBoxId) {
+      const lb = getLargeBox(layout.lastLargeBoxId);
+      if (lb) {
+        if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
+        if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
+        if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
+        enterLargeBox(layout.lastLargeBoxId); return;
+      }
+    }
+
     if (isNewTab && layout.settings.rememberLastPos && layout.lastLargeBoxId) {
       const lb = getLargeBox(layout.lastLargeBoxId);
       // Restore saved canvas zoom and pan (BX-DEV-111)
@@ -2090,19 +2124,90 @@ function updateInnerCaption(lb) {
     return `https://icons.duckduckgo.com/ip3/${host}.ico`;
   }
 
+  // BX-DEV-111 v2: Fastest-CDN race — probe all sources on first request, lock winner for session
+  const FAVICON_SOURCES = [
+    { name: 'bytecook',   url: (h) => `https://ico.bytecook.io/${h}` },
+    { name: 'duckduckgo', url: (h) => `https://icons.duckduckgo.com/ip3/${h}.ico` },
+    { name: 'google',     url: (h) => `https://www.google.com/s2/favicons?domain=${h}&sz=32` },
+    { name: 'faviconim',  url: (h) => `https://favicon.im/${h}` },
+  ];
+  let fastestCDN = null; // session-locked winner after race
+  let cdnRaceDone = false;
+
+  function getFaviconUrl(url) {
+    try { const host = new URL(url).hostname; if (!host) return null; } catch(_) { return null; }
+    const host = new URL(url).hostname;
+    if (fastestCDN) return fastestCDN.url(host);
+    // Default: DuckDuckGo (global, CN-accessible)
+    return `https://icons.duckduckgo.com/ip3/${host}.ico`;
+  }
+
+  // BX-DEV-111 v2: Race all CDNs on first favicon request, pick fastest
+  async function raceCDN(testHost) {
+    if (cdnRaceDone) return;
+    cdnRaceDone = true;
+    let bestTime = Infinity;
+    const results = await Promise.allSettled(FAVICON_SOURCES.map(async (src) => {
+      const url = src.url(testHost);
+      const start = performance.now();
+      await new Promise((resolve, reject) => {
+        const probe = new Image();
+        probe.onload = () => resolve();
+        probe.onerror = () => reject();
+        probe.src = url;
+        setTimeout(() => reject(), 2500);
+      });
+      const elapsed = performance.now() - start;
+      return { src, elapsed };
+    }));
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value.elapsed < bestTime) {
+        bestTime = r.value.elapsed;
+        fastestCDN = r.value.src;
+      }
+    }
+    debug('CDN race winner:', fastestCDN?.name, bestTime.toFixed(0) + 'ms');
+  }
+
+  // BX-DEV-111 v2: Validate URL before favicon fetch — skip intranet / non-http / raw IP
+  function isValidPublicUrl(url) {
+    try {
+      const u = new URL(url);
+      if (!/^https?:$/i.test(u.protocol)) return false;
+      const h = u.hostname;
+      if (!h || h === 'localhost') return false;
+      // Skip raw IPv4 / IPv6 addresses
+      if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) return false;
+      if (h.includes(':')) return false; // IPv6
+      // Skip intranet ranges: 10.x, 172.16-31.x, 192.168.x, 127.x
+      const parts = h.split('.');
+      if (parts.length === 4) {
+        const a = +parts[0], b = +parts[1];
+        if (a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) return false;
+      }
+      return true;
+    } catch(_) { return false; }
+  }
+
   const faviconCache = new Map(); // volatile: cleared on browser restart (session-scoped)
   async function loadFavicon(img, url) {
-    const host = (() => { try { return new URL(url).hostname; } catch(_) { return null; } })();
-    if (!host) { img.style.display = 'none'; return; }
-    // Check cache
-    if (faviconCache.has(host)) { const cached = faviconCache.get(host); if (cached === null) { img.style.display = 'none'; return; } img.src = cached; return; }
-    // Sources in priority order: DuckDuckGo → Google S2 → direct /favicon.ico
-    const sources = [
-      `https://icons.duckduckgo.com/ip3/${host}.ico`,
-      `https://www.google.com/s2/favicons?domain=${host}&sz=32`,
-      `https://${host}/favicon.ico`
-    ];
-    for (const src of sources) {
+    // BX-DEV-111 v2: Validate — skip intranet, localhost, raw IPs
+    if (!isValidPublicUrl(url)) { img.style.display = 'none'; return; }
+    const host = new URL(url).hostname;
+    // Cache hit
+    if (faviconCache.has(host)) { const c = faviconCache.get(host); if (c === null) { img.style.display = 'none'; return; } img.src = c; return; }
+    // Trigger CDN race on first-ever favicon request
+    if (!cdnRaceDone) raceCDN(host);
+    // Build ordered source list: race winner first (if available), then fallbacks
+    const ordered = [];
+    if (fastestCDN) ordered.push(fastestCDN.url(host));
+    for (const src of FAVICON_SOURCES) {
+      const u = src.url(host);
+      if (!ordered.includes(u)) ordered.push(u);
+    }
+    // Also try direct /favicon.ico as last resort
+    ordered.push(`https://${host}/favicon.ico`);
+    for (const src of ordered) {
       try {
         await new Promise((resolve, reject) => {
           const probe = new Image();
@@ -2111,10 +2216,8 @@ function updateInnerCaption(lb) {
           probe.src = src;
           setTimeout(() => reject(new Error('timeout')), 3000);
         });
-        return; // success — img.src already set
+        return;
       } catch(_) { continue; }
     }
-    // All sources failed — cache as null and hide
-    faviconCache.set(host, null);
-    img.style.display = 'none';
+    faviconCache.set(host, null); img.style.display = 'none';
   }
