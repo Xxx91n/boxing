@@ -250,7 +250,9 @@
   "importFailed": {
     "message": "가져오기 실패: 잘못된 데이터 형식"
   },
-  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
+  "importTooLarge": {
+    "message": "Import failed: file too large (max 5MB)"
+  },
   "dblclickCreateHint": {
     "message": "더블 클릭으로 만들기"
   },
@@ -451,5 +453,68 @@
   "headerPinUsage": {
     "message": "우측 상단 ⊙ 버튼: 고정 시 상단 바 표시, 해제 시 전체 화면",
     "description": "Header pin button usage guide"
+  },
+  "syncLocalOnly": {
+    "message": "로컬만"
+  },
+  "syncChrome": {
+    "message": "Chrome 동기화"
+  },
+  "syncFirefox": {
+    "message": "Firefox 동기화"
+  },
+  "backupDisabled": {
+    "message": "비활성화"
+  },
+  "backupDaily": {
+    "message": "매일"
+  },
+  "backupWeekly": {
+    "message": "매주"
+  },
+  "backupHourly": {
+    "message": "매시간"
+  },
+  "syncWebDAV": {
+    "message": "WebDAV"
+  },
+  "syncGitHubGist": {
+    "message": "GitHub Gist"
+  },
+  "webdavUrl": {
+    "message": "WebDAV URL"
+  },
+  "webdavUser": {
+    "message": "사용자 이름"
+  },
+  "webdavPass": {
+    "message": "비밀번호"
+  },
+  "gistToken": {
+    "message": "GitHub 토큰"
+  },
+  "gistTokenHint": {
+    "message": "gist 권한이 있는 개인 액세스 토큰 생성"
+  },
+  "gistId": {
+    "message": "Gist ID (자동 입력)"
+  },
+  "webdavTestBtn": {
+    "message": "연결 테스트"
+  },
+  "webdavTestOk": {
+    "message": "WebDAV 연결 성공"
+  },
+  "webdavTestFail": {
+    "message": "WebDAV 연결 실패"
+  },
+  "gistBackupOk": {
+    "message": "Gist 백업 저장됨"
+  },
+  "gistBackupFail": {
+    "message": "Gist 백업 실패"
+  },
+  "backupTooFrequent": {
+    "message": "자동 백업 건너뜀: 너무 빈번함, 최소 간격 1시간"
   }
 }

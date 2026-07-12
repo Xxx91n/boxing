@@ -250,7 +250,9 @@
   "importFailed": {
     "message": "आयात विफल: अमान्य डेटा प्रारूप"
   },
-  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
+  "importTooLarge": {
+    "message": "Import failed: file too large (max 5MB)"
+  },
   "dblclickCreateHint": {
     "message": "बनाने के लिए डबल-क्लिक करें"
   },
@@ -451,5 +453,68 @@
   "headerPinUsage": {
     "message": "⊙ बटन ऊपर दाएं: पिन किया = बार दिखाई, अनपिन = फुलस्क्रीन",
     "description": "Header pin button usage guide"
+  },
+  "syncLocalOnly": {
+    "message": "केवल स्थानीय"
+  },
+  "syncChrome": {
+    "message": "Chrome सिंक"
+  },
+  "syncFirefox": {
+    "message": "Firefox सिंक"
+  },
+  "backupDisabled": {
+    "message": "अक्षम"
+  },
+  "backupDaily": {
+    "message": "दैनिक"
+  },
+  "backupWeekly": {
+    "message": "साप्ताहिक"
+  },
+  "backupHourly": {
+    "message": "प्रति घंटा"
+  },
+  "syncWebDAV": {
+    "message": "WebDAV"
+  },
+  "syncGitHubGist": {
+    "message": "GitHub Gist"
+  },
+  "webdavUrl": {
+    "message": "WebDAV URL"
+  },
+  "webdavUser": {
+    "message": "उपयोगकर्ता"
+  },
+  "webdavPass": {
+    "message": "पासवर्ड"
+  },
+  "gistToken": {
+    "message": "GitHub टोकन"
+  },
+  "gistTokenHint": {
+    "message": "gist स्कोप के साथ टोकन बनाएं"
+  },
+  "gistId": {
+    "message": "Gist ID (स्वतः)"
+  },
+  "webdavTestBtn": {
+    "message": "परीक्षण"
+  },
+  "webdavTestOk": {
+    "message": "WebDAV कनेक्शन सफल"
+  },
+  "webdavTestFail": {
+    "message": "WebDAV कनेक्शन विफल"
+  },
+  "gistBackupOk": {
+    "message": "Gist बैकअप सहेजा गया"
+  },
+  "gistBackupFail": {
+    "message": "Gist बैकअप विफल"
+  },
+  "backupTooFrequent": {
+    "message": "ऑटो-बैकअप छोड़ा गया: बहुत बार-बार, न्यूनतम 1 घंटा"
   }
 }

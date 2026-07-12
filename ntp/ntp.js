@@ -120,6 +120,27 @@
     squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded'
   };
   // Add new v3.6 keys to I18N_FALLBACK
+  I18N_FALLBACK.syncLocalOnly = 'Local Only';
+  I18N_FALLBACK.syncChrome = 'Chrome Sync';
+  I18N_FALLBACK.syncFirefox = 'Firefox Sync';
+  I18N_FALLBACK.backupDisabled = 'Disabled';
+  I18N_FALLBACK.backupDaily = 'Daily';
+  I18N_FALLBACK.backupWeekly = 'Weekly';
+  I18N_FALLBACK.backupHourly = 'Hourly';
+  I18N_FALLBACK.syncWebDAV = 'WebDAV';
+  I18N_FALLBACK.syncGitHubGist = 'GitHub Gist';
+  I18N_FALLBACK.webdavUrl = 'WebDAV URL';
+  I18N_FALLBACK.webdavUser = 'Username';
+  I18N_FALLBACK.webdavPass = 'Password';
+  I18N_FALLBACK.gistToken = 'GitHub Token';
+  I18N_FALLBACK.gistTokenHint = 'Create a personal access token with gist scope';
+  I18N_FALLBACK.gistId = 'Gist ID (auto-filled)';
+  I18N_FALLBACK.webdavTestBtn = 'Test Connection';
+  I18N_FALLBACK.webdavTestOk = 'WebDAV connection OK';
+  I18N_FALLBACK.webdavTestFail = 'WebDAV connection failed';
+  I18N_FALLBACK.gistBackupOk = 'Gist backup saved';
+  I18N_FALLBACK.gistBackupFail = 'Gist backup failed';
+  I18N_FALLBACK.backupTooFrequent = 'Auto-backup skipped: too frequent, minimum interval 1 hour';
   I18N_FALLBACK.settingsNavGeneral = 'General';
   I18N_FALLBACK.settingsNavAppearance = 'Appearance';
   I18N_FALLBACK.settingsNavData = 'Data';
@@ -300,7 +321,7 @@
       version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
       lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
       lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 0, headerPinned: true }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 0, headerPinned: true, syncProvider: 'chrome' }
     };
   }
 
@@ -322,7 +343,7 @@
         })),
         nextLargeIndex: (raw.boxes?.length || 0) + 1,
         lastLargeBoxId: raw.lastLargeBoxId || null,
-        settings: raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14 }
+        settings: raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'chrome' }
       };
     }
     return defaultLayout();
@@ -2009,27 +2030,129 @@ function updateInnerCaption(lb) {
     }
 
     // Backup Now button
+    // ── Backup system: WebDAV / GitHub Gist / Local ──────
+    const syncProviderSelect = document.getElementById('sync-provider');
+    const webdavConfig = document.getElementById('webdav-config');
+    const gistConfig = document.getElementById('gist-config');
+    const webdavUrlInput = document.getElementById('webdav-url');
+    const webdavUserInput = document.getElementById('webdav-user');
+    const webdavPassInput = document.getElementById('webdav-pass');
+    const gistTokenInput = document.getElementById('gist-token');
+    const gistIdInput = document.getElementById('gist-id');
     const backupNowBtn = document.getElementById('backup-now-btn');
-    backupNowBtn?.addEventListener('click', () => {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const backup = JSON.stringify(layout, null, 2);
-      const blob = new Blob([backup], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'boxing-backup-' + timestamp + '.json';
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(url);
+
+    // Restore persisted provider config
+    const syncProviderVal = layout.settings.syncProvider || 'chrome';
+    if (syncProviderSelect) syncProviderSelect.value = syncProviderVal;
+    if (layout.settings.webdavUrl && webdavUrlInput) webdavUrlInput.value = layout.settings.webdavUrl;
+    if (layout.settings.webdavUser && webdavUserInput) webdavUserInput.value = layout.settings.webdavUser;
+    if (layout.settings.gistId && gistIdInput) gistIdInput.value = layout.settings.gistId;
+
+    function updateSyncConfigVisibility() {
+      const p = syncProviderSelect.value;
+      if (webdavConfig) webdavConfig.hidden = p !== 'webdav';
+      if (gistConfig) gistConfig.hidden = p !== 'gist';
+    }
+    updateSyncConfigVisibility();
+
+    syncProviderSelect?.addEventListener('change', () => {
+      layout.settings.syncProvider = syncProviderSelect.value;
+      updateSyncConfigVisibility();
+      saveLayout();
     });
 
-    // Auto-backup interval
+    [webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput].forEach(inp => {
+      inp?.addEventListener('blur', () => {
+        if (webdavUrlInput) layout.settings.webdavUrl = webdavUrlInput.value.trim();
+        if (webdavUserInput) layout.settings.webdavUser = webdavUserInput.value.trim();
+        saveLayout();
+      });
+    });
+
+    async function backupToWebDAV() {
+      const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
+      const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
+      const pass = webdavPassInput?.value || '';
+      if (!url) throw new Error('WebDAV URL not configured');
+      const h = new Headers({ 'Content-Type': 'application/json' });
+      if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
+      const resp = await fetch(url, { method: 'PUT', headers: h, body: JSON.stringify(layout, null, 2) });
+      if (!resp.ok) throw new Error('WebDAV PUT ' + resp.status);
+      return true;
+    }
+
+    async function backupToGist() {
+      const token = gistTokenInput?.value?.trim();
+      if (!token) throw new Error('GitHub token not configured');
+      const gistId = layout.settings.gistId || gistIdInput?.value?.trim();
+      const content = JSON.stringify(layout, null, 2);
+      const h = new Headers({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' });
+      let resp, result;
+      if (gistId) {
+        resp = await fetch('https://api.github.com/gists/' + gistId, {
+          method: 'PATCH', headers: h, body: JSON.stringify({ files: { 'boxing-backup.json': { content } } })
+        });
+      } else {
+        resp = await fetch('https://api.github.com/gists', {
+          method: 'POST', headers: h,
+          body: JSON.stringify({ public: false, files: { 'boxing-backup.json': { content } }, description: 'Boxing extension backup' })
+        });
+      }
+      if (!resp.ok) throw new Error('GitHub API ' + resp.status);
+      result = await resp.json();
+      if (result.id && !layout.settings.gistId) {
+        layout.settings.gistId = result.id;
+        if (gistIdInput) gistIdInput.value = result.id;
+        saveLayout();
+      }
+      return true;
+    }
+
+    function backupToLocal() {
+      const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const blob = new Blob([JSON.stringify(layout, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'boxing-backup-' + ts + '.json';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    async function performBackup() {
+      const p = syncProviderSelect?.value || 'chrome';
+      try {
+        if (p === 'webdav') { await backupToWebDAV(); debug('WebDAV backup ok'); }
+        else if (p === 'gist') { await backupToGist(); debug('Gist backup ok'); }
+        else { backupToLocal(); }
+      } catch (e) { debugErr('Backup failed', e); if (p !== 'local' && p !== 'chrome' && p !== 'firefox') backupToLocal(); }
+    }
+
+    backupNowBtn?.addEventListener('click', () => performBackup());
+
+    // ── Auto-backup scheduler ──────────────────────
+    let autoBackupTimer = null;
+    let lastAutoBackupTs = 0;
+
+    function setupAutoBackup(sec) {
+      if (autoBackupTimer) { clearInterval(autoBackupTimer); autoBackupTimer = null; }
+      if (!sec || sec < 3600) return;
+      autoBackupTimer = setInterval(async () => {
+        const now = Date.now();
+        if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
+        lastAutoBackupTs = now;
+        try { await performBackup(); debug('Auto-backup done'); } catch(e) { debugErr('Auto-backup err', e); }
+      }, sec * 1000);
+    }
+
+    if (layout.settings.autoBackupInterval >= 3600) setupAutoBackup(layout.settings.autoBackupInterval);
+
     const autoBackupSelect = document.getElementById('auto-backup-interval');
     autoBackupSelect?.addEventListener('change', () => {
       layout.settings.autoBackupInterval = parseInt(autoBackupSelect.value, 10) || 0;
+      setupAutoBackup(layout.settings.autoBackupInterval);
       saveLayout();
     });
-    if (layout.settings.autoBackupInterval) {
-      if (autoBackupSelect) autoBackupSelect.value = String(layout.settings.autoBackupInterval);
-    }
+    if (layout.settings.autoBackupInterval && autoBackupSelect) autoBackupSelect.value = String(layout.settings.autoBackupInterval);
 
     // Export / Import
     exportBtn?.addEventListener('click', () => {
@@ -2143,20 +2266,27 @@ function updateInnerCaption(lb) {
     const isNewTab = !(window.performance?.navigation?.type === 1 || window.performance?.getEntriesByType?.('navigation')?.[0]?.type === 'reload');
 
     // BX-DEV-111f: Refresh vs New-Tab memory restore policy
-    //   - Refresh (type=reload): NEVER restore — keep fresh default state
-    //   - New tab / browser restart: restore last active tab's page+position+zoom
-    //   - RememberLastPos setting controls whether to drill into last large box on new tab
-    // BX-DEV-111f v2: On refresh, keep page level (canvas vs inner) but reset pan/zoom to origin.
-    // Don't restore position — only preserve which level user was on.
+    // BX-DEV-111h: Refresh preserves current page level + pan/zoom position (user expects same view).
+    // New tab / browser restart: restore last active tab's page+position+zoom via visibilitychange snapshot.
+    // RememberLastPos setting controls whether to drill into last large box on new tab.
     if (!isNewTab) {
-      // Stay on same page level: if last page was inner, re-enter that box with default pan/zoom
+      // BX-DEV-111h: Refresh — preserve current canvas position (pan+zoom)
+      canvasZoom = layout.lastZoom || 1.0;
+      canvasPanX = layout.lastPanX || 0;
+      canvasPanY = layout.lastPanY || 0;
+      applyCanvasTransform();
       if (layout.lastLargeBoxId) {
         const lb = getLargeBox(layout.lastLargeBoxId);
-        if (lb) { enterLargeBox(layout.lastLargeBoxId, true); return; }
+        if (lb) {
+          innerZoom = layout.lastInnerZoom || 1.0;
+          innerPanX = layout.lastInnerPanX || 0;
+          innerPanY = layout.lastInnerPanY || 0;
+          applyInnerTransform();
+          enterLargeBox(layout.lastLargeBoxId, false); return;
+        }
       }
-      // Otherwise, normal canvas render
       renderCanvas();
-      debug('init complete v3.7.9f (refresh)', { boxes: layout.boxes.length });
+      debug('init complete v3.7.9h (refresh)', { boxes: layout.boxes.length, zoom: canvasZoom });
       return;
     }
     if (isNewTab) {

@@ -253,7 +253,9 @@
   "importFailed": {
     "message": "导入失败：数据格式无效"
   },
-  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
+  "importTooLarge": {
+    "message": "Import failed: file too large (max 5MB)"
+  },
   "dblclickCreateHint": {
     "message": "双击创建盒子"
   },
@@ -454,5 +456,68 @@
   "headerPinUsage": {
     "message": "点击画布右上角⊙按钮：固定时顶栏可见，取消固定进入全屏模式",
     "description": "Header pin button usage guide"
+  },
+  "syncLocalOnly": {
+    "message": "仅本地"
+  },
+  "syncChrome": {
+    "message": "Chrome 同步"
+  },
+  "syncFirefox": {
+    "message": "Firefox 同步"
+  },
+  "backupDisabled": {
+    "message": "禁用"
+  },
+  "backupDaily": {
+    "message": "每天"
+  },
+  "backupWeekly": {
+    "message": "每周"
+  },
+  "backupHourly": {
+    "message": "每小时"
+  },
+  "syncWebDAV": {
+    "message": "WebDAV"
+  },
+  "syncGitHubGist": {
+    "message": "GitHub Gist"
+  },
+  "webdavUrl": {
+    "message": "WebDAV 地址"
+  },
+  "webdavUser": {
+    "message": "用户名"
+  },
+  "webdavPass": {
+    "message": "密码"
+  },
+  "gistToken": {
+    "message": "GitHub 令牌"
+  },
+  "gistTokenHint": {
+    "message": "创建具有 gist 权限的个人访问令牌"
+  },
+  "gistId": {
+    "message": "Gist ID（自动填充）"
+  },
+  "webdavTestBtn": {
+    "message": "测试连接"
+  },
+  "webdavTestOk": {
+    "message": "WebDAV 连接成功"
+  },
+  "webdavTestFail": {
+    "message": "WebDAV 连接失败"
+  },
+  "gistBackupOk": {
+    "message": "Gist 备份已保存"
+  },
+  "gistBackupFail": {
+    "message": "Gist 备份失败"
+  },
+  "backupTooFrequent": {
+    "message": "自动备份跳过：过于频繁，最小间隔1小时"
   }
 }

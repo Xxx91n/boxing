@@ -295,9 +295,7 @@ html, body {
   transition: opacity 0.2s ease-out;
 }
 .box--hover-expand.box--collapsed .box-resize-handle {
-  opacity: 0; pointer-events: none; transition: opacity 0.15s;
-  /* hidden while collapsed: visibility collapses immediately, opacity for smooth fade */
-  visibility: hidden;
+  display: none; /* BX-DEV-111g: instantly gone while collapsed, no flash during animation */
 }
 
 /* Hover: tissue-pull expand — box grows to measured height, body fades in */
@@ -312,7 +310,7 @@ html, body {
   transition: opacity 0.3s ease-out 0.08s;
 }
 .box--hover-expand.box--collapsed:hover .box-resize-handle {
-  visibility: visible; opacity: 1; pointer-events: auto; transition: opacity 0.2s ease-out 0.35s, visibility 0s 0.35s;
+  display: block; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-out 0.35s; /* BX-DEV-111g: fade in after drawer fully expanded */
 }
 
 .large-box__body {
@@ -748,6 +746,11 @@ html, body {
 }
 .large-box:hover .box-resize-handle,
 .small-box:hover .box-resize-handle { opacity: 0.7; }
+
+/* BX-DEV-111g: When box is hover-expand and NOT collapsed (fully open), handle visible normally */
+.box--hover-expand:not(.box--collapsed) .box-resize-handle {
+  display: block; opacity: 0.4; pointer-events: auto;
+}
 body.box-resizing {
   cursor: nwse-resize !important;
   user-select: none !important;

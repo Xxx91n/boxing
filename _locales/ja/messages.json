@@ -250,7 +250,9 @@
   "importFailed": {
     "message": "インポート失敗：データ形式が無効です"
   },
-  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
+  "importTooLarge": {
+    "message": "Import failed: file too large (max 5MB)"
+  },
   "dblclickCreateHint": {
     "message": "ダブルクリックで作成"
   },
@@ -451,5 +453,68 @@
   "headerPinUsage": {
     "message": "右上の⊙ボタン：固定でトップバー表示、解除でフルスクリーン",
     "description": "Header pin button usage guide"
+  },
+  "syncLocalOnly": {
+    "message": "ローカルのみ"
+  },
+  "syncChrome": {
+    "message": "Chrome 同期"
+  },
+  "syncFirefox": {
+    "message": "Firefox 同期"
+  },
+  "backupDisabled": {
+    "message": "無効"
+  },
+  "backupDaily": {
+    "message": "毎日"
+  },
+  "backupWeekly": {
+    "message": "毎週"
+  },
+  "backupHourly": {
+    "message": "毎時"
+  },
+  "syncWebDAV": {
+    "message": "WebDAV"
+  },
+  "syncGitHubGist": {
+    "message": "GitHub Gist"
+  },
+  "webdavUrl": {
+    "message": "WebDAV URL"
+  },
+  "webdavUser": {
+    "message": "ユーザー名"
+  },
+  "webdavPass": {
+    "message": "パスワード"
+  },
+  "gistToken": {
+    "message": "GitHub トークン"
+  },
+  "gistTokenHint": {
+    "message": "gist スコープ付きの個人アクセストークンを作成"
+  },
+  "gistId": {
+    "message": "Gist ID（自動入力）"
+  },
+  "webdavTestBtn": {
+    "message": "接続テスト"
+  },
+  "webdavTestOk": {
+    "message": "WebDAV 接続成功"
+  },
+  "webdavTestFail": {
+    "message": "WebDAV 接続失敗"
+  },
+  "gistBackupOk": {
+    "message": "Gist バックアップ保存済み"
+  },
+  "gistBackupFail": {
+    "message": "Gist バックアップ失敗"
+  },
+  "backupTooFrequent": {
+    "message": "自動バックアップスキップ：頻度が高すぎます、最小間隔1時間"
   }
 }

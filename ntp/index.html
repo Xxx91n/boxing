@@ -175,9 +175,11 @@
           <section class="modal__section">
             <label class="modal__label" for="sync-provider" data-i18n="syncProvider">Sync Provider</label>
             <select id="sync-provider" class="modal__select">
-              <option value="local">Local Only</option>
-              <option value="chrome">Chrome Sync</option>
-              <option value="firefox">Firefox Sync</option>
+              <option value="local" data-i18n="syncLocalOnly">Local Only</option>
+              <option value="chrome" data-i18n="syncChrome">Chrome Sync</option>
+              <option value="firefox" data-i18n="syncFirefox">Firefox Sync</option>
+              <option value="webdav" data-i18n="syncWebDAV">WebDAV</option>
+              <option value="gist" data-i18n="syncGitHubGist">GitHub Gist</option>
             </select>
             <p class="modal__hint" data-i18n="syncProviderHint">Boxing stores data in browser sync storage. Choose your provider.</p>
           </section>
@@ -185,12 +187,30 @@
 <button id="backup-now-btn" class="btn" data-i18n="backupNow">Backup Now</button>
             <p class="modal__hint" data-i18n="backupNowHint">Create a timestamped backup of all layout data</p>
           </section>
+          <!-- WebDAV config -->
+          <section class="modal__section" id="webdav-config" hidden>
+            <label class="modal__label" for="webdav-url" data-i18n="webdavUrl">WebDAV URL</label>
+            <input id="webdav-url" class="modal__input" type="url" placeholder="https://dav.example.com/boxing/" spellcheck="false">
+            <label class="modal__label" for="webdav-user" data-i18n="webdavUser">Username</label>
+            <input id="webdav-user" class="modal__input" type="text" placeholder="" spellcheck="false">
+            <label class="modal__label" for="webdav-pass" data-i18n="webdavPass">Password</label>
+            <input id="webdav-pass" class="modal__input" type="password" placeholder="" spellcheck="false">
+          </section>
+          <!-- GitHub Gist config -->
+          <section class="modal__section" id="gist-config" hidden>
+            <label class="modal__label" for="gist-token" data-i18n="gistToken">GitHub Token</label>
+            <input id="gist-token" class="modal__input" type="password" placeholder="ghp_…" spellcheck="false">
+            <p class="modal__hint" data-i18n="gistTokenHint">Create a personal access token with gist scope</p>
+            <label class="modal__label" for="gist-id" data-i18n="gistId">Gist ID (auto-filled)</label>
+            <input id="gist-id" class="modal__input" type="text" readonly placeholder="Created on first backup">
+          </section>
           <section class="modal__section">
             <label class="modal__label" data-i18n="autoBackupInterval">Auto-Backup Interval</label>
             <select id="auto-backup-interval" class="modal__select">
-              <option value="0">Disabled</option>
-              <option value="86400">Daily</option>
-              <option value="604800">Weekly</option>
+              <option value="3600" data-i18n="backupHourly">Hourly</option>
+              <option value="0" data-i18n="backupDisabled">Disabled</option>
+              <option value="86400" data-i18n="backupDaily">Daily</option>
+              <option value="604800" data-i18n="backupWeekly">Weekly</option>
             </select>
           </section>
         </div>

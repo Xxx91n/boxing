@@ -250,7 +250,9 @@
   "importFailed": {
     "message": "นำเข้าล้มเหลว: รูปแบบข้อมูลไม่ถูกต้อง"
   },
-  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
+  "importTooLarge": {
+    "message": "Import failed: file too large (max 5MB)"
+  },
   "dblclickCreateHint": {
     "message": "ดับเบิลคลิกเพื่อสร้าง"
   },
@@ -451,5 +453,68 @@
   "headerPinUsage": {
     "message": "ปุ่ม ⊙ มุมขวาบน: ปักหมุด = แถบมองเห็น, ถอนหมุด = เต็มหน้าจอ",
     "description": "Header pin button usage guide"
+  },
+  "syncLocalOnly": {
+    "message": "เฉพาะในเครื่อง"
+  },
+  "syncChrome": {
+    "message": "ซิงค์ Chrome"
+  },
+  "syncFirefox": {
+    "message": "ซิงค์ Firefox"
+  },
+  "backupDisabled": {
+    "message": "ปิดใช้งาน"
+  },
+  "backupDaily": {
+    "message": "รายวัน"
+  },
+  "backupWeekly": {
+    "message": "รายสัปดาห์"
+  },
+  "backupHourly": {
+    "message": "ทุกชั่วโมง"
+  },
+  "syncWebDAV": {
+    "message": "WebDAV"
+  },
+  "syncGitHubGist": {
+    "message": "GitHub Gist"
+  },
+  "webdavUrl": {
+    "message": "URL WebDAV"
+  },
+  "webdavUser": {
+    "message": "ชื่อผู้ใช้"
+  },
+  "webdavPass": {
+    "message": "รหัสผ่าน"
+  },
+  "gistToken": {
+    "message": "โทเค็น GitHub"
+  },
+  "gistTokenHint": {
+    "message": "สร้างโทเค็นที่มีขอบเขต gist"
+  },
+  "gistId": {
+    "message": "Gist ID (อัตโนมัติ)"
+  },
+  "webdavTestBtn": {
+    "message": "ทดสอบ"
+  },
+  "webdavTestOk": {
+    "message": "เชื่อมต่อ WebDAV สำเร็จ"
+  },
+  "webdavTestFail": {
+    "message": "เชื่อมต่อ WebDAV ล้มเหลว"
+  },
+  "gistBackupOk": {
+    "message": "บันทึก Gist สำเร็จ"
+  },
+  "gistBackupFail": {
+    "message": "บันทึก Gist ล้มเหลว"
+  },
+  "backupTooFrequent": {
+    "message": "ข้ามการสำรองอัตโนมัติ: ถี่เกินไป, ขั้นต่ำ 1 ชั่วโมง"
   }
 }

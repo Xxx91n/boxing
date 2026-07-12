@@ -250,7 +250,9 @@
   "importFailed": {
     "message": "فشل الاستيراد: تنسيق بيانات غير صالح"
   },
-  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
+  "importTooLarge": {
+    "message": "Import failed: file too large (max 5MB)"
+  },
   "dblclickCreateHint": {
     "message": "انقر مرتين للإنشاء"
   },
@@ -451,5 +453,68 @@
   "headerPinUsage": {
     "message": "زر ⊙ أعلى اليمين: مثبت = شريط مرئي، غير مثبت = شاشة كاملة",
     "description": "Header pin button usage guide"
+  },
+  "syncLocalOnly": {
+    "message": "محلي فقط"
+  },
+  "syncChrome": {
+    "message": "مزامنة Chrome"
+  },
+  "syncFirefox": {
+    "message": "مزامنة Firefox"
+  },
+  "backupDisabled": {
+    "message": "معطل"
+  },
+  "backupDaily": {
+    "message": "يومي"
+  },
+  "backupWeekly": {
+    "message": "أسبوعي"
+  },
+  "backupHourly": {
+    "message": "كل ساعة"
+  },
+  "syncWebDAV": {
+    "message": "WebDAV"
+  },
+  "syncGitHubGist": {
+    "message": "GitHub Gist"
+  },
+  "webdavUrl": {
+    "message": "رابط WebDAV"
+  },
+  "webdavUser": {
+    "message": "اسم المستخدم"
+  },
+  "webdavPass": {
+    "message": "كلمة المرور"
+  },
+  "gistToken": {
+    "message": "رمز GitHub"
+  },
+  "gistTokenHint": {
+    "message": "أنشئ رمز وصول مع نطاق gist"
+  },
+  "gistId": {
+    "message": "معرف Gist (تلقائي)"
+  },
+  "webdavTestBtn": {
+    "message": "اختبار"
+  },
+  "webdavTestOk": {
+    "message": "اتصال WebDAV ناجح"
+  },
+  "webdavTestFail": {
+    "message": "فشل اتصال WebDAV"
+  },
+  "gistBackupOk": {
+    "message": "تم حفظ نسخة Gist"
+  },
+  "gistBackupFail": {
+    "message": "فشل نسخ Gist"
+  },
+  "backupTooFrequent": {
+    "message": "تم تخطي النسخ التلقائي: متكرر جداً، الحد الأدنى ساعة"
   }
 }

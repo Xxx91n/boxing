@@ -250,7 +250,9 @@
   "importFailed": {
     "message": "Falha na importação: formato de dados inválido"
   },
-  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
+  "importTooLarge": {
+    "message": "Import failed: file too large (max 5MB)"
+  },
   "dblclickCreateHint": {
     "message": "Clique duplo para criar"
   },
@@ -451,5 +453,68 @@
   "headerPinUsage": {
     "message": "Botão ⊙ canto superior direito: fixado = barra visível, desafixado = tela cheia",
     "description": "Header pin button usage guide"
+  },
+  "syncLocalOnly": {
+    "message": "Apenas local"
+  },
+  "syncChrome": {
+    "message": "Chrome Sync"
+  },
+  "syncFirefox": {
+    "message": "Firefox Sync"
+  },
+  "backupDisabled": {
+    "message": "Desativado"
+  },
+  "backupDaily": {
+    "message": "Diário"
+  },
+  "backupWeekly": {
+    "message": "Semanal"
+  },
+  "backupHourly": {
+    "message": "A cada hora"
+  },
+  "syncWebDAV": {
+    "message": "WebDAV"
+  },
+  "syncGitHubGist": {
+    "message": "GitHub Gist"
+  },
+  "webdavUrl": {
+    "message": "URL WebDAV"
+  },
+  "webdavUser": {
+    "message": "Usuário"
+  },
+  "webdavPass": {
+    "message": "Senha"
+  },
+  "gistToken": {
+    "message": "Token GitHub"
+  },
+  "gistTokenHint": {
+    "message": "Crie um token com escopo gist"
+  },
+  "gistId": {
+    "message": "ID Gist (auto)"
+  },
+  "webdavTestBtn": {
+    "message": "Testar"
+  },
+  "webdavTestOk": {
+    "message": "Conexão WebDAV OK"
+  },
+  "webdavTestFail": {
+    "message": "Conexão WebDAV falhou"
+  },
+  "gistBackupOk": {
+    "message": "Backup Gist salvo"
+  },
+  "gistBackupFail": {
+    "message": "Backup Gist falhou"
+  },
+  "backupTooFrequent": {
+    "message": "Backup auto ignorado: muito frequente, intervalo mín 1h"
   }
 }

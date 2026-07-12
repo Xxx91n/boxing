@@ -250,7 +250,9 @@
   "importFailed": {
     "message": "Nhập thất bại: định dạng dữ liệu không hợp lệ"
   },
-  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
+  "importTooLarge": {
+    "message": "Import failed: file too large (max 5MB)"
+  },
   "dblclickCreateHint": {
     "message": "Nhấp đúp để tạo"
   },
@@ -451,5 +453,68 @@
   "headerPinUsage": {
     "message": "Nút ⊙ góc trên phải: ghim = thanh hiển thị, bỏ ghim = toàn màn hình",
     "description": "Header pin button usage guide"
+  },
+  "syncLocalOnly": {
+    "message": "Chỉ cục bộ"
+  },
+  "syncChrome": {
+    "message": "Đồng bộ Chrome"
+  },
+  "syncFirefox": {
+    "message": "Đồng bộ Firefox"
+  },
+  "backupDisabled": {
+    "message": "Tắt"
+  },
+  "backupDaily": {
+    "message": "Hàng ngày"
+  },
+  "backupWeekly": {
+    "message": "Hàng tuần"
+  },
+  "backupHourly": {
+    "message": "Hàng giờ"
+  },
+  "syncWebDAV": {
+    "message": "WebDAV"
+  },
+  "syncGitHubGist": {
+    "message": "GitHub Gist"
+  },
+  "webdavUrl": {
+    "message": "URL WebDAV"
+  },
+  "webdavUser": {
+    "message": "Tên người dùng"
+  },
+  "webdavPass": {
+    "message": "Mật khẩu"
+  },
+  "gistToken": {
+    "message": "Token GitHub"
+  },
+  "gistTokenHint": {
+    "message": "Tạo token với phạm vi gist"
+  },
+  "gistId": {
+    "message": "ID Gist (tự động)"
+  },
+  "webdavTestBtn": {
+    "message": "Kiểm tra"
+  },
+  "webdavTestOk": {
+    "message": "Kết nối WebDAV OK"
+  },
+  "webdavTestFail": {
+    "message": "Kết nối WebDAV thất bại"
+  },
+  "gistBackupOk": {
+    "message": "Đã lưu backup Gist"
+  },
+  "gistBackupFail": {
+    "message": "Backup Gist thất bại"
+  },
+  "backupTooFrequent": {
+    "message": "Bỏ qua tự động backup: quá thường xuyên, tối thiểu 1 giờ"
   }
 }
