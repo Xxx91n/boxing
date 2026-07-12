@@ -578,8 +578,12 @@
       const wasCollapsed = el.classList.contains('box--collapsed');
       const savedMaxH = el.style.maxHeight;
       el.style.maxHeight = 'none';
+      // Force reflow: read offsetHeight triggers layout recalculation with new max-height
+      void el.offsetHeight;
       const fullH = el.scrollHeight;
       el.style.maxHeight = savedMaxH;
+      void el.offsetHeight; // reflow again after restoring
+      debug('setBodyExpandHeight measured', { id: el.dataset.id, fullH, savedMaxH, wasCollapsed });
       if (fullH > 0) el.style.setProperty('--expand-height', fullH + 'px');
       // Also keep --body-max-height for compatibility
       const bh = body.scrollHeight;
@@ -678,6 +682,7 @@
       el.classList.toggle('box--hover-expand', box.collapseHover);
       if (box.collapseHover) {
         el.classList.add('box--collapsed');
+        setBodyExpandHeight(el);  // BX-DEV-111: measure after collapsing
       } else {
         el.classList.remove('box--collapsed');
       }
@@ -940,6 +945,7 @@
       el.classList.toggle('box--hover-expand', sb.collapseHover);
       if (sb.collapseHover) {
         el.classList.add('box--collapsed');
+        setBodyExpandHeight(el);  // BX-DEV-111: measure after collapsing small box
       } else {
         el.classList.remove('box--collapsed');
       }

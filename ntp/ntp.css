@@ -285,7 +285,7 @@ html, body {
 /* Collapsed state: box shrinks to bar-only, body hidden */
 .box--hover-expand.box--collapsed {
   height: auto !important; /* override JS inline style */
-  max-height: 54px;        /* bar + padding, tightly clipped */
+  max-height: 60px;        /* bar + padding, tightly clipped */
   overflow: hidden;
   transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Material deceleration — smooth collapse */
 }
@@ -296,9 +296,9 @@ html, body {
 }
 .box--hover-expand.box--collapsed .box-resize-handle {
   opacity: 0; pointer-events: none; transition: opacity 0.15s;
-}
   /* hidden while collapsed: visibility collapses immediately, opacity for smooth fade */
   visibility: hidden;
+}
 
 /* Hover: tissue-pull expand — box grows to measured height, body fades in */
 .box--hover-expand.box--collapsed:hover {
