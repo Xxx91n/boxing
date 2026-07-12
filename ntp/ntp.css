@@ -295,7 +295,7 @@ html, body {
   transition: opacity 0.2s ease-out;
 }
 .box--hover-expand.box--collapsed .box-resize-handle {
-  display: none;
+  opacity: 0; pointer-events: none; transition: opacity 0.15s;
 }
 
 /* Hover: tissue-pull expand — box grows to measured height, body fades in */
@@ -310,7 +310,7 @@ html, body {
   transition: opacity 0.3s ease-out 0.08s;
 }
 .box--hover-expand.box--collapsed:hover .box-resize-handle {
-  display: block;
+  opacity: 1; pointer-events: auto; transition: opacity 0.35s ease-out 0.25s;
 }
 
 .large-box__body {

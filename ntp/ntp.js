@@ -1088,6 +1088,8 @@
       e.stopPropagation();
       bm.title = titleInput.value.trim() || bm.url;
       bm.url = ensureHttpsUrl(urlInput.value.trim()) || bm.url;
+      // BX-DEV-111f: Validate final URL — reject pure numeric/IP-only inputs
+      try { const test = new URL(bm.url); if (!test.hostname || /^\d+\.\d+\.\d+\.\d+$/.test(test.hostname)) { urlInput.style.borderColor = 'red'; return; } } catch(_) { urlInput.style.borderColor = 'red'; return; }
       saveLayout();
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
@@ -1815,6 +1817,12 @@ function updateInnerCaption(lb) {
   function ensureHttpsUrl(url) {
     if (!url) return 'https://www.google.com';
     const trimmed = url.trim();
+    // BX-DEV-111f: Reject inputs that resolve to raw IP addresses when prepended with https://
+    // Examples: '1' → 0.0.0.1, '0' → 0.0.0.0, '123' → 0.0.123.0, pure digits only
+    if (/^\d+(\.\d+){0,3}$/.test(trimmed) && !/[a-zA-Z]/.test(trimmed)) {
+      // Pure numeric or dotted-numeric input — would resolve as IP, reject
+      return trimmed; // return as-is; caller should validate further
+    }
     if (/^(https?:|ftp:|moz-extension:|chrome-extension:|edge:)/i.test(trimmed)) {
       return trimmed;
     }
@@ -2044,6 +2052,27 @@ function updateInnerCaption(lb) {
     // Window resize
     window.addEventListener('resize', onWindowResize);
 
+    // BX-DEV-111f: High-sensitivity memory — save current state whenever tab becomes hidden
+    // This captures the last active tab's state for restore on new tab / browser restart.
+    // Refresh does NOT restore memory; new tab DOES.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        // Persist current view state immediately
+        if (currentLargeBoxId) {
+          layout.lastLargeBoxId = currentLargeBoxId;
+          layout.lastInnerZoom = innerZoom;
+          layout.lastInnerPanX = innerPanX;
+          layout.lastInnerPanY = innerPanY;
+        } else {
+          layout.lastZoom = canvasZoom;
+          layout.lastPanX = canvasPanX;
+          layout.lastPanY = canvasPanY;
+        }
+        layout.settings.headerPinned = headerPinned;
+        try { api.storage.sync.set({ boxingLayout: layout }); } catch(_) {}
+      }
+    });
+
     // BX-DEV-111: Save layout immediately before page unload (refresh/close)
     // Synchronous write to storage.sync — beforeunload cannot wait for async
     window.addEventListener('beforeunload', () => {
@@ -2068,45 +2097,28 @@ function updateInnerCaption(lb) {
     // Detect refresh vs new-tab: Navigation Timing API type 0 = navigate, 1 = reload.
     const isNewTab = !(window.performance?.navigation?.type === 1 || window.performance?.getEntriesByType?.('navigation')?.[0]?.type === 'reload');
 
-    // Always restore canvas pan+zoom on refresh — user refreshed, not navigated away
-    if (!isNewTab) {
-      if (layout.lastZoom) canvasZoom = layout.lastZoom;
-      if (layout.lastPanX !== undefined) canvasPanX = layout.lastPanX;
-      if (layout.lastPanY !== undefined) canvasPanY = layout.lastPanY;
-      if (currentLargeBoxId) {
-        if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
-        if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
-        if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
-      }
-      applyCanvasTransform();
-      applyInnerTransform();
-    }
-
-    // BX-DEV-111: On REFRESH, also restore inner view if last page was inside a large box
-    // currentLargeBoxId is null on init but layout.lastLargeBoxId holds persisted state
-    if (!isNewTab && layout.lastLargeBoxId) {
-      const lb = getLargeBox(layout.lastLargeBoxId);
-      if (lb) {
-        if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
-        if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
-        if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
-        enterLargeBox(layout.lastLargeBoxId); return;
-      }
-    }
-
-    if (isNewTab && layout.settings.rememberLastPos && layout.lastLargeBoxId) {
-      const lb = getLargeBox(layout.lastLargeBoxId);
-      // Restore saved canvas zoom and pan (BX-DEV-111)
+    // BX-DEV-111f: Refresh vs New-Tab memory restore policy
+    //   - Refresh (type=reload): NEVER restore — keep fresh default state
+    //   - New tab / browser restart: restore last active tab's page+position+zoom
+    //   - RememberLastPos setting controls whether to drill into last large box on new tab
+    if (isNewTab) {
+      // Always restore canvas position from last session on new tab
       canvasZoom = layout.lastZoom || 1.0;
       canvasPanX = layout.lastPanX || 0;
       canvasPanY = layout.lastPanY || 0;
-      // Restore inner position if last session was inside a box
-      if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
-      if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
-      if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
       applyCanvasTransform();
-      applyInnerTransform();
-      if (lb) { enterLargeBox(layout.lastLargeBoxId); return; }
+
+      // If rememberLastPos is ON and last page was inside a large box, drill in
+      if (layout.settings.rememberLastPos !== false && layout.lastLargeBoxId) {
+        const lb = getLargeBox(layout.lastLargeBoxId);
+        if (lb) {
+          if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
+          if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
+          if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
+          applyInnerTransform();
+          enterLargeBox(layout.lastLargeBoxId); return;
+        }
+      }
     }
 
     renderCanvas();
