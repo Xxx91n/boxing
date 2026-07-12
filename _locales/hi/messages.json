@@ -250,6 +250,7 @@
   "importFailed": {
     "message": "आयात विफल: अमान्य डेटा प्रारूप"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "बनाने के लिए डबल-क्लिक करें"
   },

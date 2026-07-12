@@ -262,6 +262,7 @@
     "message": "Import failed: invalid data format",
     "description": "Import failed toast"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "Double-click to create",
     "description": "Dblclick hint"

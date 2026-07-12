@@ -250,6 +250,7 @@
   "importFailed": {
     "message": "Ошибка импорта: неверный формат данных"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "Двойной клик для создания"
   },

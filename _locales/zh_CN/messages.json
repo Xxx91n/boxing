@@ -253,6 +253,7 @@
   "importFailed": {
     "message": "导入失败：数据格式无效"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "双击创建盒子"
   },

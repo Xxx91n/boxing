@@ -111,6 +111,7 @@
     darkMode: 'Dark Mode', darkModeHint: 'Switch between light and dark appearance',
     exportData: 'Export Data', importData: 'Import Data',
     importSuccess: 'Data imported successfully', importFailed: 'Import failed: invalid data format',
+    importTooLarge: 'Import failed: file too large (max 5MB)',
     dblclickCreateHint: 'Double-click to create',
     bookmarkSave: 'Save', bookmarkDelete: 'Delete',
     bookmarkEditTitle: 'Edit Bookmark',
@@ -547,6 +548,10 @@
     canvasSurface.innerHTML = '';
     // Then re-show empty state only if truly empty
     canvasEmpty.hidden = hasBoxes;
+    // BX-DEV-111f: Ensure i18n is applied to empty state elements (may have been cleared in HTML)
+    if (!hasBoxes) {
+      document.querySelectorAll('#canvas-empty [data-i18n]').forEach(el => { if (!el.textContent) el.textContent = i18n(el.dataset.i18n); });
+    }
     debug('renderCanvas creating DOM for ' + layout.boxes.length + ' boxes');
     const frag = document.createDocumentFragment();
     for (const box of layout.boxes) {
@@ -755,6 +760,9 @@
 
   // ── render inner (small boxes inside a large box) ───────
   function enterLargeBox(id) {
+    _enterLargeBox(id, arguments[1] === true);
+  }
+  function _enterLargeBox(id, skipPosRestore) {
     currentLargeBoxId = id;
     layout.lastLargeBoxId = id;
     // Save current canvas zoom and pan for restore later
@@ -785,9 +793,11 @@
     renderInnerSurface(lb);
     updateInnerCaption(lb);
     // Restore saved inner zoom and pan from last session
+    if (!skipPosRestore) {
     if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
     if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
     if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
+    }
     applyInnerTransform();
     updateCaption();
   }
@@ -2009,7 +2019,9 @@ function updateInnerCaption(lb) {
 
     // Export / Import
     exportBtn?.addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(layout, null, 2)], { type: 'application/json' });
+      // BX-DEV-111f: Export includes integrity metadata
+      const exportData = Object.assign({}, layout, { _exportedAt: new Date().toISOString() });
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json; charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'boxing-backup.json';
@@ -2023,10 +2035,27 @@ function updateInnerCaption(lb) {
       if (!importPending) return; importPending = false;
       const file = importFile.files[0];
       if (!file) return;
+      // BX-DEV-111f: File size sanity check — reject imports > 5MB
+      if (file.size > 5 * 1024 * 1024) { try { alert(i18n('importTooLarge')); } catch(_) {} importFile.value = ''; return; }
       try {
         const text = await file.text();
-        const data = JSON.parse(text);
+        // BX-DEV-111f: Strip UTF-8 BOM if present
+        const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
+        const data = JSON.parse(cleanText);
+        // BX-DEV-111f: Validate structure — must have boxes array, version field
         if (!data || !Array.isArray(data.boxes)) throw new Error('invalid');
+        if (data.boxes.some(b => typeof b !== 'object' || !b.id)) throw new Error('corrupt boxes');
+        // Validate each box has minimum required fields
+        for (const b of data.boxes) {
+          if (!b.id || typeof b.x !== 'number' || typeof b.y !== 'number') throw new Error('corrupt box');
+          if (b.children) { for (const s of b.children) { if (!s.id || typeof s.x !== 'number' || typeof s.y !== 'number') throw new Error('corrupt small box'); } }
+        }
+        // BX-DEV-111f: Sanitize settings — prevent NaN/Infinity injection
+        if (data.settings) {
+          const s = data.settings;
+          if (s.zoomLevel && !isFinite(s.zoomLevel)) s.zoomLevel = 1.0;
+          if (s.fontSize && (!isFinite(s.fontSize) || s.fontSize < 8 || s.fontSize > 72)) s.fontSize = 14;
+        }
         layout = migrateLayout(data);
         await saveLayout();
         if (currentLargeBoxId) exitToCanvas();
@@ -2101,6 +2130,19 @@ function updateInnerCaption(lb) {
     //   - Refresh (type=reload): NEVER restore — keep fresh default state
     //   - New tab / browser restart: restore last active tab's page+position+zoom
     //   - RememberLastPos setting controls whether to drill into last large box on new tab
+    // BX-DEV-111f v2: On refresh, keep page level (canvas vs inner) but reset pan/zoom to origin.
+    // Don't restore position — only preserve which level user was on.
+    if (!isNewTab) {
+      // Stay on same page level: if last page was inner, re-enter that box with default pan/zoom
+      if (layout.lastLargeBoxId) {
+        const lb = getLargeBox(layout.lastLargeBoxId);
+        if (lb) { enterLargeBox(layout.lastLargeBoxId, true); return; }
+      }
+      // Otherwise, normal canvas render
+      renderCanvas();
+      debug('init complete v3.7.9f (refresh)', { boxes: layout.boxes.length });
+      return;
+    }
     if (isNewTab) {
       // Always restore canvas position from last session on new tab
       canvasZoom = layout.lastZoom || 1.0;

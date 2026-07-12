@@ -250,6 +250,7 @@
   "importFailed": {
     "message": "가져오기 실패: 잘못된 데이터 형식"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "더블 클릭으로 만들기"
   },

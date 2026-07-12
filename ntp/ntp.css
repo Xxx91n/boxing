@@ -297,6 +297,8 @@ html, body {
 .box--hover-expand.box--collapsed .box-resize-handle {
   opacity: 0; pointer-events: none; transition: opacity 0.15s;
 }
+  /* hidden while collapsed: visibility collapses immediately, opacity for smooth fade */
+  visibility: hidden;
 
 /* Hover: tissue-pull expand — box grows to measured height, body fades in */
 .box--hover-expand.box--collapsed:hover {
@@ -310,7 +312,7 @@ html, body {
   transition: opacity 0.3s ease-out 0.08s;
 }
 .box--hover-expand.box--collapsed:hover .box-resize-handle {
-  opacity: 1; pointer-events: auto; transition: opacity 0.35s ease-out 0.25s;
+  visibility: visible; opacity: 1; pointer-events: auto; transition: opacity 0.2s ease-out 0.35s, visibility 0s 0.35s;
 }
 
 .large-box__body {
@@ -946,6 +948,7 @@ body.box-resizing {
 .ntp--dark .settings-nav__item { color: var(--color-muted); }
 .ntp--dark .settings-nav__item:hover { background: var(--color-surface); color: var(--color-ink); }
 .ntp--dark .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); }
+.ntp--dark .settings-nav__item--active:hover { background: var(--color-accent-soft); color: var(--color-accent-ink); }
 /* dark mode settings label + checkbox */
 .ntp--dark .modal__label { color: var(--color-ink-soft); }
 .ntp--dark .checkbox-label__text { color: var(--color-ink); }
@@ -961,6 +964,8 @@ body.box-resizing {
 .settings-nav { display: flex; flex-direction: column; min-width: 160px; padding: var(--space-4) var(--space-3); border-right: 1px solid var(--color-hairline); gap: var(--space-1); }
 .settings-nav__item { background: transparent; border: 0; border-radius: var(--radius-tile); padding: var(--space-2) var(--space-3); font-size: 13px; font-weight: 500; color: var(--color-muted); text-align: left; cursor: pointer; transition: background var(--dur-fast), color var(--dur-fast); }
 .settings-nav__item:hover { background: var(--color-surface); color: var(--color-ink); }
+/* BX-DEV-111f: Active tab retains its own background on hover — only text intensifies */
+.settings-nav__item--active:hover { background: var(--color-accent-soft); color: var(--color-accent-ink); }
 .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); font-weight: 600; }
 .settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; }
 .settings-tab { display: flex; flex-direction: column; gap: var(--space-6); }

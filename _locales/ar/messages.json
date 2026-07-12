@@ -250,6 +250,7 @@
   "importFailed": {
     "message": "فشل الاستيراد: تنسيق بيانات غير صالح"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "انقر مرتين للإنشاء"
   },

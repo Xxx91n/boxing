@@ -250,6 +250,7 @@
   "importFailed": {
     "message": "インポート失敗：データ形式が無効です"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "ダブルクリックで作成"
   },

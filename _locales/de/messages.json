@@ -250,6 +250,7 @@
   "importFailed": {
     "message": "Import fehlgeschlagen: ungültiges Datenformat"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "Doppelklick zum Erstellen"
   },

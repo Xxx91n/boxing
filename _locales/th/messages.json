@@ -250,6 +250,7 @@
   "importFailed": {
     "message": "นำเข้าล้มเหลว: รูปแบบข้อมูลไม่ถูกต้อง"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "ดับเบิลคลิกเพื่อสร้าง"
   },

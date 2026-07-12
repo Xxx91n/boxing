@@ -250,6 +250,7 @@
   "importFailed": {
     "message": "Nhập thất bại: định dạng dữ liệu không hợp lệ"
   },
+  "importTooLarge": { "message": "Import failed: file too large (max 5MB)" },
   "dblclickCreateHint": {
     "message": "Nhấp đúp để tạo"
   },
