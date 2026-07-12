@@ -271,40 +271,47 @@ html, body {
 .box--pinned .small-box__bar { cursor: default; }
 .box--pinned .box-pin-btn { opacity: 0.9; }
 
-/* Auto-expand: max-height drawer slide-down from under title bar (BX-DEV-099) */
-/* Uses scaleY(0→1) with transform-origin: top for real 'tissue pull-down' body-panel animation.
-   Entire __body panel scales out from under the title bar, not just internal text appearing. */
+/* Auto-expand: true drawer pull-down from under title bar (BX-DEV-111)
+   Uses pure max-height transition on the __body panel itself.
+   When collapsed, body has max-height:0 + overflow:hidden — entire panel,
+   including background, borders, and content, is hidden cleanly under the title bar.
+   On hover, body slides down with its full measured height.
+   No scaleY — that squishes content; this pulls the entire panel out like a tissue drawer. */
 .box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
   overflow: hidden;
-  transform: scaleY(0);
-  transform-origin: top center;
   max-height: 0;
   padding-top: 0;
   padding-bottom: 0;
-  transition: transform 0.35s ease-out,
-              max-height 0.35s ease-out,
-              padding 0.35s ease-out;
+  border-top-width: 0;
+  margin-top: 0;
+  opacity: 0;
+  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2),
+              padding 0.4s ease-out,
+              opacity 0.2s ease-out,
+              margin 0.4s ease-out;
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
 .box--hover-expand.box--collapsed .large-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .large-box__body {
-  transform: scaleY(1);
   max-height: var(--body-max-height, 600px);
   padding: var(--space-3);
-  transition: transform 0.35s ease-out,
-              max-height 0.35s ease-out,
-              padding 0.35s ease-out;
+  opacity: 1;
+  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.0),
+              padding 0.4s ease-out,
+              opacity 0.35s ease-out 0.05s,
+              margin 0.4s ease-out;
 }
 .box--hover-expand.box--collapsed:hover .small-box__body,
 .box--hover-expand.box--collapsed .small-box__body:hover,
 .box--hover-expand.box--collapsed:focus-within .small-box__body {
-  transform: scaleY(1);
   max-height: var(--body-max-height, 400px);
   padding: 4px 10px;
-  transition: transform 0.35s ease-out,
-              max-height 0.35s ease-out,
-              padding 0.35s ease-out;
+  opacity: 1;
+  transition: max-height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.0),
+              padding 0.4s ease-out,
+              opacity 0.35s ease-out 0.05s,
+              margin 0.4s ease-out;
 }
 
 .large-box__body {

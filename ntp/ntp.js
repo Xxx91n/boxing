@@ -258,7 +258,7 @@
   let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click (BX-DEV-077)
 
   // header auto-hide state (must be declared before functions that reference it)
-  let headerPinned = true;  // default: pinned ON, header visible, button sits on header bar
+  let headerPinned = layout.settings.headerPinned !== false;  // BX-DEV-111: persist from layout
   let scrollTimeout;
 
   // ── storage ────────────────────────────────────────────
@@ -272,6 +272,17 @@
 
   async function saveLayout() {
     debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
+    // BX-DEV-111: auto-persist current canvas position on every save
+    if (currentLargeBoxId) {
+      layout.lastInnerZoom = innerZoom;
+      layout.lastInnerPanX = innerPanX;
+      layout.lastInnerPanY = innerPanY;
+    } else {
+      layout.lastZoom = canvasZoom;
+      layout.lastPanX = canvasPanX;
+      layout.lastPanY = canvasPanY;
+    }
+    layout.settings.headerPinned = headerPinned;
     try { await api.storage.sync.set({ boxingLayout: layout }); } catch (e) { debugWarn('saveLayout', e); }
     debug('saveLayout done');
   }
@@ -281,7 +292,7 @@
       version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
       lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
       lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 0 }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 0, headerPinned: true }
     };
   }
 
@@ -524,9 +535,11 @@
     updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
 
     const hasBoxes = layout.boxes.length > 0;
-    canvasEmpty.hidden = hasBoxes;
-
+    // BX-DEV-111: hide empty placeholder BEFORE clearing surface to avoid flash
+    canvasEmpty.hidden = true;
     canvasSurface.innerHTML = '';
+    // Then re-show empty state only if truly empty
+    canvasEmpty.hidden = hasBoxes;
     debug('renderCanvas creating DOM for ' + layout.boxes.length + ' boxes');
     const frag = document.createDocumentFragment();
     for (const box of layout.boxes) {
@@ -1361,6 +1374,15 @@
     document.removeEventListener('mouseup', onCanvasPanEnd);
     canvasContainer.style.cursor = '';
     panState = null;
+    // BX-DEV-111: persist canvas pan position immediately
+    if (currentLargeBoxId) {
+      layout.lastInnerPanX = innerPanX;
+      layout.lastInnerPanY = innerPanY;
+    } else {
+      layout.lastPanX = canvasPanX;
+      layout.lastPanY = canvasPanY;
+    }
+    saveLayout();
   }
 
   // Inner canvas pan
@@ -1987,12 +2009,44 @@ function updateInnerCaption(lb) {
     // Window resize
     window.addEventListener('resize', onWindowResize);
 
-    // BX-DEV-097: Remember last position — only restore on NEW TAB navigation, not refresh/F5.
+    // BX-DEV-111: Save layout immediately before page unload (refresh/close)
+    // Synchronous write to storage.sync — beforeunload cannot wait for async
+    window.addEventListener('beforeunload', () => {
+      if (currentLargeBoxId) {
+        layout.lastInnerZoom = innerZoom;
+        layout.lastInnerPanX = innerPanX;
+        layout.lastInnerPanY = innerPanY;
+      } else {
+        layout.lastZoom = canvasZoom;
+        layout.lastPanX = canvasPanX;
+        layout.lastPanY = canvasPanY;
+      }
+      layout.settings.headerPinned = headerPinned;
+      try { api.storage.sync.set({ boxingLayout: layout }); } catch(_) {}
+    });
+
+    // BX-DEV-111: On REFRESH, restore canvas position (pan+zoom) from last saved state.
+    // On NEW TAB, optionally restore full position including which box was open.
     // Detect refresh vs new-tab: Navigation Timing API type 0 = navigate, 1 = reload.
     const isNewTab = !(window.performance?.navigation?.type === 1 || window.performance?.getEntriesByType?.('navigation')?.[0]?.type === 'reload');
+
+    // Always restore canvas pan+zoom on refresh — user refreshed, not navigated away
+    if (!isNewTab) {
+      if (layout.lastZoom) canvasZoom = layout.lastZoom;
+      if (layout.lastPanX !== undefined) canvasPanX = layout.lastPanX;
+      if (layout.lastPanY !== undefined) canvasPanY = layout.lastPanY;
+      if (currentLargeBoxId) {
+        if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
+        if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
+        if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
+      }
+      applyCanvasTransform();
+      applyInnerTransform();
+    }
+
     if (isNewTab && layout.settings.rememberLastPos && layout.lastLargeBoxId) {
       const lb = getLargeBox(layout.lastLargeBoxId);
-      // Restore saved canvas zoom and pan
+      // Restore saved canvas zoom and pan (BX-DEV-111)
       canvasZoom = layout.lastZoom || 1.0;
       canvasPanX = layout.lastPanX || 0;
       canvasPanY = layout.lastPanY || 0;
@@ -2001,12 +2055,12 @@ function updateInnerCaption(lb) {
       if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
       if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
       applyCanvasTransform();
+      applyInnerTransform();
       if (lb) { enterLargeBox(layout.lastLargeBoxId); return; }
     }
 
     renderCanvas();
-    debug('init complete v3.5', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize });
-    debug('init complete v3.5', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, darkMode: layout.settings.darkMode });
+    debug('init complete v3.7.8', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, headerPinned, darkMode: layout.settings.darkMode });
   }
 
   await init();
