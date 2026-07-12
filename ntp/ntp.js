@@ -12,7 +12,7 @@
         set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (_) {} }
       }}, runtime: { getURL: (p) => p }
     };
-    api = mock; self.chrome = mock; self.browser = mock;
+    api = mock; /* SEC-01: mock stays local — no global chrome/browser pollution */
   }
 
   // ── constants ──────────────────────────────────────────
@@ -621,6 +621,8 @@
       if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
       if (e.key === 'Escape') { title.textContent = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]); title.blur(); }
     });
+    // SEC-03: Force plain-text paste — prevent HTML injection via contentEditable
+    title.addEventListener('paste', e => { e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
     title.addEventListener('blur', () => {
       const t = title.textContent.trim() || i18n('untitledBox');
       if (t !== box.title) { box.title = t; saveLayout(); }
@@ -785,6 +787,8 @@
     innerCrumbTitle.spellcheck = false;
     // Inner title: no drag allowed
     innerCrumbTitle.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); });
+    // SEC-03: Force plain-text paste
+    innerCrumbTitle.addEventListener('paste', e => { e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
     innerCrumbTitle.onblur = () => {
       const t = innerCrumbTitle.textContent.trim() || i18n('untitledBox');
       if (t !== lb.title) { lb.title = t; saveLayout(); renderCrumbs(lb); }
@@ -885,6 +889,8 @@
       if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
       if (e.key === 'Escape') { title.textContent = sb.title || i18n('newSmallBox'); title.blur(); }
     });
+    // SEC-03: Force plain-text paste for small box title
+    title.addEventListener('paste', e => { e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
     title.addEventListener('blur', () => {
       const t = title.textContent.trim() || i18n('newSmallBox');
       if (t !== sb.title) { sb.title = t; saveLayout(); }
@@ -1460,7 +1466,7 @@
     innerCanvas.style.cursor = '';
     panState = null;
     // BX-DEV-111: persist inner pan position
-    layout.lastInnerPanX = innerPanX; layout.lastInnerPanY = innerPanY; saveLayout();
+    layout.lastInnerPanX = innerPanX; layout.lastInnerPanY = innerPanY; saveLayoutDebounced();  // SEC-08: debounced
   }
 
   // ── Ctrl+scroll zoom ────────────────────────────────────
@@ -1833,6 +1839,8 @@ function updateInnerCaption(lb) {
       // Pure numeric or dotted-numeric input — would resolve as IP, reject
       return trimmed; // return as-is; caller should validate further
     }
+    // SEC-11: Reject dangerous javascript:/data:/vbscript: protocols
+    if (/^(javascript|data|vbscript):/i.test(trimmed)) return trimmed;
     if (/^(https?:|ftp:|moz-extension:|chrome-extension:|edge:)/i.test(trimmed)) {
       return trimmed;
     }
@@ -2043,6 +2051,8 @@ function updateInnerCaption(lb) {
         const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
         const data = JSON.parse(cleanText);
         // BX-DEV-111f: Validate structure — must have boxes array, version field
+        // SEC-06: Reject excessively large JSON payloads to prevent OOM/stack overflow
+        if (JSON.stringify(data).length > 2_000_000) throw new Error('too large');
         if (!data || !Array.isArray(data.boxes)) throw new Error('invalid');
         if (data.boxes.some(b => typeof b !== 'object' || !b.id)) throw new Error('corrupt boxes');
         // Validate each box has minimum required fields
