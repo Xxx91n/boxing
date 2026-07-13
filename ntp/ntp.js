@@ -52,6 +52,7 @@
 
   // Expose debug API for extension DevTools console inspection
   window.__boxingDebug = {
+    get layout() { return layout; }, // BX-DEV-111k: live ref to layout for Playwright testing
     state() { return { boxes: layout.boxes.length, currentLargeBoxId, canvasZoom, innerZoom, headerPinned, darkMode: layout.settings.darkMode, lang: currentLang, fontSize: layout.settings.fontSize }; },
     dumpLayout() { console.table(layout.boxes.map(b => ({ id: b.id, title: b.title, x: b.x, y: b.y, w: b.width, h: b.height, children: b.children?.length||0 }))); },
     dumpStorage() { api.storage?.sync?.get?.(null).then(d => console.log('[Boxing] storage:', d)).catch(e => console.error('[Boxing] storage read:', e)); },
@@ -1149,6 +1150,8 @@
       bm.url = ensureHttpsUrl(urlInput.value.trim()) || bm.url;
       // BX-DEV-111f: Validate final URL — reject pure numeric/IP-only inputs
       try { const test = new URL(bm.url); if (!test.hostname || /^\d+\.\d+\.\d+\.\d+$/.test(test.hostname)) { urlInput.style.borderColor = 'red'; return; } } catch(_) { urlInput.style.borderColor = 'red'; return; }
+      // BX-DEV-111k: validate box still exists before saving edited bookmark
+      if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       saveLayout();
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
@@ -1163,6 +1166,8 @@
     deleteBtn.style.cssText = 'padding:4px 12px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
     deleteBtn.addEventListener('click', e => {
       e.stopPropagation();
+      // BX-DEV-111k: validate box still exists before deleting bookmark
+      if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       sb.bookmarks.splice(index, 1);
       saveLayout();
       const lb = getLargeBox(largeId);
@@ -1313,6 +1318,8 @@
   // Bookmark row drag-to-reorder (BX-DEV-056)
   // Drag grip on left of each bm-row; drag swaps positions in array
   function onBmRowDragStart(e, row, sb, largeId) {
+    // BX-DEV-111k: validate large box still exists before allowing bookmark reorder
+    if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
     const body = row.parentElement;
     const rows = [...body.querySelectorAll('.bm-row')];
     const dragIdx = rows.indexOf(row);
@@ -1663,6 +1670,7 @@
 
   async function addLargeBox() {
   window._boxingAddLargeBox = addLargeBox;
+
     debug('addLargeBox (button) called', {boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex});
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
     const index = layout.nextLargeIndex++;
@@ -1820,6 +1828,8 @@ function updateInnerCaption(lb) {
   function closeSettingsModal() { settingsModal.hidden = true; }
   // Expose for Playwright testing
   window._boxingOpenSettings = openSettingsModal;
+  window._boxingEnterLargeBox = enterLargeBox; // BX-DEV-111k: exposed for test
+  window._boxingDeleteLargeBox = _execDeleteLargeBox; // BX-DEV-111k: exposed for cross-tab delete test
 
   // ── confirm modal (in-page, replaces browser confirm()) ──
   let confirmCallback = null;
@@ -2365,32 +2375,51 @@ function updateInnerCaption(lb) {
     // Both write to localStorage synchronously for shutdown reliability, plus async sync storage.
     // On new tab / browser restart: restore from last active tab's snapshot (box id + pan + zoom).
     // Refresh does NOT restore memory snapshot; new tab DOES.
+    // BX-DEV-111k: Decoupled snapshot system — two independent localStorage keys.
+    // boxingViewSnapshot: saved on visibilitychange + pagehide, for NEW TAB restore.
+    // boxingRefreshSnapshot: saved on pagehide ONLY, for REFRESH restore (exact current state).
+    // This prevents refresh from picking up another tab's memory.
     function saveViewState() {
+      const snap = {
+        lastLargeBoxId: currentLargeBoxId || null,
+        lastZoom: canvasZoom, lastPanX: canvasPanX, lastPanY: canvasPanY,
+        lastInnerZoom: innerZoom, lastInnerPanX: innerPanX, lastInnerPanY: innerPanY,
+        headerPinned: headerPinned
+      };
+      // Update layout fields for sync storage persistence
       if (currentLargeBoxId) {
         layout.lastLargeBoxId = currentLargeBoxId;
         layout.lastInnerZoom = innerZoom;
         layout.lastInnerPanX = innerPanX;
         layout.lastInnerPanY = innerPanY;
       } else {
-        layout.lastLargeBoxId = null;  // explicit: we're on canvas page
+        layout.lastLargeBoxId = null;
         layout.lastZoom = canvasZoom;
         layout.lastPanX = canvasPanX;
         layout.lastPanY = canvasPanY;
       }
       layout.settings.headerPinned = headerPinned;
-      // Immediate synchronous localStorage backup for cross-browser shutdown reliability
-      try { localStorage.setItem('boxingViewSnapshot', JSON.stringify({
-        lastLargeBoxId: layout.lastLargeBoxId, lastZoom: layout.lastZoom, lastPanX: layout.lastPanX, lastPanY: layout.lastPanY,
-        lastInnerZoom: layout.lastInnerZoom, lastInnerPanX: layout.lastInnerPanX, lastInnerPanY: layout.lastInnerPanY,
-        headerPinned: layout.settings.headerPinned
-      })); } catch(_) {}
-      // Async sync storage write (may complete before browser termination if not during shutdown)
+      // Synchronous write: both snapshots go to localStorage for shutdown reliability
+      try { localStorage.setItem('boxingViewSnapshot', JSON.stringify(snap)); } catch(_) {}
+      // pagehide fires for BOTH refresh and tab close — save refresh snapshot too
+      // (visibilitychange only saves view snapshot, not refresh snapshot)
       try { api.storage.sync.set({ boxingLayout: layout }); } catch(_) {}
+    }
+    function saveRefreshSnapshot() {
+      // Dedicated refresh snapshot: exact current DOM-level state at pagehide time
+      const snap = {
+        currentLargeBoxId: currentLargeBoxId || null,
+        canvasZoom, canvasPanX, canvasPanY,
+        innerZoom, innerPanX, innerPanY,
+        headerPinned
+      };
+      try { localStorage.setItem('boxingRefreshSnapshot', JSON.stringify(snap)); } catch(_) {}
     }
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') saveViewState();
     });
-    window.addEventListener('pagehide', () => { saveViewState(); });
+    // pagehide: save BOTH snapshots — view for new tab, refresh for exact restore
+    window.addEventListener('pagehide', () => { saveViewState(); saveRefreshSnapshot(); });
 
     // BX-DEV-111: Save layout immediately before page unload (refresh/close)
     // Synchronous write to storage.sync — beforeunload cannot wait for async
@@ -2416,50 +2445,75 @@ function updateInnerCaption(lb) {
     // Detect refresh vs new-tab: Navigation Timing API type 0 = navigate, 1 = reload.
     const isNewTab = !(window.performance?.navigation?.type === 1 || window.performance?.getEntriesByType?.('navigation')?.[0]?.type === 'reload');
 
-    // BX-DEV-111f: Refresh vs New-Tab memory restore policy
-    // BX-DEV-111h: Refresh preserves current page level + pan/zoom position (user expects same view).
-    // New tab / browser restart: restore last active tab's page+position+zoom via visibilitychange snapshot.
-    // RememberLastPos setting controls whether to drill into last large box on new tab.
+    // BX-DEV-111k: Decoupled refresh vs new-tab restore.
+    // Refresh: restore from boxingRefreshSnapshot (pagehide snapshot of THIS tab's exact state).
+    //   - Restores whether user was on canvas OR inside a large box (small-box page).
+    //   - Does NOT restore from boxingViewSnapshot (that's for new tab / browser restart).
+    // New tab: restore from boxingViewSnapshot (last active tab's state when hidden/closed).
+    //   - Always renders canvas (never drills into a box).
+    //   - lastLargeBoxId from view snapshot controls canvas restore only.
     if (!isNewTab) {
-      // BX-DEV-111h: Refresh — preserve current canvas position (pan+zoom)
+      // BX-DEV-111k: Refresh — restore from dedicated refresh snapshot (pagehide)
+      let rs = null;
+      try { rs = JSON.parse(localStorage.getItem('boxingRefreshSnapshot') || 'null'); } catch(_) {}
+      if (rs) {
+        canvasZoom = rs.canvasZoom || 1.0;
+        canvasPanX = rs.canvasPanX || 0;
+        canvasPanY = rs.canvasPanY || 0;
+        if (rs.headerPinned !== undefined) headerPinned = rs.headerPinned;
+        applyCanvasTransform();
+        // If refresh snapshot says we were inside a large box, restore inner state
+        if (rs.currentLargeBoxId) {
+          const lb = getLargeBox(rs.currentLargeBoxId);
+          if (lb) {
+            innerZoom = rs.innerZoom || 1.0;
+            innerPanX = rs.innerPanX || 0;
+            innerPanY = rs.innerPanY || 0;
+            // BX-DEV-111k: validate box exists before entering (cross-tab delete protection)
+            if (!getLargeBox(rs.currentLargeBoxId)) {
+              // Box was deleted on another tab between pagehide and refresh
+              exitToCanvas();
+              renderCanvas();
+              debug('init (refresh) box deleted, back to canvas');
+              return;
+            }
+            applyInnerTransform();
+            enterLargeBox(rs.currentLargeBoxId, false);
+            debug('init (refresh) restored inner box', { id: rs.currentLargeBoxId, zoom: innerZoom });
+            return;
+          }
+        }
+        // Refresh snapshot says we were on canvas
+        renderCanvas();
+        debug('init (refresh) restored canvas', { boxes: layout.boxes.length, zoom: canvasZoom });
+        return;
+      }
+      // Fallback: no refresh snapshot (first load / legacy)
       canvasZoom = layout.lastZoom || 1.0;
       canvasPanX = layout.lastPanX || 0;
       canvasPanY = layout.lastPanY || 0;
       applyCanvasTransform();
-      if (layout.lastLargeBoxId) {
-        const lb = getLargeBox(layout.lastLargeBoxId);
-        if (lb) {
-          innerZoom = layout.lastInnerZoom || 1.0;
-          innerPanX = layout.lastInnerPanX || 0;
-          innerPanY = layout.lastInnerPanY || 0;
-          applyInnerTransform();
-          enterLargeBox(layout.lastLargeBoxId, false); return;
-        }
-      }
       renderCanvas();
-      debug('init complete v3.7.9h (refresh)', { boxes: layout.boxes.length, zoom: canvasZoom });
+      debug('init (refresh fallback) no refresh snapshot', { boxes: layout.boxes.length });
       return;
     }
     if (isNewTab) {
-      // BX-DEV-111j: Fallback to localStorage view snapshot if sync storage is stale
-      // (happens when async storage.sync.set() didn't complete before browser shutdown)
+      // BX-DEV-111k: New tab restore from boxingViewSnapshot (last active tab's state).
+      // Always renders canvas (never drills into a box).
+      // rememberLastPos controls whether to restore canvas zoom/pan position.
       let vs = null;
       try { vs = JSON.parse(localStorage.getItem('boxingViewSnapshot') || 'null'); } catch(_) {}
       if (vs) {
-        if (!layout.lastZoom && vs.lastZoom) { layout.lastZoom = vs.lastZoom; layout.lastPanX = vs.lastPanX; layout.lastPanY = vs.lastPanY; }
-        if (!layout.lastLargeBoxId && vs.lastLargeBoxId) { layout.lastLargeBoxId = vs.lastLargeBoxId; layout.lastInnerZoom = vs.lastInnerZoom; layout.lastInnerPanX = vs.lastInnerPanX; layout.lastInnerPanY = vs.lastInnerPanY; }
+        canvasZoom = vs.lastZoom || 1.0;
+        canvasPanX = vs.lastPanX || 0;
+        canvasPanY = vs.lastPanY || 0;
         if (vs.headerPinned !== undefined) headerPinned = vs.headerPinned;
-        localStorage.removeItem('boxingViewSnapshot');
+      } else {
+        canvasZoom = layout.lastZoom || 1.0;
+        canvasPanX = layout.lastPanX || 0;
+        canvasPanY = layout.lastPanY || 0;
       }
-      // Always restore canvas position from last session on new tab
-      canvasZoom = layout.lastZoom || 1.0;
-      canvasPanX = layout.lastPanX || 0;
-      canvasPanY = layout.lastPanY || 0;
       applyCanvasTransform();
-
-      // BX-DEV-111j: New tab always renders canvas (never drills into a box).
-      // rememberLastPos controls canvas pan/zoom restore only.
-      // lastLargeBoxId is cleared on exitToCanvas() so refresh doesn't re-enter.
     }
 
     renderCanvas();
