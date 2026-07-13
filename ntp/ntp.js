@@ -2320,26 +2320,38 @@ function updateInnerCaption(lb) {
     // Window resize
     window.addEventListener('resize', onWindowResize);
 
-    // BX-DEV-111f: High-sensitivity memory — save current state whenever tab becomes hidden
-    // This captures the last active tab's state for restore on new tab / browser restart.
-    // Refresh does NOT restore memory; new tab DOES.
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        // Persist current view state immediately
-        if (currentLargeBoxId) {
-          layout.lastLargeBoxId = currentLargeBoxId;
-          layout.lastInnerZoom = innerZoom;
-          layout.lastInnerPanX = innerPanX;
-          layout.lastInnerPanY = innerPanY;
-        } else {
-          layout.lastZoom = canvasZoom;
-          layout.lastPanX = canvasPanX;
-          layout.lastPanY = canvasPanY;
-        }
-        layout.settings.headerPinned = headerPinned;
-        try { api.storage.sync.set({ boxingLayout: layout }); } catch(_) {}
+    // BX-DEV-111j: saveViewState() — unified snapshot on visibilitychange AND pagehide.
+    // - visibilitychange: fires when tab loses focus (switch away / minimize / browser shutdown).
+    // - pagehide: reliably fires on tab close / browser terminate in BOTH Chrome and Firefox/LibreWolf.
+    // Both write to localStorage synchronously for shutdown reliability, plus async sync storage.
+    // On new tab / browser restart: restore from last active tab's snapshot (box id + pan + zoom).
+    // Refresh does NOT restore memory snapshot; new tab DOES.
+    function saveViewState() {
+      if (currentLargeBoxId) {
+        layout.lastLargeBoxId = currentLargeBoxId;
+        layout.lastInnerZoom = innerZoom;
+        layout.lastInnerPanX = innerPanX;
+        layout.lastInnerPanY = innerPanY;
+      } else {
+        layout.lastLargeBoxId = null;  // explicit: we're on canvas page
+        layout.lastZoom = canvasZoom;
+        layout.lastPanX = canvasPanX;
+        layout.lastPanY = canvasPanY;
       }
+      layout.settings.headerPinned = headerPinned;
+      // Immediate synchronous localStorage backup for cross-browser shutdown reliability
+      try { localStorage.setItem('boxingViewSnapshot', JSON.stringify({
+        lastLargeBoxId: layout.lastLargeBoxId, lastZoom: layout.lastZoom, lastPanX: layout.lastPanX, lastPanY: layout.lastPanY,
+        lastInnerZoom: layout.lastInnerZoom, lastInnerPanX: layout.lastInnerPanX, lastInnerPanY: layout.lastInnerPanY,
+        headerPinned: layout.settings.headerPinned
+      })); } catch(_) {}
+      // Async sync storage write (may complete before browser termination if not during shutdown)
+      try { api.storage.sync.set({ boxingLayout: layout }); } catch(_) {}
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveViewState();
     });
+    window.addEventListener('pagehide', () => { saveViewState(); });
 
     // BX-DEV-111: Save layout immediately before page unload (refresh/close)
     // Synchronous write to storage.sync — beforeunload cannot wait for async
@@ -2390,6 +2402,16 @@ function updateInnerCaption(lb) {
       return;
     }
     if (isNewTab) {
+      // BX-DEV-111j: Fallback to localStorage view snapshot if sync storage is stale
+      // (happens when async storage.sync.set() didn't complete before browser shutdown)
+      let vs = null;
+      try { vs = JSON.parse(localStorage.getItem('boxingViewSnapshot') || 'null'); } catch(_) {}
+      if (vs) {
+        if (!layout.lastZoom && vs.lastZoom) { layout.lastZoom = vs.lastZoom; layout.lastPanX = vs.lastPanX; layout.lastPanY = vs.lastPanY; }
+        if (!layout.lastLargeBoxId && vs.lastLargeBoxId) { layout.lastLargeBoxId = vs.lastLargeBoxId; layout.lastInnerZoom = vs.lastInnerZoom; layout.lastInnerPanX = vs.lastInnerPanX; layout.lastInnerPanY = vs.lastInnerPanY; }
+        if (vs.headerPinned !== undefined) headerPinned = vs.headerPinned;
+        localStorage.removeItem('boxingViewSnapshot');
+      }
       // Always restore canvas position from last session on new tab
       canvasZoom = layout.lastZoom || 1.0;
       canvasPanX = layout.lastPanX || 0;

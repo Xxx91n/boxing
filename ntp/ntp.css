@@ -977,8 +977,8 @@ body.box-resizing {
 /* BX-DEV-111f: Active tab retains its own background on hover — only text intensifies */
 .settings-nav__item--active:hover { background: var(--color-accent-soft); color: var(--color-accent-ink); }
 .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); font-weight: 600; }
-.settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; }
-.settings-content { min-height: 0; max-height: 100%; /* BX-DEV-111k: fixed height, prevent tab changes from resizing modal */ }
+.settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; max-height: 430px; /* BX-DEV-111k-v2: fixed pixel height so tab switching never resizes modal */ }
+/* BX-DEV-111k-v2: replaced by fixed max-height on line 980 */
 .settings-tab { display: flex; flex-direction: column; gap: var(--space-6); }
 .settings-tab { overflow-y: auto; min-height: 0; padding-right: var(--space-2); /* BX-DEV-111i: scroll within tab */ }
 .settings-tab:not([hidden]) { position: relative; z-index: 1; } /* BX-DEV-111k: above absolute hidden siblings */
