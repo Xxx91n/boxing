@@ -150,6 +150,8 @@
   I18N_FALLBACK.lastPositionLabel = 'Last position';
   I18N_FALLBACK.lastZoomLabel = 'Last zoom';
   I18N_FALLBACK.lastPageLabel = 'Last page';
+  I18N_FALLBACK.boxDeletedWarning = 'This box has been deleted. Please refresh the page.';
+  I18N_FALLBACK.refreshPage = 'Refresh';
   let currentLang = 'en';
   const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi'];
 
@@ -836,6 +838,8 @@
 
   function exitToCanvas() {
     debug(`exitToCanvas: leaving box, back to canvas`);
+    // BX-DEV-111j: Clear lastLargeBoxId so refresh doesn't re-enter a box after exiting
+    layout.lastLargeBoxId = null;
     currentLargeBoxId = null;
     // Save current inner zoom and pan for restore later
     layout.lastInnerZoom = innerZoom;
@@ -905,7 +909,13 @@
     // title bar (drag handle — title excluded)
     const bar = document.createElement('div');
     bar.className = 'small-box__bar';
-    bar.addEventListener('mousedown', e => { if (!e.target.closest('.small-box__title') && !e.target.closest('.small-box__delete')) onBoxDragStart(e, 'small', { largeId, smallId: sb.id }, el); });
+    bar.addEventListener('mousedown', e => {
+      if (!e.target.closest('.small-box__title') && !e.target.closest('.small-box__delete')) {
+        // BX-DEV-111j: validate box still exists before allowing drag
+        if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
+        onBoxDragStart(e, 'small', { largeId, smallId: sb.id }, el);
+      }
+    });
 
     const title = document.createElement('span');
     title.className = 'small-box__title';
@@ -1231,6 +1241,8 @@
       const title = titleInput.value.trim();
       const url = urlInput.value.trim();
       if (!url) return;
+      // BX-DEV-111j: validate large box still exists before saving bookmark
+      if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       sb.bookmarks = sb.bookmarks || [];
       if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
       sb.bookmarks.push({ id: 'bm-' + Date.now(), title: title || url.replace(/^https?:\/\//, '').split('/')[0] || url, url });
@@ -1245,6 +1257,8 @@
       const title = titleInput.value.trim();
       const url = urlInput.value.trim();
       if (!url) return;
+      // BX-DEV-111j: validate large box still exists before saving bookmark
+      if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       sb.bookmarks = sb.bookmarks || [];
       if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
       sb.bookmarks.push({ id: 'bm-' + Date.now(), title: title || url.replace(/^https?:\/\//, '').split('/')[0] || url, url });
@@ -1691,9 +1705,35 @@ function updateInnerCaption(lb) {
     renderCanvas();
   }
 
-  function addSmallBox() {
-    if (!currentLargeBoxId) return;
+  // BX-DEV-111j: Cross-tab delete protection — validate currentLargeBoxId still exists before any inner operation.
+  function validateCurrentBox() {
+    if (!currentLargeBoxId) return false;
     const lb = getLargeBox(currentLargeBoxId);
+    if (!lb) {
+      // Large box was deleted on another tab — block operations and warn
+      showBoxDeletedWarning(currentLargeBoxId);
+      currentLargeBoxId = null;
+      exitToCanvas();
+      return false;
+    }
+    return lb;
+  }
+
+  function showBoxDeletedWarning(staleId) {
+    // Prevent duplicate warnings
+    if (document.getElementById('box-deleted-warning')) return;
+    const warn = document.createElement('div');
+    warn.id = 'box-deleted-warning';
+    warn.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--color-accent-ink);color:#F7F3ED;padding:var(--space-3) var(--space-5);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);font-size:14px;font-weight:600;display:flex;align-items:center;gap:var(--space-3);';
+    warn.innerHTML = `<span data-i18n="boxDeletedWarning">${i18n('boxDeletedWarning') || 'This box has been deleted. Please refresh the page.'}</span><button style="background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.3);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" data-i18n="refreshPage">${i18n('refreshPage') || 'Refresh'}</button>`;
+    warn.querySelector('button').addEventListener('click', () => window.location.reload());
+    document.body.appendChild(warn);
+    // Auto-dismiss after 10s
+    setTimeout(() => { if (warn.parentNode) warn.remove(); }, 10000);
+  }
+
+  function addSmallBox() {
+    const lb = validateCurrentBox();
     if (!lb) return;
     if ((lb.children?.length || 0) >= MAX_SMALL_BOXES) { debug('max small boxes'); return; }
 
@@ -1716,8 +1756,7 @@ function updateInnerCaption(lb) {
   }
 
   function addSmallBoxAt(clientX, clientY) {
-    if (!currentLargeBoxId) return;
-    const lb = getLargeBox(currentLargeBoxId);
+    const lb = validateCurrentBox();
     if (!lb || (lb.children?.length || 0) >= MAX_SMALL_BOXES) return;
     const world = screenToWorld(clientX, clientY, innerCanvas, innerPanX, innerPanY, innerZoom);
     const snapped = snapInner(world.x - SMALL_DEF_W / 2, world.y - SMALL_DEF_H / 2);
@@ -2418,17 +2457,9 @@ function updateInnerCaption(lb) {
       canvasPanY = layout.lastPanY || 0;
       applyCanvasTransform();
 
-      // If rememberLastPos is ON and last page was inside a large box, drill in
-      if (layout.settings.rememberLastPos !== false && layout.lastLargeBoxId) {
-        const lb = getLargeBox(layout.lastLargeBoxId);
-        if (lb) {
-          if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
-          if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
-          if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
-          applyInnerTransform();
-          enterLargeBox(layout.lastLargeBoxId); return;
-        }
-      }
+      // BX-DEV-111j: New tab always renders canvas (never drills into a box).
+      // rememberLastPos controls canvas pan/zoom restore only.
+      // lastLargeBoxId is cleared on exitToCanvas() so refresh doesn't re-enter.
     }
 
     renderCanvas();

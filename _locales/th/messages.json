@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "ไม่เคย"
+  },
+  "boxDeletedWarning": {
+    "message": "กล่องนี้ถูกลบแล้ว โปรดรีเฟรชหน้า"
+  },
+  "refreshPage": {
+    "message": "รีเฟรช"
   }
 }

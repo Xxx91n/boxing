@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "Nunca"
+  },
+  "boxDeletedWarning": {
+    "message": "Esta caja ha sido eliminada. Por favor, actualice la página."
+  },
+  "refreshPage": {
+    "message": "Actualizar"
   }
 }

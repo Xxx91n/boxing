@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "なし"
+  },
+  "boxDeletedWarning": {
+    "message": "このボックスは削除されました。ページを更新してください。"
+  },
+  "refreshPage": {
+    "message": "更新"
   }
 }

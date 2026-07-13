@@ -525,5 +525,11 @@
   },
   "neverText": {
     "message": "从未"
+  },
+  "boxDeletedWarning": {
+    "message": "该盒子已被删除，请刷新页面。"
+  },
+  "refreshPage": {
+    "message": "刷新"
   }
 }

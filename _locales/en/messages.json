@@ -535,5 +535,11 @@
   },
   "neverText": {
     "message": "Never"
+  },
+  "boxDeletedWarning": {
+    "message": "This box has been deleted. Please refresh the page."
+  },
+  "refreshPage": {
+    "message": "Refresh"
   }
 }

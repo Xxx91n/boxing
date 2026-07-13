@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "Chưa từng"
+  },
+  "boxDeletedWarning": {
+    "message": "Hộp này đã bị xóa. Vui lòng làm mới trang."
+  },
+  "refreshPage": {
+    "message": "Làm mới"
   }
 }

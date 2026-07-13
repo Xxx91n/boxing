@@ -970,14 +970,14 @@ body.box-resizing {
 /* ══════════════════════════════════════════════
    Settings Tabbed Layout
    ══════════════════════════════════════════════ */
-.settings-body { flex-direction: row; gap: 0; padding: 0 !important; }
+.settings-body { flex-direction: row; gap: 0; padding: 0 !important; overflow: hidden; contain: layout style; /* BX-DEV-111k-v3: lock height, prevent flex resize from tab content changes */ }
 .settings-nav { display: flex; flex-direction: column; min-width: 160px; padding: var(--space-4) var(--space-3); border-right: 1px solid var(--color-hairline); gap: var(--space-1); }
 .settings-nav__item { background: transparent; border: 0; border-radius: var(--radius-tile); padding: var(--space-2) var(--space-3); font-size: 13px; font-weight: 500; color: var(--color-muted); text-align: left; cursor: pointer; transition: background var(--dur-fast), color var(--dur-fast); }
 .settings-nav__item:hover { background: var(--color-surface); color: var(--color-ink); }
 /* BX-DEV-111f: Active tab retains its own background on hover — only text intensifies */
 .settings-nav__item--active:hover { background: var(--color-accent-soft); color: var(--color-accent-ink); }
 .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); font-weight: 600; }
-.settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; max-height: 430px; /* BX-DEV-111k-v2: fixed pixel height so tab switching never resizes modal */ }
+.settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; max-height: 430px; contain: strict; /* BX-DEV-111k-v3: fixed pixel height + contain:strict for smooth scroll without layout jank */ }
 /* BX-DEV-111k-v2: replaced by fixed max-height on line 980 */
 .settings-tab { display: flex; flex-direction: column; gap: var(--space-6); }
 .settings-tab { overflow-y: auto; min-height: 0; padding-right: var(--space-2); /* BX-DEV-111i: scroll within tab */ }

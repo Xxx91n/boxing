@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "कभी नहीं"
+  },
+  "boxDeletedWarning": {
+    "message": "यह बॉक्स हटा दिया गया है। कृपया पेज रिफ्रेश करें।"
+  },
+  "refreshPage": {
+    "message": "रिफ्रेश"
   }
 }

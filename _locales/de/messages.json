@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "Nie"
+  },
+  "boxDeletedWarning": {
+    "message": "Diese Box wurde gelöscht. Bitte aktualisieren Sie die Seite."
+  },
+  "refreshPage": {
+    "message": "Aktualisieren"
   }
 }

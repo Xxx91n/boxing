@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "Никогда"
+  },
+  "boxDeletedWarning": {
+    "message": "Этот бокс был удалён. Пожалуйста, обновите страницу."
+  },
+  "refreshPage": {
+    "message": "Обновить"
   }
 }

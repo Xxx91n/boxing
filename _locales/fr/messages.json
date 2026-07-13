@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "Jamais"
+  },
+  "boxDeletedWarning": {
+    "message": "Cette boîte a été supprimée. Veuillez rafraîchir la page."
+  },
+  "refreshPage": {
+    "message": "Rafraîchir"
   }
 }

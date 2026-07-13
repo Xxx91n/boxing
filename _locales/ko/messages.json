@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "없음"
+  },
+  "boxDeletedWarning": {
+    "message": "이 상자가 삭제되었습니다. 페이지를 새로고침하세요."
+  },
+  "refreshPage": {
+    "message": "새로고침"
   }
 }

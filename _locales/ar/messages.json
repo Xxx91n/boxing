@@ -522,5 +522,11 @@
   },
   "neverText": {
     "message": "أبداً"
+  },
+  "boxDeletedWarning": {
+    "message": "تم حذف هذا الصندوق. يرجى تحديث الصفحة."
+  },
+  "refreshPage": {
+    "message": "تحديث"
   }
 }
