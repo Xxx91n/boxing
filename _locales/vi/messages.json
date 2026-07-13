@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "Bỏ qua tự động backup: quá thường xuyên, tối thiểu 1 giờ"
+  },
+  "lastBackupTime": {
+    "message": "Sao lưu cuối"
+  },
+  "neverText": {
+    "message": "Chưa từng"
   }
 }

@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "Backup auto ignorado: muito frequente, intervalo mín 1h"
+  },
+  "lastBackupTime": {
+    "message": "Último backup"
+  },
+  "neverText": {
+    "message": "Nunca"
   }
 }

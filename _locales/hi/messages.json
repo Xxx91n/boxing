@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "ऑटो-बैकअप छोड़ा गया: बहुत बार-बार, न्यूनतम 1 घंटा"
+  },
+  "lastBackupTime": {
+    "message": "अंतिम बैकअप"
+  },
+  "neverText": {
+    "message": "कभी नहीं"
   }
 }

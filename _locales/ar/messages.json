@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "تم تخطي النسخ التلقائي: متكرر جداً، الحد الأدنى ساعة"
+  },
+  "lastBackupTime": {
+    "message": "آخر نسخة"
+  },
+  "neverText": {
+    "message": "أبداً"
   }
 }

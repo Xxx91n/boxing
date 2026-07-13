@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "자동 백업 건너뜀: 너무 빈번함, 최소 간격 1시간"
+  },
+  "lastBackupTime": {
+    "message": "마지막 백업"
+  },
+  "neverText": {
+    "message": "없음"
   }
 }

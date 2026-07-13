@@ -287,6 +287,7 @@ html, body {
   height: auto !important; /* override JS inline style */
   max-height: 60px;        /* bar + padding, tightly clipped */
   overflow: hidden;
+  border-radius: var(--radius-card) !important; /* BX-DEV-111i: preserve rounded corners when collapsed clips body */
   transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Material deceleration — smooth collapse */
 }
 .box--hover-expand.box--collapsed .large-box__body,
@@ -302,6 +303,7 @@ html, body {
 .box--hover-expand.box--collapsed:hover {
   max-height: var(--expand-height, 800px); /* JS-measured exact content height, avoids empty-range animation */
   overflow: visible;
+  border-radius: var(--radius-card) !important; /* BX-DEV-111i: keep rounded during expand */
   transition: max-height 0.35s cubic-bezier(0, 0, 0.2, 1); /* Material acceleration — crisp expand */
 }
 .box--hover-expand.box--collapsed:hover .large-box__body,
@@ -627,6 +629,8 @@ html, body {
   font-size: 14px;
   cursor: pointer;
 }
+.modal__input { padding: var(--space-2) var(--space-3); background: var(--color-elevated); border: 1px solid var(--color-hairline); font-size: 14px; color: var(--color-ink); border-radius: var(--radius-card); }
+.modal__input:focus { border-color: var(--color-accent); outline: none; }
 .modal__hint {
   margin: 0;
   font-size: 12px;
@@ -763,6 +767,7 @@ body.box-resizing {
 .ntp--square-corners .inner__canvas,
 .ntp--square-corners .inner__canvas-head,
 .ntp--square-corners .modal,
+.ntp--square-corners .confirm-modal,
 .ntp--square-corners .zoom-controls,
 .ntp--square-corners .settings-nav,
 .ntp--square-corners .settings-nav__item,
@@ -771,6 +776,7 @@ body.box-resizing {
 .ntp--square-corners .settings-content button {
   border-radius: 0 !important;
 }
+.ntp--square-corners .modal__input { border-radius: 0 !important; }
 
 /* === BOOKMARK ADD INPUT === */
 .bm-add-row {
@@ -838,7 +844,8 @@ body.box-resizing {
 
 /* === CONFIRM MODAL === */
 .confirm-modal { width: min(420px, 90vw); }
-.confirm-modal .modal__body { padding: var(--space-5) var(--space-5) var(--space-3); }
+.confirm-modal { border-radius: var(--radius-card); }
+.confirm-modal .modal__body { padding: var(--space-4) var(--space-4); text-align: center; }
 #confirm-delete-btn:hover { opacity: 0.85; }
 
 /* === DARK MODE TOGGLE BUTTON === */
@@ -972,6 +979,7 @@ body.box-resizing {
 .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); font-weight: 600; }
 .settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; }
 .settings-tab { display: flex; flex-direction: column; gap: var(--space-6); }
+.settings-tab { overflow-y: auto; min-height: 0; padding-right: var(--space-2); /* BX-DEV-111i: scroll within tab */ }
 /* Smooth tab transition: use opacity instead of display:none to eliminate flicker */
 .settings-tab[hidden] { display: flex; opacity: 0; pointer-events: none; position: absolute; visibility: hidden; }
 .settings-tab { transition: opacity 0.12s ease; }

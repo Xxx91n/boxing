@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "ข้ามการสำรองอัตโนมัติ: ถี่เกินไป, ขั้นต่ำ 1 ชั่วโมง"
+  },
+  "lastBackupTime": {
+    "message": "สำรองล่าสุด"
+  },
+  "neverText": {
+    "message": "ไม่เคย"
   }
 }

@@ -529,5 +529,11 @@
   },
   "backupTooFrequent": {
     "message": "Auto-backup skipped: too frequent, minimum interval 1 hour"
+  },
+  "lastBackupTime": {
+    "message": "Last backup"
+  },
+  "neverText": {
+    "message": "Never"
   }
 }

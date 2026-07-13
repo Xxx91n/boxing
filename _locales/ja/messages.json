@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "自動バックアップスキップ：頻度が高すぎます、最小間隔1時間"
+  },
+  "lastBackupTime": {
+    "message": "最終バックアップ"
+  },
+  "neverText": {
+    "message": "なし"
   }
 }

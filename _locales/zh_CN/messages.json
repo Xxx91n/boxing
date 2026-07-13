@@ -519,5 +519,11 @@
   },
   "backupTooFrequent": {
     "message": "自动备份跳过：过于频繁，最小间隔1小时"
+  },
+  "lastBackupTime": {
+    "message": "上次备份"
+  },
+  "neverText": {
+    "message": "从未"
   }
 }

@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "Auto-Backup übersprungen: zu häufig, min. 1 Stunde"
+  },
+  "lastBackupTime": {
+    "message": "Letztes Backup"
+  },
+  "neverText": {
+    "message": "Nie"
   }
 }

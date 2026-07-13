@@ -141,6 +141,8 @@
   I18N_FALLBACK.gistBackupOk = 'Gist backup saved';
   I18N_FALLBACK.gistBackupFail = 'Gist backup failed';
   I18N_FALLBACK.backupTooFrequent = 'Auto-backup skipped: too frequent, minimum interval 1 hour';
+  I18N_FALLBACK.lastBackupTime = 'Last backup';
+  I18N_FALLBACK.neverText = 'Never';
   I18N_FALLBACK.settingsNavGeneral = 'General';
   I18N_FALLBACK.settingsNavAppearance = 'Appearance';
   I18N_FALLBACK.settingsNavData = 'Data';
@@ -321,7 +323,7 @@
       version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
       lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
       lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 0, headerPinned: true, syncProvider: 'chrome' }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local' }
     };
   }
 
@@ -343,7 +345,7 @@
         })),
         nextLargeIndex: (raw.boxes?.length || 0) + 1,
         lastLargeBoxId: raw.lastLargeBoxId || null,
-        settings: raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'chrome' }
+        settings: raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }
       };
     }
     return defaultLayout();
@@ -1672,7 +1674,7 @@ function updateInnerCaption(lb) {
       title: i18n('newSmallBox'),
       x: Math.max(0, candidate.x), y: Math.max(0, candidate.y),
       width: SMALL_DEF_W, height: SMALL_DEF_H,
-      pinned: true, bookmarks: []
+      pinned: false, bookmarks: []
     });
     saveLayout();
     renderInnerSurface(lb);
@@ -1691,7 +1693,7 @@ function updateInnerCaption(lb) {
       title: i18n('newSmallBox'),
       x: 0, y: 0,
       width: SMALL_DEF_W, height: SMALL_DEF_H,
-      pinned: true, bookmarks: []
+      pinned: false, bookmarks: []
     });
     // BX-DEV-106: elastic-snap to avoid overlapping existing small boxes
     const others = lb.children.filter(s => s.id !== lb.children[lb.children.length-1].id).map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
@@ -2040,16 +2042,55 @@ function updateInnerCaption(lb) {
     const gistTokenInput = document.getElementById('gist-token');
     const gistIdInput = document.getElementById('gist-id');
     const backupNowBtn = document.getElementById('backup-now-btn');
+    const remoteBackupZone = document.getElementById('remote-backup-zone');
+    const lastBackupTimeVal = document.getElementById('last-backup-time-value');
+    const webdavTestBtn = document.getElementById('webdav-test-btn');
 
-    // Restore persisted provider config
-    const syncProviderVal = layout.settings.syncProvider || 'chrome';
+    // ── Encrypted credential storage (Web Crypto AES-GCM) ───
+    const ENC_ALGO = 'AES-GCM'; const ENC_KEY_LEN = 256;
+    async function encryptCredential(plaintext) {
+      if (!plaintext) return null;
+      const key = await crypto.subtle.generateKey({ name: ENC_ALGO, length: ENC_KEY_LEN }, true, ['encrypt', 'decrypt']);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const enc = await crypto.subtle.encrypt({ name: ENC_ALGO, iv }, key, new TextEncoder().encode(plaintext));
+      const raw = await crypto.subtle.exportKey('raw', key);
+      return { k: btoa(String.fromCharCode(...new Uint8Array(raw))), iv: btoa(String.fromCharCode(...iv)), d: btoa(String.fromCharCode(...new Uint8Array(enc))) };
+    }
+    async function decryptCredential(encObj) {
+      if (!encObj || !encObj.k) return '';
+      try {
+        const rawKey = Uint8Array.from(atob(encObj.k), c => c.charCodeAt(0));
+        const key = await crypto.subtle.importKey('raw', rawKey, { name: ENC_ALGO, length: ENC_KEY_LEN }, false, ['decrypt']);
+        const iv = Uint8Array.from(atob(encObj.iv), c => c.charCodeAt(0));
+        const ct = Uint8Array.from(atob(encObj.d), c => c.charCodeAt(0));
+        const dec = await crypto.subtle.decrypt({ name: ENC_ALGO, iv }, key, ct);
+        return new TextDecoder().decode(dec);
+      } catch(e) { return ''; }
+    }
+
+    // Restore persisted config
+    const syncProviderVal = layout.settings.syncProvider || 'local';
     if (syncProviderSelect) syncProviderSelect.value = syncProviderVal;
     if (layout.settings.webdavUrl && webdavUrlInput) webdavUrlInput.value = layout.settings.webdavUrl;
     if (layout.settings.webdavUser && webdavUserInput) webdavUserInput.value = layout.settings.webdavUser;
     if (layout.settings.gistId && gistIdInput) gistIdInput.value = layout.settings.gistId;
+    // Decrypt and fill sensitive fields
+    (async () => {
+      if (layout.settings._encWebdavPass && webdavPassInput) webdavPassInput.value = await decryptCredential(layout.settings._encWebdavPass);
+      if (layout.settings._encGistToken && gistTokenInput) gistTokenInput.value = await decryptCredential(layout.settings._encGistToken);
+    })();
+
+    // Show last backup time
+    function updateLastBackupDisplay() {
+      if (lastBackupTimeVal) {
+        lastBackupTimeVal.textContent = layout.settings.lastBackupAt ? new Date(layout.settings.lastBackupAt).toLocaleString() : i18n('neverText');
+      }
+    }
+    updateLastBackupDisplay();
 
     function updateSyncConfigVisibility() {
       const p = syncProviderSelect.value;
+      if (remoteBackupZone) remoteBackupZone.hidden = (p !== 'webdav' && p !== 'gist');
       if (webdavConfig) webdavConfig.hidden = p !== 'webdav';
       if (gistConfig) gistConfig.hidden = p !== 'gist';
     }
@@ -2061,12 +2102,27 @@ function updateInnerCaption(lb) {
       saveLayout();
     });
 
-    [webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput].forEach(inp => {
-      inp?.addEventListener('blur', () => {
-        if (webdavUrlInput) layout.settings.webdavUrl = webdavUrlInput.value.trim();
-        if (webdavUserInput) layout.settings.webdavUser = webdavUserInput.value.trim();
-        saveLayout();
-      });
+    // Persist + encrypt on blur
+    [webdavUrlInput, webdavUserInput].forEach(inp => inp?.addEventListener('blur', () => {
+      if (webdavUrlInput) layout.settings.webdavUrl = webdavUrlInput.value.trim();
+      if (webdavUserInput) layout.settings.webdavUser = webdavUserInput.value.trim();
+      saveLayout();
+    }));
+    webdavPassInput?.addEventListener('blur', async () => {
+      const v = webdavPassInput.value;
+      layout.settings._encWebdavPass = v ? await encryptCredential(v) : null;
+      saveLayout();
+    });
+    gistTokenInput?.addEventListener('blur', async () => {
+      const v = gistTokenInput.value.trim();
+      layout.settings._encGistToken = v ? await encryptCredential(v) : null;
+      saveLayout();
+    });
+
+    // WebDAV test connection button
+    webdavTestBtn?.addEventListener('click', async () => {
+      try { await backupToWebDAV(); webdavTestBtn.textContent = i18n('webdavTestOk'); setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 2000); }
+      catch(e) { webdavTestBtn.textContent = i18n('webdavTestFail'); setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 2000); }
     });
 
     async function backupToWebDAV() {
@@ -2118,12 +2174,16 @@ function updateInnerCaption(lb) {
       document.body.removeChild(a); URL.revokeObjectURL(url);
     }
 
+    // Unified backup dispatcher (only used for remote providers)
     async function performBackup() {
-      const p = syncProviderSelect?.value || 'chrome';
+      const p = syncProviderSelect?.value || 'local';
       try {
         if (p === 'webdav') { await backupToWebDAV(); debug('WebDAV backup ok'); }
         else if (p === 'gist') { await backupToGist(); debug('Gist backup ok'); }
         else { backupToLocal(); }
+        layout.settings.lastBackupAt = Date.now();
+        updateLastBackupDisplay();
+        saveLayout();
       } catch (e) { debugErr('Backup failed', e); if (p !== 'local' && p !== 'chrome' && p !== 'firefox') backupToLocal(); }
     }
 
@@ -2135,7 +2195,7 @@ function updateInnerCaption(lb) {
 
     function setupAutoBackup(sec) {
       if (autoBackupTimer) { clearInterval(autoBackupTimer); autoBackupTimer = null; }
-      if (!sec || sec < 3600) return;
+      if (!sec || sec < 3600) return;  // minimum 1 hour
       autoBackupTimer = setInterval(async () => {
         const now = Date.now();
         if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }

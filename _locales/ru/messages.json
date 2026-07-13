@@ -516,5 +516,11 @@
   },
   "backupTooFrequent": {
     "message": "Автобэкап пропущен: слишком часто, мин. интервал 1ч"
+  },
+  "lastBackupTime": {
+    "message": "Последний бэкап"
+  },
+  "neverText": {
+    "message": "Никогда"
   }
 }
