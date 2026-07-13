@@ -978,10 +978,12 @@ body.box-resizing {
 .settings-nav__item--active:hover { background: var(--color-accent-soft); color: var(--color-accent-ink); }
 .settings-nav__item--active { background: var(--color-accent-soft); color: var(--color-accent-ink); font-weight: 600; }
 .settings-content { flex: 1; padding: var(--space-5); overflow-y: auto; }
+.settings-content { min-height: 0; max-height: 100%; /* BX-DEV-111k: fixed height, prevent tab changes from resizing modal */ }
 .settings-tab { display: flex; flex-direction: column; gap: var(--space-6); }
 .settings-tab { overflow-y: auto; min-height: 0; padding-right: var(--space-2); /* BX-DEV-111i: scroll within tab */ }
+.settings-tab:not([hidden]) { position: relative; z-index: 1; } /* BX-DEV-111k: above absolute hidden siblings */
 /* Smooth tab transition: use opacity instead of display:none to eliminate flicker */
-.settings-tab[hidden] { display: flex; opacity: 0; pointer-events: none; position: absolute; visibility: hidden; }
+.settings-tab[hidden] { opacity: 0; pointer-events: none; visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; /* BX-DEV-111k: absolute removes from flow, opacity for smooth transition */ }
 .settings-tab { transition: opacity 0.12s ease; }
 .settings-content { position: relative; }
 .ntp--dark .settings-nav { border-right-color: var(--color-hairline); }

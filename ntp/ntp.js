@@ -1347,7 +1347,10 @@
         const bms = sb.bookmarks, item = bms[dragIdx];
         bms.splice(dragIdx, 1); bms.splice(targetIdx, 0, item);
         saveLayout();
-        const lb = getLargeBox(largeId); if (lb) renderInnerSurface(lb);
+        // BX-DEV-111k: only re-render bookmarks for this small box — don't rebuild entire surface
+        const smallBoxEl = row.closest('.small-box');
+        const bodyEl = smallBoxEl?.querySelector('.small-box__body');
+        if (bodyEl) { renderBookmarks(bodyEl, largeId, sb); } else { const lb = getLargeBox(largeId); if (lb) renderInnerSurface(lb); }
       }
     };
     document.addEventListener('mousemove', onMove);
@@ -1767,8 +1770,12 @@ function updateInnerCaption(lb) {
     if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
     // Show General tab by default
     const firstTab = document.querySelector('.settings-nav__item');
-    // Use rAF to let modal paint first, then switch tab — eliminates visual flicker
-    if (firstTab) { requestAnimationFrame(() => requestAnimationFrame(() => firstTab.click())); }
+    // BX-DEV-111k: restore last active tab, default to General if none saved
+    const lastTabId = layout.settings.lastSettingsTab || 'general';
+    const targetTabBtn = document.querySelector('.settings-nav__item[data-tab="' + lastTabId + '"]');
+    const tabToClick = targetTabBtn || firstTab;
+    // rAF lets modal paint before tab switch — no flicker with the absolute-position hidden approach
+    if (tabToClick) { requestAnimationFrame(() => requestAnimationFrame(() => tabToClick.click())); }
   }
 
   function closeSettingsModal() { settingsModal.hidden = true; }
@@ -1989,6 +1996,7 @@ function updateInnerCaption(lb) {
         document.querySelectorAll('.settings-nav__item').forEach(b => b.classList.remove('settings-nav__item--active'));
         btn.classList.add('settings-nav__item--active');
         const tabId = btn.dataset.tab;
+        layout.settings.lastSettingsTab = tabId;  // BX-DEV-111k: remember last active tab
         document.querySelectorAll('.settings-tab').forEach(t => t.hidden = true);
         const tab = document.getElementById('tab-' + tabId);
         if (tab) tab.hidden = false;
