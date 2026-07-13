@@ -176,8 +176,6 @@
 <label class="modal__label" for="sync-provider" data-i18n="syncProvider">Sync Provider</label>
 <select id="sync-provider" class="modal__select">
 <option value="local" data-i18n="syncLocalOnly">Local Only</option>
-<option value="chrome" data-i18n="syncChrome">Chrome Sync</option>
-<option value="firefox" data-i18n="syncFirefox">Firefox Sync</option>
 <option value="webdav" data-i18n="syncWebDAV">WebDAV</option>
 <option value="gist" data-i18n="syncGitHubGist">GitHub Gist</option>
 </select>
@@ -206,7 +204,7 @@
 <label class="modal__label" for="gist-id" data-i18n="gistId">Gist ID (auto-filled)</label>
 <input id="gist-id" class="modal__input" type="text" readonly placeholder="Created on first backup">
 </section>
-<section class="modal__section">
+<section class="modal__section" style="margin-top:var(--space-3);">
 <label class="modal__label" data-i18n="autoBackupInterval">Auto-Backup Interval</label>
 <select id="auto-backup-interval" class="modal__select">
 <option value="3600" data-i18n="backupHourly">Hourly</option>

@@ -1102,6 +1102,10 @@
     // Remove any existing popup
     document.querySelectorAll('.bm-edit-popup').forEach(p => p.remove());
 
+    // BX-DEV-111j: find small-box DOM for smart popup positioning
+    const smallBoxEl = document.querySelector('.small-box[data-id="' + sb.id + '"]');
+    const boxRect = smallBoxEl ? smallBoxEl.getBoundingClientRect() : null;
+
     const popup = document.createElement('div');
     popup.className = 'bm-edit-popup';
     popup.style.cssText = 'position:fixed;z-index:200;background:var(--color-elevated);border:1px solid var(--color-hairline);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);min-width:260px;';
@@ -1166,8 +1170,20 @@
 
     // Position near the three-dots button
     const rect = popup.getBoundingClientRect || (() => ({ left: 200, top: 200 }));
-    popup.style.left = Math.min(window.innerWidth - 280, 200) + 'px';
-    popup.style.top = Math.min(window.innerHeight - 200, 300) + 'px';
+    // BX-DEV-111j: position popup beside small box — right side if fits, else left
+    const PW = 280, PH = 200, MARGIN = 12;
+    if (boxRect) {
+      const rightSpace = window.innerWidth - boxRect.right - MARGIN;
+      if (rightSpace >= PW + MARGIN) {
+        popup.style.left = (boxRect.right + MARGIN) + 'px';
+      } else {
+        popup.style.left = Math.max(MARGIN, boxRect.left - PW - MARGIN) + 'px';
+      }
+      popup.style.top = Math.max(MARGIN, Math.min(window.innerHeight - PH - MARGIN, boxRect.top)) + 'px';
+    } else {
+      popup.style.left = Math.min(window.innerWidth - PW, 200) + 'px';
+      popup.style.top = Math.min(window.innerHeight - PH, 300) + 'px';
+    }
 
     document.body.appendChild(popup);
 
@@ -1185,6 +1201,10 @@
   // Add bookmark popup (title + URL)
   function showAddBookmarkPopup(sb, largeId) {
     document.querySelectorAll('.bm-edit-popup').forEach(p => p.remove());
+
+    // BX-DEV-111j: find small-box DOM for smart popup positioning
+    const smallBoxEl = document.querySelector('.small-box[data-id="' + sb.id + '"]');
+    const boxRect = smallBoxEl ? smallBoxEl.getBoundingClientRect() : null;
 
     const popup = document.createElement('div');
     popup.className = 'bm-edit-popup';
@@ -1246,8 +1266,20 @@
     btnRow.append(addBtn, cancelBtn);
     popup.append(titleInput, urlInput, btnRow);
 
-    popup.style.left = Math.max(40, (window.innerWidth - 320) / 2) + 'px';
-    popup.style.top = Math.max(40, (window.innerHeight - 180) / 2) + 'px';
+    // BX-DEV-111j: position popup beside small box — right side if fits, else left
+    const PW2 = 320, PH2 = 200, MG2 = 12;
+    if (boxRect) {
+      const rightSpace = window.innerWidth - boxRect.right - MG2;
+      if (rightSpace >= PW2 + MG2) {
+        popup.style.left = (boxRect.right + MG2) + 'px';
+      } else {
+        popup.style.left = Math.max(MG2, boxRect.left - PW2 - MG2) + 'px';
+      }
+      popup.style.top = Math.max(MG2, Math.min(window.innerHeight - PH2 - MG2, boxRect.top)) + 'px';
+    } else {
+      popup.style.left = Math.max(MG2, (window.innerWidth - PW2) / 2) + 'px';
+      popup.style.top = Math.max(MG2, (window.innerHeight - PH2) / 2) + 'px';
+    }
 
     document.body.appendChild(popup);
 
@@ -2184,7 +2216,7 @@ function updateInnerCaption(lb) {
         layout.settings.lastBackupAt = Date.now();
         updateLastBackupDisplay();
         saveLayout();
-      } catch (e) { debugErr('Backup failed', e); if (p !== 'local' && p !== 'chrome' && p !== 'firefox') backupToLocal(); }
+      } catch (e) { debugErr('Backup failed', e); if (p !== 'local') backupToLocal(); }
     }
 
     backupNowBtn?.addEventListener('click', () => performBackup());
