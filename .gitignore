@@ -53,7 +53,13 @@ tmp/
 # Package output
 package/
 
-# Development fix scripts
+# Development fix scripts (temp_*.py etc) — never commit
+
+temp_*.py
+*_fix*.py
+*_debug*.py
+*_patch*.py
+*_guard*.py
 
 # Build outputs (single file)
 package.json
@@ -64,12 +70,10 @@ package-lock.json
 **/screenshot*.png
 **/screenshot*.jpg
 # Python cache
+tools/
 __pycache__/
 *.pyc
 *.pyo
 # Backup files
 *.bak
 *.backup
-# Tools (temp fix scripts)
-tools/*.py
-!tools/v370_refactor.py
