@@ -528,5 +528,116 @@
   },
   "refreshPage": {
     "message": "Aktualisieren"
+  },
+  "webdavTesting": {
+    "message": "Teste..."
+  },
+  "webdavErrNoUrl": {
+    "message": "WebDAV-URL nicht konfiguriert"
+  },
+  "webdavErrHttps": {
+    "message": "WebDAV-URL muss HTTPS verwenden"
+  },
+  "webdavErrEmbedded": {
+    "message": "WebDAV-URL darf keine eingebetteten Anmeldedaten enthalten"
+  },
+  "webdavErrNoPass": {
+    "message": "WebDAV-Passwort ist leer — neu eingeben und erneut versuchen"
+  },
+  "webdavErrAuth": {
+    "message": "WebDAV-Authentifizierung fehlgeschlagen ($1$) — Anmeldedaten überprüfen"
+  },
+  "webdavErrPath": {
+    "message": "WebDAV-Pfad nicht gefunden — URL überprüfen"
+  },
+  "webdavErrStatus": {
+    "message": "WebDAV-Server gab $1$ zurück"
+  },
+  "webdavErrPut": {
+    "message": "WebDAV PUT fehlgeschlagen ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "WebDAV-Konflikt — übergeordnetes Verzeichnis existiert möglicherweise nicht"
+  },
+  "webdavErrNetwork": {
+    "message": "WebDAV-Server nicht erreichbar — URL oder Netzwerk überprüfen"
+  },
+  "syncNow": {
+    "message": "Jetzt synchronisieren"
+  },
+  "syncInProgress": {
+    "message": "Synchronisiere..."
+  },
+  "syncOk": {
+    "message": "Synchronisation abgeschlossen"
+  },
+  "syncPullFirstTime": {
+    "message": "Clouddaten erkannt — auf dieses Gerät ziehen (Erstsynchronisation)"
+  },
+  "syncUploadNewer": {
+    "message": "Lokale Daten sind neuer — in die Cloud hochgeladen"
+  },
+  "syncCloudNewer": {
+    "message": "Clouddaten sind neuer — lokal aus der Cloud aktualisiert"
+  },
+  "syncErrPartialLoss": {
+    "message": "Möglicher Datenverlust erkannt ($1$ → $2$ Boxen). Abbrechen und aus der Cloud wiederherstellen?"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "Datenverlust erkannt"
+  },
+  "syncErrCloudRestored": {
+    "message": "Lokale Daten aus der Cloud wiederhergestellt ($1$ Boxen)"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "Cloud-Wiederherstellung fehlgeschlagen: $1$"
+  },
+  "syncErrGetFailed": {
+    "message": "WebDAV GET fehlgeschlagen ($1$)"
+  },
+  "syncErrParseFailed": {
+    "message": "Clouddaten sind kein gültiges JSON"
+  },
+  "onboardingTitle": {
+    "message": "Willkommen bei Boxing"
+  },
+  "onboardingSkipTour": {
+    "message": "Überspringen"
+  },
+  "onboardingPrev": {
+    "message": "Zurück"
+  },
+  "onboardingNext": {
+    "message": "Weiter"
+  },
+  "onboardingFinish": {
+    "message": "Loslegen"
+  },
+  "onboardingStep1Label": {
+    "message": "Schritt 1 von 3"
+  },
+  "onboardingStep1Title": {
+    "message": "Füge deine erste Box hinzu"
+  },
+  "onboardingStep1Desc": {
+    "message": "Doppelklicke irgendwo auf die Leinwand oder klicke in der Symbolleiste auf das +, um eine große Box zu erstellen. Große Boxen gruppieren verwandte kleine Boxen und Lesezeichen."
+  },
+  "onboardingStep2Label": {
+    "message": "Schritt 2 von 3"
+  },
+  "onboardingStep2Title": {
+    "message": "Boxen verschachteln"
+  },
+  "onboardingStep2Desc": {
+    "message": "Öffne eine große Box und klicke auf +, um kleine Boxen darin anzulegen. Jede kleine Box enthält eine Lesezeichenliste und lässt sich per Drag-and-drop sortieren."
+  },
+  "onboardingStep3Label": {
+    "message": "Schritt 3 von 3"
+  },
+  "onboardingStep3Title": {
+    "message": "Geräteübergreifend synchronisieren"
+  },
+  "onboardingStep3Desc": {
+    "message": "Öffne Einstellungen → Sync, um einen WebDAV-Server zu verbinden. Deine Boxen synchronisieren sich zwischen Browsern und Tabs und werden per zeitstempelbasierter Zwei-Wege-Synchronisation gesichert."
   }
 }

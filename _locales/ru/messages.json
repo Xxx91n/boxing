@@ -528,5 +528,116 @@
   },
   "refreshPage": {
     "message": "Обновить"
+  },
+  "webdavTesting": {
+    "message": "Тестирование..."
+  },
+  "webdavErrNoUrl": {
+    "message": "URL WebDAV не настроен"
+  },
+  "webdavErrHttps": {
+    "message": "URL WebDAV должен использовать HTTPS"
+  },
+  "webdavErrEmbedded": {
+    "message": "URL WebDAV не должен содержать встроенные учётные данные"
+  },
+  "webdavErrNoPass": {
+    "message": "Пароль WebDAV пуст — введите заново и повторите"
+  },
+  "webdavErrAuth": {
+    "message": "Ошибка аутентификации WebDAV ($1$) — проверьте учётные данные"
+  },
+  "webdavErrPath": {
+    "message": "Путь WebDAV не найден — проверьте URL"
+  },
+  "webdavErrStatus": {
+    "message": "Сервер WebDAV вернул $1$"
+  },
+  "webdavErrPut": {
+    "message": "Ошибка WebDAV PUT ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "Конфликт WebDAV — родительский каталог может не существовать"
+  },
+  "webdavErrNetwork": {
+    "message": "Не удаётся подключиться к серверу WebDAV — проверьте URL или сеть"
+  },
+  "syncNow": {
+    "message": "Синхронизировать"
+  },
+  "syncInProgress": {
+    "message": "Синхронизация..."
+  },
+  "syncOk": {
+    "message": "Синхронизация завершена"
+  },
+  "syncPullFirstTime": {
+    "message": "Обнаружены облачные данные — загрузка на это устройство (первая синхронизация)"
+  },
+  "syncUploadNewer": {
+    "message": "Локальные данные новее — загружены в облако"
+  },
+  "syncCloudNewer": {
+    "message": "Облачные данные новее — локаль обновлена из облака"
+  },
+  "syncErrPartialLoss": {
+    "message": "Обнаружена возможная потеря данных ($1$ → $2$ боксов). Прервать и восстановить из облака?"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "Обнаружена потеря данных"
+  },
+  "syncErrCloudRestored": {
+    "message": "Локальные данные восстановлены из облака ($1$ боксов)"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "Ошибка восстановления из облака: $1$"
+  },
+  "syncErrGetFailed": {
+    "message": "Ошибка WebDAV GET ($1$)"
+  },
+  "syncErrParseFailed": {
+    "message": "Облачные данные не являются валидным JSON"
+  },
+  "onboardingTitle": {
+    "message": "Добро пожаловать в Boxing"
+  },
+  "onboardingSkipTour": {
+    "message": "Пропустить"
+  },
+  "onboardingPrev": {
+    "message": "Назад"
+  },
+  "onboardingNext": {
+    "message": "Далее"
+  },
+  "onboardingFinish": {
+    "message": "Начать"
+  },
+  "onboardingStep1Label": {
+    "message": "Шаг 1 из 3"
+  },
+  "onboardingStep1Title": {
+    "message": "Добавьте первый большой контейнер"
+  },
+  "onboardingStep1Desc": {
+    "message": "Дважды щёлкните в любом месте холста или нажмите + на панели инструментов, чтобы создать большой контейнер. Большие контейнеры группируют малые и закладки."
+  },
+  "onboardingStep2Label": {
+    "message": "Шаг 2 из 3"
+  },
+  "onboardingStep2Title": {
+    "message": "Вкладывайте контейнеры"
+  },
+  "onboardingStep2Desc": {
+    "message": "Откройте большой контейнер и нажмите +, чтобы добавить внутрь малые. Каждый малый контейнер содержит список закладок и перетаскиванием."
+  },
+  "onboardingStep3Label": {
+    "message": "Шаг 3 из 3"
+  },
+  "onboardingStep3Title": {
+    "message": "Синхронизация между устройствами"
+  },
+  "onboardingStep3Desc": {
+    "message": "Откройте Настройки → Синхронизация, чтобы подключить сервер WebDAV. Контейнеры синхронизируются между браузерами и вкладками с двусторонней синхронизацией по времени."
   }
 }

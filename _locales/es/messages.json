@@ -528,5 +528,116 @@
   },
   "refreshPage": {
     "message": "Actualizar"
+  },
+  "webdavTesting": {
+    "message": "Probando..."
+  },
+  "webdavErrNoUrl": {
+    "message": "URL de WebDAV no configurada"
+  },
+  "webdavErrHttps": {
+    "message": "La URL de WebDAV debe usar HTTPS"
+  },
+  "webdavErrEmbedded": {
+    "message": "La URL de WebDAV no debe contener credenciales incrustadas"
+  },
+  "webdavErrNoPass": {
+    "message": "Contraseña de WebDAV vacía — reingrese y reintente"
+  },
+  "webdavErrAuth": {
+    "message": "Autenticación WebDAV fallida ($1$) — verifique credenciales"
+  },
+  "webdavErrPath": {
+    "message": "Ruta WebDAV no encontrada — verifique la URL"
+  },
+  "webdavErrStatus": {
+    "message": "El servidor WebDAV devolvió $1$"
+  },
+  "webdavErrPut": {
+    "message": "WebDAV PUT fallido ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "Conflicto WebDAV — el directorio padre puede no existir"
+  },
+  "webdavErrNetwork": {
+    "message": "No se puede conectar al servidor WebDAV — verifique URL o red"
+  },
+  "syncNow": {
+    "message": "Sincronizar ahora"
+  },
+  "syncInProgress": {
+    "message": "Sincronizando..."
+  },
+  "syncOk": {
+    "message": "Sincronización completada"
+  },
+  "syncPullFirstTime": {
+    "message": "Datos en la nube detectados — descargando a este dispositivo (primera sincronización)"
+  },
+  "syncUploadNewer": {
+    "message": "Los datos locales son más recientes — subidos a la nube"
+  },
+  "syncCloudNewer": {
+    "message": "Los datos en la nube son más recientes — local actualizado desde la nube"
+  },
+  "syncErrPartialLoss": {
+    "message": "Posible pérdida de datos detectada ($1$ → $2$ cajas). ¿Abortar y restaurar desde la nube?"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "Pérdida de datos detectada"
+  },
+  "syncErrCloudRestored": {
+    "message": "Datos locales restaurados desde la nube ($1$ cajas)"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "Restauración de la nube fallida: $1$"
+  },
+  "syncErrGetFailed": {
+    "message": "WebDAV GET fallido ($1$)"
+  },
+  "syncErrParseFailed": {
+    "message": "Los datos de la nube no son JSON válido"
+  },
+  "onboardingTitle": {
+    "message": "Bienvenido a Boxing"
+  },
+  "onboardingSkipTour": {
+    "message": "Omitir"
+  },
+  "onboardingPrev": {
+    "message": "Anterior"
+  },
+  "onboardingNext": {
+    "message": "Siguiente"
+  },
+  "onboardingFinish": {
+    "message": "Empezar"
+  },
+  "onboardingStep1Label": {
+    "message": "Paso 1 de 3"
+  },
+  "onboardingStep1Title": {
+    "message": "Añade tu primera caja"
+  },
+  "onboardingStep1Desc": {
+    "message": "Haz doble clic en cualquier parte del lienzo, o en el botón + de la barra de herramientas, para crear una caja grande. Las cajas grandes agrupan cajas pequeñas y marcadores relacionados."
+  },
+  "onboardingStep2Label": {
+    "message": "Paso 2 de 3"
+  },
+  "onboardingStep2Title": {
+    "message": "Anida cajas"
+  },
+  "onboardingStep2Desc": {
+    "message": "Abre una caja grande y haz clic en + para añadir cajas pequeñas dentro. Cada caja pequeña contiene una lista de marcadores y se puede reordenar arrastrando."
+  },
+  "onboardingStep3Label": {
+    "message": "Paso 3 de 3"
+  },
+  "onboardingStep3Title": {
+    "message": "Sincroniza entre dispositivos"
+  },
+  "onboardingStep3Desc": {
+    "message": "Abre Ajustes → Sincronización para conectar un servidor WebDAV. Tus cajas se sincronizan entre navegadores y pestañas y se respaldan con sincronización bidireccional basada en marcas de tiempo."
   }
 }

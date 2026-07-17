@@ -528,5 +528,116 @@
   },
   "refreshPage": {
     "message": "रिफ्रेश"
+  },
+  "webdavTesting": {
+    "message": "जांच हो रही है..."
+  },
+  "webdavErrNoUrl": {
+    "message": "WebDAV URL कॉन्फ़िगर नहीं है"
+  },
+  "webdavErrHttps": {
+    "message": "WebDAV URL को HTTPS का उपयोग करना चाहिए"
+  },
+  "webdavErrEmbedded": {
+    "message": "WebDAV URL में एम्बेडेड क्रेडेंशियल नहीं होने चाहिए"
+  },
+  "webdavErrNoPass": {
+    "message": "WebDAV पासवर्ड खाली है — दोबारा दर्ज करें और पुनः प्रयास करें"
+  },
+  "webdavErrAuth": {
+    "message": "WebDAV प्रमाणीकरण विफल ($1$) — क्रेडेंशियल जांचें"
+  },
+  "webdavErrPath": {
+    "message": "WebDAV पथ नहीं मिला — URL जांचें"
+  },
+  "webdavErrStatus": {
+    "message": "WebDAV सर्वर ने $1$ लौटाया"
+  },
+  "webdavErrPut": {
+    "message": "WebDAV PUT विफल ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "WebDAV संघर्ष — मूल निर्देशिका मौजूद नहीं हो सकती"
+  },
+  "webdavErrNetwork": {
+    "message": "WebDAV सर्वर तक नहीं पहुंच सकते — URL या नेटवर्क जांचें"
+  },
+  "syncNow": {
+    "message": "अभी सिंक करें"
+  },
+  "syncInProgress": {
+    "message": "सिंक हो रहा है..."
+  },
+  "syncOk": {
+    "message": "सिंक पूर्ण"
+  },
+  "syncPullFirstTime": {
+    "message": "क्लाउड डेटा का पता चला — इस डिवाइस पर लाया जा रहा है (पहली सिंक)"
+  },
+  "syncUploadNewer": {
+    "message": "स्थानीय डेटा नया है — क्लाउड पर अपलोड किया गया"
+  },
+  "syncCloudNewer": {
+    "message": "क्लाउड डेटा नया है — क्लाउड से स्थानीय अपडेट किया गया"
+  },
+  "syncErrPartialLoss": {
+    "message": "संभावित डेटा हानि का पता चला ($1$ → $2$ बॉक्स)। रद्द करें और क्लाउड से पुनर्स्थापित करें?"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "डेटा हानि का पता चला"
+  },
+  "syncErrCloudRestored": {
+    "message": "क्लाउड से स्थानीय डेटा पुनर्स्थापित ($1$ बॉक्स)"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "क्लाउड पुनर्स्थापना विफल: $1$"
+  },
+  "syncErrGetFailed": {
+    "message": "WebDAV GET विफल ($1$)"
+  },
+  "syncErrParseFailed": {
+    "message": "क्लाउड डेटा मान्य JSON नहीं है"
+  },
+  "onboardingTitle": {
+    "message": "Boxing में आपका स्वागत है"
+  },
+  "onboardingSkipTour": {
+    "message": "छोड़ें"
+  },
+  "onboardingPrev": {
+    "message": "पिछला"
+  },
+  "onboardingNext": {
+    "message": "आगे"
+  },
+  "onboardingFinish": {
+    "message": "शुरू करें"
+  },
+  "onboardingStep1Label": {
+    "message": "चरण 1, 3 में से"
+  },
+  "onboardingStep1Title": {
+    "message": "अपना पहला बॉक्स जोड़ें"
+  },
+  "onboardingStep1Desc": {
+    "message": "कैनवास पर कहीं भी डबल-क्लिक करें या टूलबार के + बटन पर क्लिक करके बड़ा बॉक्स बनाएँ। बड़े बॉक्स संबंधित छोटे बॉक्स और बुकमार्क को समूहित करते हैं।"
+  },
+  "onboardingStep2Label": {
+    "message": "चरण 2, 3 में से"
+  },
+  "onboardingStep2Title": {
+    "message": "बॉक्स के अंदर नेस्ट करें"
+  },
+  "onboardingStep2Desc": {
+    "message": "एक बड़ा बॉक्स खोलें, फिर + पर क्लिक करके उसके अंदर छोटे बॉक्स जोड़ें। प्रत्येक छोटे बॉक्स में बुकमार्क की सूची होती है और खींचकर क्रम बदला जा सकता है।"
+  },
+  "onboardingStep3Label": {
+    "message": "चरण 3, 3 में से"
+  },
+  "onboardingStep3Title": {
+    "message": "डिवाइस में सिंक करें"
+  },
+  "onboardingStep3Desc": {
+    "message": "सेटिंग्स → सिंक खोलें और WebDAV सर्वर जोड़ें। आपके बॉक्स ब्राउज़र और टैब में सिंक होते हैं और टाइमस्टैम्प-आधारित द्विदिशीय सिंक से सुरक्षित रूप से बैकअप होते हैं।"
   }
 }

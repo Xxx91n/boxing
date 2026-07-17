@@ -49,6 +49,7 @@ npm-debug.log*
 # Temp
 *.tmp
 tmp/
+.codex-tmp
 
 # Package output
 package/

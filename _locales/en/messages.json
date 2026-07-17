@@ -541,5 +541,116 @@
   },
   "refreshPage": {
     "message": "Refresh"
+  },
+  "webdavTesting": {
+    "message": "Testing..."
+  },
+  "webdavErrNoUrl": {
+    "message": "WebDAV URL not configured"
+  },
+  "webdavErrHttps": {
+    "message": "WebDAV URL must use HTTPS"
+  },
+  "webdavErrEmbedded": {
+    "message": "WebDAV URL must not contain embedded credentials"
+  },
+  "webdavErrNoPass": {
+    "message": "WebDAV password is empty — re-enter and retry"
+  },
+  "webdavErrAuth": {
+    "message": "WebDAV auth failed ($1$) — check credentials"
+  },
+  "webdavErrPath": {
+    "message": "WebDAV path not found — check the URL"
+  },
+  "webdavErrStatus": {
+    "message": "WebDAV server returned $1$"
+  },
+  "webdavErrPut": {
+    "message": "WebDAV PUT failed ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "WebDAV conflict — parent directory may not exist"
+  },
+  "webdavErrNetwork": {
+    "message": "Cannot reach WebDAV server — check URL or network"
+  },
+  "syncNow": {
+    "message": "Sync Now"
+  },
+  "syncInProgress": {
+    "message": "Syncing..."
+  },
+  "syncOk": {
+    "message": "Sync completed"
+  },
+  "syncPullFirstTime": {
+    "message": "Cloud data detected — pulling to this device (first sync)"
+  },
+  "syncUploadNewer": {
+    "message": "Local data is newer — uploaded to cloud"
+  },
+  "syncCloudNewer": {
+    "message": "Cloud data is newer — updated local from cloud"
+  },
+  "syncErrPartialLoss": {
+    "message": "Possible data loss detected ($1$ → $2$ boxes). Abort and restore from cloud?"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "Data loss detected"
+  },
+  "syncErrCloudRestored": {
+    "message": "Local data restored from cloud ($1$ boxes)"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "Cloud restore failed: $1$"
+  },
+  "syncErrGetFailed": {
+    "message": "WebDAV GET failed ($1$)"
+  },
+  "syncErrParseFailed": {
+    "message": "Cloud data is not valid JSON"
+  },
+  "onboardingTitle": {
+    "message": "Welcome to Boxing"
+  },
+  "onboardingSkipTour": {
+    "message": "Skip"
+  },
+  "onboardingPrev": {
+    "message": "Previous"
+  },
+  "onboardingNext": {
+    "message": "Next"
+  },
+  "onboardingFinish": {
+    "message": "Get started"
+  },
+  "onboardingStep1Label": {
+    "message": "Step 1 of 3"
+  },
+  "onboardingStep1Title": {
+    "message": "Add your first box"
+  },
+  "onboardingStep1Desc": {
+    "message": "Double-click anywhere on the canvas, or click the + button in the toolbar, to create a large box. Large boxes group related small boxes and bookmarks."
+  },
+  "onboardingStep2Label": {
+    "message": "Step 2 of 3"
+  },
+  "onboardingStep2Title": {
+    "message": "Nest boxes inside"
+  },
+  "onboardingStep2Desc": {
+    "message": "Open a large box, then click + to add small boxes inside it. Each small box holds a list of bookmarks and can be reordered by drag."
+  },
+  "onboardingStep3Label": {
+    "message": "Step 3 of 3"
+  },
+  "onboardingStep3Title": {
+    "message": "Sync across devices"
+  },
+  "onboardingStep3Desc": {
+    "message": "Open Settings → Sync to connect a WebDAV server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way sync."
   }
 }

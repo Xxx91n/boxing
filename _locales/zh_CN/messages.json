@@ -531,5 +531,116 @@
   },
   "refreshPage": {
     "message": "刷新"
+  },
+  "webdavTesting": {
+    "message": "测试中…"
+  },
+  "webdavErrNoUrl": {
+    "message": "未配置 WebDAV 地址"
+  },
+  "webdavErrHttps": {
+    "message": "WebDAV 地址必须使用 HTTPS"
+  },
+  "webdavErrEmbedded": {
+    "message": "WebDAV 地址不能包含内嵌凭据"
+  },
+  "webdavErrNoPass": {
+    "message": "WebDAV 密码为空 — 重新输入后重试"
+  },
+  "webdavErrAuth": {
+    "message": "WebDAV 认证失败 ($1$) — 请检查凭据"
+  },
+  "webdavErrPath": {
+    "message": "WebDAV 路径不存在 — 请检查地址"
+  },
+  "webdavErrStatus": {
+    "message": "WebDAV 服务器返回 $1$"
+  },
+  "webdavErrPut": {
+    "message": "WebDAV PUT 失败 ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "WebDAV 冲突 — 父目录可能不存在"
+  },
+  "webdavErrNetwork": {
+    "message": "无法连接 WebDAV 服务器 — 请检查地址或网络"
+  },
+  "syncNow": {
+    "message": "立即同步"
+  },
+  "syncInProgress": {
+    "message": "同步中..."
+  },
+  "syncOk": {
+    "message": "同步完成"
+  },
+  "syncPullFirstTime": {
+    "message": "检测到云端数据 — 正在拉取到本设备（首次同步）"
+  },
+  "syncUploadNewer": {
+    "message": "本地数据较新 — 已上传至云端"
+  },
+  "syncCloudNewer": {
+    "message": "云端数据较新 — 已从云端更新本地"
+  },
+  "syncErrPartialLoss": {
+    "message": "检测到可能的数据丢失（$1$ → $2$ 个盒子）。是否中止并从云端恢复？"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "检测到数据丢失"
+  },
+  "syncErrCloudRestored": {
+    "message": "本地数据已从云端恢复（$1$ 个盒子）"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "云端恢复失败：$1$"
+  },
+  "syncErrGetFailed": {
+    "message": "WebDAV GET 失败（$1$）"
+  },
+  "syncErrParseFailed": {
+    "message": "云端数据不是有效的 JSON"
+  },
+  "onboardingTitle": {
+    "message": "欢迎使用 Boxing"
+  },
+  "onboardingSkipTour": {
+    "message": "跳过"
+  },
+  "onboardingPrev": {
+    "message": "上一步"
+  },
+  "onboardingNext": {
+    "message": "下一步"
+  },
+  "onboardingFinish": {
+    "message": "开始使用"
+  },
+  "onboardingStep1Label": {
+    "message": "第 1 步，共 3 步"
+  },
+  "onboardingStep1Title": {
+    "message": "添加第一个大盒子"
+  },
+  "onboardingStep1Desc": {
+    "message": "在画布任意位置双击，或点击工具栏上的 + 按钮，创建一个大盒子。大盒子用于归类相关的小盒子和书签。"
+  },
+  "onboardingStep2Label": {
+    "message": "第 2 步，共 3 步"
+  },
+  "onboardingStep2Title": {
+    "message": "在大盒子内嵌套小盒子"
+  },
+  "onboardingStep2Desc": {
+    "message": "打开一个大盒子，点击 + 在其中添加小盒子。每个小盒子保存一组书签，并可拖拽排序。"
+  },
+  "onboardingStep3Label": {
+    "message": "第 3 步，共 3 步"
+  },
+  "onboardingStep3Title": {
+    "message": "跨设备同步"
+  },
+  "onboardingStep3Desc": {
+    "message": "打开 设置 → 同步，连接 WebDAV 服务器。你的盒子会跨浏览器和标签页同步，数据通过基于时间戳的双向同步安全备份。"
   }
 }

@@ -1,119 +1,132 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8">
-<title>Boxing</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark">
-<link rel="stylesheet" href="design-system.css">
-<link rel="stylesheet" href="ntp.css">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' https: data:; connect-src 'self' https:;">
+  <meta charset="utf-8">
+  <title>Boxing</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="design-system.css">
+  <link rel="stylesheet" href="ntp.css">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' https: data:; connect-src 'self' https:;">
 </head>
+
 <body>
-<main id="app" class="ntp" aria-label="New tab dashboard">
-  <header class="ntp__bar" role="banner">
-    <button id="back-btn" class="btn btn--ghost btn--icon" aria-label="Go back" data-i18n-title="backTooltip">
-      <span aria-hidden="true">←</span>
-    </button>
-    <div class="brand">
-      <div class="brand__label">
-        <span class="brand__name" data-i18n="brandName">Boxing</span>
-        <span class="brand__sub" data-i18n="brandSub">organize bookmarks hierarchically</span>
-      </div>
-    </div>
-    <form class="search" role="search" aria-label="Search bookmarks">
-      <span class="search__icon" aria-hidden="true">⌕</span>
-      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search bookmarks…" aria-label="Search bookmarks" data-i18n-placeholder="searchPlaceholder">
-      <kbd class="search__hint" aria-hidden="true">/</kbd>
-    </form>
-    <span class="header-count" id="caption"></span>
-    <nav class="actions" aria-label="Page actions">
-      <button id="add-box" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
-        <span aria-hidden="true">+</span>
+  <main id="app" class="ntp" aria-label="New tab dashboard">
+    <header class="ntp__bar" role="banner">
+      <button id="back-btn" class="btn btn--ghost btn--icon" aria-label="Go back" data-i18n-title="backTooltip">
+        <span aria-hidden="true">←</span>
       </button>
-      <button id="settings-btn" class="btn btn--ghost" aria-label="Open settings" data-i18n-title="settingsTooltip">
-        <span aria-hidden="true">⚙</span>
-      </button>
-      <button id="dark-mode-btn" class="btn btn--ghost" aria-label="Dark mode" data-i18n-title="darkMode" style="font-size:14px;">
-        <span aria-hidden="true">☀</span>
-      </button>
-    </nav>
-    <button id="header-pin-btn" class="btn btn--ghost header-pin-float" aria-label="Pin header" data-i18n-title="headerPinOff" style="font-size:14px;">
-      <span aria-hidden="true">○</span>
-    </button>
-  </header>
-
-  <section class="library" aria-label="Library">
-    <div id="canvas" class="canvas" role="region" aria-label="Infinite canvas">
-      <div id="canvas-surface" class="canvas__surface"></div>
-      <div id="canvas-empty" class="canvas__empty">
-        <div class="canvas__empty-icon" aria-hidden="true">📦</div>
-        <div class="canvas__empty-title" data-i18n="emptyCanvasTitle"></div>
-        <div class="canvas__empty-hint">
-          <span data-i18n="dblclickHint"></span>
-          <span>&nbsp;·&nbsp;</span>
-          <span data-i18n="clickPlusHint"></span>
+      <div class="brand">
+        <div class="brand__label">
+          <span class="brand__name" data-i18n="brandName">Boxing</span>
+          <span class="brand__sub" data-i18n="brandSub">organize bookmarks hierarchically</span>
         </div>
       </div>
-      <div class="zoom-controls" id="canvas-zoom">
-        <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut">◂</button>
-        <span class="zoom-value" id="canvas-zoom-value">100%</span>
-        <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn">▸</button>
-      </div>
-    </div>
 
-    <div id="inner" class="inner" hidden>
-      <div id="inner-canvas" class="inner__canvas">
-        <div id="inner-canvas-head" class="inner__canvas-head">
-          <span class="inner__crumb-title" id="inner-crumb-title" contenteditable="true" spellcheck="false"></span>
-          <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box" data-i18n-title="addSmallBoxTooltip" style="font-size:18px;">
-            <span aria-hidden="true">+</span>
-          </button>
+      <form class="search" role="search" aria-label="Search bookmarks">
+        <span class="search__icon" aria-hidden="true">⌕</span>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search bookmarks…"
+          aria-label="Search bookmarks" data-i18n-placeholder="searchPlaceholder">
+        <kbd class="search__hint" aria-hidden="true">/</kbd>
+      </form>
+      <span class="header-count" id="caption"></span>
+      <nav class="actions" aria-label="Page actions">
+        <button id="add-box" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
+          <span aria-hidden="true">+</span>
+        </button>
+        <button id="settings-btn" class="btn btn--ghost" aria-label="Open settings" data-i18n-title="settingsTooltip">
+          <span aria-hidden="true">⚙</span>
+        </button>
+        <button id="dark-mode-btn" class="btn btn--ghost" aria-label="Dark mode" data-i18n-title="darkMode"
+          style="font-size:14px;">
+          <span aria-hidden="true">☀</span>
+        </button>
+      </nav>
+      <button id="header-pin-btn" class="btn btn--ghost header-pin-float" aria-label="Pin header"
+        data-i18n-title="headerPinOff" style="font-size:14px;">
+        <span aria-hidden="true">○</span>
+      </button>
+    </header>
+
+    <section class="library" aria-label="Library">
+      <div id="canvas" class="canvas" role="region" aria-label="Infinite canvas">
+        <div id="canvas-surface" class="canvas__surface"></div>
+        <div id="canvas-empty" class="canvas__empty">
+          <div class="canvas__empty-icon" aria-hidden="true">📦</div>
+          <div class="canvas__empty-title" data-i18n="emptyCanvasTitle"></div>
+          <div class="canvas__empty-hint">
+            <span data-i18n="dblclickHint"></span>
+            <span>&nbsp;·&nbsp;</span>
+            <span data-i18n="clickPlusHint"></span>
+          </div>
+          </p>
         </div>
-        <div id="inner-surface" class="inner__surface"></div>
-        <div class="zoom-controls" id="inner-zoom">
+        <div class="zoom-controls" id="canvas-zoom">
           <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut">◂</button>
-          <span class="zoom-value" id="inner-zoom-value">100%</span>
+          <span class="zoom-value" id="canvas-zoom-value">100%</span>
           <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn">▸</button>
         </div>
       </div>
-    </div>
-  </section>
 
-  <footer class="foot">
-    <span class="foot__dot" aria-hidden="true"></span>
-    <span class="foot__txt" data-i18n="footerHint">Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add</span>
-  </footer>
-</main>
+      <div id="inner" class="inner" hidden>
+        <div id="inner-canvas" class="inner__canvas">
+          <div id="inner-canvas-head" class="inner__canvas-head">
+            <span class="inner__crumb-title" id="inner-crumb-title" contenteditable="true" spellcheck="false"></span>
+            <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box"
+              data-i18n-title="addSmallBoxTooltip" style="font-size:18px;">
+              <span aria-hidden="true">+</span>
+            </button>
+          </div>
+          <div id="inner-surface" class="inner__surface"></div>
+          <div class="zoom-controls" id="inner-zoom">
+            <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut">◂</button>
+            <span class="zoom-value" id="inner-zoom-value">100%</span>
+            <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn">▸</button>
+          </div>
+        </div>
+      </div>
 
-<!-- Settings modal (in-page overlay) -->
-<div id="settings-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-label="Settings">
-  <div class="modal">
-    <div class="modal__head">
-      <h2 class="modal__title" data-i18n="settingsTitle">Settings</h2>
-      <button class="modal__close btn btn--ghost btn--icon" aria-label="Close" data-i18n-title="closeSettings">&times;</button>
-    </div>
-    <div class="modal__body settings-body">
-      <nav class="settings-nav">
-        <button class="settings-nav__item settings-nav__item--active" data-tab="general" data-i18n="settingsNavGeneral">General</button>
-        <button class="settings-nav__item" data-tab="appearance" data-i18n="settingsNavAppearance">Appearance</button>
-        <button class="settings-nav__item" data-tab="data" data-i18n="settingsNavData">Data</button>
-        <button class="settings-nav__item" data-tab="sync" data-i18n="settingsNavSync">Sync & Backup</button>
-      </nav>
-      <div class="settings-content">
+    </section>
+
+    <footer class="foot">
+      <span class="foot__dot" aria-hidden="true"></span>
+      <span class="foot__txt" data-i18n="footerHint">Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to
+        add</span>
+    </footer>
+  </main>
+
+  <!-- Settings modal (in-page overlay) -->
+  <div id="settings-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-label="Settings">
+    <div class="modal">
+      <div class="modal__head">
+        <h2 class="modal__title" data-i18n="settingsTitle">Settings</h2>
+        <button class="modal__close btn btn--ghost btn--icon" aria-label="Close"
+          data-i18n-title="closeSettings">&times;</button>
+      </div>
+      <div class="modal__body settings-body">
+        <nav class="settings-nav">
+          <button class="settings-nav__item settings-nav__item--active" data-tab="general"
+            data-i18n="settingsNavGeneral">General</button>
+          <button class="settings-nav__item" data-tab="appearance" data-i18n="settingsNavAppearance">Appearance</button>
+          <button class="settings-nav__item" data-tab="data" data-i18n="settingsNavData">Data</button>
+          <button class="settings-nav__item" data-tab="sync" data-i18n="settingsNavSync">Sync & Backup</button>
+        </nav>
+        <div class="settings-content">
           <!-- General tab -->
           <div class="settings-tab" id="tab-general">
             <section class="modal__section">
               <label class="modal__label" for="lang-select" data-i18n="settingsLanguage">Language / 语言</label>
               <select id="lang-select" class="modal__select">
                 <option value="en">English</option>
-                <option value="zh_CN">中文</option>
+                <option value="zh_CN">简体中文</option>
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
                 <option value="fr">Français</option>
                 <option value="de">Deutsch</option>
                 <option value="es">Español</option>
-                <option value="pt_BR">Português (BR)</option>
+                <option value="pt_BR">Português (Brasil)</option>
                 <option value="ru">Русский</option>
                 <option value="ar">العربية</option>
                 <option value="hi">हिन्दी</option>
@@ -126,124 +139,181 @@
                 <input type="checkbox" id="remember-last-pos" checked>
                 <span class="checkbox-label__text" data-i18n="rememberLastPos">Remember last position</span>
               </label>
-              <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new tabs</p>
+              <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new
+                tabs</p>
             </section>
           </div>
-        <!-- Appearance tab -->
-        <div class="settings-tab" id="tab-appearance" hidden>
-          <section class="modal__section">
-            <label class="checkbox-label">
-              <input type="checkbox" id="dark-mode-cb">
-              <span class="checkbox-label__text" data-i18n="darkMode">Dark Mode</span>
-            </label>
-            <p class="modal__hint" data-i18n="darkModeHint">Switch between light and dark appearance</p>
-          </section>
-          <section class="modal__section">
-            <label class="modal__label" for="font-slider" data-i18n="fontSizeLabel">Font Size</label>
-            <div class="modal__row">
-              <input type="range" id="font-slider" min="11" max="20" value="14" step="1">
-              <span id="font-slider-value" class="modal__value">14px</span>
+
+          <!-- Appearance tab -->
+          <div class="settings-tab" id="tab-appearance" hidden>
+            <section class="modal__section">
+              <label class="checkbox-label">
+                <input type="checkbox" id="dark-mode-cb">
+                <span class="checkbox-label__text" data-i18n="darkMode">Dark Mode</span>
+              </label>
+              <p class="modal__hint" data-i18n="darkModeHint">Switch between light and dark appearance</p>
+            </section>
+            <section class="modal__section">
+              <label class="modal__label" for="font-slider" data-i18n="fontSizeLabel">Font Size</label>
+              <div class="modal__row">
+                <input type="range" id="font-slider" min="11" max="20" value="14" step="1">
+                <span id="font-slider-value" class="modal__value">14px</span>
+              </div>
+            </section>
+            <section class="modal__section">
+              <label class="modal__label" for="zoom-slider" data-i18n="zoomLabel">Zoom</label>
+              <div class="modal__row">
+                <input type="range" id="zoom-slider" min="50" max="150" value="100" step="5">
+                <span id="zoom-slider-value" class="modal__value">100%</span>
+              </div>
+            </section>
+            <section class="modal__section">
+              <label class="checkbox-label">
+                <input type="checkbox" id="square-corners-cb">
+                <span class="checkbox-label__text" data-i18n="squareCorners">Square Corners</span>
+              </label>
+              <p class="modal__hint" data-i18n="squareCornersHint">Use sharp square corners instead of rounded</p>
+            </section>
+          </div>
+          <!-- Data tab -->
+          <div class="settings-tab" id="tab-data" hidden>
+            <section class="modal__section">
+              <div style="display:flex;gap:8px;">
+                <button id="export-data-btn" class="btn" data-i18n="exportData">Export Data</button>
+                <button id="import-data-btn" class="btn" data-i18n="importData">Import Data</button>
+                <input type="file" id="import-file-input" accept=".json" hidden>
+              </div>
+            </section>
+          </div>
+          <!-- Sync & Backup tab -->
+          <div class="settings-tab" id="tab-sync" hidden>
+            <section class="modal__section">
+              <label class="modal__label" for="sync-provider" data-i18n="syncProvider">Sync Provider</label>
+              <select id="sync-provider" class="modal__select">
+                <option value="local" data-i18n="syncLocalOnly">Local Only</option>
+                <option value="webdav" data-i18n="syncWebDAV">WebDAV</option>
+                <option value="gist" data-i18n="syncGitHubGist">GitHub Gist</option>
+              </select>
+              <p class="modal__hint" data-i18n="syncProviderHint">Boxing stores data in browser sync storage. Choose
+                your provider.</p>
+            </section>
+            <section class="modal__section" id="last-backup-section">
+              <p class="modal__hint" style="margin:0;font-size:11px;"><span data-i18n="lastBackupTime">Last
+                  backup</span>: <span id="last-backup-time-value">Never</span></p>
+            </section>
+            <!-- Remote backup zone (WebDAV/Gist) — hidden when provider is local -->
+            <div id="remote-backup-zone" hidden>
+              <!-- WebDAV config -->
+              <section class="modal__section" id="webdav-config" hidden>
+                <label class="modal__label" for="webdav-url" data-i18n="webdavUrl">WebDAV URL</label>
+                <input id="webdav-url" class="modal__input" type="url" placeholder="https://dav.example.com/boxing/"
+                  spellcheck="false">
+                <label class="modal__label" for="webdav-user" data-i18n="webdavUser">Username</label>
+                <input id="webdav-user" class="modal__input" type="text" placeholder="" spellcheck="false">
+                <label class="modal__label" for="webdav-pass" data-i18n="webdavPass">Password</label>
+                <input id="webdav-pass" class="modal__input" type="password" placeholder="" spellcheck="false">
+                <button id="webdav-test-btn" class="btn" data-i18n="webdavTestBtn" style="margin-top:8px;">Test
+                  Connection</button>
+              </section>
+              <!-- GitHub Gist config -->
+              <section class="modal__section" id="gist-config" hidden>
+                <label class="modal__label" for="gist-token" data-i18n="gistToken">GitHub Token</label>
+                <input id="gist-token" class="modal__input" type="password" placeholder="ghp_…" spellcheck="false">
+                <p class="modal__hint" data-i18n="gistTokenHint">Create a personal access token with gist scope</p>
+                <label class="modal__label" for="gist-id" data-i18n="gistId">Gist ID (auto-filled)</label>
+                <input id="gist-id" class="modal__input" type="text" readonly placeholder="Created on first backup">
+              </section>
+              <section class="modal__section" style="margin-top:var(--space-3);">
+                <label class="modal__label" data-i18n="autoBackupInterval">Auto-Backup Interval</label>
+                <select id="auto-backup-interval" class="modal__select">
+                  <option value="3600" data-i18n="backupHourly">Hourly</option>
+                  <option value="0" data-i18n="backupDisabled">Disabled</option>
+                  <option value="86400" data-i18n="backupDaily">Daily</option>
+                  <option value="604800" data-i18n="backupWeekly">Weekly</option>
+                </select>
+              </section>
+              <section class="modal__section">
+                <button id="backup-now-btn" class="btn" data-i18n="syncNow">Sync Now</button>
+              </section>
             </div>
-          </section>
-          <section class="modal__section">
-            <label class="modal__label" for="zoom-slider" data-i18n="zoomLabel">Zoom</label>
-            <div class="modal__row">
-              <input type="range" id="zoom-slider" min="50" max="150" value="100" step="5">
-              <span id="zoom-slider-value" class="modal__value">100%</span>
-            </div>
-          </section>
-          <section class="modal__section">
-            <label class="checkbox-label">
-              <input type="checkbox" id="square-corners-cb">
-              <span class="checkbox-label__text" data-i18n="squareCorners">Square Corners</span>
-            </label>
-            <p class="modal__hint" data-i18n="squareCornersHint">Use sharp square corners instead of rounded</p>
-          </section>
+          </div>
         </div>
-        <!-- Data tab -->
-        <div class="settings-tab" id="tab-data" hidden>
-          <section class="modal__section">
-            <div style="display:flex;gap:8px;">
-              <button id="export-data-btn" class="btn" data-i18n="exportData">Export Data</button>
-              <button id="import-data-btn" class="btn" data-i18n="importData">Import Data</button>
-              <input type="file" id="import-file-input" accept=".json" hidden>
-            </div>
-          </section>
-        </div>
-        <!-- Sync & Backup tab -->
-<div class="settings-tab" id="tab-sync" hidden>
-<section class="modal__section">
-<label class="modal__label" for="sync-provider" data-i18n="syncProvider">Sync Provider</label>
-<select id="sync-provider" class="modal__select">
-<option value="local" data-i18n="syncLocalOnly">Local Only</option>
-<option value="webdav" data-i18n="syncWebDAV">WebDAV</option>
-<option value="gist" data-i18n="syncGitHubGist">GitHub Gist</option>
-</select>
-<p class="modal__hint" data-i18n="syncProviderHint">Boxing stores data in browser sync storage. Choose your provider.</p>
-</section>
-<section class="modal__section" id="last-backup-section">
-<p class="modal__hint" style="margin:0;font-size:11px;"><span data-i18n="lastBackupTime">Last backup</span>: <span id="last-backup-time-value">Never</span></p>
-</section>
-<!-- Remote backup zone (WebDAV/Gist) — hidden when provider is local -->
-<div id="remote-backup-zone" hidden>
-<!-- WebDAV config -->
-<section class="modal__section" id="webdav-config" hidden>
-<label class="modal__label" for="webdav-url" data-i18n="webdavUrl">WebDAV URL</label>
-<input id="webdav-url" class="modal__input" type="url" placeholder="https://dav.example.com/boxing/" spellcheck="false">
-<label class="modal__label" for="webdav-user" data-i18n="webdavUser">Username</label>
-<input id="webdav-user" class="modal__input" type="text" placeholder="" spellcheck="false">
-<label class="modal__label" for="webdav-pass" data-i18n="webdavPass">Password</label>
-<input id="webdav-pass" class="modal__input" type="password" placeholder="" spellcheck="false">
-<button id="webdav-test-btn" class="btn" data-i18n="webdavTestBtn" style="margin-top:8px;">Test Connection</button>
-</section>
-<!-- GitHub Gist config -->
-<section class="modal__section" id="gist-config" hidden>
-<label class="modal__label" for="gist-token" data-i18n="gistToken">GitHub Token</label>
-<input id="gist-token" class="modal__input" type="password" placeholder="ghp_…" spellcheck="false">
-<p class="modal__hint" data-i18n="gistTokenHint">Create a personal access token with gist scope</p>
-<label class="modal__label" for="gist-id" data-i18n="gistId">Gist ID (auto-filled)</label>
-<input id="gist-id" class="modal__input" type="text" readonly placeholder="Created on first backup">
-</section>
-<section class="modal__section" style="margin-top:var(--space-3);">
-<label class="modal__label" data-i18n="autoBackupInterval">Auto-Backup Interval</label>
-<select id="auto-backup-interval" class="modal__select">
-<option value="3600" data-i18n="backupHourly">Hourly</option>
-<option value="0" data-i18n="backupDisabled">Disabled</option>
-<option value="86400" data-i18n="backupDaily">Daily</option>
-<option value="604800" data-i18n="backupWeekly">Weekly</option>
-</select>
-</section>
-<section class="modal__section">
-<button id="backup-now-btn" class="btn" data-i18n="backupNow">Backup Now</button>
-</section>
-</div>
-</div>
+      </div>
+      <div class="modal__foot">
+        <p class="modal__version">Boxing v3.6.6</p>
       </div>
     </div>
-    <div class="modal__foot">
-      <p class="modal__version">Boxing v3.6.6</p>
+  </div>
+
+  <!-- Confirm delete modal (in-page overlay) -->
+  <div id="confirm-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-label="Confirm">
+    <div class="modal confirm-modal">
+      <div class="modal__head">
+        <h2 class="modal__title" id="confirm-title">Confirm Delete</h2>
+      </div>
+      <div class="modal__body">
+        <p id="confirm-body" style="margin:0;font-size:14px;line-height:1.6;"></p>
+      </div>
+      <div class="modal__foot" style="justify-content:space-between;">
+        <button id="confirm-cancel-btn" class="btn" data-i18n="confirmCancel">Cancel</button>
+        <button id="confirm-delete-btn" class="btn"
+          style="background:var(--color-accent-ink);color:#F4EFE5;border-color:var(--color-accent-ink);"
+          data-i18n="confirmYes">Delete</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Confirm delete modal (in-page overlay) -->
-<div id="confirm-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-label="Confirm">
-  <div class="modal confirm-modal">
-    <div class="modal__head">
-      <h2 class="modal__title" id="confirm-title">Confirm Delete</h2>
-    </div>
-    <div class="modal__body">
-      <p id="confirm-body" style="margin:0;font-size:14px;line-height:1.6;"></p>
-    </div>
-    <div class="modal__foot" style="justify-content:space-between;">
-      <button id="confirm-cancel-btn" class="btn" data-i18n="confirmCancel">Cancel</button>
-      <button id="confirm-delete-btn" class="btn" style="background:var(--color-accent-ink);color:#F4EFE5;border-color:var(--color-accent-ink);" data-i18n="confirmYes">Delete</button>
+  <div id="empty" class="sr-only" aria-live="polite"></div>
+
+  <!-- Onboarding overlay (first-run guided tour) -->
+  <div id="onboarding-overlay" class="modal-overlay onboarding-overlay" hidden role="dialog" aria-modal="true"
+    aria-label="Welcome">
+    <div class="modal onboarding-modal">
+      <div class="modal__head">
+        <h2 class="modal__title" id="onboarding-title" data-i18n="onboardingTitle">Welcome to Boxing</h2>
+        <button class="btn btn--ghost" id="onboarding-skip-btn" aria-label="Skip tour"
+          data-i18n-title="onboardingSkipTour">Skip</button>
+      </div>
+      <div class="modal__body onboarding__body">
+        <!-- Step 1: Add large boxes -->
+        <div class="onboarding__step" data-step="1">
+          <div class="onboarding__step-icon" aria-hidden="true">＋</div>
+          <div class="onboarding__step-num" data-i18n="onboardingStep1Label">Step 1 of 3</div>
+          <h3 class="onboarding__step-title" data-i18n="onboardingStep1Title">Add your first box</h3>
+          <p class="onboarding__step-desc" data-i18n="onboardingStep1Desc">Double-click anywhere on the canvas, or click
+            the + button in the toolbar, to create a large box. Large boxes group related small boxes and bookmarks.</p>
+        </div>
+        <!-- Step 2: Nested small boxes -->
+        <div class="onboarding__step" data-step="2" hidden>
+          <div class="onboarding__step-icon" aria-hidden="true">📦</div>
+          <div class="onboarding__step-num" data-i18n="onboardingStep2Label">Step 2 of 3</div>
+          <h3 class="onboarding__step-title" data-i18n="onboardingStep2Title">Nest boxes inside</h3>
+          <p class="onboarding__step-desc" data-i18n="onboardingStep2Desc">Open a large box, then click + to add small
+            boxes inside it. Each small box holds a list of bookmarks and can be reordered by drag.</p>
+        </div>
+        <!-- Step 3: Sync + settings -->
+        <div class="onboarding__step" data-step="3" hidden>
+          <div class="onboarding__step-icon" aria-hidden="true">⚙</div>
+          <div class="onboarding__step-num" data-i18n="onboardingStep3Label">Step 3 of 3</div>
+          <h3 class="onboarding__step-title" data-i18n="onboardingStep3Title">Sync across devices</h3>
+          <p class="onboarding__step-desc" data-i18n="onboardingStep3Desc">Open Settings → Sync to connect a WebDAV
+            server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way
+            sync.</p>
+        </div>
+        <div class="onboarding__dots" aria-hidden="true">
+          <span class="onboarding__dot is-active" data-dot="1"></span>
+          <span class="onboarding__dot" data-dot="2"></span>
+          <span class="onboarding__dot" data-dot="3"></span>
+        </div>
+      </div>
+      <div class="modal__foot onboarding__foot">
+        <button class="btn btn--ghost" id="onboarding-prev-btn" disabled data-i18n="onboardingPrev">Previous</button>
+        <button class="btn" id="onboarding-next-btn" data-i18n="onboardingNext">Next</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div id="empty" class="sr-only" aria-live="polite"></div>
-
-<script src="ntp.js" defer></script>
+  <script src="ntp.js" defer></script>
 </body>
+
 </html>

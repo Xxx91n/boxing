@@ -528,5 +528,116 @@
   },
   "refreshPage": {
     "message": "새로고침"
+  },
+  "webdavTesting": {
+    "message": "테스트 중..."
+  },
+  "webdavErrNoUrl": {
+    "message": "WebDAV URL이 설정되지 않았습니다"
+  },
+  "webdavErrHttps": {
+    "message": "WebDAV URL은 HTTPS를 사용해야 합니다"
+  },
+  "webdavErrEmbedded": {
+    "message": "WebDAV URL에 인증 정보를 포함할 수 없습니다"
+  },
+  "webdavErrNoPass": {
+    "message": "WebDAV 비밀번호가 비어있습니다 — 다시 입력하세요"
+  },
+  "webdavErrAuth": {
+    "message": "WebDAV 인증 실패 ($1$) — 자격 증명을 확인하세요"
+  },
+  "webdavErrPath": {
+    "message": "WebDAV 경로를 찾을 수 없습니다 — URL을 확인하세요"
+  },
+  "webdavErrStatus": {
+    "message": "WebDAV 서버가 $1$를 반환했습니다"
+  },
+  "webdavErrPut": {
+    "message": "WebDAV PUT 실패 ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "WebDAV 충돌 — 상위 디렉토리가 존재하지 않을 수 있습니다"
+  },
+  "webdavErrNetwork": {
+    "message": "WebDAV 서버에 연결할 수 없습니다 — URL 또는 네트워크를 확인하세요"
+  },
+  "syncNow": {
+    "message": "지금 동기화"
+  },
+  "syncInProgress": {
+    "message": "동기화 중..."
+  },
+  "syncOk": {
+    "message": "동기화 완료"
+  },
+  "syncPullFirstTime": {
+    "message": "클라우드 데이터 감지 — 이 기기로 풀 중 (첫 동기화)"
+  },
+  "syncUploadNewer": {
+    "message": "로컬 데이터가 더 최신 — 클라우드에 업로드됨"
+  },
+  "syncCloudNewer": {
+    "message": "클라우드 데이터가 더 최신 — 클라우드에서 로컬 업데이트됨"
+  },
+  "syncErrPartialLoss": {
+    "message": "데이터 손실 가능성 감지 ($1$ → $2$ 박스). 중단하고 클라우드에서 복구할까요?"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "데이터 손실 감지됨"
+  },
+  "syncErrCloudRestored": {
+    "message": "로컬 데이터를 클라우드에서 복구함 ($1$ 박스)"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "클라우드 복구 실패: $1$"
+  },
+  "syncErrGetFailed": {
+    "message": "WebDAV GET 실패 ($1$)"
+  },
+  "syncErrParseFailed": {
+    "message": "클라우드 데이터가 유효한 JSON이 아님"
+  },
+  "onboardingTitle": {
+    "message": "Boxing에 오신 것을 환영합니다"
+  },
+  "onboardingSkipTour": {
+    "message": "건너뛰기"
+  },
+  "onboardingPrev": {
+    "message": "이전"
+  },
+  "onboardingNext": {
+    "message": "다음"
+  },
+  "onboardingFinish": {
+    "message": "시작하기"
+  },
+  "onboardingStep1Label": {
+    "message": "3단계 중 1단계"
+  },
+  "onboardingStep1Title": {
+    "message": "첫 번째 대형 박스 추가"
+  },
+  "onboardingStep1Desc": {
+    "message": "캔버스의 아무 곳이나 두 번 클릭하거나 도구 모음의 + 버튼을 클릭하여 대형 박스를 만드세요. 대형 박스는 관련된 소형 박스와 북마크를 그룹화합니다."
+  },
+  "onboardingStep2Label": {
+    "message": "3단계 중 2단계"
+  },
+  "onboardingStep2Title": {
+    "message": "박스 중첩하기"
+  },
+  "onboardingStep2Desc": {
+    "message": "대형 박스를 열고 + 를 클릭하여 소형 박스를 추가합니다. 각 소형 박스는 북마크 목록을 보유하며 드래그로 순서를 변경할 수 있습니다."
+  },
+  "onboardingStep3Label": {
+    "message": "3단계 중 3단계"
+  },
+  "onboardingStep3Title": {
+    "message": "기기 간 동기화"
+  },
+  "onboardingStep3Desc": {
+    "message": "설정 → 동기화에서 WebDAV 서버에 연결하세요. 박스는 브라우저와 탭 간에 동기화되며 타임스탬프 기반 양방향 동기화로 안전하게 백업됩니다."
   }
 }

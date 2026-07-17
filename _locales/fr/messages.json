@@ -528,5 +528,116 @@
   },
   "refreshPage": {
     "message": "Rafraîchir"
+  },
+  "webdavTesting": {
+    "message": "Test en cours..."
+  },
+  "webdavErrNoUrl": {
+    "message": "URL WebDAV non configurée"
+  },
+  "webdavErrHttps": {
+    "message": "L'URL WebDAV doit utiliser HTTPS"
+  },
+  "webdavErrEmbedded": {
+    "message": "L'URL WebDAV ne doit pas contenir d'identifiants intégrés"
+  },
+  "webdavErrNoPass": {
+    "message": "Mot de passe WebDAV vide — re-saisissez et réessayez"
+  },
+  "webdavErrAuth": {
+    "message": "Échec d'authentification WebDAV ($1$) — vérifiez vos identifiants"
+  },
+  "webdavErrPath": {
+    "message": "Chemin WebDAV introuvable — vérifiez l'URL"
+  },
+  "webdavErrStatus": {
+    "message": "Le serveur WebDAV a renvoyé $1$"
+  },
+  "webdavErrPut": {
+    "message": "Échec WebDAV PUT ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "Conflit WebDAV — le répertoire parent n'existe peut-être pas"
+  },
+  "webdavErrNetwork": {
+    "message": "Impossible de joindre le serveur WebDAV — vérifiez l'URL ou le réseau"
+  },
+  "syncNow": {
+    "message": "Synchroniser"
+  },
+  "syncInProgress": {
+    "message": "Synchronisation..."
+  },
+  "syncOk": {
+    "message": "Synchronisation terminée"
+  },
+  "syncPullFirstTime": {
+    "message": "Données cloud détectées — pulls vers ce périphérique (première synchro)"
+  },
+  "syncUploadNewer": {
+    "message": "Données locales plus récentes — téléversées dans le cloud"
+  },
+  "syncCloudNewer": {
+    "message": "Données cloud plus récentes — local mis à jour depuis le cloud"
+  },
+  "syncErrPartialLoss": {
+    "message": "Perte de données possible détectée ($1$ → $2$ boîtes). Annuler et restaurer depuis le cloud ?"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "Perte de données détectée"
+  },
+  "syncErrCloudRestored": {
+    "message": "Données locales restaurées depuis le cloud ($1$ boîtes)"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "Échec de restauration cloud : $1$"
+  },
+  "syncErrGetFailed": {
+    "message": "Échec du GET WebDAV ($1$)"
+  },
+  "syncErrParseFailed": {
+    "message": "Les données cloud ne sont pas du JSON valide"
+  },
+  "onboardingTitle": {
+    "message": "Bienvenue sur Boxing"
+  },
+  "onboardingSkipTour": {
+    "message": "Passer"
+  },
+  "onboardingPrev": {
+    "message": "Précédent"
+  },
+  "onboardingNext": {
+    "message": "Suivant"
+  },
+  "onboardingFinish": {
+    "message": "Commencer"
+  },
+  "onboardingStep1Label": {
+    "message": "Étape 1 sur 3"
+  },
+  "onboardingStep1Title": {
+    "message": "Ajoutez votre première boîte"
+  },
+  "onboardingStep1Desc": {
+    "message": "Double-cliquez n'importe où sur le canevas, ou cliquez sur le bouton + de la barre d'outils, pour créer une grande boîte. Les grandes boîtes regroupent les petites boîtes et les marque-pages associés."
+  },
+  "onboardingStep2Label": {
+    "message": "Étape 2 sur 3"
+  },
+  "onboardingStep2Title": {
+    "message": "Emboîtez les boîtes"
+  },
+  "onboardingStep2Desc": {
+    "message": "Ouvrez une grande boîte, puis cliquez sur + pour y ajouter des petites boîtes. Chaque petite boîte contient une liste de marque-pages et peut être réordonnée par glisser-déposer."
+  },
+  "onboardingStep3Label": {
+    "message": "Étape 3 sur 3"
+  },
+  "onboardingStep3Title": {
+    "message": "Synchronisez entre appareils"
+  },
+  "onboardingStep3Desc": {
+    "message": "Ouvrez Paramètres → Synchronisation pour connecter un serveur WebDAV. Vos boîtes se synchronisent entre navigateurs et onglets, et sont sauvegardées en toute sécurité par une synchronisation bidirectionnelle basée sur l'horodatage."
   }
 }

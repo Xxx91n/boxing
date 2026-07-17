@@ -528,5 +528,116 @@
   },
   "refreshPage": {
     "message": "تحديث"
+  },
+  "webdavTesting": {
+    "message": "...جارٍ الاختبار"
+  },
+  "webdavErrNoUrl": {
+    "message": "لم يتم تكوين عنوان WebDAV"
+  },
+  "webdavErrHttps": {
+    "message": "يجب أن يستخدم عنوان WebDAV بروتوكول HTTPS"
+  },
+  "webdavErrEmbedded": {
+    "message": "يجب ألا يحتوي عنوان WebDAV على بيانات اعتماد مضمنة"
+  },
+  "webdavErrNoPass": {
+    "message": "كلمة مرور WebDAV فارغة — أعد إدخالها وحاول مرة أخرى"
+  },
+  "webdavErrAuth": {
+    "message": "فشلت مصادقة WebDAV ($1$) — تحقق من بيانات الاعتماد"
+  },
+  "webdavErrPath": {
+    "message": "لم يتم العثور على مسار WebDAV — تحقق من عنوان URL"
+  },
+  "webdavErrStatus": {
+    "message": "أرجع خادم WebDAV $1$"
+  },
+  "webdavErrPut": {
+    "message": "فشل WebDAV PUT ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "تعارض WebDAV — قد لا يكون الدليل الأصلي موجوداً"
+  },
+  "webdavErrNetwork": {
+    "message": "تعذّر الوصول إلى خادم WebDAV — تحقق من عنوان URL أو الشبكة"
+  },
+  "syncNow": {
+    "message": "زامن الآن"
+  },
+  "syncInProgress": {
+    "message": "جارٍ المزامنة..."
+  },
+  "syncOk": {
+    "message": "اكتملت المزامنة"
+  },
+  "syncPullFirstTime": {
+    "message": "تم اكتشاف بيانات السحابة — سحبها إلى هذا الجهاز (المزامنة الأولى)"
+  },
+  "syncUploadNewer": {
+    "message": "البيانات المحلية أحدث — تم رفعها إلى السحابة"
+  },
+  "syncCloudNewer": {
+    "message": "بيانات السحابة أحدث — تم تحديث المحلي من السحابة"
+  },
+  "syncErrPartialLoss": {
+    "message": "تم اكتشاف فقدان محتمل للبيانات ($1$ → $2$ صناديق). الإلغاء والاستعادة من السحابة؟"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "تم اكتشاف فقدان البيانات"
+  },
+  "syncErrCloudRestored": {
+    "message": "تمت استعادة البيانات المحلية من السحابة ($1$ صناديق)"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "فشل الاستعادة من السحابة: $1$"
+  },
+  "syncErrGetFailed": {
+    "message": "فشل WebDAV GET ($1$)"
+  },
+  "syncErrParseFailed": {
+    "message": "بيانات السحابة ليست JSON صالحًا"
+  },
+  "onboardingTitle": {
+    "message": "مرحبًا بك في Boxing"
+  },
+  "onboardingSkipTour": {
+    "message": "تخطّ"
+  },
+  "onboardingPrev": {
+    "message": "السابق"
+  },
+  "onboardingNext": {
+    "message": "التالي"
+  },
+  "onboardingFinish": {
+    "message": "ابدأ"
+  },
+  "onboardingStep1Label": {
+    "message": "الخطوة 1 من 3"
+  },
+  "onboardingStep1Title": {
+    "message": "أضف صندوقك الأول"
+  },
+  "onboardingStep1Desc": {
+    "message": "انقر مرتين في أي مكان على اللوحة، أو على زر + في شريط الأدوات، لإنشاء صندوق كبير. الصناديق الكبيرة تجمع الصناديق الصغيرة والإشارات المرجعية ذات الصلة."
+  },
+  "onboardingStep2Label": {
+    "message": "الخطوة 2 من 3"
+  },
+  "onboardingStep2Title": {
+    "message": "ضع الصناديق داخل بعضها"
+  },
+  "onboardingStep2Desc": {
+    "message": "افتح صندوقًا كبيرًا ثم انقر + لإضافة صناديق صغيرة بداخله. يحتوي كل صندوق صغير على قائمة إشارات مرجعية ويمكن إعادة ترتيبه بالسحب."
+  },
+  "onboardingStep3Label": {
+    "message": "الخطوة 3 من 3"
+  },
+  "onboardingStep3Title": {
+    "message": "المزامنة بين الأجهزة"
+  },
+  "onboardingStep3Desc": {
+    "message": "افتح الإعدادات → المزامنة لتوصيل خادم WebDAV. تتم مزامنة صناديقك عبر المتصفحات وعلامات التبويب بمزامنة ثنائية الاتجاه قائمة على الطوابع الزمنية."
   }
 }

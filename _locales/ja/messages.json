@@ -528,5 +528,116 @@
   },
   "refreshPage": {
     "message": "更新"
+  },
+  "webdavTesting": {
+    "message": "テスト中..."
+  },
+  "webdavErrNoUrl": {
+    "message": "WebDAV URLが未設定です"
+  },
+  "webdavErrHttps": {
+    "message": "WebDAV URLはHTTPSを使用してください"
+  },
+  "webdavErrEmbedded": {
+    "message": "WebDAV URLに認証情報を含めないでください"
+  },
+  "webdavErrNoPass": {
+    "message": "WebDAVパスワードが空です — 再入力してください"
+  },
+  "webdavErrAuth": {
+    "message": "WebDAV認証失敗 ($1$) — 認証情報を確認してください"
+  },
+  "webdavErrPath": {
+    "message": "WebDAVパスが見つかりません — URLを確認してください"
+  },
+  "webdavErrStatus": {
+    "message": "WebDAVサーバーが $1$ を返しました"
+  },
+  "webdavErrPut": {
+    "message": "WebDAV PUT失敗 ($1$)"
+  },
+  "webdavErrConflict": {
+    "message": "WebDAV競合 — 親ディレクトリが存在しない可能性があります"
+  },
+  "webdavErrNetwork": {
+    "message": "WebDAVサーバーに接続できません — URLまたはネットワークを確認してください"
+  },
+  "syncNow": {
+    "message": "今すぐ同期"
+  },
+  "syncInProgress": {
+    "message": "同期中..."
+  },
+  "syncOk": {
+    "message": "同期が完了しました"
+  },
+  "syncPullFirstTime": {
+    "message": "クラウドデータを検出 — このデバイスにプル中（初回同期）"
+  },
+  "syncUploadNewer": {
+    "message": "ローカルデータがより新しい — クラウドにアップロード済み"
+  },
+  "syncCloudNewer": {
+    "message": "クラウドデータがより新しい — クラウドからローカルを更新済み"
+  },
+  "syncErrPartialLoss": {
+    "message": "データ消失の可能性を検出（$1$ → $2$ ボックス）。中止してクラウドから復元しますか？"
+  },
+  "syncErrPartialLossTitle": {
+    "message": "データ消失を検出"
+  },
+  "syncErrCloudRestored": {
+    "message": "ローカルデータをクラウドから復元（$1$ ボックス）"
+  },
+  "syncErrCloudRestoreFailed": {
+    "message": "クラウド復元に失敗：$1$"
+  },
+  "syncErrGetFailed": {
+    "message": "WebDAV GET 失敗（$1$）"
+  },
+  "syncErrParseFailed": {
+    "message": "クラウドデータは有効な JSON ではありません"
+  },
+  "onboardingTitle": {
+    "message": "Boxing へようこそ"
+  },
+  "onboardingSkipTour": {
+    "message": "スキップ"
+  },
+  "onboardingPrev": {
+    "message": "前へ"
+  },
+  "onboardingNext": {
+    "message": "次へ"
+  },
+  "onboardingFinish": {
+    "message": "始める"
+  },
+  "onboardingStep1Label": {
+    "message": "ステップ 1 / 3"
+  },
+  "onboardingStep1Title": {
+    "message": "最初の大ボックスを追加"
+  },
+  "onboardingStep1Desc": {
+    "message": "キャンバスのどこかをダブルクリック、またはツールバーの + ボタンで大ボックスを作成します。大ボックスは関連する小ボックスとブックマークをまとめます。"
+  },
+  "onboardingStep2Label": {
+    "message": "ステップ 2 / 3"
+  },
+  "onboardingStep2Title": {
+    "message": "内部にボックスをネスト"
+  },
+  "onboardingStep2Desc": {
+    "message": "大ボックスを開き、+ で小ボックスを追加します。各小ボックスはブックマークのリストを保持し、ドラッグで並べ替えできます。"
+  },
+  "onboardingStep3Label": {
+    "message": "ステップ 3 / 3"
+  },
+  "onboardingStep3Title": {
+    "message": "デバイス間で同期"
+  },
+  "onboardingStep3Desc": {
+    "message": "設定 → 同步を開き WebDAV サーバーに接続します。ボックスはブラウザやタブをまたいで同期され、タイムスタンプベースの双方向同期で安全にバックアップされます。"
   }
 }

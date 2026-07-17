@@ -6,23 +6,48 @@
   let api = (typeof browser !== 'undefined' ? browser : typeof chrome !== 'undefined' ? chrome : null);
   // In file:/// or non-extension contexts, chrome/browser may exist but storage is unavailable.
   if (!api || !api.storage || !api.storage.sync) {
+    const mockChangeListeners = new Set();
+    window.addEventListener('storage', event => {
+      if (event.key !== 'boxingLayout' || !event.newValue) return;
+      let newValue = null;
+      let oldValue = null;
+      try {
+        newValue = JSON.parse(event.newValue);
+        oldValue = event.oldValue ? JSON.parse(event.oldValue) : null;
+      } catch (_) { return; }
+      for (const listener of mockChangeListeners) {
+        listener({ boxingLayout: { oldValue, newValue } }, 'sync');
+      }
+    });
     const mock = {
-      storage: { sync: {
-        get: async (_keys) => { try { const v = localStorage.getItem('boxingLayout'); return v ? { boxingLayout: JSON.parse(v) } : { boxingLayout: null }; } catch (_) { return { boxingLayout: null }; } },
-        set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (_) {} }
-      }}, runtime: { getURL: (p) => p }
+      storage: {
+        sync: {
+          get: async (_keys) => { try { const v = localStorage.getItem('boxingLayout'); return v ? { boxingLayout: JSON.parse(v) } : { boxingLayout: null }; } catch (_) { return { boxingLayout: null }; } },
+          set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (_) { } }
+        },
+        local: {
+          get: async (_keys) => { try { const v = localStorage.getItem('boxingLayout'); return v ? { boxingLayout: JSON.parse(v) } : { boxingLayout: null }; } catch (_) { return { boxingLayout: null }; } },
+          set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (_) { } }
+        },
+        onChanged: {
+          addListener: listener => mockChangeListeners.add(listener),
+          removeListener: listener => mockChangeListeners.delete(listener)
+        }
+      },
+      runtime: { getURL: (p) => p }
     };
     api = mock; /* SEC-01: mock stays local — no global chrome/browser pollution */
   }
+  const layoutStorage = api.storage.sync;
 
   // ── constants ──────────────────────────────────────────
   const CANVAS_GRID = 24;
-  const INNER_GRID  = 16;
+  const INNER_GRID = 16;
   const RESIZE_SNAP = 5;
   const LARGE_DEF_W = 320, LARGE_DEF_H = 220;
-  const SMALL_DEF_W  = 300, SMALL_DEF_H = 340;
+  const SMALL_DEF_W = 300, SMALL_DEF_H = 340;
   const LARGE_MIN_W = 200, LARGE_MIN_H = 120;
-  const SMALL_MIN_W  = 180, SMALL_MIN_H = 200;
+  const SMALL_MIN_W = 180, SMALL_MIN_H = 200;
   const MAX_LARGE_BOXES = 1000;
   const MAX_SMALL_BOXES = 500;
   const MAX_BOOKMARKS = 50;
@@ -54,9 +79,36 @@
   window.__boxingDebug = {
     get layout() { return layout; }, // BX-DEV-111k: live ref to layout for Playwright testing
     state() { return { boxes: layout.boxes.length, currentLargeBoxId, canvasZoom, innerZoom, headerPinned, darkMode: layout.settings.darkMode, lang: currentLang, fontSize: layout.settings.fontSize }; },
-    dumpLayout() { console.table(layout.boxes.map(b => ({ id: b.id, title: b.title, x: b.x, y: b.y, w: b.width, h: b.height, children: b.children?.length||0 }))); },
-    dumpStorage() { api.storage?.sync?.get?.(null).then(d => console.log('[Boxing] storage:', d)).catch(e => console.error('[Boxing] storage read:', e)); },
+    dumpLayout() { console.table(layout.boxes.map(b => ({ id: b.id, title: b.title, x: b.x, y: b.y, w: b.width, h: b.height, children: b.children?.length || 0 }))); },
+    dumpStorage() { layoutStorage?.get?.(null).then(d => console.log('[Boxing] storage:', d)).catch(e => console.error('[Boxing] storage read:', e)); },
+    persistView() { persistViewState(true); },
+    applyExternalLayout(raw) { return applyExternalLayout(raw); },
+    normalizeBookmarkUrl(value) { return normalizeBookmarkUrl(value); },
     triggerGC() { if (typeof gc === 'function') gc(); else console.log('[Boxing] gc not available (not in --js-flags=--expose-gc mode)'); },
+    // BX-DEV-114: WebDAV config for Playwright tests
+    setWebDAVConfig(url, user, pass) {
+      layout.settings.webdavUrl = url;
+      layout.settings.webdavUser = user;
+      layout.settings._encWebdavPass = pass ? pass : null;
+      // Also fill the input fields if they exist
+      const urlInput = document.getElementById('webdav-url');
+      const userInput = document.getElementById('webdav-user');
+      const passInput = document.getElementById('webdav-pass');
+      if (urlInput) urlInput.value = url || '';
+      if (userInput) userInput.value = user || '';
+      if (passInput) passInput.value = pass || '';
+      return saveLayout();
+    },
+    async testWebDAV() { return await window.__boxingTestWebDAV(); },
+    async backupWebDAV() { return await window.__boxingBackupWebDAV(); },
+    async syncWebDAV(opts) { return await window.__boxingSyncWebDAV(opts || {}); },
+    // BX-ONBOARDING: dismiss onboarding for E2E tests / scripted flows.
+    skipOnboarding() {
+      const ov = document.getElementById('onboarding-overlay');
+      if (ov) ov.hidden = true;
+      if (layout.settings) layout.settings.onboardingCompleted = true;
+      return saveLayout();
+    },
   };
   // Log mock usage (must be after DEBUG init)
   if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');
@@ -139,6 +191,17 @@
   I18N_FALLBACK.webdavTestBtn = 'Test Connection';
   I18N_FALLBACK.webdavTestOk = 'WebDAV connection OK';
   I18N_FALLBACK.webdavTestFail = 'WebDAV connection failed';
+  I18N_FALLBACK.webdavTesting = 'Testing...';
+  I18N_FALLBACK.webdavErrNoUrl = 'WebDAV URL not configured';
+  I18N_FALLBACK.webdavErrHttps = 'WebDAV URL must use HTTPS';
+  I18N_FALLBACK.webdavErrEmbedded = 'WebDAV URL must not contain embedded credentials';
+  I18N_FALLBACK.webdavErrNoPass = 'WebDAV password is empty — re-enter and retry';
+  I18N_FALLBACK.webdavErrAuth = 'WebDAV auth failed ($1$) — check credentials';
+  I18N_FALLBACK.webdavErrPath = 'WebDAV path not found — check the URL';
+  I18N_FALLBACK.webdavErrStatus = 'WebDAV server returned $1$';
+  I18N_FALLBACK.webdavErrPut = 'WebDAV PUT failed ($1$)';
+  I18N_FALLBACK.webdavErrConflict = 'WebDAV conflict — parent directory may not exist';
+  I18N_FALLBACK.webdavErrNetwork = 'Cannot reach WebDAV server — check URL or network';
   I18N_FALLBACK.gistBackupOk = 'Gist backup saved';
   I18N_FALLBACK.gistBackupFail = 'Gist backup failed';
   I18N_FALLBACK.backupTooFrequent = 'Auto-backup skipped: too frequent, minimum interval 1 hour';
@@ -153,6 +216,34 @@
   I18N_FALLBACK.lastPageLabel = 'Last page';
   I18N_FALLBACK.boxDeletedWarning = 'This box has been deleted. Please refresh the page.';
   I18N_FALLBACK.refreshPage = 'Refresh';
+
+  // BX-DEV-SYNC: WebDAV sync i18n keys
+  I18N_FALLBACK.syncNow = 'Sync Now';
+  I18N_FALLBACK.syncInProgress = 'Syncing...';
+  I18N_FALLBACK.syncOk = 'Sync completed';
+  I18N_FALLBACK.syncPullFirstTime = 'Cloud data detected — pulling to this device (first sync)';
+  I18N_FALLBACK.syncUploadNewer = 'Local data is newer — uploaded to cloud';
+  I18N_FALLBACK.syncCloudNewer = 'Cloud data is newer — updated local from cloud';
+  I18N_FALLBACK.syncErrPartialLoss = 'Possible data loss detected ($1$ → $2$ boxes). Abort and restore from cloud?';
+  I18N_FALLBACK.syncErrPartialLossTitle = 'Data loss detected';
+  I18N_FALLBACK.syncErrCloudRestored = 'Local data restored from cloud ($1$ boxes)';
+  I18N_FALLBACK.syncErrCloudRestoreFailed = 'Cloud restore failed: $1$';
+  I18N_FALLBACK.syncErrGetFailed = 'WebDAV GET failed ($1$)';
+  I18N_FALLBACK.syncErrParseFailed = 'Cloud data is not valid JSON';
+  I18N_FALLBACK.onboardingTitle = 'Welcome to Boxing';
+  I18N_FALLBACK.onboardingSkipTour = 'Skip';
+  I18N_FALLBACK.onboardingPrev = 'Previous';
+  I18N_FALLBACK.onboardingNext = 'Next';
+  I18N_FALLBACK.onboardingFinish = 'Get started';
+  I18N_FALLBACK.onboardingStep1Label = 'Step 1 of 3';
+  I18N_FALLBACK.onboardingStep1Title = 'Add your first box';
+  I18N_FALLBACK.onboardingStep1Desc = 'Double-click anywhere on the canvas, or click the + button in the toolbar, to create a large box. Large boxes group related small boxes and bookmarks.';
+  I18N_FALLBACK.onboardingStep2Label = 'Step 2 of 3';
+  I18N_FALLBACK.onboardingStep2Title = 'Nest boxes inside';
+  I18N_FALLBACK.onboardingStep2Desc = 'Open a large box, then click + to add small boxes inside it. Each small box holds a list of bookmarks and can be reordered by drag.';
+  I18N_FALLBACK.onboardingStep3Label = 'Step 3 of 3';
+  I18N_FALLBACK.onboardingStep3Title = 'Sync across devices';
+  I18N_FALLBACK.onboardingStep3Desc = 'Open Settings → Sync to connect a WebDAV server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way sync.';
   let currentLang = 'en';
   const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi'];
 
@@ -203,61 +294,58 @@
   const $$ = (sel, ctx = document) => ctx.querySelectorAll(sel);
 
   const canvasContainer = $('#canvas');
-  const canvasSurface  = $('#canvas-surface');
-  const canvasEmpty    = $('#canvas-empty');
-  const canvasZoomOut  = $('#canvas-zoom [data-zoom="out"]');
-  const canvasZoomIn   = $('#canvas-zoom [data-zoom="in"]');
-  const canvasZoomVal  = $('#canvas-zoom-value');
+  const canvasSurface = $('#canvas-surface');
+  const canvasEmpty = $('#canvas-empty');
+  const canvasZoomOut = $('#canvas-zoom [data-zoom="out"]');
+  const canvasZoomIn = $('#canvas-zoom [data-zoom="in"]');
+  const canvasZoomVal = $('#canvas-zoom-value');
   const canvasZoomCtrl = $('#canvas-zoom');
-  const innerSurface   = $('#inner-surface');
-  const innerZoomOut   = $('#inner-zoom [data-zoom="out"]');
-  const innerZoomIn    = $('#inner-zoom [data-zoom="in"]');
-  const innerZoomVal   = $('#inner-zoom-value');
-  const innerZoomCtrl  = $('#inner-zoom');
-  const innerWrapper   = $('#inner');
-  const innerCanvas    = $('#inner-canvas');
+  const innerSurface = $('#inner-surface');
+  const innerZoomOut = $('#inner-zoom [data-zoom="out"]');
+  const innerZoomIn = $('#inner-zoom [data-zoom="in"]');
+  const innerZoomVal = $('#inner-zoom-value');
+  const innerZoomCtrl = $('#inner-zoom');
+  const innerWrapper = $('#inner');
+  const innerCanvas = $('#inner-canvas');
   const innerCrumbTitle = $('#inner-crumb-title');
-  const crumbsEl       = $('#crumbs');
-  const captionEl      = $('#caption');
-  const searchInput    = $('#q');
-  const backBtn        = $('#back-btn');
-  const addLargeBtn    = $('#add-box');
-  const addSmallBtn    = $('#add-small');
-  const settingsBtn    = $('#settings-btn');
-  const settingsModal  = $('#settings-modal');
-  const modalClose     = $('#settings-modal .modal__close');
-  const langSelect     = $('#lang-select');
-  const rememberCheck  = $('#remember-last-pos');
-  const fontSlider     = $('#font-slider');
-  const fontSliderVal  = $('#font-slider-value');
-  const zoomSlider     = $('#zoom-slider');
-  const zoomSliderVal  = $('#zoom-slider-value');
-  const emptyEl        = $('#empty');
+  const crumbsEl = $('#crumbs');
+  const captionEl = $('#caption');
+  const searchInput = $('#q');
+  const backBtn = $('#back-btn');
+  const addLargeBtn = $('#add-box');
+  const addSmallBtn = $('#add-small');
+  const settingsBtn = $('#settings-btn');
+  const settingsModal = $('#settings-modal');
+  const modalClose = $('#settings-modal .modal__close');
+  const langSelect = $('#lang-select');
+  const rememberCheck = $('#remember-last-pos');
+  const fontSlider = $('#font-slider');
+  const fontSliderVal = $('#font-slider-value');
+  const zoomSlider = $('#zoom-slider');
+  const zoomSliderVal = $('#zoom-slider-value');
+  const emptyEl = $('#empty');
 
   // confirm modal
-  const confirmModal   = $('#confirm-modal');
-  const confirmTitle   = $('#confirm-title');
-  const confirmBody    = $('#confirm-body');
-  const confirmCancel  = $('#confirm-cancel-btn');
-  const confirmDelete  = $('#confirm-delete-btn');
+  const confirmModal = $('#confirm-modal');
+  const confirmTitle = $('#confirm-title');
+  const confirmBody = $('#confirm-body');
+  const confirmCancel = $('#confirm-cancel-btn');
+  const confirmDelete = $('#confirm-delete-btn');
 
   // dark mode
-  const darkModeBtn    = $('#dark-mode-btn');
-  const darkModeCB     = $('#dark-mode-cb');
+  const darkModeBtn = $('#dark-mode-btn');
+  const darkModeCB = $('#dark-mode-cb');
 
   // import/export
-  const exportBtn      = $('#export-data-btn');
-  const importBtn      = $('#import-data-btn');
-  const importFile     = $('#import-file-input');
+  const exportBtn = $('#export-data-btn');
+  const importBtn = $('#import-data-btn');
+  const importFile = $('#import-file-input');
 
   // ── state ──────────────────────────────────────────────
   let layout = {
     version: 3.5,
     boxes: [],
     nextLargeIndex: 1,
-    lastLargeBoxId: null,
-    lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
-    lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
     settings: {
       selectedLanguage: 'en',
       rememberLastPos: true,
@@ -268,7 +356,7 @@
   };
   let currentLargeBoxId = null;
   let canvasZoom = 1.0;
-  let innerZoom  = 1.0;
+  let innerZoom = 1.0;
   // Obsidian-style pan state
   let canvasPanX = 0, canvasPanY = 0;
   let innerPanX = 0, innerPanY = 0;
@@ -287,45 +375,120 @@
   // header auto-hide state (must be declared before functions that reference it)
   let headerPinned = true;  // BX-DEV-111: set after loadLayout reads persisted value
   let scrollTimeout;
+  const TAB_VIEW_KEY = 'boxingTabView.v2';
+  const LAST_ACTIVE_VIEW_KEY = 'boxingLastActiveView.v2';
+  const writerId = crypto.randomUUID ? crypto.randomUUID() : `page-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  let idSequence = 0;
+  function makeId(prefix) {
+    idSequence = (idSequence + 1) % Number.MAX_SAFE_INTEGER;
+    return `${prefix}-${Date.now().toString(36)}-${writerId.slice(-8)}-${idSequence.toString(36)}`;
+  }
+  let storageWriteChain = Promise.resolve();
+  let applyingExternalLayout = false;
+  let saveDebounceTimer = null;
+  const MAX_TOMBSTONES = 2000;
 
   // ── storage ────────────────────────────────────────────
   async function loadLayout() {
     try {
-      const data = await api.storage.sync.get({ boxingLayout: null });
-      if (data.boxingLayout) layout = migrateLayout(data.boxingLayout);
-      else layout = defaultLayout();
-      // BX-DEV-111: Emergency restore from localStorage if sync storage was stale
-      // (happens when beforeunload couldn't finish async storage.sync.set)
-      const em = localStorage.getItem('boxingEmergencyBackup');
-      if (em) {
-        try { const emLayout = JSON.parse(em); if (emLayout.boxes && emLayout.boxes.length > 0) { layout = migrateLayout(emLayout); debug('loadLayout: restored from emergency backup'); } } catch(_) {}
-        localStorage.removeItem('boxingEmergencyBackup');
+      const data = await layoutStorage.get({ boxingLayout: null });
+      if (data.boxingLayout) {
+        layout = migrateLayout(data.boxingLayout);
+      } else {
+        const legacy = layoutStorage === api.storage.sync ? data : await api.storage.sync.get({ boxingLayout: null });
+        layout = legacy.boxingLayout ? migrateLayout(legacy.boxingLayout) : defaultLayout();
+        if (legacy.boxingLayout && layoutStorage !== api.storage.sync) await layoutStorage.set({ boxingLayout: layout });
       }
     } catch (e) { debugErr('loadLayout', e); layout = defaultLayout(); }
   }
 
-  async function saveLayout() {
-    debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
-    // BX-DEV-111: auto-persist current canvas position on every save
-    if (currentLargeBoxId) {
-      layout.lastInnerZoom = innerZoom;
-      layout.lastInnerPanX = innerPanX;
-      layout.lastInnerPanY = innerPanY;
-    } else {
-      layout.lastZoom = canvasZoom;
-      layout.lastPanX = canvasPanX;
-      layout.lastPanY = canvasPanY;
+  function currentViewSnapshot() {
+    return {
+      version: 2,
+      currentLargeBoxId: currentLargeBoxId || null,
+      canvasZoom, canvasPanX, canvasPanY,
+      innerZoom, innerPanX, innerPanY,
+      headerPinned,
+      updatedAt: Date.now()
+    };
+  }
+
+  function persistViewState(includeLastActive = true) {
+    const serialized = JSON.stringify(currentViewSnapshot());
+    try { sessionStorage.setItem(TAB_VIEW_KEY, serialized); } catch (e) { debugWarn('tab view save', e); }
+    if (includeLastActive && layout.settings.rememberLastPos !== false) {
+      try { localStorage.setItem(LAST_ACTIVE_VIEW_KEY, serialized); } catch (e) { debugWarn('last active view save', e); }
     }
-    layout.settings.headerPinned = headerPinned;
-    try { await api.storage.sync.set({ boxingLayout: layout }); } catch (e) { debugWarn('saveLayout', e); }
-    debug('saveLayout done');
+  }
+
+  function mergeById(localItems, remoteItems, tombstones) {
+    const local = (localItems || []).filter(item => item?.id && !tombstones.has(item.id));
+    const known = new Set(local.map(item => item.id));
+    for (const item of remoteItems || []) if (item?.id && !known.has(item.id) && !tombstones.has(item.id)) local.push(item);
+    return local;
+  }
+
+  function mergeConcurrentLayout(localValue, remoteValue) {
+    if (!remoteValue) return localValue;
+    const localDeleted = localValue._meta?.deleted || {};
+    const remoteDeleted = remoteValue._meta?.deleted || {};
+    const deleted = { ...remoteDeleted, ...localDeleted };
+    const tombstones = new Set(Object.keys(deleted));
+    const boxes = mergeById(localValue.boxes, remoteValue.boxes, tombstones);
+    for (const localBox of boxes) {
+      const remoteBox = remoteValue.boxes?.find(candidate => candidate.id === localBox.id);
+      if (!remoteBox) continue;
+      localBox.children = mergeById(localBox.children, remoteBox.children, tombstones);
+      for (const localChild of localBox.children) {
+        const remoteChild = remoteBox.children?.find(candidate => candidate.id === localChild.id);
+        if (remoteChild) localChild.bookmarks = mergeById(localChild.bookmarks, remoteChild.bookmarks, tombstones);
+      }
+    }
+    const trimmedDeleted = Object.fromEntries(Object.entries(deleted).sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, MAX_TOMBSTONES));
+    return {
+      ...remoteValue,
+      ...localValue,
+      boxes,
+      nextLargeIndex: Math.max(Number(localValue.nextLargeIndex) || 1, Number(remoteValue.nextLargeIndex) || 1),
+      settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}) },
+      _meta: { ...(remoteValue._meta || {}), ...(localValue._meta || {}), deleted: trimmedDeleted }
+    };
+  }
+
+  function markDeleted(...ids) {
+    const deleted = { ...(layout._meta?.deleted || {}) };
+    const at = Date.now();
+    for (const id of ids) if (id) deleted[id] = at;
+    layout._meta = { ...(layout._meta || {}), deleted };
+  }
+
+  async function saveLayout() {
+    storageWriteChain = storageWriteChain.then(async () => {
+      debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
+      persistViewState(true);
+      layout.settings.headerPinned = headerPinned;
+      const stored = await layoutStorage.get({ boxingLayout: null });
+      const remote = stored.boxingLayout ? migrateLayout(stored.boxingLayout) : null;
+      layout = mergeConcurrentLayout(layout, remote);
+      const revision = Math.max(Number(layout._meta?.revision) || 0, Number(remote?._meta?.revision) || 0) + 1;
+      layout._meta = { ...(layout._meta || {}), revision, updatedAt: Date.now(), writerId };
+      await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+      debug('saveLayout done, revision=' + revision);
+    });
+    try { await storageWriteChain; } catch (e) { debugWarn('saveLayout', e); }
+  }
+
+  function saveLayoutDebounced() {
+    if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+    saveDebounceTimer = setTimeout(() => {
+      saveDebounceTimer = null;
+      saveLayout();
+    }, 120);
   }
 
   function defaultLayout() {
     return {
-      version: 3.5, boxes: [], nextLargeIndex: 1, lastLargeBoxId: null,
-      lastZoom: 1.0, lastPanX: 0, lastPanY: 0,
-      lastInnerZoom: 1.0, lastInnerPanX: 0, lastInnerPanY: 0,
+      version: 3.5, boxes: [], nextLargeIndex: 1,
       settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local' }
     };
   }
@@ -334,7 +497,15 @@
     if (!raw) return defaultLayout();
     // BX-DEV-085: Data integrity — version >= 3 returns as-is; no data loss on downgrade.
     // Unknown future versions (>= 4) are still accepted to prevent upgrade-then-downgrade data loss.
-    if (raw.version >= 3) return raw;
+    if (raw.version >= 3) {
+      const defaults = defaultLayout();
+      return {
+        ...defaults,
+        ...raw,
+        boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
+        settings: { ...defaults.settings, ...(raw.settings || {}) }
+      };
+    }
     if (raw.version === 2) {
       return {
         version: 3.5,
@@ -347,7 +518,6 @@
           }))
         })),
         nextLargeIndex: (raw.boxes?.length || 0) + 1,
-        lastLargeBoxId: raw.lastLargeBoxId || null,
         settings: raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }
       };
     }
@@ -389,7 +559,7 @@
   }
 
   function snapCanvas(x, y) { return { x: Math.round(x / CANVAS_GRID) * CANVAS_GRID, y: Math.round(y / CANVAS_GRID) * CANVAS_GRID }; }
-  function snapInner(x, y)  { return { x: Math.round(x / INNER_GRID) * INNER_GRID, y: Math.round(y / INNER_GRID) * INNER_GRID }; }
+  function snapInner(x, y) { return { x: Math.round(x / INNER_GRID) * INNER_GRID, y: Math.round(y / INNER_GRID) * INNER_GRID }; }
 
   function rectsOverlap(a, b) {
     return !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
@@ -583,8 +753,8 @@
     for (const box of layout.boxes) {
       debug('renderCanvas creating largeBox DOM for', box.id, box.title);
       try {
-      frag.appendChild(createLargeBoxEl(box));
-      } catch(e) { debugErr('createLargeBoxEl failed for', box.id, e); }
+        frag.appendChild(createLargeBoxEl(box));
+      } catch (e) { debugErr('createLargeBoxEl failed for', box.id, e); }
     }
     canvasSurface.appendChild(frag);
     debug('renderCanvas done, surface children=' + canvasSurface.children.length);
@@ -797,14 +967,9 @@
   }
   function _enterLargeBox(id, skipPosRestore) {
     currentLargeBoxId = id;
-    layout.lastLargeBoxId = id;
-    // Save current canvas zoom and pan for restore later
-    layout.lastZoom = canvasZoom;
-    layout.lastPanX = canvasPanX;
-    layout.lastPanY = canvasPanY;
     const lb = getLargeBox(id);
     if (!lb) { exitToCanvas(); return; }
-    saveLayout();  // BX-DEV-097: persist navigation state immediately, prevent ghost empty on refresh
+    persistViewState(true);
 
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
@@ -827,27 +992,15 @@
 
     renderInnerSurface(lb);
     updateInnerCaption(lb);
-    // Restore saved inner zoom and pan from last session
-    if (!skipPosRestore) {
-    if (layout.lastInnerZoom) innerZoom = layout.lastInnerZoom;
-    if (layout.lastInnerPanX !== undefined) innerPanX = layout.lastInnerPanX;
-    if (layout.lastInnerPanY !== undefined) innerPanY = layout.lastInnerPanY;
-    }
     applyInnerTransform();
     updateCaption();
   }
 
   function exitToCanvas() {
     debug(`exitToCanvas: leaving box, back to canvas`);
-    // BX-DEV-111j: Clear lastLargeBoxId so refresh doesn't re-enter a box after exiting
-    layout.lastLargeBoxId = null;
     currentLargeBoxId = null;
-    // Save current inner zoom and pan for restore later
-    layout.lastInnerZoom = innerZoom;
-    layout.lastInnerPanX = innerPanX;
-    layout.lastInnerPanY = innerPanY;
     innerPanX = 0; innerPanY = 0; innerZoom = 1.0;
-    saveLayout();  // BX-DEV-097: persist exit state immediately
+    persistViewState(true);
     if (addLargeBtn) addLargeBtn.style.display = '';  // BX-DEV-101: restore + button
     renderCanvas();
   }
@@ -858,10 +1011,10 @@
     // remove any existing crumbs
     const existing = innerCanvasHead?.parentNode?.querySelector('.crumbs--inner');
     existing?.remove();
-    
+
     const crumbsDiv = document.createElement('div');
     crumbsDiv.className = 'crumbs crumbs--inner';
-    
+
     const root = document.createElement('span');
     root.className = 'crumbs__item';
     root.textContent = i18n('canvasRoot');
@@ -877,7 +1030,7 @@
     cur.className = 'crumbs__item crumbs__item--current';
     cur.textContent = lb.title || i18n('untitledBox');
     crumbsDiv.appendChild(cur);
-    
+
     // insert before inner-canvas-head
     if (innerCanvasHead) {
       innerCanvasHead.parentNode.insertBefore(crumbsDiv, innerCanvasHead);
@@ -1023,22 +1176,26 @@
       row.style.cursor = 'pointer';
       row.addEventListener('click', e => {
         if (e.target.closest('.bm-row__edit-btn') || e.target.closest('.bm-row__grip')) return;
-        (async function(url) {
-        // BX-DEV-096: Follow browser default open-bookmark behavior.
-        // Firefox: respect openBookmarksInNewTabs setting; Chrome: fallback to current tab.
-        let openInNewTab = false;
-        try { if (typeof browser !== 'undefined' && browser.browserSettings?.openBookmarksInNewTabs) {
-          const s = await browser.browserSettings.openBookmarksInNewTabs.get({});
-          openInNewTab = s.value;
-        }} catch(_) {}
-        if (openInNewTab) {
-          api.tabs?.create ? api.tabs.create({ url, active: true }) : window.open(url, '_blank');
-        } else {
-          // Open in current tab: use tabs.update (replace this NTP) or window.location fallback
-          if (api.tabs?.update) { api.tabs.update({ url }); }
-          else { window.location.href = url; }
-        }
-      })(ensureHttpsUrl(bm.url));
+        const safeUrl = normalizeBookmarkUrl(bm.url);
+        if (!safeUrl) { debugWarn('blocked invalid bookmark URL', bm.url); return; }
+        (async function (url) {
+          // BX-DEV-096: Follow browser default open-bookmark behavior.
+          // Firefox: respect openBookmarksInNewTabs setting; Chrome: fallback to current tab.
+          let openInNewTab = false;
+          try {
+            if (typeof browser !== 'undefined' && browser.browserSettings?.openBookmarksInNewTabs) {
+              const s = await browser.browserSettings.openBookmarksInNewTabs.get({});
+              openInNewTab = s.value;
+            }
+          } catch (_) { }
+          if (openInNewTab) {
+            api.tabs?.create ? api.tabs.create({ url, active: true }) : window.open(url, '_blank');
+          } else {
+            // Open in current tab: use tabs.update (replace this NTP) or window.location fallback
+            if (api.tabs?.update) { api.tabs.update({ url }); }
+            else { window.location.href = url; }
+          }
+        })(safeUrl);
       });
 
       const dot = document.createElement('span');
@@ -1146,12 +1303,12 @@
     saveBtn.style.cssText = 'padding:4px 12px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:12px;cursor:pointer;';
     saveBtn.addEventListener('click', e => {
       e.stopPropagation();
-      bm.title = titleInput.value.trim() || bm.url;
-      bm.url = ensureHttpsUrl(urlInput.value.trim()) || bm.url;
-      // BX-DEV-111f: Validate final URL — reject pure numeric/IP-only inputs
-      try { const test = new URL(bm.url); if (!test.hostname || /^\d+\.\d+\.\d+\.\d+$/.test(test.hostname)) { urlInput.style.borderColor = 'red'; return; } } catch(_) { urlInput.style.borderColor = 'red'; return; }
+      const normalizedUrl = normalizeBookmarkUrl(urlInput.value);
+      if (!normalizedUrl) { urlInput.style.borderColor = 'red'; return; }
       // BX-DEV-111k: validate box still exists before saving edited bookmark
       if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
+      bm.title = titleInput.value.trim() || normalizedUrl;
+      bm.url = normalizedUrl;
       saveLayout();
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
@@ -1246,11 +1403,13 @@
       const title = titleInput.value.trim();
       const url = urlInput.value.trim();
       if (!url) return;
+      const normalizedUrl = normalizeBookmarkUrl(url);
+      if (!normalizedUrl) { urlInput.style.borderColor = 'red'; return; }
       // BX-DEV-111j: validate large box still exists before saving bookmark
       if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       sb.bookmarks = sb.bookmarks || [];
       if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
-      sb.bookmarks.push({ id: 'bm-' + Date.now(), title: title || url.replace(/^https?:\/\//, '').split('/')[0] || url, url });
+      sb.bookmarks.push({ id: makeId('bm'), title: title || new URL(normalizedUrl).hostname, url: normalizedUrl });
       saveLayout();
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
@@ -1262,11 +1421,13 @@
       const title = titleInput.value.trim();
       const url = urlInput.value.trim();
       if (!url) return;
+      const normalizedUrl = normalizeBookmarkUrl(url);
+      if (!normalizedUrl) { urlInput.style.borderColor = 'red'; return; }
       // BX-DEV-111j: validate large box still exists before saving bookmark
       if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       sb.bookmarks = sb.bookmarks || [];
       if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
-      sb.bookmarks.push({ id: 'bm-' + Date.now(), title: title || url.replace(/^https?:\/\//, '').split('/')[0] || url, url });
+      sb.bookmarks.push({ id: makeId('bm'), title: title || new URL(normalizedUrl).hostname, url: normalizedUrl });
       saveLayout();
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
@@ -1506,15 +1667,7 @@
     document.removeEventListener('mouseup', onCanvasPanEnd);
     canvasContainer.style.cursor = '';
     panState = null;
-    // BX-DEV-111: persist canvas pan position immediately
-    if (currentLargeBoxId) {
-      layout.lastInnerPanX = innerPanX;
-      layout.lastInnerPanY = innerPanY;
-    } else {
-      layout.lastPanX = canvasPanX;
-      layout.lastPanY = canvasPanY;
-    }
-    saveLayout();
+    persistViewState(true);
   }
 
   // Inner canvas pan
@@ -1550,8 +1703,7 @@
     document.removeEventListener('mouseup', onInnerPanEnd);
     innerCanvas.style.cursor = '';
     panState = null;
-    // BX-DEV-111: persist inner pan position
-    layout.lastInnerPanX = innerPanX; layout.lastInnerPanY = innerPanY; saveLayoutDebounced();  // SEC-08: debounced
+    persistViewState(true);
   }
 
   // ── Ctrl+scroll zoom ────────────────────────────────────
@@ -1641,7 +1793,7 @@
 
   // ── create / delete ────────────────────────────────────
   async function addLargeBoxAt(clientX, clientY) {
-    debug('addLargeBoxAt called', {clientX, clientY, boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex});
+    debug('addLargeBoxAt called', { clientX, clientY, boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex });
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
     const world = screenToWorld(clientX, clientY, canvasContainer, canvasPanX, canvasPanY, canvasZoom);
     debug('addLargeBoxAt world', world);
@@ -1650,7 +1802,7 @@
     const index = layout.nextLargeIndex++;
     debug('addLargeBoxAt making index', index);
     const newBox = {
-      id: 'large-' + Date.now(), type: 'large',
+      id: makeId('large'), type: 'large',
       title: i18n('newLargeBox', [index]),
       x: 0, y: 0,
       width: LARGE_DEF_W, height: LARGE_DEF_H,
@@ -1669,21 +1821,22 @@
   }
 
   async function addLargeBox() {
-  window._boxingAddLargeBox = addLargeBox;
 
-    debug('addLargeBox (button) called', {boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex});
+    debug('addLargeBox (button) called', { boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex });
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
     const index = layout.nextLargeIndex++;
     debug('addLargeBox index', index);
     const others = layout.boxes.map(b => ({ x: b.x, y: b.y, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H }));
-    // Start at default offset, then elastic-snap to avoid overlap
-    let candidate = { x: 20, y: 20 };
+    // BX-DEV-112: start at current viewport's top-left in world coords, not canvas origin
+    const cvsRect = canvasContainer.getBoundingClientRect();
+    const vpWorld = screenToWorld(cvsRect.left, cvsRect.top, canvasContainer, canvasPanX, canvasPanY, canvasZoom);
+    let candidate = { x: vpWorld.x + 20, y: vpWorld.y + 20 };
     const snapped = snapCanvas(candidate.x, candidate.y);
     debug('addLargeBox snapped', snapped);
     candidate = elasticSnap(snapped, LARGE_DEF_W, LARGE_DEF_H, others, CANVAS_GRID, snapCanvas);
     debug('addLargeBox after elasticSnap', candidate);
     const newBox = {
-      id: 'large-' + Date.now(), type: 'large',
+      id: makeId('large'), type: 'large',
       title: i18n('newLargeBox', [index]),
       x: Math.max(0, candidate.x), y: Math.max(0, candidate.y),
       width: LARGE_DEF_W, height: LARGE_DEF_H,
@@ -1697,7 +1850,7 @@
     debug('addLargeBox done, surface children=' + canvasSurface.children.length);
   }
   debug('addLargeBox function defined');
-function updateInnerCaption(lb) {
+  function updateInnerCaption(lb) {
     const captionEl = document.getElementById('caption');
     if (captionEl) captionEl.textContent = i18n('smallBoxesCount', [lb?.children?.length || 0]);
   }
@@ -1706,8 +1859,10 @@ function updateInnerCaption(lb) {
   }
 
   function _execDeleteLargeBox(id) {
+    const removed = getLargeBox(id);
+    markDeleted(id, ...(removed?.children || []).flatMap(child => [child.id, ...(child.bookmarks || []).map(bookmark => bookmark.id)]));
     layout.boxes = layout.boxes.filter(b => b.id !== id);
-    layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title||'').match(/\d+/)||[0])||0)+1), 1);
+    layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title || '').match(/\d+/) || [0]) || 0) + 1), 1);
     if (currentLargeBoxId === id) exitToCanvas();
     saveLayout();
     renderCanvas();
@@ -1733,8 +1888,15 @@ function updateInnerCaption(lb) {
     const warn = document.createElement('div');
     warn.id = 'box-deleted-warning';
     warn.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--color-accent-ink);color:#F7F3ED;padding:var(--space-3) var(--space-5);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);font-size:14px;font-weight:600;display:flex;align-items:center;gap:var(--space-3);';
-    warn.innerHTML = `<span data-i18n="boxDeletedWarning">${i18n('boxDeletedWarning') || 'This box has been deleted. Please refresh the page.'}</span><button style="background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.3);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:13px;" data-i18n="refreshPage">${i18n('refreshPage') || 'Refresh'}</button>`;
-    warn.querySelector('button').addEventListener('click', () => window.location.reload());
+    const message = document.createElement('span');
+    message.dataset.i18n = 'boxDeletedWarning';
+    message.textContent = i18n('boxDeletedWarning');
+    const refresh = document.createElement('button');
+    refresh.dataset.i18n = 'refreshPage';
+    refresh.textContent = i18n('refreshPage');
+    refresh.style.cssText = 'background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.3);padding:4px 12px;border-radius:var(--radius-tile);cursor:pointer;font-size:13px;';
+    refresh.addEventListener('click', () => window.location.reload());
+    warn.append(message, refresh);
     document.body.appendChild(warn);
     // Auto-dismiss after 10s
     setTimeout(() => { if (warn.parentNode) warn.remove(); }, 10000);
@@ -1747,13 +1909,16 @@ function updateInnerCaption(lb) {
 
     lb.children = lb.children || [];
     const others = lb.children.map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
-    let candidate = { x: 20, y: 20 };
+    // BX-DEV-112: start at current viewport's top-left in world coords, not inner origin
+    const innerRect = innerCanvas.getBoundingClientRect();
+    const vpWorld = screenToWorld(innerRect.left, innerRect.top, innerCanvas, innerPanX, innerPanY, innerZoom);
+    let candidate = { x: vpWorld.x + 20, y: vpWorld.y + 20 };
     const snapped = snapInner(candidate.x, candidate.y);
     candidate = elasticSnap(snapped, SMALL_DEF_W, SMALL_DEF_H, others, INNER_GRID, snapInner);
     lb.nextSmallIndex = lb.nextSmallIndex || 1;
     const idx = lb.nextSmallIndex++;
     lb.children.push({
-      id: 'small-' + Date.now(), type: 'small',
+      id: makeId('small'), type: 'small',
       title: i18n('newSmallBox'),
       x: Math.max(0, candidate.x), y: Math.max(0, candidate.y),
       width: SMALL_DEF_W, height: SMALL_DEF_H,
@@ -1771,14 +1936,14 @@ function updateInnerCaption(lb) {
     const idx = lb.nextSmallIndex++;
     lb.children = lb.children || [];
     lb.children.push({
-      id: 'small-' + Date.now(), type: 'small',
+      id: makeId('small'), type: 'small',
       title: i18n('newSmallBox'),
       x: 0, y: 0,
       width: SMALL_DEF_W, height: SMALL_DEF_H,
       pinned: false, bookmarks: []
     });
     // BX-DEV-106: elastic-snap to avoid overlapping existing small boxes
-    const others = lb.children.filter(s => s.id !== lb.children[lb.children.length-1].id).map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
+    const others = lb.children.filter(s => s.id !== lb.children[lb.children.length - 1].id).map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
     const last = lb.children[lb.children.length - 1];
     const unsnapped = elasticSnap({ x: snapped.x, y: snapped.y }, SMALL_DEF_W, SMALL_DEF_H, others, INNER_GRID, snapInner);
     last.x = Math.max(0, unsnapped.x); last.y = Math.max(0, unsnapped.y);
@@ -1793,15 +1958,63 @@ function updateInnerCaption(lb) {
   function _execDeleteSmallBox(largeId, smallId) {
     const lb = getLargeBox(largeId);
     if (!lb) return;
+    const removed = lb.children.find(s => s.id === smallId);
+    markDeleted(smallId, ...(removed?.bookmarks || []).map(bookmark => bookmark.id));
     lb.children = lb.children.filter(s => s.id !== smallId);
     saveLayout();
     renderInnerSurface(lb);
   }
 
+  function applyExternalLayout(raw) {
+    if (!raw || applyingExternalLayout) return false;
+    const incoming = migrateLayout(raw);
+    const incomingRevision = Number(incoming._meta?.revision) || 0;
+    const currentRevision = Number(layout._meta?.revision) || 0;
+    const incomingUpdatedAt = Number(incoming._meta?.updatedAt) || 0;
+    const currentUpdatedAt = Number(layout._meta?.updatedAt) || 0;
+    if (incoming._meta?.writerId === writerId) return false;
+    if (incomingRevision < currentRevision) return false;
+    const incomingWins = incomingRevision > currentRevision
+      || incomingUpdatedAt > currentUpdatedAt
+      || (incomingUpdatedAt === currentUpdatedAt
+        && String(incoming._meta?.writerId || '') > String(layout._meta?.writerId || ''));
+
+    applyingExternalLayout = true;
+    const staleLargeBoxId = currentLargeBoxId;
+    const incomingSerialized = JSON.stringify(incoming);
+    layout = incomingWins
+      ? mergeConcurrentLayout(incoming, layout)
+      : mergeConcurrentLayout(layout, incoming);
+    const needsReconcileWrite = JSON.stringify(layout) !== incomingSerialized;
+    try {
+      if (staleLargeBoxId && !getLargeBox(staleLargeBoxId)) {
+        currentLargeBoxId = null;
+        innerPanX = 0;
+        innerPanY = 0;
+        innerZoom = 1;
+        renderCanvas();
+        showBoxDeletedWarning(staleLargeBoxId);
+      } else if (currentLargeBoxId) {
+        const lb = getLargeBox(currentLargeBoxId);
+        if (lb) {
+          renderInnerSurface(lb);
+          renderCrumbs(lb);
+          updateCaption();
+          applyInnerTransform();
+        }
+      } else {
+        renderCanvas();
+      }
+      if (needsReconcileWrite && incomingWins) saveLayoutDebounced();
+      debug('external layout applied', { revision: incomingRevision, boxes: layout.boxes.length });
+      return true;
+    } finally {
+      applyingExternalLayout = false;
+    }
+  }
+
   // ── settings modal ─────────────────────────────────────
   function openSettingsModal() {
-    debug('openSettingsModal called, current hidden=' + settingsModal.hidden);
-    // Expose for testing
     debug('openSettingsModal called, current hidden=' + settingsModal.hidden);
     settingsModal.hidden = false;
     debug('openSettingsModal set hidden=false, now=' + settingsModal.hidden + ' display=' + getComputedStyle(settingsModal).display);
@@ -1815,19 +2028,22 @@ function updateInnerCaption(lb) {
     // square corners
     const squareCB = document.getElementById('square-corners-cb');
     if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
-    // Show General tab by default
     const firstTab = document.querySelector('.settings-nav__item');
-    // BX-DEV-111k: restore last active tab, default to General if none saved
     const lastTabId = layout.settings.lastSettingsTab || 'general';
     const targetTabBtn = document.querySelector('.settings-nav__item[data-tab="' + lastTabId + '"]');
     const tabToClick = targetTabBtn || firstTab;
-    // rAF lets modal paint before tab switch — no flicker with the absolute-position hidden approach
-    if (tabToClick) { requestAnimationFrame(() => requestAnimationFrame(() => tabToClick.click())); }
+    if (tabToClick) {
+      document.querySelectorAll('.settings-nav__item').forEach(b => b.classList.toggle('settings-nav__item--active', b === tabToClick));
+      document.querySelectorAll('.settings-tab').forEach(t => { t.hidden = t.id !== 'tab-' + tabToClick.dataset.tab; });
+      document.querySelector('.settings-content')?.scrollTo({ top: 0 });
+    }
   }
 
   function closeSettingsModal() { settingsModal.hidden = true; }
   // Expose for Playwright testing
   window._boxingOpenSettings = openSettingsModal;
+  window._boxingAddLargeBox = addLargeBox;
+  window._boxingAddSmallBox = addSmallBox;
   window._boxingEnterLargeBox = enterLargeBox; // BX-DEV-111k: exposed for test
   window._boxingDeleteLargeBox = _execDeleteLargeBox; // BX-DEV-111k: exposed for cross-tab delete test
 
@@ -1920,7 +2136,7 @@ function updateInnerCaption(lb) {
   }
 
   function onCanvasDblClick(e) {
-    debug('onCanvasDblClick', {clientX: e.clientX, clientY: e.clientY, target: e.target.tagName, className: e.target.className});
+    debug('onCanvasDblClick', { clientX: e.clientX, clientY: e.clientY, target: e.target.tagName, className: e.target.className });
     const targetBox = e.target.closest('.large-box');
     if (targetBox) {
       debug('onCanvasDblClick on existing box, entering', targetBox.dataset.id);
@@ -1946,24 +2162,24 @@ function updateInnerCaption(lb) {
 
   // ── window resize → refresh canvas transform ───────────
 
-  // Ensure URL has https:// scheme to prevent moz-extension prefix bug (BX-DEV-048)
+  function normalizeBookmarkUrl(value) {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.length > 2048 || /^\d+(\.\d+){0,3}$/.test(trimmed)) return null;
+    // Reject all non-http(s) schemes; protocol-relative URLs (//host) also rejected
+    if (/^(javascript|data|vbscript|file|ftp|moz-extension|chrome-extension|chrome|edge|about|blob|view-source):/i.test(trimmed)) return null;
+    if (/^\/\//.test(trimmed)) return null; // protocol-relative URL
+    const privateHost = /^(10\.\d+\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.\d+\.\d+\.|localhost(?::\d+)?(?:\/|$))/i.test(trimmed);
+    const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `${privateHost ? 'http' : 'https'}://${trimmed}`;
+    try {
+      const parsed = new URL(candidate);
+      if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname || parsed.username || parsed.password) return null;
+      return parsed.href;
+    } catch (_) { return null; }
+  }
+
   function ensureHttpsUrl(url) {
-    if (!url) return 'https://www.google.com';
-    const trimmed = url.trim();
-    // BX-DEV-111f: Reject inputs that resolve to raw IP addresses when prepended with https://
-    // Examples: '1' → 0.0.0.1, '0' → 0.0.0.0, '123' → 0.0.123.0, pure digits only
-    if (/^\d+(\.\d+){0,3}$/.test(trimmed) && !/[a-zA-Z]/.test(trimmed)) {
-      // Pure numeric or dotted-numeric input — would resolve as IP, reject
-      return trimmed; // return as-is; caller should validate further
-    }
-    // SEC-11: Reject dangerous javascript:/data:/vbscript: protocols
-    if (/^(javascript|data|vbscript):/i.test(trimmed)) return trimmed;
-    if (/^(https?:|ftp:|moz-extension:|chrome-extension:|edge:)/i.test(trimmed)) {
-      return trimmed;
-    }
-    // Detect intranet / private IP (BX-DEV-055): 10.x, 172.16-31.x, 192.168.x, 127.x, localhost → http
-    const isPrivate = /^(10\.\d+\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.\d+\.\d+\.|localhost)/i.test(trimmed);
-    return (isPrivate ? 'http://' : 'https://') + trimmed;
+    return normalizeBookmarkUrl(url);
   }
   function onWindowResize() {
     debug(`window resize: ${window.innerWidth}x${window.innerHeight}`);
@@ -1988,7 +2204,7 @@ function updateInnerCaption(lb) {
     });
     backBtn.addEventListener('click', exitToCanvas);
 
-  // ── header auto-hide ON by default: fullscreen immersive canvas ──
+    // ── header auto-hide ON by default: fullscreen immersive canvas ──
 
     if (addLargeBtn) addLargeBtn.addEventListener('click', addLargeBox);
     if (addSmallBtn) addSmallBtn.addEventListener('click', addSmallBox);
@@ -2004,18 +2220,25 @@ function updateInnerCaption(lb) {
     canvasContainer.addEventListener('mousedown', onCanvasPanStart);
     canvasContainer.addEventListener('click', onCanvasClick);
     canvasContainer.addEventListener('dblclick', onCanvasDblClick);
-    canvasContainer.addEventListener('wheel', onCanvasWheel, { passive: false });
+    // BX-DEV-116: capture-phase wheel on canvas for reliable ctrl+wheel zoom
+    canvasContainer.addEventListener('wheel', (e) => {
+      if (e.ctrlKey) { e.preventDefault(); onCanvasWheel(e); }
+    }, { capture: true, passive: false });
 
     // Inner mouse events
     // Inner canvas: pan (drag empty area) + zoom
     innerSurface.addEventListener('click', onInnerClick);
     innerSurface.addEventListener('dblclick', onInnerDblClick);
     innerCanvas.addEventListener('mousedown', onInnerPanStart);
-    innerCanvas.addEventListener('wheel', onInnerWheel, { passive: false });
-
-    // Ensure inner surface also gets wheel events
-    innerSurface.addEventListener('wheel', onInnerWheel, { passive: false });
-
+    // BX-DEV-116: capture-phase ctrl+wheel on inner canvas ensures zoom works even
+    // when mouse is over a scrollable small-box__body that would normally consume the event.
+    // Use capture phase so the event is intercepted before reaching scrollable children.
+    innerCanvas.addEventListener('wheel', (e) => {
+      if (e.ctrlKey) { e.preventDefault(); onInnerWheel(e); }
+      else if (e.target.classList && (e.target.classList.contains('small-box__body') || e.target.closest('.small-box__body'))) {
+        // Plain wheel inside small-box body: let it scroll normally
+      }
+    }, { capture: true, passive: false });
     // Zoom buttons
     canvasZoomOut?.addEventListener('click', () => {
       canvasZoom = zoomStep(canvasZoom, 'out');
@@ -2049,6 +2272,7 @@ function updateInnerCaption(lb) {
         document.querySelectorAll('.settings-tab').forEach(t => t.hidden = true);
         const tab = document.getElementById('tab-' + tabId);
         if (tab) tab.hidden = false;
+        document.querySelector('.settings-content')?.scrollTo({ top: 0 });
       });
     });
 
@@ -2137,25 +2361,62 @@ function updateInnerCaption(lb) {
 
     // ── Encrypted credential storage (Web Crypto AES-GCM) ───
     const ENC_ALGO = 'AES-GCM'; const ENC_KEY_LEN = 256;
+    // BX-CRED-V2: PBKDF2-derived key + AES-GCM. Format = { v:2, s, iv, d } — key derived from a
+    // constant app secret + per-record salt so the key is NOT stored alongside ciphertext.
+    // Legacy v1 format { k, iv, d } (key bundled with ciphertext) still decrypts for backward compat.
+    // Plain-string values are treated as plaintext (migration from pre-encryption backups).
+    const CRED_APP_SECRET = 'boxing-sync-cred-v2-app-secret-2024';
+    let __credDerivedKeyCache = null; // cached derived key (key derivation is the slowest step)
+    function b64ToU8(b64) { return Uint8Array.from(atob(b64), c => c.charCodeAt(0)); }
+    function u8ToB64(u8) { return btoa(String.fromCharCode(...u8)); }
+    async function deriveCredKey(salt) {
+      if (__credDerivedKeyCache) return __credDerivedKeyCache;
+      const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(CRED_APP_SECRET), 'PBKDF2', false, ['deriveKey']);
+      const key = await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+        baseKey, { name: ENC_ALGO, length: ENC_KEY_LEN }, false, ['encrypt', 'decrypt']);
+      __credDerivedKeyCache = key; // cache: salt is constant across records (per-app) for V2
+      return key;
+    }
     async function encryptCredential(plaintext) {
       if (!plaintext) return null;
-      const key = await crypto.subtle.generateKey({ name: ENC_ALGO, length: ENC_KEY_LEN }, true, ['encrypt', 'decrypt']);
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const enc = await crypto.subtle.encrypt({ name: ENC_ALGO, iv }, key, new TextEncoder().encode(plaintext));
-      const raw = await crypto.subtle.exportKey('raw', key);
-      return { k: btoa(String.fromCharCode(...new Uint8Array(raw))), iv: btoa(String.fromCharCode(...iv)), d: btoa(String.fromCharCode(...new Uint8Array(enc))) };
+      try {
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        __credDerivedKeyCache = null; // refresh per-salt derivation
+        const key = await deriveCredKey(salt);
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const enc = await crypto.subtle.encrypt({ name: ENC_ALGO, iv }, key, new TextEncoder().encode(plaintext));
+        return { v: 2, s: u8ToB64(salt), iv: u8ToB64(iv), d: u8ToB64(new Uint8Array(enc)) };
+      } catch (e) { debugErr('encryptCredential failed', e); return null; }
     }
     async function decryptCredential(encObj) {
-      if (!encObj || !encObj.k) return '';
+      if (!encObj) return '';
+      // Plain-string (legacy plaintext backup) → return as-is; caller re-encrypts on save.
+      if (typeof encObj === 'string') return encObj;
       try {
-        const rawKey = Uint8Array.from(atob(encObj.k), c => c.charCodeAt(0));
-        const key = await crypto.subtle.importKey('raw', rawKey, { name: ENC_ALGO, length: ENC_KEY_LEN }, false, ['decrypt']);
-        const iv = Uint8Array.from(atob(encObj.iv), c => c.charCodeAt(0));
-        const ct = Uint8Array.from(atob(encObj.d), c => c.charCodeAt(0));
-        const dec = await crypto.subtle.decrypt({ name: ENC_ALGO, iv }, key, ct);
-        return new TextDecoder().decode(dec);
-      } catch(e) { return ''; }
+        // Legacy v1: key bundled with ciphertext.
+        if (encObj.k) {
+          const rawKey = b64ToU8(encObj.k);
+          const key = await crypto.subtle.importKey('raw', rawKey, { name: ENC_ALGO, length: ENC_KEY_LEN }, false, ['decrypt']);
+          const iv = b64ToU8(encObj.iv); const ct = b64ToU8(encObj.d);
+          const dec = await crypto.subtle.decrypt({ name: ENC_ALGO, iv }, key, ct);
+          return new TextDecoder().decode(dec);
+        }
+        // v2: key derived from app secret + per-record salt.
+        if (encObj.v === 2 && encObj.s && encObj.iv && encObj.d) {
+          const salt = b64ToU8(encObj.s);
+          __credDerivedKeyCache = null;
+          const key = await deriveCredKey(salt);
+          const iv = b64ToU8(encObj.iv); const ct = b64ToU8(encObj.d);
+          const dec = await crypto.subtle.decrypt({ name: ENC_ALGO, iv }, key, ct);
+          return new TextDecoder().decode(dec);
+        }
+      } catch (e) { debugErr('decryptCredential failed', e); }
+      return '';
     }
+    // BX-CRED-V2: expose to __boxingDebug for tests.
+    window.__boxingEncryptCredential = encryptCredential;
+    window.__boxingDecryptCredential = decryptCredential;
 
     // Restore persisted config
     const syncProviderVal = layout.settings.syncProvider || 'local';
@@ -2163,10 +2424,18 @@ function updateInnerCaption(lb) {
     if (layout.settings.webdavUrl && webdavUrlInput) webdavUrlInput.value = layout.settings.webdavUrl;
     if (layout.settings.webdavUser && webdavUserInput) webdavUserInput.value = layout.settings.webdavUser;
     if (layout.settings.gistId && gistIdInput) gistIdInput.value = layout.settings.gistId;
-    // Decrypt and fill sensitive fields
+    // Decrypt and fill sensitive fields — awaited so test button waits for password
+    if (webdavTestBtn) webdavTestBtn.disabled = true; // BX-DEV-114: disable until password is ready
     (async () => {
-      if (layout.settings._encWebdavPass && webdavPassInput) webdavPassInput.value = await decryptCredential(layout.settings._encWebdavPass);
-      if (layout.settings._encGistToken && gistTokenInput) gistTokenInput.value = await decryptCredential(layout.settings._encGistToken);
+      try {
+        if (layout.settings._encWebdavPass && webdavPassInput) webdavPassInput.value = await decryptCredential(layout.settings._encWebdavPass);
+        if (layout.settings._encGistToken && gistTokenInput) gistTokenInput.value = await decryptCredential(layout.settings._encGistToken);
+        debug('WebDAV: credentials decrypted successfully');
+      } catch (e) {
+        debugErr('WebDAV: credential decrypt failed', e);
+      } finally {
+        if (webdavTestBtn) webdavTestBtn.disabled = false;
+      }
     })();
 
     // Show last backup time
@@ -2210,26 +2479,417 @@ function updateInnerCaption(lb) {
 
     // WebDAV test connection button
     webdavTestBtn?.addEventListener('click', async () => {
-      try { await backupToWebDAV(); webdavTestBtn.textContent = i18n('webdavTestOk'); setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 2000); }
-      catch(e) { webdavTestBtn.textContent = i18n('webdavTestFail'); setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 2000); }
+      webdavTestBtn.textContent = i18n('webdavTesting');
+      webdavTestBtn.disabled = true;
+      try {
+        await testWebDAVConnection();
+        webdavTestBtn.textContent = i18n('webdavTestOk');
+      } catch (e) {
+        debugErr('WebDAV test failed', e);
+        // Show i18n error if it's a known error, otherwise show the raw message
+        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrNetwork'];
+        const isKnown = knownErrors.some(k => e.message && i18n(k) === e.message);
+        if (isKnown) {
+          webdavTestBtn.textContent = e.message;
+        } else {
+          // Network errors (CORS, NetworkError, etc.) get a friendly i18n message
+          debug('WebDAV test: unknown error type, showing network error', e.message);
+          webdavTestBtn.textContent = i18n('webdavErrNetwork');
+        }
+      } finally {
+        webdavTestBtn.disabled = false;
+        setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 4000);
+      }
     });
+
+    // BX-DEV-115: Route WebDAV through background service worker to bypass CORS.
+    // In Firefox MV3, extension page fetch to external HTTPS is blocked even with
+    // host_permissions — "NetworkError when attempting to fetch resource".
+    // Background SW runs in extension origin, not subject to page CSP/CORS.
+    function sendToBackground(msg) {
+      // BX-DEV-115: Cross-browser message passing.
+      // Firefox browser.* returns a Promise from sendMessage without callback.
+      // Chrome chrome.* supports callback-style. Try Promise first, fall back to callback.
+      debug('sendToBackground:', msg.type);
+      // Try Promise-based API first (Firefox browser.* native, Chrome MV3 also supports this)
+      if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
+        return browser.runtime.sendMessage(msg).then(resp => {
+          if (resp && resp.success) return resp;
+          throw new Error(resp && resp.error ? resp.error : 'BG error');
+        });
+      }
+      // Fall back to callback-style (Chrome chrome.* API)
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        return new Promise((resolve, reject) => {
+          try {
+            chrome.runtime.sendMessage(msg, resp => {
+              if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+                return;
+              }
+              if (resp && resp.success) resolve(resp);
+              else if (resp && !resp.success) reject(new Error(resp.error || 'BG error'));
+              else reject(new Error('No response from background'));
+            });
+          } catch (e) { reject(e); }
+        });
+      }
+      return Promise.reject(new Error('No extension runtime available'));
+    }
+
+    async function testWebDAVConnection() {
+      const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
+      const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
+      const pass = webdavPassInput?.value || '';
+      debug('WebDAV test: starting', { url, user: user ? '(set)' : '(empty)', pass: pass ? '(set)' : '(empty)' });
+      if (!url) throw new Error(i18n('webdavErrNoUrl'));
+      const target = new URL(url);
+      if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
+      if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
+      if (user && !pass) {
+        debugErr('WebDAV test: password is empty — decrypt may not have completed');
+        throw new Error(i18n('webdavErrNoPass'));
+      }
+      try {
+        let status, ok;
+        // Primary: route through background SW (bypasses CORS in Firefox MV3)
+        try {
+          const resp = await sendToBackground({ type: 'webdav-test', url: target.href, user, pass });
+          status = resp.status; ok = resp.ok;
+          debug('WebDAV test via BG:', { status, ok });
+        } catch (bgErr) {
+          debug('WebDAV test via BG failed, falling back to direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
+          // Fallback: direct fetch (works in Chromium extension, not in Firefox)
+          const h = new Headers({ 'Depth': '0' });
+          if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
+          const resp = await fetch(target.href, { method: 'PROPFIND', headers: h, redirect: 'follow' });
+          status = resp.status;
+          ok = resp.status === 207 || resp.ok;
+          debug('WebDAV test direct: PROPFIND', { status, ok });
+        }
+        // Interpret response
+        debug('WebDAV test: interpreting response', { status, ok });
+        if (status === 401 || status === 403) {
+          throw new Error(i18n('webdavErrAuth', [status]));
+        }
+        if (status === 404) {
+          throw new Error(i18n('webdavErrPath'));
+        }
+        if (status === 207 || status === 200 || (ok && status >= 200 && status < 300)) {
+          debug('WebDAV test: connection OK');
+          return true;
+        }
+        throw new Error(i18n('webdavErrStatus', [status]));
+      } catch (netErr) {
+        // If the error is already a known i18n message, re-throw it
+        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrNetwork'];
+        const isKnown = knownErrors.some(k => netErr.message && i18n(k) === netErr.message);
+        if (isKnown) throw netErr;
+        // Map network/fetch errors (TypeError, NetworkError, etc.) to the i18n message
+        debugErr('WebDAV test: network-level error', netErr);
+        throw new Error(i18n('webdavErrNetwork'));
+      }
+    }
 
     async function backupToWebDAV() {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
       const pass = webdavPassInput?.value || '';
-      if (!url) throw new Error('WebDAV URL not configured');
-      const h = new Headers({ 'Content-Type': 'application/json' });
-      if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
-      const resp = await fetch(url, { method: 'PUT', headers: h, body: JSON.stringify(layout, null, 2) });
-      if (!resp.ok) throw new Error('WebDAV PUT ' + resp.status);
+      debug('WebDAV backup: starting', { url, user: user ? '(set)' : '(empty)' });
+      if (!url) throw new Error(i18n('webdavErrNoUrl'));
+      const target = new URL(url);
+      if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
+      if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
+      // Resolve file URL
+      let basePath = target.href;
+      if (!basePath.endsWith('/')) basePath += '/';
+      const BACKUP_FILENAME = 'boxing-backup.json';
+      let fileUrl = basePath.endsWith(BACKUP_FILENAME) ? basePath : basePath + BACKUP_FILENAME;
+      if (target.href.endsWith('.json')) fileUrl = target.href;
+      debug('WebDAV backup: resolved file URL', fileUrl);
+      if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
+      const body = JSON.stringify(layout, null, 2);
+      debug('WebDAV backup: sending PUT', { size: body.length });
+      try {
+        let status, ok;
+        // Primary: route through background SW
+        try {
+          const resp = await sendToBackground({ type: 'webdav-put', url: fileUrl, user, pass, body });
+          status = resp.status; ok = resp.ok;
+          debug('WebDAV backup via BG: PUT', { status, ok });
+        } catch (bgErr) {
+          debug('WebDAV backup via BG failed, falling back to direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
+          const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
+          if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
+          const resp = await fetch(fileUrl, { method: 'PUT', headers: h, body, redirect: 'follow' });
+          status = resp.status; ok = resp.ok;
+          debug('WebDAV backup direct: PUT', { status, ok });
+        }
+        if (status === 401 || status === 403) {
+          throw new Error(i18n('webdavErrAuth', [status]));
+        }
+        if (status === 409) {
+          throw new Error(i18n('webdavErrConflict'));
+        }
+        if (!ok && status !== 201 && status !== 204) {
+          throw new Error(i18n('webdavErrPut', [status]));
+        }
+        debug('WebDAV backup: success');
+        return true;
+      } catch (netErr) {
+        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork'];
+        const isKnown = knownErrors.some(k => netErr.message && i18n(k) === netErr.message);
+        if (isKnown) throw netErr;
+        debugErr('WebDAV backup: network-level error', netErr);
+        throw new Error(i18n('webdavErrNetwork'));
+      }
+    }
+    // BX-DEV-114: expose for __boxingDebug (which runs in outer scope)
+    window.__boxingTestWebDAV = testWebDAVConnection;
+    window.__boxingBackupWebDAV = backupToWebDAV;
+
+    // ── BX-DEV-SYNC: WebDAV two-way sync (replaces blind backup) ───────────
+    // First sync (lastSyncAt === 0) + cloud exists → pull cloud over local.
+    // Otherwise: compare layout._meta.updatedAt vs cloud._meta.updatedAt — newer wins.
+    // Data-loss guard runs BEFORE any destructive upload: if currentLocalBoxCount
+    // < 50% of lastKnownBoxCountBaseline, prompt user to restore from cloud instead.
+
+    function computeBoxCount(layoutObj) {
+      const large = Array.isArray(layoutObj?.boxes) ? layoutObj.boxes.length : 0;
+      let small = 0;
+      for (const b of (layoutObj?.boxes || [])) {
+        if (Array.isArray(b?.children)) small += b.children.length;
+      }
+      return { large, small, total: large + small };
+    }
+
+    function getBaselineBoxCount() {
+      return Number(layout.settings?.lastKnownBoxCountBaseline) || 0;
+    }
+
+    function setBaselineBoxCount(n) {
+      if (!layout.settings) layout.settings = {};
+      layout.settings.lastKnownBoxCountBaseline = n;
+    }
+
+    // BX-DATALOSS-V2: improved data-loss detection.
+    // Combines three independent signals so intentional deletes and sync recoveries do NOT
+    // false-trigger, while true data-loss (stale/truncated local after refresh or bad merge)
+    // is caught:
+    //   1) local total dropped to <50% of the renormalized baseline AND >=2 boxes missing;
+    //   2) local total dropped to <70% of baseline AND >=3 boxes missing (stricter ratio for
+    //      medium drops, avoids catching normal user 1-2 deletions);
+    // Signal must hold for the *current* sync attempt only (not a transient state), and
+    // intentionally does not run when baseline is itself 0/<2 (fresh installs).
+    function detectDataLoss() {
+      const baseline = getBaselineBoxCount();
+      if (!baseline || baseline < 2) return false;
+      const cur = computeBoxCount(layout).total;
+      if (cur >= baseline) return false; // local grew or held — not loss
+      const drop = baseline - cur;
+      // Tier 1: catastrophic drop (>50% missing, >=2 boxes).
+      const catastrophic = cur < baseline * 0.5 && drop >= 2;
+      // Tier 2: significant drop (>=30% missing) requires at least 3 boxes lost —
+      // guards against accidentally triggering on 1-2 intentional user deletions.
+      const significant = cur < baseline * 0.7 && drop >= 3;
+      return catastrophic || significant;
+    }
+
+    async function webdavGetCloud(fileUrl, user, pass) {
+      let status, body;
+      try {
+        const resp = await sendToBackground({ type: 'webdav-get', url: fileUrl, user, pass });
+        status = resp.status; body = resp.body;
+      } catch (bgErr) {
+        debug('WebDAV GET via BG failed, trying direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
+        const h = new Headers();
+        if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
+        const resp = await fetch(fileUrl, { method: 'GET', headers: h, redirect: 'follow' });
+        status = resp.status; body = resp.ok ? await resp.text() : null;
+      }
+      debug('WebDAV GET cloud:', { status, bodyLen: body?.length || 0 });
+      if (status === 404) return null;
+      if (status === 401 || status === 403) throw new Error(i18n('webdavErrAuth', [status]));
+      if (status >= 400) throw new Error(i18n('syncErrGetFailed', [status]));
+      if (!body) return null;
+      try { return JSON.parse(body); } catch (_) { throw new Error(i18n('syncErrParseFailed')); }
+    }
+
+    async function webdavPutLocal(fileUrl, user, pass, body) {
+      let status, ok;
+      try {
+        const resp = await sendToBackground({ type: 'webdav-put', url: fileUrl, user, pass, body });
+        status = resp.status; ok = resp.ok;
+      } catch (bgErr) {
+        debug('WebDAV PUT via BG failed, trying direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
+        const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
+        if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
+        const resp = await fetch(fileUrl, { method: 'PUT', headers: h, body, redirect: 'follow' });
+        status = resp.status; ok = resp.ok;
+      }
+      if (status === 401 || status === 403) throw new Error(i18n('webdavErrAuth', [status]));
+      if (status === 409) throw new Error(i18n('webdavErrConflict'));
+      if (!ok && status !== 201 && status !== 204) throw new Error(i18n('webdavErrPut', [status]));
       return true;
     }
+
+    // Resolve the cloud file URL the same way backupToWebDAV does.
+    function resolveWebDAVFileUrl(urlInput) {
+      const url = urlInput.trim();
+      if (!url) return { url: '', fileUrl: '' };
+      const target = new URL(url);
+      let basePath = target.href;
+      if (!basePath.endsWith('/')) basePath += '/';
+      const BACKUP_FILENAME = 'boxing-backup.json';
+      let fileUrl = basePath.endsWith(BACKUP_FILENAME) ? basePath : basePath + BACKUP_FILENAME;
+      if (target.href.endsWith('.json')) fileUrl = target.href;
+      return { url, fileUrl };
+    }
+
+    // Two-way sync. Returns { direction: 'pull'|'push'|'none', cloudBoxes, localBoxes }.
+    async function syncWithWebDAV(opts = {}) {
+      const bypassLossGuard = !!opts.bypassLossGuard;
+      const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
+      const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
+      const pass = webdavPassInput?.value || '';
+      debug('WebDAV sync: starting', { url, user: user ? '(set)' : '(empty)' });
+      if (!url) throw new Error(i18n('webdavErrNoUrl'));
+      checkUrlValid(url);
+      if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
+      const { fileUrl } = resolveWebDAVFileUrl(url);
+
+      // Data-loss guard — blocks destructive upload unless user confirms restore-from-cloud.
+      if (!bypassLossGuard && detectDataLoss()) {
+        const baseline = getBaselineBoxCount();
+        const cur = computeBoxCount(layout).total;
+        const msg = i18n('syncErrPartialLoss', [baseline, cur]);
+        if (typeof confirm === 'function' && confirm(msg)) {
+          // Try to restore from cloud (force pull). If user declines after all, abort sync.
+          const cloud = await webdavGetCloud(fileUrl, user, pass);
+          if (cloud && typeof cloud === 'object' && Array.isArray(cloud.boxes)) {
+            // Replace local layout with cloud (keep sync meta).
+            const savedMeta = layout._meta;
+            const savedSettings = layout.settings;
+            layout = cloud;
+            if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
+            if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
+            layout._meta = layout._meta || {};
+            layout._meta.updatedAt = Date.now();
+            layout._meta.writerId = writerId;
+            const lossRev = (Number(cloud._meta?.revision) || 0) + 1;
+            layout._meta.revision = lossRev;
+            // Direct write — avoid saveLayout restoring the truncated local.
+            try {
+              await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+            } catch (e) { debugErr('WebDAV sync: data-loss restore set failed', e); }
+            renderCanvas();
+            const cnt = computeBoxCount(layout).total;
+            setBaselineBoxCount(cnt);
+            debug('WebDAV sync: cloud restored after data-loss guard', { boxes: cnt });
+            return { direction: 'pull', cloudBoxes: cnt, localBoxes: cnt, restoredAfterLoss: true };
+          }
+          throw new Error(i18n('syncErrCloudRestoreFailed', ['cloud missing or invalid']));
+        }
+        debug('WebDAV sync: data-loss guard triggered but user declined restore; aborting upload');
+        throw new Error(i18n('syncErrPartialLossTitle'));
+      }
+
+      // GET cloud file.
+      const cloud = await webdavGetCloud(fileUrl, user, pass);
+      const lastSyncAt = Number(layout.settings?.lastSyncAt) || 0;
+      const localUpdatedAt = Number(layout._meta?.updatedAt) || 0;
+      const cloudUpdatedAt = cloud && typeof cloud === 'object' ? (Number(cloud._meta?.updatedAt) || 0) : 0;
+      debug('WebDAV sync: timestamps', { localUpdatedAt, cloudUpdatedAt, lastSyncAt, cloudExists: !!cloud });
+
+      // First sync (never synced before) + cloud exists → pull cloud over local.
+      // Use direct storage.set (bypass saveLayout merge) so the old local layout is fully replaced, not merged.
+      // BX-FATAL-FIX: ONLY blindly pull cloud over local when local is empty. If local has
+      // data (e.g. user added content after install, or lastSyncAt was lost by a stale
+      // storage migration / cross-tab state loss), do NOT overwrite — fall through to
+      // timestamp comparison so the newer side wins. This prevents the fatal "refresh
+      // reverts to first-sync" scenario where user's freshly-added content is wiped by
+      // stale cloud data because lastSyncAt somehow reads as 0 after reload.
+      const localBoxCountTotal = computeBoxCount(layout).total;
+      if (lastSyncAt === 0 && cloud && Array.isArray(cloud.boxes) && localBoxCountTotal === 0) {
+        const savedSettings = layout.settings;
+        const savedMeta = layout._meta;
+        layout = cloud;
+        if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
+        if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
+        layout._meta = layout._meta || {};
+        layout._meta.updatedAt = Date.now();
+        layout._meta.writerId = writerId;
+        const newRevision = (Number(cloud._meta?.revision) || 0) + 1;
+        layout._meta.revision = newRevision;
+        layout.settings.lastSyncAt = Date.now();
+        setBaselineBoxCount(computeBoxCount(layout).total);
+        // Direct write — do NOT merge with old local (we are intentionally discarding it).
+        try {
+          await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+        } catch (e) { debugErr('WebDAV sync: first-time pull set failed', e); }
+        renderCanvas();
+        debug('WebDAV sync: first-time pull', { boxes: layout.boxes.length });
+        return { direction: 'pull', cloudBoxes: layout.boxes.length, localBoxes: layout.boxes.length, firstSync: true };
+      }
+
+      // Both exist: newer wins.
+      if (cloud && Array.isArray(cloud.boxes)) {
+        if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {
+          // Cloud is newer or equal-but-different-writer → pull.
+          const savedSettings = layout.settings;
+          const savedMeta = layout._meta;
+          layout = cloud;
+          if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
+          if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
+          layout._meta = layout._meta || {};
+          layout._meta.updatedAt = Date.now();
+          layout._meta.writerId = writerId;
+          const newRevision2 = (Number(cloud._meta?.revision) || 0) + 1;
+          layout._meta.revision = newRevision2;
+          layout.settings.lastSyncAt = Date.now();
+          setBaselineBoxCount(computeBoxCount(layout).total);
+          // Direct write — avoid saveLayout merging old local boxes back in.
+          try {
+            await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+          } catch (e) { debugErr('WebDAV sync: cloud-newer pull set failed', e); }
+          renderCanvas();
+          debug('WebDAV sync: cloud newer, pulled', { boxes: layout.boxes.length });
+          return { direction: 'pull', cloudBoxes: layout.boxes.length, localBoxes: layout.boxes.length };
+        }
+        // Local is newer → upload local over cloud.
+        const body = JSON.stringify(layout, null, 2);
+        await webdavPutLocal(fileUrl, user, pass, body);
+        layout.settings.lastSyncAt = Date.now();
+        setBaselineBoxCount(computeBoxCount(layout).total);
+        saveLayout();
+        debug('WebDAV sync: local newer, pushed', { boxes: layout.boxes.length });
+        return { direction: 'push', cloudBoxes: cloud.boxes.length, localBoxes: layout.boxes.length };
+      }
+
+      // Cloud absent or invalid → upload local.
+      const body = JSON.stringify(layout, null, 2);
+      await webdavPutLocal(fileUrl, user, pass, body);
+      layout.settings.lastSyncAt = Date.now();
+      setBaselineBoxCount(computeBoxCount(layout).total);
+      saveLayout();
+      debug('WebDAV sync: no cloud, pushed local', { boxes: layout.boxes.length });
+      return { direction: 'push', cloudBoxes: 0, localBoxes: layout.boxes.length };
+    }
+
+    function checkUrlValid(urlStr) {
+      const target = new URL(urlStr);
+      if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
+      if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
+    }
+
+    // Expose sync for debug + tests.
+    window.__boxingSyncWebDAV = syncWithWebDAV;
 
     async function backupToGist() {
       const token = gistTokenInput?.value?.trim();
       if (!token) throw new Error('GitHub token not configured');
       const gistId = layout.settings.gistId || gistIdInput?.value?.trim();
+      if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw new Error('Invalid Gist ID');
       const content = JSON.stringify(layout, null, 2);
       const h = new Headers({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' });
       let resp, result;
@@ -2264,10 +2924,11 @@ function updateInnerCaption(lb) {
     }
 
     // Unified backup dispatcher (only used for remote providers)
+    // Unified sync dispatcher (only used for remote providers)
     async function performBackup() {
       const p = syncProviderSelect?.value || 'local';
       try {
-        if (p === 'webdav') { await backupToWebDAV(); debug('WebDAV backup ok'); }
+        if (p === 'webdav') { await syncWithWebDAV(); debug('WebDAV sync ok'); }
         else if (p === 'gist') { await backupToGist(); debug('Gist backup ok'); }
         else { backupToLocal(); }
         layout.settings.lastBackupAt = Date.now();
@@ -2289,7 +2950,7 @@ function updateInnerCaption(lb) {
         const now = Date.now();
         if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
         lastAutoBackupTs = now;
-        try { await performBackup(); debug('Auto-backup done'); } catch(e) { debugErr('Auto-backup err', e); }
+        try { await performBackup(); debug('Auto-backup done'); } catch (e) { debugErr('Auto-backup err', e); }
       }, sec * 1000);
     }
 
@@ -2322,7 +2983,7 @@ function updateInnerCaption(lb) {
       const file = importFile.files[0];
       if (!file) return;
       // BX-DEV-111f: File size sanity check — reject imports > 5MB
-      if (file.size > 5 * 1024 * 1024) { try { alert(i18n('importTooLarge')); } catch(_) {} importFile.value = ''; return; }
+      if (file.size > 5 * 1024 * 1024) { try { alert(i18n('importTooLarge')); } catch (_) { } importFile.value = ''; return; }
       try {
         const text = await file.text();
         // BX-DEV-111f: Strip UTF-8 BOM if present
@@ -2333,10 +2994,28 @@ function updateInnerCaption(lb) {
         if (JSON.stringify(data).length > 2_000_000) throw new Error('too large');
         if (!data || !Array.isArray(data.boxes)) throw new Error('invalid');
         if (data.boxes.some(b => typeof b !== 'object' || !b.id)) throw new Error('corrupt boxes');
+        if (data.boxes.length > MAX_LARGE_BOXES) throw new Error('too many boxes');
+        const ids = new Set();
         // Validate each box has minimum required fields
         for (const b of data.boxes) {
-          if (!b.id || typeof b.x !== 'number' || typeof b.y !== 'number') throw new Error('corrupt box');
-          if (b.children) { for (const s of b.children) { if (!s.id || typeof s.x !== 'number' || typeof s.y !== 'number') throw new Error('corrupt small box'); } }
+          if (typeof b.id !== 'string' || b.id.length > 128 || ids.has(b.id)) throw new Error('corrupt box id');
+          ids.add(b.id);
+          if (!Number.isFinite(b.x) || !Number.isFinite(b.y) || Math.abs(b.x) > 100000 || Math.abs(b.y) > 100000) throw new Error('corrupt box position');
+          if (typeof b.title === 'string' && b.title.length > 500) throw new Error('box title too long');
+          if (b.children != null && !Array.isArray(b.children)) throw new Error('corrupt children');
+          if ((b.children?.length || 0) > MAX_SMALL_BOXES) throw new Error('too many small boxes');
+          for (const s of b.children || []) {
+            if (typeof s?.id !== 'string' || s.id.length > 128 || ids.has(s.id)) throw new Error('corrupt small box id');
+            ids.add(s.id);
+            if (!Number.isFinite(s.x) || !Number.isFinite(s.y) || Math.abs(s.x) > 100000 || Math.abs(s.y) > 100000) throw new Error('corrupt small box position');
+            if (!Array.isArray(s.bookmarks || [])) throw new Error('corrupt bookmarks');
+            if ((s.bookmarks?.length || 0) > MAX_BOOKMARKS) throw new Error('too many bookmarks');
+            for (const bm of s.bookmarks || []) {
+              if (typeof bm?.id !== 'string' || bm.id.length > 128 || ids.has(bm.id)) throw new Error('corrupt bookmark id');
+              ids.add(bm.id);
+              if (typeof bm.title !== 'string' || bm.title.length > 1000 || !normalizeBookmarkUrl(bm.url)) throw new Error('corrupt bookmark');
+            }
+          }
         }
         // BX-DEV-111f: Sanitize settings — prevent NaN/Infinity injection
         if (data.settings) {
@@ -2352,9 +3031,9 @@ function updateInnerCaption(lb) {
         applyCanvasTransform();
         applyInnerTransform();
         updateCaption();
-        try { /* silent success — no alert needed */ } catch(_) {}
+        try { /* silent success — no alert needed */ } catch (_) { }
         debug('Import succeeded, layout replaced');
-      } catch (_) { try { alert(i18n('importFailed')); } catch(_) {} }
+      } catch (_) { try { alert(i18n('importFailed')); } catch (_) { } }
       importFile.value = '';
     });
 
@@ -2369,262 +3048,179 @@ function updateInnerCaption(lb) {
     // Window resize
     window.addEventListener('resize', onWindowResize);
 
-    // BX-DEV-111j: saveViewState() — unified snapshot on visibilitychange AND pagehide.
-    // - visibilitychange: fires when tab loses focus (switch away / minimize / browser shutdown).
-    // - pagehide: reliably fires on tab close / browser terminate in BOTH Chrome and Firefox/LibreWolf.
-    // Both write to localStorage synchronously for shutdown reliability, plus async sync storage.
-    // On new tab / browser restart: restore from last active tab's snapshot (box id + pan + zoom).
-    // Refresh does NOT restore memory snapshot; new tab DOES.
-    // BX-DEV-111k: Decoupled snapshot system — two independent localStorage keys.
-    // boxingViewSnapshot: saved on visibilitychange + pagehide, for NEW TAB restore.
-    // boxingRefreshSnapshot: saved on pagehide ONLY, for REFRESH restore (exact current state).
-    // This prevents refresh from picking up another tab's memory.
-    function saveViewState() {
-      const snap = {
-        lastLargeBoxId: currentLargeBoxId || null,
-        lastZoom: canvasZoom, lastPanX: canvasPanX, lastPanY: canvasPanY,
-        lastInnerZoom: innerZoom, lastInnerPanX: innerPanX, lastInnerPanY: innerPanY,
-        headerPinned: headerPinned
-      };
-      // Update layout fields for sync storage persistence
-      if (currentLargeBoxId) {
-        layout.lastLargeBoxId = currentLargeBoxId;
-        layout.lastInnerZoom = innerZoom;
-        layout.lastInnerPanX = innerPanX;
-        layout.lastInnerPanY = innerPanY;
-      } else {
-        layout.lastLargeBoxId = null;
-        layout.lastZoom = canvasZoom;
-        layout.lastPanX = canvasPanX;
-        layout.lastPanY = canvasPanY;
-      }
-      layout.settings.headerPinned = headerPinned;
-      // Synchronous write: both snapshots go to localStorage for shutdown reliability
-      try { localStorage.setItem('boxingViewSnapshot', JSON.stringify(snap)); } catch(_) {}
-      // pagehide fires for BOTH refresh and tab close — save refresh snapshot too
-      // (visibilitychange only saves view snapshot, not refresh snapshot)
-      try { api.storage.sync.set({ boxingLayout: layout }); } catch(_) {}
-    }
-    function saveRefreshSnapshot() {
-      // Dedicated refresh snapshot: exact current DOM-level state at pagehide time
-      const snap = {
-        currentLargeBoxId: currentLargeBoxId || null,
-        canvasZoom, canvasPanX, canvasPanY,
-        innerZoom, innerPanX, innerPanY,
-        headerPinned
-      };
-      try { localStorage.setItem('boxingRefreshSnapshot', JSON.stringify(snap)); } catch(_) {}
-    }
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') saveViewState();
-    });
-    // pagehide: save BOTH snapshots — view for new tab, refresh for exact restore
-    window.addEventListener('pagehide', () => { saveViewState(); saveRefreshSnapshot(); });
+    // Per-tab session state survives reload but is isolated from every other tab.
+    window.addEventListener('pagehide', () => persistViewState(false));
 
-    // BX-DEV-111: Save layout immediately before page unload (refresh/close)
-    // Synchronous write to storage.sync — beforeunload cannot wait for async
-    window.addEventListener('beforeunload', () => {
-      if (currentLargeBoxId) {
-        layout.lastInnerZoom = innerZoom;
-        layout.lastInnerPanX = innerPanX;
-        layout.lastInnerPanY = innerPanY;
-      } else {
-        layout.lastZoom = canvasZoom;
-        layout.lastPanX = canvasPanX;
-        layout.lastPanY = canvasPanY;
-      }
-      layout.settings.headerPinned = headerPinned;
-      // BX-DEV-111: async storage.sync.set() won't complete in beforeunload.
-      // Fallback: serialize to localStorage as emergency backup.
-      // On next init, loadLayout will check localStorage if sync storage is stale.
-      try { localStorage.setItem('boxingEmergencyBackup', JSON.stringify(layout)); } catch(_) {}
+    api.storage.onChanged?.addListener?.((changes, areaName) => {
+      const expectedArea = layoutStorage === api.storage.local ? 'local' : 'sync';
+      if (areaName !== expectedArea || !changes.boxingLayout?.newValue) return;
+      applyExternalLayout(changes.boxingLayout.newValue);
     });
 
-    // BX-DEV-111: On REFRESH, restore canvas position (pan+zoom) from last saved state.
-    // On NEW TAB, optionally restore full position including which box was open.
-    // Detect refresh vs new-tab: Navigation Timing API type 0 = navigate, 1 = reload.
-    const isNewTab = !(window.performance?.navigation?.type === 1 || window.performance?.getEntriesByType?.('navigation')?.[0]?.type === 'reload');
+    const navigationType = performance.getEntriesByType?.('navigation')?.[0]?.type;
+    let view = null;
+    try {
+      const key = navigationType === 'reload' ? TAB_VIEW_KEY : LAST_ACTIVE_VIEW_KEY;
+      view = JSON.parse((navigationType === 'reload' ? sessionStorage : localStorage).getItem(key) || 'null');
+    } catch (e) { debugWarn('view restore', e); }
 
-    // BX-DEV-111k: Decoupled refresh vs new-tab restore.
-    // Refresh: restore from boxingRefreshSnapshot (pagehide snapshot of THIS tab's exact state).
-    //   - Restores whether user was on canvas OR inside a large box (small-box page).
-    //   - Does NOT restore from boxingViewSnapshot (that's for new tab / browser restart).
-    // New tab: restore from boxingViewSnapshot (last active tab's state when hidden/closed).
-    //   - Always renders canvas (never drills into a box).
-    //   - lastLargeBoxId from view snapshot controls canvas restore only.
-    if (!isNewTab) {
-      // BX-DEV-111k: Refresh — restore from dedicated refresh snapshot (pagehide)
-      let rs = null;
-      try { rs = JSON.parse(localStorage.getItem('boxingRefreshSnapshot') || 'null'); } catch(_) {}
-      if (rs) {
-        canvasZoom = rs.canvasZoom || 1.0;
-        canvasPanX = rs.canvasPanX || 0;
-        canvasPanY = rs.canvasPanY || 0;
-        if (rs.headerPinned !== undefined) headerPinned = rs.headerPinned;
-        applyCanvasTransform();
-        // If refresh snapshot says we were inside a large box, restore inner state
-        if (rs.currentLargeBoxId) {
-          const lb = getLargeBox(rs.currentLargeBoxId);
-          if (lb) {
-            innerZoom = rs.innerZoom || 1.0;
-            innerPanX = rs.innerPanX || 0;
-            innerPanY = rs.innerPanY || 0;
-            // BX-DEV-111k: validate box exists before entering (cross-tab delete protection)
-            if (!getLargeBox(rs.currentLargeBoxId)) {
-              // Box was deleted on another tab between pagehide and refresh
-              exitToCanvas();
-              renderCanvas();
-              debug('init (refresh) box deleted, back to canvas');
-              return;
-            }
-            applyInnerTransform();
-            enterLargeBox(rs.currentLargeBoxId, false);
-            debug('init (refresh) restored inner box', { id: rs.currentLargeBoxId, zoom: innerZoom });
-            return;
-          }
-        }
-        // Refresh snapshot says we were on canvas
-        renderCanvas();
-        debug('init (refresh) restored canvas', { boxes: layout.boxes.length, zoom: canvasZoom });
-        return;
-      }
-      // Fallback: no refresh snapshot (first load / legacy)
-      canvasZoom = layout.lastZoom || 1.0;
-      canvasPanX = layout.lastPanX || 0;
-      canvasPanY = layout.lastPanY || 0;
-      applyCanvasTransform();
+    const shouldRestoreView = navigationType === 'reload' || layout.settings.rememberLastPos !== false;
+    if (view && shouldRestoreView) {
+      canvasZoom = Number(view.canvasZoom) || 1;
+      canvasPanX = Number(view.canvasPanX) || 0;
+      canvasPanY = Number(view.canvasPanY) || 0;
+      innerZoom = Number(view.innerZoom) || 1;
+      innerPanX = Number(view.innerPanX) || 0;
+      innerPanY = Number(view.innerPanY) || 0;
+      if (view.headerPinned !== undefined) headerPinned = view.headerPinned;
+    }
+
+    if (view?.currentLargeBoxId && getLargeBox(view.currentLargeBoxId)) {
+      enterLargeBox(view.currentLargeBoxId, true);
+    } else {
       renderCanvas();
-      debug('init (refresh fallback) no refresh snapshot', { boxes: layout.boxes.length });
-      return;
-    }
-    if (isNewTab) {
-      // BX-DEV-111k: New tab restore from boxingViewSnapshot (last active tab's state).
-      // Always renders canvas (never drills into a box).
-      // rememberLastPos controls whether to restore canvas zoom/pan position.
-      let vs = null;
-      try { vs = JSON.parse(localStorage.getItem('boxingViewSnapshot') || 'null'); } catch(_) {}
-      if (vs) {
-        canvasZoom = vs.lastZoom || 1.0;
-        canvasPanX = vs.lastPanX || 0;
-        canvasPanY = vs.lastPanY || 0;
-        if (vs.headerPinned !== undefined) headerPinned = vs.headerPinned;
-      } else {
-        canvasZoom = layout.lastZoom || 1.0;
-        canvasPanX = layout.lastPanX || 0;
-        canvasPanY = layout.lastPanY || 0;
-      }
       applyCanvasTransform();
     }
-
-    renderCanvas();
+    // BX-ONBOARDING: first-run guided tour — auto-show on fresh install with empty canvas.
+    try { initOnboarding(); } catch (e) { debugErr('onboarding init', e); }
+    persistViewState(true);
     debug('init complete v3.7.8', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, headerPinned, darkMode: layout.settings.darkMode });
+  }
+
+  // ── BX-ONBOARDING: first-run guided tour ───────────────────────────────
+  function initOnboarding() {
+    const overlay = document.getElementById('onboarding-overlay');
+    if (!overlay) return;
+    const freshInstall = !layout.settings.onboardingCompleted && Array.isArray(layout.boxes) && layout.boxes.length === 0;
+    if (!freshInstall) { return; }
+    const steps = Array.from(overlay.querySelectorAll('.onboarding__step'));
+    const dots = Array.from(overlay.querySelectorAll('.onboarding__dot'));
+    const prevBtn = document.getElementById('onboarding-prev-btn');
+    const nextBtn = document.getElementById('onboarding-next-btn');
+    const skipBtn = document.getElementById('onboarding-skip-btn');
+    let current = 0;
+    function render() {
+      steps.forEach((el, i) => { el.hidden = i !== current; });
+      dots.forEach((d, i) => { d.classList.toggle('is-active', i === current); });
+      if (prevBtn) prevBtn.disabled = current === 0;
+      if (nextBtn) {
+        const last = current === steps.length - 1;
+        nextBtn.textContent = last ? (i18n('onboardingFinish') || 'Get started') : (i18n('onboardingNext') || 'Next');
+      }
+    }
+    function close(commit) {
+      overlay.hidden = true;
+      layout.settings.onboardingCompleted = true;
+      saveLayout();
+      debug('onboarding', commit ? 'completed' : 'skipped');
+    }
+    prevBtn?.addEventListener('click', () => { if (current > 0) { current--; render(); } });
+    nextBtn?.addEventListener('click', () => {
+      if (current < steps.length - 1) { current++; render(); }
+      else { close(true); }
+    });
+    skipBtn?.addEventListener('click', () => close(false));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+    overlay.hidden = false;
+    render();
   }
 
   await init();
 })();
+// BX-DEV-111 v2: Fastest-CDN race — probe all sources on first request, lock winner for session
+const FAVICON_SOURCES = [
+  { name: 'bytecook', url: (h) => `https://ico.bytecook.io/${h}` },
+  { name: 'duckduckgo', url: (h) => `https://icons.duckduckgo.com/ip3/${h}.ico` },
+  { name: 'google', url: (h) => `https://www.google.com/s2/favicons?domain=${h}&sz=32` },
+  { name: 'faviconim', url: (h) => `https://favicon.im/${h}` },
+];
+let fastestCDN = null; // session-locked winner after race
+let cdnRaceDone = false;
 
-  // BX-DEV-107: multi-source favicon with sessionStorage cache (clears on browser restart)
-  function getFaviconUrl(url) {
-    try { const host = new URL(url).hostname; if (!host) return null; } catch(_) { return null; }
-    const host = new URL(url).hostname;
-    // DuckDuckGo first (CN-friendly, global CDN)
-    return `https://icons.duckduckgo.com/ip3/${host}.ico`;
+function getFaviconUrl(url) {
+  try { const host = new URL(url).hostname; if (!host) return null; } catch (_) { return null; }
+  const host = new URL(url).hostname;
+  if (fastestCDN) return fastestCDN.url(host);
+  // Default: DuckDuckGo (global, CN-accessible)
+  return `https://icons.duckduckgo.com/ip3/${host}.ico`;
+}
+
+// BX-DEV-111 v2: Race all CDNs on first favicon request, pick fastest
+async function raceCDN(testHost) {
+  if (cdnRaceDone) return;
+  cdnRaceDone = true;
+  let bestTime = Infinity;
+  const results = await Promise.allSettled(FAVICON_SOURCES.map(async (src) => {
+    const url = src.url(testHost);
+    const start = performance.now();
+    await new Promise((resolve, reject) => {
+      const probe = new Image();
+      const timer = setTimeout(() => reject(new Error('timeout')), 2500);
+      probe.onload = () => { clearTimeout(timer); resolve(); };
+      probe.onerror = () => { clearTimeout(timer); reject(new Error('load failed')); };
+      probe.src = url;
+    });
+    const elapsed = performance.now() - start;
+    return { src, elapsed };
+  }));
+  for (const r of results) {
+    if (r.status === 'fulfilled' && r.value.elapsed < bestTime) {
+      bestTime = r.value.elapsed;
+      fastestCDN = r.value.src;
+    }
   }
+  if (window.__BOXING_DEBUG__) console.debug('[Boxing] CDN race winner:', fastestCDN?.name || 'none', Number.isFinite(bestTime) ? bestTime.toFixed(0) + 'ms' : 'n/a');
+}
 
-  // BX-DEV-111 v2: Fastest-CDN race — probe all sources on first request, lock winner for session
-  const FAVICON_SOURCES = [
-    { name: 'bytecook',   url: (h) => `https://ico.bytecook.io/${h}` },
-    { name: 'duckduckgo', url: (h) => `https://icons.duckduckgo.com/ip3/${h}.ico` },
-    { name: 'google',     url: (h) => `https://www.google.com/s2/favicons?domain=${h}&sz=32` },
-    { name: 'faviconim',  url: (h) => `https://favicon.im/${h}` },
-  ];
-  let fastestCDN = null; // session-locked winner after race
-  let cdnRaceDone = false;
+// BX-DEV-111 v2: Validate URL before favicon fetch — skip intranet / non-http / raw IP
+function isValidPublicUrl(url) {
+  try {
+    const u = new URL(url);
+    if (!/^https?:$/i.test(u.protocol)) return false;
+    const h = u.hostname;
+    if (!h || h === 'localhost') return false;
+    // Skip raw IPv4 / IPv6 addresses
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) return false;
+    if (h.includes(':')) return false; // IPv6
+    // Skip intranet ranges: 10.x, 172.16-31.x, 192.168.x, 127.x
+    const parts = h.split('.');
+    if (parts.length === 4) {
+      const a = +parts[0], b = +parts[1];
+      if (a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) return false;
+    }
+    return true;
+  } catch (_) { return false; }
+}
 
-  function getFaviconUrl(url) {
-    try { const host = new URL(url).hostname; if (!host) return null; } catch(_) { return null; }
-    const host = new URL(url).hostname;
-    if (fastestCDN) return fastestCDN.url(host);
-    // Default: DuckDuckGo (global, CN-accessible)
-    return `https://icons.duckduckgo.com/ip3/${host}.ico`;
+const faviconCache = new Map(); // volatile: cleared on browser restart (session-scoped)
+async function loadFavicon(img, url) {
+  // BX-DEV-111 v2: Validate — skip intranet, localhost, raw IPs
+  if (!isValidPublicUrl(url)) { img.style.display = 'none'; return; }
+  const host = new URL(url).hostname;
+  // Cache hit
+  if (faviconCache.has(host)) { const c = faviconCache.get(host); if (c === null) { img.style.display = 'none'; return; } img.src = c; return; }
+  // Trigger CDN race on first-ever favicon request
+  if (!cdnRaceDone) raceCDN(host);
+  // Build ordered source list: race winner first (if available), then fallbacks
+  const ordered = [];
+  if (fastestCDN) ordered.push(fastestCDN.url(host));
+  for (const src of FAVICON_SOURCES) {
+    const u = src.url(host);
+    if (!ordered.includes(u)) ordered.push(u);
   }
-
-  // BX-DEV-111 v2: Race all CDNs on first favicon request, pick fastest
-  async function raceCDN(testHost) {
-    if (cdnRaceDone) return;
-    cdnRaceDone = true;
-    let bestTime = Infinity;
-    const results = await Promise.allSettled(FAVICON_SOURCES.map(async (src) => {
-      const url = src.url(testHost);
-      const start = performance.now();
+  // Also try direct /favicon.ico as last resort
+  ordered.push(`https://${host}/favicon.ico`);
+  for (const src of ordered) {
+    try {
       await new Promise((resolve, reject) => {
         const probe = new Image();
-        probe.onload = () => resolve();
-        probe.onerror = () => reject();
-        probe.src = url;
-        setTimeout(() => reject(), 2500);
+        const timer = setTimeout(() => reject(new Error('timeout')), 3000);
+        probe.onload = () => { clearTimeout(timer); faviconCache.set(host, src); img.src = src; resolve(); };
+        probe.onerror = () => { clearTimeout(timer); reject(new Error('fail')); };
+        probe.src = src;
       });
-      const elapsed = performance.now() - start;
-      return { src, elapsed };
-    }));
-    for (const r of results) {
-      if (r.status === 'fulfilled' && r.value.elapsed < bestTime) {
-        bestTime = r.value.elapsed;
-        fastestCDN = r.value.src;
-      }
-    }
-    debug('CDN race winner:', fastestCDN?.name, bestTime.toFixed(0) + 'ms');
+      return;
+    } catch (_) { continue; }
   }
-
-  // BX-DEV-111 v2: Validate URL before favicon fetch — skip intranet / non-http / raw IP
-  function isValidPublicUrl(url) {
-    try {
-      const u = new URL(url);
-      if (!/^https?:$/i.test(u.protocol)) return false;
-      const h = u.hostname;
-      if (!h || h === 'localhost') return false;
-      // Skip raw IPv4 / IPv6 addresses
-      if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) return false;
-      if (h.includes(':')) return false; // IPv6
-      // Skip intranet ranges: 10.x, 172.16-31.x, 192.168.x, 127.x
-      const parts = h.split('.');
-      if (parts.length === 4) {
-        const a = +parts[0], b = +parts[1];
-        if (a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) return false;
-      }
-      return true;
-    } catch(_) { return false; }
-  }
-
-  const faviconCache = new Map(); // volatile: cleared on browser restart (session-scoped)
-  async function loadFavicon(img, url) {
-    // BX-DEV-111 v2: Validate — skip intranet, localhost, raw IPs
-    if (!isValidPublicUrl(url)) { img.style.display = 'none'; return; }
-    const host = new URL(url).hostname;
-    // Cache hit
-    if (faviconCache.has(host)) { const c = faviconCache.get(host); if (c === null) { img.style.display = 'none'; return; } img.src = c; return; }
-    // Trigger CDN race on first-ever favicon request
-    if (!cdnRaceDone) raceCDN(host);
-    // Build ordered source list: race winner first (if available), then fallbacks
-    const ordered = [];
-    if (fastestCDN) ordered.push(fastestCDN.url(host));
-    for (const src of FAVICON_SOURCES) {
-      const u = src.url(host);
-      if (!ordered.includes(u)) ordered.push(u);
-    }
-    // Also try direct /favicon.ico as last resort
-    ordered.push(`https://${host}/favicon.ico`);
-    for (const src of ordered) {
-      try {
-        await new Promise((resolve, reject) => {
-          const probe = new Image();
-          probe.onload = () => { faviconCache.set(host, src); img.src = src; resolve(); };
-          probe.onerror = () => reject(new Error('fail'));
-          probe.src = src;
-          setTimeout(() => reject(new Error('timeout')), 3000);
-        });
-        return;
-      } catch(_) { continue; }
-    }
-    faviconCache.set(host, null); img.style.display = 'none';
-  }
+  faviconCache.set(host, null); img.style.display = 'none';
+}
