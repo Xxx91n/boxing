@@ -79,10 +79,10 @@
     "description": "Default small box title"
   },
   "newLargeBox": {
-    "message": "बॉक्स $1$",
+    "message": "बॉक्स $count$",
     "description": "Default new large box title with auto-numbering",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -112,28 +112,28 @@
     "description": "Unpin button tooltip"
   },
   "largeBoxesCount": {
-    "message": "$1$ बड़े बॉक्स",
+    "message": "$count$ बड़े बॉक्स",
     "description": "Count of large boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "smallBoxesCount": {
-    "message": "$1$ छोटे बॉक्स",
+    "message": "$count$ छोटे बॉक्स",
     "description": "Count of small boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "searchResults": {
-    "message": "$1$ परिणाम",
+    "message": "$count$ परिणाम",
     "description": "Search result count",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -195,9 +195,9 @@
     "message": "वेब लिंक"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ छोटे बॉक्स",
+    "message": "$count$ छोटे बॉक्स",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -499,6 +499,12 @@
   "gistId": {
     "message": "Gist ID (स्वतः)"
   },
+  "webdavErrUrlTooLong": {
+    "message": "WebDAV URL बहुत लंबा है"
+  },
+  "webdavErrBlockedHost": {
+    "message": "निजी या स्थानीय नेटवर्क पते पर WebDAV होस्ट की अनुमति नहीं है"
+  },
   "webdavTestBtn": {
     "message": "परीक्षण"
   },
@@ -545,16 +551,31 @@
     "message": "WebDAV पासवर्ड खाली है — दोबारा दर्ज करें और पुनः प्रयास करें"
   },
   "webdavErrAuth": {
-    "message": "WebDAV प्रमाणीकरण विफल ($1$) — क्रेडेंशियल जांचें"
+    "message": "WebDAV प्रमाणीकरण विफल ($status$) — क्रेडेंशियल जांचें",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPath": {
     "message": "WebDAV पथ नहीं मिला — URL जांचें"
   },
   "webdavErrStatus": {
-    "message": "WebDAV सर्वर ने $1$ लौटाया"
+    "message": "WebDAV सर्वर ने $status$ लौटाया",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPut": {
-    "message": "WebDAV PUT विफल ($1$)"
+    "message": "WebDAV PUT विफल ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrConflict": {
     "message": "WebDAV संघर्ष — मूल निर्देशिका मौजूद नहीं हो सकती"
@@ -581,22 +602,51 @@
     "message": "क्लाउड डेटा नया है — क्लाउड से स्थानीय अपडेट किया गया"
   },
   "syncErrPartialLoss": {
-    "message": "संभावित डेटा हानि का पता चला ($1$ → $2$ बॉक्स)। रद्द करें और क्लाउड से पुनर्स्थापित करें?"
+    "message": "संभावित डेटा हानि का पता चला ($prev$ → $current$ बॉक्स)। रद्द करें और क्लाउड से पुनर्स्थापित करें?",
+    "placeholders": {
+      "current": {
+        "content": "$2"
+      },
+      "prev": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrPartialLossTitle": {
     "message": "डेटा हानि का पता चला"
   },
   "syncErrCloudRestored": {
-    "message": "क्लाउड से स्थानीय डेटा पुनर्स्थापित ($1$ बॉक्स)"
+    "message": "क्लाउड से स्थानीय डेटा पुनर्स्थापित ($count$ बॉक्स)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrCloudRestoreFailed": {
-    "message": "क्लाउड पुनर्स्थापना विफल: $1$"
+    "message": "क्लाउड पुनर्स्थापना विफल: $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrGetFailed": {
-    "message": "WebDAV GET विफल ($1$)"
+    "message": "WebDAV GET विफल ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrParseFailed": {
     "message": "क्लाउड डेटा मान्य JSON नहीं है"
+  },
+  "onboardingLangTitle": {
+    "message": "अपनी भाषा चुनें"
+  },
+  "onboardingLangDesc": {
+    "message": "इंटरफ़ेस की भाषा चुनें"
   },
   "onboardingTitle": {
     "message": "Boxing में आपका स्वागत है"
@@ -639,5 +689,38 @@
   },
   "onboardingStep3Desc": {
     "message": "सेटिंग्स → सिंक खोलें और WebDAV सर्वर जोड़ें। आपके बॉक्स ब्राउज़र और टैब में सिंक होते हैं और टाइमस्टैम्प-आधारित द्विदिशीय सिंक से सुरक्षित रूप से बैकअप होते हैं।"
+  },
+  "diagSectionTitle": {
+    "message": "निदान"
+  },
+  "diagSectionDesc": {
+    "message": "समस्या का निदान करने में सहायता के लिए हाल के Boxing घटनाओं का रिंग-बफ़र स्नैपशॉट निर्यात करें। बफ़र 300 प्रविष्टियाँ रखता है और ब्राउज़र पुनः आरंभ होने पर बना नहीं रहता।"
+  },
+  "diagExportLog": {
+    "message": "लॉग निर्यात करें"
+  },
+  "diagClearLog": {
+    "message": "लॉग साफ़ करें"
+  },
+  "diagNoLogs": {
+    "message": "अभी तक कोई लॉग प्रविष्टि नहीं"
+  },
+  "diagLogLevelLabel": {
+    "message": "लॉग स्तर"
+  },
+  "diagLogLevelError": {
+    "message": "त्रुटि"
+  },
+  "diagLogLevelWarn": {
+    "message": "चेतावनी"
+  },
+  "diagLogLevelInfo": {
+    "message": "जानकारी"
+  },
+  "diagLogLevelDebug": {
+    "message": "डिबग"
+  },
+  "onboardingRestore": {
+    "message": "बैकअप से पुनर्स्थापित करें"
   }
 }

@@ -79,10 +79,10 @@
     "description": "デフォルト小ボックス タイトル"
   },
   "newLargeBox": {
-    "message": "ボックス $1$",
+    "message": "ボックス $count$",
     "description": "デフォルト新大ボックス タイトル（自動番号）",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -112,28 +112,28 @@
     "description": "ピン留め解除ボタン ツールチップ"
   },
   "largeBoxesCount": {
-    "message": "大ボックス $1$ 個",
+    "message": "大ボックス $count$ 個",
     "description": "大ボックス カウント",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "smallBoxesCount": {
-    "message": "小ボックス $1$ 個",
+    "message": "小ボックス $count$ 個",
     "description": "小ボックス カウント",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "searchResults": {
-    "message": "$1$ 件の結果",
+    "message": "$count$ 件の結果",
     "description": "検索結果カウント",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -195,9 +195,9 @@
     "message": "ウェブリンク"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ スモールボックス",
+    "message": "$count$ スモールボックス",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -499,6 +499,12 @@
   "gistId": {
     "message": "Gist ID（自動入力）"
   },
+  "webdavErrUrlTooLong": {
+    "message": "WebDAV URLが長すぎます"
+  },
+  "webdavErrBlockedHost": {
+    "message": "プライベートまたはローカルのWebDAVホストは使用できません"
+  },
   "webdavTestBtn": {
     "message": "接続テスト"
   },
@@ -545,16 +551,31 @@
     "message": "WebDAVパスワードが空です — 再入力してください"
   },
   "webdavErrAuth": {
-    "message": "WebDAV認証失敗 ($1$) — 認証情報を確認してください"
+    "message": "WebDAV認証失敗 ($status$) — 認証情報を確認してください",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPath": {
     "message": "WebDAVパスが見つかりません — URLを確認してください"
   },
   "webdavErrStatus": {
-    "message": "WebDAVサーバーが $1$ を返しました"
+    "message": "WebDAVサーバーが $status$ を返しました",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPut": {
-    "message": "WebDAV PUT失敗 ($1$)"
+    "message": "WebDAV PUT失敗 ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrConflict": {
     "message": "WebDAV競合 — 親ディレクトリが存在しない可能性があります"
@@ -581,22 +602,51 @@
     "message": "クラウドデータがより新しい — クラウドからローカルを更新済み"
   },
   "syncErrPartialLoss": {
-    "message": "データ消失の可能性を検出（$1$ → $2$ ボックス）。中止してクラウドから復元しますか？"
+    "message": "データ消失の可能性を検出（$prev$ → $current$ ボックス）。中止してクラウドから復元しますか？",
+    "placeholders": {
+      "current": {
+        "content": "$2"
+      },
+      "prev": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrPartialLossTitle": {
     "message": "データ消失を検出"
   },
   "syncErrCloudRestored": {
-    "message": "ローカルデータをクラウドから復元（$1$ ボックス）"
+    "message": "ローカルデータをクラウドから復元（$count$ ボックス）",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrCloudRestoreFailed": {
-    "message": "クラウド復元に失敗：$1$"
+    "message": "クラウド復元に失敗：$reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrGetFailed": {
-    "message": "WebDAV GET 失敗（$1$）"
+    "message": "WebDAV GET 失敗（$status$）",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrParseFailed": {
     "message": "クラウドデータは有効な JSON ではありません"
+  },
+  "onboardingLangTitle": {
+    "message": "言語を選択"
+  },
+  "onboardingLangDesc": {
+    "message": "インターフェースの言語を選んでください"
   },
   "onboardingTitle": {
     "message": "Boxing へようこそ"
@@ -639,5 +689,38 @@
   },
   "onboardingStep3Desc": {
     "message": "設定 → 同步を開き WebDAV サーバーに接続します。ボックスはブラウザやタブをまたいで同期され、タイムスタンプベースの双方向同期で安全にバックアップされます。"
+  },
+  "diagSectionTitle": {
+    "message": "診断"
+  },
+  "diagSectionDesc": {
+    "message": "問題解析のため、直近の Boxing イベントをリングバッファから最大 300 件まで書き出します。ブラウザ再起動後は保持されません。"
+  },
+  "diagExportLog": {
+    "message": "ログをエクスポート"
+  },
+  "diagClearLog": {
+    "message": "ログを消去"
+  },
+  "diagNoLogs": {
+    "message": "ログがまだありません"
+  },
+  "diagLogLevelLabel": {
+    "message": "ログレベル"
+  },
+  "diagLogLevelError": {
+    "message": "エラー"
+  },
+  "diagLogLevelWarn": {
+    "message": "警告"
+  },
+  "diagLogLevelInfo": {
+    "message": "情報"
+  },
+  "diagLogLevelDebug": {
+    "message": "デバッグ"
+  },
+  "onboardingRestore": {
+    "message": "バックアップから復元"
   }
 }

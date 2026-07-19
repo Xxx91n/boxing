@@ -26,6 +26,51 @@ try {
   // BX-DEV-115: Route WebDAV test/backup through background to fix
   // "NetworkError when attempting to fetch resource" in Firefox MV3.
 
+  // SECURITY (BX-AUD-01/02/03) — v3.7.10: harden the background WebDAV proxy against abuse.
+  const BG_MAX_URL = 2048;
+  const BG_MAX_BODY = 2 * 1024 * 1024; // 2 MiB; Service Worker memory-budget safe.
+  // BX-AUD-01: refuse hostnames that resolve to private / loopback / link-local addresses.
+  const BG_PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fe80:|fc00:|fd00:)/i;
+
+  function isSafeWebDAVUrl(urlStr) {
+    if (typeof urlStr !== 'string' || urlStr.length > BG_MAX_URL) return false;
+    let u;
+    try { u = new URL(urlStr); } catch (_) { return false; }
+    if (u.protocol !== 'https:') return false;          // BX-AUD-01: scheme lock
+    if (u.username || u.password) return false;           // no embedded credentials
+    const host = (u.hostname || '').toLowerCase();
+    if (BG_PRIVATE_HOST_RE.test(host)) return false;     // BX-AUD-01: private / host-only literals
+    if (host.endsWith('.local') || host.endsWith('.internal')) return false;
+    return true;
+  }
+
+  function guardWebDAVRequest(msg, requireBodyOK) {
+    if (!msg || !isSafeWebDAVUrl(msg.url)) {
+      return { success: false, error: 'blocked unsafe WebDAV url', blocked: true };
+    }
+    if (requireBodyOK) {
+      if (typeof msg.body !== 'string' || msg.body.length > BG_MAX_BODY) {
+        return { success: false, error: 'blocked oversized WebDAV body', blocked: true };
+      }
+    }
+    return null;
+  }
+
+  // BX-AUD-01: only messages sent from our own extension (sender.id === our runtime id) may use the WebDAV proxy.
+  // This blocks other installed extensions or arbitrary extension pages from driving Boxing as a blind fetch proxy.
+  function isOwnSender(sender) {
+    if (!sender) return false;
+    if (typeof sender.id === 'string' && typeof api.runtime?.id === 'string') {
+      return sender.id === api.runtime.id;
+    }
+    // Firefox browser.* sometimes leaves sender.id empty for self-frames — accept when the url is our origin.
+    if (!sender.id) {
+      const ourBase = api.runtime?.getURL?.('') || 'chrome-extension://';
+      return !sender.url || String(sender.url).startsWith(ourBase);
+    }
+    return false;
+  }
+
   function makeAuthHeader(user, pass) {
     if (!user) return null;
     return 'Basic ' + btoa(user + ':' + pass);
@@ -49,9 +94,12 @@ try {
         method: 'PROPFIND',
         headers: pfHeaders,
         body: pfBody,
-        redirect: 'follow'
+        redirect: 'manual' // BX-AUD-02: refuse transparent 3xx; Authorization never follows.
       });
       bgLog('WebDAV test PROPFIND response:', pfResp.status);
+      if (pfResp.status === 0 || pfResp.type === 'opaqueredirect') {
+        return { status: 0, ok: false, error: 'webdav redirect blocked' };
+      }
       // 207 = Multi-Status (WebDAV success), 200 also OK
       if (pfResp.status === 207 || pfResp.status === 200) {
         return { status: pfResp.status, ok: true };
@@ -69,8 +117,11 @@ try {
     try {
       const optHeaders = new Headers();
       if (auth) optHeaders.set('Authorization', auth);
-      const resp = await fetch(url, { method: 'OPTIONS', headers: optHeaders, redirect: 'follow' });
+      const resp = await fetch(url, { method: 'OPTIONS', headers: optHeaders, redirect: 'manual' });
       bgLog('WebDAV test OPTIONS response:', resp.status);
+      if (resp.status === 0 || resp.type === 'opaqueredirect') {
+        return { status: 0, ok: false, error: 'webdav redirect blocked' };
+      }
       return { status: resp.status, ok: resp.ok };
     } catch (e) {
       bgErr('WebDAV test OPTIONS failed:', e.message);
@@ -84,8 +135,11 @@ try {
     const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
-    const resp = await fetch(url, { method: 'PUT', headers: h, body, redirect: 'follow' });
+    const resp = await fetch(url, { method: 'PUT', headers: h, body, redirect: 'manual' });
     bgLog('WebDAV PUT response:', resp.status);
+    if (resp.status === 0 || resp.type === 'opaqueredirect') {
+      return { status: 0, ok: false, error: 'webdav redirect blocked' };
+    }
     return { status: resp.status, ok: resp.ok };
   }
 
@@ -96,8 +150,11 @@ try {
     const h = new Headers();
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
-    const resp = await fetch(url, { method: 'GET', headers: h, redirect: 'follow' });
+    const resp = await fetch(url, { method: 'GET', headers: h, redirect: 'manual' });
     bgLog('WebDAV GET response:', resp.status);
+    if (resp.status === 0 || resp.type === 'opaqueredirect') {
+      return { status: 0, ok: false, body: null, error: 'webdav redirect blocked' };
+    }
     if (resp.status === 404) { return { status: 404, ok: false, body: null }; }
     if (resp.status === 401 || resp.status === 403) { return { status: resp.status, ok: false, body: null }; }
     const body = await resp.text();
@@ -108,6 +165,19 @@ try {
   async function dispatch(msg, sender) {
     if (!msg || !msg.type) return { success: false, error: 'Empty message type' };
     bgLog('BG message:', msg.type);
+    // BX-AUD-01: reject external senders — other extensions cannot use Boxing as a fetch proxy.
+    if (!isOwnSender(sender)) {
+      bgErr('BG: rejected external sender', sender && { id: sender.id, url: sender.url });
+      return { success: false, error: 'external sender blocked', blocked: true };
+    }
+    // BX-AUD-01/03: per-handler scheme + private-address + length guards.
+    if (msg.type === 'webdav-test' || msg.type === 'webdav-get') {
+      const block = guardWebDAVRequest(msg, false);
+      if (block) return block;
+    } else if (msg.type === 'webdav-put') {
+      const block = guardWebDAVRequest(msg, true);
+      if (block) return block;
+    }
     try {
       if (msg.type === 'webdav-test') {
         const result = await handleWebDAVTest(msg);

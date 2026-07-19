@@ -184,6 +184,27 @@
                 <input type="file" id="import-file-input" accept=".json" hidden>
               </div>
             </section>
+            <!-- BX-AUD-05: diagnostics — leveled log ring buffer export/clear. Industry-shape
+                 (pino/loglevel): producers stay in script; UI surfaces an export button so users
+                 can file bug reports without a developer console. No log grows unbounded — the
+                 ring buffer is capped at 300 entries server-side. -->
+            <section class="modal__section">
+              <label class="modal__label" data-i18n="diagSectionTitle">Diagnostics</label>
+              <p class="modal__hint" data-i18n="diagSectionDesc">Export a small ring-buffer snapshot
+                of recent Boxing events to help diagnose issues. The buffer holds up to 300 entries
+                and never persists across browser restarts.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button id="diag-export-log-btn" class="btn" data-i18n="diagExportLog">Export Log</button>
+                <button id="diag-clear-log-btn" class="btn btn--ghost" data-i18n="diagClearLog">Clear Log</button>
+                <label class="modal__label" for="diag-log-level-select" data-i18n="diagLogLevelLabel" style="font-weight:normal;margin:0;">Log level</label>
+                <select id="diag-log-level-select" class="modal__select" style="width:auto;">
+                  <option value="1" data-i18n="diagLogLevelError">Error</option>
+                  <option value="2" data-i18n="diagLogLevelWarn">Warning</option>
+                  <option value="3" data-i18n="diagLogLevelInfo">Info</option>
+                  <option value="4" data-i18n="diagLogLevelDebug">Debug</option>
+                </select>
+              </div>
+            </section>
           </div>
           <!-- Sync & Backup tab -->
           <div class="settings-tab" id="tab-sync" hidden>
@@ -274,7 +295,13 @@
         <button class="btn btn--ghost" id="onboarding-skip-btn" aria-label="Skip tour"
           data-i18n-title="onboardingSkipTour">Skip</button>
       </div>
-      <div class="modal__body onboarding__body">
+      <!-- BX-DEV-111O: new-user language picker — first-run onboarding, mirrors Settings > Language -->
+      <div class="onboarding__lang" id="onboarding-lang-wrap">
+        <label class="onboarding__lang-label" data-i18n="onboardingLangTitle">Choose your language</label>
+        <select id="onboarding-lang-select" class="modal__select onboarding__lang-select"></select>
+        <p class="onboarding__lang-hint" data-i18n="onboardingLangDesc">Pick a language for the interface</p>
+      </div>
+            <div class="modal__body onboarding__body">
         <!-- Step 1: Add large boxes -->
         <div class="onboarding__step" data-step="1">
           <div class="onboarding__step-icon" aria-hidden="true">＋</div>
@@ -299,6 +326,9 @@
           <p class="onboarding__step-desc" data-i18n="onboardingStep3Desc">Open Settings → Sync to connect a WebDAV
             server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way
             sync.</p>
+          <div style="margin-top:8px;">
+            <button type="button" class="btn btn--ghost" id="onboarding-restore-btn" data-i18n="onboardingRestore">Restore from backup</button>
+          </div>
         </div>
         <div class="onboarding__dots" aria-hidden="true">
           <span class="onboarding__dot is-active" data-dot="1"></span>

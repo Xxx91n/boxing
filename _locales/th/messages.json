@@ -79,10 +79,10 @@
     "description": "Default small box title"
   },
   "newLargeBox": {
-    "message": "กล่อง $1$",
+    "message": "กล่อง $count$",
     "description": "Default new large box title with auto-numbering",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -112,28 +112,28 @@
     "description": "Unpin button tooltip"
   },
   "largeBoxesCount": {
-    "message": "กล่องใหญ่ $1$ กล่อง",
+    "message": "กล่องใหญ่ $count$ กล่อง",
     "description": "Count of large boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "smallBoxesCount": {
-    "message": "กล่องเล็ก $1$ กล่อง",
+    "message": "กล่องเล็ก $count$ กล่อง",
     "description": "Count of small boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "searchResults": {
-    "message": "$1$ ผลลัพธ์",
+    "message": "$count$ ผลลัพธ์",
     "description": "Search result count",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -195,9 +195,9 @@
     "message": "ลิงก์เว็บ"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ กล่องเล็ก",
+    "message": "$count$ กล่องเล็ก",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -499,6 +499,12 @@
   "gistId": {
     "message": "Gist ID (อัตโนมัติ)"
   },
+  "webdavErrUrlTooLong": {
+    "message": "URL ของ WebDAV ยาวเกินไป"
+  },
+  "webdavErrBlockedHost": {
+    "message": "ไม่อนุญาตให้ใช้โฮสต์ WebDAV บนเครือข่ายส่วนตัวหรือภายในเครื่อง"
+  },
   "webdavTestBtn": {
     "message": "ทดสอบ"
   },
@@ -545,16 +551,31 @@
     "message": "รหัสผ่าน WebDAV ว่างเปล่า — กรอกใหม่และลองอีกครั้ง"
   },
   "webdavErrAuth": {
-    "message": "การตรวจสอบสิทธิ์ WebDAV ล้มเหลว ($1$) — ตรวจสอบข้อมูลประจำตัว"
+    "message": "การตรวจสอบสิทธิ์ WebDAV ล้มเหลว ($status$) — ตรวจสอบข้อมูลประจำตัว",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPath": {
     "message": "ไม่พบเส้นทาง WebDAV — ตรวจสอบ URL"
   },
   "webdavErrStatus": {
-    "message": "เซิร์ฟเวอร์ WebDAV ส่งกลับ $1$"
+    "message": "เซิร์ฟเวอร์ WebDAV ส่งกลับ $status$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPut": {
-    "message": "WebDAV PUT ล้มเหลว ($1$)"
+    "message": "WebDAV PUT ล้มเหลว ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrConflict": {
     "message": "ขัดแย้ง WebDAV — อาจไม่มีไดเรกทอรีหลัก"
@@ -581,22 +602,51 @@
     "message": "ข้อมูลคลาวด์ใหม่กว่า — อัปเดตในเครื่องจากคลาวด์แล้ว"
   },
   "syncErrPartialLoss": {
-    "message": "ตรวจพบการสูญเสียข้อมูลที่เป็นไปได้ ($1$ → $2$ กล่อง) ยกเลิกและกู้คืนจากคลาวด์?"
+    "message": "ตรวจพบการสูญเสียข้อมูลที่เป็นไปได้ ($prev$ → $current$ กล่อง) ยกเลิกและกู้คืนจากคลาวด์?",
+    "placeholders": {
+      "current": {
+        "content": "$2"
+      },
+      "prev": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrPartialLossTitle": {
     "message": "ตรวจพบการสูญเสียข้อมูล"
   },
   "syncErrCloudRestored": {
-    "message": "กู้คืนข้อมูลในเครื่องจากคลาวด์แล้ว ($1$ กล่อง)"
+    "message": "กู้คืนข้อมูลในเครื่องจากคลาวด์แล้ว ($count$ กล่อง)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrCloudRestoreFailed": {
-    "message": "การกู้คืนคลาวด์ล้มเหลว: $1$"
+    "message": "การกู้คืนคลาวด์ล้มเหลว: $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrGetFailed": {
-    "message": "WebDAV GET ล้มเหลว ($1$)"
+    "message": "WebDAV GET ล้มเหลว ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrParseFailed": {
     "message": "ข้อมูลคลาวด์ไม่ใช่ JSON ที่ถูกต้อง"
+  },
+  "onboardingLangTitle": {
+    "message": "เลือกภาษาของคุณ"
+  },
+  "onboardingLangDesc": {
+    "message": "เลือกภาษาของอินเทอร์เฟซ"
   },
   "onboardingTitle": {
     "message": "ยินดีต้อนรับสู่ Boxing"
@@ -639,5 +689,38 @@
   },
   "onboardingStep3Desc": {
     "message": "เปิด การตั้งค่า → ซิงค์ เพื่อเชื่อมต่อเซิร์ฟเวอร์ WebDAV กล่องของคุณจะซิงค์ข้ามเบราว์เซอร์และแท็บ พร้อมสำรองข้อมูลด้วยการซิงค์สองทิศทางแบบตามเวลา"
+  },
+  "diagSectionTitle": {
+    "message": "การวินิจฉัย"
+  },
+  "diagSectionDesc": {
+    "message": "ส่งออกสแนปช็อตของบัพเฟอร์วงแหวนของเหตุการณ์ Boxing ล่าสุดเพื่อช่วยวินิจฉัยปัญหา บัฟเฟอร์เก็บได้สูงสุด 300 รายการ และไม่คงอยู่หลังรีสตาร์ทเบราว์เซอร์"
+  },
+  "diagExportLog": {
+    "message": "ส่งออกบันทึก"
+  },
+  "diagClearLog": {
+    "message": "ล้างบันทึก"
+  },
+  "diagNoLogs": {
+    "message": "ยังไม่มีรายการบันทึก"
+  },
+  "diagLogLevelLabel": {
+    "message": "ระดับบันทึก"
+  },
+  "diagLogLevelError": {
+    "message": "ข้อผิดพลาด"
+  },
+  "diagLogLevelWarn": {
+    "message": "คำเตือน"
+  },
+  "diagLogLevelInfo": {
+    "message": "ข้อมูล"
+  },
+  "diagLogLevelDebug": {
+    "message": "ดีบัก"
+  },
+  "onboardingRestore": {
+    "message": "กู้คืนจากการสำรองข้อมูล"
   }
 }

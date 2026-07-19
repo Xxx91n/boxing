@@ -79,10 +79,10 @@
     "description": "Default small box title"
   },
   "newLargeBox": {
-    "message": "صندوق $1$",
+    "message": "صندوق $count$",
     "description": "Default new large box title with auto-numbering",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -112,28 +112,28 @@
     "description": "Unpin button tooltip"
   },
   "largeBoxesCount": {
-    "message": "$1$ صناديق كبيرة",
+    "message": "$count$ صناديق كبيرة",
     "description": "Count of large boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "smallBoxesCount": {
-    "message": "$1$ صناديق صغيرة",
+    "message": "$count$ صناديق صغيرة",
     "description": "Count of small boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "searchResults": {
-    "message": "$1$ نتائج",
+    "message": "$count$ نتائج",
     "description": "Search result count",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -195,9 +195,9 @@
     "message": "رابط الويب"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ صناديق صغيرة",
+    "message": "$count$ صناديق صغيرة",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -499,6 +499,12 @@
   "gistId": {
     "message": "معرف Gist (تلقائي)"
   },
+  "webdavErrUrlTooLong": {
+    "message": "عنوان WebDAV طويل جدًا"
+  },
+  "webdavErrBlockedHost": {
+    "message": "لا يُسمح باستخدام مضيفات WebDAV على عناوين الشبكة الخاصة أو المحلية"
+  },
   "webdavTestBtn": {
     "message": "اختبار"
   },
@@ -545,16 +551,31 @@
     "message": "كلمة مرور WebDAV فارغة — أعد إدخالها وحاول مرة أخرى"
   },
   "webdavErrAuth": {
-    "message": "فشلت مصادقة WebDAV ($1$) — تحقق من بيانات الاعتماد"
+    "message": "فشلت مصادقة WebDAV ($status$) — تحقق من بيانات الاعتماد",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPath": {
     "message": "لم يتم العثور على مسار WebDAV — تحقق من عنوان URL"
   },
   "webdavErrStatus": {
-    "message": "أرجع خادم WebDAV $1$"
+    "message": "أرجع خادم WebDAV $status$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPut": {
-    "message": "فشل WebDAV PUT ($1$)"
+    "message": "فشل WebDAV PUT ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrConflict": {
     "message": "تعارض WebDAV — قد لا يكون الدليل الأصلي موجوداً"
@@ -581,22 +602,51 @@
     "message": "بيانات السحابة أحدث — تم تحديث المحلي من السحابة"
   },
   "syncErrPartialLoss": {
-    "message": "تم اكتشاف فقدان محتمل للبيانات ($1$ → $2$ صناديق). الإلغاء والاستعادة من السحابة؟"
+    "message": "تم اكتشاف فقدان محتمل للبيانات ($prev$ → $current$ صناديق). الإلغاء والاستعادة من السحابة؟",
+    "placeholders": {
+      "current": {
+        "content": "$2"
+      },
+      "prev": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrPartialLossTitle": {
     "message": "تم اكتشاف فقدان البيانات"
   },
   "syncErrCloudRestored": {
-    "message": "تمت استعادة البيانات المحلية من السحابة ($1$ صناديق)"
+    "message": "تمت استعادة البيانات المحلية من السحابة ($count$ صناديق)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrCloudRestoreFailed": {
-    "message": "فشل الاستعادة من السحابة: $1$"
+    "message": "فشل الاستعادة من السحابة: $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrGetFailed": {
-    "message": "فشل WebDAV GET ($1$)"
+    "message": "فشل WebDAV GET ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrParseFailed": {
     "message": "بيانات السحابة ليست JSON صالحًا"
+  },
+  "onboardingLangTitle": {
+    "message": "اختر لغتك"
+  },
+  "onboardingLangDesc": {
+    "message": "اختر لغة الواجهة"
   },
   "onboardingTitle": {
     "message": "مرحبًا بك في Boxing"
@@ -639,5 +689,38 @@
   },
   "onboardingStep3Desc": {
     "message": "افتح الإعدادات → المزامنة لتوصيل خادم WebDAV. تتم مزامنة صناديقك عبر المتصفحات وعلامات التبويب بمزامنة ثنائية الاتجاه قائمة على الطوابع الزمنية."
+  },
+  "diagSectionTitle": {
+    "message": "تشخيص"
+  },
+  "diagSectionDesc": {
+    "message": "تصدير لقطة صغيرة من المخزن الحلقي لأحدث أحداث Boxing للمساعدة في تشخيص المشكلات. يستوعب المخزن حتى 300 إدخال ولا يُحفظ بعد إعادة تشغيل المتصفح."
+  },
+  "diagExportLog": {
+    "message": "تصدير السجل"
+  },
+  "diagClearLog": {
+    "message": "مسح السجل"
+  },
+  "diagNoLogs": {
+    "message": "لا توجد إدخالات سجل بعد"
+  },
+  "diagLogLevelLabel": {
+    "message": "مستوى السجل"
+  },
+  "diagLogLevelError": {
+    "message": "خطأ"
+  },
+  "diagLogLevelWarn": {
+    "message": "تحذير"
+  },
+  "diagLogLevelInfo": {
+    "message": "معلومات"
+  },
+  "diagLogLevelDebug": {
+    "message": "تصحيح"
+  },
+  "onboardingRestore": {
+    "message": "استعادة من نسخة احتياطية"
   }
 }

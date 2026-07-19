@@ -1,86 +1,86 @@
 {
   "brandName": {
     "message": "Boxing",
-    "description": "扩展品牌名称"
+    "description": "擴展品牌名稱"
   },
   "brandSub": {
-    "message": "分层管理书签",
-    "description": "品牌副标题"
+    "message": "分層管理書籤",
+    "description": "品牌副標題"
   },
   "searchPlaceholder": {
-    "message": "搜索书签…",
-    "description": "搜索输入框占位"
+    "message": "搜索書籤…",
+    "description": "搜索輸入框佔位"
   },
   "backTooltip": {
     "message": "返回",
-    "description": "返回按钮提示"
+    "description": "返回按鈕提示"
   },
   "addLargeBoxTooltip": {
     "message": "添加大盒子",
     "description": "添加大盒子提示"
   },
   "settingsTooltip": {
-    "message": "打开设置",
-    "description": "设置按钮提示"
+    "message": "打開設置",
+    "description": "設置按鈕提示"
   },
   "addSmallBoxTooltip": {
     "message": "添加小盒子",
     "description": "添加小盒子提示"
   },
   "emptyCanvasTitle": {
-    "message": "暂无大盒子",
-    "description": "空画布标题"
+    "message": "暫無大盒子",
+    "description": "空畫布標題"
   },
   "emptyCanvasHint": {
-    "message": "点击 + 创建第一个大盒子",
-    "description": "空画布提示（旧版）"
+    "message": "點擊 + 創建第一個大盒子",
+    "description": "空畫布提示（舊版）"
   },
   "dblclickHint": {
-    "message": "双击画布创建大盒子",
-    "description": "双击画布提示"
+    "message": "雙擊畫布創建大盒子",
+    "description": "雙擊畫布提示"
   },
   "clickPlusHint": {
-    "message": "或点击上方 +",
-    "description": "或点击上方加号提示"
+    "message": "或點擊上方 +",
+    "description": "或點擊上方加號提示"
   },
   "emptyLargeHint": {
-    "message": "点击添加小盒子",
+    "message": "點擊添加小盒子",
     "description": "空大盒子提示"
   },
   "emptyInnerHint": {
-    "message": "点击 + 添加第一个小盒子",
-    "description": "空内部画布提示"
+    "message": "點擊 + 添加第一個小盒子",
+    "description": "空內部畫布提示"
   },
   "emptySmallHint": {
-    "message": "暂无书签",
+    "message": "暫無書籤",
     "description": "空小盒子提示"
   },
   "clickToOpen": {
-    "message": "点击打开 →",
-    "description": "打开大盒子提示"
+    "message": "點擊打開 →",
+    "description": "打開大盒子提示"
   },
   "footerHint": {
-    "message": "Ctrl+滚轮缩放 · 拖拽空白平移 · 双击创建盒子 · 右键返回 · 拖拽标题栏移动 · 画布右上角⊙按钮：取消固定进入全屏模式"
+    "message": "Ctrl+滾輪縮放 · 拖拽空白平移 · 雙擊創建盒子 · 右鍵返回 · 拖拽標題欄移動 · 畫布右上角⊙按鈕：取消固定進入全屏模式"
   },
   "canvasRoot": {
-    "message": "画布",
-    "description": "面包屑根标签"
+    "message": "畫布",
+    "description": "麵包屑根標籤"
   },
   "untitledBox": {
     "message": "未命名盒子",
-    "description": "默认盒子标题"
+    "description": "默認盒子標題"
   },
   "untitledLargeBox": {
     "message": "未命名大盒子",
-    "description": "默认大盒子标题"
+    "description": "默認大盒子標題"
   },
   "untitledSmallBox": {
     "message": "未命名小盒子",
-    "description": "默认小盒子标题"
+    "description": "默認小盒子標題"
   },
   "newLargeBox": {
     "message": "盒子 $count$",
-    "description": "默认新大盒子标题（自动编号）",
+    "description": "默認新大盒子標題（自動編號）",
     "placeholders": {
       "count": {
         "content": "$1"
@@ -89,31 +89,31 @@
   },
   "newSmallBox": {
     "message": "新小盒子",
-    "description": "默认新小盒子标题"
+    "description": "默認新小盒子標題"
   },
   "deleteBox": {
-    "message": "删除盒子",
-    "description": "删除按钮提示"
+    "message": "刪除盒子",
+    "description": "刪除按鈕提示"
   },
   "confirmDeleteLarge": {
-    "message": "删除此大盒子及其所有小盒子？",
-    "description": "确认删除大盒子"
+    "message": "刪除此大盒子及其所有小盒子？",
+    "description": "確認刪除大盒子"
   },
   "confirmDeleteSmall": {
-    "message": "删除此小盒子？",
-    "description": "确认删除小盒子"
+    "message": "刪除此小盒子？",
+    "description": "確認刪除小盒子"
   },
   "pin": {
     "message": "固定",
-    "description": "固定按钮提示"
+    "description": "固定按鈕提示"
   },
   "unpin": {
     "message": "取消固定",
-    "description": "取消固定按钮提示"
+    "description": "取消固定按鈕提示"
   },
   "largeBoxesCount": {
-    "message": "$count$ 个大盒子",
-    "description": "大盒子计数",
+    "message": "$count$ 個大盒子",
+    "description": "大盒子計數",
     "placeholders": {
       "count": {
         "content": "$1"
@@ -121,8 +121,8 @@
     }
   },
   "smallBoxesCount": {
-    "message": "$count$ 个小盒子",
-    "description": "小盒子计数",
+    "message": "$count$ 個小盒子",
+    "description": "小盒子計數",
     "placeholders": {
       "count": {
         "content": "$1"
@@ -130,8 +130,8 @@
     }
   },
   "searchResults": {
-    "message": "$count$ 个结果",
-    "description": "搜索结果计数",
+    "message": "$count$ 個結果",
+    "description": "搜索結果計數",
     "placeholders": {
       "count": {
         "content": "$1"
@@ -139,60 +139,60 @@
     }
   },
   "settingsTitle": {
-    "message": "设置",
-    "description": "设置弹窗标题"
+    "message": "設置",
+    "description": "設置彈窗標題"
   },
   "closeSettings": {
-    "message": "关闭",
-    "description": "关闭设置按钮"
+    "message": "關閉",
+    "description": "關閉設置按鈕"
   },
   "settingsLanguage": {
-    "message": "语言 / Language",
-    "description": "语言选择标签"
+    "message": "語言 / Language",
+    "description": "語言選擇標籤"
   },
   "rememberLastPos": {
-    "message": "记住上次位置",
-    "description": "记住上次位置选项标签"
+    "message": "記住上次位置",
+    "description": "記住上次位置選項標籤"
   },
   "rememberLastPosHint": {
-    "message": "打开新标签页时自动恢复上次访问的大盒子",
-    "description": "记住上次位置提示"
+    "message": "打開新標籤頁時自動恢復上次訪問的大盒子",
+    "description": "記住上次位置提示"
   },
   "zoomLabel": {
-    "message": "缩放",
-    "description": "缩放滑块标签"
+    "message": "縮放",
+    "description": "縮放滑塊標籤"
   },
   "zoomOut": {
-    "message": "缩小",
-    "description": "缩小按钮提示"
+    "message": "縮小",
+    "description": "縮小按鈕提示"
   },
   "zoomIn": {
     "message": "放大",
-    "description": "放大按钮提示"
+    "description": "放大按鈕提示"
   },
   "addBookmarkPlaceholder": {
-    "message": "粘贴网址…",
-    "description": "添加书签输入占位"
+    "message": "粘貼網址…",
+    "description": "添加書籤輸入佔位"
   },
   "addBookmarkBtn": {
     "message": "添加",
-    "description": "添加书签按钮文字"
+    "description": "添加書籤按鈕文字"
   },
   "doubleClickToCreateHint": {
-    "message": "双击创建",
-    "description": "小盒子双击创建提示"
+    "message": "雙擊創建",
+    "description": "小盒子雙擊創建提示"
   },
   "fontSizeLabel": {
-    "message": "字体大小"
+    "message": "字體大小"
   },
   "editBookmarkLabel": {
     "message": "Edit bookmark"
   },
   "bookmarkTitlePlaceholder": {
-    "message": "书签标题"
+    "message": "書籤標題"
   },
   "bookmarkUrlPlaceholder": {
-    "message": "网页链接"
+    "message": "網頁鏈接"
   },
   "smallBoxCountLabel": {
     "message": "$count$ 小盒子",
@@ -203,34 +203,34 @@
     }
   },
   "autoExpand": {
-    "message": "自动展开"
+    "message": "自動展開"
   },
   "autoExpandHover": {
-    "message": "悬停展开"
+    "message": "懸停展開"
   },
   "headerPin": {
-    "message": "固定顶栏"
+    "message": "固定頂欄"
   },
   "headerPinOn": {
-    "message": "顶栏已固定"
+    "message": "頂欄已固定"
   },
   "headerPinOff": {
-    "message": "顶栏未固定"
+    "message": "頂欄未固定"
   },
   "confirmDeleteTitle": {
-    "description": "Delete confirm title",
-    "message": "确认删除"
+    "message": "確認刪除",
+    "description": "Delete confirm title"
   },
   "confirmDeleteLargeBody": {
-    "description": "Large box delete confirm",
-    "message": "删除这个大盒子及其所有小盒子？此操作不可撤销。"
+    "message": "刪除這個大盒子及其所有小盒子？此操作不可撤銷。",
+    "description": "Large box delete confirm"
   },
   "confirmDeleteSmallBody": {
-    "description": "Small box delete confirm",
-    "message": "删除这个小盒子及其所有书签？此操作不可撤销。"
+    "message": "刪除這個小盒子及其所有書籤？此操作不可撤銷。",
+    "description": "Small box delete confirm"
   },
   "confirmYes": {
-    "message": "删除"
+    "message": "刪除"
   },
   "confirmCancel": {
     "message": "取消"
@@ -239,43 +239,43 @@
     "message": "暗黑模式"
   },
   "darkModeHint": {
-    "message": "在亮色和暗色外观之间切换"
+    "message": "在亮色和暗色外觀之間切換"
   },
   "exportData": {
-    "message": "导出数据"
+    "message": "導出數據"
   },
   "importData": {
-    "message": "导入数据"
+    "message": "導入數據"
   },
   "importSuccess": {
-    "message": "数据导入成功"
+    "message": "數據導入成功"
   },
   "importFailed": {
-    "message": "导入失败：数据格式无效"
+    "message": "導入失敗：數據格式無效"
   },
   "importTooLarge": {
     "message": "Import failed: file too large (max 5MB)"
   },
   "dblclickCreateHint": {
-    "message": "双击创建盒子"
+    "message": "雙擊創建盒子"
   },
   "bookmarkSave": {
     "message": "保存"
   },
   "bookmarkDelete": {
-    "message": "删除"
+    "message": "刪除"
   },
   "bookmarkEditTitle": {
-    "message": "编辑书签"
+    "message": "編輯書籤"
   },
   "backupNow": {
-    "message": "立即备份"
+    "message": "立即備份"
   },
   "backupNowHint": {
-    "message": "创建带时间戳的完整备份"
+    "message": "創建帶時間戳的完整備份"
   },
   "autoBackupInterval": {
-    "message": "自动备份间隔"
+    "message": "自動備份間隔"
   },
   "syncProvider": {
     "message": "同步方式"
@@ -284,45 +284,45 @@
     "message": "方形角"
   },
   "squareCornersHint": {
-    "message": "使用尖角代替圆角"
+    "message": "使用尖角代替圓角"
   },
   "settingsNavGeneral": {
     "message": "通用"
   },
   "settingsNavAppearance": {
-    "message": "外观"
+    "message": "外觀"
   },
   "settingsNavData": {
-    "message": "数据"
+    "message": "數據"
   },
   "settingsNavSync": {
-    "message": "同步与备份"
+    "message": "同步與備份"
   },
   "syncProviderHint": {
-    "message": "Boxing 将数据存储在浏览器同步存储中。选择您的同步方式。"
+    "message": "Boxing 將數據存儲在瀏覽器同步存儲中。選擇您的同步方式。"
   },
   "urlOpenModeLabel": {
-    "message": "在以下位置打开书签",
+    "message": "在以下位置打開書籤",
     "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeNewTab": {
-    "message": "新标签页",
+    "message": "新標籤頁",
     "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeCurrentTab": {
-    "message": "当前标签页",
+    "message": "當前標籤頁",
     "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "urlOpenModeHint": {
-    "message": "选择点击书签时打开的位置",
+    "message": "選擇點擊書籤時打開的位置",
     "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
   },
   "dragToReorder": {
-    "message": "拖动以重新排序",
+    "message": "拖動以重新排序",
     "description": "Tooltip for bookmark reorder grip"
   },
   "startDragHint": {
-    "message": "拖拽标题栏以移动盒子",
+    "message": "拖拽標題欄以移動盒子",
     "description": "Hint for box drag interaction"
   },
   "searchShortcut": {
@@ -330,67 +330,67 @@
     "description": "Search shortcut hint"
   },
   "addBoxShortcut": {
-    "message": "双击空白区域",
+    "message": "雙擊空白區域",
     "description": "Add box shortcut hint"
   },
   "zoomShortcut": {
-    "message": "Ctrl+滚轮",
+    "message": "Ctrl+滾輪",
     "description": "Zoom shortcut hint"
   },
   "panShortcut": {
-    "message": "左键拖拽空白区域",
+    "message": "左鍵拖拽空白區域",
     "description": "Pan shortcut hint"
   },
   "returnShortcut": {
-    "message": "右键或Esc返回",
+    "message": "右鍵或Esc返回",
     "description": "Return shortcut hint"
   },
   "undoShortcut": {
-    "message": "Ctrl+Z撤销",
+    "message": "Ctrl+Z撤銷",
     "description": "Undo shortcut hint"
   },
   "accessibilityLabel": {
-    "message": "支持键盘操作 · 兼容屏幕阅读器",
+    "message": "支持鍵盤操作 · 兼容屏幕閱讀器",
     "description": "A11y label"
   },
   "rightClickReturnHint": {
-    "message": "右键返回画布",
+    "message": "右鍵返回畫布",
     "description": "Right click return tooltip"
   },
   "escReturnHint": {
-    "message": "按Esc返回画布",
+    "message": "按Esc返回畫布",
     "description": "Esc return hint"
   },
   "ctrlScrollZoom": {
-    "message": "Ctrl+滚轮缩放",
+    "message": "Ctrl+滾輪縮放",
     "description": "Zoom shortcut label"
   },
   "dragPanCanvas": {
-    "message": "拖拽平移画布",
+    "message": "拖拽平移畫布",
     "description": "Pan canvas label"
   },
   "dblclickAddBox": {
-    "message": "双击添加盒子",
+    "message": "雙擊添加盒子",
     "description": "Add box shortcut label"
   },
   "searchSlash": {
-    "message": "/ 键搜索",
+    "message": "/ 鍵搜索",
     "description": "Search shortcut label"
   },
   "noBookmarksYet": {
-    "message": "暂无书签。点击＋添加。",
+    "message": "暫無書籤。點擊＋添加。",
     "description": "Empty bookmarks hint"
   },
   "emptyBoxDragHint": {
-    "message": "双击或点击+添加盒子",
+    "message": "雙擊或點擊+添加盒子",
     "description": "Empty box action hint"
   },
   "bookmarkReorderHint": {
-    "message": "拖动左侧手柄重新排序书签",
+    "message": "拖動左側手柄重新排序書籤",
     "description": "Bookmark reorder hint"
   },
   "deleteConfirmMessage": {
-    "message": "此操作不可撤销。内部所有书签将被移除。",
+    "message": "此操作不可撤銷。內部所有書籤將被移除。",
     "description": "Delete confirmation detail"
   },
   "settingsCategoryGeneral": {
@@ -398,19 +398,19 @@
     "description": "Settings category"
   },
   "settingsCategoryAppearance": {
-    "message": "外观",
+    "message": "外觀",
     "description": "Settings category"
   },
   "settingsCategoryData": {
-    "message": "数据",
+    "message": "數據",
     "description": "Settings category"
   },
   "settingsCategorySync": {
-    "message": "同步与备份",
+    "message": "同步與備份",
     "description": "Settings category"
   },
   "langAutoDetect": {
-    "message": "自动检测（浏览器语言）",
+    "message": "自動檢測（瀏覽器語言）",
     "description": "Auto-detect language option"
   },
   "fontSizeSmall": {
@@ -426,39 +426,39 @@
     "description": "Font size label"
   },
   "debugModeOn": {
-    "message": "调试：开启",
+    "message": "調試：開啟",
     "description": "Debug mode status"
   },
   "debugModeOff": {
-    "message": "调试：关闭",
+    "message": "調試：關閉",
     "description": "Debug mode status"
   },
   "canvasBoundaryHint": {
-    "message": "画布在30%缩放级别时有边界限制",
+    "message": "畫布在30%縮放級別時有邊界限制",
     "description": "Canvas boundary hint"
   },
   "lastOpenedBox": {
-    "message": "上次打开的盒子",
+    "message": "上次打開的盒子",
     "description": "Remember last position label"
   },
   "storedDataFound": {
-    "message": "找到已存储的数据",
+    "message": "找到已存儲的數據",
     "description": "Data status"
   },
   "backupSaved": {
-    "message": "备份已保存",
+    "message": "備份已保存",
     "description": "Backup confirmation"
   },
   "allLanguages": {
-    "message": "已翻译全部13种语言",
+    "message": "已翻譯全部13種語言",
     "description": "Locale completeness note"
   },
   "headerPinUsage": {
-    "message": "点击画布右上角⊙按钮：固定时顶栏可见，取消固定进入全屏模式",
+    "message": "點擊畫布右上角⊙按鈕：固定時頂欄可見，取消固定進入全屏模式",
     "description": "Header pin button usage guide"
   },
   "syncLocalOnly": {
-    "message": "仅本地"
+    "message": "僅本地"
   },
   "syncChrome": {
     "message": "Chrome 同步"
@@ -473,10 +473,10 @@
     "message": "每天"
   },
   "backupWeekly": {
-    "message": "每周"
+    "message": "每週"
   },
   "backupHourly": {
-    "message": "每小时"
+    "message": "每小時"
   },
   "syncWebDAV": {
     "message": "WebDAV"
@@ -488,73 +488,73 @@
     "message": "WebDAV 地址"
   },
   "webdavUser": {
-    "message": "用户名"
+    "message": "用戶名"
   },
   "webdavPass": {
-    "message": "密码"
+    "message": "密碼"
   },
   "gistToken": {
     "message": "GitHub 令牌"
   },
   "gistTokenHint": {
-    "message": "创建具有 gist 权限的个人访问令牌"
+    "message": "創建具有 gist 權限的個人訪問令牌"
   },
   "gistId": {
-    "message": "Gist ID（自动填充）"
+    "message": "Gist ID（自動填充）"
   },
   "webdavErrUrlTooLong": {
-    "message": "WebDAV 地址过长"
+    "message": "WebDAV 地址過長"
   },
   "webdavErrBlockedHost": {
-    "message": "私有或本机网段的 WebDAV 主机不允许使用"
+    "message": "私有或本機網段的 WebDAV 主機不允許使用"
   },
   "webdavTestBtn": {
-    "message": "测试连接"
+    "message": "測試連接"
   },
   "webdavTestOk": {
-    "message": "WebDAV 连接成功"
+    "message": "WebDAV 連接成功"
   },
   "webdavTestFail": {
-    "message": "WebDAV 连接失败"
+    "message": "WebDAV 連接失敗"
   },
   "gistBackupOk": {
-    "message": "Gist 备份已保存"
+    "message": "Gist 備份已保存"
   },
   "gistBackupFail": {
-    "message": "Gist 备份失败"
+    "message": "Gist 備份失敗"
   },
   "backupTooFrequent": {
-    "message": "自动备份跳过：过于频繁，最小间隔1小时"
+    "message": "自動備份跳過：過於頻繁，最小間隔1小時"
   },
   "lastBackupTime": {
-    "message": "上次备份"
+    "message": "上次備份"
   },
   "neverText": {
-    "message": "从未"
+    "message": "從未"
   },
   "boxDeletedWarning": {
-    "message": "该盒子已被删除，请刷新页面。"
+    "message": "該盒子已被刪除，請刷新頁面。"
   },
   "refreshPage": {
     "message": "刷新"
   },
   "webdavTesting": {
-    "message": "测试中…"
+    "message": "測試中…"
   },
   "webdavErrNoUrl": {
     "message": "未配置 WebDAV 地址"
   },
   "webdavErrHttps": {
-    "message": "WebDAV 地址必须使用 HTTPS"
+    "message": "WebDAV 地址必須使用 HTTPS"
   },
   "webdavErrEmbedded": {
-    "message": "WebDAV 地址不能包含内嵌凭据"
+    "message": "WebDAV 地址不能包含內嵌憑據"
   },
   "webdavErrNoPass": {
-    "message": "WebDAV 密码为空 — 重新输入后重试"
+    "message": "WebDAV 密碼為空 — 重新輸入後重試"
   },
   "webdavErrAuth": {
-    "message": "WebDAV 认证失败 ($status$) — 请检查凭据",
+    "message": "WebDAV 認證失敗 ($status$) — 請檢查憑據",
     "placeholders": {
       "status": {
         "content": "$1"
@@ -562,10 +562,10 @@
     }
   },
   "webdavErrPath": {
-    "message": "WebDAV 路径不存在 — 请检查地址"
+    "message": "WebDAV 路徑不存在 — 請檢查地址"
   },
   "webdavErrStatus": {
-    "message": "WebDAV 服务器返回 $status$",
+    "message": "WebDAV 服務器返回 $status$",
     "placeholders": {
       "status": {
         "content": "$1"
@@ -573,7 +573,7 @@
     }
   },
   "webdavErrPut": {
-    "message": "WebDAV PUT 失败 ($status$)",
+    "message": "WebDAV PUT 失敗 ($status$)",
     "placeholders": {
       "status": {
         "content": "$1"
@@ -581,10 +581,10 @@
     }
   },
   "webdavErrConflict": {
-    "message": "WebDAV 冲突 — 父目录可能不存在"
+    "message": "WebDAV 衝突 — 父目錄可能不存在"
   },
   "webdavErrNetwork": {
-    "message": "无法连接 WebDAV 服务器 — 请检查地址或网络"
+    "message": "無法連接 WebDAV 服務器 — 請檢查地址或網絡"
   },
   "syncNow": {
     "message": "立即同步"
@@ -596,16 +596,16 @@
     "message": "同步完成"
   },
   "syncPullFirstTime": {
-    "message": "检测到云端数据 — 正在拉取到本设备（首次同步）"
+    "message": "檢測到雲端數據 — 正在拉取到本設備（首次同步）"
   },
   "syncUploadNewer": {
-    "message": "本地数据较新 — 已上传至云端"
+    "message": "本地數據較新 — 已上傳至雲端"
   },
   "syncCloudNewer": {
-    "message": "云端数据较新 — 已从云端更新本地"
+    "message": "雲端數據較新 — 已從雲端更新本地"
   },
   "syncErrPartialLoss": {
-    "message": "检测到可能的数据丢失（$prev$ → $current$ 个盒子）。是否中止并从云端恢复？",
+    "message": "檢測到可能的數據丟失（$prev$ → $current$ 個盒子）。是否中止並從雲端恢復？",
     "placeholders": {
       "current": {
         "content": "$2"
@@ -616,10 +616,10 @@
     }
   },
   "syncErrPartialLossTitle": {
-    "message": "检测到数据丢失"
+    "message": "檢測到數據丟失"
   },
   "syncErrCloudRestored": {
-    "message": "本地数据已从云端恢复（$count$ 个盒子）",
+    "message": "本地數據已從雲端恢復（$count$ 個盒子）",
     "placeholders": {
       "count": {
         "content": "$1"
@@ -627,7 +627,7 @@
     }
   },
   "syncErrCloudRestoreFailed": {
-    "message": "云端恢复失败：$reason$",
+    "message": "雲端恢復失敗：$reason$",
     "placeholders": {
       "reason": {
         "content": "$1"
@@ -635,7 +635,7 @@
     }
   },
   "syncErrGetFailed": {
-    "message": "WebDAV GET 失败（$status$）",
+    "message": "WebDAV GET 失敗（$status$）",
     "placeholders": {
       "status": {
         "content": "$1"
@@ -643,19 +643,19 @@
     }
   },
   "syncErrParseFailed": {
-    "message": "云端数据不是有效的 JSON"
+    "message": "雲端數據不是有效的 JSON"
   },
   "onboardingLangTitle": {
-    "message": "选择您的语言"
+    "message": "選擇您的語言"
   },
   "onboardingLangDesc": {
-    "message": "选择界面显示的语言"
+    "message": "選擇界面顯示的語言"
   },
   "onboardingTitle": {
-    "message": "欢迎使用 Boxing"
+    "message": "歡迎使用 Boxing"
   },
   "onboardingSkipTour": {
-    "message": "跳过"
+    "message": "跳過"
   },
   "onboardingPrev": {
     "message": "上一步"
@@ -664,55 +664,55 @@
     "message": "下一步"
   },
   "onboardingFinish": {
-    "message": "开始使用"
+    "message": "開始使用"
   },
   "onboardingStep1Label": {
     "message": "第 1 步，共 3 步"
   },
   "onboardingStep1Title": {
-    "message": "添加第一个大盒子"
+    "message": "添加第一個大盒子"
   },
   "onboardingStep1Desc": {
-    "message": "在画布任意位置双击，或点击工具栏上的 + 按钮，创建一个大盒子。大盒子用于归类相关的小盒子和书签。"
+    "message": "在畫布任意位置雙擊，或點擊工具欄上的 + 按鈕，創建一個大盒子。大盒子用於歸類相關的小盒子和書籤。"
   },
   "onboardingStep2Label": {
     "message": "第 2 步，共 3 步"
   },
   "onboardingStep2Title": {
-    "message": "在大盒子内嵌套小盒子"
+    "message": "在大盒子內嵌套小盒子"
   },
   "onboardingStep2Desc": {
-    "message": "打开一个大盒子，点击 + 在其中添加小盒子。每个小盒子保存一组书签，并可拖拽排序。"
+    "message": "打開一個大盒子，點擊 + 在其中添加小盒子。每個小盒子保存一組書籤，並可拖拽排序。"
   },
   "onboardingStep3Label": {
     "message": "第 3 步，共 3 步"
   },
   "onboardingStep3Title": {
-    "message": "跨设备同步"
+    "message": "跨設備同步"
   },
   "onboardingStep3Desc": {
-    "message": "打开 设置 → 同步，连接 WebDAV 服务器。你的盒子会跨浏览器和标签页同步，数据通过基于时间戳的双向同步安全备份。"
+    "message": "打開 設置 → 同步，連接 WebDAV 服務器。你的盒子會跨瀏覽器和標籤頁同步，數據通過基於時間戳的雙向同步安全備份。"
   },
   "diagSectionTitle": {
-    "message": "诊断"
+    "message": "診斷"
   },
   "diagSectionDesc": {
-    "message": "导出最近一段 Boxing 事件的环形缓冲快照以协助排查问题。缓冲最多 300 条，重启浏览器后不保留。"
+    "message": "導出最近一段 Boxing 事件的環形緩衝快照以協助排查問題。緩衝最多 300 條，重啟瀏覽器後不保留。"
   },
   "diagExportLog": {
-    "message": "导出日志"
+    "message": "導出日誌"
   },
   "diagClearLog": {
-    "message": "清空日志"
+    "message": "清空日誌"
   },
   "diagNoLogs": {
-    "message": "暂无日志条目"
+    "message": "暫無日誌條目"
   },
   "diagLogLevelLabel": {
-    "message": "日志级别"
+    "message": "日誌級別"
   },
   "diagLogLevelError": {
-    "message": "错误"
+    "message": "錯誤"
   },
   "diagLogLevelWarn": {
     "message": "警告"
@@ -721,9 +721,9 @@
     "message": "信息"
   },
   "diagLogLevelDebug": {
-    "message": "调试"
+    "message": "調試"
   },
   "onboardingRestore": {
-    "message": "从备份恢复"
+    "message": "從備份恢復"
   }
 }

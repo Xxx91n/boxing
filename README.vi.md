@@ -1,10 +1,14 @@
-# 🥊 Boxing — Hierarchical Bookmark Manager
+# 🥊 Boxing — tổ chức dấu trang theo cấp bậc
 
-**Languages:** [English](README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · **Tiếng Việt**
 
-**v3.7** · Chrome Extension (MV3) · Firefox compatible
+### tổ chức dấu trang theo cấp bậc
 
-Boxing organizes your bookmarks in a two-level infinite canvas — large boxes hold small boxes, small boxes hold bookmarks. Think Obsidian canvas meets bookmarks.
+> Nhấp ＋ để tạo hộp lớn đầu tiên
+
+> Tiếng Việt README — canonical feature list and technical specs are in the [English README](README.md).
+
+---
 
 ## ✨ Features
 
@@ -91,3 +95,4 @@ GPL-3.0 (see [LICENSE](LICENSE))
 
 ### v1.0.0
 - Initial scaffold: beige design system, MV3 skeleton
+

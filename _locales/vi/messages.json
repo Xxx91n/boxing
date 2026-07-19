@@ -79,10 +79,10 @@
     "description": "Default small box title"
   },
   "newLargeBox": {
-    "message": "Hộp $1$",
+    "message": "Hộp $count$",
     "description": "Default new large box title with auto-numbering",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -112,28 +112,28 @@
     "description": "Unpin button tooltip"
   },
   "largeBoxesCount": {
-    "message": "$1$ hộp lớn",
+    "message": "$count$ hộp lớn",
     "description": "Count of large boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "smallBoxesCount": {
-    "message": "$1$ hộp nhỏ",
+    "message": "$count$ hộp nhỏ",
     "description": "Count of small boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "searchResults": {
-    "message": "$1$ kết quả",
+    "message": "$count$ kết quả",
     "description": "Search result count",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -195,9 +195,9 @@
     "message": "Liên kết web"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ hộp nhỏ",
+    "message": "$count$ hộp nhỏ",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -499,6 +499,12 @@
   "gistId": {
     "message": "ID Gist (tự động)"
   },
+  "webdavErrUrlTooLong": {
+    "message": "URL WebDAV quá dài"
+  },
+  "webdavErrBlockedHost": {
+    "message": "Không cho phép máy chủ WebDAV tại địa chỉ mạng nội bộ/cục bộ"
+  },
   "webdavTestBtn": {
     "message": "Kiểm tra"
   },
@@ -545,16 +551,31 @@
     "message": "Mật khẩu WebDAV trống — nhập lại và thử lại"
   },
   "webdavErrAuth": {
-    "message": "Xác thực WebDAV thất bại ($1$) — kiểm tra thông tin xác thực"
+    "message": "Xác thực WebDAV thất bại ($status$) — kiểm tra thông tin xác thực",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPath": {
     "message": "Không tìm thấy đường dẫn WebDAV — kiểm tra URL"
   },
   "webdavErrStatus": {
-    "message": "Máy chủ WebDAV trả về $1$"
+    "message": "Máy chủ WebDAV trả về $status$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPut": {
-    "message": "WebDAV PUT thất bại ($1$)"
+    "message": "WebDAV PUT thất bại ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrConflict": {
     "message": "Xung đột WebDAV — thư mục cha có thể không tồn tại"
@@ -581,22 +602,51 @@
     "message": "Dữ liệu đám mây mới hơn — đã cập nhật cục bộ từ đám mây"
   },
   "syncErrPartialLoss": {
-    "message": "Phát hiện có thể mất dữ liệu ($1$ → $2$ hộp). Hủy và khôi phục từ đám mây?"
+    "message": "Phát hiện có thể mất dữ liệu ($prev$ → $current$ hộp). Hủy và khôi phục từ đám mây?",
+    "placeholders": {
+      "current": {
+        "content": "$2"
+      },
+      "prev": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrPartialLossTitle": {
     "message": "Phát hiện mất dữ liệu"
   },
   "syncErrCloudRestored": {
-    "message": "Đã khôi phục dữ liệu cục bộ từ đám mây ($1$ hộp)"
+    "message": "Đã khôi phục dữ liệu cục bộ từ đám mây ($count$ hộp)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrCloudRestoreFailed": {
-    "message": "Khôi phục đám mây thất bại: $1$"
+    "message": "Khôi phục đám mây thất bại: $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrGetFailed": {
-    "message": "WebDAV GET thất bại ($1$)"
+    "message": "WebDAV GET thất bại ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrParseFailed": {
     "message": "Dữ liệu đám mây không phải JSON hợp lệ"
+  },
+  "onboardingLangTitle": {
+    "message": "Chọn ngôn ngữ"
+  },
+  "onboardingLangDesc": {
+    "message": "Chọn ngôn ngữ giao diện"
   },
   "onboardingTitle": {
     "message": "Chào mừng đến với Boxing"
@@ -639,5 +689,38 @@
   },
   "onboardingStep3Desc": {
     "message": "Mở Cài đặt → Đồng bộ để kết nối máy chủ WebDAV. Các hộp đồng bộ giữa các trình duyệt và tab, sao lưu an toàn bằng đồng bộ hai chiều theo dấu thời gian."
+  },
+  "diagSectionTitle": {
+    "message": "Chuẩn đoán"
+  },
+  "diagSectionDesc": {
+    "message": "Xuất bản chụp bộ đệm vòng các sự kiện Boxing gần đây để hỗ trợ chuẩn đoán sự cố. Bộ đệm chứa tối đa 300 mục và không lưu lại sau khi restart trình duyệt."
+  },
+  "diagExportLog": {
+    "message": "Xuất nhật ký"
+  },
+  "diagClearLog": {
+    "message": "Xoá nhật ký"
+  },
+  "diagNoLogs": {
+    "message": "Chưa có mục nhật ký nào"
+  },
+  "diagLogLevelLabel": {
+    "message": "Mức nhật ký"
+  },
+  "diagLogLevelError": {
+    "message": "Lỗi"
+  },
+  "diagLogLevelWarn": {
+    "message": "Cảnh báo"
+  },
+  "diagLogLevelInfo": {
+    "message": "Thông tin"
+  },
+  "diagLogLevelDebug": {
+    "message": "Gỡ lỗi"
+  },
+  "onboardingRestore": {
+    "message": "Khôi phục từ bản sao lưu"
   }
 }

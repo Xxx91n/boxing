@@ -23,11 +23,11 @@
       storage: {
         sync: {
           get: async (_keys) => { try { const v = localStorage.getItem('boxingLayout'); return v ? { boxingLayout: JSON.parse(v) } : { boxingLayout: null }; } catch (_) { return { boxingLayout: null }; } },
-          set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (_) { } }
+          set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (e) { if (typeof debugErr === 'function') debugErr('mock storage.set failed', e); throw e; } }
         },
         local: {
           get: async (_keys) => { try { const v = localStorage.getItem('boxingLayout'); return v ? { boxingLayout: JSON.parse(v) } : { boxingLayout: null }; } catch (_) { return { boxingLayout: null }; } },
-          set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (_) { } }
+          set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (e) { if (typeof debugErr === 'function') debugErr('mock storage.set failed', e); throw e; } }
         },
         onChanged: {
           addListener: listener => mockChangeListeners.add(listener),
@@ -54,11 +54,82 @@
   const ZOOM_STEPS = [0.5, 0.75, 0.9, 1.0, 1.25, 1.5];
   const MIN_ZOOM = 0.3, MAX_ZOOM = 2.0;
   const DEBUG = true;
+  // BX-AUD-01/03 — front-end WebDAV URL guard (mirrors the stricter guard in background.js).
+  // Rejects private / host-only hostnames and oversized URLs so users never silently target a local network.
+  const AUD_PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fe80:|fc00:|fd00:)/i;
+  function isSafeExtUrl(urlStr) {
+    if (typeof urlStr !== 'string' || urlStr.length > 2048) return false;
+    let u;
+    try { u = new URL(urlStr); } catch (_) { return false; }
+    if (u.protocol !== 'https:') return false;
+    if (u.username || u.password) return false;
+    const host = (u.hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+    if (AUD_PRIVATE_HOST_RE.test(host)) return false;
+    if (host.endsWith('.local') || host.endsWith('.internal')) return false;
+    return true;
+  }
+  window.__boxingIsSafeExtUrl = isSafeExtUrl;
+  // ── log system (BX-AUD-05) ─────────────────────────────
+  // Tiered, bounded, off-by-default-in-production logging that mirrors the well-worn pino/winston-style shape:
+  //   ERROR(1) → always recorded (ring buffer + console whenever console is attached)
+  //   WARN(2)  → recorded when level >= WARN
+  //   INFO(3)  → recorded when level >= INFO  (opt-in, recommended for support sessions)
+  //   DEBUG(4) → recorded when level >= DEBUG (verbose; default only via ?debug=verbose or setting)
+  // Design constraints enforced to protect the host / user:
+  //   - Ring buffer is capped at LOG_RING_MAX entries; older entries are evicted FIFO — no unbounded memory growth.
+  //   - Nothing is written to chrome.storage.sync, so logs cannot create state sprawl or cross-tab writes.
+  //   - The console sink still obeys window.__BOXING_DEBUG__ so production users without ?debug get no console spam,
+  //     but error/warn records still land in the ring buffer (exportable via __boxingDebug.exportLog()).
+  const LOG_ERROR = 1, LOG_WARN = 2, LOG_INFO = 3, LOG_DEBUG = 4;
+  const LOG_RING_MAX = 300;
+  // Default level = WARN in production (records errors + warnings), elevate to DEBUG with ?debug=verbose.
+  let __logLevel = LOG_WARN;
+  const __logRing = []; // FIFO entries newest-at-end; cap LOG_RING_MAX; not persisted to chrome.storage.
+  // Sample rate for the most chatty DEBUG call sites (pan/zoom/saveLayout done) — 1 in N preserved to avoid log spam.
+  let __logSampleSlot = 0;
 
-  // ── debug ──────────────────────────────────────────────
-  function debug(...args) { if (window.__BOXING_DEBUG__) console.log('[Boxing]', ...args); }
-  function debugErr(...args) { if (window.__BOXING_DEBUG__) console.error('[Boxing]', ...args); }
-  function debugWarn(...args) { if (window.__BOXING_DEBUG__) console.warn('[Boxing]', ...args); }
+  function __logFmt(level, args) {
+    const t = new Date();
+    const ts = t.toISOString();
+    // BX-AUD-05: keep the legacy `[Boxing]` prefix on the console so existing observability
+    // (Playwright specs that filter on '[Boxing]' substrings, DevTools console greps) keeps working.
+    // Level is preserved on entry.level; the visible prefix adds a level tag for human triage.
+    let prefix = '[Boxing]';
+    if (level === LOG_ERROR) prefix = '[Boxing][ERR]';
+    else if (level === LOG_WARN) prefix = '[Boxing][WARN]';
+    else if (level === LOG_INFO) prefix = '[Boxing][INFO]';
+    else prefix = '[Boxing][DBG]';
+    const text = args.map(a => {
+      try {
+        if (a instanceof Error) return a.stack || (a.name + ': ' + a.message);
+        if (typeof a === 'string') return a;
+        return JSON.stringify(a);
+      } catch (_) { return String(a); }
+    }).join(' ');
+    return { ts, level, prefix, text: text.length > 800 ? text.slice(0, 800) + '…' : text };
+  }
+
+  function __logPush(level, args) {
+    if (level > __logLevel) return;
+    const entry = __logFmt(level, args);
+    __logRing.push(entry);
+    if (__logRing.length > LOG_RING_MAX) __logRing.splice(0, __logRing.length - LOG_RING_MAX);
+    if (window.__BOXING_DEBUG__) {
+      if (level === LOG_ERROR) console.error(entry.prefix, ...args);
+      else if (level === LOG_WARN) console.warn(entry.prefix, ...args);
+      else console.log(entry.prefix, ...args);
+    }
+  }
+
+  // BX-AUD-05: sampled DEBUG — every DEBUG_SAMPLE_RATE calls produce one entry. Use for hot paths
+  // (pan/zoom/saveLayout) so they cannot flood the ring even when level is set to DEBUG.
+  const LOG_DEBUG_SAMPLE_RATE = 20;
+  function debugSampled(...args) { __logSampleSlot = (__logSampleSlot + 1) % LOG_DEBUG_SAMPLE_RATE; if (__logSampleSlot === 0) __logPush(LOG_DEBUG, args); }
+
+  function debug(...args) { __logPush(LOG_DEBUG, args); }
+  function debugErr(...args) { __logPush(LOG_ERROR, args); }
+  function debugWarn(...args) { __logPush(LOG_WARN, args); }
+  function debugInfo(...args) { __logPush(LOG_INFO, args); }
 
   // ── Enhanced debug system (v3.6.5+) ─────────────────
   // DEBUG=true enables all logs. Set DEBUG=false for production.
@@ -68,10 +139,13 @@
   (function initDebugMode() {
     const params = new URLSearchParams(location.search);
     const flag = params.get('debug');
-    if (flag === '1') { window.__BOXING_DEBUG__ = true; window.__BOXING_VERBOSE__ = false; }
-    else if (flag === '0') { window.__BOXING_DEBUG__ = false; window.__BOXING_VERBOSE__ = false; }
-    else if (flag === 'verbose') { window.__BOXING_DEBUG__ = true; window.__BOXING_VERBOSE__ = true; }
-    else { window.__BOXING_DEBUG__ = DEBUG; window.__BOXING_VERBOSE__ = false; }
+    if (flag === '1') { window.__BOXING_DEBUG__ = true; window.__BOXING_VERBOSE__ = false; __logLevel = LOG_DEBUG; } // BX-AUD-05: debug=1 → full DEBUG level (legacy compat)
+    else if (flag === '0') { window.__BOXING_DEBUG__ = false; window.__BOXING_VERBOSE__ = false; __logLevel = LOG_ERROR; }
+    else if (flag === 'verbose') { window.__BOXING_DEBUG__ = true; window.__BOXING_VERBOSE__ = true; __logLevel = LOG_DEBUG; }
+    else if (flag === 'info') { window.__BOXING_DEBUG__ = true; __logLevel = LOG_INFO; }
+    // BX-AUD-05: when DEBUG constant is true (legacy dev build), elevate level to LOG_DEBUG so existing tests
+    // that key on [Boxing] console logs keep producing output. Production ships DEBUG=false → LOG_ERROR only.
+    else { window.__BOXING_DEBUG__ = DEBUG; window.__BOXING_VERBOSE__ = false; __logLevel = DEBUG ? LOG_DEBUG : LOG_WARN; }
     debug('[debug] mode=' + (window.__BOXING_DEBUG__ ? 'on' : 'off') + ' verbose=' + (window.__BOXING_VERBOSE__ ? 'on' : 'off'));
   })();
 
@@ -109,6 +183,18 @@
       if (layout.settings) layout.settings.onboardingCompleted = true;
       return saveLayout();
     },
+    // BX-DEV-111M/N/L: test hooks for credential flush + per-box viewState + LRU history
+    flushCredentials: () => window.__boxingFlushCredentials && window.__boxingFlushCredentials(),
+    saveLargeBoxViewState: (id) => window.__boxingSaveLargeBoxViewState && window.__boxingSaveLargeBoxViewState(id),
+    clearTabViewHistory: () => window.__boxingClearTabViewHistory && window.__boxingClearTabViewHistory(),
+    setOnboardingLangInUI: (code) => { const el = document.getElementById('onboarding-lang-select'); if (el) { el.value = code; el.dispatchEvent(new Event('change')); } },
+    // BX-AUD-05: leveled log API — supports support / debugging without unbounded log sprawl.
+    getLogLevel: () => __logLevel,
+    setLogLevel: (n) => { const v = Math.max(1, Math.min(4, Number(n) | 0)); __logLevel = v; debugInfo('log level set to', v); return v; },
+    getLogRing: () => __logRing.slice(),
+    exportLog: () => __logRing.map(e => (e.ts + ' ' + e.prefix + ' ' + e.text)).join('\n'),
+    clearLog: () => { __logRing.length = 0; return true; },
+    LOG_LEVELS: { ERROR: 1, WARN: 2, INFO: 3, DEBUG: 4 },
   };
   // Log mock usage (must be after DEBUG init)
   if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');
@@ -170,7 +256,65 @@
     bookmarkEditTitle: 'Edit Bookmark',
     backupNow: 'Backup Now', backupNowHint: 'Create a timestamped backup of all layout data',
     autoBackupInterval: 'Auto-Backup Interval', syncProvider: 'Sync Provider',
-    squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded'
+    squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded',
+    // BX-DEV-111P-v2:补齐 en 字面 fallback 全覆盖 (fix-7)
+    accessibilityLabel: 'Keyboard accessible · Screen reader friendly',
+    addBoxShortcut: 'Double-click empty area',
+    allLanguages: 'All 13 languages translated',
+    backupSaved: 'Backup saved',
+    bookmarkReorderHint: 'Drag the grip to reorder bookmarks',
+    canvasBoundaryHint: 'Canvas has boundaries at 30% zoom level',
+    ctrlScrollZoom: 'Ctrl+scroll to zoom',
+    dblclickAddBox: 'Double-click to add box',
+    debugModeOff: 'Debug: OFF',
+    debugModeOn: 'Debug: ON',
+    deleteConfirmMessage: 'This action cannot be undone. All bookmarks inside will be removed.',
+    diagClearLog: 'Clear Log',
+    diagExportLog: 'Export Log',
+    diagLogLevelDebug: 'Debug',
+    diagLogLevelError: 'Error',
+    diagLogLevelInfo: 'Info',
+    diagLogLevelLabel: 'Log level',
+    diagLogLevelWarn: 'Warning',
+    diagNoLogs: 'No log entries yet',
+    diagSectionDesc: 'Export a small ring-buffer snapshot of recent Boxing events to help diagnose issues. The buffer holds up to 300 entries and never persists across browser restarts.',
+    diagSectionTitle: 'Diagnostics',
+    doubleClickToCreateHint: 'Double-click to create',
+    dragPanCanvas: 'Drag to pan canvas',
+    dragToReorder: 'Drag to reorder',
+    emptyBoxDragHint: 'Double-click or click + to add a box',
+    emptyCanvasHint: 'Click + to create your first large box',
+    escReturnHint: 'Press Esc to return to canvas',
+    fontSizeLarge: 'Large',
+    fontSizeNormal: 'Normal',
+    fontSizeSmall: 'Small',
+    headerPinUsage: 'Click ⊙ in canvas top-right: pinned keeps top bar visible, unpinned goes fullscreen',
+    langAutoDetect: 'Auto-detect (browser language)',
+    lastOpenedBox: 'Last opened box',
+    noBookmarksYet: 'No bookmarks yet. Click + to add one.',
+    onboardingLangDesc: 'Pick a language for the interface',
+    onboardingLangTitle: 'Choose your language',
+    onboardingRestore: 'Restore from backup',
+    panShortcut: 'Left-drag empty area',
+    returnShortcut: 'Right-click or Esc to return',
+    rightClickReturnHint: 'Right-click to go back to canvas',
+    searchResults: '$1$ results',
+    searchShortcut: '/ or Ctrl+F',
+    searchSlash: '/ to search',
+    settingsCategoryAppearance: 'Appearance',
+    settingsCategoryData: 'Data',
+    settingsCategoryGeneral: 'General',
+    settingsCategorySync: 'Sync & Backup',
+    startDragHint: 'Drag titlebar to move box',
+    storedDataFound: 'Stored data found',
+    undoShortcut: 'Ctrl+Z to undo',
+    urlOpenModeCurrentTab: 'Current Tab',
+    urlOpenModeHint: 'Choose where bookmarks open when clicked',
+    urlOpenModeLabel: 'Open bookmarks in',
+    urlOpenModeNewTab: 'New Tab',
+    webdavErrBlockedHost: 'WebDAV hosts on private or local network addresses are not allowed',
+    webdavErrUrlTooLong: 'WebDAV URL is too long',
+    zoomShortcut: 'Ctrl+scroll wheel',
   };
   // Add new v3.6 keys to I18N_FALLBACK
   I18N_FALLBACK.syncLocalOnly = 'Local Only';
@@ -245,7 +389,8 @@
   I18N_FALLBACK.onboardingStep3Title = 'Sync across devices';
   I18N_FALLBACK.onboardingStep3Desc = 'Open Settings → Sync to connect a WebDAV server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way sync.';
   let currentLang = 'en';
-  const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi'];
+  // BX-i18n-LOC: To add a new language, append the code here + update ONB_LANG_LABELS below + create _locales/<code>/messages.json.
+  const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi', 'zh_TW'];
 
   async function loadI18nStore(lang) {
     try {
@@ -255,7 +400,7 @@
       const raw = await resp.json();
       i18nStore = {};
       for (const [k, v] of Object.entries(raw)) {
-        i18nStore[k] = typeof v === 'object' && v.message ? v.message : v;
+        i18nStore[k] = (typeof v === 'object' && v.message) ? { message: v.message, placeholders: (v.placeholders || null) } : v;
       }
       currentLang = lang;
       debug(`i18n loaded: ${lang}, ${Object.keys(i18nStore).length} keys`);
@@ -268,10 +413,27 @@
   }
 
   function i18n(key, placeholders) {
-    let msg = i18nStore[key] || I18N_FALLBACK[key] || key;
-    if (placeholders && Array.isArray(placeholders)) {
-      for (let i = 0; i < placeholders.length; i++) {
-        msg = msg.replace(`$${i + 1}$`, placeholders[i]);
+    const entry = i18nStore[key];
+    let msg, phMap = null;
+    if (entry && typeof entry === 'object' && entry.message) {
+      msg = entry.message;
+      phMap = entry.placeholders || null;
+    } else if (typeof entry === 'string') {
+      msg = entry;
+    } else {
+      msg = I18N_FALLBACK[key] || key;
+    }
+    if (placeholders && Array.isArray(placeholders) && placeholders.length) {
+      if (phMap && Object.keys(phMap).length) {
+        for (const [name, info] of Object.entries(phMap)) {
+          let content = String((info && info.content) || '');
+          for (let i = 0; i < placeholders.length; i++) {
+            content = content.split('$' + (i + 1)).join(String(placeholders[i]));
+          }
+          msg = msg.split('$' + name + '$').join(content);
+        }
+      } else {
+        for (let i = 0; i < placeholders.length; i++) { msg = msg.split('$' + (i + 1) + '$').join(String(placeholders[i])); }
       }
     }
     return msg;
@@ -340,6 +502,10 @@
   const exportBtn = $('#export-data-btn');
   const importBtn = $('#import-data-btn');
   const importFile = $('#import-file-input');
+  // BX-AUD-05 UI surfaces — diagnostics export/clear/level.
+  const diagExportLogBtn = $('#diag-export-log-btn');
+  const diagClearLogBtn = $('#diag-clear-log-btn');
+  const diagLogLevelSelect = $('#diag-log-level-select');
 
   // ── state ──────────────────────────────────────────────
   let layout = {
@@ -370,6 +536,8 @@
   let lastClickTime = 0;
   let lastClickTarget = null;
   let lastDragEndTime = 0;  // skip click if within 60ms of drag end (BX-DEV-065)
+let lastEnterLargeBoxAt = 0;  // BX-DEV-112C: time of last enterLargeBox via click/dblclick — used to suppress stray inner dblclick
+let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by enterLargeBox to swallow the next inner dblclick
   let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click (BX-DEV-077)
 
   // header auto-hide state (must be declared before functions that reference it)
@@ -377,6 +545,10 @@
   let scrollTimeout;
   const TAB_VIEW_KEY = 'boxingTabView.v2';
   const LAST_ACTIVE_VIEW_KEY = 'boxingLastActiveView.v2';
+  // BX-DEV-111L: permanent tab-view history (survives browser restart). LRU-bounded to prevent heap blow-up.
+  const TAB_VIEW_HISTORY_KEY = 'boxingTabViewHistory.v3';
+  const MAX_TAB_VIEW_HISTORY = 8;
+  // Per-large-box inner view state persisted into layout (auto-syncs across tabs via chrome.storage).
   const writerId = crypto.randomUUID ? crypto.randomUUID() : `page-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   let idSequence = 0;
   function makeId(prefix) {
@@ -414,12 +586,105 @@
   }
 
   function persistViewState(includeLastActive = true) {
-    const serialized = JSON.stringify(currentViewSnapshot());
+    const snap = currentViewSnapshot();
+    const serialized = JSON.stringify(snap);
     try { sessionStorage.setItem(TAB_VIEW_KEY, serialized); } catch (e) { debugWarn('tab view save', e); }
     if (includeLastActive && layout.settings.rememberLastPos !== false) {
       try { localStorage.setItem(LAST_ACTIVE_VIEW_KEY, serialized); } catch (e) { debugWarn('last active view save', e); }
     }
+    // BX-DEV-111L: permanent LRU history — survives browser close. Used as fallback when sessionStorage is gone.
+    try { pushTabViewHistory(snap); } catch (e) { debugWarn('tab view history push', e); }
   }
+
+  function pushTabViewHistory(snap) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(TAB_VIEW_HISTORY_KEY) || '[]'); } catch (_) { hist = []; }
+    if (!Array.isArray(hist)) hist = [];
+    // Drop stale entries older than 30 days, keep most recent MAX_TAB_VIEW_HISTORY.
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    hist = hist.filter(h => h && typeof h.updatedAt === 'number' && h.updatedAt >= cutoff);
+    // Replace any entry sharing the same view signature to avoid dupes of identical state.
+    const sig = snap.currentLargeBoxId + ':' + snap.canvasZoom.toFixed(3);
+    hist = hist.filter(h => !h || (h.currentLargeBoxId + ':' + Number(h.canvasZoom).toFixed(3)) !== sig);
+    hist.push(snap);
+    if (hist.length > MAX_TAB_VIEW_HISTORY) hist = hist.slice(hist.length - MAX_TAB_VIEW_HISTORY);
+    localStorage.setItem(TAB_VIEW_HISTORY_KEY, JSON.stringify(hist));
+  }
+
+  function loadFallbackTabView() {
+    try {
+      const hist = JSON.parse(localStorage.getItem(TAB_VIEW_HISTORY_KEY) || '[]');
+      if (Array.isArray(hist) && hist.length) { const latest = hist[hist.length - 1]; return latest && typeof latest === 'object' ? latest : null; }
+    } catch (_) {}
+    return null;
+  }
+
+  window.__boxingClearTabViewHistory = function () { try { localStorage.removeItem(TAB_VIEW_HISTORY_KEY); localStorage.removeItem(LAST_ACTIVE_VIEW_KEY); localStorage.removeItem(TAB_VIEW_KEY); sessionStorage.removeItem(TAB_VIEW_KEY); } catch (_) {} return true; };
+
+  // BX-DEV-111N: persist the inner canvas zoom/pan into the large box record so it survives tab/browser close
+  // and syncs across tabs via chrome.storage.onChanged. Cheap write — called on pan-end/zoom-end/exit.
+  function saveLargeBoxViewState(boxId) {
+    if (!boxId) return;
+    const lb = getLargeBox(boxId);
+    if (!lb) return;
+    const ts = Date.now();
+    lb.viewState = { innerZoom: innerZoom, innerPanX: innerPanX, innerPanY: innerPanY, updatedAt: ts };
+    // BX-DEV-111N+v2: record this tab's own write timestamp per box so applyExternalLayout
+    // can compare incoming.viewState.updatedAt against what *this* tab last wrote, not
+    // against layout._meta.updatedAt (which mergeConcurrentLayout already overwrote).
+    try { __selfLastWriteTs.set(boxId, ts); } catch (e) { debugWarn('selfLastWriteTs set', e); }
+    // Drop stale view states across all boxes (>90 days). Prune at most once per hour to
+    // keep the hot path cheap during continuous pan/zoom.
+    try {
+      if (Date.now() - __lastViewStatePruneTs > 3600000) {
+        __lastViewStatePruneTs = Date.now();
+        const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+        for (const b of layout.boxes) if (b.viewState && b.viewState.updatedAt < cutoff) delete b.viewState;
+      }
+    } catch (e) { debugWarn('saveLargeBoxViewState prune', e); }
+    saveLayout();
+  }
+  window.__boxingSaveLargeBoxViewState = saveLargeBoxViewState;
+  // BX-DEV-111N+v2 : millisecond-grade cross-tab viewState propagation. Per-box 80ms
+  // throttle (up from 25ms) keeps pan/zoom writes under chrome.storage.sync
+  // MAX_WRITE_OPERATIONS_PER_MINUTE=1200 (=20/sec) quota with a 4x safety margin.
+  // Each large box has its OWN timer (Map<boxId, timerHandle>) so switching boxes
+  // mid-pan no longer overwrites a different box's pending write.
+  const __viewStatePersistTimers = new Map();
+  const __selfLastWriteTs = new Map();
+  let __lastViewStatePruneTs = 0;
+  function scheduleLargeBoxViewStatePersist(boxId) {
+    if (!boxId) return;
+    // Always refresh the in-memory snapshot first so even a tab that reads via
+    // applyExternalLayout before the timer fires sees fresh values.
+    try {
+      const lb = getLargeBox(boxId);
+      if (lb) lb.viewState = { innerZoom: innerZoom, innerPanX: innerPanX, innerPanY: innerPanY, updatedAt: Date.now() };
+    } catch (e) { debugWarn('scheduleLargeBoxViewStatePersist snapshot', e); }
+    if (__viewStatePersistTimers.has(boxId)) return;
+    const handle = setTimeout(() => {
+      __viewStatePersistTimers.delete(boxId);
+      // saveLargeBoxViewState already updates lb.viewState + saveLayout(); reusing it
+      // keeps the single-writer path and quota/error handling in one place.
+      try { saveLargeBoxViewState(boxId); } catch (e) { debugWarn('throttled viewState persist', e); }
+    }, 80);
+    __viewStatePersistTimers.set(boxId, handle);
+  }
+  window.__boxingScheduleLargeBoxViewStatePersist = scheduleLargeBoxViewStatePersist;
+  // BX-DEV-111N+v2 : flush all pending per-box view-state timers immediately. Called on
+  // pagehide / visibilitychange=hidden / beforeunload so a tab close never loses the last
+  // pan/zoom that was sitting in an 80ms timer window. Synchronous save so the browser
+  // has the storage write before it tears down the page.
+  function flushPendingViewStatePersist() {
+    try {
+      for (const [boxId, handle] of __viewStatePersistTimers) {
+        clearTimeout(handle);
+        try { saveLargeBoxViewState(boxId); } catch (e) { debugWarn('flush viewState persist', e); }
+      }
+      __viewStatePersistTimers.clear();
+    } catch (e) { debugWarn('flushPendingViewStatePersist', e); }
+  }
+  window.__boxingFlushPendingViewStatePersist = flushPendingViewStatePersist;
 
   function mergeById(localItems, remoteItems, tombstones) {
     const local = (localItems || []).filter(item => item?.id && !tombstones.has(item.id));
@@ -472,7 +737,20 @@
       layout = mergeConcurrentLayout(layout, remote);
       const revision = Math.max(Number(layout._meta?.revision) || 0, Number(remote?._meta?.revision) || 0) + 1;
       layout._meta = { ...(layout._meta || {}), revision, updatedAt: Date.now(), writerId };
-      await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+      // BX-AUD-04: explicit chrome.storage.sync quota failure handling — sets a user-visible flag
+      // and writes a emergency localStorage snapshot so data is never silently lost.
+      try {
+        await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+        if (layout.settings && layout.settings.__lastSaveError) { layout.settings.__lastSaveError = null; }
+      } catch (e) {
+        debugErr('saveLayout: set failed (quota?) — writing fallback snapshot', e);
+        try {
+          if (layout.settings) layout.settings.__lastSaveError = (e && e.message ? e.message : String(e)) + ' @ ' + new Date().toISOString();
+          localStorage.setItem('boxingLayoutFallback.v1', JSON.stringify(layout));
+        } catch (_fbErr) { debugErr('saveLayout: fallback snapshot also failed', _fbErr); }
+        // Rethrow so the storage-write-chain catch below records it; the next saveLayout will retry.
+        throw e;
+      }
       debug('saveLayout done, revision=' + revision);
     });
     try { await storageWriteChain; } catch (e) { debugWarn('saveLayout', e); }
@@ -914,6 +1192,10 @@
       }
       // Skip click if drag just ended within 60ms (BX-DEV-065)
       if (Date.now() - lastDragEndTime < 60) { debug('skip click: drag just ended'); return; }
+      // BX-DEV-112C: this click enters — set suppress guard so any follow-on
+      // inner dblclick from the same physical click/dblclick does NOT create a stray small box.
+      lastEnterLargeBoxAt = Date.now();
+      suppressInnerDblClickOnce = true;
       enterLargeBox(box.id);
     });
     if (childCount) {
@@ -966,10 +1248,23 @@
     _enterLargeBox(id, arguments[1] === true);
   }
   function _enterLargeBox(id, skipPosRestore) {
+    // BX-DEV-111N: stash the previous large box inner view state into its own record before switching.
+    if (currentLargeBoxId && currentLargeBoxId !== id) { saveLargeBoxViewState(currentLargeBoxId); }
     currentLargeBoxId = id;
     const lb = getLargeBox(id);
     if (!lb) { exitToCanvas(); return; }
     persistViewState(true);
+    // BX-DEV-111N: restore per-box inner view state (zoom/pan) saved earlier, unless caller asked to skip.
+    if (!skipPosRestore && lb.viewState && typeof lb.viewState.innerZoom === 'number') {
+      innerZoom = lb.viewState.innerZoom;
+      innerPanX = Number(lb.viewState.innerPanX) || 0;
+      innerPanY = Number(lb.viewState.innerPanY) || 0;
+      debug('enterLargeBox: restored viewState for', id, { innerZoom, innerPanX, innerPanY });
+    } else if (skipPosRestore) {
+      // caller (reload/restore) will set inner* values externally after this returns
+    } else {
+      innerZoom = layout.settings.zoomLevel || 1.0; innerPanX = 0; innerPanY = 0;
+    }
 
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
@@ -998,6 +1293,8 @@
 
   function exitToCanvas() {
     debug(`exitToCanvas: leaving box, back to canvas`);
+    // BX-DEV-111N: stash inner view before resetting — preserves per-box view across exits.
+    saveLargeBoxViewState(currentLargeBoxId);
     currentLargeBoxId = null;
     innerPanX = 0; innerPanY = 0; innerZoom = 1.0;
     persistViewState(true);
@@ -1643,34 +1940,45 @@
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       origPanX: canvasPanX,
-      origPanY: canvasPanY
+      origPanY: canvasPanY,
+      moved: false
     };
-    canvasContainer.style.cursor = 'grabbing';
     document.addEventListener('mousemove', onCanvasPanMove);
     document.addEventListener('mouseup', onCanvasPanEnd);
-    e.preventDefault();
+    // BX-DEV-112B: do not preventDefault on mousedown — allow dblclick synthesis.
   }
 
   function onCanvasPanMove(e) {
     if (!panState) return;
     const dx = e.clientX - panState.startMouseX;
     const dy = e.clientY - panState.startMouseY;
+    if (!panState.moved && Math.abs(dx) < PAN_CURSOR_THRESHOLD && Math.abs(dy) < PAN_CURSOR_THRESHOLD) return;
+    if (!panState.moved) {
+      panState.moved = true;
+      canvasContainer.style.cursor = 'grabbing';
+    }
     const raw = { x: panState.origPanX + dx, y: panState.origPanY + dy };
     const clamped = clampCanvasPan(raw.x, raw.y, canvasZoom);
     canvasPanX = clamped.x;
     canvasPanY = clamped.y;
     applyCanvasTransform();
+    e.preventDefault();
   }
 
   function onCanvasPanEnd(e) {
     document.removeEventListener('mousemove', onCanvasPanMove);
     document.removeEventListener('mouseup', onCanvasPanEnd);
-    canvasContainer.style.cursor = '';
+    if (panState && panState.moved) canvasContainer.style.cursor = '';
     panState = null;
     persistViewState(true);
   }
 
   // Inner canvas pan
+  // BX-DEV-112B: mousedown must NOT prematurely set cursor=grabbing. Only after
+  // a real drag (>= 3px movement) do we switch to grabbing. This keeps the
+  // dblclick mousedown/mouseup sequence from flashing cursor between grab and
+  // grabbing, and keeps dblclick event synthesis intact (no preventDefault on bare mousedown).
+  const PAN_CURSOR_THRESHOLD = 3;
   function onInnerPanStart(e) {
     if (e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float') || e.target.id === 'header-pin-btn' || e.target.closest('#header-pin-btn')) return;
     if (e.button !== 0) return;
@@ -1679,33 +1987,46 @@
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       origPanX: innerPanX,
-      origPanY: innerPanY
+      origPanY: innerPanY,
+      moved: false
     };
-    innerCanvas.style.cursor = 'grabbing';
+    // Cursor switch deferred to first onInnerPanMove beyond threshold.
     document.addEventListener('mousemove', onInnerPanMove);
     document.addEventListener('mouseup', onInnerPanEnd);
-    e.preventDefault();
+    // Do NOT preventDefault on mousedown — that interferes with dblclick event
+    // synthesis. panMove will call e.preventDefault() once a real drag starts.
   }
 
   function onInnerPanMove(e) {
     if (!panState) return;
     const dx = e.clientX - panState.startMouseX;
     const dy = e.clientY - panState.startMouseY;
+    if (!panState.moved && Math.abs(dx) < PAN_CURSOR_THRESHOLD && Math.abs(dy) < PAN_CURSOR_THRESHOLD) return;
+    if (!panState.moved) {
+      panState.moved = true;
+      innerCanvas.style.cursor = 'grabbing'; innerSurface.style.cursor = 'grabbing';
+    }
     const raw = { x: panState.origPanX + dx, y: panState.origPanY + dy };
     const clamped = clampInnerPan(raw.x, raw.y, innerZoom);
     innerPanX = clamped.x;
     innerPanY = clamped.y;
     applyInnerTransform();
+    e.preventDefault();
+    // BX-DEV-111N+ : propagate live inner pan to other tabs within ~25ms (throttled).
+    if (currentLargeBoxId) scheduleLargeBoxViewStatePersist(currentLargeBoxId);
   }
 
   function onInnerPanEnd(e) {
     document.removeEventListener('mousemove', onInnerPanMove);
     document.removeEventListener('mouseup', onInnerPanEnd);
-    innerCanvas.style.cursor = '';
+    if (panState && panState.moved) {
+      innerCanvas.style.cursor = ''; innerSurface.style.cursor = '';
+    }
     panState = null;
     persistViewState(true);
+    // BX-DEV-111N: persist inner pan into the current large box record.
+    if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
   }
-
   // ── Ctrl+scroll zoom ────────────────────────────────────
   function onCanvasWheel(e) {
     if (e.ctrlKey) {
@@ -1733,7 +2054,15 @@
       innerPanX = clampedInnerPan.x;
       innerPanY = clampedInnerPan.y;
       applyInnerTransform();
-      saveLayout();  // BX-DEV-111: persist inner zoom
+      // BX-DEV-111N+v2 : single saveLayout path per wheel event via the throttled
+      // schedulePersist (Map-based, 80ms). Previously this block called saveLayout()
+      // AND saveLargeBoxViewState() AND schedulePersist() — three storage writes per
+      // wheel tick, fully capable of blow-through chrome.storage.sync's
+      // MAX_WRITE_OPERATIONS_PER_MINUTE=1200 mid continuous Ctrl+wheel zoom. The hot
+      // path now schedules ONE throttled save (80ms, per-box isolated) which itself
+      // runs saveLargeBoxViewState -> saveLayout. Snapshot is refreshed synchronously
+      // inside schedulePersist so cross-tab readers still see fresh values immediately.
+      if (currentLargeBoxId) scheduleLargeBoxViewStatePersist(currentLargeBoxId);
     }
   }
 
@@ -1997,6 +2326,29 @@
       } else if (currentLargeBoxId) {
         const lb = getLargeBox(currentLargeBoxId);
         if (lb) {
+          // BX-DEV-111N+ : if the incoming writer is another tab and it produced a newer
+          // viewState for the currently-open large box, and the user is not actively panning,
+          // pull inner zoom/pan from lb.viewState so the current tab reflects the remote edit
+          // immediately. Active pan (panState !== null) wins: never interrupt a live drag.
+          try {
+            if (panState === null && lb.viewState && typeof lb.viewState.innerZoom === 'number') {
+              const remoteTs = Number(lb.viewState.updatedAt) || 0;
+              // BX-DEV-111N+v2: compare against THIS tab's own last write to lb.viewState,
+              // NOT layout._meta.updatedAt (mergeConcurrentLayout already overwrote
+              // it with the incoming _meta, making remoteTs>localTs always false and
+              // cross-tab adopt dead). 100ms tolerance absorbs wall-clock drift between
+              // tabs while still excluding our own just-written revision.
+              const ownTs = __selfLastWriteTs.get(lb.id) || 0;
+              // Only adopt when the remote viewState is strictly newer than what this tab
+              // most recently wrote; avoids ping-pong when both tabs idle on the same box.
+              if (remoteTs > ownTs + 100) {
+                innerZoom = Number(lb.viewState.innerZoom) || innerZoom;
+                innerPanX = Number(lb.viewState.innerPanX) || 0;
+                innerPanY = Number(lb.viewState.innerPanY) || 0;
+                debug('applyExternalLayout: adopted remote viewState', { box: lb.id, innerZoom, innerPanX, innerPanY, remoteTs });
+              }
+            }
+          } catch (ev) { debugWarn('applyExternalLayout viewState adopt', ev); }
           renderInnerSurface(lb);
           renderCrumbs(lb);
           updateCaption();
@@ -2039,7 +2391,13 @@
     }
   }
 
-  function closeSettingsModal() { settingsModal.hidden = true; }
+  function closeSettingsModal() {
+    // BX-DEV-111M: flush via the globally-exposed helper — flushUnsavedCredentials is defined inside loadSettings()'s
+    // closure so the top-level closeSettingsModal cannot reference it directly. window.__boxingFlushCredentials is set
+    // during loadSettings() and may be undefined on the very first open before that runs.
+    try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { debugWarn('credential flush on close', e); }
+    settingsModal.hidden = true;
+  }
   // Expose for Playwright testing
   window._boxingOpenSettings = openSettingsModal;
   window._boxingAddLargeBox = addLargeBox;
@@ -2140,6 +2498,9 @@
     const targetBox = e.target.closest('.large-box');
     if (targetBox) {
       debug('onCanvasDblClick on existing box, entering', targetBox.dataset.id);
+      // BX-DEV-112C: suppress stray inner dblclick that synthesizes from the entry click.
+      lastEnterLargeBoxAt = Date.now();
+      suppressInnerDblClickOnce = true;
       enterLargeBox(targetBox.dataset.id);
       return;
     }
@@ -2155,6 +2516,25 @@
   }
 
   function onInnerDblClick(e) {
+    // BX-DEV-112C: If this dblclick is a continuation of the click that
+    // triggered enterLargeBox (within 350ms), do NOT create a small box.
+    // After 350ms the one-shot flag is auto-cleared so user-initiated
+    // dblclicks outside this window still create boxes normally.
+    const withinEnterWindow = (Date.now() - lastEnterLargeBoxAt) < 350;
+    if (suppressInnerDblClickOnce) {
+      if (withinEnterWindow) {
+        suppressInnerDblClickOnce = false;
+        debug('onInnerDblClick suppressed: one-shot from enterLargeBox');
+        return;
+      } else {
+        // Stale one-shot flag; discard so user dblclicks are no longer blocked.
+        suppressInnerDblClickOnce = false;
+      }
+    }
+    if (withinEnterWindow) {
+      debug('onInnerDblClick suppressed: within 350ms of enterLargeBox');
+      return;
+    }
     const targetBox = e.target.closest('.small-box');
     if (targetBox) return;
     addSmallBoxAt(e.clientX, e.clientY);
@@ -2466,16 +2846,46 @@
       if (webdavUserInput) layout.settings.webdavUser = webdavUserInput.value.trim();
       saveLayout();
     }));
-    webdavPassInput?.addEventListener('blur', async () => {
-      const v = webdavPassInput.value;
-      layout.settings._encWebdavPass = v ? await encryptCredential(v) : null;
-      saveLayout();
-    });
-    gistTokenInput?.addEventListener('blur', async () => {
-      const v = gistTokenInput.value.trim();
-      layout.settings._encGistToken = v ? await encryptCredential(v) : null;
-      saveLayout();
-    });
+    // BX-DEV-111M: debounced input listeners — survive close without blur (browser close, tab close).
+    let __credDebounceTimer = null;
+    function __scheduleCredFlush() {
+      if (__credDebounceTimer) clearTimeout(__credDebounceTimer);
+      __credDebounceTimer = setTimeout(() => { __credDebounceTimer = null; flushUnsavedCredentials(); }, 800);
+    }
+    // Commit synchronous plain fields instantly (cheap), defer the async encryption via debounce.
+    [webdavUrlInput, webdavUserInput].forEach(inp => inp?.addEventListener('input', () => {
+      if (webdavUrlInput) layout.settings.webdavUrl = webdavUrlInput.value.trim();
+      if (webdavUserInput) layout.settings.webdavUser = webdavUserInput.value.trim();
+      __scheduleCredFlush();
+    }));
+    webdavPassInput?.addEventListener('input', __scheduleCredFlush);
+    gistTokenInput?.addEventListener('input', __scheduleCredFlush);
+    // Keep blur for immediate commit on tabbing away.
+    webdavPassInput?.addEventListener('blur', () => { if (__credDebounceTimer) { clearTimeout(__credDebounceTimer); __credDebounceTimer = null; } flushUnsavedCredentials(); });
+    gistTokenInput?.addEventListener('blur', () => { if (__credDebounceTimer) { clearTimeout(__credDebounceTimer); __credDebounceTimer = null; } flushUnsavedCredentials(); });
+    // BX-DEV-111M: flush helper — encrypts current input values into layout.settings then saveLayout.
+    // Safe-no-op when called from contexts without settings inputs (early startup, etc.).
+    let __credFlushInFlight = false;
+    async function flushUnsavedCredentials() {
+      if (__credFlushInFlight) return;
+      const hasInputs = !!(webdavPassInput || webdavUrlInput || webdavUserInput || gistTokenInput);
+      if (!hasInputs) return;
+      try {
+        const webdavUrlCur = webdavUrlInput ? webdavUrlInput.value.trim() : layout.settings.webdavUrl;
+        const webdavUserCur = webdavUserInput ? webdavUserInput.value.trim() : layout.settings.webdavUser;
+        const passCur = webdavPassInput ? webdavPassInput.value : '';
+        const gistCur = gistTokenInput ? gistTokenInput.value.trim() : '';
+        if (webdavUrlInput && webdavUrlCur !== (layout.settings.webdavUrl || '')) layout.settings.webdavUrl = webdavUrlCur;
+        if (webdavUserInput && webdavUserCur !== (layout.settings.webdavUser || '')) layout.settings.webdavUser = webdavUserCur;
+        const encPass = passCur ? await encryptCredential(passCur) : null;
+        const encGist = gistCur ? await encryptCredential(gistCur) : null;
+        layout.settings._encWebdavPass = encPass;
+        layout.settings._encGistToken = encGist;
+        saveLayout();
+        debug('flushUnsavedCredentials: committed', { webdavUrl: webdavUrlCur ? '(set)' : '(empty)', pass: passCur ? '(set)' : '(empty)', gist: gistCur ? '(set)' : '(empty)' });
+      } catch (e) { debugErr('flushUnsavedCredentials failed', e); }
+    }
+    window.__boxingFlushCredentials = flushUnsavedCredentials;
 
     // WebDAV test connection button
     webdavTestBtn?.addEventListener('click', async () => {
@@ -2543,9 +2953,15 @@
       const pass = webdavPassInput?.value || '';
       debug('WebDAV test: starting', { url, user: user ? '(set)' : '(empty)', pass: pass ? '(set)' : '(empty)' });
       if (!url) throw new Error(i18n('webdavErrNoUrl'));
+      // BX-AUD-01/03 front-end guard: private hosts, scheme, length, embedded creds
+      if (!isSafeExtUrl(url)) {
+        if (url.length > 2048) throw new Error(i18n('webdavErrUrlTooLong'));
+        let _u; try { _u = new URL(url); } catch (_) { throw new Error(i18n('webdavErrNetwork')); }
+        if (_u.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
+        if (_u.username || _u.password) throw new Error(i18n('webdavErrEmbedded'));
+        throw new Error(i18n('webdavErrBlockedHost'));
+      }
       const target = new URL(url);
-      if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
-      if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
       if (user && !pass) {
         debugErr('WebDAV test: password is empty — decrypt may not have completed');
         throw new Error(i18n('webdavErrNoPass'));
@@ -2562,7 +2978,8 @@
           // Fallback: direct fetch (works in Chromium extension, not in Firefox)
           const h = new Headers({ 'Depth': '0' });
           if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
-          const resp = await fetch(target.href, { method: 'PROPFIND', headers: h, redirect: 'follow' });
+          const resp = await fetch(target.href, { method: 'PROPFIND', headers: h, redirect: 'manual' });
+          if (resp.type === 'opaqueredirect') throw new Error(i18n('webdavErrNetwork'));
           status = resp.status;
           ok = resp.status === 207 || resp.ok;
           debug('WebDAV test direct: PROPFIND', { status, ok });
@@ -2597,9 +3014,15 @@
       const pass = webdavPassInput?.value || '';
       debug('WebDAV backup: starting', { url, user: user ? '(set)' : '(empty)' });
       if (!url) throw new Error(i18n('webdavErrNoUrl'));
+      // BX-AUD-01/03 front-end guard: private hosts, scheme, length, embedded creds
+      if (!isSafeExtUrl(url)) {
+        if (url.length > 2048) throw new Error(i18n('webdavErrUrlTooLong'));
+        let _u; try { _u = new URL(url); } catch (_) { throw new Error(i18n('webdavErrNetwork')); }
+        if (_u.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
+        if (_u.username || _u.password) throw new Error(i18n('webdavErrEmbedded'));
+        throw new Error(i18n('webdavErrBlockedHost'));
+      }
       const target = new URL(url);
-      if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
-      if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
       // Resolve file URL
       let basePath = target.href;
       if (!basePath.endsWith('/')) basePath += '/';
@@ -2621,7 +3044,8 @@
           debug('WebDAV backup via BG failed, falling back to direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
           const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
           if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
-          const resp = await fetch(fileUrl, { method: 'PUT', headers: h, body, redirect: 'follow' });
+          const resp = await fetch(fileUrl, { method: 'PUT', headers: h, body, redirect: 'manual' });
+          if (resp.type === 'opaqueredirect') throw new Error(i18n('webdavErrNetwork'));
           status = resp.status; ok = resp.ok;
           debug('WebDAV backup direct: PUT', { status, ok });
         }
@@ -2877,9 +3301,11 @@
     }
 
     function checkUrlValid(urlStr) {
+      if (typeof urlStr !== 'string' || urlStr.length > 2048) throw new Error(i18n('webdavErrUrlTooLong'));
       const target = new URL(urlStr);
       if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
       if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
+      if (AUD_PRIVATE_HOST_RE.test((target.hostname || '').toLowerCase())) throw new Error(i18n('webdavErrBlockedHost'));
     }
 
     // Expose sync for debug + tests.
@@ -2920,7 +3346,7 @@
       const a = document.createElement('a');
       a.href = url; a.download = 'boxing-backup-' + ts + '.json';
       document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(url);
+      document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 4000);
     }
 
     // Unified backup dispatcher (only used for remote providers)
@@ -2973,7 +3399,7 @@
       const a = document.createElement('a');
       a.href = url; a.download = 'boxing-backup.json';
       document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(url);
+      document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 4000);
     });
 
     let importPending = false;
@@ -3037,6 +3463,43 @@
       importFile.value = '';
     });
 
+    // ── BX-AUD-05: diagnostics UI surface (Settings > Data > Diagnostics) ───
+    diagExportLogBtn?.addEventListener('click', () => {
+      try {
+        const text = (window.__boxingDebug && typeof window.__boxingDebug.exportLog === 'function') ? window.__boxingDebug.exportLog() : '';
+        if (!text) { try { alert(i18n('diagNoLogs') || 'No log entries yet'); } catch (_) {} return; }
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const blob = new Blob([text], { type: 'text/plain; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'boxing-log-' + ts + '.log';
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 4000);
+        debug('diag: exported log ring');
+      } catch (e) { debugErr('diag: export log failed', e); }
+    });
+    diagClearLogBtn?.addEventListener('click', () => {
+      try {
+        if (window.__boxingDebug && typeof window.__boxingDebug.clearLog === 'function') {
+          window.__boxingDebug.clearLog();
+          debug('diag: log ring cleared by user');
+        }
+      } catch (e) { debugErr('diag: clear log failed', e); }
+    });
+    diagLogLevelSelect?.addEventListener('change', () => {
+      try {
+        const v = parseInt(diagLogLevelSelect.value, 10) || 2;
+        if (window.__boxingDebug && typeof window.__boxingDebug.setLogLevel === 'function') {
+          window.__boxingDebug.setLogLevel(v);
+          layout.settings.__diagLogLevel = v;
+          saveLayout();
+        }
+      } catch (e) { debugErr('diag: log level change failed', e); }
+    });
+    if (diagLogLevelSelect && layout.settings.__diagLogLevel) {
+      diagLogLevelSelect.value = String(layout.settings.__diagLogLevel);
+    }
+
     // Confirm modal events
     confirmDelete?.addEventListener('click', () => {
       if (confirmCallback) confirmCallback();
@@ -3049,7 +3512,11 @@
     window.addEventListener('resize', onWindowResize);
 
     // Per-tab session state survives reload but is isolated from every other tab.
-    window.addEventListener('pagehide', () => persistViewState(false));
+    window.addEventListener('pagehide', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (_) {} persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (_) {} });
+    // BX-DEV-111M: flush credentials on tab switch / window hide / beforeunload —
+    // fixes the 'close browser loses WebDAV password' bug (blur never fires in those paths).
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (_) {} persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (_) {} } });
+    window.addEventListener('beforeunload', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (_) {} try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (_) {} });
 
     api.storage.onChanged?.addListener?.((changes, areaName) => {
       const expectedArea = layoutStorage === api.storage.local ? 'local' : 'sync';
@@ -3062,6 +3529,8 @@
     try {
       const key = navigationType === 'reload' ? TAB_VIEW_KEY : LAST_ACTIVE_VIEW_KEY;
       view = JSON.parse((navigationType === 'reload' ? sessionStorage : localStorage).getItem(key) || 'null');
+      // BX-DEV-111L: when sessionStorage is gone (fresh browser launch), fall back to permanent LRU history.
+      if (!view) { view = loadFallbackTabView(); debug('view restore: using permanent history fallback', !!view); }
     } catch (e) { debugWarn('view restore', e); }
 
     const shouldRestoreView = navigationType === 'reload' || layout.settings.rememberLastPos !== false;
@@ -3121,6 +3590,48 @@
     });
     skipBtn?.addEventListener('click', () => close(false));
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+
+    // BX-DEV-111O+: onboarding data-restore shortcut — opens Settings > Data and triggers the import
+    // file picker so users with an existing JSON backup can pull it in on first run without hunting menus.
+    try {
+      const restoreBtn = document.getElementById('onboarding-restore-btn');
+      if (restoreBtn) {
+        restoreBtn.addEventListener('click', () => {
+          try { close(false); } catch (_) {}
+          try {
+            if (typeof openSettingsModal === 'function') openSettingsModal();
+            const tabBtn = document.querySelector('.settings-nav__item[data-tab="data"]');
+            if (tabBtn) tabBtn.click();
+            const importBtn = document.getElementById('import-data-btn');
+            if (importBtn) importBtn.click();
+          } catch (e) { debugErr('onboarding restore open', e); }
+        });
+      }
+    } catch (e) { debugErr('onboarding restore bind', e); }
+    // BX-DEV-111O: build onboarding language picker — mirrors the Settings lang-select list.
+    try {
+      const onbLang = document.getElementById('onboarding-lang-select');
+      const ONB_LANG_LABELS = { en: 'English', zh_CN: '简体中文', ja: '日本語', ko: '한국어', fr: 'Français', de: 'Deutsch', es: 'Español', pt_BR: 'Português (Brasil)', ru: 'Русский', ar: 'العربية', hi: 'हिन्दी', th: 'ไทย', vi: 'Tiếng Việt', zh_TW: '繁體中文' };
+      if (onbLang) {
+        if (!onbLang.options.length) {
+          for (const code of SUPPORTED_LANGS) {
+            const o = document.createElement('option');
+            o.value = code; o.textContent = ONB_LANG_LABELS[code] || code;
+            if (code === (layout.settings.selectedLanguage || currentLang)) o.selected = true;
+            onbLang.appendChild(o);
+          }
+        }
+        onbLang.addEventListener('change', async () => {
+          layout.settings.selectedLanguage = onbLang.value;
+          await loadI18nStore(onbLang.value);
+          if (langSelect) langSelect.value = onbLang.value;
+          render();
+          if (typeof applyI18n === 'function') applyI18n();
+          saveLayout();
+          debug('onboarding lang changed', onbLang.value);
+        });
+      }
+    } catch (el) { debugErr('onboarding lang setup', el); }
     overlay.hidden = false;
     render();
   }

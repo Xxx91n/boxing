@@ -79,10 +79,10 @@
     "description": "Default small box title"
   },
   "newLargeBox": {
-    "message": "박스 $1$",
+    "message": "박스 $count$",
     "description": "Default new large box title with auto-numbering",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -112,28 +112,28 @@
     "description": "Unpin button tooltip"
   },
   "largeBoxesCount": {
-    "message": "대형 박스 $1$개",
+    "message": "대형 박스 $count$개",
     "description": "Count of large boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "smallBoxesCount": {
-    "message": "소형 박스 $1$개",
+    "message": "소형 박스 $count$개",
     "description": "Count of small boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "searchResults": {
-    "message": "$1$개 결과",
+    "message": "$count$개 결과",
     "description": "Search result count",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -195,9 +195,9 @@
     "message": "웹 링크"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ 작은 상자",
+    "message": "$count$ 작은 상자",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -499,6 +499,12 @@
   "gistId": {
     "message": "Gist ID (자동 입력)"
   },
+  "webdavErrUrlTooLong": {
+    "message": "WebDAV URL이 너무 깁니다"
+  },
+  "webdavErrBlockedHost": {
+    "message": "사설망/로컬 네트워크의 WebDAV 호스트는 사용할 수 없습니다"
+  },
   "webdavTestBtn": {
     "message": "연결 테스트"
   },
@@ -545,16 +551,31 @@
     "message": "WebDAV 비밀번호가 비어있습니다 — 다시 입력하세요"
   },
   "webdavErrAuth": {
-    "message": "WebDAV 인증 실패 ($1$) — 자격 증명을 확인하세요"
+    "message": "WebDAV 인증 실패 ($status$) — 자격 증명을 확인하세요",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPath": {
     "message": "WebDAV 경로를 찾을 수 없습니다 — URL을 확인하세요"
   },
   "webdavErrStatus": {
-    "message": "WebDAV 서버가 $1$를 반환했습니다"
+    "message": "WebDAV 서버가 $status$를 반환했습니다",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPut": {
-    "message": "WebDAV PUT 실패 ($1$)"
+    "message": "WebDAV PUT 실패 ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrConflict": {
     "message": "WebDAV 충돌 — 상위 디렉토리가 존재하지 않을 수 있습니다"
@@ -581,22 +602,51 @@
     "message": "클라우드 데이터가 더 최신 — 클라우드에서 로컬 업데이트됨"
   },
   "syncErrPartialLoss": {
-    "message": "데이터 손실 가능성 감지 ($1$ → $2$ 박스). 중단하고 클라우드에서 복구할까요?"
+    "message": "데이터 손실 가능성 감지 ($prev$ → $current$ 박스). 중단하고 클라우드에서 복구할까요?",
+    "placeholders": {
+      "current": {
+        "content": "$2"
+      },
+      "prev": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrPartialLossTitle": {
     "message": "데이터 손실 감지됨"
   },
   "syncErrCloudRestored": {
-    "message": "로컬 데이터를 클라우드에서 복구함 ($1$ 박스)"
+    "message": "로컬 데이터를 클라우드에서 복구함 ($count$ 박스)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrCloudRestoreFailed": {
-    "message": "클라우드 복구 실패: $1$"
+    "message": "클라우드 복구 실패: $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrGetFailed": {
-    "message": "WebDAV GET 실패 ($1$)"
+    "message": "WebDAV GET 실패 ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrParseFailed": {
     "message": "클라우드 데이터가 유효한 JSON이 아님"
+  },
+  "onboardingLangTitle": {
+    "message": "언어 선택"
+  },
+  "onboardingLangDesc": {
+    "message": "인터페이스 언어를 선택하세요"
   },
   "onboardingTitle": {
     "message": "Boxing에 오신 것을 환영합니다"
@@ -639,5 +689,38 @@
   },
   "onboardingStep3Desc": {
     "message": "설정 → 동기화에서 WebDAV 서버에 연결하세요. 박스는 브라우저와 탭 간에 동기화되며 타임스탬프 기반 양방향 동기화로 안전하게 백업됩니다."
+  },
+  "diagSectionTitle": {
+    "message": "진단"
+  },
+  "diagSectionDesc": {
+    "message": "문제 해결을 위해 최근 Boxing 이벤트의 링 버퍼 스냅샷(최대 300개, 브라우저 재시작 시 유지되지 않음)을 내보냅니다."
+  },
+  "diagExportLog": {
+    "message": "로그 내보내기"
+  },
+  "diagClearLog": {
+    "message": "로그 지우기"
+  },
+  "diagNoLogs": {
+    "message": "아직 로그가 없습니다"
+  },
+  "diagLogLevelLabel": {
+    "message": "로그 레벨"
+  },
+  "diagLogLevelError": {
+    "message": "오류"
+  },
+  "diagLogLevelWarn": {
+    "message": "경고"
+  },
+  "diagLogLevelInfo": {
+    "message": "정보"
+  },
+  "diagLogLevelDebug": {
+    "message": "디버그"
+  },
+  "onboardingRestore": {
+    "message": "백업에서 복원"
   }
 }

@@ -80,10 +80,10 @@
     "description": "Default small box title"
   },
   "newLargeBox": {
-    "message": "Box $1$",
+    "message": "Box $count$",
     "description": "Default new large box title with auto-numbering",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -113,28 +113,28 @@
     "description": "Unpin button tooltip"
   },
   "largeBoxesCount": {
-    "message": "$1$ large boxes",
+    "message": "$count$ large boxes",
     "description": "Count of large boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "smallBoxesCount": {
-    "message": "$1$ small boxes",
+    "message": "$count$ small boxes",
     "description": "Count of small boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
   },
   "searchResults": {
-    "message": "$1$ results",
+    "message": "$count$ results",
     "description": "Search result count",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -196,9 +196,9 @@
     "message": "https://…"
   },
   "smallBoxCountLabel": {
-    "message": "$1$ small boxes",
+    "message": "$count$ small boxes",
     "placeholders": {
-      "1": {
+      "count": {
         "content": "$1"
       }
     }
@@ -512,6 +512,12 @@
   "gistId": {
     "message": "Gist ID (auto-filled)"
   },
+  "webdavErrUrlTooLong": {
+    "message": "WebDAV URL is too long"
+  },
+  "webdavErrBlockedHost": {
+    "message": "WebDAV hosts on private or local network addresses are not allowed"
+  },
   "webdavTestBtn": {
     "message": "Test Connection"
   },
@@ -558,16 +564,31 @@
     "message": "WebDAV password is empty — re-enter and retry"
   },
   "webdavErrAuth": {
-    "message": "WebDAV auth failed ($1$) — check credentials"
+    "message": "WebDAV auth failed ($status$) — check credentials",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPath": {
     "message": "WebDAV path not found — check the URL"
   },
   "webdavErrStatus": {
-    "message": "WebDAV server returned $1$"
+    "message": "WebDAV server returned $status$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrPut": {
-    "message": "WebDAV PUT failed ($1$)"
+    "message": "WebDAV PUT failed ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "webdavErrConflict": {
     "message": "WebDAV conflict — parent directory may not exist"
@@ -594,22 +615,51 @@
     "message": "Cloud data is newer — updated local from cloud"
   },
   "syncErrPartialLoss": {
-    "message": "Possible data loss detected ($1$ → $2$ boxes). Abort and restore from cloud?"
+    "message": "Possible data loss detected ($prev$ → $current$ boxes). Abort and restore from cloud?",
+    "placeholders": {
+      "current": {
+        "content": "$2"
+      },
+      "prev": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrPartialLossTitle": {
     "message": "Data loss detected"
   },
   "syncErrCloudRestored": {
-    "message": "Local data restored from cloud ($1$ boxes)"
+    "message": "Local data restored from cloud ($count$ boxes)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrCloudRestoreFailed": {
-    "message": "Cloud restore failed: $1$"
+    "message": "Cloud restore failed: $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrGetFailed": {
-    "message": "WebDAV GET failed ($1$)"
+    "message": "WebDAV GET failed ($status$)",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   },
   "syncErrParseFailed": {
     "message": "Cloud data is not valid JSON"
+  },
+  "onboardingLangTitle": {
+    "message": "Choose your language"
+  },
+  "onboardingLangDesc": {
+    "message": "Pick a language for the interface"
   },
   "onboardingTitle": {
     "message": "Welcome to Boxing"
@@ -652,5 +702,38 @@
   },
   "onboardingStep3Desc": {
     "message": "Open Settings → Sync to connect a WebDAV server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way sync."
+  },
+  "diagSectionTitle": {
+    "message": "Diagnostics"
+  },
+  "diagSectionDesc": {
+    "message": "Export a small ring-buffer snapshot of recent Boxing events to help diagnose issues. The buffer holds up to 300 entries and never persists across browser restarts."
+  },
+  "diagExportLog": {
+    "message": "Export Log"
+  },
+  "diagClearLog": {
+    "message": "Clear Log"
+  },
+  "diagNoLogs": {
+    "message": "No log entries yet"
+  },
+  "diagLogLevelLabel": {
+    "message": "Log level"
+  },
+  "diagLogLevelError": {
+    "message": "Error"
+  },
+  "diagLogLevelWarn": {
+    "message": "Warning"
+  },
+  "diagLogLevelInfo": {
+    "message": "Info"
+  },
+  "diagLogLevelDebug": {
+    "message": "Debug"
+  },
+  "onboardingRestore": {
+    "message": "Restore from backup"
   }
 }

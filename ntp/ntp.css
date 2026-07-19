@@ -585,6 +585,10 @@ body {
   overflow: hidden;
 }
 
+/* BX-DEV-111Pv2: mirror large .canvas / .canvas:active pan cursor for inner canvas (fix 5 cursor-shadowing bug) */
+.inner__canvas:active { cursor: grabbing; }
+.inner__surface:active { cursor: grabbing; }
+
 /* inner__canvas-head: lightweight bar inside canvas (v3.7.3 - replaced inner__head) */
 .inner__canvas-head {
   position: absolute;
@@ -628,7 +632,7 @@ body {
   bottom: 0;
   min-width: 100%;
   min-height: calc(100% - 40px);
-  cursor: default;
+  cursor: grab;
 }
 
 /* === SMALL BOX (fixed, second-level container) === */
@@ -1868,7 +1872,11 @@ html.ntp--dark {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
   padding: var(--space-5) var(--space-5) var(--space-3);
+  box-sizing: border-box;
   gap: var(--space-3);
 }
 
@@ -1952,4 +1960,31 @@ html.ntp--dark {
 
 .ntp--dark .onboarding__step-title {
   color: var(--color-ink);
+}.onboarding__lang {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 420px;            /* match .onboarding__step so divider spans the same content width */
+  margin: 0 auto var(--space-2);
+  padding: var(--space-3) 0 var(--space-2);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border-soft, rgba(0,0,0,0.08));
+}
+.onboarding__lang-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.onboarding__lang-select {
+  width: 100%;
+  max-width: 260px;
+}
+.onboarding__lang-hint {
+  font-size: 0.82rem;
+  opacity: 0.7;
+  margin: 0;
+}
+.ntp--dark .onboarding__lang {
+  border-bottom-color: rgba(255,255,255,0.12);
 }

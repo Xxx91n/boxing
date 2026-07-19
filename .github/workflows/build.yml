@@ -1,0 +1,100 @@
+# Boxing — Build & release packaging workflow.
+# Manual dispatch only — does NOT auto-trigger on push/PR.
+# Goals: produce 4 release artifacts per run:
+#   - boxing-chrome.zip  -> Chrome build (load unpacked)
+#   - boxing-chrome.crx  -> CRX3 pack (signed when secret CRX_PRIVATE_KEY_PEM present, else placeholder)
+#   - boxing-firefox.zip -> Firefox build (zipped folder)
+#   - boxing-firefox.xpi -> Unsigned dev XPI (AMO signing requires separate AMO_* secrets, out of scope here)
+name: Build & Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Optional build version override (e.g. 3.7.10). Empty keeps manifest version as-is."
+        required: false
+        default: ""
+      make_release:
+        description: "Also create a draft GitHub Release attaching the 4 artifacts."
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build browser-specific trees
+        env:
+          BOXING_BUILD_VERSION: ${{ github.event.inputs.version }}
+        run: node .github/scripts/build.mjs
+
+      - name: Zip Chrome tree
+        working-directory: dist
+        run: |
+          (cd boxing-chrome && zip -r -X ../boxing-chrome.zip .)
+          (cd boxing-firefox && zip -r -X ../boxing-firefox.zip .)
+
+      - name: Pack CRX3 (signed when CRX_PRIVATE_KEY_PEM secret present)
+        id: crx
+        env:
+          CRX_KEY: ${{ secrets.CRX_PRIVATE_KEY_PEM }}
+        run: |
+          if [ -z "$CRX_KEY" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            # Placeholder so the artifact slot is still populated and discoverable.
+            cp dist/boxing-chrome.zip dist/boxing-chrome.crx
+            echo "CRX_PRIVATE_KEY_PEM secret not set -> boxing-chrome.crx is a placeholder (unsigned)."
+          else
+            echo "$CRX_KEY" | base64 -d > /tmp/crx.pem
+            npx --yes crx3 pack dist/boxing-chrome.zip -o dist/boxing-chrome.crx -p /tmp/crx.pem
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pack Firefox XPI (unsigned dev build)
+        run: cp dist/boxing-firefox.zip dist/boxing-firefox.xpi
+
+      - name: Verify all 4 artifacts exist
+        run: |
+          ls -l dist/boxing-chrome.zip dist/boxing-chrome.crx dist/boxing-firefox.zip dist/boxing-firefox.xpi
+
+      - name: Upload all 4 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: boxing-release
+          path: |
+            dist/boxing-chrome.zip
+            dist/boxing-chrome.crx
+            dist/boxing-firefox.zip
+            dist/boxing-firefox.xpi
+          if-no-files-found: error
+
+      - name: Create draft GitHub Release (optional)
+        if: github.event.inputs.make_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version || github.run_id }}
+          name: Boxing ${{ github.event.inputs.version || github.run_id }}
+          files: |
+            dist/boxing-chrome.zip
+            dist/boxing-chrome.crx
+            dist/boxing-firefox.zip
+            dist/boxing-firefox.xpi
+          draft: true
+          prerelease: true
+          body: |
+            Manual build artifacts. See CHANGELOG for details.
+            - `boxing-chrome.zip`  -> load via Chrome > Manage extensions > Developer mode > Load unpacked.
+            - `boxing-chrome.crx`  -> CRX3 pack (signed when secret CRX_PRIVATE_KEY_PEM is present).
+            - `boxing-firefox.zip` -> Firefox build (zipped folder).
+            - `boxing-firefox.xpi` -> unsigned dev XPI (needs AMO signing for production).

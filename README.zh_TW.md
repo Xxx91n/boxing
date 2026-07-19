@@ -1,10 +1,14 @@
-# 🥊 Boxing — Hierarchical Bookmark Manager
+# 🥊 Boxing — 分層管理書籤
 
-**Languages:** [English](README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](README.md) · [简体中文](README.zh_CN.md) · **繁體中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 
-**v3.7** · Chrome Extension (MV3) · Firefox compatible
+### 分層管理書籤
 
-Boxing organizes your bookmarks in a two-level infinite canvas — large boxes hold small boxes, small boxes hold bookmarks. Think Obsidian canvas meets bookmarks.
+> 點擊 + 創建第一個大盒子
+
+> 繁體中文 README — canonical feature list and technical specs are in the [English README](README.md).
+
+---
 
 ## ✨ Features
 
@@ -91,3 +95,4 @@ GPL-3.0 (see [LICENSE](LICENSE))
 
 ### v1.0.0
 - Initial scaffold: beige design system, MV3 skeleton
+
