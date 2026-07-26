@@ -2045,6 +2045,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // panState stuck and cursor=grabbing forever ("爬取键一直生效" bug).
     window.addEventListener('blur', onCanvasPanEnd);
     document.addEventListener('visibilitychange', onCanvasPanVisHide);
+    // BX-DEV-128 (B3): pointerup/pointercancel cover the cases where mouseup is
+    // swallowed by an iframe, cross-origin popup, or browser chrome (the recurring
+    // "爬取键一直生效" intermittent). pointer events also fire for mouse and are
+    // not blocked when the cursor leaves the document while the button is held.
+    document.addEventListener('pointerup', onCanvasPanEnd);
+    document.addEventListener('pointercancel', onCanvasPanEnd);
     // BX-DEV-112B: do not preventDefault on mousedown — allow dblclick synthesis.
   }
 
@@ -2071,6 +2077,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.removeEventListener('mouseup', onCanvasPanEnd);
     window.removeEventListener('blur', onCanvasPanEnd);
     document.removeEventListener('visibilitychange', onCanvasPanVisHide);
+    document.removeEventListener('pointerup', onCanvasPanEnd);
+    document.removeEventListener('pointercancel', onCanvasPanEnd);
     if (panState && panState.moved) canvasContainer.style.cursor = '';
     panState = null;
     persistViewState(true);
@@ -2104,6 +2112,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // BX-DEV-120A: window-blur + tab-hide safety net for inner canvas too.
     window.addEventListener('blur', onInnerPanEnd);
     document.addEventListener('visibilitychange', onInnerPanVisHide);
+    // BX-DEV-128 (B3): pointerup/pointercancel mirror the canvas-pan fix; covers
+    // iframe/popup/chrome swallow cases that leave the inner grab cursor stuck.
+    document.addEventListener('pointerup', onInnerPanEnd);
+    document.addEventListener('pointercancel', onInnerPanEnd);
     // Do NOT preventDefault on mousedown — that interferes with dblclick event
     // synthesis. panMove will call e.preventDefault() once a real drag starts.
   }
@@ -2133,6 +2145,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.removeEventListener('mouseup', onInnerPanEnd);
     window.removeEventListener('blur', onInnerPanEnd);
     document.removeEventListener('visibilitychange', onInnerPanVisHide);
+    document.removeEventListener('pointerup', onInnerPanEnd);
+    document.removeEventListener('pointercancel', onInnerPanEnd);
     if (panState && panState.moved) {
       innerCanvas.style.cursor = ''; innerSurface.style.cursor = '';
     }
