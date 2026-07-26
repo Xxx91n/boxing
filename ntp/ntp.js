@@ -1723,15 +1723,17 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.body.appendChild(popup);
     addPopupTracker(popup, positionEditPopup);
 
-    // Close on outside click
+    // BX-DEV-127 (B7): close on outside MOUSEDOWN only — using 'click' closed the popup
+    // when the user dragged-selected text starting inside an input and ending outside, because
+    // the click target is the mouseup location (outside the popup). mousedown fires at the
+    // press origin (inside the input, which popup.contains()), so drag-select no longer dismisses.
     const closeHandler = (ev) => {
-      if (!popup.contains(ev.target)) {
-        popup.remove();
-        removePopupTracker(popup);
-        document.removeEventListener('click', closeHandler);
-      }
+      if (popup.contains(ev.target)) return; // press began inside popup → keep open
+      popup.remove();
+      removePopupTracker(popup);
+      document.removeEventListener('mousedown', closeHandler, true);
     };
-    setTimeout(() => document.addEventListener('click', closeHandler), 50);
+    setTimeout(() => document.addEventListener('mousedown', closeHandler, true), 50);
     titleInput.focus();
   }
 
@@ -1837,14 +1839,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.body.appendChild(popup);
     addPopupTracker(popup, positionAddPopup);
 
+    // BX-DEV-127 (B7): mousedown-only close — drag-select inside inputs no longer dismisses popup.
     const closeHandler2 = (ev) => {
       if (!popup.contains(ev.target)) {
         popup.remove();
         removePopupTracker(popup);
-        document.removeEventListener('click', closeHandler2);
+        document.removeEventListener('mousedown', closeHandler2, true);
       }
     };
-    setTimeout(() => document.addEventListener('click', closeHandler2), 50);
+    setTimeout(() => document.addEventListener('mousedown', closeHandler2, true), 50);
     titleInput.focus();
   }
 
