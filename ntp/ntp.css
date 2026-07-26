@@ -576,8 +576,10 @@ body {
 }
 .box--hover-expand:not(.box--collapsed) .large-box__body,
 .box--hover-expand:not(.box--collapsed) .small-box__body {
-  /* If auto-expand is enabled but the box is currently fully open (uncollapsed),
-     body keeps normal overflow-y: auto so it can still scroll when needed. */
+  /* BOX-DEV-124 (B6): auto-expand mode uncollapsed state — no vertical scrollbar.
+     Box owns overflow:hidden on its border; body uses overflow:visible so the
+     drawer shows full content without a scrollbar at the right edge. */
+  overflow: visible;
 }
 
 .box--hover-expand.box--collapsed:hover .box-resize-handle {
@@ -1146,31 +1148,25 @@ body {
 
 /* BX-DEV-112E: CSS border triangle — no font/SVG dependency, cross-browser identical */
 .zoom-arrow {
-  display: block;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 5px 7px 5px 0;  /* left-pointing triangle */
-  border-color: transparent var(--color-ink-soft) transparent transparent;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  color: var(--color-ink-soft);
   pointer-events: none;
-  /* BX-DEV-112F: promote to own compositor layer so Chrome rasterizes the 0x0
-     border-triangle on the GPU instead of culling it during the first
-     hidden=>visible transition (Chromium bug 41117621-family). Harmless on FF. */
-  transform: translateZ(0);
-  will-change: transform;
-  backface-visibility: hidden;
 }
-
 .zoom-arrow--right {
-  border-width: 5px 0 5px 7px;  /* right-pointing triangle */
-  border-color: transparent transparent transparent var(--color-ink-soft);
+  /* right-pointing arrow uses Unicode character in HTML; no border override needed */
 }
 
 .zoom-btn:hover .zoom-arrow {
-  border-right-color: var(--color-ink);
+  color: var(--color-ink);
 }
 .zoom-btn:hover .zoom-arrow--right {
-  border-left-color: var(--color-ink);
+  color: var(--color-ink);
 }
 
 .zoom-btn:hover {
@@ -1988,6 +1984,7 @@ html.ntp--dark {
 }
 
 .onboarding__body {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
