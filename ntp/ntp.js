@@ -195,6 +195,10 @@
     exportLog: () => __logRing.map(e => (e.ts + ' ' + e.prefix + ' ' + e.text)).join('\n'),
     clearLog: () => { __logRing.length = 0; return true; },
     LOG_LEVELS: { ERROR: 1, WARN: 2, INFO: 3, DEBUG: 4 },
+    // BX-DEV-122: expose sync payload helpers for Playwright tests
+    get buildSyncPayload() { if (window.__bxSync) return window.__bxSync.buildSyncPayload; return null; },
+    get resolveWebDAVFileUrl() { if (window.__bxSync) return window.__bxSync.resolveWebDAVFileUrl; return null; },
+    get backupToGist() { if (window.__bxSync) return window.__bxSync.backupToGist; return null; },
   };
   // Log mock usage (must be after DEBUG init)
   if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');
@@ -3316,6 +3320,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (lvl === 'boxesOnly') return Object.assign({}, layout, { settings: null });
       return layout;
     }
+    window.__bxSync = window.__bxSync || {};
+    window.__bxSync.buildSyncPayload = buildSyncPayload;
 
     async function backupToWebDAV() {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
@@ -3475,6 +3481,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (target.href.endsWith('.json')) fileUrl = target.href;
       return { url, fileUrl };
     }
+    window.__bxSync = window.__bxSync || {};
+    window.__bxSync.resolveWebDAVFileUrl = resolveWebDAVFileUrl;
 
     // Two-way sync. Returns { direction: 'pull'|'push'|'none', cloudBoxes, localBoxes }.
     async function syncWithWebDAV(opts = {}) {
@@ -3647,6 +3655,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       }
       return true;
     }
+    window.__bxSync = window.__bxSync || {};
+    window.__bxSync.backupToGist = backupToGist;
 
     function backupToLocal() {
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
