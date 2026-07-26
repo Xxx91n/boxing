@@ -513,6 +513,20 @@ body {
   opacity: 1;
   transition: opacity 0.3s ease-out 0.08s;
 }
+.box--hover-expand.box--collapsed:hover .large-box__body,
+.box--hover-expand.box--collapsed:hover .small-box__body {
+  /* Auto-expand drawer fully fits body (box max-height = measured full
+     scrollHeight via JS --expand-height), so no scrollbar should appear
+     when popped. While collapsed body uses its own overflow; here override
+     to visible to prevent the right vertical scrollbar popping out at the
+     edge of the expanded drawer. */
+  overflow: visible;
+}
+.box--hover-expand:not(.box--collapsed) .large-box__body,
+.box--hover-expand:not(.box--collapsed) .small-box__body {
+  /* If auto-expand is enabled but the box is currently fully open (uncollapsed),
+     body keeps normal overflow-y: auto so it can still scroll when needed. */
+}
 
 .box--hover-expand.box--collapsed:hover .box-resize-handle {
   display: block;
@@ -633,6 +647,9 @@ body {
   min-width: 100%;
   min-height: calc(100% - 40px);
   cursor: grab;
+  /* Surface starts below inner__canvas-head (40px) so small-box world origin
+     is at surface top; world height = canvas - head. inner__canvas-head
+     (z-index:5) sits above in DOM stacking order. */
 }
 
 /* === SMALL BOX (fixed, second-level container) === */
@@ -1060,6 +1077,37 @@ body {
   border-radius: 4px;
   cursor: pointer;
   line-height: 1;
+  /* BX-DEV-112E: inline-flex + min size ensures Chrome renders the button
+     consistently (was block with no min-size; Chrome kept 0x0 after parent
+     unhide in some extension load contexts). Firefox auto-reflows fine. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+/* BX-DEV-112E: CSS border triangle — no font/SVG dependency, cross-browser identical */
+.zoom-arrow {
+  display: block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 5px 7px 5px 0;  /* left-pointing triangle */
+  border-color: transparent var(--color-ink-soft) transparent transparent;
+  pointer-events: none;
+}
+
+.zoom-arrow--right {
+  border-width: 5px 0 5px 7px;  /* right-pointing triangle */
+  border-color: transparent transparent transparent var(--color-ink-soft);
+}
+
+.zoom-btn:hover .zoom-arrow {
+  border-right-color: var(--color-ink);
+}
+.zoom-btn:hover .zoom-arrow--right {
+  border-left-color: var(--color-ink);
 }
 
 .zoom-btn:hover {
@@ -1120,6 +1168,14 @@ body.box-resizing {
 .ntp--square-corners .settings-content input,
 .ntp--square-corners .settings-content select,
 .ntp--square-corners .settings-content button {
+  border-radius: 0 !important;
+}
+.ntp--square-corners .box--hover-expand.box--collapsed,
+.ntp--square-corners .box--hover-expand.box--collapsed:hover {
+  /* Higher specificity than the .box--collapsed/:hover drawers' own
+     `border-radius: var(--radius-card) !important` so square corners win
+     in BOTH collapsed and mid-hover-expanded states. Fixes the
+     "上两角在圆/方之间反复跳" regression. */
   border-radius: 0 !important;
 }
 
@@ -1864,7 +1920,8 @@ html.ntp--dark {
   width: min(520px, 92vw);
   height: auto;
   min-height: 0;
-  max-height: min(560px, 86vh);
+  max-height: min(620px, 90vh);
+  overflow: hidden;
 }
 
 .onboarding__body {
@@ -1879,8 +1936,11 @@ html.ntp--dark {
   box-sizing: border-box;
   gap: var(--space-3);
 }
-
 .onboarding__step {
+  /* Single step never scrolls on its own; the modal itself owns the
+     legit max-height. Avoids the right vertical scrollbar on Step 3
+     (which has restore button + long description). */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;

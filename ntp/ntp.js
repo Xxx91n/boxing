@@ -292,7 +292,8 @@
     langAutoDetect: 'Auto-detect (browser language)',
     lastOpenedBox: 'Last opened box',
     noBookmarksYet: 'No bookmarks yet. Click + to add one.',
-    onboardingLangDesc: 'Pick a language for the interface',
+    onboardingSkipTour: 'Skip',
+  onboardingLangDesc: 'Pick a language for the interface',
     onboardingLangTitle: 'Choose your language',
     onboardingRestore: 'Restore from backup',
     panShortcut: 'Left-drag empty area',
@@ -868,9 +869,13 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   function clampInnerPan(panX, panY, zoom) {
     const container = innerCanvas;
-    const w = container.clientWidth, h = container.clientHeight;
-    const minPanX = w * (1.0 - zoom / 0.3);
-    const minPanY = h * (1.0 - zoom / 0.3);
+    // Use innerSurface dimensions — surface starts at top:40px (below canvas-head),
+    // so its usable height is canvas - 40. Using innerCanvas height would count
+    // the 40px head strip as world-pannable, causing bottom coverage bug.
+    const sw = innerSurface.clientWidth || container.clientWidth;
+    const sh = innerSurface.clientHeight || (container.clientHeight - 40);
+    const minPanX = sw * (1.0 - zoom / 0.3);
+    const minPanY = sh * (1.0 - zoom / 0.3);
     return {
       x: Math.max(minPanX, Math.min(0, panX)),
       y: Math.max(minPanY, Math.min(0, panY))
@@ -1268,6 +1273,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
+    // BX-DEV-112E: force reflow after unhide — Chrome keeps inner zoom btns at 0x0 without this
+    void innerCanvas.offsetWidth;
     backBtn.dataset.show = '1';
     if (addLargeBtn) addLargeBtn.style.display = 'none';  // BX-DEV-101: inner view hides header + button
     updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
@@ -1915,9 +1922,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const others = (lb?.children || []).filter(s => s.id !== sb.id);
       const w = sb.width || SMALL_DEF_W, h = sb.height || SMALL_DEF_H;
       const snapped = elasticSnap({ x: finalX, y: finalY }, w, h, others, INNER_GRID, snapInner);
-      // clamp to virtual inner canvas boundary
-      const worldMaxX2 = (innerCanvas.clientWidth / 0.3) - w;
-      const worldMaxY2 = (innerCanvas.clientHeight / 0.3) - h;
+      // clamp to virtual inner surface boundary — surface starts at top:40px so
+      // its inner height is (canvas - 40). Using innerCanvas height would add a
+      // phantom 40px world region at the bottom covered by inner__canvas overflow
+      // and cause the box to appear covered by nonexistent area at zoom out.
+      const sw2 = innerSurface.clientWidth || innerCanvas.clientWidth;
+      const sh2 = innerSurface.clientHeight || (innerCanvas.clientHeight - 40);
+      const worldMaxX2 = (sw2 / 0.3) - w;
+      const worldMaxY2 = (sh2 / 0.3) - h;
       sb.x = Math.max(0, Math.min(snapped.x, worldMaxX2));
       sb.y = Math.max(0, Math.min(snapped.y, worldMaxY2));
       el.style.left = sb.x + 'px';

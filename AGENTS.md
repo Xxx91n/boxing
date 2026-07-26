@@ -44,6 +44,9 @@
 | CRX-R-010 | MUST NOT | Do not default to shadcn/ui, Tailwind, Figma, React, Plasmo, Browserbase, or Stagehand. |
 | CRX-R-011 | MUST NOT | Do not migrate an existing unpacked extension into WXT unless the user explicitly requests a full framework migration. |
 | CRX-R-012 | IF-THEN | If a project-specific `agent.md` exists in a subdirectory, follow it after this guide. |
+| CRX-R-013 | MUST | After every code/config/asset batch edit, immediately `git add -A && git commit -m "<summary>" && git push` (or `git commit` then push when remote reachable). NEVER only `node --check` or build-run without persisting a commit. Reason: working tree diff is NOT a record — only the commit/reflog history survives. Lone edits without commits have repeatedly lost weeks of work after a turn reset or context compression. Local commit without push (when remote unreachable) is acceptable as a stopgap; CI dispatch can sync later. Persist the user's work before claiming exit. |
+| CRX-R-014 | MUST | Treat working-tree diff as transient: if you end a turn (or the user aborts) without a commit, every untracked edit risks being lost. Commit early, commit small. Use scoped commit messages (e.g. `fix(boxing): NTP surface clamp top:40px`) rather than one huge blob. |
+| CRX-R-015 | MUST NOT | Do not `git reset --hard`, `git checkout -- <path>` to discard user-owned working-tree changes, or `git stash` to clear unless the user explicitly authorized it. A user pulling back a regression means surgical file revert by `apply_patch`, never HEAD pointer moves. |
 
 ## Approved CRX Capabilities
 
@@ -64,7 +67,7 @@
 | Existing unpacked extension validation | Load unpacked extension in Chrome/Firefox | Extension loads without manifest errors. |
 | UI verification | Use available browser runtime screenshot/DOM/console inspection | Visual result matches requested state. |
 | Syntax pre-check | `node --check ntp.js && node --check background.js` | Both exit 0. |
-| Full e2e | `cd D:/Aworker/crx/playwright && npx playwright test --project=chromium --reporter=line` | ~3-4 min, all Boxing specs PASS (extension-load Qlearly spec is known-dead). |
+| Full e2e | `cd D:/Aworker/crx/playwright && npx playwright test --project=chromium --reporter=line` | ~3-4 min, all Boxing specs PASS (`extension-test.spec.ts` + `boxing-*` specs). |
 
 ## Playwright & Browser Testing
 
@@ -72,7 +75,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 - Chromium project (headed, persistent context, `--load-extension`) is the primary lane.
 - Firefox project uses `-no-remote`; LibreWolf is manual-verify only (no remote debug).
 - Run a single spec: `npx playwright test tests/boxing-viewstate-sync.spec.ts --project=chromium`.
-- Known dead spec: `tests/extension-load.test.ts` references a nonexistent Qlearly directory (historical residue); ignore that one failure.
+- Test files: `boxing-*.spec.ts` (11 specs) + `data-recovery.spec.ts` + `extension-test.spec.ts` cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, and export/import. No historical `extension-load.test.ts` exists anymore.
 
 ## Chrome Extension Workflow
 
@@ -136,6 +139,15 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | BX-I18N-DEV-008 | MUST NOT | Never add hardcoded language strings in JS or HTML that bypass the i18n(key) function. |
 | BX-I18N-DEV-009 | MUST | After changing language in settings, re-render all visible UI (canvas, inner surface, crumbs, caption) to reflect new language immediately. |
 
+
+## Code Exploration
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-EXPLORE-001 | MUST | All project exploration (searching files, reading source, analyzing structure) MUST use .codegraph (ctx tools / codegraph DB) as the primary index. Direct filesystem traversal (ls, dir, Get-ChildItem for source discovery) is prohibited unless .codegraph is unavailable or the task is trivially scoped to one known file. |
+| BX-EXPLORE-002 | MUST | Before answering any "where is X", "how many Y", "what does Z do" question about the codebase, query .codegraph first (via ctx_search or ctx_execute_file over the DB). Only fall back to direct file reads when .codegraph lacks the needed granularity. |
+| BX-EXPLORE-003 | MUST | Keep .codegraph/index.json in sync with the actual file tree after each session that adds, removes, or renames source files (use the codegraph CLI or regenerate via the project script). |
+
 ## Debug Development
 
 | Rule ID | Type | Rule |
@@ -176,6 +188,30 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) have been moved to `docs/boxing-changelog.md` to keep this operating contract lean. See that file for per-version feature lists, BX-DEV rule additions, and i18n key references by version.
 
 Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..012). All incremental rules from v3.3..v3.6.6 (BX-DEV-013..112) live in `docs/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
+
+## Manifest Source-of-Truth Contract (v3.7.0+)
+
+> **🔥 HARD CONSTRAINT — DO NOT VIOLATE 🔥**
+> The repository root `manifest.json` is a **full-compat dual-declaration** manifest. It MUST keep
+> `background.service_worker` AND `background.scripts` simultaneously, MUST keep
+> `permissions.browserSettings`, and MUST keep `browser_specific_settings.gecko`. Removing any of
+> these breaks one browser or the other:
+> - Remove `background.scripts` → Firefox fails to load with `background.service_worker is currently disabled. Add background.scripts.`
+> - Remove `permissions.browserSettings` → Firefox loses the permission the extension relies on.
+> - Remove `browser_specific_settings.gecko` → Firefox loses the extension ID needed for upgrade and sync identity.
+> - Keep `background.scripts` in MV3 → Chrome < 121 refuses to load with `'background.scripts' requires manifest version of 2 or lower.` Chrome ≥ 121 ignores it (ignored ≠ rejected), so the dual-declaration is *the* supported cross-browser pattern per MDN.
+> - Keep `permissions.browserSettings` in a Chrome-loadable manifest → Chrome reports `Permission 'browserSettings' is unknown.` on every Chrome version (Chrome never supported this permission).
+> So the source manifest is **intentionally Firefox-loadable and Chrome-rejectable**. Chrome dev/testing MUST load `dist/boxing-chrome/` or `~/box/release/chrome/boxing/` instead, where the Tailor step has stripped the Firefox-only fields.
+
+| Rule ID | Type | Rule |
+|---|---|---|
+| BX-MANIFEST-001 | **MUST / RED LINE** | The root `manifest.json` is a **full-compat dual-declaration** manifest and MUST keep all four Firefox-compat fields at all times: `background.service_worker`, `background.scripts`, `permissions.browserSettings`, `browser_specific_settings.gecko`. **Removing any of these to "fix Chrome direct loading" is forbidden** — it breaks Firefox direct loading. This constraint exists because a previous round stripped `scripts`/`browserSettings`/`gecko` to make Chrome < 121 happy, and Firefox loading the raw repo then failed with `background.service_worker is currently disabled. Add background.scripts.` — a regression that took the user hours to surface. **Learn from history.** |
+| BX-MANIFEST-002 | MUST | Two build scripts produce browser-tailored rebuilds and MUST stay in lockstep on the Tailor logic: `scripts/build-release.js` (local — outputs `~/box/release/{chrome,firefox}/`) and `.github/scripts/build.mjs` (CI — outputs `dist/boxing-{chrome,firefox}/`). After changing either, diff the two `tailorManifestFor` functions and align them. |
+| BX-MANIFEST-003 | MUST | **Chrome Tailor** MUST remove the Firefox-only fields: replace `m.background` with `{ service_worker: 'background.js' }` (drop `scripts`); filter `browserSettings` out of `permissions`; `delete m.browser_specific_settings`. **Firefox Tailor** MUST drop `service_worker` (full replace `m.background = { scripts: ['background.js'], type: 'module' }` — do NOT `Object.assign` which would leak `service_worker` into the Firefox manifest). Both must add `permissions.browserSettings` only for Firefox and `browser_specific_settings.gecko` only for Firefox. |
+| BX-MANIFEST-004 | MUST | After any change to source `manifest.json` OR `ntp/` OR `background.js`, both build scripts MUST be re-run; otherwise `dist/` will be stale vs `~/box/release/` vs the source. Run order: `node .github/scripts/build.mjs && node scripts/build-release.js`. Stale `dist/` is the root cause of user-facing "旧版 UI" symptoms when loading the rebuilt package. |
+| BX-MANIFEST-005 | MUST NOT | Do NOT attempt to make the *source* `manifest.json` directly Chrome-loadable by stripping Firefox-compat fields. The supported Chrome dev workflow is to load `dist/boxing-chrome/` (or `~/box/release/chrome/boxing/`) — both are produced by Chrome-Tailor and contain NO `background.scripts`, NO `browserSettings`, NO `gecko`. The source manifest is Firefox-direct-loadable by design, Chrome-direct-loadUnsupported by design, and this asymmetry is the intended trade. |
+| BX-MANIFEST-006 | INFO | MDN canonical reference ([Cross-browser MV3 background scripts](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background)): dual declaring `scripts` + `service_worker` is the official cross-browser pattern. Chrome < 121 still rejects it (limitation of old Chrome, not the manifest), Chrome ≥ 121 ignores `scripts`. Firefox uses `scripts` and ignores `service_worker`. The source manifest honors this dual-declaration pattern verbatim. |
+| BX-MANIFEST-007 | MUST | When tests verify "loads in both Chrome and Firefox", the Chrome test target is `dist/boxing-chrome` (or `~/box/release/chrome/boxing/`), NOT the raw repo `D:/Aworker/crx/boxing/`. The Firefox test target is the raw repo (`about:debugging` "Load Temporary Add-on" → point at `D:/Aworker/crx/boxing/manifest.json`) OR `dist/boxing-firefox` — both Firefox-loadable. Mixing the two (loading the raw repo in Chrome, or chrome-tailored build in Firefox) will surface manifest rejection errors. |
 
 ## Security Rules (SEC series — v3.7.9f security audit)
 
