@@ -1936,16 +1936,22 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
     document.addEventListener('mousemove', onBoxDragMove);
     document.addEventListener('mouseup', onBoxDragEnd);
+    // BX-DEV-121: release a drag if focus leaves the window mid-drag (matches pan safety nets).
+    window.addEventListener('blur', onBoxDragEnd);
+    document.addEventListener('visibilitychange', onBoxDragVisHide);
   }
+  function onBoxDragVisHide() { if (dragState) onBoxDragEnd({ type: 'visibilitychange' }); }
 
   function onBoxDragMove(e) {
     if (!dragState) return;
 
     const dx = e.clientX - dragState.startMouseX;
     const dy = e.clientY - dragState.startMouseY;
-    // Convert screen delta to world delta
-    const worldDx = dx / dragState.zoom;
-    const worldDy = dy / dragState.zoom;
+    // BX-DEV-121: read LIVE zoom — innerZoom/canvasZoom can change mid-drag via Ctrl+wheel.
+    // Dividing by the stale start-of-drag snapshot made the box lag/jump behind the cursor.
+    const liveZoom = dragState.type === 'large' ? canvasZoom : innerZoom;
+    const worldDx = dx / liveZoom;
+    const worldDy = dy / liveZoom;
 
     const newX = dragState.origLeft + worldDx;
     const newY = dragState.origTop + worldDy;
@@ -1958,6 +1964,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function onBoxDragEnd(e) {
     document.removeEventListener('mousemove', onBoxDragMove);
     document.removeEventListener('mouseup', onBoxDragEnd);
+    window.removeEventListener('blur', onBoxDragEnd);
+    document.removeEventListener('visibilitychange', onBoxDragVisHide);
     if (!dragState) return;
 
     const { type, id, el, container } = dragState;
@@ -4000,6 +4008,51 @@ function isValidPublicUrl(url) {
 }
 
 const faviconCache = new Map(); // volatile: cleared on browser restart (session-scoped)
+// BX-DEV-121 (Bug12): persistent favicon URL cache in localStorage with TTLs.
+//   hit  (url != null) → 7-day TTL
+//   miss (url == null) → 90-day TTL (avoid re-racing 404 sites)
+const FAV_CACHE_KEY = 'boxingFaviconCache.v1';
+const FAV_HIT_TTL = 7 * 24 * 3600 * 1000;     // 7 days
+const FAV_MISS_TTL = 90 * 24 * 3600 * 1000;   // 90 days
+const FAV_MAX_ENTRIES = 2000; // bounded — no unbounded localStorage growth
+let __favPersistPending = false;
+function loadFaviconCacheFromStorage() {
+  try {
+    const raw = localStorage.getItem(FAV_CACHE_KEY);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    const now = Date.now();
+    const entries = (obj && obj.entries) || {};
+    for (const host of Object.keys(entries)) {
+      const e = entries[host];
+      if (!e || typeof e.ts !== 'number') continue;
+      const ttl = (e.url === null) ? FAV_MISS_TTL : FAV_HIT_TTL;
+      if (now - e.ts > ttl) continue; // expired: drop it (will re-race lazily)
+      faviconCache.set(host, e.url);
+    }
+  } catch (_) { /* corrupt cache — ignore; will rebuild lazily */ }
+}
+function persistFaviconCacheNow() {
+  try {
+    const entries = {};
+    // Trim to most recent FAV_MAX_ENTRIES to keep the JSON bounded.
+    let pairs = Array.from(faviconCache.entries());
+    // We track no per-entry ts in mem; approximate recency by iteration order (Map preserves insertion order).
+    // Cap: keep newest FAV_MAX_ENTRIES by trimming oldest inserts (first ones).
+    if (pairs.length > FAV_MAX_ENTRIES) pairs = pairs.slice(pairs.length - FAV_MAX_ENTRIES);
+    const now = Date.now();
+    for (const [host, u] of pairs) entries[host] = { url: u, ts: now };
+    localStorage.setItem(FAV_CACHE_KEY, JSON.stringify({ entries, savedAt: now }));
+  } catch (_) { /* quota exceeded — fail-soft; mem cache still works this session */ }
+}
+function persistFaviconCacheDebounced() {
+  if (__favPersistPending) return;
+  __favPersistPending = true;
+  setTimeout(() => { __favPersistPending = false; persistFaviconCacheNow(); }, 400);
+}
+// BX-DEV-121: hydrate the mem cache on first script load.
+try { loadFaviconCacheFromStorage(); } catch (_) {}
+
 async function loadFavicon(img, url) {
   // BX-DEV-111 v2: Validate — skip intranet, localhost, raw IPs
   if (!isValidPublicUrl(url)) { img.style.display = 'none'; return; }
@@ -4022,12 +4075,12 @@ async function loadFavicon(img, url) {
       await new Promise((resolve, reject) => {
         const probe = new Image();
         const timer = setTimeout(() => reject(new Error('timeout')), 3000);
-        probe.onload = () => { clearTimeout(timer); faviconCache.set(host, src); img.src = src; resolve(); };
+        probe.onload = () => { clearTimeout(timer); faviconCache.set(host, src); try { persistFaviconCacheDebounced(); } catch (_) {} img.src = src; resolve(); };
         probe.onerror = () => { clearTimeout(timer); reject(new Error('fail')); };
         probe.src = src;
       });
       return;
     } catch (_) { continue; }
   }
-  faviconCache.set(host, null); img.style.display = 'none';
+  faviconCache.set(host, null); try { persistFaviconCacheDebounced(); } catch (_) {} img.style.display = 'none';
 }
