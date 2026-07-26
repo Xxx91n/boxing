@@ -234,6 +234,22 @@
             </section>
             <!-- Remote backup zone (WebDAV/Gist) — hidden when provider is local -->
             <div id="remote-backup-zone" hidden>
+              <!-- BX-DEV-121 (Bug16): provider-agnostic Sync Level + File Name — modular across all backup providers -->
+              <section class="modal__section">
+                <label class="modal__label" for="sync-level-select" data-i18n="syncLevelLabel">Sync Level</label>
+                <select id="sync-level-select" class="modal__select">
+                  <option value="full" data-i18n="syncLevelFull">Everything (settings + boxes)</option>
+                  <option value="settingsOnly" data-i18n="syncLevelSettingsOnly">Settings only</option>
+                  <option value="boxesOnly" data-i18n="syncLevelBoxesOnly">Boxes only</option>
+                </select>
+                <p class="modal__hint" data-i18n="syncLevelHint">Choose what to sync with remote backup</p>
+              </section>
+              <section class="modal__section">
+                <label class="modal__label" for="sync-filename-input" data-i18n="syncFileNameLabel">Sync File Name</label>
+                <input id="sync-filename-input" class="modal__input" type="text" spellcheck="false"
+                  data-i18n-placeholder="syncFileNamePlaceholder" placeholder="boxing-backup.json">
+                <p class="modal__hint" data-i18n="syncFileNameHint">Custom file name for the remote backup file</p>
+              </section>
               <!-- WebDAV config -->
               <section class="modal__section" id="webdav-config" hidden>
                 <label class="modal__label" for="webdav-url" data-i18n="webdavUrl">WebDAV URL</label>

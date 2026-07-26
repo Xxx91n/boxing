@@ -3017,6 +3017,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const webdavPassInput = document.getElementById('webdav-pass');
     const gistTokenInput = document.getElementById('gist-token');
     const gistIdInput = document.getElementById('gist-id');
+    // BX-DEV-121 (Bug16): provider-agnostic Sync Level + Sync File Name
+    const syncLevelSelect = document.getElementById('sync-level-select');
+    const syncFilenameInput = document.getElementById('sync-filename-input');
     const backupNowBtn = document.getElementById('backup-now-btn');
     const remoteBackupZone = document.getElementById('remote-backup-zone');
     const lastBackupTimeVal = document.getElementById('last-backup-time-value');
@@ -3087,6 +3090,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     if (layout.settings.webdavUrl && webdavUrlInput) webdavUrlInput.value = layout.settings.webdavUrl;
     if (layout.settings.webdavUser && webdavUserInput) webdavUserInput.value = layout.settings.webdavUser;
     if (layout.settings.gistId && gistIdInput) gistIdInput.value = layout.settings.gistId;
+    // BX-DEV-121 (Bug16): sync level + filename (shared across all remote providers)
+    if (syncLevelSelect) syncLevelSelect.value = layout.settings.syncLevel || 'full';
+    if (syncFilenameInput) syncFilenameInput.value = layout.settings.syncFileName || '';
     // Decrypt and fill sensitive fields — awaited so test button waits for password
     if (webdavTestBtn) webdavTestBtn.disabled = true; // BX-DEV-114: disable until password is ready
     (async () => {
@@ -3117,6 +3123,18 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
     updateSyncConfigVisibility();
 
+    // BX-DEV-121 (Bug16): sync level + filename persist on change
+    syncLevelSelect?.addEventListener('change', () => {
+      layout.settings.syncLevel = syncLevelSelect.value === 'settingsOnly' || syncLevelSelect.value === 'boxesOnly' ? syncLevelSelect.value : 'full';
+      saveLayout();
+    });
+    syncFilenameInput?.addEventListener('input', () => {
+      let v = (syncFilenameInput.value || '').trim();
+      v = v.replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
+      syncFilenameInput.value = v;
+      layout.settings.syncFileName = v;
+      saveLayout();
+    });
     syncProviderSelect?.addEventListener('change', () => {
       layout.settings.syncProvider = syncProviderSelect.value;
       updateSyncConfigVisibility();
@@ -3291,6 +3309,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       }
     }
 
+    // BX-DEV-121 (Bug16): apply layout.settings.syncLevel — what to push to remote.
+    function buildSyncPayload() {
+      const lvl = layout.settings.syncLevel || 'full';
+      if (lvl === 'settingsOnly') return Object.assign({}, layout, { boxes: [] });
+      if (lvl === 'boxesOnly') return Object.assign({}, layout, { settings: null });
+      return layout;
+    }
+
     async function backupToWebDAV() {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
@@ -3305,16 +3331,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         if (_u.username || _u.password) throw new Error(i18n('webdavErrEmbedded'));
         throw new Error(i18n('webdavErrBlockedHost'));
       }
-      const target = new URL(url);
-      // Resolve file URL
-      let basePath = target.href;
-      if (!basePath.endsWith('/')) basePath += '/';
-      const BACKUP_FILENAME = 'boxing-backup.json';
-      let fileUrl = basePath.endsWith(BACKUP_FILENAME) ? basePath : basePath + BACKUP_FILENAME;
-      if (target.href.endsWith('.json')) fileUrl = target.href;
+      // Resolve file URL — reuse the shared helper (honors custom sync filename).
+      const { fileUrl } = resolveWebDAVFileUrl(url);
       debug('WebDAV backup: resolved file URL', fileUrl);
       if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
-      const body = JSON.stringify(layout, null, 2);
+      const body = JSON.stringify(buildSyncPayload(), null, 2);
       debug('WebDAV backup: sending PUT', { size: body.length });
       try {
         let status, ok;
@@ -3447,7 +3468,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const target = new URL(url);
       let basePath = target.href;
       if (!basePath.endsWith('/')) basePath += '/';
-      const BACKUP_FILENAME = 'boxing-backup.json';
+      // BX-DEV-121 (Bug16): honor user-set sync filename; default boxing-backup.json.
+      const customName = (layout.settings.syncFileName || '').trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
+      const BACKUP_FILENAME = customName || 'boxing-backup.json';
       let fileUrl = basePath.endsWith(BACKUP_FILENAME) ? basePath : basePath + BACKUP_FILENAME;
       if (target.href.endsWith('.json')) fileUrl = target.href;
       return { url, fileUrl };
@@ -3599,17 +3622,20 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (!token) throw new Error('GitHub token not configured');
       const gistId = layout.settings.gistId || gistIdInput?.value?.trim();
       if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw new Error('Invalid Gist ID');
-      const content = JSON.stringify(layout, null, 2);
+      const content = JSON.stringify(buildSyncPayload(), null, 2);
+      // BX-DEV-121 (Bug16): honor custom sync filename; default boxing-backup.json.
+      const _rawName = (layout.settings.syncFileName || '').trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
+      const GIST_FILENAME = _rawName || 'boxing-backup.json';
       const h = new Headers({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' });
       let resp, result;
       if (gistId) {
         resp = await fetch('https://api.github.com/gists/' + gistId, {
-          method: 'PATCH', headers: h, body: JSON.stringify({ files: { 'boxing-backup.json': { content } } })
+          method: 'PATCH', headers: h, body: JSON.stringify({ files: { [GIST_FILENAME]: { content } } })
         });
       } else {
         resp = await fetch('https://api.github.com/gists', {
           method: 'POST', headers: h,
-          body: JSON.stringify({ public: false, files: { 'boxing-backup.json': { content } }, description: 'Boxing extension backup' })
+          body: JSON.stringify({ public: false, files: { [GIST_FILENAME]: { content } }, description: 'Boxing extension backup' })
         });
       }
       if (!resp.ok) throw new Error('GitHub API ' + resp.status);
