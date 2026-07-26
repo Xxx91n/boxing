@@ -1975,6 +1975,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.removeEventListener('mouseup', onBoxDragEnd);
     window.removeEventListener('blur', onBoxDragEnd);
     document.removeEventListener('visibilitychange', onBoxDragVisHide);
+    document.removeEventListener('pointerup', onBoxDragEnd);
+    document.removeEventListener('pointercancel', onBoxDragEnd);
     if (!dragState) return;
 
     const { type, id, el, container } = dragState;
