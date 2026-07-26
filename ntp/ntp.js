@@ -474,6 +474,7 @@
   const crumbsEl = $('#crumbs');
   const captionEl = $('#caption');
   const searchInput = $('#q');
+  const searchResultsEl = $('#search-results');
   const backBtn = $('#back-btn');
   const addLargeBtn = $('#add-box');
   const addSmallBtn = $('#add-small');
@@ -1957,6 +1958,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     };
     document.addEventListener('mousemove', onCanvasPanMove);
     document.addEventListener('mouseup', onCanvasPanEnd);
+    // BX-DEV-120A: window-blur safety net — if the user alt-tabs/releases the
+    // mouse outside the document, document.mouseup can be missed, leaving
+    // panState stuck and cursor=grabbing forever ("爬取键一直生效" bug).
+    window.addEventListener('blur', onCanvasPanEnd);
+    document.addEventListener('visibilitychange', onCanvasPanVisHide);
     // BX-DEV-112B: do not preventDefault on mousedown — allow dblclick synthesis.
   }
 
@@ -1980,9 +1986,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function onCanvasPanEnd(e) {
     document.removeEventListener('mousemove', onCanvasPanMove);
     document.removeEventListener('mouseup', onCanvasPanEnd);
+    window.removeEventListener('blur', onCanvasPanEnd);
+    document.removeEventListener('visibilitychange', onCanvasPanVisHide);
     if (panState && panState.moved) canvasContainer.style.cursor = '';
     panState = null;
     persistViewState(true);
+  }
+
+  function onCanvasPanVisHide() {
+    // BX-DEV-120A: tab-hide during pan — release grabbing immediately.
+    if (panState) onCanvasPanEnd({ type: 'visibilitychange' });
   }
 
   // Inner canvas pan
@@ -2005,6 +2018,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // Cursor switch deferred to first onInnerPanMove beyond threshold.
     document.addEventListener('mousemove', onInnerPanMove);
     document.addEventListener('mouseup', onInnerPanEnd);
+    // BX-DEV-120A: window-blur + tab-hide safety net for inner canvas too.
+    window.addEventListener('blur', onInnerPanEnd);
+    document.addEventListener('visibilitychange', onInnerPanVisHide);
     // Do NOT preventDefault on mousedown — that interferes with dblclick event
     // synthesis. panMove will call e.preventDefault() once a real drag starts.
   }
@@ -2031,6 +2047,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function onInnerPanEnd(e) {
     document.removeEventListener('mousemove', onInnerPanMove);
     document.removeEventListener('mouseup', onInnerPanEnd);
+    window.removeEventListener('blur', onInnerPanEnd);
+    document.removeEventListener('visibilitychange', onInnerPanVisHide);
     if (panState && panState.moved) {
       innerCanvas.style.cursor = ''; innerSurface.style.cursor = '';
     }
@@ -2038,6 +2056,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     persistViewState(true);
     // BX-DEV-111N: persist inner pan into the current large box record.
     if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
+  }
+
+  function onInnerPanVisHide() {
+    // BX-DEV-120A: tab-hide during pan — release grabbing immediately.
+    if (panState) onInnerPanEnd({ type: 'visibilitychange' });
   }
   // ── Ctrl+scroll zoom ────────────────────────────────────
   function onCanvasWheel(e) {
@@ -2444,6 +2467,151 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
   }
 
+  // BX-DEV-121 (Bug9 search): live search across large boxes, small boxes, bookmarks.
+  // returns up to 50 hits sorted by container depth (large>small>bookmark).
+  function runSearch(q) {
+    const hits = [];
+    const pushHit = (type, largeId, largeTitle, smallId, smallTitle, bm) => {
+      hits.push({ type, largeId, largeTitle, smallId, smallTitle, bm });
+    };
+    for (const lb of (layout.boxes || [])) {
+      const lt = (lb.title || '').toLowerCase();
+      if (lt.includes(q)) pushHit('large', lb.id, lb.title || i18n('untitledBox'), null, null, null);
+      for (const sb of (lb.children || [])) {
+        const st = (sb.title || '').toLowerCase();
+        if (st.includes(q)) pushHit('small', lb.id, lb.title || i18n('untitledBox'), sb.id, sb.title || i18n('newLargeBox', ['']?.[0] || ''), null);
+        for (const bm of (sb.bookmarks || [])) {
+          const bt = (bm.title || '').toLowerCase();
+          const bu = (bm.url || '').toLowerCase();
+          if (bt.includes(q) || bu.includes(q)) {
+            pushHit('bookmark', lb.id, lb.title || i18n('untitledBox'), sb.id, sb.title || '', bm);
+          }
+        }
+      }
+    }
+    return hits.slice(0, 50);
+  }
+
+  function renderSearchResults(hits, q) {
+    if (!searchResultsEl) return;
+    if (!hits || !hits.length) {
+      searchResultsEl.hidden = false;
+      searchResultsEl.innerHTML = '';
+      const empty = document.createElement('div');
+      empty.className = 'search-results__empty';
+      empty.textContent = i18n('searchPlaceholder');
+      searchResultsEl.appendChild(empty);
+      return;
+    }
+    searchResultsEl.hidden = false;
+    searchResultsEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    for (const h of hits) {
+      const item = document.createElement('div');
+      item.className = 'search-results__item';
+      item.setAttribute('role', 'option');
+      item.dataset.hitType = h.type;
+      item.dataset.largeId = h.largeId || '';
+      item.dataset.smallId = h.smallId || '';
+      if (h.bm) item.dataset.bmId = h.bm.id;
+      const titleRow = document.createElement('div');
+      titleRow.className = 'search-results__item-title';
+      titleRow.textContent = h.bm ? (h.bm.title || h.bm.url) : (h.smallTitle || h.largeTitle);
+      const meta = document.createElement('div');
+      meta.className = 'search-results__item-meta';
+      const metaParts = [];
+      if (h.type === 'bookmark') metaParts.push('🔖');
+      else if (h.type === 'small') metaParts.push('📦');
+      else metaParts.push('🗂');
+      metaParts.push(h.largeTitle || '');
+      if (h.smallTitle) { metaParts.push('›'); metaParts.push(h.smallTitle); }
+      meta.textContent = metaParts.join(' ');
+      item.appendChild(titleRow);
+      item.appendChild(meta);
+      if (h.bm && h.bm.url) {
+        const urlRow = document.createElement('div');
+        urlRow.className = 'search-results__item-url';
+        urlRow.textContent = h.bm.url;
+        item.appendChild(urlRow);
+      }
+      item.addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        openSearchHit(h);
+      });
+      frag.appendChild(item);
+    }
+    searchResultsEl.appendChild(frag);
+  }
+
+  function hideSearchResults() {
+    if (searchResultsEl) { searchResultsEl.hidden = true; searchResultsEl.innerHTML = ''; }
+  }
+
+  // navigate to the box/box-context for a search hit.
+  // bookmark type: also resolve bookmark editor/open behavior (current vs new tab).
+  function openSearchHit(h) {
+    if (!h || !h.largeId) return;
+    saveLargeBoxViewState(currentLargeBoxId);
+    // If we're already inside a large box and it's NOT the same, exit first.
+    if (currentLargeBoxId && currentLargeBoxId !== h.largeId) { exitToCanvas(); }
+    // Enter target large box (skipPosRestore=true keeps current zoom/pan for snappy locate).
+    if (currentLargeBoxId !== h.largeId) enterLargeBox(h.largeId, true);
+    if (h.bm && h.bm.url) {
+      // Open the bookmark URL — respect urlOpenMode setting if it exists.
+      try { openBookmarkUrl(h.bm.url); } catch (_) { /* background or fallback */ }
+      searchInput.value = '';
+      hideSearchResults();
+      updateCaption();
+    } else if (h.smallId) {
+      // scroll small box into view inside inner canvas (jump pan to sb origin).
+      try {
+        const sb = getSmallBox(h.largeId, h.smallId);
+        if (sb) {
+          const sw = innerSurface.clientWidth || innerCanvas.clientWidth || 600;
+          const sh = innerSurface.clientHeight || (innerCanvas.clientHeight - 40) || 400;
+          innerPanX = Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + 16));
+          innerPanY = Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + 16));
+          applyInnerTransform();
+          if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
+        }
+      } catch (_) { /* no-op */ }
+      searchInput.value = '';
+      hideSearchResults();
+      updateCaption();
+    } else {
+      searchInput.value = '';
+      hideSearchResults();
+      updateCaption();
+    }
+    searchInput.blur();
+  }
+
+  // openBookmarkUrl respects settings.urlOpenMode: 'newTab' (default) or 'sameTab'.
+  // works for both Chrome (tabs API not available from newtab without permission
+  // elsewhere) and Firefox; falls back to window.open.
+  function openBookmarkUrl(url) {
+    const mode = layout.settings.urlOpenMode || 'newTab';
+    try {
+      if (mode === 'sameTab') {
+        // stay in this Boxing tab — navigation will leave the page; boxing state
+        // is autosaved by saveLayout on every model mutation.
+        window.location.href = url;
+      } else {
+        // newTab: prefer tabs API if extension context allows; else window.open.
+        if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+          chrome.tabs.create({ url });
+        } else if (typeof browser !== 'undefined' && browser.tabs && browser.tabs.create) {
+          browser.tabs.create({ url });
+        } else {
+          window.open(url, '_blank', 'noopener');
+        }
+      }
+    } catch (e) {
+      debug('openBookmarkUrl fallback', e && e.message);
+      window.open(url, '_blank', 'noopener');
+    }
+  }
+
   // ── context menu (right-click → back) ──────────────────
   function onContextMenu(e) {
     if (currentLargeBoxId) {
@@ -2590,9 +2758,29 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
     // events
     searchInput.addEventListener('input', e => {
-      // simple caption update; full search TBD
-      if (e.target.value.trim()) { captionEl.textContent = i18n('searchPlaceholder'); }
-      else updateCaption();
+      // BX-DEV-121 (Bug9 search): full live search across large boxes, small boxes, bookmarks.
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) { hideSearchResults(); updateCaption(); return; }
+      const hits = runSearch(q);
+      renderSearchResults(hits, q);
+      if (hits.length) captionEl.textContent = i18n('searchResults', [hits.length]);
+      else captionEl.textContent = i18n('searchPlaceholder');
+    });
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const list = searchResultsEl.querySelectorAll('.search-results__item');
+        if (list.length) list[0].click();
+      } else if (e.key === 'Escape') {
+        searchInput.value = '';
+        hideSearchResults();
+        updateCaption();
+        searchInput.blur();
+      }
+    });
+    searchInput.addEventListener('blur', e => {
+      // Defer hide so item click (mousedown happens AFTER blur in some browsers) can fire.
+      setTimeout(hideSearchResults, 180);
     });
     backBtn.addEventListener('click', exitToCanvas);
 
@@ -3528,6 +3716,27 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // BX-DEV-111M: flush credentials on tab switch / window hide / beforeunload —
     // fixes the 'close browser loses WebDAV password' bug (blur never fires in those paths).
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (_) {} persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (_) {} } });
+    // BX-DEV-120 (Bug8 return freeze): when returning to the Boxing tab after
+    // opening a bookmark in a new tab, any lingering dragState/panState + a
+    // stalled async storage-write chain could leave the UI trapped. On visibility
+    // == visible we proactive release any stuck interaction state and let the
+    // view self-heal without a full reload. Safe: no write happens, only state
+    // reset + transform re-apply.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          if (panState && typeof onCanvasPanEnd === 'function') onCanvasPanEnd({ type: 'visibilitychange' });
+          if (panState && typeof onInnerPanEnd === 'function') onInnerPanEnd({ type: 'visibilitychange' });
+          if (typeof dragState === 'object' && dragState && typeof onBoxDragEnd === 'function') {
+            // simulate a final mouseup so drag won't get stuck mid-pending
+            onBoxDragEnd({ type: 'visibilitychange', clientX: 0, clientY: 0 });
+          }
+          // re-apply transforms from current vars — no extra read from storage
+          if (currentLargeBoxId) { applyInnerTransform(); }
+          else { applyCanvasTransform(); }
+        } catch (e) { debugWarn('visibility-visible recovery', e); }
+      }
+    });
     window.addEventListener('beforeunload', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (_) {} try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (_) {} });
 
     api.storage.onChanged?.addListener?.((changes, areaName) => {

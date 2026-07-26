@@ -31,6 +31,7 @@
           aria-label="Search bookmarks" data-i18n-placeholder="searchPlaceholder">
         <kbd class="search__hint" aria-hidden="true">/</kbd>
       </form>
+      <div id="search-results" class="search-results" hidden role="listbox" aria-label="Search results"></div>
       <span class="header-count" id="caption"></span>
       <nav class="actions" aria-label="Page actions">
         <button id="add-box" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
@@ -64,9 +65,9 @@
           </p>
         </div>
         <div class="zoom-controls" id="canvas-zoom">
-          <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut">◂</button>
+          <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut"><span class="zoom-arrow" aria-hidden="true"></span></button>
           <span class="zoom-value" id="canvas-zoom-value">100%</span>
-          <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn">▸</button>
+          <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn"><span class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
         </div>
       </div>
 
@@ -81,9 +82,9 @@
           </div>
           <div id="inner-surface" class="inner__surface"></div>
           <div class="zoom-controls" id="inner-zoom">
-            <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut">◂</button>
+            <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut"><span class="zoom-arrow" aria-hidden="true"></span></button>
             <span class="zoom-value" id="inner-zoom-value">100%</span>
-            <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn">▸</button>
+            <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn"><span class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -293,7 +294,7 @@
       <div class="modal__head">
         <h2 class="modal__title" id="onboarding-title" data-i18n="onboardingTitle">Welcome to Boxing</h2>
         <button class="btn btn--ghost" id="onboarding-skip-btn" aria-label="Skip tour"
-          data-i18n-title="onboardingSkipTour">Skip</button>
+          data-i18n="onboardingSkipTour" data-i18n-title="onboardingSkipTour">Skip</button>
       </div>
       <!-- BX-DEV-111O: new-user language picker — first-run onboarding, mirrors Settings > Language -->
       <div class="onboarding__lang" id="onboarding-lang-wrap">
