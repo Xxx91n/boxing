@@ -645,6 +645,8 @@ body {
   position: relative;
   flex: 1;
   min-height: 440px;
+  display: flex;
+  flex-direction: column;
   border-radius: var(--radius-card);
   background:
     radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px,
@@ -657,10 +659,8 @@ body {
 
 /* inner__canvas-head: lightweight bar inside canvas (v3.7.3 - replaced inner__head) */
 .inner__canvas-head {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: relative;
+  flex-shrink: 0;
   z-index: 5;
   display: flex;
   align-items: center;
@@ -691,15 +691,13 @@ body {
 }
 
 .inner__surface {
-  position: absolute;
-  top: 40px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  flex: 1;
+  min-height: 0;
   min-width: 100%;
-  min-height: calc(100% - 40px);
   cursor: grab;
-  /* Surface starts below inner__canvas-head (40px) so small-box world origin
+  overflow: hidden;
+  /* Surface is below inner__canvas-head (flex column); small-box world origin
      is at surface top; world height = canvas - head. inner__canvas-head
      (z-index:5) sits above in DOM stacking order. */
 }
