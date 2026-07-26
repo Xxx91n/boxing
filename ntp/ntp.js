@@ -199,6 +199,8 @@
     get buildSyncPayload() { if (window.__bxSync) return window.__bxSync.buildSyncPayload; return null; },
     get resolveWebDAVFileUrl() { if (window.__bxSync) return window.__bxSync.resolveWebDAVFileUrl; return null; },
     get backupToGist() { if (window.__bxSync) return window.__bxSync.backupToGist; return null; },
+    // BX-DEV-126: expose loadFavicon for Playwright tests verifying parallel CDN race.
+    loadFavicon,
   };
   // Log mock usage (must be after DEBUG init)
   if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');
@@ -4121,33 +4123,37 @@ function persistFaviconCacheDebounced() {
 try { loadFaviconCacheFromStorage(); } catch (_) {}
 
 async function loadFavicon(img, url) {
-  // BX-DEV-111 v2: Validate — skip intranet, localhost, raw IPs
+  // BX-DEV-126 (B10): parallel CDN race via Promise.any — fastest token wins, no serial waterfall.
   if (!isValidPublicUrl(url)) { img.style.display = 'none'; return; }
   const host = new URL(url).hostname;
-  // Cache hit
+  // Cache hit — instant render, zero network.
   if (faviconCache.has(host)) { const c = faviconCache.get(host); if (c === null) { img.style.display = 'none'; return; } img.src = c; return; }
-  // Trigger CDN race on first-ever favicon request
+  // Trigger session CDN speed race on first-ever favicon request (sets fastestCDN).
   if (!cdnRaceDone) raceCDN(host);
-  // Build ordered source list: race winner first (if available), then fallbacks
-  const ordered = [];
-  if (fastestCDN) ordered.push(fastestCDN.url(host));
+  // Build token list: racy winner first (if resolved), then other sources, then direct /favicon.ico.
+  const tokens = [];
+  if (fastestCDN) tokens.push(fastestCDN.url(host));
   for (const src of FAVICON_SOURCES) {
     const u = src.url(host);
-    if (!ordered.includes(u)) ordered.push(u);
+    if (!tokens.includes(u)) tokens.push(u);
   }
-  // Also try direct /favicon.ico as last resort
-  ordered.push(`https://${host}/favicon.ico`);
-  for (const src of ordered) {
-    try {
-      await new Promise((resolve, reject) => {
-        const probe = new Image();
-        const timer = setTimeout(() => reject(new Error('timeout')), 3000);
-        probe.onload = () => { clearTimeout(timer); faviconCache.set(host, src); try { persistFaviconCacheDebounced(); } catch (_) {} img.src = src; resolve(); };
-        probe.onerror = () => { clearTimeout(timer); reject(new Error('fail')); };
-        probe.src = src;
-      });
-      return;
-    } catch (_) { continue; }
+  tokens.push(`https://${host}/favicon.ico`);
+  // Probe helper — resolves with the winning url, rejects on timeout/error.
+  function probe(url) {
+    return new Promise((resolve, reject) => {
+      const probe = new Image();
+      const timer = setTimeout(() => reject(new Error('timeout')), 3000);
+      probe.onload = () => { clearTimeout(timer); resolve(url); };
+      probe.onerror = () => { clearTimeout(timer); reject(new Error('fail')); };
+      probe.src = url;
+    });
   }
-  faviconCache.set(host, null); try { persistFaviconCacheDebounced(); } catch (_) {} img.style.display = 'none';
+  try {
+    // Promise.any: returns first fulfilled (winning url). Removed serial waterfall blocking.
+    const winningUrl = await Promise.any(tokens.map(probe));
+    faviconCache.set(host, winningUrl); try { persistFaviconCacheDebounced(); } catch (_) {} img.src = winningUrl;
+  } catch (_) {
+    // All tokens failed — cache the miss with 90-day TTL so we don't re-race dead hosts.
+    faviconCache.set(host, null); try { persistFaviconCacheDebounced(); } catch (_) {} img.style.display = 'none';
+  }
 }
