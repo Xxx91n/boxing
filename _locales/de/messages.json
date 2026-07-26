@@ -300,19 +300,19 @@
   },
   "urlOpenModeLabel": {
     "message": "Lesezeichen öffnen in",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeNewTab": {
     "message": "Neuer Tab",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeCurrentTab": {
     "message": "Aktueller Tab",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeHint": {
     "message": "Wählen Sie, wo Lesezeichen geöffnet werden",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "dragToReorder": {
     "message": "Neu anordnen",

@@ -313,19 +313,19 @@
   },
   "urlOpenModeLabel": {
     "message": "Open bookmarks in",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeNewTab": {
     "message": "New Tab",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeCurrentTab": {
     "message": "Current Tab",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeHint": {
     "message": "Choose where bookmarks open when clicked",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "dragToReorder": {
     "message": "Drag to reorder",

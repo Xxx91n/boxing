@@ -300,19 +300,19 @@
   },
   "urlOpenModeLabel": {
     "message": "เปิดบุ๊กมาร์กใน",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeNewTab": {
     "message": "แท็บใหม่",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeCurrentTab": {
     "message": "แท็บปัจจุบัน",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeHint": {
     "message": "เลือกตำแหน่งที่จะเปิดบุ๊กมาร์กเมื่อคลิก",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "dragToReorder": {
     "message": "จัดเรียงใหม่",

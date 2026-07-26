@@ -300,19 +300,19 @@
   },
   "urlOpenModeLabel": {
     "message": "बुकमार्क खोलें",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeNewTab": {
     "message": "नया टैब",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeCurrentTab": {
     "message": "वर्तमान टैब",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeHint": {
     "message": "चुनें कि क्लिक करने पर बुकमार्क कहां खुलें",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "dragToReorder": {
     "message": "पुनर्व्यवस्थित करें",

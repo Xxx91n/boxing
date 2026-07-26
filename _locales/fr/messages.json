@@ -300,19 +300,19 @@
   },
   "urlOpenModeLabel": {
     "message": "Ouvrir les marque-pages dans",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeNewTab": {
     "message": "Nouvel onglet",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeCurrentTab": {
     "message": "Onglet actuel",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "urlOpenModeHint": {
     "message": "Choisissez où ouvrir les marque-pages",
-    "description": "DEPRECATED in v3.7.1 — bookmarks always open in new tab (browser-compatible)"
+    "description": ""
   },
   "dragToReorder": {
     "message": "Réorganiser",

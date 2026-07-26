@@ -483,6 +483,8 @@
   const modalClose = $('#settings-modal .modal__close');
   const langSelect = $('#lang-select');
   const rememberCheck = $('#remember-last-pos');
+  // BX-DEV-120: urlOpenMode select — bookmarks open in newTab (default) or sameTab.
+  const urlOpenModeSelect = $('#url-open-mode-select');
   const fontSlider = $('#font-slider');
   const fontSliderVal = $('#font-slider-value');
   const zoomSlider = $('#zoom-slider');
@@ -1274,8 +1276,19 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
-    // BX-DEV-112E: force reflow after unhide — Chrome keeps inner zoom btns at 0x0 without this
-    void innerCanvas.offsetWidth;
+    // BX-DEV-112F: reliable cross-browser zoom-btn reveal — Chrome defers abs-pos child layout
+    // when parent transitions hidden=>visible; sync offsetWidth alone is unreliable (chromium
+    // bug 41117621). Push to next rAF (post-recalc/paint) and force a true layout there.
+    requestAnimationFrame(() => {
+      try {
+        // getBoundingClientRect forces a full layout incl. abs-pos descendants.
+        if (canvasZoomCtrl) void canvasZoomCtrl.getBoundingClientRect();
+        if (innerZoomCtrl) void innerZoomCtrl.getBoundingClientRect();
+        // Toggle visibility off→on on the controls to break Chrome layout-suppression cache.
+        if (innerZoomCtrl) { innerZoomCtrl.style.visibility = "hidden"; void innerZoomCtrl.offsetTop; innerZoomCtrl.style.visibility = ""; }
+        if (canvasZoomCtrl) { canvasZoomCtrl.style.visibility = "hidden"; void canvasZoomCtrl.offsetTop; canvasZoomCtrl.style.visibility = ""; }
+      } catch (_) { /* fail-soft; next render will correct anyway */ }
+    });
     backBtn.dataset.show = '1';
     if (addLargeBtn) addLargeBtn.style.display = 'none';  // BX-DEV-101: inner view hides header + button
     updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
@@ -1484,8 +1497,21 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         const safeUrl = normalizeBookmarkUrl(bm.url);
         if (!safeUrl) { debugWarn('blocked invalid bookmark URL', bm.url); return; }
         (async function (url) {
-          // BX-DEV-096: Follow browser default open-bookmark behavior.
-          // Firefox: respect openBookmarksInNewTabs setting; Chrome: fallback to current tab.
+          // BX-DEV-120: respect explicit settings.urlOpenMode first (default 'newTab').
+          // Fall back to legacy per-browser default only when the setting is unset AND
+          // Firefox exposes browserSettings.openBookmarksInNewTabs (Chrome has no equivalent).
+          const mode = layout.settings && layout.settings.urlOpenMode;
+          if (mode === 'sameTab') {
+            if (api.tabs?.update) { api.tabs.update({ url }); }
+            else { window.location.href = url; }
+            return;
+          }
+          if (mode === 'newTab') {
+            if (api.tabs?.create) { api.tabs.create({ url, active: true }); }
+            else { window.open(url, '_blank', 'noopener'); }
+            return;
+          }
+          // Unset — legacy browser default. Firefox respects openBookmarksInNewTabs; Chrome opens current tab.
           let openInNewTab = false;
           try {
             if (typeof browser !== 'undefined' && browser.browserSettings?.openBookmarksInNewTabs) {
@@ -1496,7 +1522,6 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
           if (openInNewTab) {
             api.tabs?.create ? api.tabs.create({ url, active: true }) : window.open(url, '_blank');
           } else {
-            // Open in current tab: use tabs.update (replace this NTP) or window.location fallback
             if (api.tabs?.update) { api.tabs.update({ url }); }
             else { window.location.href = url; }
           }
@@ -2451,6 +2476,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     debug('openSettingsModal set hidden=false, now=' + settingsModal.hidden + ' display=' + getComputedStyle(settingsModal).display);
     langSelect.value = layout.settings.selectedLanguage || 'en';
     rememberCheck.checked = layout.settings.rememberLastPos !== false;
+  if (urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'newTab';
     darkModeCB.checked = layout.settings.darkMode === true;
     zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
     zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
@@ -2915,6 +2941,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     });
     rememberCheck?.addEventListener('change', () => {
       layout.settings.rememberLastPos = rememberCheck.checked;
+      saveLayout();
+    });
+    // BX-DEV-120: urlOpenMode — default 'newTab' so bookmarks open in a new tab unless user picks Current Tab.
+    urlOpenModeSelect?.addEventListener('change', () => {
+      layout.settings.urlOpenMode = urlOpenModeSelect.value === 'sameTab' ? 'sameTab' : 'newTab';
       saveLayout();
     });
     zoomSlider?.addEventListener('input', () => {

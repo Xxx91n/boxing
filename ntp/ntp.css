@@ -1118,6 +1118,11 @@ body {
   border: 1px solid var(--color-hairline);
   padding: 2px 4px;
   z-index: 2;
+  /* BX-DEV-112F: own layout context + compositor layer so children do not collapse to 0 on
+     parent hidden=>visible transitions in Chrome (mirrors the standard pattern used by
+     side-panel / sidebar extensions to keep small abs-pos controls reliably visible). */
+  contain: layout;
+  isolation: isolate;
 }
 
 .zoom-btn {
@@ -1148,6 +1153,12 @@ body {
   border-width: 5px 7px 5px 0;  /* left-pointing triangle */
   border-color: transparent var(--color-ink-soft) transparent transparent;
   pointer-events: none;
+  /* BX-DEV-112F: promote to own compositor layer so Chrome rasterizes the 0x0
+     border-triangle on the GPU instead of culling it during the first
+     hidden=>visible transition (Chromium bug 41117621-family). Harmless on FF. */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .zoom-arrow--right {

@@ -133,6 +133,7 @@
                 <option value="hi">हिन्दी</option>
                 <option value="th">ไทย</option>
                 <option value="vi">Tiếng Việt</option>
+                <option value="zh_TW">繁體中文</option>
               </select>
             </section>
             <section class="modal__section">
@@ -142,6 +143,14 @@
               </label>
               <p class="modal__hint" data-i18n="rememberLastPosHint">Automatically reopen last visited large box on new
                 tabs</p>
+            </section>
+            <section class="modal__section">
+              <label class="modal__label" for="url-open-mode-select" data-i18n="urlOpenModeLabel">Open bookmarks in</label>
+              <select id="url-open-mode-select" class="modal__select">
+                <option value="newTab" data-i18n="urlOpenModeNewTab">New Tab</option>
+                <option value="sameTab" data-i18n="urlOpenModeCurrentTab">Current Tab</option>
+              </select>
+              <p class="modal__hint" data-i18n="urlOpenModeHint">Choose where bookmarks open when clicked</p>
             </section>
           </div>
 
