@@ -688,7 +688,7 @@
     "message": "デバイス間で同期"
   },
   "onboardingStep3Desc": {
-    "message": "設定 → 同步を開き WebDAV サーバーに接続します。ボックスはブラウザやタブをまたいで同期され、タイムスタンプベースの双方向同期で安全にバックアップされます。"
+    "message": "設定 → 同步を開き WebDAV または GitHub Gist サーバーに接続します。ボックスはブラウザやタブをまたいで同期され、タイムスタンプベースの双方向同期で安全にバックアップされます。"
   },
   "diagSectionTitle": {
     "message": "診断"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "バックアップから復元"
+  },
+  "syncLevelLabel": {
+    "message": "同期レベル"
+  },
+  "syncLevelHint": {
+    "message": "リモートバックアップ と同期する内容を選択"
+  },
+  "syncLevelFull": {
+    "message": "すべて（設定 + ボックス）"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "設定のみ"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "ボックスのみ"
+  },
+  "syncFileNameLabel": {
+    "message": "同期ファイル名"
+  },
+  "syncFileNameHint": {
+    "message": "リモートバックアップ バックアップファイルのカスタム名"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

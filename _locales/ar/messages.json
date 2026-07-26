@@ -688,7 +688,7 @@
     "message": "المزامنة بين الأجهزة"
   },
   "onboardingStep3Desc": {
-    "message": "افتح الإعدادات → المزامنة لتوصيل خادم WebDAV. تتم مزامنة صناديقك عبر المتصفحات وعلامات التبويب بمزامنة ثنائية الاتجاه قائمة على الطوابع الزمنية."
+    "message": "افتح الإعدادات → المزامنة لتوصيل خادم WebDAV أو GitHub Gist. تتم مزامنة صناديقك عبر المتصفحات وعلامات التبويب بمزامنة ثنائية الاتجاه قائمة على الطوابع الزمنية."
   },
   "diagSectionTitle": {
     "message": "تشخيص"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "استعادة من نسخة احتياطية"
+  },
+  "syncLevelLabel": {
+    "message": "مستوى المزامنة"
+  },
+  "syncLevelHint": {
+    "message": "اختر ما تريد مزامنته مع النسخ الاحتياطي البعيد"
+  },
+  "syncLevelFull": {
+    "message": "الكل (الإعدادات + المربعات)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "الإعدادات فقط"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "المربعات فقط"
+  },
+  "syncFileNameLabel": {
+    "message": "اسم ملف المزامنة"
+  },
+  "syncFileNameHint": {
+    "message": "اسم مخصص لملف النسخ الاحتياطي النسخ الاحتياطي البعيد"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

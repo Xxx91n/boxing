@@ -688,7 +688,7 @@
     "message": "Đồng bộ giữa các thiết bị"
   },
   "onboardingStep3Desc": {
-    "message": "Mở Cài đặt → Đồng bộ để kết nối máy chủ WebDAV. Các hộp đồng bộ giữa các trình duyệt và tab, sao lưu an toàn bằng đồng bộ hai chiều theo dấu thời gian."
+    "message": "Mở Cài đặt → Đồng bộ để kết nối máy chủ WebDAV hoặc GitHub Gist. Các hộp đồng bộ giữa các trình duyệt và tab, sao lưu an toàn bằng đồng bộ hai chiều theo dấu thời gian."
   },
   "diagSectionTitle": {
     "message": "Chuẩn đoán"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "Khôi phục từ bản sao lưu"
+  },
+  "syncLevelLabel": {
+    "message": "Mức đồng bộ"
+  },
+  "syncLevelHint": {
+    "message": "Chọn nội dung để đồng bộ với sao lưu từ xa"
+  },
+  "syncLevelFull": {
+    "message": "Tất cả (cài đặt + hộp)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "Chỉ cài đặt"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "Chỉ hộp"
+  },
+  "syncFileNameLabel": {
+    "message": "Tên tệp đồng bộ"
+  },
+  "syncFileNameHint": {
+    "message": "Tên tùy chỉnh cho tệp sao lưu sao lưu từ xa"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

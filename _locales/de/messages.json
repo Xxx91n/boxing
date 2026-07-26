@@ -688,7 +688,7 @@
     "message": "Geräteübergreifend synchronisieren"
   },
   "onboardingStep3Desc": {
-    "message": "Öffne Einstellungen → Sync, um einen WebDAV-Server zu verbinden. Deine Boxen synchronisieren sich zwischen Browsern und Tabs und werden per zeitstempelbasierter Zwei-Wege-Synchronisation gesichert."
+    "message": "Öffne Einstellungen → Sync, um einen WebDAV oder GitHub Gist-Server zu verbinden. Deine Boxen synchronisieren sich zwischen Browsern und Tabs und werden per zeitstempelbasierter Zwei-Wege-Synchronisation gesichert."
   },
   "diagSectionTitle": {
     "message": "Diagnose"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "Aus Backup wiederherstellen"
+  },
+  "syncLevelLabel": {
+    "message": "Synchronisationsebene"
+  },
+  "syncLevelHint": {
+    "message": "Wählen Sie, was mit Remote-Backup synchronisiert wird"
+  },
+  "syncLevelFull": {
+    "message": "Alles (Einstellungen + Boxen)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "Nur Einstellungen"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "Nur Boxen"
+  },
+  "syncFileNameLabel": {
+    "message": "Synchronisierungsdateiname"
+  },
+  "syncFileNameHint": {
+    "message": "Benutzerdefinierter Name für die Remote-Backup-Backup-Datei"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

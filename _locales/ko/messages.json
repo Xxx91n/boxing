@@ -688,7 +688,7 @@
     "message": "기기 간 동기화"
   },
   "onboardingStep3Desc": {
-    "message": "설정 → 동기화에서 WebDAV 서버에 연결하세요. 박스는 브라우저와 탭 간에 동기화되며 타임스탬프 기반 양방향 동기화로 안전하게 백업됩니다."
+    "message": "설정 → 동기화에서 WebDAV 또는 GitHub Gist 서버에 연결하세요. 박스는 브라우저와 탭 간에 동기화되며 타임스탬프 기반 양방향 동기화로 안전하게 백업됩니다."
   },
   "diagSectionTitle": {
     "message": "진단"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "백업에서 복원"
+  },
+  "syncLevelLabel": {
+    "message": "동기화 수준"
+  },
+  "syncLevelHint": {
+    "message": "원격 백업와 동기화할 내용 선택"
+  },
+  "syncLevelFull": {
+    "message": "전체 (설정 + 박스)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "설정만"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "박스만"
+  },
+  "syncFileNameLabel": {
+    "message": "동기화 파일명"
+  },
+  "syncFileNameHint": {
+    "message": "원격 백업 백업 파일의 사용자 정의 이름"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

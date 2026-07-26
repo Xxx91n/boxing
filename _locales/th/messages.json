@@ -688,7 +688,7 @@
     "message": "ซิงค์ข้ามอุปกรณ์"
   },
   "onboardingStep3Desc": {
-    "message": "เปิด การตั้งค่า → ซิงค์ เพื่อเชื่อมต่อเซิร์ฟเวอร์ WebDAV กล่องของคุณจะซิงค์ข้ามเบราว์เซอร์และแท็บ พร้อมสำรองข้อมูลด้วยการซิงค์สองทิศทางแบบตามเวลา"
+    "message": "เปิด การตั้งค่า → ซิงค์ เพื่อเชื่อมต่อเซิร์ฟเวอร์ WebDAV หรือ GitHub Gist กล่องของคุณจะซิงค์ข้ามเบราว์เซอร์และแท็บ พร้อมสำรองข้อมูลด้วยการซิงค์สองทิศทางแบบตามเวลา"
   },
   "diagSectionTitle": {
     "message": "การวินิจฉัย"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "กู้คืนจากการสำรองข้อมูล"
+  },
+  "syncLevelLabel": {
+    "message": "ระดับการซิงค์"
+  },
+  "syncLevelHint": {
+    "message": "เลือกเนื้อหาที่จะซิงค์กับ การสำรองข้อมูลระยะไกล"
+  },
+  "syncLevelFull": {
+    "message": "ทั้งหมด (การตั้งค่า + กล่อง)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "เฉพาะการตั้งค่า"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "เฉพาะกล่อง"
+  },
+  "syncFileNameLabel": {
+    "message": "ชื่อไฟล์ซิงค์"
+  },
+  "syncFileNameHint": {
+    "message": "ชื่อที่กำหนดเองสำหรับไฟล์สำรอง การสำรองข้อมูลระยะไกล"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

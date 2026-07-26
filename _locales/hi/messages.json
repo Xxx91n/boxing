@@ -688,7 +688,7 @@
     "message": "डिवाइस में सिंक करें"
   },
   "onboardingStep3Desc": {
-    "message": "सेटिंग्स → सिंक खोलें और WebDAV सर्वर जोड़ें। आपके बॉक्स ब्राउज़र और टैब में सिंक होते हैं और टाइमस्टैम्प-आधारित द्विदिशीय सिंक से सुरक्षित रूप से बैकअप होते हैं।"
+    "message": "सेटिंग्स → सिंक खोलें और WebDAV या GitHub Gist सर्वर जोड़ें। आपके बॉक्स ब्राउज़र और टैब में सिंक होते हैं और टाइमस्टैम्प-आधारित द्विदिशीय सिंक से सुरक्षित रूप से बैकअप होते हैं।"
   },
   "diagSectionTitle": {
     "message": "निदान"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "बैकअप से पुनर्स्थापित करें"
+  },
+  "syncLevelLabel": {
+    "message": "सिंक स्तर"
+  },
+  "syncLevelHint": {
+    "message": "रिमोट बैकअप के साथ सिंक करने के लिए सामग्री चुनें"
+  },
+  "syncLevelFull": {
+    "message": "सब कुछ (सेटिंग्स + बॉक्स)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "केवल सेटिंग्स"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "केवल बॉक्स"
+  },
+  "syncFileNameLabel": {
+    "message": "सिंक फ़ाइल नाम"
+  },
+  "syncFileNameHint": {
+    "message": "रिमोट बैकअप बैकअप फ़ाइल के लिए कस्टम नाम"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

@@ -701,7 +701,7 @@
     "message": "Sync across devices"
   },
   "onboardingStep3Desc": {
-    "message": "Open Settings → Sync to connect a WebDAV server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way sync."
+    "message": "Open Settings → Sync to connect a WebDAV or GitHub Gist server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way sync."
   },
   "diagSectionTitle": {
     "message": "Diagnostics"
@@ -735,5 +735,29 @@
   },
   "onboardingRestore": {
     "message": "Restore from backup"
+  },
+  "syncLevelLabel": {
+    "message": "Sync Level"
+  },
+  "syncLevelHint": {
+    "message": "Choose what to sync with remote backup"
+  },
+  "syncLevelFull": {
+    "message": "Everything (settings + boxes)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "Settings only"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "Boxes only"
+  },
+  "syncFileNameLabel": {
+    "message": "Sync File Name"
+  },
+  "syncFileNameHint": {
+    "message": "Custom file name for the remote backup backup file"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

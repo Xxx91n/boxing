@@ -691,7 +691,7 @@
     "message": "跨設備同步"
   },
   "onboardingStep3Desc": {
-    "message": "打開 設置 → 同步，連接 WebDAV 服務器。你的盒子會跨瀏覽器和標籤頁同步，數據通過基於時間戳的雙向同步安全備份。"
+    "message": "打開 設置 → 同步，連接 WebDAV 或 GitHub Gist 服務器。你的盒子會跨瀏覽器和標籤頁同步，數據通過基於時間戳的雙向同步安全備份。"
   },
   "diagSectionTitle": {
     "message": "診斷"
@@ -725,5 +725,29 @@
   },
   "onboardingRestore": {
     "message": "從備份恢復"
+  },
+  "syncLevelLabel": {
+    "message": "同步層級"
+  },
+  "syncLevelHint": {
+    "message": "選擇與遠端備份同步的內容"
+  },
+  "syncLevelFull": {
+    "message": "全部（設定 + 盒子）"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "僅設定"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "僅盒子"
+  },
+  "syncFileNameLabel": {
+    "message": "同步檔案名稱"
+  },
+  "syncFileNameHint": {
+    "message": "遠端備份檔案的自訂名稱"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

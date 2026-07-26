@@ -688,7 +688,7 @@
     "message": "Sincroniza entre dispositivos"
   },
   "onboardingStep3Desc": {
-    "message": "Abre Ajustes → Sincronización para conectar un servidor WebDAV. Tus cajas se sincronizan entre navegadores y pestañas y se respaldan con sincronización bidireccional basada en marcas de tiempo."
+    "message": "Abre Ajustes → Sincronización para conectar un servidor WebDAV o GitHub Gist. Tus cajas se sincronizan entre navegadores y pestañas y se respaldan con sincronización bidireccional basada en marcas de tiempo."
   },
   "diagSectionTitle": {
     "message": "Diagnóstico"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "Restaurar desde copia de seguridad"
+  },
+  "syncLevelLabel": {
+    "message": "Nivel de sincronización"
+  },
+  "syncLevelHint": {
+    "message": "Elegir el contenido para sincronizar con copia de seguridad remota"
+  },
+  "syncLevelFull": {
+    "message": "Todo (configuración + cajas)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "Solo configuración"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "Solo cajas"
+  },
+  "syncFileNameLabel": {
+    "message": "Nombre del archivo de sincronización"
+  },
+  "syncFileNameHint": {
+    "message": "Nombre personalizado del archivo de respaldo copia de seguridad remota"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

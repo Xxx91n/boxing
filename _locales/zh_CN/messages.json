@@ -691,7 +691,7 @@
     "message": "跨设备同步"
   },
   "onboardingStep3Desc": {
-    "message": "打开 设置 → 同步，连接 WebDAV 服务器。你的盒子会跨浏览器和标签页同步，数据通过基于时间戳的双向同步安全备份。"
+    "message": "打开 设置 → 同步，连接 WebDAV 或 GitHub Gist 服务器。你的盒子会跨浏览器和标签页同步，数据通过基于时间戳的双向同步安全备份。"
   },
   "diagSectionTitle": {
     "message": "诊断"
@@ -725,5 +725,29 @@
   },
   "onboardingRestore": {
     "message": "从备份恢复"
+  },
+  "syncLevelLabel": {
+    "message": "同步层级"
+  },
+  "syncLevelHint": {
+    "message": "选择与远程备份同步的内容"
+  },
+  "syncLevelFull": {
+    "message": "全部（设置 + 盒子）"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "仅设置"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "仅盒子"
+  },
+  "syncFileNameLabel": {
+    "message": "同步文件名"
+  },
+  "syncFileNameHint": {
+    "message": "远程备份文件的自定义名称"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }

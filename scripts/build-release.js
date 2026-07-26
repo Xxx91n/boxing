@@ -11,15 +11,26 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { execSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const RELEASE_ROOT = path.resolve(__dirname, '..', 'release');
+// v3.7.0+: output to ~/box/release as user-requested, fallback to <project>/release if HOME unset.
+const RELEASE_ROOT = path.resolve(os.homedir() || __dirname, 'box', 'release');
+// Ensure ~/box/release exists; mkdir -p semantics.
+(function ensureReleaseRoot() {
+  try {
+    const parts = RELEASE_ROOT.split(path.sep);
+    let cur = parts[0] || path.sep;
+    for (let i = 1; i < parts.length; i++) {
+      cur = path.join(cur, parts[i]);
+      if (!fs.existsSync(cur)) fs.mkdirSync(cur, { recursive: true });
+    }
+  } catch (e) { /* fail-soft — build will create subdirs later anyway */ }
+})();
 const IGNORE = new Set(['.git', '.github', 'node_modules', '.codex-tmp', '.codex-tmp-onb.log',
   '.codex-final.log', '.codex-misc.log', '.codex-tmp-repro.log', 'playwright-report', 'test-results',
   'dist', 'build', 'out', 'release', '~box', 'docs', 'opencode.json',
   '.omx', 'scripts', 'package-lock.json', 'package.json', 'AGENTS.md', '.codegraph', '.gitignore',
-  '.gitattributes']);
+  '.gitattributes', 'tools']);
 const EXTS = new Set(['.js', '.json', '.html', '.css', '.svg', '.png', '.ico', '.webp', '.txt', '.md']);
 
 function walk(src, base, out) {
@@ -28,6 +39,8 @@ function walk(src, base, out) {
     if (IGNORE.has(entryName)) continue;
     if (entryName.startsWith('README.') && entryName.endsWith('.md')) continue;    // multi-language READMEs are repo-doc only, not bundled
     if (entryName === 'CHANGELOG.md') continue;
+    // BX-DEV-120: include top-level LICENSE (no extension) in extension bundle for compliance.
+    if (entryName === 'LICENSE') { out.push([path.join(src, entryName), base ? base + '/' + entryName : entryName]); continue; }
     const p = path.join(src, entryName);
     const rel = base ? base + '/' + entryName : entryName;
     if (name.isDirectory()) { walk(p, rel, out); }
@@ -114,7 +127,9 @@ function copyFilesToDir(srcList, dstDir) {
 function tailorManifestFor(base, browser) {
   const m = JSON.parse(JSON.stringify(base));
   if (browser === 'firefox') {
-    m.background = Object.assign({}, m.background || {}, { scripts: ['background.js'], type: 'module' });
+    // Match .github/scripts/build.mjs: Firefox build完全替换 background (not Object.assign).
+    // Object.assign 会保留 service_worker 字段，Firefox 虽然忽略但 manifest 不应包含。
+    m.background = { scripts: ['background.js'], type: 'module' };
     if (!m.browser_specific_settings) m.browser_specific_settings = {};
     m.browser_specific_settings.gecko = Object.assign({
       id: '{2F5A8F1E-9B3C-4D7E-A2B1-6F4C8E9D3A7F}',

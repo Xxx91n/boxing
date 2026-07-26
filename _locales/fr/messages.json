@@ -688,7 +688,7 @@
     "message": "Synchronisez entre appareils"
   },
   "onboardingStep3Desc": {
-    "message": "Ouvrez Paramètres → Synchronisation pour connecter un serveur WebDAV. Vos boîtes se synchronisent entre navigateurs et onglets, et sont sauvegardées en toute sécurité par une synchronisation bidirectionnelle basée sur l'horodatage."
+    "message": "Ouvrez Paramètres → Synchronisation pour connecter un serveur WebDAV ou GitHub Gist. Vos boîtes se synchronisent entre navigateurs et onglets, et sont sauvegardées en toute sécurité par une synchronisation bidirectionnelle basée sur l'horodatage."
   },
   "diagSectionTitle": {
     "message": "Diagnostics"
@@ -722,5 +722,29 @@
   },
   "onboardingRestore": {
     "message": "Restaurer depuis une sauvegarde"
+  },
+  "syncLevelLabel": {
+    "message": "Niveau de synchronisation"
+  },
+  "syncLevelHint": {
+    "message": "Choisir le contenu à synchroniser avec sauvegarde distante"
+  },
+  "syncLevelFull": {
+    "message": "Tout (paramètres + boîtes)"
+  },
+  "syncLevelSettingsOnly": {
+    "message": "Paramètres seulement"
+  },
+  "syncLevelBoxesOnly": {
+    "message": "Boîtes seulement"
+  },
+  "syncFileNameLabel": {
+    "message": "Nom du fichier de synchronisation"
+  },
+  "syncFileNameHint": {
+    "message": "Nom personnalisé du fichier de sauvegarde sauvegarde distante"
+  },
+  "syncFileNamePlaceholder": {
+    "message": "boxing-backup.json"
   }
 }
