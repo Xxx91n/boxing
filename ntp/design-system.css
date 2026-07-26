@@ -118,6 +118,12 @@ body {
 button, input, select, textarea {
   font: inherit;
   color: inherit;
+  /* BX-DEV-130 (B8): font-smoothing is NOT inherited by form controls — re-apply
+     so native buttons/selects render crisp on Chrome + Firefox (addresses "字体发虚"
+     on zoom-arrow chars, select option text, settings modal inputs). Matches body. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 a {
