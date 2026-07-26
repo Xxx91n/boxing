@@ -2116,11 +2116,11 @@ html.ntp--dark {
    Exclude dragging/hover-expand/dragged states to keep interaction smooth. */
 .large-box:not(.large-box--dragging):not(.large-box--ghost) {
   content-visibility: auto;
-  contain-intrinsic-size: 320px 220px;
+  contain-intrinsic-size: auto 320px auto 220px;
 }
 .small-box:not(.small-box--dragging):not(.small-box--ghost) {
   content-visibility: auto;
-  contain-intrinsic-size: 300px 340px;
+  contain-intrinsic-size: auto 300px auto 340px;
 }
 
 /* BX-DEV-SEARCH (B9): search highlight — match boxes glow, non-match dim */
