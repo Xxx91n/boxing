@@ -2627,6 +2627,36 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   function hideSearchResults() {
     if (searchResultsEl) { searchResultsEl.hidden = true; searchResultsEl.innerHTML = ''; }
+    clearSearchHighlight();
+  }
+  function clearSearchHighlight() {
+    document.querySelectorAll('.large-box--search-match, .large-box--search-hidden, .small-box--search-match, .small-box--search-hidden').forEach(el => {
+      el.classList.remove('large-box--search-match', 'large-box--search-hidden', 'small-box--search-match', 'small-box--search-hidden');
+    });
+  }
+  function applySearchHighlight(hits) {
+    clearSearchHighlight();
+    const matchIds = new Set();
+    for (const h of hits) {
+      if (h.largeId) matchIds.add(h.largeId);
+    }
+    const smallMatchIds = new Set();
+    for (const h of hits) {
+      if (h.smallId) smallMatchIds.add(h.smallId + '@' + h.largeId);
+    }
+    document.querySelectorAll('.large-box').forEach(el => {
+      const id = el.dataset.id;
+      if (matchIds.has(id)) el.classList.add('large-box--search-match');
+      else el.classList.add('large-box--search-hidden');
+    });
+    document.querySelectorAll('.small-box').forEach(el => {
+      const sid = el.dataset.id;
+      const container = el.closest('.inner__surface');
+      if (!container) return;
+      const key = sid + '@' + (container.dataset.largeId || '');
+      if (smallMatchIds.has(key) || matchIds.size > 0) el.classList.add('small-box--search-match');
+      else el.classList.add('small-box--search-hidden');
+    });
   }
 
   // navigate to the box/box-context for a search hit.
@@ -2842,9 +2872,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     searchInput.addEventListener('input', e => {
       // BX-DEV-121 (Bug9 search): full live search across large boxes, small boxes, bookmarks.
       const q = e.target.value.trim().toLowerCase();
-      if (!q) { hideSearchResults(); updateCaption(); return; }
+      if (!q) { hideSearchResults(); updateCaption(); return; } /* hideSearchResults now calls clearSearchHighlight */
       const hits = runSearch(q);
       renderSearchResults(hits, q);
+      applySearchHighlight(hits);
       if (hits.length) captionEl.textContent = i18n('searchResults', [hits.length]);
       else captionEl.textContent = i18n('searchPlaceholder');
     });

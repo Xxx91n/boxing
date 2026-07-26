@@ -2115,3 +2115,13 @@ html.ntp--dark {
   content-visibility: auto;
   contain-intrinsic-size: 300px 340px;
 }
+
+/* BX-DEV-SEARCH (B9): search highlight — match boxes glow, non-match dim */
+.large-box--search-match, .small-box--search-match {
+  box-shadow: 0 0 0 2px var(--color-accent, #5b8def), var(--shadow-2);
+  opacity: 1;
+}
+.large-box--search-hidden, .small-box--search-hidden {
+  opacity: 0.25;
+  filter: grayscale(0.5);
+}
