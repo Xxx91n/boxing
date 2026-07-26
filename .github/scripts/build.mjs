@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..", "..");
@@ -65,6 +66,17 @@ function build() {
   copyTree(ROOT, firefoxDir);
   writeManifest(chromeDir, tailorManifest(base, "chrome"));
   writeManifest(firefoxDir, tailorManifest(base, "firefox"));
+  // BX-DEV-129 (B15): write a BUILD_INFO.json into each dist so users loading
+  // a packaged extension can confirm the dist matches the source they expect
+  // (the recurring "dist shows old onboarding UI" was a stale-disk issue; this
+  // makes staleness observable without diffing files).
+  let commit = "unknown";
+  try { commit = execSync("git -C " + ROOT + " rev-parse --short HEAD", { encoding: "utf8" }).trim(); } catch (_) {}
+  const branch = (() => { try { return execSync("git -C " + ROOT + " rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim(); } catch (_) { return "unknown"; } })();
+  const info = { builtAt: new Date().toISOString(), commit, branch, source: "D:\\Aworker\\crx\\boxing" };
+  for (const dir of [chromeDir, firefoxDir]) {
+    fs.writeFileSync(path.join(dir, "BUILD_INFO.json"), JSON.stringify(info, null, 2) + "\n", "utf8");
+  }
   console.log("Build dirs created:");
   console.log(" -", chromeDir);
   console.log(" -", firefoxDir);
