@@ -1570,6 +1570,27 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     body.appendChild(addRow);
   }
 
+  // BX-DEV-122 (Bug12 popup-followf-box): maintain a live tracker of open bookmark edit/add
+  // popups so that pan/zoom/box-drag can reposition them to follow the attached small box.
+  const __popupTrackers = new Map(); // DOMNode -> reposition fn
+  function addPopupTracker(popupEl, repositionFn) {
+    if (!popupEl || typeof repositionFn !== 'function') return;
+    __popupTrackers.set(popupEl, repositionFn);
+  }
+  function removePopupTracker(popupEl) {
+    if (popupEl) __popupTrackers.delete(popupEl);
+  }
+  function repositionAllPopups() {
+    // Re-position every open popup to its currently attached small box.
+    // Safe to call from hot paths (panmove, wheel, dragmove) — it's a Map#forEach + getBoundingClientRect.
+    if (__popupTrackers.size === 0) return;
+    // Drop popups that were resolved (removed from DOM, e.g. by save/cancel).
+    for (const k of [...__popupTrackers.keys()]) {
+      if (!document.body.contains(k)) __popupTrackers.delete(k);
+    }
+    __popupTrackers.forEach(fn => { try { fn(); } catch (_) {} });
+  }
+
   // Inline bookmark edit popup
   function showBookmarkEditPopup(bm, index, sb, largeId) {
     // Remove any existing popup
@@ -1582,6 +1603,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const popup = document.createElement('div');
     popup.className = 'bm-edit-popup';
     popup.style.cssText = 'position:fixed;z-index:200;background:var(--color-elevated);border:1px solid var(--color-hairline);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);min-width:260px;';
+    popup.dataset.attachedSbId = sb.id;
 
     // Title input
     const titleInput = document.createElement('input');
@@ -1618,6 +1640,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
       popup.remove();
+      removePopupTracker(popup);
     });
     // Enter key to save (BX-DEV-057)
     titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); } });
@@ -1635,39 +1658,45 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
       popup.remove();
+      removePopupTracker(popup);
     });
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = i18n('confirmCancel');
     cancelBtn.style.cssText = 'padding:4px 12px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
-    cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); });
+    cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); removePopupTracker(popup); });
 
     btnRow.append(saveBtn, deleteBtn, cancelBtn);
     popup.append(titleInput, urlInput, btnRow);
 
-    // Position near the three-dots button
-    const rect = popup.getBoundingClientRect || (() => ({ left: 200, top: 200 }));
     // BX-DEV-111j: position popup beside small box — right side if fits, else left
     const PW = 280, PH = 200, MARGIN = 12;
-    if (boxRect) {
-      const rightSpace = window.innerWidth - boxRect.right - MARGIN;
-      if (rightSpace >= PW + MARGIN) {
-        popup.style.left = (boxRect.right + MARGIN) + 'px';
+    function positionEditPopup() {
+      const el = document.querySelector('.small-box[data-id="' + sb.id + '"]');
+      const br = el ? el.getBoundingClientRect() : boxRect;
+      if (br) {
+        const rightSpace = window.innerWidth - br.right - MARGIN;
+        if (rightSpace >= PW + MARGIN) {
+          popup.style.left = (br.right + MARGIN) + 'px';
+        } else {
+          popup.style.left = Math.max(MARGIN, br.left - PW - MARGIN) + 'px';
+        }
+        popup.style.top = Math.max(MARGIN, Math.min(window.innerHeight - PH - MARGIN, br.top)) + 'px';
       } else {
-        popup.style.left = Math.max(MARGIN, boxRect.left - PW - MARGIN) + 'px';
+        popup.style.left = Math.min(window.innerWidth - PW, 200) + 'px';
+        popup.style.top = Math.min(window.innerHeight - PH, 300) + 'px';
       }
-      popup.style.top = Math.max(MARGIN, Math.min(window.innerHeight - PH - MARGIN, boxRect.top)) + 'px';
-    } else {
-      popup.style.left = Math.min(window.innerWidth - PW, 200) + 'px';
-      popup.style.top = Math.min(window.innerHeight - PH, 300) + 'px';
     }
+    positionEditPopup();
 
     document.body.appendChild(popup);
+    addPopupTracker(popup, positionEditPopup);
 
     // Close on outside click
     const closeHandler = (ev) => {
       if (!popup.contains(ev.target)) {
         popup.remove();
+        removePopupTracker(popup);
         document.removeEventListener('click', closeHandler);
       }
     };
@@ -1686,6 +1715,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const popup = document.createElement('div');
     popup.className = 'bm-edit-popup';
     popup.style.cssText = 'position:fixed;z-index:200;background:var(--color-elevated);border:1px solid var(--color-hairline);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);min-width:300px;';
+    popup.dataset.attachedSbId = sb.id;
 
     const titleInput = document.createElement('input');
     titleInput.type = 'text';
@@ -1719,6 +1749,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
       popup.remove();
+      removePopupTracker(popup);
     });
 
     // Enter key in either input = add bookmark (BX-DEV-057)
@@ -1737,6 +1768,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
       popup.remove();
+      removePopupTracker(popup);
     };
     // Update addBtn click to delegate:
     // Already handled above; add Enter key listeners:
@@ -1746,35 +1778,42 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = i18n('confirmCancel');
     cancelBtn.style.cssText = 'padding:5px 14px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
-    cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); });
+    cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); removePopupTracker(popup); });
 
     btnRow.append(addBtn, cancelBtn);
     popup.append(titleInput, urlInput, btnRow);
 
     // BX-DEV-111j: position popup beside small box — right side if fits, else left
     const PW2 = 320, PH2 = 200, MG2 = 12;
-    if (boxRect) {
-      const rightSpace = window.innerWidth - boxRect.right - MG2;
-      if (rightSpace >= PW2 + MG2) {
-        popup.style.left = (boxRect.right + MG2) + 'px';
+    function positionAddPopup() {
+      const el = document.querySelector('.small-box[data-id="' + sb.id + '"]');
+      const br = el ? el.getBoundingClientRect() : boxRect;
+      if (br) {
+        const rightSpace = window.innerWidth - br.right - MG2;
+        if (rightSpace >= PW2 + MG2) {
+          popup.style.left = (br.right + MG2) + 'px';
+        } else {
+          popup.style.left = Math.max(MG2, br.left - PW2 - MG2) + 'px';
+        }
+        popup.style.top = Math.max(MG2, Math.min(window.innerHeight - PH2 - MG2, br.top)) + 'px';
       } else {
-        popup.style.left = Math.max(MG2, boxRect.left - PW2 - MG2) + 'px';
+        popup.style.left = Math.max(MG2, (window.innerWidth - PW2) / 2) + 'px';
+        popup.style.top = Math.max(MG2, (window.innerHeight - PH2) / 2) + 'px';
       }
-      popup.style.top = Math.max(MG2, Math.min(window.innerHeight - PH2 - MG2, boxRect.top)) + 'px';
-    } else {
-      popup.style.left = Math.max(MG2, (window.innerWidth - PW2) / 2) + 'px';
-      popup.style.top = Math.max(MG2, (window.innerHeight - PH2) / 2) + 'px';
     }
+    positionAddPopup();
 
     document.body.appendChild(popup);
+    addPopupTracker(popup, positionAddPopup);
 
-    const closeHandler = (ev) => {
+    const closeHandler2 = (ev) => {
       if (!popup.contains(ev.target)) {
         popup.remove();
-        document.removeEventListener('click', closeHandler);
+        removePopupTracker(popup);
+        document.removeEventListener('click', closeHandler2);
       }
     };
-    setTimeout(() => document.addEventListener('click', closeHandler), 50);
+    setTimeout(() => document.addEventListener('click', closeHandler2), 50);
     titleInput.focus();
   }
 
@@ -1888,6 +1927,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
     dragState.el.style.left = newX + 'px';
     dragState.el.style.top = newY + 'px';
+    try { repositionAllPopups(); } catch (_) {}
   }
 
   function onBoxDragEnd(e) {
@@ -1981,6 +2021,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     canvasPanY = clamped.y;
     applyCanvasTransform();
     e.preventDefault();
+    try { repositionAllPopups(); } catch (_) {}
   }
 
   function onCanvasPanEnd(e) {
@@ -2042,6 +2083,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     e.preventDefault();
     // BX-DEV-111N+ : propagate live inner pan to other tabs within ~25ms (throttled).
     if (currentLargeBoxId) scheduleLargeBoxViewStatePersist(currentLargeBoxId);
+    try { repositionAllPopups(); } catch (_) {}
   }
 
   function onInnerPanEnd(e) {
@@ -2076,6 +2118,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       layout.settings.zoomLevel = canvasZoom;
       applyCanvasTransform();
       saveLayout();
+      try { repositionAllPopups(); } catch (_) {}
     }
   }
 
@@ -2089,6 +2132,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       innerPanX = clampedInnerPan.x;
       innerPanY = clampedInnerPan.y;
       applyInnerTransform();
+      try { repositionAllPopups(); } catch (_) {}
       // BX-DEV-111N+v2 : single saveLayout path per wheel event via the throttled
       // schedulePersist (Map-based, 80ms). Previously this block called saveLayout()
       // AND saveLargeBoxViewState() AND schedulePersist() — three storage writes per
