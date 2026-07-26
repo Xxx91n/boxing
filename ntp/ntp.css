@@ -2111,3 +2111,16 @@ html.ntp--dark {
 .ntp--dark .onboarding__lang {
   border-bottom-color: rgba(255,255,255,0.12);
 }
+
+/* BX-DEV-123: Performance — content-visibility for engineering-scale canvas (1000+ boxes).
+   Browser auto-skips layout/paint of offscreen boxes; 7x render boost per web.dev/MDN.
+   Must pair with contain-intrinsic-size to prevent scrollbar jumping.
+   Exclude dragging/hover-expand/dragged states to keep interaction smooth. */
+.large-box:not(.large-box--dragging):not(.large-box--ghost) {
+  content-visibility: auto;
+  contain-intrinsic-size: 320px 220px;
+}
+.small-box:not(.small-box--dragging):not(.small-box--ghost) {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px 340px;
+}
