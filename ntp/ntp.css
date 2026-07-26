@@ -654,8 +654,6 @@ body {
 }
 
 /* BX-DEV-111Pv2: mirror large .canvas / .canvas:active pan cursor for inner canvas (fix 5 cursor-shadowing bug) */
-.inner__canvas:active { cursor: grabbing; }
-.inner__surface:active { cursor: grabbing; }
 
 /* inner__canvas-head: lightweight bar inside canvas (v3.7.3 - replaced inner__head) */
 .inner__canvas-head {
@@ -1369,9 +1367,7 @@ body.box-resizing {
   cursor: grab;
 }
 
-.canvas:active {
-  cursor: grabbing;
-}
+.canvas { cursor: grab; } /* BX-DEV-124B (Bug3): JS sets grabbing after threshold to avoid :active stuck */
 
 /* === CONFIRM MODAL === */
 .confirm-modal {
