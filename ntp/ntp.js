@@ -942,8 +942,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   function applyInnerTransform() {
-    innerSurface.style.transform = `translate(${innerPanX}px, ${innerPanY}px) scale(${innerZoom})`;
-    innerSurface.style.transformOrigin = '0 0';
+    const content = ensureInnerSurfaceContent();
+    content.style.transform = `translate(${innerPanX}px, ${innerPanY}px) scale(${innerZoom})`;
+    content.style.transformOrigin = '0 0';
     innerZoomVal.textContent = Math.round(innerZoom * 100) + '%';
     zoomSlider.value = Math.round(innerZoom * 100);
     zoomSliderVal.textContent = Math.round(innerZoom * 100) + '%';
@@ -1361,15 +1362,36 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
   }
 
+  // BX-DEV-132 (B1 real fix): inner surface uses an inner content layer as the
+  // transform target. Previously the transform was applied to innerSurface itself, so
+  // pan lifted the surface's overflow:hidden clip box above the inner__canvas-head
+  // and small-box titles slipped under the head's solid background ("小盒子上面的标题
+  // 被画布上方标题覆盖，缩放越小越严重"). Mirrors the large-page architecture where
+  // .canvas (clip box) is separate from .canvas__surface (transform target).
+  let innerSurfaceContent = null;
+  function ensureInnerSurfaceContent() {
+    if (innerSurfaceContent && innerSurface.contains(innerSurfaceContent)) return innerSurfaceContent;
+    innerSurfaceContent = innerSurface.querySelector('.inner__surface-content');
+    if (!innerSurfaceContent) {
+      innerSurfaceContent = document.createElement('div');
+      innerSurfaceContent.className = 'inner__surface-content';
+      innerSurfaceContent.style.cssText = 'position:absolute;inset:0;transform-origin:0 0;will-change:transform;';
+      innerSurface.appendChild(innerSurfaceContent);
+    }
+    return innerSurfaceContent;
+  }
   function renderInnerSurface(lb) {
-    innerSurface.innerHTML = '';
+    // Keep the surface (parent clip box) intact; only refresh the content layer.
+    // innerHTML='' on the surface would also wipe the content wrapper we added.
+    const content = ensureInnerSurfaceContent();
+    content.innerHTML = '';
     const frag = document.createDocumentFragment();
     for (const sb of lb.children || []) {
       frag.appendChild(createSmallBoxEl(lb.id, sb));
     }
-    innerSurface.appendChild(frag);
+    content.appendChild(frag);
     // BX-DEV-111 v2: measure each collapsed small box for precise expand animation
-    innerSurface.querySelectorAll('.small-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
+    content.querySelectorAll('.small-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
   }
 
   function createSmallBoxEl(largeId, sb) {
