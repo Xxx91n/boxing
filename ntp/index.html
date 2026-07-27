@@ -369,6 +369,10 @@
     </div>
   </div>
 
+  <!-- BX-DEV-137: leader-line (mid-edge SVG connection lines between boxes).
+       Zero-dependency MIT library, vendored to avoid CSP issues with CDN scripts.
+       Loaded BEFORE ntp.js so window.LeaderLine is defined when ntp.js runs. -->
+  <script src="vendor/leader-line.min.js" defer></script>
   <script src="ntp.js" defer></script>
 </body>
 

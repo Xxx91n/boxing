@@ -746,5 +746,13 @@
   },
   "syncFileNamePlaceholder": {
     "message": "boxing-backup.json"
+  },
+  "connStarParent": {
+    "message": "グループの親としてマーク",
+    "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connStart": {
+    "message": "別のボックスへの接続を開始",
+    "description": "BX-DEV-137 box connections / star-mark"
   }
 }

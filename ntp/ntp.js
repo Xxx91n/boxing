@@ -151,6 +151,10 @@
 
   // Expose debug API for extension DevTools console inspection
   window.__boxingDebug = {
+    addConnection, removeConnection, toggleStarMark, addMember, moveGroupTogether,
+    getLargeBox, renderCanvas,
+    pruneConnArrays, renderConnections, disposeAllConns,
+    connCount: () => connLines.size,
     get layout() { return layout; }, // BX-DEV-111k: live ref to layout for Playwright testing
     state() { return { boxes: layout.boxes.length, currentLargeBoxId, canvasZoom, innerZoom, headerPinned, darkMode: layout.settings.darkMode, lang: currentLang, fontSize: layout.settings.fontSize }; },
     dumpLayout() { console.table(layout.boxes.map(b => ({ id: b.id, title: b.title, x: b.x, y: b.y, w: b.width, h: b.height, children: b.children?.length || 0 }))); },
@@ -760,6 +764,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
       persistViewState(true);
       layout.settings.headerPinned = headerPinned;
+      try { pruneConnArrays(); } catch (_) {}
       const stored = await layoutStorage.get({ boxingLayout: null });
       const remote = stored.boxingLayout ? migrateLayout(stored.boxingLayout) : null;
       layout = mergeConcurrentLayout(layout, remote);
@@ -794,7 +799,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   function defaultLayout() {
     return {
-      version: 3.5, boxes: [], nextLargeIndex: 1,
+      version: 3.5, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
       settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local' }
     };
   }
@@ -859,6 +864,191 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   // ── helpers ────────────────────────────────────────────
   function getLargeBox(id) { return layout.boxes.find(b => b.id === id); }
+
+  // ── Box Connections / Groups (BX-DEV-137) ────────────────────────────
+  // leader-line draws mid-edge SVG between two DOM elements; we vendored
+  // vendor/leader-line.min.js (MIT, zero-deps) into ntp/index.html. The lib's
+  // `socket: 'auto'` picks the nearest edge midpoint; active-connect mode lets
+  // the user click box A then box B; a star-mark makes a box the parent of a
+  // group so dragging the parent averages the members and snaps them together.
+  const MAX_CONNECTIONS = 5000; // ponytail: bounded; upgrade to pagination past 5k
+  const connLines = new Map();          // connId -> LeaderLine instance
+  const dirtyConns = new Set();         // connIds needing .position() next rAF
+  let connRafPending = false;
+  let connectMode = null;               // { fromId, fromEl } | null
+
+  function ensureConnArrays() {
+    if (!Array.isArray(layout.connections)) layout.connections = [];
+    if (!Array.isArray(layout.groups)) layout.groups = [];
+  }
+  function pruneConnArrays(onSave) {
+    ensureConnArrays();
+    const ids = new Set(layout.boxes.map(b => b.id));
+    layout.connections = layout.connections.filter(c => ids.has(c.from) && ids.has(c.to) && c.from !== c.to);
+    // ponytail: O(n) prune on save only — runs once per saveLayout, not hot path.
+    if (layout.connections.length > MAX_CONNECTIONS) {
+      layout.connections = layout.connections.slice(layout.connections.length - MAX_CONNECTIONS);
+    }
+    layout.groups = layout.groups.filter(g => ids.has(g.parentId) && (g.members || []).every(m => ids.has(m)));
+  }
+
+  function findConn(from, to) {
+    return layout.connections.find(c =>
+      (c.from === from && c.to === to) || (c.from === to && c.to === from));
+  }
+
+  function addConnection(fromId, toId) {
+    ensureConnArrays();
+    if (fromId === toId) return false;
+    if (findConn(fromId, toId)) return false;     // dedupe
+    layout.connections.push({
+      id: 'conn-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
+      from: fromId, to: toId, createdAt: Date.now()
+    });
+    return true;
+  }
+
+  function removeConnection(connId) {
+    ensureConnArrays();
+    layout.connections = layout.connections.filter(c => c.id !== connId);
+  }
+
+  function disposeAllConns() {
+    for (const line of connLines.values()) {
+      try { line.hide(); line.remove(); } catch (_) {}
+    }
+    connLines.clear();
+    dirtyConns.clear();
+  }
+
+  function renderConnections() {
+    ensureConnArrays();
+    if (typeof window.LeaderLine !== 'function') {
+      debugWarn('renderConnections: window.LeaderLine not loaded');
+      return;
+    }
+    // Reconcile live lines with layout.connections: add new, drop dead, keep shared.
+    const wanted = new Set(layout.connections.map(c => c.id));
+    for (const [id, line] of connLines.entries()) {
+      if (!wanted.has(id)) {
+        try { line.hide(); line.remove(); } catch (_) {}
+        connLines.delete(id);
+        dirtyConns.delete(id);
+      }
+    }
+    for (const c of layout.connections) {
+      if (connLines.has(c.id)) continue;
+      const a = document.querySelector(`.large-box[data-id="${CSS.escape(c.from)}"]`);
+      const b = document.querySelector(`.large-box[data-id="${CSS.escape(c.to)}"]`);
+      if (!a || !b) continue;     // box missing (deleted/hidden) — skip creating
+      try {
+        const line = new window.LeaderLine({
+          start: a, end: b,
+          color: 'var(--connection-color, #333)',
+          size: 1.5,
+          startSocket: 'auto', endSocket: 'auto',       // mid-edge of nearest side
+          startPlug: 'disc', endPlug: 'arrow1',
+          path: 'straight',
+          hide: false
+        });
+        connLines.set(c.id, line);
+      } catch (e) { debugWarn('renderConnections: LeaderLine ctor failed', e); }
+    }
+    scheduleConnRefresh(Array.from(connLines.keys()));
+  }
+
+  function scheduleConnRefresh(connIds) {
+    if (!connIds || !connIds.length) return;
+    for (const id of connIds) dirtyConns.add(id);
+    if (connRafPending || typeof requestAnimationFrame !== 'function') return;
+    connRafPending = true;
+    requestAnimationFrame(() => {
+      connRafPending = false;
+      const ids = Array.from(dirtyConns);
+      dirtyConns.clear();
+      for (const id of ids) {
+        const line = connLines.get(id);
+        if (!line) continue;
+        try { line.position(); } catch (_) {}
+      }
+    });
+  }
+
+  function refreshConnsForBox(boxId) {
+    ensureConnArrays();
+    const ids = layout.connections.filter(c => c.from === boxId || c.to === boxId).map(c => c.id);
+    scheduleConnRefresh(ids);
+  }
+
+  function refreshAllConns() { scheduleConnRefresh(Array.from(connLines.keys())); }
+
+  // ── Star-mark / group drag ──────────────────────────
+  function ensureGroups() { ensureConnArrays(); return layout.groups || (layout.groups = []); }
+  function getGroupByParent(parentId) {
+    return ensureGroups().find(g => g.parentId === parentId);
+  }
+  function toggleStarMark(parentId) {
+    ensureConnArrays();
+    const groups = layout.groups;
+    let g = groups.find(x => x.parentId === parentId);
+    if (g) {
+      // unstar: drop the group; members go back to individual drag
+      layout.groups = groups.filter(x => x.parentId !== parentId);
+      debug('toggleStarMark: unstar parent=' + parentId);
+    } else {
+      // star: create a group with the box as parent and no members yet
+      groups.push({ parentId, members: [] });
+      debug('toggleStarMark: star parent=' + parentId);
+    }
+    saveLayout(); renderCanvas();       // re-render the star UI on the box header
+  }
+  function addMember(parentId, memberId) {
+    if (parentId === memberId) return;
+    ensureConnArrays();
+    let g = layout.groups.find(x => x.parentId === parentId);
+    if (!g) { g = { parentId, members: [] }; layout.groups.push(g); }
+    if (!g.members.includes(memberId)) g.members.push(memberId);
+  }
+
+  // During parent drag we apply the same delta to every member. Members collide
+  // against OUT-of-group boxes only; intra-group siblings move as a rigid set.
+  function moveGroupTogether(parentId, deltaX, deltaY) {
+    const g = getGroupByParent(parentId);
+    if (!g || !g.members || !g.members.length) return;
+    for (const mId of g.members) {
+      const m = getLargeBox(mId);
+      if (!m) continue;
+      const nx = m.x + deltaX;
+      const ny = m.y + deltaY;
+      m.x = nx; m.y = ny;
+      const el = document.querySelector(`.large-box[data-id="${CSS.escape(mId)}"]`);
+      if (el) { el.style.left = nx + 'px'; el.style.top = ny + 'px'; }
+      refreshConnsForBox(mId);
+    }
+  }
+
+  // ── active-connect mode (cursor cross, click two boxes) ──
+  function enterConnectMode(fromId, fromEl) {
+    if (connectMode) { exitConnectMode(); return; }   // second click cancels
+    connectMode = { fromId, fromEl };
+    document.body.classList.add('cx--connecting');
+    document.body.style.cursor = 'crosshair';
+    debug('enterConnectMode from=' + fromId);
+  }
+  function exitConnectMode(commitToId) {
+    const cm = connectMode; connectMode = null;
+    document.body.classList.remove('cx--connecting');
+    document.body.style.cursor = '';
+    if (cm && commitToId && cm.fromId && cm.fromId !== commitToId) {
+      if (addConnection(cm.fromId, commitToId)) {
+        saveLayout(); renderConnections();
+        debug('connect ' + cm.fromId + ' -> ' + commitToId);
+      } else {
+        debug('connect skipped (dup or self)');
+      }
+    }
+  }
+
   function getSmallBox(largeId, smallId) {
     const lb = getLargeBox(largeId);
     return lb?.children?.find(s => s.id === smallId) || null;
@@ -1069,7 +1259,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       } catch (e) { debugErr('createLargeBoxEl failed for', box.id, e); }
     }
     canvasSurface.appendChild(frag);
-    debug('renderCanvas done, surface children=' + canvasSurface.children.length);
+    ensureConnArrays(); renderConnections(); debug('renderCanvas done, surface children=' + canvasSurface.children.length);
     // BX-DEV-111 v2: measure each collapsed box for precise expand animation
     canvasSurface.querySelectorAll('.large-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
     applyCanvasTransform();
@@ -1260,6 +1450,22 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     openHint.textContent = i18n('clickToOpen');
     body.appendChild(openHint);
 
+    // BX-DEV-137: star-mark (parent) + connect-mode toggle buttons. Cheap per-box UI;
+    // theme uses currentColor so it adapts to dark/light automatically.
+    const starBtn = document.createElement('button');
+    starBtn.type = 'button';
+    starBtn.className = 'box-star-btn box-tool-btn' + (getGroupByParent(box.id) ? ' box-tool-btn--on' : '');
+    starBtn.textContent = '★';
+    starBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
+    starBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(box.id); });
+    const connectBtn = document.createElement('button');
+    connectBtn.type = 'button';
+    connectBtn.className = 'box-connect-btn box-tool-btn';
+    connectBtn.textContent = '↗';
+    connectBtn.title = i18n('connStart') || 'Start a connection to another box';
+    connectBtn.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); enterConnectMode(box.id, el); });
+    // second click on a different box's bar arrives via document-level mousedown handler in init()
+    bar.append(starBtn, connectBtn);
     el.append(bar, body);
 
     // resize handle
@@ -1992,6 +2198,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     dragState.el.style.left = newX + 'px';
     dragState.el.style.top = newY + 'px';
     try { repositionAllPopups(); } catch (_) {}
+    if (dragState.type === 'large') refreshConnsForBox(dragState.id);
   }
 
   function onBoxDragEnd(e) {
@@ -2024,6 +2231,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       box.x = clamped.x; box.y = clamped.y;
       el.style.left = box.x + 'px';
       el.style.top = box.y + 'px';
+      if (getGroupByParent(box.id)) {
+        const dX = box.x - dragState.origLeft;
+        const dY = box.y - dragState.origTop;
+        moveGroupTogether(box.id, dX, dY);
+      }
+      refreshConnsForBox(box.id);
     } else {
       const sb = getSmallBox(id.largeId, id.smallId);
       if (!sb) { dragState = null; return; }
@@ -2096,6 +2309,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     applyCanvasTransform();
     e.preventDefault();
     try { repositionAllPopups(); } catch (_) {}
+    if (connLines.size) refreshAllConns();
   }
 
   function onCanvasPanEnd(e) {
@@ -2351,6 +2565,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function _execDeleteLargeBox(id) {
     const removed = getLargeBox(id);
     markDeleted(id, ...(removed?.children || []).flatMap(child => [child.id, ...(child.bookmarks || []).map(bookmark => bookmark.id)]));
+    ensureConnArrays();
+    layout.connections = layout.connections.filter(c => c.from !== id && c.to !== id);
+    layout.groups = layout.groups.filter(g => g.parentId !== id);
+    layout.groups = layout.groups.map(g => ({ ...g, members: (g.members || []).filter(m => m !== id) }));
     layout.boxes = layout.boxes.filter(b => b.id !== id);
     layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title || '').match(/\d+/) || [0]) || 0) + 1), 1);
     if (currentLargeBoxId === id) exitToCanvas();
@@ -2958,6 +3176,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     settingsModal.addEventListener('click', e => { if (e.target === settingsModal) closeSettingsModal(); });
 
     document.addEventListener('contextmenu', onContextMenu);
+    // BX-DEV-137: terminate active-connect mode when user clicks another large box bar.
+    document.addEventListener('mousedown', e => {
+      if (!connectMode) return;
+      const targetBox = e.target.closest && e.target.closest('.large-box');
+      if (!targetBox) { exitConnectMode(null); return; }
+      const targetId = targetBox.dataset.id;
+      if (targetId && targetId !== connectMode.fromId) { exitConnectMode(targetId); return; }
+      // same-box or non-box click → cancel
+      exitConnectMode(null);
+    }, true);   // capture so we run BEFORE bar's own mousedown drag handler
     document.addEventListener('keydown', onKeyDown);
 
     // Canvas mouse events

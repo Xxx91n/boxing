@@ -2158,3 +2158,14 @@ html.ntp--dark {
   opacity: 0.25;
   filter: grayscale(0.5);
 }
+
+
+/* BX-DEV-137: box-connections / star-mark UI (leader-line draws the actual SVG)
+   color uses --color-ink so it adapts to dark mode automatically. */
+:root { --connection-color: var(--color-ink); }
+.box-tool-btn { background: transparent; border: 0; cursor: pointer;
+  color: var(--color-ink-soft); font-size: 12px; line-height: 1; padding: 0 4px;
+  border-radius: 4px; opacity: 0.55; transition: opacity 120ms; flex-shrink: 0; }
+.box-tool-btn:hover { opacity: 1; }
+.box-tool-btn--on { opacity: 1; color: var(--color-accent, #A08060); }
+body.cx--connecting, body.cx--connecting * { cursor: crosshair !important; }
