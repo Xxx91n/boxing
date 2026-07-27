@@ -476,6 +476,24 @@
   const innerZoomCtrl = $('#inner-zoom');
   const innerWrapper = $('#inner');
   const innerCanvas = $('#inner-canvas');
+  // BX-DEV-134 (B2 perf): ResizeObserver-fed geometry cache. clampCanvasPan/clampInnerPan
+  // and onBoxDragEnd worldMaxX/Y read these instead of clientWidth/Height, eliminating
+  // the per-mousemove forced layout that 60-120Hz pan/drag caused. Updated by the RO below.
+  const canvasContainerSize = { w: 0, h: 0 };
+  const innerSurfaceSize = { w: 0, h: 0 };
+  let __sizeObserver = null;
+  function refreshContainerSizes() {
+    canvasContainerSize.w = canvasContainer.clientWidth || 0;
+    canvasContainerSize.h = canvasContainer.clientHeight || 0;
+    innerSurfaceSize.w = innerSurface.clientWidth || 0;
+    innerSurfaceSize.h = innerSurface.clientHeight || 0;
+  }
+  function initSizeObserver() {
+    refreshContainerSizes();
+    if (__sizeObserver || typeof ResizeObserver === 'undefined') return;
+    __sizeObserver = new ResizeObserver(() => { try { refreshContainerSizes(); } catch (_) {} });
+    try { __sizeObserver.observe(canvasContainer); __sizeObserver.observe(innerSurface); } catch (_) {}
+  }
   const innerCrumbTitle = $('#inner-crumb-title');
   const crumbsEl = $('#crumbs');
   const captionEl = $('#caption');
@@ -862,8 +880,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   // Canvas pan boundary: at 10% zoom, max pan range = 10x screen size
   function clampCanvasPan(panX, panY, zoom) {
-    const container = canvasContainer;
-    const w = container.clientWidth, h = container.clientHeight;
+    // BX-DEV-134 (B2 perf): read cached geometry — no per-mousemove forced layout.
+    const w = canvasContainerSize.w || canvasContainer.clientWidth;
+    const h = canvasContainerSize.h || canvasContainer.clientHeight;
     // Virtual world: [0, containerW/0.3]. Screen = world*zoom + pan.
     // Constraint: visible world must stay within [0, containerW/0.3].
     // Left: world=0 at screen pan → pan <= 0 (no blank left of origin)
@@ -881,8 +900,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // Use innerSurface dimensions — surface starts at top:40px (below canvas-head),
     // so its usable height is canvas - 40. Using innerCanvas height would count
     // the 40px head strip as world-pannable, causing bottom coverage bug.
-    const sw = innerSurface.clientWidth || container.clientWidth;
-    const sh = innerSurface.clientHeight || (container.clientHeight - 40);
+    const sw = (innerSurfaceSize.w || innerSurface.clientWidth) || container.clientWidth;
+    const sh = (innerSurfaceSize.h || innerSurface.clientHeight) || (container.clientHeight - 40);
     const minPanX = sw * (1.0 - zoom / 0.3);
     const minPanY = sh * (1.0 - zoom / 0.3);
     return {
@@ -1970,6 +1989,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // BX-DEV-121: release a drag if focus leaves the window mid-drag (matches pan safety nets).
     window.addEventListener('blur', onBoxDragEnd);
     document.addEventListener('visibilitychange', onBoxDragVisHide);
+    // BX-DEV-134 (B2): pointerup/pointercancel cover mouseup-swallow (iframe/popup/chrome)
+    // cases that previously left dragState stuck with '-box--dragging' class + zIndex=10
+    // permanently applied — a visible cause of intermittent 'cannot drag the box again'.
+    document.addEventListener('pointerup', onBoxDragEnd);
+    document.addEventListener('pointercancel', onBoxDragEnd);
   }
   function onBoxDragVisHide() { if (dragState) onBoxDragEnd({ type: 'visibilitychange' }); }
 
@@ -2912,6 +2936,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   async function init() {
     await loadLayout();
     await loadSettings();
+    initSizeObserver();
 
     // BX-DEV-111: Now that layout is loaded, restore headerPinned from persisted state
     headerPinned = layout.settings.headerPinned !== false;  // true if not explicitly set to false
