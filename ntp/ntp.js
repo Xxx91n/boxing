@@ -743,12 +743,26 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       }
     }
     const trimmedDeleted = Object.fromEntries(Object.entries(deleted).sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, MAX_TOMBSTONES));
+    // BX-DEV-137++: explicit merge of connections/groups — spread alone lets
+    // localValue.connections=undefined (new tab, not yet initialized) overwrite
+    // remoteValue.connections, silently dropping all lines cross-tab.
+    const mergeByIdUnion = (localArr, remoteArr, keyField = 'id') => {
+      const la = Array.isArray(localArr) ? localArr : [];
+      const ra = Array.isArray(remoteArr) ? remoteArr : [];
+      const map = new Map();
+      // remote first so local entries overwrite on id conflict (local writes win ties)
+      for (const item of ra) { if (item && item[keyField]) map.set(item[keyField], item); }
+      for (const item of la) { if (item && item[keyField]) map.set(item[keyField], item); }
+      return Array.from(map.values());
+    };
     return {
       ...remoteValue,
       ...localValue,
       boxes,
       nextLargeIndex: Math.max(Number(localValue.nextLargeIndex) || 1, Number(remoteValue.nextLargeIndex) || 1),
       settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}) },
+      connections: mergeByIdUnion(localValue.connections, remoteValue.connections),
+      groups: mergeByIdUnion(localValue.groups, remoteValue.groups),
       _meta: { ...(remoteValue._meta || {}), ...(localValue._meta || {}), deleted: trimmedDeleted }
     };
   }
@@ -1092,7 +1106,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.body.style.cursor = '';
     if (cm && commitToId && cm.fromId && cm.fromId !== commitToId) {
       if (addConnection(cm.fromId, commitToId)) {
-        saveLayout(); renderConnections();
+        saveLayout();
+        // BX-DEV-137++: defer renderConnections to next rAF — avoids blocking the
+        // mousedown event that triggered the connect. Synchronous LeaderLine ctor
+        // on boxes×N pairs stalls the event loop on large layouts.
+        requestAnimationFrame(() => renderConnections());
         debug('connect ' + cm.fromId + ' -> ' + commitToId);
       } else {
         debug('connect skipped (dup or self)');
@@ -1208,6 +1226,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     innerZoomVal.textContent = Math.round(innerZoom * 100) + '%';
     zoomSlider.value = Math.round(innerZoom * 100);
     zoomSliderVal.textContent = Math.round(innerZoom * 100) + '%';
+    // BX-DEV-137++: lines must follow boxes on inner zoom — rAF-coalesced refresh.
+    if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
   }
 
   function zoomAtPoint(container, zoom, panX, panY, clientX, clientY, factor) {
@@ -1337,6 +1357,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       // Also keep --body-max-height for compatibility
       const bh = body.scrollHeight;
       if (bh > 0) body.style.setProperty('--body-max-height', bh + 'px');
+      // BX-DEV-137++: after layout settles, refresh lines — box height may have changed.
+      if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
     });
   }
 
@@ -1422,12 +1444,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     expandBtn.className = 'box-expand-btn';
     expandBtn.title = i18n('autoExpand');
     expandBtn.textContent = '⊟';
-    expandBtn.title = box.collapseHover ? 'Hover to expand' : i18n('autoExpand');
+    expandBtn.title = box.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
     expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       box.collapseHover = !box.collapseHover;
-      expandBtn.title = box.collapseHover ? 'Hover to expand' : i18n('autoExpand');
+      expandBtn.title = box.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
       expandBtn.style.opacity = box.collapseHover ? '0.9' : '0.4';
       expandBtn.textContent = box.collapseHover ? '⊞' : '⊟';
       el.classList.toggle('box--hover-expand', box.collapseHover);
@@ -1438,6 +1460,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         el.classList.remove('box--collapsed');
       }
       saveLayout();
+      // BX-DEV-137++: refresh connections after expand/collapse — box height changed,
+      // leader-line cached stale position. rAF-coalesced via refreshAllConns.
+      if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
     });
 
     bar.append(icon, title, meta, pinBtn, expandBtn, delBtn);
@@ -1595,6 +1620,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     updateInnerCaption(lb);
     applyInnerTransform();
     updateCaption();
+    // BX-DEV-137++: re-render cross-level connections after entering large box —
+    // small-box DOM elements are now live so leader-line can resolve tiered keys.
+    renderConnections();
   }
 
   function exitToCanvas() {
@@ -1726,12 +1754,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     expandBtn.className = 'box-expand-btn';
     expandBtn.title = i18n('autoExpand');
     expandBtn.textContent = '⊟';
-    expandBtn.title = sb.collapseHover ? 'Hover to expand' : i18n('autoExpand');
+    expandBtn.title = sb.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
     expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       sb.collapseHover = !sb.collapseHover;
-      expandBtn.title = sb.collapseHover ? 'Hover to expand' : i18n('autoExpand');
+      expandBtn.title = sb.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
       expandBtn.style.opacity = sb.collapseHover ? '0.9' : '0.4';
       expandBtn.textContent = sb.collapseHover ? '⊞' : '⊟';
       el.classList.toggle('box--hover-expand', sb.collapseHover);
@@ -1742,6 +1770,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         el.classList.remove('box--collapsed');
       }
       saveLayout();
+      // BX-DEV-137++: refresh connections after small-box expand/collapse.
+      if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
     });
 
         // BX-DEV-137+: connect button (↗) for cross-level lines. Star-mark stays
@@ -2559,6 +2589,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         if (sb) { sb.width = nw; sb.height = nh; }
       }
       saveLayout();
+      // BX-DEV-137++: refresh connections after resize — box dimensions changed,
+      // leader-line cached stale bounding rect. rAF-coalesced via refreshAllConns.
+      if (connLines.size) refreshAllConns();
       resizeState = null;
     };
 
@@ -2818,6 +2851,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
           renderCrumbs(lb);
           updateCaption();
           applyInnerTransform();
+          // BX-DEV-137++: re-render connections on cross-tab sync into inner-surface view
+          renderConnections();
         }
       } else {
         renderCanvas();
