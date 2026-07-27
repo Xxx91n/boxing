@@ -1147,29 +1147,38 @@ body {
   min-height: 24px;
 }
 
-/* BX-DEV-112E: CSS border triangle — no font/SVG dependency, cross-browser identical */
+/* BX-DEV-135 (B6): pure CSS border triangle — zero font/Unicode glyph dependency,
+   so ungood-chromium/other-UAs without a good ‹› fallback glyph still see the arrows.
+   The Unicode literal kept in HTML is hidden via font-size:0; ::before paints the triangle. */
 .zoom-arrow {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  font-family: var(--font-stack-ui);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 14px;
-  text-align: center;
+  display: block;
+  position: relative;
+  width: 10px;
+  height: 10px;
+  font-size: 0;
+  line-height: 0;
   color: var(--color-ink-soft);
-  /* BX-DEV-130 (B8): keep the Unicode arrow glyph crisp on Chrome (default UA
-     font can render ‹/› thin/blurry at 14px, especially inside the contain:layout
-     zoom-controls container). */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: geometricPrecision;
   pointer-events: none;
 }
-.zoom-arrow--right {
-  /* right-pointing arrow uses Unicode character in HTML; no border override needed */
+.zoom-arrow::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 6px solid currentColor;
+  transform: translate(-50%, -50%);
 }
-
+.zoom-arrow--right::before {
+  border-right: 0;
+  border-left: 6px solid currentColor;
+}
 .zoom-btn:hover .zoom-arrow {
   color: var(--color-ink);
 }

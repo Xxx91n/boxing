@@ -3948,6 +3948,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         try {
+          // BX-DEV-135 (B8): tab-hide may have deferred RO; refresh geometry cache so
+          // the re-applied transform does not use a stale container/surface size
+          try { if (typeof refreshContainerSizes === 'function') refreshContainerSizes(); } catch (_) {}
           if (panState && typeof onCanvasPanEnd === 'function') onCanvasPanEnd({ type: 'visibilitychange' });
           if (panState && typeof onInnerPanEnd === 'function') onInnerPanEnd({ type: 'visibilitychange' });
           if (typeof dragState === 'object' && dragState && typeof onBoxDragEnd === 'function') {
