@@ -641,7 +641,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     hist = hist.filter(h => !h || (h.currentLargeBoxId + ':' + Number(h.canvasZoom).toFixed(3)) !== sig);
     hist.push(snap);
     if (hist.length > MAX_TAB_VIEW_HISTORY) hist = hist.slice(hist.length - MAX_TAB_VIEW_HISTORY);
-    localStorage.setItem(TAB_VIEW_HISTORY_KEY, JSON.stringify(hist));
+    try { localStorage.setItem(TAB_VIEW_HISTORY_KEY, JSON.stringify(hist)); } catch (_) { /* quota exceeded — fail-soft; in-memory hist still valid this session */ }
   }
 
   function loadFallbackTabView() {
@@ -1217,6 +1217,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     canvasZoomVal.textContent = Math.round(canvasZoom * 100) + '%';
     zoomSlider.value = Math.round(canvasZoom * 100);
     zoomSliderVal.textContent = Math.round(canvasZoom * 100) + '%';
+    // BX-DEV-137++: lines must follow boxes on zoom — rAF-coalesced via scheduleConnRefresh.
+    if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
   }
 
   function applyInnerTransform() {
