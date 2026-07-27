@@ -1994,10 +1994,11 @@ html.ntp--dark {
   box-shadow: var(--shadow-2);
 }
 
-/* Inner canvas (small-box page): pin button must clear inner__canvas-head bar (~40px) */
 .inner__canvas .header-pin--floating {
-  top: 64px !important;
-  /* BX-DEV-108: below inner-canvas-head + spacer */
+  /* BX-DEV-136: inner-canvas-head was de-coupled from the canvas and floated
+     at the app-title-bar level above it, so the pin no longer needs to clear
+     an in-canvas head strip. Small offset keeps it off the canvas top edge. */
+  top: var(--space-2) !important;
 }
 
 /* === Onboarding (first-run guided tour) === */

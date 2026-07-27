@@ -1350,33 +1350,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   function renderCrumbs(lb) {
-    // crumbs now render inline into inner__head area
-    const innerCanvasHead = $('#inner-canvas-head');
-    // remove any existing crumbs
-    const existing = innerCanvasHead?.parentNode?.querySelector('.crumbs--inner');
-    existing?.remove();
-
-    const crumbsDiv = document.createElement('div');
-    crumbsDiv.className = 'crumbs crumbs--inner';
-
-    const root = document.createElement('span');
-    root.className = 'crumbs__item';
-    root.textContent = i18n('canvasRoot');
-    root.addEventListener('click', exitToCanvas);
-    crumbsDiv.appendChild(root);
-
-    const sep = document.createElement('span');
-    sep.className = 'crumbs__sep';
-    sep.textContent = '/';
-    crumbsDiv.appendChild(sep);
-
-    // BX-DEV-133 (B5): cur span removed ? inner-crumb-title already shows & edits the box title
-    // keeping it here produced a duplicate title row in small-box view
-
-    // insert before inner-canvas-head
-    if (innerCanvasHead) {
-      innerCanvasHead.parentNode.insertBefore(crumbsDiv, innerCanvasHead);
-    }
+    // BX-DEV-136: inner-canvas-head de-coupled from canvas and floated at top
+    // title bar level; the "画布/" breadcrumb is no longer rendered (mirrors the
+    // large-canvas architecture where the canvas is a pure infinite surface).
+    // The box title + add button live inside #inner-canvas-head directly; the
+    // exit-to-canvas action is reachable via the Esc / back gesture.
   }
 
   // BX-DEV-132 (B1 real fix): inner surface uses an inner content layer as the
