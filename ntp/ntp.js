@@ -1351,10 +1351,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     sep.textContent = '/';
     crumbsDiv.appendChild(sep);
 
-    const cur = document.createElement('span');
-    cur.className = 'crumbs__item crumbs__item--current';
-    cur.textContent = lb.title || i18n('untitledBox');
-    crumbsDiv.appendChild(cur);
+    // BX-DEV-133 (B5): cur span removed ? inner-crumb-title already shows & edits the box title
+    // keeping it here produced a duplicate title row in small-box view
 
     // insert before inner-canvas-head
     if (innerCanvasHead) {
@@ -1390,6 +1388,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       frag.appendChild(createSmallBoxEl(lb.id, sb));
     }
     content.appendChild(frag);
+    // BX-DEV-133 (B1 search): stamp largeId on inner surface so applySearchHighlight key matches
+    innerSurface.dataset.largeId = lb.id;
     // BX-DEV-111 v2: measure each collapsed small box for precise expand animation
     content.querySelectorAll('.small-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
   }
@@ -2696,9 +2696,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const sid = el.dataset.id;
       const container = el.closest('.inner__surface');
       if (!container) return;
-      const key = sid + '@' + (container.dataset.largeId || '');
-      if (smallMatchIds.has(key) || matchIds.size > 0) el.classList.add('small-box--search-match');
-      else el.classList.add('small-box--search-hidden');
+      const lid = container.dataset.largeId || '';
+      const key = sid + '@'+ lid;
+      // BX-DEV-133 (B1): old || matchIds.size>0 lit every small box when any large title matched
+      if (smallMatchIds.has(key)) {
+        el.classList.add('small-box--search-match');
+      } else if (smallMatchIds.size > 0 && matchIds.has(lid)) {
+        el.classList.add('small-box--search-hidden');
+      }
     });
   }
 
