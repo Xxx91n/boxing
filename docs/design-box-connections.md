@@ -22,10 +22,14 @@ Status: proposal; not yet implemented. Resolve scope with user before code lands
   - hand-rolled SVG - user explicitly said do not write a wheel.
 
 ## Data model (additive, no rewrites)
-- `layout.connections = Array<{ id, from, to, createdAt }>` - `from`/`to` are box ids.
-- `layout.groups = Array<{ id, parentId, members:[boxId] }>` - for star-mark/group-move.
-- Box records unchanged - connections/groups live at `layout` root.
-- Prune on save: cap `MAX_CONNECTIONS = 5000`; drop oldest when exceeded.
+- `layout.connections = Array<{ id, from, to, createdAt }>` — `from`/`to` are **tiered keys**:
+  `large:boxId` for large boxes, `small:largeId:smallId` for small boxes.
+  Legacy raw-id format (Round 1) is back-compat: `resolveBoxEl` and `pruneConnArrays` accept both.
+- `layout.groups = Array<{ id, parentId, members:[boxKey] }>` — for star-mark/group-move.
+  `parentId` and `members` use tiered keys (large boxes only for star-mark per user confirmation).
+- Box records unchanged — connections/groups live at `layout` root.
+- Prune on save: cap `MAX_CONNECTIONS = 5000`; `pruneConnArrays` validates keys via `allValidKeys()`
+  set (all `large:` + `small:` keys) plus legacy raw-id set; drop oldest when exceeded.
   `ponytail: bounded array, upgrade to pagination if growing past 5k`
 
 ## Hot path / perf
@@ -65,7 +69,21 @@ Status: proposal; not yet implemented. Resolve scope with user before code lands
 - Weighted-average other than centroid.
 - Undo for connection deletion (use existing layout undo when it exists).
 
-## Open questions for user
-- Allow connections ONLY large-to-large, or also large-to-small and small-to-small?
-- Star-mark: only large boxes qualify as parent, or any box?
-- Confirm we want ONLY black/white line, or a third accent color for primary link?
+## Open questions for user — RESOLVED (Round 2, BX-DEV-137+)
+- ~~Allow connections ONLY large-to-large, or also large-to-small and small-to-small?~~
+  **RESOLVED:** Cross-level enabled via tiered keys (`large:boxId` / `small:largeId:smallId`).
+  Connections store tiered keys; `resolveBoxEl(key)` routes to the correct DOM element at any
+  nesting level. Legacy raw-id connections (Round 1 format) remain back-compat via fallback.
+  Visual line rendering requires both endpoint DOMs to exist simultaneously: a small box DOM
+  only exists inside the inner-canvas of its parent large box (after `enterLargeBox`). If either
+  endpoint is offscreen/not rendered, leader-line skips creating the line (graceful degradation).
+  Data-layer persistence is unaffected — connections survive regardless of render state.
+- ~~Star-mark: only large boxes qualify as parent, or any box?~~
+  **RESOLVED:** Large boxes only. Small-box star button is omitted (per user confirmation).
+  Rationale: `moveGroupTogether` resolves members against `layout.boxes` (large-box array);
+  extending to small-box parents would require context lookup into `lb.children` with a
+  separate collision set (inner coordinates vs canvas coordinates). Not worth the complexity
+  until users request it; the ↗ connect button on small boxes covers cross-level visualization.
+- ~~Confirm we want ONLY black/white line, or a third accent color for primary link?~~
+  **RESOLVED:** Black/white only (`--connection-color: var(--color-ink)`), adapts to dark/light
+  theme automatically via `currentColor`-based CSS. No third accent color added.

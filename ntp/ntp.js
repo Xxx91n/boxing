@@ -152,6 +152,7 @@
   // Expose debug API for extension DevTools console inspection
   window.__boxingDebug = {
     addConnection, removeConnection, toggleStarMark, addMember, moveGroupTogether,
+    largeKey, smallKey, resolveBoxEl, allValidKeys,
     getLargeBox, renderCanvas,
     pruneConnArrays, renderConnections, disposeAllConns,
     connCount: () => connLines.size,
@@ -883,13 +884,18 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
   function pruneConnArrays(onSave) {
     ensureConnArrays();
-    const ids = new Set(layout.boxes.map(b => b.id));
-    layout.connections = layout.connections.filter(c => ids.has(c.from) && ids.has(c.to) && c.from !== c.to);
+    // Tiered-key aware: build set of all valid 'large:' + 'small:' keys.
+    // Also accept legacy raw-id connections (Round 1 format) for back-compat.
+    const validKeys = allValidKeys();
+    const rawIds = new Set(layout.boxes.map(b => b.id));
+    const isValidKey = k => validKeys.has(k) || rawIds.has(k);   // tiered or legacy
+    layout.connections = layout.connections.filter(c => isValidKey(c.from) && isValidKey(c.to) && c.from !== c.to);
     // ponytail: O(n) prune on save only — runs once per saveLayout, not hot path.
     if (layout.connections.length > MAX_CONNECTIONS) {
       layout.connections = layout.connections.slice(layout.connections.length - MAX_CONNECTIONS);
     }
-    layout.groups = layout.groups.filter(g => ids.has(g.parentId) && (g.members || []).every(m => ids.has(m)));
+    // Groups: parentId and members may be tiered keys or legacy raw ids.
+    layout.groups = layout.groups.filter(g => isValidKey(g.parentId) && (g.members || []).every(m => isValidKey(m)));
   }
 
   function findConn(from, to) {
@@ -938,8 +944,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
     for (const c of layout.connections) {
       if (connLines.has(c.id)) continue;
-      const a = document.querySelector(`.large-box[data-id="${CSS.escape(c.from)}"]`);
-      const b = document.querySelector(`.large-box[data-id="${CSS.escape(c.to)}"]`);
+      const a = resolveBoxEl(c.from);
+      const b = resolveBoxEl(c.to);
       if (!a || !b) continue;     // box missing (deleted/hidden) — skip creating
       try {
         const line = new window.LeaderLine({
@@ -974,9 +980,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     });
   }
 
-  function refreshConnsForBox(boxId) {
+  function refreshConnsForBox(boxKey) {
     ensureConnArrays();
-    const ids = layout.connections.filter(c => c.from === boxId || c.to === boxId).map(c => c.id);
+    // Accept tiered key ('large:xx' / 'small:lg:sm') or legacy raw id.
+    const ids = layout.connections.filter(c => c.from === boxKey || c.to === boxKey).map(c => c.id);
     scheduleConnRefresh(ids);
   }
 
@@ -984,6 +991,38 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   // ── Star-mark / group drag ──────────────────────────
   function ensureGroups() { ensureConnArrays(); return layout.groups || (layout.groups = []); }
+
+  // ── Tiered keys for cross-level connections (BX-DEV-137+) ──────────
+  // large:boxId  |  small:largeId:smallId  — addresses any box at any nesting.
+  // Connections store these tiered keys, so a line can link large-to-large,
+  // large-to-small, small-to-small regardless of inner-canvas nesting.
+  function largeKey(id) { return 'large:' + id; }
+  function smallKey(largeId, smallId) { return 'small:' + largeId + ':' + smallId; }
+  function resolveBoxEl(key) {
+    if (!key || typeof key !== 'string') return null;
+    if (key.startsWith('large:')) {
+      const id = key.slice(6);
+      return document.querySelector(`.large-box[data-id="${CSS.escape(id)}"]`);
+    }
+    if (key.startsWith('small:')) {
+      const parts = key.split(':');           // ['small','largeId','smallId']
+      if (parts.length < 3) return null;
+      const largeId = parts[1], smallId = parts.slice(2).join(':');
+      return document.querySelector(`.small-box[data-id="${CSS.escape(smallId)}"][data-large-id="${CSS.escape(largeId)}"]`);
+    }
+    // legacy raw id (Round 1 format) — treat as large box
+    return document.querySelector(`.large-box[data-id="${CSS.escape(key)}"]`);
+  }
+  // Build set of all currently-valid tiered keys (for pruneConnArrays)
+  function allValidKeys() {
+    const s = new Set();
+    for (const b of layout.boxes) {
+      s.add(largeKey(b.id));
+      for (const sb of (b.children || [])) s.add(smallKey(b.id, sb.id));
+    }
+    return s;
+  }
+
   function getGroupByParent(parentId) {
     return ensureGroups().find(g => g.parentId === parentId);
   }
@@ -1012,18 +1051,30 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   // During parent drag we apply the same delta to every member. Members collide
   // against OUT-of-group boxes only; intra-group siblings move as a rigid set.
+  // BX-DEV-137+: group drag now performs a continuous elastic sweep against
+  // OUT-of-group large boxes, not just a rigid delta translate. Each member
+  // is resolved via elasticSnap with siblings (group + parent) excluded, so the
+  // whole group visits new positions as a rigid set, then collisions push back.
+  // ponytail: O(m*n) elastic pass per group; swap in rbush R-tree at >100 boxes.
   function moveGroupTogether(parentId, deltaX, deltaY) {
     const g = getGroupByParent(parentId);
     if (!g || !g.members || !g.members.length) return;
+    // parentId and members are tiered keys ('large:xx'); strip to raw id for layout.boxes filter.
+    const rawPid = (typeof parentId === 'string' && parentId.startsWith('large:')) ? parentId.slice(6) : parentId;
+    const parentIdSet = new Set([rawPid, ...g.members.map(m => (typeof m === 'string' && m.startsWith('large:')) ? m.slice(6) : m)]);
+    const others = layout.boxes.filter(b => !parentIdSet.has(b.id));
     for (const mId of g.members) {
-      const m = getLargeBox(mId);
+      // members may be tiered keys ('large:xx') or legacy raw ids
+      const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
+      const m = getLargeBox(rawId);
       if (!m) continue;
-      const nx = m.x + deltaX;
-      const ny = m.y + deltaY;
-      m.x = nx; m.y = ny;
-      const el = document.querySelector(`.large-box[data-id="${CSS.escape(mId)}"]`);
-      if (el) { el.style.left = nx + 'px'; el.style.top = ny + 'px'; }
-      refreshConnsForBox(mId);
+      const w = m.width || LARGE_DEF_W, h = m.height || LARGE_DEF_H;
+      const nx0 = m.x + deltaX, ny0 = m.y + deltaY;
+      const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, CANVAS_GRID, snapCanvas);
+      m.x = resolved.x; m.y = resolved.y;
+      const el = document.querySelector(`.large-box[data-id="${CSS.escape(rawId)}"]`);
+      if (el) { el.style.left = m.x + 'px'; el.style.top = m.y + 'px'; }
+      refreshConnsForBox(mId);   // mId is already the tiered key
     }
   }
 
@@ -1296,6 +1347,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const el = document.createElement('div');
     el.className = 'large-box';
     el.dataset.id = box.id;
+    el.dataset.boxKey = largeKey(box.id);
+    el.dataset.kind = 'large';
     el.style.left = box.x + 'px';
     el.style.top = box.y + 'px';
     el.style.width = w + 'px';
@@ -1454,16 +1507,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // theme uses currentColor so it adapts to dark/light automatically.
     const starBtn = document.createElement('button');
     starBtn.type = 'button';
-    starBtn.className = 'box-star-btn box-tool-btn' + (getGroupByParent(box.id) ? ' box-tool-btn--on' : '');
+    starBtn.className = 'box-star-btn box-tool-btn' + (getGroupByParent(largeKey(box.id)) ? ' box-tool-btn--on' : '');
     starBtn.textContent = '★';
     starBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
-    starBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(box.id); });
+    starBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(largeKey(box.id)); });
     const connectBtn = document.createElement('button');
     connectBtn.type = 'button';
     connectBtn.className = 'box-connect-btn box-tool-btn';
     connectBtn.textContent = '↗';
     connectBtn.title = i18n('connStart') || 'Start a connection to another box';
-    connectBtn.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); enterConnectMode(box.id, el); });
+    connectBtn.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); enterConnectMode(largeKey(box.id), el); });
     // second click on a different box's bar arrives via document-level mousedown handler in init()
     bar.append(starBtn, connectBtn);
     el.append(bar, body);
@@ -1604,6 +1657,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const el = document.createElement('div');
     el.className = 'small-box small-box--list'; // default list mode always
     el.dataset.id = sb.id;
+    el.dataset.largeId = largeId;
+    el.dataset.boxKey = smallKey(largeId, sb.id);
+    el.dataset.kind = 'small';
     el.style.left = sb.x + 'px';
     el.style.top = sb.y + 'px';
     el.style.width = w + 'px';
@@ -1688,7 +1744,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       saveLayout();
     });
 
-    bar.append(title, pinBtn, expandBtn, delBtn);
+        // BX-DEV-137+: connect button (↗) for cross-level lines. Star-mark stays
+    // large-only per user confirmation — small-box star would need moveGroupTogether
+    // override to lookup small-box parent context; not worth the complexity now.
+    const sbConnBtn = document.createElement('button');
+    sbConnBtn.type = 'button';
+    sbConnBtn.className = 'box-connect-btn box-tool-btn';
+    sbConnBtn.textContent = '↗';
+    sbConnBtn.title = i18n('connStart') || 'Start a connection to another box';
+    sbConnBtn.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); enterConnectMode(smallKey(largeId, sb.id), el); });
+    bar.append(title, pinBtn, expandBtn, sbConnBtn, delBtn);
 
     // body — bookmark list (always list mode, no grid)
     const body = document.createElement('div');
@@ -2198,7 +2263,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     dragState.el.style.left = newX + 'px';
     dragState.el.style.top = newY + 'px';
     try { repositionAllPopups(); } catch (_) {}
-    if (dragState.type === 'large') refreshConnsForBox(dragState.id);
+    if (dragState.type === 'large') refreshConnsForBox(largeKey(dragState.id));
+    // BX-DEV-137+: small-box drag also refreshes cross-level lines
+    if (dragState.type === 'small' && dragState.id && dragState.id.largeId && dragState.id.smallId) {
+      refreshConnsForBox(smallKey(dragState.id.largeId, dragState.id.smallId));
+    }
   }
 
   function onBoxDragEnd(e) {
@@ -2231,12 +2300,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       box.x = clamped.x; box.y = clamped.y;
       el.style.left = box.x + 'px';
       el.style.top = box.y + 'px';
-      if (getGroupByParent(box.id)) {
+      if (getGroupByParent(largeKey(box.id))) {
         const dX = box.x - dragState.origLeft;
         const dY = box.y - dragState.origTop;
-        moveGroupTogether(box.id, dX, dY);
+        moveGroupTogether(largeKey(box.id), dX, dY);
       }
-      refreshConnsForBox(box.id);
+      refreshConnsForBox(largeKey(box.id));
     } else {
       const sb = getSmallBox(id.largeId, id.smallId);
       if (!sb) { dragState = null; return; }
@@ -2256,6 +2325,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       sb.y = Math.max(0, Math.min(snapped.y, worldMaxY2));
       el.style.left = sb.x + 'px';
       el.style.top = sb.y + 'px';
+      // BX-DEV-137+: refresh cross-level lines connected to this small box
+      refreshConnsForBox(smallKey(id.largeId, id.smallId));
     }
 
     saveLayout();
@@ -2566,9 +2637,18 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const removed = getLargeBox(id);
     markDeleted(id, ...(removed?.children || []).flatMap(child => [child.id, ...(child.bookmarks || []).map(bookmark => bookmark.id)]));
     ensureConnArrays();
-    layout.connections = layout.connections.filter(c => c.from !== id && c.to !== id);
-    layout.groups = layout.groups.filter(g => g.parentId !== id);
-    layout.groups = layout.groups.map(g => ({ ...g, members: (g.members || []).filter(m => m !== id) }));
+    // BX-DEV-137+: connections/groups now use tiered keys. Drop connections where
+    // from/to is 'large:id' or any 'small:id:*' (small boxes inside this large box).
+    // Also keep back-compat with legacy raw-id connections (Round 1 format).
+    const largeK = largeKey(id);
+    const smallPrefix = 'small:' + id + ':';
+    const matchesDeletedKey = k =>
+      k === id ||                                    // legacy raw id
+      k === largeK ||                               // 'large:id'
+      (typeof k === 'string' && k.startsWith(smallPrefix));  // 'small:id:smallId'
+    layout.connections = layout.connections.filter(c => !matchesDeletedKey(c.from) && !matchesDeletedKey(c.to));
+    layout.groups = layout.groups.filter(g => !matchesDeletedKey(g.parentId));
+    layout.groups = layout.groups.map(g => ({ ...g, members: (g.members || []).filter(m => !matchesDeletedKey(m)) }));
     layout.boxes = layout.boxes.filter(b => b.id !== id);
     layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title || '').match(/\d+/) || [0]) || 0) + 1), 1);
     if (currentLargeBoxId === id) exitToCanvas();
@@ -2668,6 +2748,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     if (!lb) return;
     const removed = lb.children.find(s => s.id === smallId);
     markDeleted(smallId, ...(removed?.bookmarks || []).map(bookmark => bookmark.id));
+    // BX-DEV-137+: prune connections/groups referencing this small box's tiered key.
+    const sk = smallKey(largeId, smallId);
+    ensureConnArrays();
+    layout.connections = layout.connections.filter(c => c.from !== sk && c.to !== sk);
+    layout.groups = layout.groups.filter(g => g.parentId !== sk);
+    layout.groups = layout.groups.map(g => ({ ...g, members: (g.members || []).filter(m => m !== sk) }));
     lb.children = lb.children.filter(s => s.id !== smallId);
     saveLayout();
     renderInnerSurface(lb);
@@ -3179,10 +3265,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // BX-DEV-137: terminate active-connect mode when user clicks another large box bar.
     document.addEventListener('mousedown', e => {
       if (!connectMode) return;
-      const targetBox = e.target.closest && e.target.closest('.large-box');
+      const targetBox = e.target.closest && (e.target.closest('.large-box') || e.target.closest('.small-box'));
       if (!targetBox) { exitConnectMode(null); return; }
-      const targetId = targetBox.dataset.id;
-      if (targetId && targetId !== connectMode.fromId) { exitConnectMode(targetId); return; }
+      const targetKey = targetBox.dataset.boxKey || targetBox.dataset.id;  // boxKey for tiered, dataset.id for legacy
+      if (targetKey && targetKey !== connectMode.fromId) { exitConnectMode(targetKey); return; }
       // same-box or non-box click → cancel
       exitConnectMode(null);
     }, true);   // capture so we run BEFORE bar's own mousedown drag handler
