@@ -12,7 +12,18 @@ body {
   font-family: var(--font-stack-ui);
   font-size: var(--font-size-base);
   line-height: 1.5;
+  /* BX-DEV-135 (B3 font crispness): preserve the design-system font stack's
+     smoothing + features here — ntp.css loads AFTER design-system.css so its
+     body block silently dropped -moz-osx-font-smoothing / ligatures / kern,
+     which was the actual root of the “字体发虚不清晰” symptom (Firefox lost
+     grayscale smoothing; Chrome Fontations stack had no kerning/ligature hints). */
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-variant-ligatures: common-ligatures contextual;
+  /* prevent fake synth bold/italic that adds visual noise on Windows */
+  font-synthesis: weight style;
 }
 
 /* === MAIN LAYOUT === */
