@@ -894,6 +894,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   const groupIdx = new Map();             // ponytail: O(1) group lookup by parentId -> group obj
   let connRafPending = false;
   let connectMode = null;               // { fromId, fromEl } | null
+  let provisionalLine = null;        // temp LeaderLine during drag (Bug 4)
+  let provisionalGhost = null;      // invisible div acting as the drag endpoint
 
   function ensureConnArrays() {
     if (!Array.isArray(layout.connections)) layout.connections = [];
@@ -1164,12 +1166,27 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     connectMode = { fromId, fromEl };
     document.body.classList.add('cx--connecting');
     document.body.style.cursor = 'crosshair';
+    // Bug 4: create a provisional line that follows the cursor during drag.
+    // Uses a ghost div as the drag endpoint; LeaderLine.position() redraws it on mousemove.
+    try {
+      provisionalGhost = document.createElement('div');
+      provisionalGhost.style.cssText = 'position:absolute;width:1px;height:1px;pointer-events:none;z-index:-1;';
+      document.body.appendChild(provisionalGhost);
+      provisionalLine = new window.LeaderLine({
+        start: fromEl, end: provisionalGhost,
+        color: 'var(--connection-color, #333)', size: 1.5,
+        dash: { animation: true }, path: 'straight', hide: false
+      });
+    } catch (e) { debugWarn('enterConnectMode provisional line', e); }
     debug('enterConnectMode from=' + fromId);
   }
   function exitConnectMode(commitToId) {
     const cm = connectMode; connectMode = null;
     document.body.classList.remove('cx--connecting');
     document.body.style.cursor = '';
+    // Bug 4: dispose provisional line + ghost div.
+    if (provisionalLine) { try { provisionalLine.hide(); provisionalLine.remove(); } catch (_) {} provisionalLine = null; }
+    if (provisionalGhost) { try { provisionalGhost.remove(); } catch (_) {} provisionalGhost = null; }
     if (cm && commitToId && cm.fromId && cm.fromId !== commitToId) {
       if (addConnection(cm.fromId, commitToId)) {
         saveLayout();
@@ -3414,6 +3431,13 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.addEventListener('contextmenu', onContextMenu);
     // BX-DEV-137++++: connect mode is now drag-based: mousedown on edge anchor
     // starts connect mode, user drags to target box, mouseup connects to nearest midpoint.
+    // Bug 4: update provisional line endpoint to follow cursor during drag.
+    document.addEventListener('mousemove', e => {
+      if (!connectMode || !provisionalGhost || !provisionalLine) return;
+      provisionalGhost.style.left = e.clientX + 'px';
+      provisionalGhost.style.top = e.clientY + 'px';
+      try { provisionalLine.position(); } catch (_) {}
+    }, { passive: true });
     document.addEventListener('mouseup', e => {
       if (!connectMode) return;
       const targetBox = e.target.closest && (e.target.closest('.large-box') || e.target.closest('.small-box'));
@@ -3863,7 +3887,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // BX-DEV-121 (Bug16): apply layout.settings.syncLevel — what to push to remote.
     function buildSyncPayload() {
       const lvl = layout.settings.syncLevel || 'full';
-      if (lvl === 'settingsOnly') return Object.assign({}, layout, { boxes: [] });
+      if (lvl === 'settingsOnly') return Object.assign({}, layout, { boxes: [], connections: [], groups: [] });
       if (lvl === 'boxesOnly') return Object.assign({}, layout, { settings: null });
       return layout;
     }
@@ -4121,11 +4145,17 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (cloud && Array.isArray(cloud.boxes)) {
         if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {
           // Cloud is newer or equal-but-different-writer → pull.
+          // BX-DEV-138: preserve local connections/groups when cloud payload lacks them
+          // (settingsOnly sync mode strips connections/groups from the uploaded payload).
           const savedSettings = layout.settings;
           const savedMeta = layout._meta;
+          const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
+          const savedGroups = Array.isArray(layout.groups) ? layout.groups : [];
           layout = cloud;
           if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
           if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
+          if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
+          if (!Array.isArray(layout.groups) || layout.groups.length === 0) layout.groups = savedGroups;
           layout._meta = layout._meta || {};
           layout._meta.updatedAt = Date.now();
           layout._meta.writerId = writerId;
