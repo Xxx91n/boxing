@@ -30,8 +30,7 @@
   "permissions": [
     "storage",
     "tabs",
-    "bookmarks",
-    "browserSettings"
+    "bookmarks"
   ],
   "host_permissions": [
     "https://*/*"

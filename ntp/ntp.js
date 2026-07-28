@@ -734,12 +734,18 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const deleted = { ...remoteDeleted, ...localDeleted };
     const tombstones = new Set(Object.keys(deleted));
     const boxes = mergeById(localValue.boxes, remoteValue.boxes, tombstones);
+    // AUD-PERF: pre-index remote boxes & children by id to avoid O(N²) nested find
+    // loops during cross-tab/cross-device merge (essential for engineering-scale layouts).
+    const remoteBoxMap = new Map();
+    for (const rb of (remoteValue.boxes || [])) if (rb?.id) remoteBoxMap.set(rb.id, rb);
     for (const localBox of boxes) {
-      const remoteBox = remoteValue.boxes?.find(candidate => candidate.id === localBox.id);
+      const remoteBox = remoteBoxMap.get(localBox.id);
       if (!remoteBox) continue;
       localBox.children = mergeById(localBox.children, remoteBox.children, tombstones);
+      const remoteChildMap = new Map();
+      for (const rc of (remoteBox.children || [])) if (rc?.id) remoteChildMap.set(rc.id, rc);
       for (const localChild of localBox.children) {
-        const remoteChild = remoteBox.children?.find(candidate => candidate.id === localChild.id);
+        const remoteChild = remoteChildMap.get(localChild.id);
         if (remoteChild) localChild.bookmarks = mergeById(localChild.bookmarks, remoteChild.bookmarks, tombstones);
       }
     }
@@ -4345,7 +4351,13 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
           if (s.zoomLevel && !isFinite(s.zoomLevel)) s.zoomLevel = 1.0;
           if (s.fontSize && (!isFinite(s.fontSize) || s.fontSize < 8 || s.fontSize > 72)) s.fontSize = 14;
         }
+        const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
+        const savedGroups = Array.isArray(layout.groups) ? layout.groups : [];
         layout = migrateLayout(data);
+        // AUD-SEC: preserve local connections/groups if import file lacks them
+        // (older backups predate the connections system; full replace would lose user lines).
+        if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
+        if (!Array.isArray(layout.groups) || layout.groups.length === 0) layout.groups = savedGroups;
         await saveLayout();
         if (currentLargeBoxId) exitToCanvas();
         exitToCanvas();  // force exit any drill-in state

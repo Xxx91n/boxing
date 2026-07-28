@@ -751,7 +751,7 @@
     "message": "boxing-backup.json"
   },
   "connStarParent": {
-    "message": "Star-mark as group parent",
+    "message": "标记为组父盒子",
     "description": "BX-DEV-137 box connections / star-mark"
   },
   "connStart": {
