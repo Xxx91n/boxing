@@ -154,7 +154,7 @@
     addConnection, removeConnection, toggleStarMark, addMember, moveGroupTogether,
     largeKey, smallKey, resolveBoxEl, allValidKeys,
     getLargeBox, renderCanvas,
-    pruneConnArrays, renderConnections, disposeAllConns,
+    pruneConnArrays, renderConnections, disposeAllConns, enterLargeBox,
     connCount: () => connLines.size,
     get layout() { return layout; }, // BX-DEV-111k: live ref to layout for Playwright testing
     state() { return { boxes: layout.boxes.length, currentLargeBoxId, canvasZoom, innerZoom, headerPinned, darkMode: layout.settings.darkMode, lang: currentLang, fontSize: layout.settings.fontSize }; },
