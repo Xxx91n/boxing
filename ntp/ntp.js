@@ -2398,7 +2398,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     dragState.el.style.left = newX + 'px';
     dragState.el.style.top = newY + 'px';
     try { repositionAllPopups(); } catch (_) {}
-    if (dragState.type === 'large') refreshConnsForBox(largeKey(dragState.id));
+    if (dragState.type === 'large') {
+      refreshConnsForBox(largeKey(dragState.id));
+      // Bug 6: real-time group move — members follow parent during drag, not just at end
+      if (getGroupByParent(largeKey(dragState.id))) {
+        const dX = newX - dragState.origLeft;
+        const dY = newY - dragState.origTop;
+        moveGroupTogether(largeKey(dragState.id), dX, dY);
+      }
+    }
     // BX-DEV-137+: small-box drag also refreshes cross-level lines
     if (dragState.type === 'small' && dragState.id && dragState.id.largeId && dragState.id.smallId) {
       refreshConnsForBox(smallKey(dragState.id.largeId, dragState.id.smallId));
