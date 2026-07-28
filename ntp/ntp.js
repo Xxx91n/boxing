@@ -162,6 +162,7 @@
     dumpStorage() { layoutStorage?.get?.(null).then(d => console.log('[Boxing] storage:', d)).catch(e => console.error('[Boxing] storage read:', e)); },
     persistView() { persistViewState(true); },
     applyExternalLayout(raw) { return applyExternalLayout(raw); },
+    saveLayout,
     normalizeBookmarkUrl(value) { return normalizeBookmarkUrl(value); },
     triggerGC() { if (typeof gc === 'function') gc(); else console.log('[Boxing] gc not available (not in --js-flags=--expose-gc mode)'); },
     // BX-DEV-114: WebDAV config for Playwright tests
@@ -1031,6 +1032,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     connRafPending = true;
     requestAnimationFrame(() => {
       connRafPending = false;
+      // Bug 3 fix: force layout flush before position() so getBoundingClientRect
+        // reflects the latest CSS transform (pan/zoom). Without this, the browser may
+        // batch the transform with other style changes and position() reads stale rects.
+        if (canvasSurface) void canvasSurface.offsetHeight;
       const ids = Array.from(dirtyConns);
       dirtyConns.clear();
       for (const id of ids) {
@@ -1369,6 +1374,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const hasBoxes = layout.boxes.length > 0;
     // BX-DEV-111: hide empty placeholder BEFORE clearing surface to avoid flash
     canvasEmpty.hidden = true;
+    disposeAllConns(); // BX-DEV-137++++: clear stale LeaderLine instances before DOM is wiped
     canvasSurface.innerHTML = '';
     // Then re-show empty state only if truly empty
     canvasEmpty.hidden = hasBoxes;
