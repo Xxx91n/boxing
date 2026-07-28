@@ -1111,7 +1111,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       groups.push({ parentId, members: [] });
       debug('toggleStarMark: star parent=' + parentId);
     }
-    saveLayout(); renderCanvas();       // re-render the star UI on the box header
+    saveLayout();
+    // Bug 2 fix: do NOT call renderCanvas() here — it exits the inner-surface view
+    // (small-box page) and jumps back to the canvas. Instead, just toggle the button visual.
+    document.querySelectorAll('.box-star-btn').forEach(btn => {
+      const boxEl = btn.closest('[data-box-key]');
+      if (!boxEl) return;
+      const key = boxEl.dataset.boxKey;
+      btn.classList.toggle('box-tool-btn--on', !!getGroupByParent(key));
+    });
   }
   function addMember(parentId, memberId) {
     if (parentId === memberId) return;
@@ -1150,7 +1158,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
   }
 
-  // ── active-connect mode (cursor cross, click two boxes) ──
+  // ── active-connect mode (drag from edge anchor to target box) ──
   function enterConnectMode(fromId, fromEl) {
     if (connectMode) { exitConnectMode(); return; }   // second click cancels
     connectMode = { fromId, fromEl };
@@ -3396,16 +3404,17 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     settingsModal.addEventListener('click', e => { if (e.target === settingsModal) closeSettingsModal(); });
 
     document.addEventListener('contextmenu', onContextMenu);
-    // BX-DEV-137: terminate active-connect mode when user clicks another large box bar.
-    document.addEventListener('mousedown', e => {
+    // BX-DEV-137++++: connect mode is now drag-based: mousedown on edge anchor
+    // starts connect mode, user drags to target box, mouseup connects to nearest midpoint.
+    document.addEventListener('mouseup', e => {
       if (!connectMode) return;
       const targetBox = e.target.closest && (e.target.closest('.large-box') || e.target.closest('.small-box'));
       if (!targetBox) { exitConnectMode(null); return; }
-      const targetKey = targetBox.dataset.boxKey || targetBox.dataset.id;  // boxKey for tiered, dataset.id for legacy
+      const targetKey = targetBox.dataset.boxKey || targetBox.dataset.id;
       if (targetKey && targetKey !== connectMode.fromId) { exitConnectMode(targetKey); return; }
-      // same-box or non-box click → cancel
+      // same-box or non-box release → cancel
       exitConnectMode(null);
-    }, true);   // capture so we run BEFORE bar's own mousedown drag handler
+    }, true);   // capture so we run BEFORE bar's own mouseup handler
     document.addEventListener('keydown', onKeyDown);
 
     // Canvas mouse events
@@ -4454,6 +4463,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       overlay.hidden = true;
       layout.settings.onboardingCompleted = true;
       saveLayout();
+      // Bug 1 fix: refresh canvas + caption after onboarding so i18n updates immediately
+      renderCanvas();
+      updateCaption();
       debug('onboarding', commit ? 'completed' : 'skipped');
     }
     prevBtn?.addEventListener('click', () => { if (current > 0) { current--; render(); } });
