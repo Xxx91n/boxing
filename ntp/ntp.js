@@ -889,6 +889,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   const MAX_CONNECTIONS = 5000; // ponytail: bounded; upgrade to pagination past 5k
   const connLines = new Map();          // connId -> LeaderLine instance
   const dirtyConns = new Set();         // connIds needing .position() next rAF
+  const connIdx = new Map();              // ponytail: O(1) conn lookup by key-pair 'from>to'
+  const groupIdx = new Map();             // ponytail: O(1) group lookup by parentId -> group obj
   let connRafPending = false;
   let connectMode = null;               // { fromId, fromEl } | null
 
@@ -913,8 +915,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   function findConn(from, to) {
+    if (connIdx.size > 0) return connIdx.get(from + '>' + to) || null;
+    // ponytail: fallback linear scan — connIdx not yet built (before first renderConnections)
     return layout.connections.find(c =>
-      (c.from === from && c.to === to) || (c.from === to && c.to === from));
+      (c.from === from && c.to === to) || (c.from === to && c.to === from)) || null;
   }
 
   function addConnection(fromId, toId) {
@@ -947,8 +951,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       debugWarn('renderConnections: window.LeaderLine not loaded');
       return;
     }
-    // Reconcile live lines with layout.connections: add new, drop dead, keep shared.
+    // Reconcile live lines with layout.connections: drop dead.
     const wanted = new Set(layout.connections.map(c => c.id));
+    // Rebuild connIdx for O(1) pair lookup (Bug 6).
+    connIdx.clear();
+    for (const c of layout.connections) {
+      connIdx.set(c.from + '>' + c.to, c);
+      connIdx.set(c.to + '>' + c.from, c);
+    }
     for (const [id, line] of connLines.entries()) {
       if (!wanted.has(id)) {
         try { line.hide(); line.remove(); } catch (_) {}
@@ -956,25 +966,41 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         dirtyConns.delete(id);
       }
     }
-    for (const c of layout.connections) {
-      if (connLines.has(c.id)) continue;
-      const a = resolveBoxEl(c.from);
-      const b = resolveBoxEl(c.to);
-      if (!a || !b) continue;     // box missing (deleted/hidden) — skip creating
-      try {
-        const line = new window.LeaderLine({
-          start: a, end: b,
-          color: 'var(--connection-color, #333)',
-          size: 1.5,
-          startSocket: 'auto', endSocket: 'auto',       // mid-edge of nearest side
-          startPlug: 'disc', endPlug: 'arrow1',
-          path: 'straight',
-          hide: false
-        });
-        connLines.set(c.id, line);
-      } catch (e) { debugWarn('renderConnections: LeaderLine ctor failed', e); }
+    // Batch-create new lines asynchronously to avoid blocking on large layouts (Bug 2).
+    const pending = layout.connections.filter(c => !connLines.has(c.id));
+    if (!pending.length) { scheduleConnRefresh(Array.from(connLines.keys())); return; }
+    // ponytail: batch 8 lines per rAF frame — LeaderLine ctor is ~2-5ms each; 8 keeps frame < 16ms.
+    let batchIdx = 0;
+    const BATCH_SIZE = 8;
+    function createBatch() {
+      const slice = pending.slice(batchIdx, batchIdx + BATCH_SIZE);
+      for (const c of slice) {
+        if (connLines.has(c.id)) continue;
+        const a = resolveBoxEl(c.from);
+        const b = resolveBoxEl(c.to);
+        if (!a || !b) continue;     // box missing (deleted/hidden in current view) — skip, will retry on next renderConnections
+        try {
+          const line = new window.LeaderLine({
+            start: a, end: b,
+            color: 'var(--connection-color, #333)',
+            size: 1.5,
+            startSocket: 'auto', endSocket: 'auto',
+            startPlug: 'disc', endPlug: 'arrow1',
+            path: 'straight',
+            hide: false
+          });
+          connLines.set(c.id, line);
+        } catch (e) { debugWarn('renderConnections: LeaderLine ctor failed', e); }
+      }
+      batchIdx += BATCH_SIZE;
+      if (batchIdx < pending.length) {
+        requestAnimationFrame(createBatch);
+      } else {
+        // All batches done — position all newly created lines.
+        scheduleConnRefresh(Array.from(connLines.keys()));
+      }
     }
-    scheduleConnRefresh(Array.from(connLines.keys()));
+    createBatch();
   }
 
   function scheduleConnRefresh(connIds) {
@@ -1038,10 +1064,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   function getGroupByParent(parentId) {
-    return ensureGroups().find(g => g.parentId === parentId);
+    // ponytail: O(1) group lookup via groupIdx Map (Bug 6). Rebuild on demand.
+    const cached = groupIdx.get(parentId);
+    if (cached || groupIdx.size > 0) return cached || null;
+    // Fallback: first access — build index from ensureGroups()
+    const gs = ensureGroups();
+    for (const g of gs) groupIdx.set(g.parentId, g);
+    return groupIdx.get(parentId) || null;
   }
   function toggleStarMark(parentId) {
-    ensureConnArrays();
+    ensureConnArrays(); groupIdx.clear(); // ponytail: invalidate group cache after mutation (Bug 6)
     const groups = layout.groups;
     let g = groups.find(x => x.parentId === parentId);
     if (g) {
@@ -1332,9 +1364,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       } catch (e) { debugErr('createLargeBoxEl failed for', box.id, e); }
     }
     canvasSurface.appendChild(frag);
-    ensureConnArrays(); renderConnections(); debug('renderCanvas done, surface children=' + canvasSurface.children.length);
+    ensureConnArrays(); debug('renderCanvas done, surface children=' + canvasSurface.children.length);
     // BX-DEV-111 v2: measure each collapsed box for precise expand animation
     canvasSurface.querySelectorAll('.large-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
+    // BX-DEV-137+++: deferred renderConnections — wait for setBodyExpandHeight rAF to settle box heights
+    requestAnimationFrame(() => requestAnimationFrame(() => renderConnections()));
     applyCanvasTransform();
     updateCaption();
   }
@@ -1618,6 +1652,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (t !== lb.title) { lb.title = t; saveLayout(); renderCrumbs(lb); }
     };
 
+    disposeAllConns(); // BX-DEV-137+++: clear canvas-view lines before inner surface re-renders them
     renderInnerSurface(lb);
     updateInnerCaption(lb);
     applyInnerTransform();
@@ -1635,6 +1670,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     innerPanX = 0; innerPanY = 0; innerZoom = 1.0;
     persistViewState(true);
     if (addLargeBtn) addLargeBtn.style.display = '';  // BX-DEV-101: restore + button
+    disposeAllConns(); // BX-DEV-137+++: clear inner-view lines before canvas re-renders them
     renderCanvas();
   }
 
@@ -2791,7 +2827,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     layout.groups = layout.groups.map(g => ({ ...g, members: (g.members || []).filter(m => m !== sk) }));
     lb.children = lb.children.filter(s => s.id !== smallId);
     saveLayout();
+    disposeAllConns(); // BX-DEV-137+++: clear stale lines before re-rendering inner surface
     renderInnerSurface(lb);
+    renderConnections(); // BX-DEV-137+++: re-render connections after small box deletion
   }
 
   function applyExternalLayout(raw) {
