@@ -945,6 +945,23 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     dirtyConns.clear();
   }
 
+  // BX-DEV-137++++: edge-midpoint connection hotspots — 4 anchors per box for initiating connections.
+  function addEdgeAnchors(el, boxKey) {
+    if (!el || el.querySelector('.box-edge-anchor')) return;  // already has anchors
+    const sides = ['top', 'bottom', 'left', 'right'];
+    for (const side of sides) {
+      const a = document.createElement('div');
+      a.className = 'box-edge-anchor box-edge-anchor--' + side;
+      a.dataset.boxKey = boxKey;
+      a.dataset.side = side;
+      a.addEventListener('mousedown', e => {
+        e.stopPropagation(); e.preventDefault();
+        enterConnectMode(boxKey, el);
+      });
+      el.appendChild(a);
+    }
+  }
+
   function renderConnections() {
     ensureConnArrays();
     if (typeof window.LeaderLine !== 'function') {
@@ -966,41 +983,45 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         dirtyConns.delete(id);
       }
     }
-    // Batch-create new lines asynchronously to avoid blocking on large layouts (Bug 2).
+    // Batch-create new lines to avoid blocking on large layouts (Bug 2).
     const pending = layout.connections.filter(c => !connLines.has(c.id));
     if (!pending.length) { scheduleConnRefresh(Array.from(connLines.keys())); return; }
-    // ponytail: batch 8 lines per rAF frame — LeaderLine ctor is ~2-5ms each; 8 keeps frame < 16ms.
-    let batchIdx = 0;
+    // ponytail: sync create when <= 8 pending (small layouts/tests); async batch for large counts.
     const BATCH_SIZE = 8;
-    function createBatch() {
-      const slice = pending.slice(batchIdx, batchIdx + BATCH_SIZE);
-      for (const c of slice) {
-        if (connLines.has(c.id)) continue;
-        const a = resolveBoxEl(c.from);
-        const b = resolveBoxEl(c.to);
-        if (!a || !b) continue;     // box missing (deleted/hidden in current view) — skip, will retry on next renderConnections
-        try {
-          const line = new window.LeaderLine({
-            start: a, end: b,
-            color: 'var(--connection-color, #333)',
-            size: 1.5,
-            startSocket: 'auto', endSocket: 'auto',
-            startPlug: 'disc', endPlug: 'arrow1',
-            path: 'straight',
-            hide: false
-          });
-          connLines.set(c.id, line);
-        } catch (e) { debugWarn('renderConnections: LeaderLine ctor failed', e); }
-      }
-      batchIdx += BATCH_SIZE;
-      if (batchIdx < pending.length) {
-        requestAnimationFrame(createBatch);
-      } else {
-        // All batches done — position all newly created lines.
-        scheduleConnRefresh(Array.from(connLines.keys()));
-      }
+    function createConn(c) {
+      if (connLines.has(c.id)) return;
+      const a = resolveBoxEl(c.from);
+      const b = resolveBoxEl(c.to);
+      if (!a || !b) return;     // box missing (deleted/hidden in current view) — skip
+      try {
+        const line = new window.LeaderLine({
+          start: a, end: b,
+          color: 'var(--connection-color, #333)',
+          size: 1.5,
+          startSocket: 'auto', endSocket: 'auto',
+          startPlug: 'disc', endPlug: 'arrow1',
+          path: 'straight',
+          hide: false
+        });
+        connLines.set(c.id, line);
+      } catch (e) { debugWarn('renderConnections: LeaderLine ctor failed', e); }
     }
-    createBatch();
+    if (pending.length <= BATCH_SIZE) {
+      // Sync path — small layouts: immediate creation, no rAF delay.
+      for (const c of pending) createConn(c);
+      scheduleConnRefresh(Array.from(connLines.keys()));
+    } else {
+      // Async batch — large layouts: 8 per rAF to keep frame < 16ms.
+      let batchIdx = 0;
+      function createBatch() {
+        const slice = pending.slice(batchIdx, batchIdx + BATCH_SIZE);
+        for (const c of slice) createConn(c);
+        batchIdx += BATCH_SIZE;
+        if (batchIdx < pending.length) requestAnimationFrame(createBatch);
+        else scheduleConnRefresh(Array.from(connLines.keys()));
+      }
+      createBatch();
+    }
   }
 
   function scheduleConnRefresh(connIds) {
@@ -1590,10 +1611,26 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // BX-DEV-111: restore persisted pinned & auto-expand state
     el.classList.toggle('box--pinned', box.pinned === true);
     if (box.collapseHover) { el.classList.add('box--hover-expand'); el.classList.add('box--collapsed'); }
+    // BX-DEV-137++++: refresh connections on hover-expand transition — leader-line
+    // must re-read bounding rect AFTER CSS max-height transition completes.
+    if (box.collapseHover) {
+      el.addEventListener('mouseenter', () => {
+        // Defer until after CSS transitionend (~350ms); use transitionend for precision.
+        const tidy = setTimeout(() => { if (connLines.size) refreshAllConns(); }, 360);
+        const onEnd = () => { clearTimeout(tidy); el.removeEventListener('transitionend', onEnd); if (connLines.size) refreshAllConns(); };
+        el.addEventListener('transitionend', onEnd, { once: true });
+      });
+      el.addEventListener('mouseleave', () => {
+        const tidy = setTimeout(() => { if (connLines.size) refreshAllConns(); }, 360);
+        const onEnd = () => { clearTimeout(tidy); el.removeEventListener('transitionend', onEnd); if (connLines.size) refreshAllConns(); };
+        el.addEventListener('transitionend', onEnd, { once: true });
+      });
+    }
 
     el.appendChild(resizeHandle);
 
 
+    addEdgeAnchors(el, largeKey(box.id));
     return el;
   }
 
@@ -1815,13 +1852,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         // BX-DEV-137+: connect button (↗) for cross-level lines. Star-mark stays
     // large-only per user confirmation — small-box star would need moveGroupTogether
     // override to lookup small-box parent context; not worth the complexity now.
-    const sbConnBtn = document.createElement('button');
-    sbConnBtn.type = 'button';
-    sbConnBtn.className = 'box-connect-btn box-tool-btn';
-    sbConnBtn.textContent = '↗';
-    sbConnBtn.title = i18n('connStart') || 'Start a connection to another box';
-    sbConnBtn.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); enterConnectMode(smallKey(largeId, sb.id), el); });
-    bar.append(title, pinBtn, expandBtn, sbConnBtn, delBtn);
+    // BX-DEV-137++++: small-box star button (replaces ↗ connect button per user request).
+    // Connection initiation now happens from box edge midpoints (mouse cursor +).
+    const sbStarBtn = document.createElement('button');
+    sbStarBtn.type = 'button';
+    sbStarBtn.className = 'box-star-btn box-tool-btn' + (getGroupByParent(smallKey(largeId, sb.id)) ? ' box-tool-btn--on' : '');
+    sbStarBtn.textContent = '★';
+    sbStarBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
+    sbStarBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(smallKey(largeId, sb.id)); });
+    bar.append(title, pinBtn, expandBtn, sbStarBtn, delBtn);
 
     // body — bookmark list (always list mode, no grid)
     const body = document.createElement('div');
@@ -1840,8 +1879,22 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // BX-DEV-111: restore persisted pinned & auto-expand state for small boxes
     el.classList.toggle('box--pinned', sb.pinned === true);
     if (sb.collapseHover) { el.classList.add('box--hover-expand'); el.classList.add('box--collapsed'); }
+    // BX-DEV-137++++: refresh connections on hover-expand transition for small boxes.
+    if (sb.collapseHover) {
+      el.addEventListener('mouseenter', () => {
+        const tidy = setTimeout(() => { if (connLines.size) refreshAllConns(); }, 360);
+        const onEnd = () => { clearTimeout(tidy); el.removeEventListener('transitionend', onEnd); if (connLines.size) refreshAllConns(); };
+        el.addEventListener('transitionend', onEnd, { once: true });
+      });
+      el.addEventListener('mouseleave', () => {
+        const tidy = setTimeout(() => { if (connLines.size) refreshAllConns(); }, 360);
+        const onEnd = () => { clearTimeout(tidy); el.removeEventListener('transitionend', onEnd); if (connLines.size) refreshAllConns(); };
+        el.addEventListener('transitionend', onEnd, { once: true });
+      });
+    }
 
 
+    addEdgeAnchors(el, smallKey(largeId, sb.id));
     return el;
   }
 

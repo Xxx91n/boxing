@@ -2169,3 +2169,24 @@ html.ntp--dark {
 .box-tool-btn:hover { opacity: 1; }
 .box-tool-btn--on { opacity: 1; color: var(--color-accent, #A08060); }
 body.cx--connecting, body.cx--connecting * { cursor: crosshair !important; }
+/* BX-DEV-137++++: edge-midpoint connection hotspots — mouse hover shows + cursor */
+.box-edge-anchor {
+  position: absolute; z-index: 5; pointer-events: auto;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 150ms ease;
+}
+.box-edge-anchor::after {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--color-accent, #A08060); opacity: 0.6;
+}
+.large-box:hover .box-edge-anchor,
+.small-box:hover .box-edge-anchor { opacity: 0.7; }
+.box-edge-anchor:hover { opacity: 1 !important; cursor: crosshair; }
+.box-edge-anchor:hover::after { width: 10px; height: 10px; opacity: 1; }
+/* Position: 4 edge midpoints */
+.box-edge-anchor--top    { top: -8px; left: 50%; transform: translateX(-50%); }
+.box-edge-anchor--bottom { bottom: -8px; left: 50%; transform: translateX(-50%); }
+.box-edge-anchor--left   { left: -8px; top: 50%; transform: translateY(-50%); }
+.box-edge-anchor--right  { right: -8px; top: 50%; transform: translateY(-50%); }
+
