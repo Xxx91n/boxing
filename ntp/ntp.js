@@ -938,6 +938,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       id: 'conn-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
       from: fromId, to: toId, createdAt: Date.now()
     });
+    // Bug 4: auto-join connection endpoints to a starred parent group.
+    // If from is a starred parent, the to-end joins as a member;
+    // if to is a starred parent, the from-end joins as a member.
+    if (getGroupByParent(fromId)) addMember(fromId, toId);
+    else if (getGroupByParent(toId)) addMember(toId, fromId);
     return true;
   }
 
@@ -1040,10 +1045,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     connRafPending = true;
     requestAnimationFrame(() => {
       connRafPending = false;
-      // Bug 3 fix: force layout flush before position() so getBoundingClientRect
-        // reflects the latest CSS transform (pan/zoom). Without this, the browser may
-        // batch the transform with other style changes and position() reads stale rects.
-        if (canvasSurface) void canvasSurface.offsetHeight;
+      // Bug 3 / Bug 1 fix: force layout flush on BOTH transform containers before
+      // position() so getBoundingClientRect reflects the latest CSS transform
+      // (pan/zoom). canvasSurface handles outer-canvas; innerSurfaceContent handles
+      // inner-surface. Missing either leaves stale rects after zoom in one view.
+      if (canvasSurface) void canvasSurface.offsetHeight;
+      if (typeof innerSurfaceContent !== 'undefined' && innerSurfaceContent) void innerSurfaceContent.offsetHeight;
       const ids = Array.from(dirtyConns);
       dirtyConns.clear();
       for (const id of ids) {
@@ -1115,9 +1122,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       layout.groups = groups.filter(x => x.parentId !== parentId);
       debug('toggleStarMark: unstar parent=' + parentId);
     } else {
-      // star: create a group with the box as parent and no members yet
+      // star: create a group with the box as parent, then auto-join all
+      // boxes already connected to this parent (Bug 4: network structure).
       groups.push({ parentId, members: [] });
-      debug('toggleStarMark: star parent=' + parentId);
+      for (const c of layout.connections) {
+        if (c.from === parentId && c.to !== parentId) addMember(parentId, c.to);
+        if (c.to === parentId && c.from !== parentId) addMember(parentId, c.from);
+      }
+      debug('toggleStarMark: star parent=' + parentId + ' members=' + (groups[groups.length-1].members.length));
     }
     saveLayout();
     // Bug 2 fix: do NOT call renderCanvas() here — it exits the inner-surface view
@@ -1630,14 +1642,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     starBtn.textContent = '★';
     starBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
     starBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(largeKey(box.id)); });
-    const connectBtn = document.createElement('button');
-    connectBtn.type = 'button';
-    connectBtn.className = 'box-connect-btn box-tool-btn';
-    connectBtn.textContent = '↗';
-    connectBtn.title = i18n('connStart') || 'Start a connection to another box';
-    connectBtn.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); enterConnectMode(largeKey(box.id), el); });
-    // second click on a different box's bar arrives via document-level mousedown handler in init()
-    bar.append(starBtn, connectBtn);
+    // Bug 5: large-box connect ↗ button removed — edge-midpoint drag has replaced it.
+    bar.append(starBtn);
     el.append(bar, body);
 
     // resize handle
