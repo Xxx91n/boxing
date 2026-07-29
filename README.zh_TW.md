@@ -35,6 +35,13 @@
 node --check ntp/ntp.js
 ```
 
+### Build
+Both commands run from the project root (`boxing/` directory):
+```bash
+node .github/scripts/build.mjs        # Dev build → dist/boxing-chrome + dist/boxing-firefox
+node scripts/build-release.js         # Release build → ~/box/release/{chrome,firefox}/ (4 artifacts)
+```
+
 ### Playwright Testing
 ```bash
 cd ../playwright
@@ -43,7 +50,9 @@ npm run test:firefox        # Firefox-specific
 ```
 
 ### web-ext (Firefox)
+These commands run from the `playwright/` directory (which holds `package.json` and dev dependencies):
 ```bash
+cd ../playwright
 npm run dev:firefox         # Hot-reload dev
 npm run build:firefox       # Package .xpi
 npm run lint                # Manifest validation
@@ -51,10 +60,10 @@ npm run lint                # Manifest validation
 
 ## Privacy
 
-- All data stored locally in `chrome.storage.sync`
-- No network requests (except loading `_locales/` from extension bundle)
+- Bookmark and layout data stored locally in `chrome.storage.sync`
+- Optional WebDAV / GitHub Gist backup is the only outbound network usage; configured by user in Settings > Sync & Backup
 - No analytics, tracking, or third-party services
-- Permissions: `storage`, `tabs`, `bookmarks`
+- Permissions: `storage`, `tabs`, `bookmarks`; host_permissions `https://*/*` used only for user-initiated WebDAV backup
 
 ## License
 
