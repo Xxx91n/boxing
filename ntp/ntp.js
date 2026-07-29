@@ -1041,16 +1041,25 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function scheduleConnRefresh(connIds) {
     if (!connIds || !connIds.length) return;
     for (const id of connIds) dirtyConns.add(id);
-    if (connRafPending || typeof requestAnimationFrame !== 'function') return;
+    if (connRafPending) return;
     connRafPending = true;
-    requestAnimationFrame(() => {
+    // Bug 2 fix: use setTimeout(0) instead of rAF. rAF runs at the START of the
+    // next frame, BEFORE browser applies style/layout changes from the current
+    // event tick — so line.position() reads stale pre-transform BCRs and lines
+    // do not sync after Ctrl+wheel zoom. setTimeout(0) fires after the current
+    // event-tick's style mutations commit, so BCR reflects the new transform.
+    // Coalescing still works: subsequent calls within the same tick add to
+    // dirtyConns and the early return above prevents timer inflation.
+    setTimeout(() => {
       connRafPending = false;
-      // Bug 3 / Bug 1 fix: force layout flush on BOTH transform containers before
-      // position() so getBoundingClientRect reflects the latest CSS transform
-      // (pan/zoom). canvasSurface handles outer-canvas; innerSurfaceContent handles
-      // inner-surface. Missing either leaves stale rects after zoom in one view.
+      // Force layout flush on BOTH transform containers so getBoundingClientRect
+      // reflects the latest CSS transform (pan/zoom).
       if (canvasSurface) void canvasSurface.offsetHeight;
       if (typeof innerSurfaceContent !== 'undefined' && innerSurfaceContent) void innerSurfaceContent.offsetHeight;
+      // Touch one line's start element BCR — forces the compositor to sync layout
+      // for transformed descendants before position() reads their rect.
+      const firstLine = connLines.values().next().value;
+      if (firstLine && firstLine.start) { try { firstLine.start.getBoundingClientRect(); } catch (_) {} }
       const ids = Array.from(dirtyConns);
       dirtyConns.clear();
       for (const id of ids) {
@@ -1058,7 +1067,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         if (!line) continue;
         try { line.position(); } catch (_) {}
       }
-    });
+    }, 0);
   }
 
   function refreshConnsForBox(boxKey) {
@@ -1134,11 +1143,18 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     saveLayout();
     // Bug 2 fix: do NOT call renderCanvas() here — it exits the inner-surface view
     // (small-box page) and jumps back to the canvas. Instead, just toggle the button visual.
+    // Bug 3 fix: rebuild groupIdx fully before iterating so stale entries (from a previous
+    // star state, cleared at function entry) do not bypass early-return and leave --on set.
+    groupIdx.clear();
+    for (const g of ensureGroups()) groupIdx.set(g.parentId, g);
     document.querySelectorAll('.box-star-btn').forEach(btn => {
       const boxEl = btn.closest('[data-box-key]');
       if (!boxEl) return;
       const key = boxEl.dataset.boxKey;
-      btn.classList.toggle('box-tool-btn--on', !!getGroupByParent(key));
+      const starred = !!getGroupByParent(key);
+      btn.classList.toggle('box-tool-btn--on', starred);
+      // Bug 4: box--starred visual highlight on parent element itself.
+      boxEl.classList.toggle('box--starred', starred);
     });
   }
   function addMember(parentId, memberId) {
@@ -1156,25 +1172,28 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // is resolved via elasticSnap with siblings (group + parent) excluded, so the
   // whole group visits new positions as a rigid set, then collisions push back.
   // ponytail: O(m*n) elastic pass per group; swap in rbush R-tree at >100 boxes.
-  function moveGroupTogether(parentId, deltaX, deltaY) {
+  function moveGroupTogether(parentId, deltaX, deltaY, origins) {
     const g = getGroupByParent(parentId);
     if (!g || !g.members || !g.members.length) return;
-    // parentId and members are tiered keys ('large:xx'); strip to raw id for layout.boxes filter.
+    // Bug 1 fix: members move from their ORIGINAL position (captured at drag start)
+    // by deltaX/deltaY. The previous code added the cumulative delta to m.x every
+    // mousemove tick, stacking the delta onto already-moved members and flinging
+    // them off-canvas. origins Map<memberKey, {x,y}> replaces the destructive pattern.
     const rawPid = (typeof parentId === 'string' && parentId.startsWith('large:')) ? parentId.slice(6) : parentId;
     const parentIdSet = new Set([rawPid, ...g.members.map(m => (typeof m === 'string' && m.startsWith('large:')) ? m.slice(6) : m)]);
     const others = layout.boxes.filter(b => !parentIdSet.has(b.id));
     for (const mId of g.members) {
-      // members may be tiered keys ('large:xx') or legacy raw ids
       const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
       const m = getLargeBox(rawId);
       if (!m) continue;
       const w = m.width || LARGE_DEF_W, h = m.height || LARGE_DEF_H;
-      const nx0 = m.x + deltaX, ny0 = m.y + deltaY;
+      const base = (origins && origins.get(mId)) || { x: m.x, y: m.y };
+      const nx0 = base.x + deltaX, ny0 = base.y + deltaY;
       const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, CANVAS_GRID, snapCanvas);
       m.x = resolved.x; m.y = resolved.y;
       const el = document.querySelector(`.large-box[data-id="${CSS.escape(rawId)}"]`);
       if (el) { el.style.left = m.x + 'px'; el.style.top = m.y + 'px'; }
-      refreshConnsForBox(mId);   // mId is already the tiered key
+      refreshConnsForBox(mId);
     }
   }
 
@@ -1642,6 +1661,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     starBtn.textContent = '★';
     starBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
     starBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(largeKey(box.id)); });
+    // Bug 4: highlight parent box with --starred class for visual distinction.
+    if (getGroupByParent(largeKey(box.id))) el.classList.add('box--starred');
     // Bug 5: large-box connect ↗ button removed — edge-midpoint drag has replaced it.
     bar.append(starBtn);
     el.append(bar, body);
@@ -1903,6 +1924,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     sbStarBtn.textContent = '★';
     sbStarBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
     sbStarBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(smallKey(largeId, sb.id)); });
+    if (getGroupByParent(smallKey(largeId, sb.id))) el.classList.add('box--starred');
     bar.append(title, pinBtn, expandBtn, sbStarBtn, delBtn);
 
     // body — bookmark list (always list mode, no grid)
@@ -2384,6 +2406,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const panX = type === 'large' ? canvasPanX : innerPanX;
     const panY = type === 'large' ? canvasPanY : innerPanY;
 
+    const memberOrigins = new Map(); // Bug 1 fix: capture member base positions to prevent delta-stacking
+    if (type === 'large') {
+      const g = getGroupByParent(largeKey(id));
+      if (g) for (const mId of g.members) {
+        const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
+        const m = getLargeBox(rawId);
+        if (m) memberOrigins.set(mId, { x: m.x, y: m.y });
+      }
+    }
     dragState = {
       type, id, el,
       startMouseX: e.clientX,
@@ -2391,7 +2422,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       origLeft: parseInt(el.style.left, 10) || 0,
       origTop: parseInt(el.style.top, 10) || 0,
       zoom, panX, panY,
-      container
+      container,
+      memberOrigins
     };
 
     el.classList.add(type === 'large' ? 'large-box--dragging' : 'small-box--dragging');
@@ -2433,7 +2465,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (getGroupByParent(largeKey(dragState.id))) {
         const dX = newX - dragState.origLeft;
         const dY = newY - dragState.origTop;
-        moveGroupTogether(largeKey(dragState.id), dX, dY);
+        moveGroupTogether(largeKey(dragState.id), dX, dY, dragState.memberOrigins);
       }
     }
     // BX-DEV-137+: small-box drag also refreshes cross-level lines
@@ -2475,7 +2507,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (getGroupByParent(largeKey(box.id))) {
         const dX = box.x - dragState.origLeft;
         const dY = box.y - dragState.origTop;
-        moveGroupTogether(largeKey(box.id), dX, dY);
+        moveGroupTogether(largeKey(box.id), dX, dY, dragState.memberOrigins);
       }
       refreshConnsForBox(largeKey(box.id));
     } else {

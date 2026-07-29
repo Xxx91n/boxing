@@ -525,6 +525,11 @@ body {
   opacity: 0.9;
 }
 
+/* BX-140: parent box highlight — subtle accent ring on starred boxes */
+.box--starred {
+  box-shadow: 0 0 0 2px var(--color-accent, #A08060), 0 2px 8px rgba(160, 128, 96, 0.15);
+}
+
 /* Auto-expand: true drawer pull-down from under title bar (BX-DEV-111)
    Uses pure max-height transition on the __body panel itself.
    When collapsed, body has max-height:0 + overflow:hidden — entire panel,
