@@ -757,9 +757,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const la = Array.isArray(localArr) ? localArr : [];
       const ra = Array.isArray(remoteArr) ? remoteArr : [];
       const map = new Map();
+      // tombstone filter: drop items whose key is tombstoned (deleted cross-tab)
       // remote first so local entries overwrite on id conflict (local writes win ties)
-      for (const item of ra) { if (item && item[keyField]) map.set(item[keyField], item); }
-      for (const item of la) { if (item && item[keyField]) map.set(item[keyField], item); }
+      for (const item of ra) { if (item && item[keyField] && !tombstones.has(item[keyField])) map.set(item[keyField], item); }
+      for (const item of la) { if (item && item[keyField] && !tombstones.has(item[keyField])) map.set(item[keyField], item); }
       return Array.from(map.values());
     };
     return {
@@ -769,7 +770,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       nextLargeIndex: Math.max(Number(localValue.nextLargeIndex) || 1, Number(remoteValue.nextLargeIndex) || 1),
       settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}) },
       connections: mergeByIdUnion(localValue.connections, remoteValue.connections),
-      groups: mergeByIdUnion(localValue.groups, remoteValue.groups),
+      groups: mergeByIdUnion(localValue.groups, remoteValue.groups, 'parentId'),
       _meta: { ...(remoteValue._meta || {}), ...(localValue._meta || {}), deleted: trimmedDeleted }
     };
   }
@@ -1186,8 +1187,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const groups = layout.groups;
     let g = groups.find(x => x.parentId === parentId);
     if (g) {
-      // unstar: drop the group; members go back to individual drag
+      // unstar: drop the group; members go back to individual drag.
+      // BX-143: tombstone the parentId so cross-tab merge union does NOT bring it back
+      // (without tombstone, remote's old group survives the union merge → star never clears)
       layout.groups = groups.filter(x => x.parentId !== parentId);
+      markDeleted(parentId);
       debug('toggleStarMark: unstar parent=' + parentId);
     } else {
       // star: create a group with the box as parent, then auto-join all
@@ -1212,6 +1216,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const key = boxEl.dataset.boxKey;
       const starred = !!getGroupByParent(key);
       btn.classList.toggle('box-tool-btn--on', starred);
+      btn.textContent = starred ? '★' : '☆'; // Bug 4: hollow star for non-parent, solid for parent
       // Bug 4: box--starred visual highlight on parent element itself.
       boxEl.classList.toggle('box--starred', starred);
     });
@@ -1238,25 +1243,64 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // by deltaX/deltaY. The previous code added the cumulative delta to m.x every
     // mousemove tick, stacking the delta onto already-moved members and flinging
     // them off-canvas. origins Map<memberKey, {x,y}> replaces the destructive pattern.
-    const rawPid = (typeof parentId === 'string' && parentId.startsWith('large:')) ? parentId.slice(6) : parentId;
-    const parentIdSet = new Set([rawPid, ...g.members.map(m => (typeof m === 'string' && m.startsWith('large:')) ? m.slice(6) : m)]);
-    const others = layout.boxes.filter(b => !parentIdSet.has(b.id));
-    for (const mId of g.members) {
-      const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
-      const m = getLargeBox(rawId);
-      if (!m) continue;
-      const w = m.width || LARGE_DEF_W, h = m.height || LARGE_DEF_H;
-      const base = (origins && origins.get(mId)) || { x: m.x, y: m.y };
-      const nx0 = base.x + deltaX, ny0 = base.y + deltaY;
-      const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, CANVAS_GRID, snapCanvas);
-      // Bug 3: clamp member to virtual canvas boundary — same world limits as parent drag-end
-      const worldMaxX = (canvasContainer.clientWidth / 0.3) - w;
-      const worldMaxY = (canvasContainer.clientHeight / 0.3) - h;
-      m.x = Math.max(0, Math.min(resolved.x, worldMaxX));
-      m.y = Math.max(0, Math.min(resolved.y, worldMaxY));
-      const el = document.querySelector(`.large-box[data-id="${CSS.escape(rawId)}"]`);
-      if (el) { el.style.left = m.x + 'px'; el.style.top = m.y + 'px'; }
-      refreshConnsForBox(mId);
+    const isLarge = (typeof parentId === 'string' && parentId.startsWith('large:'));
+    if (isLarge) {
+      const rawPid = parentId.slice(6);
+      const parentIdSet = new Set([rawPid, ...g.members.map(m => (typeof m === 'string' && m.startsWith('large:')) ? m.slice(6) : m)]);
+      const others = layout.boxes.filter(b => !parentIdSet.has(b.id));
+      for (const mId of g.members) {
+        const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
+        const m = getLargeBox(rawId);
+        if (!m) continue;
+        const w = m.width || LARGE_DEF_W, h = m.height || LARGE_DEF_H;
+        const base = (origins && origins.get(mId)) || { x: m.x, y: m.y };
+        const nx0 = base.x + deltaX, ny0 = base.y + deltaY;
+        const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, CANVAS_GRID, snapCanvas);
+        const worldMaxX = (canvasContainer.clientWidth / 0.3) - w;
+        const worldMaxY = (canvasContainer.clientHeight / 0.3) - h;
+        m.x = Math.max(0, Math.min(resolved.x, worldMaxX));
+        m.y = Math.max(0, Math.min(resolved.y, worldMaxY));
+        const el = document.querySelector(`.large-box[data-id="${CSS.escape(rawId)}"]`);
+        if (el) { el.style.left = m.x + 'px'; el.style.top = m.y + 'px'; }
+        refreshConnsForBox(mId);
+      }
+    } else {
+      // BX-143: small-box group members — resolve 'small:largeId:smallId' keys and
+      // move children within the parent large box's inner surface. Collision set is the
+      // parent box's other children (excluding group members).
+      const parts = parentId.split(':');
+      if (parts.length < 3) return;
+      const parentLargeId = parts[1];
+      const lb = getLargeBox(parentLargeId);
+      if (!lb) return;
+      const memberSmallIds = new Set();
+      for (const mId of g.members) {
+        if (typeof mId === 'string' && mId.startsWith('small:')) {
+          const mp = mId.split(':');
+          if (mp.length >= 3 && mp[1] === parentLargeId) memberSmallIds.add(mp.slice(2).join(':'));
+        }
+      }
+      const others = (lb.children || []).filter(s => !memberSmallIds.has(s.id) && s.id !== parts.slice(2).join(':'));
+      for (const mId of g.members) {
+        const mp = (typeof mId === 'string' && mId.startsWith('small:')) ? mId.split(':') : null;
+        if (!mp || mp.length < 3 || mp[1] !== parentLargeId) continue;
+        const rawId = mp.slice(2).join(':');
+        const m = getSmallBox(parentLargeId, rawId);
+        if (!m) continue;
+        const w = m.width || SMALL_DEF_W, h = m.height || SMALL_DEF_H;
+        const base = (origins && origins.get(mId)) || { x: m.x, y: m.y };
+        const nx0 = base.x + deltaX, ny0 = base.y + deltaY;
+        const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, INNER_GRID, snapInner);
+        const sw2 = innerSurface.clientWidth || innerCanvas.clientWidth;
+        const sh2 = innerSurface.clientHeight || (innerCanvas.clientHeight - 40);
+        const worldMaxX2 = (sw2 / 0.3) - w;
+        const worldMaxY2 = (sh2 / 0.3) - h;
+        m.x = Math.max(0, Math.min(resolved.x, worldMaxX2));
+        m.y = Math.max(0, Math.min(resolved.y, worldMaxY2));
+        const el = resolveBoxEl(mId);
+        if (el) { el.style.left = m.x + 'px'; el.style.top = m.y + 'px'; }
+        refreshConnsForBox(mId);
+      }
     }
   }
 
@@ -1279,12 +1323,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       // Bug 1 fix: immediately snap line endpoint to mouse position — line follows cursor from first frame
       let initLX = mp.x, initLY = mp.y;
       if (typeof initCx === 'number' && typeof initCy === 'number' && surface) {
+        // Bug 7 fix: surface is the TRANSFORMED element (has CSS translate(panX,panY) scale(zoom)).
+        // Its getBoundingClientRect() already reflects the pan offset, so we must NOT subtract
+        // panX/panY again — that would double-subtract and fling the endpoint off to a corner.
+        // Inverse: world = (client - transformedRect.left) / zoom.
         const rect = surface.getBoundingClientRect();
         const zoom = isInner ? innerZoom : canvasZoom;
-        const panX = isInner ? innerPanX : canvasPanX;
-        const panY = isInner ? innerPanY : canvasPanY;
-        initLX = (initCx - rect.left - panX) / zoom;
-        initLY = (initCy - rect.top - panY) / zoom;
+        initLX = (initCx - rect.left) / zoom;
+        initLY = (initCy - rect.top) / zoom;
       }
       provisionalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       provisionalLine.setAttribute('class', 'conn-line conn-line--provisional');
@@ -1740,8 +1786,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // theme uses currentColor so it adapts to dark/light automatically.
     const starBtn = document.createElement('button');
     starBtn.type = 'button';
-    starBtn.className = 'box-star-btn box-tool-btn' + (getGroupByParent(largeKey(box.id)) ? ' box-tool-btn--on' : '');
-    starBtn.textContent = '★';
+    const _starred = !!getGroupByParent(largeKey(box.id));
+    starBtn.className = 'box-star-btn box-tool-btn' + (_starred ? ' box-tool-btn--on' : '');
+    starBtn.textContent = _starred ? '★' : '☆';
     starBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
     starBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(largeKey(box.id)); });
     // Bug 4: highlight parent box with --starred class for visual distinction.
@@ -1902,6 +1949,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     innerSurface.dataset.largeId = lb.id;
     // BX-DEV-111 v2: measure each collapsed small box for precise expand animation
     content.querySelectorAll('.small-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
+    // BX-143: re-render connections AFTER disposeAllConns cleared them.
+    // Without this call, any caller of renderInnerSurface strips all lines
+    // (disposeAllConns is called early in this function), and subsequent
+    // renderConnections is never called — lines stay invisible until
+    // some other code path happens to render them.
+    requestAnimationFrame(() => requestAnimationFrame(() => renderConnections()));
   }
 
   function createSmallBoxEl(largeId, sb) {
@@ -2007,11 +2060,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // Connection initiation now happens from box edge midpoints (mouse cursor +).
     const sbStarBtn = document.createElement('button');
     sbStarBtn.type = 'button';
-    sbStarBtn.className = 'box-star-btn box-tool-btn' + (getGroupByParent(smallKey(largeId, sb.id)) ? ' box-tool-btn--on' : '');
-    sbStarBtn.textContent = '★';
+    const _sbStarred = !!getGroupByParent(smallKey(largeId, sb.id));
+    sbStarBtn.className = 'box-star-btn box-tool-btn' + (_sbStarred ? ' box-tool-btn--on' : '');
+    sbStarBtn.textContent = _sbStarred ? '★' : '☆';
     sbStarBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
     sbStarBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(smallKey(largeId, sb.id)); });
-    if (getGroupByParent(smallKey(largeId, sb.id))) el.classList.add('box--starred');
+    if (_sbStarred) el.classList.add('box--starred');
     bar.append(title, pinBtn, expandBtn, sbStarBtn, delBtn);
 
     // body — bookmark list (always list mode, no grid)
@@ -2501,6 +2555,18 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         const m = getLargeBox(rawId);
         if (m) memberOrigins.set(mId, { x: m.x, y: m.y });
       }
+    } else if (type === 'small' && id && id.largeId && id.smallId) {
+      // BX-143: capture small-box group member origins for parent drag
+      const g = getGroupByParent(smallKey(id.largeId, id.smallId));
+      if (g) for (const mId of g.members) {
+        if (typeof mId === 'string' && mId.startsWith('small:')) {
+          const parts = mId.split(':');
+          if (parts.length >= 3) {
+            const m = getSmallBox(parts[1], parts.slice(2).join(':'));
+            if (m) memberOrigins.set(mId, { x: m.x, y: m.y });
+          }
+        }
+      }
     }
     dragState = {
       type, id, el,
@@ -2563,7 +2629,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       // Real-time data model update so boxMidPoint reads live coords during drag
       const sb = getSmallBox(dragState.id.largeId, dragState.id.smallId);
       if (sb) { sb.x = newX; sb.y = newY; }
-      refreshConnsForBox(smallKey(dragState.id.largeId, dragState.id.smallId));
+      const sKey = smallKey(dragState.id.largeId, dragState.id.smallId);
+      refreshConnsForBox(sKey);
+      // BX-143: small-box parent drag — move group members real-time with elastic collision
+      if (getGroupByParent(sKey)) {
+        const dX = newX - dragState.origLeft;
+        const dY = newY - dragState.origTop;
+        moveGroupTogether(sKey, dX, dY, dragState.memberOrigins);
+      }
     }
   }
 
@@ -2623,7 +2696,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       el.style.left = sb.x + 'px';
       el.style.top = sb.y + 'px';
       // BX-DEV-137+: refresh cross-level lines connected to this small box
-      refreshConnsForBox(smallKey(id.largeId, id.smallId));
+      const sKey = smallKey(id.largeId, id.smallId);
+      refreshConnsForBox(sKey);
+      // BX-143: small-box parent — final group move with snap at drag end
+      if (getGroupByParent(sKey)) {
+        const dX = sb.x - dragState.origLeft;
+        const dY = sb.y - dragState.origTop;
+        moveGroupTogether(sKey, dX, dY, dragState.memberOrigins);
+        renderConnections();
+      }
     }
 
     saveLayout();
@@ -3584,12 +3665,12 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         const isInner = provisionalGhost.surface === 'inner';
         const surface = isInner ? innerSurfaceContent : canvasSurface;
         if (!surface) return;
+        // Bug 7 fix: surface is the transformed element — rect already includes pan.
+        // No additional panX/panY subtraction needed (would double-subtract).
         const rect = surface.getBoundingClientRect();
         const zoom = isInner ? innerZoom : canvasZoom;
-        const panX = isInner ? innerPanX : canvasPanX;
-        const panY = isInner ? innerPanY : canvasPanY;
-        const lx = (e.clientX - rect.left - panX) / zoom;
-        const ly = (e.clientY - rect.top - panY) / zoom;
+        const lx = (e.clientX - rect.left) / zoom;
+        const ly = (e.clientY - rect.top) / zoom;
         provisionalLine.setAttribute('x2', lx.toFixed(1));
         provisionalLine.setAttribute('y2', ly.toFixed(1));
       });
