@@ -1877,6 +1877,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // Keep the surface (parent clip box) intact; only refresh the content layer.
     // innerHTML='' on the surface would also wipe the content wrapper we added.
     const content = ensureInnerSurfaceContent();
+    // BX-143: dispose connection state BEFORE clearing innerHTML — content.innerHTML=''
+    // orphans innerConnSvg + all connLines SVG elements. Without this, renderConnections
+    // skips creating new lines because connLines.has(c.id) returns true for stale refs.
+    disposeAllConns();
     content.innerHTML = '';
     const frag = document.createDocumentFragment();
     for (const sb of lb.children || []) {
