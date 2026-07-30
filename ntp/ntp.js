@@ -836,6 +836,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         ...defaults,
         ...raw,
         boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
+        connections: Array.isArray(raw.connections) ? raw.connections : [],
+        groups: Array.isArray(raw.groups) ? raw.groups : [],
         settings: { ...defaults.settings, ...(raw.settings || {}) }
       };
     }
@@ -900,6 +902,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   const connLines = new Map();          // connId -> SVG <line> element
   const dirtyConns = new Set();         // connIds needing path update
   const connIdx = new Map();              // O(1) conn lookup by key-pair
+  const boxConnIdx = new Map();            // O(1) reverse: boxKey -> Set<connId>
   const groupIdx = new Map();             // O(1) group lookup by parentId
   let canvasConnSvg = null;     // SVG overlay inside canvasSurface
   let innerConnSvg = null;     // SVG overlay inside innerSurfaceContent
@@ -961,6 +964,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
     connLines.clear();
     dirtyConns.clear();
+    boxConnIdx.clear();
     // Clear SVG overlay DOM too
     if (canvasConnSvg) { while (canvasConnSvg.firstChild) canvasConnSvg.removeChild(canvasConnSvg.firstChild); }
     if (innerConnSvg) { while (innerConnSvg.firstChild) innerConnSvg.removeChild(innerConnSvg.firstChild); }
@@ -1067,9 +1071,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // Reconcile live lines with layout.connections: drop dead.
     const wanted = new Set(layout.connections.map(c => c.id));
     connIdx.clear();
+    boxConnIdx.clear();
     for (const c of layout.connections) {
       connIdx.set(c.from + '>' + c.to, c);
       connIdx.set(c.to + '>' + c.from, c);
+      // O(1) reverse index: boxKey -> Set of connIds
+      if (!boxConnIdx.has(c.from)) boxConnIdx.set(c.from, new Set());
+      if (!boxConnIdx.has(c.to)) boxConnIdx.set(c.to, new Set());
+      boxConnIdx.get(c.from).add(c.id);
+      boxConnIdx.get(c.to).add(c.id);
     }
     for (const [id, line] of connLines.entries()) {
       if (!wanted.has(id)) {
@@ -1108,9 +1118,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   function refreshConnsForBox(boxKey) {
     ensureConnArrays();
-    // Accept tiered key ('large:xx' / 'small:lg:sm') or legacy raw id.
-    const ids = layout.connections.filter(c => c.from === boxKey || c.to === boxKey).map(c => c.id);
-    scheduleConnRefresh(ids);
+    // O(1) via boxConnIdx reverse index — avoids O(n) filter on every mousemove
+    const connSet = boxConnIdx.get(boxKey);
+    if (connSet && connSet.size > 0) {
+      scheduleConnRefresh(Array.from(connSet));
+    }
   }
 
   function refreshAllConns() { scheduleConnRefresh(Array.from(connLines.keys())); }
@@ -2520,6 +2532,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     dragState.el.style.top = newY + 'px';
     try { repositionAllPopups(); } catch (_) {}
     if (dragState.type === 'large') {
+      // Real-time data model update so boxMidPoint reads live coords during drag
+      const lb = getLargeBox(dragState.id);
+      if (lb) { lb.x = newX; lb.y = newY; }
       refreshConnsForBox(largeKey(dragState.id));
       // Bug 6: real-time group move — members follow parent during drag, not just at end
       if (getGroupByParent(largeKey(dragState.id))) {
@@ -2530,6 +2545,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
     // BX-DEV-137+: small-box drag also refreshes cross-level lines
     if (dragState.type === 'small' && dragState.id && dragState.id.largeId && dragState.id.smallId) {
+      // Real-time data model update so boxMidPoint reads live coords during drag
+      const sb = getSmallBox(dragState.id.largeId, dragState.id.smallId);
+      if (sb) { sb.x = newX; sb.y = newY; }
       refreshConnsForBox(smallKey(dragState.id.largeId, dragState.id.smallId));
     }
   }
