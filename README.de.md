@@ -71,13 +71,21 @@ Apache-2.0 (see [LICENSE](LICENSE))
 
 ## Changelog
 
+### v3.7.0 (2026-07-26)
+- SVG connection layer: self-drawn `<line>` elements replace LeaderLine vendor lib (BX-142)
+- Edge-midpoint drag-to-connect: mousedown on 4 edge anchors, drag to target box, mouseup connects
+- Star-mark parent boxes: group drag moves members together with elastic boundary clamp (BX-143)
+- Connection persistence: cross-tab sync, state-change refresh, zoom-follow lines
+- Vietnamese (vi) + Chinese Traditional (zh_TW) i18n added — 14 locales total
+- Security audit: manifest permissions hardened, WebDAV import guards, CORS redirect blocked
+
 ### v3.6.0 (2026-07-10)
 - Box drag clamp: boxes now constrained to visible canvas area with edge-snap
 - Elastic snap rewritten with while-loop for complete overlap resolution
 - Dark mode comprehensive fix: body/html now dark, all edges covered, settings synced
 - Header pin defaults ON: header visible, button on bar; toggle for fullscreen animation
 - Small boxes now rounded (border-radius: var(--radius-card)) matching large boxes
-- All i18n gaps fixed: smallBoxCountLabel, bookmark placeholders, settings nav labels — all 13 locales
+- All i18n gaps fixed: smallBoxCountLabel, bookmark placeholders, settings nav labels — all 14 locales
 - Remember-last-position now saves/restores zoom + pan for both canvas and inner surfaces
 - New i18n keys: settingsNavGeneral/Appearance/Data/Sync, syncProviderHint — all locales translated
 - Tests: boxing-v3.spec.ts 10/10 passing, updated for current version
