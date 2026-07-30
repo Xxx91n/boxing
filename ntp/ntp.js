@@ -151,7 +151,7 @@
 
   // Expose debug API for extension DevTools console inspection
   window.__boxingDebug = {
-    addConnection, removeConnection, toggleStarMark, addMember, moveGroupTogether,
+    addConnection, removeConnection, toggleStarMark, addMember, moveGroupTogether, enterConnectMode, exitConnectMode, getGroupByParent,
     largeKey, smallKey, resolveBoxEl, allValidKeys,
     getLargeBox, renderCanvas,
     pruneConnArrays, renderConnections, disposeAllConns, enterLargeBox,
@@ -894,14 +894,18 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // the user click box A then box B; a star-mark makes a box the parent of a
   // group so dragging the parent averages the members and snaps them together.
   const MAX_CONNECTIONS = 5000; // ponytail: bounded; upgrade to pagination past 5k
-  const connLines = new Map();          // connId -> LeaderLine instance
-  const dirtyConns = new Set();         // connIds needing .position() next rAF
-  const connIdx = new Map();              // ponytail: O(1) conn lookup by key-pair 'from>to'
-  const groupIdx = new Map();             // ponytail: O(1) group lookup by parentId -> group obj
-  let connRafPending = false;
-  let connectMode = null;               // { fromId, fromEl } | null
-  let provisionalLine = null;        // temp LeaderLine during drag (Bug 4)
-  let provisionalGhost = null;      // invisible div acting as the drag endpoint
+  // BX-142: SVG-based connection layer — replaces LeaderLine.
+  // SVG overlay lives INSIDE the transform surface, so line coords = box logical coords.
+  // No BCR reads, no transform-commit timing issues, lines clipped by surface overflow.
+  const connLines = new Map();          // connId -> SVG <line> element
+  const dirtyConns = new Set();         // connIds needing path update
+  const connIdx = new Map();              // O(1) conn lookup by key-pair
+  const groupIdx = new Map();             // O(1) group lookup by parentId
+  let canvasConnSvg = null;     // SVG overlay inside canvasSurface
+  let innerConnSvg = null;     // SVG overlay inside innerSurfaceContent
+  let connectMode = null;               // { fromId, fromEl, fromSide } | null
+  let provisionalLine = null;        // temp SVG <line> during drag
+  let provisionalGhost = null;      // { x, y } logical coords of drag endpoint
 
   function ensureConnArrays() {
     if (!Array.isArray(layout.connections)) layout.connections = [];
@@ -953,10 +957,13 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   function disposeAllConns() {
     for (const line of connLines.values()) {
-      try { line.hide(); line.remove(); } catch (_) {}
+      try { line.remove(); } catch (_) {}
     }
     connLines.clear();
     dirtyConns.clear();
+    // Clear SVG overlay DOM too
+    if (canvasConnSvg) { while (canvasConnSvg.firstChild) canvasConnSvg.removeChild(canvasConnSvg.firstChild); }
+    if (innerConnSvg) { while (innerConnSvg.firstChild) innerConnSvg.removeChild(innerConnSvg.firstChild); }
   }
 
   // BX-DEV-137++++: edge-midpoint connection hotspots — 4 anchors per box for initiating connections.
@@ -976,15 +983,89 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
   }
 
+  // BX-142: Get or create the SVG overlay inside a transform surface.
+  // SVG lives INSIDE the surface so it inherits pan/zoom — no BCR, no timing hacks.
+  function getConnSvg(surface, layerVar) {
+    if (layerVar && surface.contains(layerVar)) return layerVar;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'conn-layer');
+    svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
+    // Add arrow marker definition
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'conn-arrow');
+    marker.setAttribute('viewBox', '0 0 10 10');
+    marker.setAttribute('refX', '8');
+    marker.setAttribute('refY', '5');
+    marker.setAttribute('markerWidth', '6');
+    marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('orient', 'auto');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M 0 0 L 8 5 L 0 10 z');
+    path.setAttribute('fill', 'var(--connection-color, #333)');
+    marker.appendChild(path);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+    surface.insertBefore(svg, surface.firstChild);
+    return svg;
+  }
+
+  // Compute the mid-point of a box edge in logical (untransformed) coords.
+  // Since SVG is inside the transform surface, we use raw box x/y/w/h.
+  function boxMidPoint(key) {
+    if (!key || typeof key !== 'string') return null;
+    if (key.startsWith('large:')) {
+      const b = getLargeBox(key.slice(6));
+      if (!b) return null;
+      const x = b.x, y = b.y, w = b.width || LARGE_DEF_W, h = b.height || LARGE_DEF_H;
+      return { x: x + w / 2, y: y + h / 2, surface: 'canvas' };
+    }
+    if (key.startsWith('small:')) {
+      const parts = key.split(':');
+      if (parts.length < 3) return null;
+      const sb = getSmallBox(parts[1], parts.slice(2).join(':'));
+      if (!sb) return null;
+      const x = sb.x, y = sb.y, w = sb.width || SMALL_DEF_W, h = sb.height || SMALL_DEF_H;
+      return { x: x + w / 2, y: y + h / 2, surface: 'inner' };
+    }
+    // legacy raw id (Round 1 format) — treat as large box
+    const b = getLargeBox(key);
+    if (!b) return null;
+    const x = b.x, y = b.y, w = b.width || LARGE_DEF_W, h = b.height || LARGE_DEF_H;
+    return { x: x + w / 2, y: y + h / 2, surface: 'canvas' };
+  }
+
+  // Pick the SVG layer for a connection based on which surface both boxes share.
+  // large-large = canvas SVG, small-small = inner SVG, cross-level = canvas (parent view).
+  function connSvgForConn(c) {
+    const a = boxMidPoint(c.from);
+    const b = boxMidPoint(c.to);
+    if (!a || !b) return null;
+    if (a.surface === 'inner' && b.surface === 'inner') {
+      return innerConnSvg ? innerConnSvg : (innerSurfaceContent ? getConnSvg(innerSurfaceContent, innerConnSvg) : null);
+    }
+    return canvasConnSvg ? canvasConnSvg : (canvasSurface ? getConnSvg(canvasSurface, canvasConnSvg) : null);
+  }
+
+  // Update a single SVG <line> element from connection data.
+  function updateSvgLine(lineEl, c) {
+    const a = boxMidPoint(c.from);
+    const b = boxMidPoint(c.to);
+    if (!a || !b) { lineEl.style.display = 'none'; return; }
+    lineEl.setAttribute('x1', a.x.toFixed(1));
+    lineEl.setAttribute('y1', a.y.toFixed(1));
+    lineEl.setAttribute('x2', b.x.toFixed(1));
+    lineEl.setAttribute('y2', b.y.toFixed(1));
+    lineEl.style.display = '';
+  }
+
   function renderConnections() {
     ensureConnArrays();
-    if (typeof window.LeaderLine !== 'function') {
-      debugWarn('renderConnections: window.LeaderLine not loaded');
-      return;
-    }
+    // Ensure SVG overlays exist
+    if (canvasSurface) canvasConnSvg = getConnSvg(canvasSurface, canvasConnSvg);
+    if (typeof innerSurfaceContent !== 'undefined' && innerSurfaceContent) innerConnSvg = getConnSvg(innerSurfaceContent, innerConnSvg);
     // Reconcile live lines with layout.connections: drop dead.
     const wanted = new Set(layout.connections.map(c => c.id));
-    // Rebuild connIdx for O(1) pair lookup (Bug 6).
     connIdx.clear();
     for (const c of layout.connections) {
       connIdx.set(c.from + '>' + c.to, c);
@@ -992,82 +1073,37 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
     for (const [id, line] of connLines.entries()) {
       if (!wanted.has(id)) {
-        try { line.hide(); line.remove(); } catch (_) {}
+        try { line.remove(); } catch (_) {}
         connLines.delete(id);
         dirtyConns.delete(id);
       }
     }
-    // Batch-create new lines to avoid blocking on large layouts (Bug 2).
+    // Create new SVG <line> elements for pending connections.
     const pending = layout.connections.filter(c => !connLines.has(c.id));
-    if (!pending.length) { scheduleConnRefresh(Array.from(connLines.keys())); return; }
-    // ponytail: sync create when <= 8 pending (small layouts/tests); async batch for large counts.
-    const BATCH_SIZE = 8;
-    function createConn(c) {
-      if (connLines.has(c.id)) return;
-      const a = resolveBoxEl(c.from);
-      const b = resolveBoxEl(c.to);
-      if (!a || !b) return;     // box missing (deleted/hidden in current view) — skip
-      try {
-        const line = new window.LeaderLine({
-          start: a, end: b,
-          color: 'var(--connection-color, #333)',
-          size: 1.5,
-          startSocket: 'auto', endSocket: 'auto',
-          startPlug: 'disc', endPlug: 'arrow1',
-          path: 'straight',
-          hide: false
-        });
-        connLines.set(c.id, line);
-      } catch (e) { debugWarn('renderConnections: LeaderLine ctor failed', e); }
+    for (const c of pending) {
+      const svg = connSvgForConn(c);
+      if (!svg) continue;
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('class', 'conn-line');
+      line.setAttribute('stroke', 'var(--connection-color, #333)');
+      line.setAttribute('stroke-width', '1.5');
+      updateSvgLine(line, c);
+      svg.appendChild(line);
+      connLines.set(c.id, line);
     }
-    if (pending.length <= BATCH_SIZE) {
-      // Sync path — small layouts: immediate creation, no rAF delay.
-      for (const c of pending) createConn(c);
-      scheduleConnRefresh(Array.from(connLines.keys()));
-    } else {
-      // Async batch — large layouts: 8 per rAF to keep frame < 16ms.
-      let batchIdx = 0;
-      function createBatch() {
-        const slice = pending.slice(batchIdx, batchIdx + BATCH_SIZE);
-        for (const c of slice) createConn(c);
-        batchIdx += BATCH_SIZE;
-        if (batchIdx < pending.length) requestAnimationFrame(createBatch);
-        else scheduleConnRefresh(Array.from(connLines.keys()));
-      }
-      createBatch();
-    }
+    scheduleConnRefresh(Array.from(connLines.keys()));
   }
-
   function scheduleConnRefresh(connIds) {
     if (!connIds || !connIds.length) return;
     for (const id of connIds) dirtyConns.add(id);
-    if (connRafPending) return;
-    connRafPending = true;
-    // Bug 2 fix: use setTimeout(0) instead of rAF. rAF runs at the START of the
-    // next frame, BEFORE browser applies style/layout changes from the current
-    // event tick — so line.position() reads stale pre-transform BCRs and lines
-    // do not sync after Ctrl+wheel zoom. setTimeout(0) fires after the current
-    // event-tick's style mutations commit, so BCR reflects the new transform.
-    // Coalescing still works: subsequent calls within the same tick add to
-    // dirtyConns and the early return above prevents timer inflation.
-    setTimeout(() => {
-      connRafPending = false;
-      // Force layout flush on BOTH transform containers so getBoundingClientRect
-      // reflects the latest CSS transform (pan/zoom).
-      if (canvasSurface) void canvasSurface.offsetHeight;
-      if (typeof innerSurfaceContent !== 'undefined' && innerSurfaceContent) void innerSurfaceContent.offsetHeight;
-      // Touch one line's start element BCR — forces the compositor to sync layout
-      // for transformed descendants before position() reads their rect.
-      const firstLine = connLines.values().next().value;
-      if (firstLine && firstLine.start) { try { firstLine.start.getBoundingClientRect(); } catch (_) {} }
-      const ids = Array.from(dirtyConns);
-      dirtyConns.clear();
-      for (const id of ids) {
-        const line = connLines.get(id);
-        if (!line) continue;
-        try { line.position(); } catch (_) {}
-      }
-    }, 0);
+    const ids = Array.from(dirtyConns);
+    dirtyConns.clear();
+    for (const id of ids) {
+      const line = connLines.get(id);
+      if (!line) continue;
+      const conn = layout.connections.find(c => c.id === id);
+      if (conn) updateSvgLine(line, conn);
+    }
   }
 
   function refreshConnsForBox(boxKey) {
@@ -1198,39 +1234,49 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   // ── active-connect mode (drag from edge anchor to target box) ──
+  // BX-142: SVG-based drag-create. provisionalLine is an SVG <line> inside the surface.
+  // provisionalGhost is now { x, y } logical coords, updated on mousemove via rAF throttle.
   function enterConnectMode(fromId, fromEl) {
     if (connectMode) { exitConnectMode(); return; }   // second click cancels
     connectMode = { fromId, fromEl };
     document.body.classList.add('cx--connecting');
     document.body.style.cursor = 'crosshair';
-    // Bug 4: create a provisional line that follows the cursor during drag.
-    // Uses a ghost div as the drag endpoint; LeaderLine.position() redraws it on mousemove.
-    try {
-      provisionalGhost = document.createElement('div');
-      provisionalGhost.style.cssText = 'position:absolute;width:1px;height:1px;pointer-events:none;z-index:-1;';
-      document.body.appendChild(provisionalGhost);
-      provisionalLine = new window.LeaderLine({
-        start: fromEl, end: provisionalGhost,
-        color: 'var(--connection-color, #333)', size: 1.5,
-        dash: { animation: true }, path: 'straight', hide: false
-      });
-    } catch (e) { debugWarn('enterConnectMode provisional line', e); }
+    // Determine which surface this box lives in
+    const mp = boxMidPoint(fromId);
+    const isInner = mp && mp.surface === 'inner';
+    const surface = isInner ? innerSurfaceContent : canvasSurface;
+    const svg = surface ? getConnSvg(surface, isInner ? innerConnSvg : canvasConnSvg) : null;
+    if (isInner) innerConnSvg = svg; else canvasConnSvg = svg;
+    // Create provisional SVG <line> with dashed stroke
+    if (svg && mp) {
+      provisionalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      provisionalLine.setAttribute('class', 'conn-line conn-line--provisional');
+      provisionalLine.setAttribute('stroke', 'var(--connection-color, #333)');
+      provisionalLine.setAttribute('stroke-width', '1.5');
+      provisionalLine.setAttribute('stroke-dasharray', '5,3');
+      provisionalLine.setAttribute('x1', mp.x.toFixed(1));
+      provisionalLine.setAttribute('y1', mp.y.toFixed(1));
+      provisionalLine.setAttribute('x2', mp.x.toFixed(1));
+      provisionalLine.setAttribute('y2', mp.y.toFixed(1));
+      svg.appendChild(provisionalLine);
+      provisionalGhost = { x: mp.x, y: mp.y, surface: mp.surface };
+    }
     debug('enterConnectMode from=' + fromId);
   }
   function exitConnectMode(commitToId) {
     const cm = connectMode; connectMode = null;
     document.body.classList.remove('cx--connecting');
     document.body.style.cursor = '';
-    // Bug 4: dispose provisional line + ghost div.
-    if (provisionalLine) { try { provisionalLine.hide(); provisionalLine.remove(); } catch (_) {} provisionalLine = null; }
-    if (provisionalGhost) { try { provisionalGhost.remove(); } catch (_) {} provisionalGhost = null; }
+    // BX-142: dispose provisional SVG line + ghost coords.
+    if (provisionalLine) { try { provisionalLine.remove(); } catch (_) {} provisionalLine = null; }
+    provisionalGhost = null;
     if (cm && commitToId && cm.fromId && cm.fromId !== commitToId) {
       if (addConnection(cm.fromId, commitToId)) {
         saveLayout();
         // BX-DEV-137++: defer renderConnections to next rAF — avoids blocking the
         // mousedown event that triggered the connect. Synchronous LeaderLine ctor
         // on boxes×N pairs stalls the event loop on large layouts.
-        requestAnimationFrame(() => renderConnections());
+        renderConnections();
         debug('connect ' + cm.fromId + ' -> ' + commitToId);
       } else {
         debug('connect skipped (dup or self)');
@@ -3475,12 +3521,31 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.addEventListener('contextmenu', onContextMenu);
     // BX-DEV-137++++: connect mode is now drag-based: mousedown on edge anchor
     // starts connect mode, user drags to target box, mouseup connects to nearest midpoint.
-    // Bug 4: update provisional line endpoint to follow cursor during drag.
+    // BX-142: update provisional SVG line endpoint via rAF throttle.
+    // Convert screen coords to surface logical coords: logical = (clientXY - rect.left - panXY) / zoom.
+    let _provisionalRafPending = false;
+    let _provisionalLastEvent = null;
     document.addEventListener('mousemove', e => {
       if (!connectMode || !provisionalGhost || !provisionalLine) return;
-      provisionalGhost.style.left = e.clientX + 'px';
-      provisionalGhost.style.top = e.clientY + 'px';
-      try { provisionalLine.position(); } catch (_) {}
+      _provisionalLastEvent = e;
+      if (_provisionalRafPending) return;
+      _provisionalRafPending = true;
+      requestAnimationFrame(() => {
+        _provisionalRafPending = false;
+        if (!_provisionalLastEvent || !provisionalLine) return;
+        const e = _provisionalLastEvent;
+        const isInner = provisionalGhost.surface === 'inner';
+        const surface = isInner ? innerSurfaceContent : canvasSurface;
+        if (!surface) return;
+        const rect = surface.getBoundingClientRect();
+        const zoom = isInner ? innerZoom : canvasZoom;
+        const panX = isInner ? innerPanX : canvasPanX;
+        const panY = isInner ? innerPanY : canvasPanY;
+        const lx = (e.clientX - rect.left - panX) / zoom;
+        const ly = (e.clientY - rect.top - panY) / zoom;
+        provisionalLine.setAttribute('x2', lx.toFixed(1));
+        provisionalLine.setAttribute('y2', ly.toFixed(1));
+      });
     }, { passive: true });
     document.addEventListener('mouseup', e => {
       if (!connectMode) return;
