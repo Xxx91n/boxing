@@ -977,7 +977,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       a.dataset.side = side;
       a.addEventListener('mousedown', e => {
         e.stopPropagation(); e.preventDefault();
-        enterConnectMode(boxKey, el);
+        enterConnectMode(boxKey, el, e.clientX, e.clientY);
       });
       el.appendChild(a);
     }
@@ -1226,7 +1226,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const base = (origins && origins.get(mId)) || { x: m.x, y: m.y };
       const nx0 = base.x + deltaX, ny0 = base.y + deltaY;
       const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, CANVAS_GRID, snapCanvas);
-      m.x = resolved.x; m.y = resolved.y;
+      // Bug 3: clamp member to virtual canvas boundary — same world limits as parent drag-end
+      const worldMaxX = (canvasContainer.clientWidth / 0.3) - w;
+      const worldMaxY = (canvasContainer.clientHeight / 0.3) - h;
+      m.x = Math.max(0, Math.min(resolved.x, worldMaxX));
+      m.y = Math.max(0, Math.min(resolved.y, worldMaxY));
       const el = document.querySelector(`.large-box[data-id="${CSS.escape(rawId)}"]`);
       if (el) { el.style.left = m.x + 'px'; el.style.top = m.y + 'px'; }
       refreshConnsForBox(mId);
@@ -1236,7 +1240,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // ── active-connect mode (drag from edge anchor to target box) ──
   // BX-142: SVG-based drag-create. provisionalLine is an SVG <line> inside the surface.
   // provisionalGhost is now { x, y } logical coords, updated on mousemove via rAF throttle.
-  function enterConnectMode(fromId, fromEl) {
+  function enterConnectMode(fromId, fromEl, initCx, initCy) {
     if (connectMode) { exitConnectMode(); return; }   // second click cancels
     connectMode = { fromId, fromEl };
     document.body.classList.add('cx--connecting');
@@ -1249,6 +1253,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     if (isInner) innerConnSvg = svg; else canvasConnSvg = svg;
     // Create provisional SVG <line> with dashed stroke
     if (svg && mp) {
+      // Bug 1 fix: immediately snap line endpoint to mouse position — line follows cursor from first frame
+      let initLX = mp.x, initLY = mp.y;
+      if (typeof initCx === 'number' && typeof initCy === 'number' && surface) {
+        const rect = surface.getBoundingClientRect();
+        const zoom = isInner ? innerZoom : canvasZoom;
+        const panX = isInner ? innerPanX : canvasPanX;
+        const panY = isInner ? innerPanY : canvasPanY;
+        initLX = (initCx - rect.left - panX) / zoom;
+        initLY = (initCy - rect.top - panY) / zoom;
+      }
       provisionalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       provisionalLine.setAttribute('class', 'conn-line conn-line--provisional');
       provisionalLine.setAttribute('stroke', 'var(--connection-color, #333)');
@@ -1256,10 +1270,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       provisionalLine.setAttribute('stroke-dasharray', '5,3');
       provisionalLine.setAttribute('x1', mp.x.toFixed(1));
       provisionalLine.setAttribute('y1', mp.y.toFixed(1));
-      provisionalLine.setAttribute('x2', mp.x.toFixed(1));
-      provisionalLine.setAttribute('y2', mp.y.toFixed(1));
+      provisionalLine.setAttribute('x2', initLX.toFixed(1));
+      provisionalLine.setAttribute('y2', initLY.toFixed(1));
       svg.appendChild(provisionalLine);
-      provisionalGhost = { x: mp.x, y: mp.y, surface: mp.surface };
+      provisionalGhost = { x: initLX, y: initLY, surface: mp.surface };
     }
     debug('enterConnectMode from=' + fromId);
   }
