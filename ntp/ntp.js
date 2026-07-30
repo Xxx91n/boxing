@@ -958,6 +958,17 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     layout.connections = layout.connections.filter(c => c.id !== connId);
   }
 
+  // ── ARCHITECTURAL INVARIANT ──────────────────────────────────────────
+  // Any code that clears a transform surface (canvasSurface.innerHTML = ''
+  // or innerSurfaceContent.innerHTML = '') MUST call disposeAllConns() first.
+  // Without this, connLines Map holds stale SVG refs and renderConnections()
+  // skips rebuild — lines become invisible forever. Call sites:
+  //   L/renderCanvas:    disposeAllConns() → canvasSurface.innerHTML = ''
+  //   L/renderInnerSurface: disposeAllConns() → content.innerHTML = ''
+  //   L/applyExternalLayout: disposeAllConns() → renderInnerSurface(lb)
+  //   L/enterLargeBox:   disposeAllConns() → renderInnerSurface(lb)
+  //   L/exitLargeBox:    disposeAllConns() → renderCanvas()
+  // ── END INVARIANT ──────────────────────────────────────────────────────
   function disposeAllConns() {
     for (const line of connLines.values()) {
       try { line.remove(); } catch (_) {}
