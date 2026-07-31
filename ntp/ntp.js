@@ -3163,6 +3163,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       ? mergeConcurrentLayout(incoming, layout)
       : mergeConcurrentLayout(layout, incoming);
     const needsReconcileWrite = JSON.stringify(layout) !== incomingSerialized;
+    // Bug 1: invalidate groupIdx cache so getGroupByParent reads fresh layout.groups after cross-tab merge.
+    groupIdx.clear();
+    connIdx.clear();
+    boxConnIdx.clear();
     try {
       if (staleLargeBoxId && !getLargeBox(staleLargeBoxId)) {
         currentLargeBoxId = null;
