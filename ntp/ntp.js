@@ -904,7 +904,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   const dirtyConns = new Set();         // connIds needing path update
   const connIdx = new Map();              // O(1) conn lookup by key-pair
   const boxConnIdx = new Map();            // O(1) reverse: boxKey -> Set<connId>
-  const groupIdx = new Map();             // O(1) group lookup by parentId
+  // BX-DSU: Union-Find with path compression for O(α) group connectivity
+  const boxGroupId = new Map();      // boxKey -> groupId (DSU find root)
+  const groupMembers = new Map();    // groupId -> Set<boxKey> (all members)
+  const groupStar = new Set();       // boxKeys marked as parent (starred)
+  const groupIdx = new Map();       // kept for compat: parentId -> group object
   let canvasConnSvg = null;     // SVG overlay inside canvasSurface
   let innerConnSvg = null;     // SVG overlay inside innerSurfaceContent
   let connectMode = null;               // { fromId, fromEl, fromSide } | null
@@ -946,6 +950,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       id: 'conn-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
       from: fromId, to: toId, createdAt: Date.now()
     });
+    // BX-DSU: union the two boxes' groups when a connection is created
+    dsuUnion(fromId, toId);
     // Bug 4: auto-join connection endpoints to a starred parent group.
     // If from is a starred parent, the to-end joins as a member;
     // if to is a starred parent, the from-end joins as a member.
@@ -957,6 +963,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function removeConnection(connId) {
     ensureConnArrays();
     layout.connections = layout.connections.filter(c => c.id !== connId);
+    // BX-DSU: rebuild group connectivity after connection removal
+    dsuRebuildFromConnections();
   }
 
   // ── ARCHITECTURAL INVARIANT ──────────────────────────────────────────
@@ -1119,6 +1127,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       line.setAttribute('class', 'conn-line');
       line.setAttribute('stroke', 'var(--connection-color, #333)');
       line.setAttribute('stroke-width', '1.5');
+      line.setAttribute('shape-rendering', 'geometricPrecision');
       updateSvgLine(line, c);
       svg.appendChild(line);
       connLines.set(c.id, line);
@@ -1156,7 +1165,75 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function refreshAllConns() { scheduleConnRefresh(Array.from(connLines.keys())); }
 
   // ── Star-mark / group drag ──────────────────────────
-  function ensureGroups() { ensureConnArrays(); return layout.groups || (layout.groups = []); }
+  
+  // ── BX-DSU: Union-Find with path compression ──
+  let __nextGroupId = 1;
+  
+  function dsuFind(key) {
+    if (!boxGroupId.has(key)) return 0;
+    let root = key;
+    while (boxGroupId.get(root) !== root) {
+      // path compression: point to grandparent
+      const parent = boxGroupId.get(root);
+      const grandparent = boxGroupId.get(parent);
+      if (grandparent !== parent) boxGroupId.set(root, grandparent);
+      root = parent;
+    }
+    return boxGroupId.get(root);
+  }
+  
+  function dsuMake(key) {
+    if (!boxGroupId.has(key)) {
+      boxGroupId.set(key, key);
+      groupMembers.set(key, new Set([key]));
+    }
+  }
+  
+  function dsuUnion(a, b) {
+    dsuMake(a); dsuMake(b);
+    const ra = dsuFind(a), rb = dsuFind(b);
+    if (ra === rb) return;
+    // union by size: attach smaller group to larger
+    const sa = groupMembers.get(ra).size, sb = groupMembers.get(rb).size;
+    const big = sa >= sb ? ra : rb, small = sa >= sb ? rb : ra;
+    // repoint all members of small group to big group
+    for (const m of groupMembers.get(small)) boxGroupId.set(m, big);
+    groupMembers.get(big).add(...groupMembers.get(small));
+    groupMembers.delete(small);
+  }
+  
+  function dsuReset() {
+    boxGroupId.clear(); groupMembers.clear(); groupStar.clear();
+  }
+  
+  function dsuRebuildFromConnections() {
+    dsuReset();
+    // Rebuild DSU from layout.connections — each connection unions two boxes
+    for (const c of layout.connections) {
+      if (c.from && c.to) dsuUnion(c.from, c.to);
+    }
+    // Re-apply star marks from layout.groups (preserve starred parents)
+    for (const g of (layout.groups || [])) {
+      if (g.parentId) groupStar.add(g.parentId);
+    }
+  }
+  
+  function dsuGroupMembers(key) {
+    const root = dsuFind(key);
+    if (!root) return null;
+    return groupMembers.get(root) || null;
+  }
+  
+  function getGroupByParent(parentId) {
+    // Compat: return a fake group object with members from DSU
+    if (!parentId) return null;
+    if (!groupStar.has(parentId)) return null;
+    const members = dsuGroupMembers(parentId);
+    if (!members) return null;
+    return { parentId, members: [...members].filter(k => k !== parentId) };
+  }
+
+function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); return layout.groups || (layout.groups = []); }
 
   // ── Tiered keys for cross-level connections (BX-DEV-137+) ──────────
   // large:boxId  |  small:largeId:smallId  — addresses any box at any nesting.
@@ -1199,41 +1276,31 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     return groupIdx.get(parentId) || null;
   }
   function toggleStarMark(parentId) {
-    ensureConnArrays(); groupIdx.clear(); // ponytail: invalidate group cache after mutation (Bug 6)
-    const groups = layout.groups;
-    let g = groups.find(x => x.parentId === parentId);
-    if (g) {
-      // unstar: drop the group; members go back to individual drag.
-      // BX-143: tombstone the parentId so cross-tab merge union does NOT bring it back
-      // (without tombstone, remote's old group survives the union merge → star never clears)
-      layout.groups = groups.filter(x => x.parentId !== parentId);
+    ensureConnArrays();
+    if (groupStar.has(parentId)) {
+      // unstar: remove from groupStar + layout.groups
+      groupStar.delete(parentId);
+      layout.groups = (layout.groups || []).filter(x => x.parentId !== parentId);
       markDeleted(parentId);
       debug('toggleStarMark: unstar parent=' + parentId);
     } else {
-      // star: create a group with the box as parent, then auto-join all
-      // boxes already connected to this parent (Bug 4: network structure).
-      groups.push({ parentId, members: [] });
-      for (const c of layout.connections) {
-        if (c.from === parentId && c.to !== parentId) addMember(parentId, c.to);
-        if (c.to === parentId && c.from !== parentId) addMember(parentId, c.from);
+      // star: add to groupStar + layout.groups for persistence
+      groupStar.add(parentId);
+      if (!layout.groups) layout.groups = [];
+      if (!layout.groups.find(x => x.parentId === parentId)) {
+        layout.groups.push({ parentId, members: [] });
       }
-      debug('toggleStarMark: star parent=' + parentId + ' members=' + (groups[groups.length-1].members.length));
+      debug('toggleStarMark: star parent=' + parentId);
     }
     saveLayout();
-    // Bug 2 fix: do NOT call renderCanvas() here — it exits the inner-surface view
-    // (small-box page) and jumps back to the canvas. Instead, just toggle the button visual.
-    // Bug 3 fix: rebuild groupIdx fully before iterating so stale entries (from a previous
-    // star state, cleared at function entry) do not bypass early-return and leave --on set.
-    groupIdx.clear();
-    for (const g of ensureGroups()) groupIdx.set(g.parentId, g);
+    // Update star button visual state
     document.querySelectorAll('.box-star-btn').forEach(btn => {
       const boxEl = btn.closest('[data-box-key]');
       if (!boxEl) return;
       const key = boxEl.dataset.boxKey;
-      const starred = !!getGroupByParent(key);
+      const starred = groupStar.has(key);
       btn.classList.toggle('box-tool-btn--on', starred);
-      btn.textContent = starred ? '★' : '☆'; // Bug 4: hollow star for non-parent, solid for parent
-      // Bug 4: box--starred visual highlight on parent element itself.
+      btn.textContent = starred ? '★' : '☆';
       boxEl.classList.toggle('box--starred', starred);
     });
   }
@@ -1253,18 +1320,24 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // whole group visits new positions as a rigid set, then collisions push back.
   // ponytail: O(m*n) elastic pass per group; swap in rbush R-tree at >100 boxes.
   function moveGroupTogether(parentId, deltaX, deltaY, origins) {
-    const g = getGroupByParent(parentId);
-    if (!g || !g.members || !g.members.length) return;
-    // Bug 1 fix: members move from their ORIGINAL position (captured at drag start)
-    // by deltaX/deltaY. The previous code added the cumulative delta to m.x every
-    // mousemove tick, stacking the delta onto already-moved members and flinging
-    // them off-canvas. origins Map<memberKey, {x,y}> replaces the destructive pattern.
+    // BX-DSU: use DSU to find ALL group members (multi-level, not just direct children)
+    const members = dsuGroupMembers(parentId);
+    if (!members || members.size <= 1) return;
     const isLarge = (typeof parentId === 'string' && parentId.startsWith('large:'));
+    // Exclude the parent itself from the move set (parent is already at new position)
+    const memberKeys = [...members].filter(k => k !== parentId);
+    if (!memberKeys.length) return;
     if (isLarge) {
-      const rawPid = parentId.slice(6);
-      const parentIdSet = new Set([rawPid, ...g.members.map(m => (typeof m === 'string' && m.startsWith('large:')) ? m.slice(6) : m)]);
-      const others = layout.boxes.filter(b => !parentIdSet.has(b.id));
-      for (const mId of g.members) {
+      // Build collision set: all boxes NOT in this group
+      const groupBoxIds = new Set();
+      for (const k of memberKeys) {
+        const rawId = (typeof k === 'string' && k.startsWith('large:')) ? k.slice(6) : k;
+        groupBoxIds.add(rawId);
+      }
+      const parentRawId = parentId.slice(6);
+      groupBoxIds.add(parentRawId);
+      const others = layout.boxes.filter(b => !groupBoxIds.has(b.id));
+      for (const mId of memberKeys) {
         const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
         const m = getLargeBox(rawId);
         if (!m) continue;
@@ -1276,28 +1349,26 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         const worldMaxY = (canvasContainer.clientHeight / 0.3) - h;
         m.x = Math.max(0, Math.min(resolved.x, worldMaxX));
         m.y = Math.max(0, Math.min(resolved.y, worldMaxY));
-        const el = document.querySelector(`.large-box[data-id="${CSS.escape(rawId)}"]`);
+        const el = document.querySelector('.large-box[data-id="' + CSS.escape(rawId) + '"]');
         if (el) { el.style.left = m.x + 'px'; el.style.top = m.y + 'px'; }
         refreshConnsForBox(mId);
       }
     } else {
-      // BX-143: small-box group members — resolve 'small:largeId:smallId' keys and
-      // move children within the parent large box's inner surface. Collision set is the
-      // parent box's other children (excluding group members).
+      // Small-box group members
       const parts = parentId.split(':');
       if (parts.length < 3) return;
       const parentLargeId = parts[1];
       const lb = getLargeBox(parentLargeId);
       if (!lb) return;
       const memberSmallIds = new Set();
-      for (const mId of g.members) {
+      for (const mId of memberKeys) {
         if (typeof mId === 'string' && mId.startsWith('small:')) {
           const mp = mId.split(':');
           if (mp.length >= 3 && mp[1] === parentLargeId) memberSmallIds.add(mp.slice(2).join(':'));
         }
       }
       const others = (lb.children || []).filter(s => !memberSmallIds.has(s.id) && s.id !== parts.slice(2).join(':'));
-      for (const mId of g.members) {
+      for (const mId of memberKeys) {
         const mp = (typeof mId === 'string' && mId.startsWith('small:')) ? mId.split(':') : null;
         if (!mp || mp.length < 3 || mp[1] !== parentLargeId) continue;
         const rawId = mp.slice(2).join(':');
@@ -1477,6 +1548,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   // ── Obsidian-style zoom & pan ──────────────────────────
   function applyCanvasTransform() {
+    canvasSurface.style.willChange = 'transform';
     canvasSurface.style.transform = `translate(${canvasPanX}px, ${canvasPanY}px) scale(${canvasZoom})`;
     canvasSurface.style.transformOrigin = '0 0';
     canvasZoomVal.textContent = Math.round(canvasZoom * 100) + '%';
@@ -1581,8 +1653,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const hasBoxes = layout.boxes.length > 0;
     // BX-DEV-111: hide empty placeholder BEFORE clearing surface to avoid flash
     canvasEmpty.hidden = true;
-    disposeAllConns(); // BX-DEV-137++++: clear stale LeaderLine instances before DOM is wiped
+    // Bug2: clear DOM synchronously then rebuild in same tick — no flash
     canvasSurface.innerHTML = '';
+    disposeAllConns(); // clear stale connLines Map after DOM wipe
     // Then re-show empty state only if truly empty
     canvasEmpty.hidden = hasBoxes;
     // BX-DEV-111f: Ensure i18n is applied to empty state elements (may have been cleared in HTML)
@@ -1601,8 +1674,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     ensureConnArrays(); debug('renderCanvas done, surface children=' + canvasSurface.children.length);
     // BX-DEV-111 v2: measure each collapsed box for precise expand animation
     canvasSurface.querySelectorAll('.large-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
-    // BX-DEV-137+++: deferred renderConnections — wait for setBodyExpandHeight rAF to settle box heights
-    requestAnimationFrame(() => requestAnimationFrame(() => renderConnections()));
+    // Bug2: render connections synchronously — no flash with deferred dispose
+    renderConnections(); // Bug2: sync render — same JS tick, no flash
     applyCanvasTransform();
     updateCaption();
   }
@@ -1970,7 +2043,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // (disposeAllConns is called early in this function), and subsequent
     // renderConnections is never called — lines stay invisible until
     // some other code path happens to render them.
-    requestAnimationFrame(() => requestAnimationFrame(() => renderConnections()));
+    renderConnections();
   }
 
   function createSmallBoxEl(largeId, sb) {
@@ -2750,6 +2823,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     if (e.target.closest('.large-box') || e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float') || e.target.id === 'header-pin-btn' || e.target.closest('#header-pin-btn')) return;
     if (e.button !== 0) return;
 
+    canvasSurface.classList.add('panning');
     panState = {
       startMouseX: e.clientX,
       startMouseY: e.clientY,
@@ -2793,6 +2867,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   function onCanvasPanEnd(e) {
+    canvasSurface.classList.remove('panning');
     document.removeEventListener('mousemove', onCanvasPanMove);
     document.removeEventListener('mouseup', onCanvasPanEnd);
     window.removeEventListener('blur', onCanvasPanEnd);
@@ -3195,7 +3270,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       : mergeConcurrentLayout(layout, incoming);
     const needsReconcileWrite = JSON.stringify(layout) !== incomingSerialized;
     // Bug 1: invalidate groupIdx cache so getGroupByParent reads fresh layout.groups after cross-tab merge.
-    groupIdx.clear();
+    groupIdx.clear(); dsuRebuildFromConnections();
     connIdx.clear();
     boxConnIdx.clear();
     try {

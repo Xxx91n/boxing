@@ -2185,6 +2185,10 @@ html.ntp--dark {
   content-visibility: auto;
   contain-intrinsic-size: auto 320px auto 220px;
 }
+/* Bug1: disable content-visibility during canvas pan — avoids per-box viewport check on every transform tick */
+.panning .large-box {
+  content-visibility: visible !important;
+}
 .small-box:not(.small-box--dragging):not(.small-box--ghost) {
   content-visibility: auto;
   contain-intrinsic-size: auto 300px auto 340px;
