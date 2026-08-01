@@ -1,4 +1,4 @@
-<!-- BOXING-CTX-ROUTING-OVERRIDE:START -->
+﻿<!-- BOXING-CTX-ROUTING-OVERRIDE:START -->
 <!-- Project-level hard contract: compresses + localizes host AGENTS.md Tool routing precedence. Do not remove. -->
 > **TOOL ROUTING — READ FIRST.** `ctx_*` (context-mode) PREFERRED over `shell`/inline `python -c`/inline `node -e` whenever both can do the job:
 >
@@ -79,6 +79,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 
 ## Chrome Extension Workflow
 
+- **Dev load (recommended)**: `npm run dev:chrome` or `npm run dev:firefox` — uses web-ext (Mozilla official tool) to auto-launch browser with correct dist loaded. Requires `npm install` first.
 - Load unpacked (Chrome): `chrome://extensions` -> Developer mode -> Load unpacked -> select `dist/boxing-chrome/` (auto-discover from project root — do NOT load repo root in Chrome).
 - Load unpacked (Firefox): `about:debugging` -> This Firefox -> Load Temporary Add-on -> select `dist/boxing-firefox/manifest.json` (or raw repo root for Firefox dev).
 - Tip: If you accidentally load the repo root (`D:/Aworker/crx/boxing`) in Chrome, Chrome will show `background.scripts requires MV2` or `Permission 'browserSettings' unknown` — this is expected. Rebuild with `node .github/scripts/build.mjs` and load `dist/boxing-chrome/` instead.
