@@ -79,7 +79,9 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 
 ## Chrome Extension Workflow
 
-- Load unpacked: `chrome://extensions` -> Developer mode -> Load unpacked -> select `D:/Aworker/crx/boxing`.
+- Load unpacked (Chrome): `chrome://extensions` -> Developer mode -> Load unpacked -> select `dist/boxing-chrome/` (auto-discover from project root — do NOT load repo root in Chrome).
+- Load unpacked (Firefox): `about:debugging` -> This Firefox -> Load Temporary Add-on -> select `dist/boxing-firefox/manifest.json` (or raw repo root for Firefox dev).
+- Tip: If you accidentally load the repo root (`D:/Aworker/crx/boxing`) in Chrome, Chrome will show `background.scripts requires MV2` or `Permission 'browserSettings' unknown` — this is expected. Rebuild with `node .github/scripts/build.mjs` and load `dist/boxing-chrome/` instead.
 - Inspect: service worker (`chrome://extensions` -> Details -> service worker), popup (right-click toolbar icon -> Inspect popup), errors (Errors button on extension card).
 - MV3 requirements: valid `manifest.json`, service worker active, only declared permissions requested.
 - New tab override should load `ntp/index.html` with beige theme and zero console errors.

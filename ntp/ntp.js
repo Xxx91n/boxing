@@ -1028,13 +1028,21 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   // Compute the mid-point of a box edge in logical (untransformed) coords.
   // Since SVG is inside the transform surface, we use raw box x/y/w/h.
+  // BX-DEV-137+++++: title bar center anchor for auto-expand boxes.
+  // For collapseHover=false (auto-expand active, box is expanded), use title bar center
+  // (TITLE_BAR_H/2 from box top) instead of full geometric center — keeps connection lines
+  // anchored to the consistent visual title bar regardless of expand/collapse state.
+  const TITLE_BAR_H = 40; // matches .small-box__bar min-height + .large-box__bar padding
+
   function boxMidPoint(key) {
     if (!key || typeof key !== 'string') return null;
     if (key.startsWith('large:')) {
       const b = getLargeBox(key.slice(6));
       if (!b) return null;
       const x = b.x, y = b.y, w = b.width || LARGE_DEF_W, h = b.height || LARGE_DEF_H;
-      return { x: x + w / 2, y: y + h / 2, surface: 'canvas' };
+      // If auto-expand is active and box is NOT in hover-collapse mode, use title bar center
+      const anchorY = (b.collapseHover === false) ? y + TITLE_BAR_H / 2 : y + h / 2;
+      return { x: x + w / 2, y: anchorY, surface: 'canvas' };
     }
     if (key.startsWith('small:')) {
       const parts = key.split(':');
@@ -1042,13 +1050,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const sb = getSmallBox(parts[1], parts.slice(2).join(':'));
       if (!sb) return null;
       const x = sb.x, y = sb.y, w = sb.width || SMALL_DEF_W, h = sb.height || SMALL_DEF_H;
-      return { x: x + w / 2, y: y + h / 2, surface: 'inner' };
+      const anchorY = (sb.collapseHover === false) ? y + TITLE_BAR_H / 2 : y + h / 2;
+      return { x: x + w / 2, y: anchorY, surface: 'inner' };
     }
     // legacy raw id (Round 1 format) — treat as large box
     const b = getLargeBox(key);
     if (!b) return null;
     const x = b.x, y = b.y, w = b.width || LARGE_DEF_W, h = b.height || LARGE_DEF_H;
-    return { x: x + w / 2, y: y + h / 2, surface: 'canvas' };
+    const anchorY = (b.collapseHover === false) ? y + TITLE_BAR_H / 2 : y + h / 2;
+    return { x: x + w / 2, y: anchorY, surface: 'canvas' };
   }
 
   // Pick the SVG layer for a connection based on which surface both boxes share.
@@ -2576,7 +2586,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       origTop: parseInt(el.style.top, 10) || 0,
       zoom, panX, panY,
       container,
-      memberOrigins
+      memberOrigins,
+      hasMoved: false // BX-DEV-137+++++: track actual drag movement to suppress accidental button click
     };
 
     el.classList.add(type === 'large' ? 'large-box--dragging' : 'small-box--dragging');
@@ -2597,9 +2608,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   function onBoxDragMove(e) {
     if (!dragState) return;
-
     const dx = e.clientX - dragState.startMouseX;
     const dy = e.clientY - dragState.startMouseY;
+    // BX-DEV-137+++++: Mark as moved if mouse traveled more than threshold — suppresses accidental button click after drag
+    if (!dragState.hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) dragState.hasMoved = true;
     // BX-DEV-121: read LIVE zoom — innerZoom/canvasZoom can change mid-drag via Ctrl+wheel.
     // Dividing by the stale start-of-drag snapshot made the box lag/jump behind the cursor.
     const liveZoom = dragState.type === 'large' ? canvasZoom : innerZoom;
@@ -2647,6 +2659,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     document.removeEventListener('visibilitychange', onBoxDragVisHide);
     document.removeEventListener('pointerup', onBoxDragEnd);
     document.removeEventListener('pointercancel', onBoxDragEnd);
+    // BX-DEV-137+++++: if a real drag happened, suppress the next click on toolbar buttons
+    // to prevent accidental activation when drag started on a button area.
+    if (dragState && dragState.hasMoved) {
+      const suppressClick = (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        document.removeEventListener('click', suppressClick, true);
+      };
+      document.addEventListener('click', suppressClick, true);
+    }
     if (!dragState) return;
 
     const { type, id, el, container } = dragState;
