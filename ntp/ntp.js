@@ -1086,10 +1086,13 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const a = boxMidPoint(c.from);
     const b = boxMidPoint(c.to);
     if (!a || !b) { lineEl.style.display = 'none'; return; }
-    lineEl.setAttribute('x1', a.x.toFixed(1));
-    lineEl.setAttribute('y1', a.y.toFixed(1));
-    lineEl.setAttribute('x2', b.x.toFixed(1));
-    lineEl.setAttribute('y2', b.y.toFixed(1));
+    // BX-145: round to integer to eliminate subpixel coordinate jitter at low zoom.
+    // toFixed(1) lands coordinates between device pixels, causing antialiasing artifacts
+    // that appear as jagged lines especially at 30% zoom in Chrome.
+    lineEl.setAttribute('x1', Math.round(a.x));
+    lineEl.setAttribute('y1', Math.round(a.y));
+    lineEl.setAttribute('x2', Math.round(b.x));
+    lineEl.setAttribute('y2', Math.round(b.y));
     lineEl.style.display = '';
   }
 
@@ -1324,20 +1327,27 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
     const members = dsuGroupMembers(parentId);
     if (!members || members.size <= 1) return;
     const isLarge = (typeof parentId === 'string' && parentId.startsWith('large:'));
-    // Exclude the parent itself from the move set (parent is already at new position)
-    const memberKeys = [...members].filter(k => k !== parentId);
-    if (!memberKeys.length) return;
-    if (isLarge) {
-      // Build collision set: all boxes NOT in this group
+    // Separate members by key type — DSU may contain mixed large:/small: keys
+    const largeMembers = [];
+    const smallMembers = [];
+    for (const k of members) {
+      if (k === parentId) continue;
+      if (typeof k === 'string' && k.startsWith('large:')) largeMembers.push(k);
+      else if (typeof k === 'string' && k.startsWith('small:')) smallMembers.push(k);
+      else largeMembers.push(k); // legacy raw id
+    }
+    if (!largeMembers.length && !smallMembers.length) return;
+
+    // Move large-box members
+    if (largeMembers.length) {
       const groupBoxIds = new Set();
-      for (const k of memberKeys) {
+      for (const k of largeMembers) {
         const rawId = (typeof k === 'string' && k.startsWith('large:')) ? k.slice(6) : k;
         groupBoxIds.add(rawId);
       }
-      const parentRawId = parentId.slice(6);
-      groupBoxIds.add(parentRawId);
+      if (isLarge) { const parentRawId = parentId.slice(6); groupBoxIds.add(parentRawId); }
       const others = layout.boxes.filter(b => !groupBoxIds.has(b.id));
-      for (const mId of memberKeys) {
+      for (const mId of largeMembers) {
         const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
         const m = getLargeBox(rawId);
         if (!m) continue;
@@ -1353,23 +1363,24 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
         if (el) { el.style.left = m.x + 'px'; el.style.top = m.y + 'px'; }
         refreshConnsForBox(mId);
       }
-    } else {
-      // Small-box group members
-      const parts = parentId.split(':');
-      if (parts.length < 3) return;
-      const parentLargeId = parts[1];
+    }
+
+    // Move small-box members
+    if (smallMembers.length) {
+      let parentLargeId = null;
+      if (isLarge) { parentLargeId = parentId.slice(6); }
+      else { const parts = parentId.split(':'); if (parts.length >= 3) parentLargeId = parts[1]; }
+      if (!parentLargeId) return;
       const lb = getLargeBox(parentLargeId);
       if (!lb) return;
       const memberSmallIds = new Set();
-      for (const mId of memberKeys) {
-        if (typeof mId === 'string' && mId.startsWith('small:')) {
-          const mp = mId.split(':');
-          if (mp.length >= 3 && mp[1] === parentLargeId) memberSmallIds.add(mp.slice(2).join(':'));
-        }
+      for (const mId of smallMembers) {
+        const mp = mId.split(':');
+        if (mp.length >= 3 && mp[1] === parentLargeId) memberSmallIds.add(mp.slice(2).join(':'));
       }
-      const others = (lb.children || []).filter(s => !memberSmallIds.has(s.id) && s.id !== parts.slice(2).join(':'));
-      for (const mId of memberKeys) {
-        const mp = (typeof mId === 'string' && mId.startsWith('small:')) ? mId.split(':') : null;
+      const others = (lb.children || []).filter(s => !memberSmallIds.has(s.id) && (!isLarge || s.id !== parentId.split(':').slice(2).join(':')));
+      for (const mId of smallMembers) {
+        const mp = mId.split(':');
         if (!mp || mp.length < 3 || mp[1] !== parentLargeId) continue;
         const rawId = mp.slice(2).join(':');
         const m = getSmallBox(parentLargeId, rawId);
@@ -2638,24 +2649,25 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
     const panX = type === 'large' ? canvasPanX : innerPanX;
     const panY = type === 'large' ? canvasPanY : innerPanY;
 
-    const memberOrigins = new Map(); // Bug 1 fix: capture member base positions to prevent delta-stacking
-    if (type === 'large') {
-      const g = getGroupByParent(largeKey(id));
+    const memberOrigins = new Map(); // BX-DSU: capture ALL group member origins to prevent delta-stacking
+    const dragKey = type === 'large' ? largeKey(id) : (id && id.largeId && id.smallId ? smallKey(id.largeId, id.smallId) : null);
+    if (dragKey) {
+      const g = getGroupByParent(dragKey);
       if (g) for (const mId of g.members) {
-        const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
-        const m = getLargeBox(rawId);
-        if (m) memberOrigins.set(mId, { x: m.x, y: m.y });
-      }
-    } else if (type === 'small' && id && id.largeId && id.smallId) {
-      // BX-143: capture small-box group member origins for parent drag
-      const g = getGroupByParent(smallKey(id.largeId, id.smallId));
-      if (g) for (const mId of g.members) {
-        if (typeof mId === 'string' && mId.startsWith('small:')) {
+        // Capture origin for any member key type (large: or small:)
+        if (typeof mId === 'string' && mId.startsWith('large:')) {
+          const m = getLargeBox(mId.slice(6));
+          if (m) memberOrigins.set(mId, { x: m.x, y: m.y });
+        } else if (typeof mId === 'string' && mId.startsWith('small:')) {
           const parts = mId.split(':');
           if (parts.length >= 3) {
             const m = getSmallBox(parts[1], parts.slice(2).join(':'));
             if (m) memberOrigins.set(mId, { x: m.x, y: m.y });
           }
+        } else {
+          // legacy raw id — treat as large box
+          const m = getLargeBox(mId);
+          if (m) memberOrigins.set(mId, { x: m.x, y: m.y });
         }
       }
     }
