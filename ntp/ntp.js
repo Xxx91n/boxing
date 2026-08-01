@@ -1125,17 +1125,23 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
     scheduleConnRefresh(Array.from(connLines.keys()));
   }
+  let __connRefreshRAF = 0;
   function scheduleConnRefresh(connIds) {
     if (!connIds || !connIds.length) return;
     for (const id of connIds) dirtyConns.add(id);
-    const ids = Array.from(dirtyConns);
-    dirtyConns.clear();
-    for (const id of ids) {
-      const line = connLines.get(id);
-      if (!line) continue;
-      const conn = layout.connections.find(c => c.id === id);
-      if (conn) updateSvgLine(line, conn);
-    }
+    // BX-DEV-PERF: rAF-batch to avoid sync layout thrash on Firefox during drag
+    if (__connRefreshRAF) return;
+    __connRefreshRAF = requestAnimationFrame(() => {
+      __connRefreshRAF = 0;
+      const ids = Array.from(dirtyConns);
+      dirtyConns.clear();
+      for (const id of ids) {
+        const line = connLines.get(id);
+        if (!line) continue;
+        const conn = layout.connections.find(c => c.id === id);
+        if (conn) updateSvgLine(line, conn);
+      }
+    });
   }
 
   function refreshConnsForBox(boxKey) {
@@ -2140,8 +2146,10 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
             return;
           }
           if (mode === 'newTab') {
-            if (api.tabs?.create) { api.tabs.create({ url, active: true }); }
-            else { window.open(url, '_blank', 'noopener'); }
+            try {
+              if (api.tabs?.create) { api.tabs.create({ url, active: true }); return; }
+            } catch (e) { debug('tabs.create failed, fallback to window.open', e?.message); }
+            window.open(url, '_blank', 'noopener');
             return;
           }
           // Unset — legacy browser default. Firefox respects openBookmarksInNewTabs; Chrome opens current tab.
@@ -2623,7 +2631,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
     dragState.el.style.left = newX + 'px';
     dragState.el.style.top = newY + 'px';
-    try { repositionAllPopups(); } catch (_) {}
+    // BX-DEV-PERF: only reposition popups if any exist — skip getBoundingClientRect on hot path
+    if (__popupTrackers.size > 0) { try { repositionAllPopups(); } catch (_) {} }
     if (dragState.type === 'large') {
       // Real-time data model update so boxMidPoint reads live coords during drag
       const lb = getLargeBox(dragState.id);
@@ -3475,13 +3484,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         window.location.href = url;
       } else {
         // newTab: prefer tabs API if extension context allows; else window.open.
-        if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
-          chrome.tabs.create({ url });
-        } else if (typeof browser !== 'undefined' && browser.tabs && browser.tabs.create) {
-          browser.tabs.create({ url });
-        } else {
-          window.open(url, '_blank', 'noopener');
-        }
+        try {
+          if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+            chrome.tabs.create({ url }); return;
+          } else if (typeof browser !== 'undefined' && browser.tabs && browser.tabs.create) {
+            browser.tabs.create({ url }); return;
+          }
+        } catch (e) { debug('tabs.create via openBookmarkUrl failed', e?.message); }
+        window.open(url, '_blank', 'noopener');
       }
     } catch (e) {
       debug('openBookmarkUrl fallback', e && e.message);

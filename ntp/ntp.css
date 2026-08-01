@@ -375,6 +375,7 @@ body {
 /* === LARGE BOX (draggable, fixed size) === */
 .large-box {
   position: absolute;
+  z-index: 1;
   width: 320px;
   height: 220px;
   display: flex;
@@ -398,6 +399,9 @@ body {
   opacity: 0.95;
   cursor: grabbing;
   z-index: 5;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  will-change: left, top;
 }
 
 .large-box--ghost {
@@ -721,6 +725,7 @@ body {
 /* === SMALL BOX (fixed, second-level container) === */
 .small-box {
   position: absolute;
+  z-index: 1;
   width: 300px;
   height: 340px;
   display: flex;
@@ -743,6 +748,9 @@ body {
   border-color: var(--color-accent);
   z-index: 5;
   cursor: grabbing;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  will-change: left, top;
 }
 
 .small-box--ghost {
