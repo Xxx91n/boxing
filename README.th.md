@@ -39,7 +39,7 @@ node --check ntp/ntp.js
 Both commands run from the project root (`boxing/` directory):
 ```bash
 node .github/scripts/build.mjs        # Dev build → dist/boxing-chrome + dist/boxing-firefox
-node scripts/build-release.js         # Release build → ~/box/release/{chrome,firefox}/ (4 artifacts)
+node scripts/build-release.js         # Release build → dist/boxing-{chrome,firefox}/release/{chrome,firefox}/ (6 artifacts)
 ```
 
 ### Playwright Testing
