@@ -987,6 +987,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     connLines.clear();
     dirtyConns.clear();
     boxConnIdx.clear();
+    connById.clear();
     // Clear SVG overlay DOM too
     if (canvasConnSvg) { while (canvasConnSvg.firstChild) canvasConnSvg.removeChild(canvasConnSvg.firstChild); }
     if (innerConnSvg) { while (innerConnSvg.firstChild) innerConnSvg.removeChild(innerConnSvg.firstChild); }
