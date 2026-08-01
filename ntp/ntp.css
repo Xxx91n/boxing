@@ -373,6 +373,16 @@ body {
 }
 
 /* === LARGE BOX (draggable, fixed size) === */
+/* ========================================================================
+ * BX-CSS-DUAL-WRITE CONVENTION
+ * Rules touching .large-box and .small-box share the same visual language.
+ * Any CSS property added/changed for one surface MUST be mirrored on the other.
+ * Markers:
+ *   BX-DUAL-WRITE  — paired rule; changing one requires changing the other.
+ *   LARGE-ONLY     — large-box design difference (no small-box counterpart).
+ *   SMALL-ONLY     — small-box design difference (no large-box counterpart).
+ * See: docs/css-dual-write-convention.md
+ * ======================================================================== */
 .large-box {
   position: absolute;
   z-index: 1;
@@ -388,11 +398,13 @@ body {
   user-select: none;
 }
 
+/* BX-DUAL-WRITE: :hover vs :hover */
 .large-box:hover {
   box-shadow: var(--shadow-2);
   border-color: var(--color-card-edge);
 }
 
+/* BX-DUAL-WRITE: --dragging vs --dragging */
 .large-box--dragging {
   box-shadow: var(--shadow-pop);
   border-color: var(--color-accent);
@@ -404,10 +416,12 @@ body {
   will-change: left, top;
 }
 
+/* BX-DUAL-WRITE: --ghost vs --ghost */
 .large-box--ghost {
   box-shadow: 0 0 0 2px var(--color-accent-soft-2);
 }
 
+/* BX-DUAL-WRITE: __bar vs __bar */
 .large-box__bar {
   display: flex;
   align-items: center;
@@ -423,11 +437,13 @@ body {
   cursor: grabbing;
 }
 
+/* LARGE-ONLY: __icon (large-box only content) */
 .large-box__icon {
   font-size: 14px;
   opacity: .8;
 }
 
+/* BX-DUAL-WRITE: __title vs __title */
 .large-box__title {
   flex: 1;
   font-size: 13px;
@@ -442,6 +458,7 @@ body {
   white-space: nowrap;
 }
 
+/* BX-DUAL-WRITE: __title[contenteditable]:focus */
 .large-box__title[contenteditable="true"]:focus {
   background: var(--color-elevated);
   padding: 2px 6px;
@@ -450,6 +467,7 @@ body {
   white-space: nowrap;
 }
 
+/* LARGE-ONLY: __meta (large-box only content) */
 .large-box__meta {
   font-size: 11px;
   font-weight: 500;
@@ -473,6 +491,7 @@ body {
   font-size: 13px;
 }
 
+/* BX-DUAL-WRITE: __delete vs __delete */
 .large-box__delete {
   background: transparent;
   border: 0;
@@ -484,6 +503,7 @@ body {
   line-height: 1;
 }
 
+/* BX-DUAL-WRITE: __delete:hover */
 .large-box__delete:hover {
   color: var(--color-accent-ink);
   background: var(--color-accent-soft);
@@ -517,6 +537,7 @@ body {
 }
 
 /* Pinned box: no drag */
+/* BX-DUAL-WRITE: __bar (second rule) vs __bar */
 .box--pinned .large-box__bar {
   cursor: default;
 }
@@ -558,6 +579,7 @@ body {
   /* Material deceleration — smooth collapse */
 }
 
+/* BX-DUAL-WRITE-SHARED: __body hover-expand pair — both in one rule, safe */
 .box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
   opacity: 0;
@@ -620,6 +642,7 @@ body {
   cursor: pointer;
 }
 
+/* LARGE-ONLY: __chips (large-box only content) */
 .large-box__chips {
   display: flex;
   flex-wrap: wrap;
@@ -628,6 +651,7 @@ body {
   align-content: flex-start;
 }
 
+/* LARGE-ONLY: __chip (large-box only content) */
 .large-box__chip {
   font-size: 11px;
   font-weight: 500;
@@ -638,12 +662,14 @@ body {
   border: 1px solid var(--color-hairline);
 }
 
+/* LARGE-ONLY: __empty-hint (large-box only content) */
 .large-box__empty-hint {
   font-size: 12px;
   color: var(--color-muted);
   font-style: italic;
 }
 
+/* LARGE-ONLY: __open-hint (large-box only content) */
 .large-box__open-hint {
   font-size: 11px;
   color: var(--color-faint);
@@ -788,6 +814,7 @@ body {
 }
 
 
+/* SMALL-ONLY: __mode (small-box only view toggle) */
 .small-box__mode {
   background: transparent;
   border: 0;
@@ -826,12 +853,14 @@ body {
   overflow: auto;
 }
 
+/* SMALL-ONLY: --list .small-box__body (small-box only view mode) */
 .small-box--list .small-box__body {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
+/* SMALL-ONLY: --grid .small-box__body (small-box only view mode) */
 .small-box--grid .small-box__body {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1265,6 +1294,7 @@ body {
   border-radius: 0 0 var(--radius-card) 0;
 }
 
+/* BX-DUAL-WRITE-SHARED: :hover .box-resize-handle — both in one rule, safe */
 .large-box:hover .box-resize-handle,
 .small-box:hover .box-resize-handle {
   opacity: 0.7;
@@ -1283,6 +1313,7 @@ body.box-resizing {
 }
 
 /* Corner style: square corners override */
+/* BX-DUAL-WRITE-SHARED: .ntp--square-corners — both in one rule, safe */
 .ntp--square-corners .large-box,
 .ntp--square-corners .small-box,
 .ntp--square-corners .canvas,
@@ -2181,11 +2212,13 @@ html.ntp--dark {
    Browser auto-skips layout/paint of offscreen boxes; 7x render boost per web.dev/MDN.
    Must pair with contain-intrinsic-size to prevent scrollbar jumping.
    Exclude dragging/hover-expand/dragged states to keep interaction smooth. */
+/* BX-DUAL-WRITE: content-visibility:auto (paired) */
 .large-box:not(.large-box--dragging):not(.large-box--ghost) {
   content-visibility: auto;
   contain-intrinsic-size: auto 320px auto 220px;
 }
 /* Bug1: disable content-visibility during canvas pan — avoids per-box viewport check on every transform tick */
+/* BX-DUAL-WRITE: .panning override (paired) */
 .panning .large-box {
   content-visibility: visible !important;
 }
@@ -2199,10 +2232,12 @@ html.ntp--dark {
 }
 
 /* BX-DEV-SEARCH (B9): search highlight — match boxes glow, non-match dim */
+/* BX-DUAL-WRITE-SHARED: --search-match — both in one rule, safe */
 .large-box--search-match, .small-box--search-match {
   box-shadow: 0 0 0 2px var(--color-accent, #5b8def), var(--shadow-2);
   opacity: 1;
 }
+/* BX-DUAL-WRITE-SHARED: --search-hidden — both in one rule, safe */
 .large-box--search-hidden, .small-box--search-hidden {
   opacity: 0.25;
   filter: grayscale(0.5);
@@ -2233,6 +2268,7 @@ body.cx--connecting, body.cx--connecting * { cursor: crosshair !important; }
   content: ''; width: 6px; height: 6px; border-radius: 50%;
   background: var(--color-accent, #A08060); opacity: 0.6;
 }
+/* BX-DUAL-WRITE-SHARED: :hover .box-edge-anchor — both in one rule, safe */
 .large-box:hover .box-edge-anchor,
 .small-box:hover .box-edge-anchor { opacity: 0.7; }
 .box-edge-anchor:hover { opacity: 1 !important; cursor: crosshair; }
