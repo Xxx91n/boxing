@@ -2198,8 +2198,8 @@ html.ntp--dark {
 :root { --connection-color: var(--color-ink); }
 .ntp--dark { --connection-color: var(--color-ink); /* #E8E4DB in dark mode — light line on dark bg */ }
 .conn-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 0; }
-.conn-line { stroke: var(--connection-color, #333); stroke-width: 1.5; fill: none; shape-rendering: geometricPrecision; }
-.conn-line--provisional { stroke-dasharray: 5,3; opacity: 0.7; }
+.conn-line { stroke: var(--connection-color, #333); stroke-width: 1.5; fill: none; shape-rendering: geometricPrecision; vector-effect: non-scaling-stroke; }
+.conn-line--provisional { stroke-dasharray: 5,3; opacity: 0.7; vector-effect: non-scaling-stroke; }
 .box-tool-btn { background: transparent; border: 0; cursor: pointer;
   color: var(--color-ink-soft); font-size: 12px; line-height: 1; padding: 0 4px;
   border-radius: 4px; opacity: 0.55; transition: opacity 120ms; flex-shrink: 0; }

@@ -1029,9 +1029,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // Compute the mid-point of a box edge in logical (untransformed) coords.
   // Since SVG is inside the transform surface, we use raw box x/y/w/h.
   // BX-DEV-137+++++: title bar center anchor for auto-expand boxes.
-  // For collapseHover=false (auto-expand active, box is expanded), use title bar center
-  // (TITLE_BAR_H/2 from box top) instead of full geometric center — keeps connection lines
-  // anchored to the consistent visual title bar regardless of expand/collapse state.
+  // For collapseHover=true (auto-expand mode active, box is collapsed to title bar), use
+  // title bar center (TITLE_BAR_H/2 from box top) — keeps connection lines anchored to the
+  // consistent visible title bar area. collapseHover=false means box is expanded → full center.
   const TITLE_BAR_H = 40; // matches .small-box__bar min-height + .large-box__bar padding
 
   function boxMidPoint(key) {
@@ -1041,7 +1041,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (!b) return null;
       const x = b.x, y = b.y, w = b.width || LARGE_DEF_W, h = b.height || LARGE_DEF_H;
       // If auto-expand is active and box is NOT in hover-collapse mode, use title bar center
-      const anchorY = (b.collapseHover === false) ? y + TITLE_BAR_H / 2 : y + h / 2;
+      const anchorY = (b.collapseHover === true) ? y + TITLE_BAR_H / 2 : y + h / 2;
       return { x: x + w / 2, y: anchorY, surface: 'canvas' };
     }
     if (key.startsWith('small:')) {
@@ -1050,14 +1050,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const sb = getSmallBox(parts[1], parts.slice(2).join(':'));
       if (!sb) return null;
       const x = sb.x, y = sb.y, w = sb.width || SMALL_DEF_W, h = sb.height || SMALL_DEF_H;
-      const anchorY = (sb.collapseHover === false) ? y + TITLE_BAR_H / 2 : y + h / 2;
+      const anchorY = (sb.collapseHover === true) ? y + TITLE_BAR_H / 2 : y + h / 2;
       return { x: x + w / 2, y: anchorY, surface: 'inner' };
     }
     // legacy raw id (Round 1 format) — treat as large box
     const b = getLargeBox(key);
     if (!b) return null;
     const x = b.x, y = b.y, w = b.width || LARGE_DEF_W, h = b.height || LARGE_DEF_H;
-    const anchorY = (b.collapseHover === false) ? y + TITLE_BAR_H / 2 : y + h / 2;
+    const anchorY = (b.collapseHover === true) ? y + TITLE_BAR_H / 2 : y + h / 2;
     return { x: x + w / 2, y: anchorY, surface: 'canvas' };
   }
 
