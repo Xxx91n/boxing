@@ -1165,6 +1165,23 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
   }
 
+  // BX-DEV-145: sync variant used during active drag to remove the 1-frame rAF
+  // lag between box DOM movement and SVG line endpoint update — without this,
+  // the line endpoint trails behind the box for one frame, making a portion of
+  // the line visible in the area the box just vacated ("线条显现").
+  // Touches only the dragged box's N connections (typ. 1-5), so cost is trivial.
+  function refreshConnsForBoxSync(boxKey) {
+    ensureConnArrays();
+    const connSet = boxConnIdx.get(boxKey);
+    if (!connSet || connSet.size === 0) return;
+    for (const id of connSet) {
+      const line = connLines.get(id);
+      if (!line) continue;
+      const conn = layout.connections.find(x => x.id === id);
+      if (conn) updateSvgLine(line, conn);
+    }
+  }
+
   function refreshAllConns() { scheduleConnRefresh(Array.from(connLines.keys())); }
 
   // ── Star-mark / group drag ──────────────────────────
@@ -2722,7 +2739,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
       // Real-time data model update so boxMidPoint reads live coords during drag
       const lb = getLargeBox(dragState.id);
       if (lb) { lb.x = newX; lb.y = newY; }
-      refreshConnsForBox(largeKey(dragState.id));
+      refreshConnsForBoxSync(largeKey(dragState.id));
       // Bug 6: real-time group move — members follow parent during drag, not just at end
       if (getGroupByParent(largeKey(dragState.id))) {
         const dX = newX - dragState.origLeft;
@@ -2736,7 +2753,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
       const sb = getSmallBox(dragState.id.largeId, dragState.id.smallId);
       if (sb) { sb.x = newX; sb.y = newY; }
       const sKey = smallKey(dragState.id.largeId, dragState.id.smallId);
-      refreshConnsForBox(sKey);
+      refreshConnsForBoxSync(sKey);
       // BX-143: small-box parent drag — move group members real-time with elastic collision
       if (getGroupByParent(sKey)) {
         const dX = newX - dragState.origLeft;
