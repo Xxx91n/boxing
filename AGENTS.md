@@ -127,6 +127,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | BX-DEV-010 | MUST | Font size adjustable via CSS variable --font-size-base controlled by settings. |
 | BX-DEV-011 | MUST NOT | Do not add shadcn/ui, Tailwind, React, Vue, or npm dependencies. |
 | BX-DEV-012 | MUST NOT | Do not use brand__mark brown color block (removed). |
+| BX-DEV-013 | MUST | CSS rules that affect both large-box and small-box canvases MUST be written in paired selectors (`.large-box` + `.small-box`). See [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md) for the full convention. |
 
 
 ## i18n Development Requirements
@@ -191,7 +192,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 
 Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) have been moved to `docs/boxing-changelog.md` to keep this operating contract lean. See that file for per-version feature lists, BX-DEV rule additions, and i18n key references by version.
 
-Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..012). All incremental rules from v3.3..v3.6.6 (BX-DEV-013..112) live in `docs/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
+Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..013). All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
 
 ## Manifest Source-of-Truth Contract (v3.7.0+)
 

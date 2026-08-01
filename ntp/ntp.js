@@ -901,6 +901,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // SVG overlay lives INSIDE the transform surface, so line coords = box logical coords.
   // No BCR reads, no transform-commit timing issues, lines clipped by surface overflow.
   const connLines = new Map();          // connId -> SVG <line> element
+const connById = new Map();            // connId -> connection object (O(1) lookup)
   const dirtyConns = new Set();         // connIds needing path update
   const connIdx = new Map();              // O(1) conn lookup by key-pair
   const boxConnIdx = new Map();            // O(1) reverse: boxKey -> Set<connId>
@@ -963,6 +964,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function removeConnection(connId) {
     ensureConnArrays();
     layout.connections = layout.connections.filter(c => c.id !== connId);
+    connById.delete(connId);
     // BX-DSU: rebuild group connectivity after connection removal
     dsuRebuildFromConnections();
   }
@@ -1104,6 +1106,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // Reconcile live lines with layout.connections: drop dead.
     const wanted = new Set(layout.connections.map(c => c.id));
     connIdx.clear();
+    connById.clear();
     boxConnIdx.clear();
     for (const c of layout.connections) {
       connIdx.set(c.from + '>' + c.to, c);
@@ -1113,6 +1116,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (!boxConnIdx.has(c.to)) boxConnIdx.set(c.to, new Set());
       boxConnIdx.get(c.from).add(c.id);
       boxConnIdx.get(c.to).add(c.id);
+      connById.set(c.id, c);
     }
     for (const [id, line] of connLines.entries()) {
       if (!wanted.has(id)) {
@@ -1150,7 +1154,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       for (const id of ids) {
         const line = connLines.get(id);
         if (!line) continue;
-        const conn = layout.connections.find(c => c.id === id);
+        const conn = connById.get(id);
         if (conn) updateSvgLine(line, conn);
       }
     });
@@ -1582,8 +1586,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
     canvasZoomVal.textContent = Math.round(canvasZoom * 100) + '%';
     zoomSlider.value = Math.round(canvasZoom * 100);
     zoomSliderVal.textContent = Math.round(canvasZoom * 100) + '%';
-    // BX-DEV-137++: lines must follow boxes on zoom — rAF-coalesced via scheduleConnRefresh.
-    if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
+    // BX-DEV-145: lines live inside canvasSurface, so CSS transform moves them
+    // automatically on pan/zoom — no per-tick recalculation needed.
   }
 
   function applyInnerTransform() {
@@ -1593,8 +1597,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
     innerZoomVal.textContent = Math.round(innerZoom * 100) + '%';
     zoomSlider.value = Math.round(innerZoom * 100);
     zoomSliderVal.textContent = Math.round(innerZoom * 100) + '%';
-    // BX-DEV-137++: lines must follow boxes on inner zoom — rAF-coalesced refresh.
-    if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
+    // BX-DEV-145: inner surface transform carries conn-lines too.
+    // No per-tick recalculation — CSS transform handles line position.
   }
 
   function zoomAtPoint(container, zoom, panX, panY, clientX, clientY, factor) {
@@ -2892,7 +2896,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
     applyCanvasTransform();
     e.preventDefault();
     try { repositionAllPopups(); } catch (_) {}
-    if (connLines.size) refreshAllConns();
+    // BX-DEV-145: refreshAllConns removed — applyCanvasTransform no longer
+    // calls it, and CSS transform moves SVG lines automatically.
   }
 
   function onCanvasPanEnd(e) {
