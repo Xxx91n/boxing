@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 
 # Build artifacts
@@ -65,7 +65,6 @@ temp_*.py
 # Agent temporary scripts (Windows file integrity protocol)
 .codex-tmp/
 
-# Build outputs (single file)
 # Screenshots (any path)
 **/debug_*.png
 **/debug_*.jpg

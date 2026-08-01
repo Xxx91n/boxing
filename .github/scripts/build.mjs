@@ -16,7 +16,9 @@ const DIST = path.resolve(ROOT, "dist");
 
 const SKIP = new Set([
   ".git", ".github", ".codex-tmp", ".codex", ".omx", ".codegraph",
-  "node_modules", "dist", "package", "playwright", "docs", "scripts", "release",
+  "node_modules", "dist", "package", "package.json", "package-lock.json",
+  "playwright", "docs", "scripts", "release",
+  "dev-chrome", "dev-firefox",
   "opencode.json",
   ".gitignore", ".gitattributes", "AGENTS.md", ".DS_Store", "Thumbs.db"
 ]);

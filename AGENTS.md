@@ -1,4 +1,4 @@
-﻿<!-- BOXING-CTX-ROUTING-OVERRIDE:START -->
+<!-- BOXING-CTX-ROUTING-OVERRIDE:START -->
 <!-- Project-level hard contract: compresses + localizes host AGENTS.md Tool routing precedence. Do not remove. -->
 > **TOOL ROUTING — READ FIRST.** `ctx_*` (context-mode) PREFERRED over `shell`/inline `python -c`/inline `node -e` whenever both can do the job:
 >
