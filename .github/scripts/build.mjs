@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..", "..");
@@ -176,9 +177,9 @@ function build() {
   writeManifest(firefoxDir, ffManifest);
 
   let commit = "unknown";
-  try { commit = require("node:child_process").execSync("git -C " + ROOT + " rev-parse --short HEAD", { encoding: "utf8" }).trim(); } catch (_) {}
+  try { commit = execSync("git -C " + ROOT + " rev-parse --short HEAD", { encoding: "utf8" }).trim(); } catch (_) {}
   let branch = "unknown";
-  try { branch = require("node:child_process").execSync("git -C " + ROOT + " rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim(); } catch (_) {}
+  try { branch = execSync("git -C " + ROOT + " rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim(); } catch (_) {}
   const info = { builtAt: new Date().toISOString(), commit, branch, source: ROOT };
   for (const dir of [chromeDir, firefoxDir]) {
     fs.writeFileSync(path.join(dir, "BUILD_INFO.json"), JSON.stringify(info, null, 2) + "\n", "utf8");
@@ -188,6 +189,31 @@ function build() {
   const ff = buildBrowser("firefox", base, firefoxDir);
 
   console.log("DONE_BUILD");
+
+  // ── Create dev-load junctions/symlinks for browser GUI loading ──
+  // dev-chrome -> dist/boxing-chrome, dev-firefox -> dist/boxing-firefox
+  // Users can load ~\boxing\dev-chrome in Chrome, ~\boxing\dev-firefox in Firefox
+  const devLinks = [
+    { name: "dev-chrome", target: chromeDir },
+    { name: "dev-firefox", target: firefoxDir },
+  ];
+  for (const link of devLinks) {
+    const linkPath = path.join(ROOT, link.name);
+    try {
+      if (fs.existsSync(linkPath) || fs.lstatSync(linkPath, { throwIfNoEntry: false })) {
+        fs.rmSync(linkPath, { recursive: true, force: true });
+      }
+      if (process.platform === "win32") {
+        execSync('mklink /J "' + linkPath + '" "' + link.target + '"', { stdio: "pipe" });
+      } else {
+        fs.symlinkSync(link.target, linkPath, "dir");
+      }
+      console.log("  dev link: " + linkPath + " -> " + link.target);
+    } catch (e) {
+      console.log("  dev link skipped: " + link.name + " (" + e.message + ")");
+    }
+  }
+
   console.log("Chrome release:");
   console.log("  " + chr.extDir);
   console.log("  " + chr.zip);
