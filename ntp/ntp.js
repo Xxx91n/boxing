@@ -2894,6 +2894,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
     if (e.target.closest('.small-box') || e.target.closest('.zoom-controls') || e.target.closest('.box-resize-handle') || e.target.closest('.header-pin-float') || e.target.id === 'header-pin-btn' || e.target.closest('#header-pin-btn')) return;
     if (e.button !== 0) return;
 
+    innerCanvas.classList.add('panning');
     panState = {
       startMouseX: e.clientX,
       startMouseY: e.clientY,
@@ -2936,6 +2937,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
   }
 
   function onInnerPanEnd(e) {
+    innerCanvas.classList.remove('panning');
     document.removeEventListener('mousemove', onInnerPanMove);
     document.removeEventListener('mouseup', onInnerPanEnd);
     window.removeEventListener('blur', onInnerPanEnd);
