@@ -770,7 +770,6 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       nextLargeIndex: Math.max(Number(localValue.nextLargeIndex) || 1, Number(remoteValue.nextLargeIndex) || 1),
       settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}) },
       connections: mergeByIdUnion(localValue.connections, remoteValue.connections),
-      groups: mergeByIdUnion(localValue.groups, remoteValue.groups, 'parentId'),
       _meta: { ...(remoteValue._meta || {}), ...(localValue._meta || {}), deleted: trimmedDeleted }
     };
   }
@@ -918,7 +917,6 @@ const connById = new Map();            // connId -> connection object (O(1) look
 
   function ensureConnArrays() {
     if (!Array.isArray(layout.connections)) layout.connections = [];
-    if (!Array.isArray(layout.groups)) layout.groups = [];
   }
   function pruneConnArrays(onSave) {
     ensureConnArrays();
@@ -933,7 +931,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
       layout.connections = layout.connections.slice(layout.connections.length - MAX_CONNECTIONS);
     }
     // Groups: parentId and members may be tiered keys or legacy raw ids.
-    layout.groups = layout.groups.filter(g => isValidKey(g.parentId) && (g.members || []).every(m => isValidKey(m)));
+    // A5: layout.groups pruned via box.isParent — no separate filter needed
   }
 
   function findConn(from, to) {
@@ -1237,9 +1235,9 @@ const connById = new Map();            // connId -> connection object (O(1) look
     for (const c of layout.connections) {
       if (c.from && c.to) dsuUnion(c.from, c.to);
     }
-    // Re-apply star marks from layout.groups (preserve starred parents)
-    for (const g of (layout.groups || [])) {
-      if (g.parentId) groupStar.add(g.parentId);
+  // A5: Re-apply star marks from box.isParent field
+  for (const b of (layout.boxes || [])) {
+    if (b.isParent) groupStar.add(largeKey(b.id));
     }
   }
   
@@ -1249,16 +1247,8 @@ const connById = new Map();            // connId -> connection object (O(1) look
     return groupMembers.get(root) || null;
   }
   
-  function getGroupByParent(parentId) {
-    // Compat: return a fake group object with members from DSU
-    if (!parentId) return null;
-    if (!groupStar.has(parentId)) return null;
-    const members = dsuGroupMembers(parentId);
-    if (!members) return null;
-    return { parentId, members: [...members].filter(k => k !== parentId) };
-  }
 
-function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); return layout.groups || (layout.groups = []); }
+function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const gs = (layout.boxes || []).filter(b => b.isParent).map(b => ({ parentId: largeKey(b.id), members: [] })); layout.groups = gs; return gs; }
 
   // ── Tiered keys for cross-level connections (BX-DEV-137+) ──────────
   // large:boxId  |  small:largeId:smallId  — addresses any box at any nesting.
@@ -1292,31 +1282,35 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
   }
 
   function getGroupByParent(parentId) {
-    // ponytail: O(1) group lookup via groupIdx Map (Bug 6). Rebuild on demand.
-    const cached = groupIdx.get(parentId);
-    if (cached || groupIdx.size > 0) return cached || null;
-    // Fallback: first access — build index from ensureGroups()
-    const gs = ensureGroups();
-    for (const g of gs) groupIdx.set(g.parentId, g);
-    return groupIdx.get(parentId) || null;
+    // A5: lazy DSU rebuild on first access — needed after page reload where
+    // groupStar is empty until ensureGroups()/dsuRebuildFromConnections runs.
+    if (parentId && groupStar.size === 0) ensureGroups();
+    // A5: star determined by groupStar Set (populated from box.isParent)
+    if (!parentId || !groupStar.has(parentId)) return null;
+    const members = dsuGroupMembers(parentId);
+    if (!members) return null;
+    return { parentId, members: [...members].filter(k => k !== parentId) };
   }
   function toggleStarMark(parentId) {
     ensureConnArrays();
     if (groupStar.has(parentId)) {
-      // unstar: remove from groupStar + layout.groups
+      // unstar: remove from groupStar, clear box.isParent
       groupStar.delete(parentId);
-      layout.groups = (layout.groups || []).filter(x => x.parentId !== parentId);
+      const pk = parentId.startsWith('large:') ? parentId.slice(6) : parentId;
+      const lb = getLargeBox(pk);
+      if (lb) lb.isParent = false;
       markDeleted(parentId);
       debug('toggleStarMark: unstar parent=' + parentId);
+      ensureGroups();
     } else {
-      // star: add to groupStar + layout.groups for persistence
+      // star: add to groupStar, set box.isParent
       groupStar.add(parentId);
-      if (!layout.groups) layout.groups = [];
-      if (!layout.groups.find(x => x.parentId === parentId)) {
-        layout.groups.push({ parentId, members: [] });
-      }
+      const pk = parentId.startsWith('large:') ? parentId.slice(6) : parentId;
+      const lb = getLargeBox(pk);
+      if (lb) lb.isParent = true;
       debug('toggleStarMark: star parent=' + parentId);
     }
+    ensureGroups();
     saveLayout();
     // Update star button visual state
     document.querySelectorAll('.box-star-btn').forEach(btn => {
@@ -1329,12 +1323,10 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
       boxEl.classList.toggle('box--starred', starred);
     });
   }
+  // A5: addMember no-op - DSU auto-unions on addConnection
   function addMember(parentId, memberId) {
     if (parentId === memberId) return;
     ensureConnArrays();
-    let g = layout.groups.find(x => x.parentId === parentId);
-    if (!g) { g = { parentId, members: [] }; layout.groups.push(g); }
-    if (!g.members.includes(memberId)) g.members.push(memberId);
   }
 
   // During parent drag we apply the same delta to every member. Members collide
@@ -3171,8 +3163,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
       k === largeK ||                               // 'large:id'
       (typeof k === 'string' && k.startsWith(smallPrefix));  // 'small:id:smallId'
     layout.connections = layout.connections.filter(c => !matchesDeletedKey(c.from) && !matchesDeletedKey(c.to));
-    layout.groups = layout.groups.filter(g => !matchesDeletedKey(g.parentId));
-    layout.groups = layout.groups.map(g => ({ ...g, members: (g.members || []).filter(m => !matchesDeletedKey(m)) }));
+    // A5: groups cleanup no longer needed
     layout.boxes = layout.boxes.filter(b => b.id !== id);
     layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title || '').match(/\d+/) || [0]) || 0) + 1), 1);
     if (currentLargeBoxId === id) exitToCanvas();
@@ -3276,8 +3267,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
     const sk = smallKey(largeId, smallId);
     ensureConnArrays();
     layout.connections = layout.connections.filter(c => c.from !== sk && c.to !== sk);
-    layout.groups = layout.groups.filter(g => g.parentId !== sk);
-    layout.groups = layout.groups.map(g => ({ ...g, members: (g.members || []).filter(m => m !== sk) }));
+    // A5: groups cleanup no longer needed
     lb.children = lb.children.filter(s => s.id !== smallId);
     saveLayout();
     disposeAllConns(); // BX-DEV-137+++: clear stale lines before re-rendering inner surface
@@ -3306,8 +3296,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
       ? mergeConcurrentLayout(incoming, layout)
       : mergeConcurrentLayout(layout, incoming);
     const needsReconcileWrite = JSON.stringify(layout) !== incomingSerialized;
-    // Bug 1: invalidate groupIdx cache so getGroupByParent reads fresh layout.groups after cross-tab merge.
-    groupIdx.clear(); dsuRebuildFromConnections();
+    // A5: groupIdx no longer needed; dsuRebuild reads box.isParent
+    dsuRebuildFromConnections();
     connIdx.clear();
     boxConnIdx.clear();
     try {
@@ -4535,12 +4525,10 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
           const savedSettings = layout.settings;
           const savedMeta = layout._meta;
           const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
-          const savedGroups = Array.isArray(layout.groups) ? layout.groups : [];
           layout = cloud;
           if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
           if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
           if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
-          if (!Array.isArray(layout.groups) || layout.groups.length === 0) layout.groups = savedGroups;
           layout._meta = layout._meta || {};
           layout._meta.updatedAt = Date.now();
           layout._meta.writerId = writerId;
@@ -4731,12 +4719,12 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
           if (s.fontSize && (!isFinite(s.fontSize) || s.fontSize < 8 || s.fontSize > 72)) s.fontSize = 14;
         }
         const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
-        const savedGroups = Array.isArray(layout.groups) ? layout.groups : [];
+        // A5: savedGroups guard removed (groups derived from box.isParent)
         layout = migrateLayout(data);
         // AUD-SEC: preserve local connections/groups if import file lacks them
         // (older backups predate the connections system; full replace would lose user lines).
         if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
-        if (!Array.isArray(layout.groups) || layout.groups.length === 0) layout.groups = savedGroups;
+        // A5: savedGroups restore removed
         await saveLayout();
         if (currentLargeBoxId) exitToCanvas();
         exitToCanvas();  // force exit any drill-in state
