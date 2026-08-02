@@ -1087,17 +1087,46 @@ const connById = new Map();            // connId -> connection object (O(1) look
   }
 
   // Update a single SVG <line> element from connection data.
+  // A4: viewport cull margin (px in svg-local coords) — hide lines whose
+  // both endpoints sit outside the surface visible area by this much.
+  const CONN_VP_MARGIN = 60;
+
+  function connSvgVisibleRect(svg) {
+    // Returns {w, h} of the visible area in svg-local (world) coordinates.
+    // The svg lives inside a transformed surface; its clientWidth/Height reflect
+    // the on-screen viewport. Lines are in world coords (1:1 with svg viewBox 0..w).
+    const w = svg.clientWidth || 0, h = svg.clientHeight || 0;
+    if (!w || !h) return null;
+    return { w, h };
+  }
+
   function updateSvgLine(lineEl, c) {
     const a = boxMidPoint(c.from);
     const b = boxMidPoint(c.to);
     if (!a || !b) { lineEl.style.display = 'none'; return; }
+    // A4: viewport culling — if both endpoints are far outside the visible
+    // svg area, hide the line entirely instead of paying for attribute sets
+    // and triggering layout/paint on off-screen geometry.
+    const svg = lineEl.ownerSVGElement || lineEl.parentNode;
+    const vr = svg ? connSvgVisibleRect(svg) : null;
+    if (vr) {
+      const minX = -CONN_VP_MARGIN, maxX = vr.w + CONN_VP_MARGIN;
+      const minY = -CONN_VP_MARGIN, maxY = vr.h + CONN_VP_MARGIN;
+      const aOut = a.x < minX || a.x > maxX || a.y < minY || a.y > maxY;
+      const bOut = b.x < minX || b.x > maxX || b.y < minY || b.y > maxY;
+      if (aOut && bOut) { lineEl.style.display = 'none'; return; }
+    }
     // BX-145: round to integer to eliminate subpixel coordinate jitter at low zoom.
-    // toFixed(1) lands coordinates between device pixels, causing antialiasing artifacts
-    // that appear as jagged lines especially at 30% zoom in Chrome.
     lineEl.setAttribute('x1', Math.round(a.x));
     lineEl.setAttribute('y1', Math.round(a.y));
     lineEl.setAttribute('x2', Math.round(b.x));
     lineEl.setAttribute('y2', Math.round(b.y));
+    // A4: LOD — thinner stroke at low zoom reduces Chrome antialiasing jitter
+    // and saves fill-rate. At >=80% zoom keep the default 1.5, below 50% use 1,
+    // below 35% use 0.75. CSS var --connection-color stays the same.
+    const z = a.surface === 'inner' ? (typeof innerZoom !== 'undefined' ? innerZoom : 1) : canvasZoom;
+    const sw = z >= 0.8 ? 1.5 : z >= 0.5 ? 1 : 0.75;
+    lineEl.setAttribute('stroke-width', sw);
     lineEl.style.display = '';
   }
 
@@ -3001,6 +3030,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
       canvasPanY = clampedZoomPan.y;
       layout.settings.zoomLevel = canvasZoom;
       applyCanvasTransform();
+      // A4: refresh conn lines so LOD stroke-width + viewport-culling react to the new zoom.
+      if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
       saveLayout();
       try { repositionAllPopups(); } catch (_) {}
     }
@@ -3016,6 +3047,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
       innerPanX = clampedInnerPan.x;
       innerPanY = clampedInnerPan.y;
       applyInnerTransform();
+      // A4: refresh inner conn lines after zoom so LOD/culling reacts.
+      if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
       try { repositionAllPopups(); } catch (_) {}
       // BX-DEV-111N+v2 : single saveLayout path per wheel event via the throttled
       // schedulePersist (Map-based, 80ms). Previously this block called saveLayout()
@@ -3871,6 +3904,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     innerZoomIn?.addEventListener('click', () => {
       innerZoom = zoomStep(innerZoom, 'in');
       applyInnerTransform();
+      if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
     });
 
     // Settings modal controls
