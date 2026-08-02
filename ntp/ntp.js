@@ -994,6 +994,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     dirtyConns.clear();
     boxConnIdx.clear();
     connById.clear();
+    if (__connRefreshRAF) { cancelAnimationFrame(__connRefreshRAF); __connRefreshRAF = 0; }
     // Clear SVG overlay DOM too
     if (canvasConnSvg) { while (canvasConnSvg.firstChild) canvasConnSvg.removeChild(canvasConnSvg.firstChild); }
     if (innerConnSvg) { while (innerConnSvg.firstChild) innerConnSvg.removeChild(innerConnSvg.firstChild); }
@@ -2398,7 +2399,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     document.querySelectorAll('.bm-edit-popup').forEach(p => p.remove());
 
     // BX-DEV-111j: find small-box DOM for smart popup positioning
-    const smallBoxEl = document.querySelector('.small-box[data-id="' + sb.id + '"]');
+    const smallBoxEl = document.querySelector('.small-box[data-id="' + CSS.escape(sb.id) + '"]');
     const boxRect = smallBoxEl ? smallBoxEl.getBoundingClientRect() : null;
 
     const popup = document.createElement('div');
@@ -2473,7 +2474,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     // BX-DEV-111j: position popup beside small box — right side if fits, else left
     const PW = 280, PH = 200, MARGIN = 12;
     function positionEditPopup() {
-      const el = document.querySelector('.small-box[data-id="' + sb.id + '"]');
+      const el = document.querySelector('.small-box[data-id="' + CSS.escape(sb.id) + '"]');
       const br = el ? el.getBoundingClientRect() : boxRect;
       if (br) {
         const rightSpace = window.innerWidth - br.right - MARGIN;
@@ -2512,7 +2513,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     document.querySelectorAll('.bm-edit-popup').forEach(p => p.remove());
 
     // BX-DEV-111j: find small-box DOM for smart popup positioning
-    const smallBoxEl = document.querySelector('.small-box[data-id="' + sb.id + '"]');
+    const smallBoxEl = document.querySelector('.small-box[data-id="' + CSS.escape(sb.id) + '"]');
     const boxRect = smallBoxEl ? smallBoxEl.getBoundingClientRect() : null;
 
     const popup = document.createElement('div');
@@ -2589,7 +2590,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     // BX-DEV-111j: position popup beside small box — right side if fits, else left
     const PW2 = 320, PH2 = 200, MG2 = 12;
     function positionAddPopup() {
-      const el = document.querySelector('.small-box[data-id="' + sb.id + '"]');
+      const el = document.querySelector('.small-box[data-id="' + CSS.escape(sb.id) + '"]');
       const br = el ? el.getBoundingClientRect() : boxRect;
       if (br) {
         const rightSpace = window.innerWidth - br.right - MG2;
