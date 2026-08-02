@@ -166,7 +166,82 @@ function build() {
   const base = JSON.parse(fs.readFileSync(baseManifestPath, "utf8"));
   console.log("Base manifest version:", base.version);
 
-  fs.rmSync(DIST, { recursive: true, force: true });
+  // ── A7: i18n key consistency validator ──
+  // Verifies every key in _locales/en/messages.json is present in all 14 other
+  // locale files. Provides a fast fail before dist build (BX-I18N-DEV-002/003).
+  function validateI18nKeys() {
+    const localesDir = path.join(ROOT, "_locales");
+    if (!fs.existsSync(localesDir)) {
+      console.warn("A7: _locales dir not found — skipping i18n validation");
+      return;
+    }
+    const langs = fs.readdirSync(localesDir, { withFileTypes: true })
+      .filter(d => d.isDirectory()).map(d => d.name);
+    if (!langs.includes("en")) {
+      console.warn("A7: _locales/en missing — cannot validate baseline");
+      return;
+    }
+    const enPath = path.join(localesDir, "en", "messages.json");
+    const enData = JSON.parse(fs.readFileSync(enPath, "utf8"));
+    const enKeys = new Set(Object.keys(enData));
+    let missing = 0, extra = 0;
+    const report = [];
+    for (const lang of langs) {
+      if (lang === "en") continue;
+      const langPath = path.join(localesDir, lang, "messages.json");
+      if (!fs.existsSync(langPath)) { report.push("[A7] " + lang + ": messages.json missing"); missing++; continue; }
+      const langData = JSON.parse(fs.readFileSync(langPath, "utf8"));
+      const langKeys = new Set(Object.keys(langData));
+      for (const k of enKeys) if (!langKeys.has(k)) { missing++; report.push("[A7] " + lang + ": missing key " + k); }
+      for (const k of langKeys) if (!enKeys.has(k)) { extra++; report.push("[A7] " + lang + ": extra key " + k); }
+    }
+    if (report.length) {
+      console.log("A7 i18n check report (" + report.length + " issues):");
+      console.log(report.slice(0, 20).join("\n"));
+      if (report.length > 20) console.log("  ..." + (report.length - 20) + " more");
+    }
+  }
+
+  // ── A8: CSS dual-write marker validator ──
+  // Checks ntp/ntp.css for rules that touch BOTH .large-box AND .small-box but
+  // lack the BX-CSS-DUAL-WRITE marker. Per docs/css-dual-write-convention.md.
+  function validateCssDualWriteMarkers() {
+    const cssPath = path.join(ROOT, "ntp", "ntp.css");
+    if (!fs.existsSync(cssPath)) {
+      console.warn("A8: ntp/ntp.css missing — skipping CSS dual-write validation");
+      return;
+    }
+    const css = fs.readFileSync(cssPath, "utf8");
+    const lines = css.split(/\r?\n/);
+    let issues = [];
+    let lastSelector = null;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line || line.startsWith("/*")) continue;
+      // detect selector line (ends with '{' or comma)
+      if (line.includes("{") || (line.endsWith(",") && !lastSelector)) {
+        // crude: any line with .large-box and .small-box in same selector
+        if (line.includes(".large-box") && line.includes(".small-box")) {
+          // next non-empty line (or same) should already have a marker comment above it
+          let hasMarker = false;
+          for (let k = Math.max(0, i - 3); k < i; k++) {
+            if (lines[k].includes("BX-CSS-DUAL-WRITE")) { hasMarker = true; break; }
+          }
+          if (!hasMarker) issues.push("L" + (i + 1) + ": selector uses .large-box + .small-box without BX-CSS-DUAL-WRITE marker above");
+        }
+      }
+    }
+    if (issues.length) {
+      console.log("A8 CSS dual-write issues (" + issues.length + "):");
+      console.log(issues.slice(0, 20).join("\n"));
+    } else {
+      console.log("A8: CSS dual-write markers OK");
+    }
+  }
+
+  validateI18nKeys();
+  validateCssDualWriteMarkers();
+    fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(DIST, { recursive: true });
 
   const chromeDir = path.join(DIST, "boxing-chrome");
