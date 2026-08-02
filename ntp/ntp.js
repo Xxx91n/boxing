@@ -778,6 +778,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       nextLargeIndex: Math.max(Number(localValue.nextLargeIndex) || 1, Number(remoteValue.nextLargeIndex) || 1),
       settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}) },
       connections: mergeByIdUnion(localValue.connections, remoteValue.connections),
+      groups: mergeByIdUnion(localValue.groups, remoteValue.groups, "parentId"),
       _meta: { ...(remoteValue._meta || {}), ...(localValue._meta || {}), deleted: trimmedDeleted }
     };
   }
@@ -917,6 +918,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
   const groupMembers = new Map();    // groupId -> Set<boxKey> (all members)
   const groupStar = new Set();       // boxKeys marked as parent (starred)
   const groupIdx = new Map();       // kept for compat: parentId -> group object
+  let __dsuBuilt = false;            // Bug1: track DSU build to avoid O(n) rebuild per mousemove when groupStar stays empty
   let canvasConnSvg = null;     // SVG overlay inside canvasSurface
   let innerConnSvg = null;     // SVG overlay inside innerSurfaceContent
   let connectMode = null;               // { fromId, fromEl, fromSide } | null
@@ -1265,6 +1267,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
   
   function dsuReset() {
     boxGroupId.clear(); groupMembers.clear(); groupStar.clear();
+    __dsuBuilt = false; // Bug1: reset build flag
   }
   
   function dsuRebuildFromConnections() {
@@ -1273,11 +1276,52 @@ const connById = new Map();            // connId -> connection object (O(1) look
     for (const c of layout.connections) {
       if (c.from && c.to) dsuUnion(c.from, c.to);
     }
-  // A5: Re-apply star marks from box.isParent field
-  for (const b of (layout.boxes || [])) {
-    if (b.isParent) groupStar.add(largeKey(b.id));
+  // Apply layout.groups -> box.isParent before reading stars (BX-144: remote star adoption)
+  // BX-144: skip tombstoned parents — unstarred locally must NOT be re-adopted from stale layout.groups
+  if (Array.isArray(layout.groups)) {
+    const tdel = layout._meta?.deleted || {};
+    for (const g of layout.groups) {
+      if (!g || !g.parentId) continue;
+      if (tdel[g.parentId]) continue; // tombstoned — skip
+      if (g.parentId.startsWith("large:")) {
+        const lb = getLargeBox(g.parentId.slice(6));
+        if (lb) lb.isParent = true;
+      } else if (g.parentId.startsWith("small:")) {
+        const sp = g.parentId.split(":");
+        if (sp.length >= 3) { const sb = getSmallBox(sp[1], sp.slice(2).join(":")); if (sb) sb.isParent = true; }
+      }
     }
   }
+  // BX-144: DSU union group members so getGroupByParent returns members even without connections
+  // BX-144: skip tombstoned parents — unstarred locally must NOT re-union stale members
+  if (Array.isArray(layout.groups)) {
+    const tdel2 = layout._meta?.deleted || {};
+    for (const g of layout.groups) {
+      if (!g || !g.parentId || !Array.isArray(g.members)) continue;
+      if (tdel2[g.parentId]) continue; // tombstoned — skip
+      for (const m of g.members) { if (m && m !== g.parentId && !tdel2[m]) dsuUnion(g.parentId, m); }
+    }
+  }
+  // A5: Re-apply star marks from box.isParent field
+  // BX-144: clear isParent for tombstoned parents before applying star marks
+  // (mergeById filters by box.id, but tombstones are keyed by box key — e.g. "large:<id>").
+  // A remote box with isParent=true can survive mergeById when its key is tombstoned;
+  // this filter ensures unstarred parents stay unstarred after cross-tab merge.
+  const __tdel = layout._meta?.deleted || {};
+  for (const b of (layout.boxes || [])) {
+    if (b.isParent && __tdel[largeKey(b.id)]) b.isParent = false;
+    for (const sb of (b.children || [])) {
+      if (sb.isParent && __tdel[smallKey(b.id, sb.id)]) sb.isParent = false;
+    }
+  }
+  for (const b of (layout.boxes || [])) {
+    if (b.isParent) groupStar.add(largeKey(b.id));
+    for (const sb of (b.children || [])) {
+      if (sb.isParent) groupStar.add(smallKey(b.id, sb.id));
+    }
+  }
+  __dsuBuilt = true; // Bug1: mark DSU as built so getGroupByParent skips ensureGroups on subsequent calls
+}
   
   function dsuGroupMembers(key) {
     const root = dsuFind(key);
@@ -1286,7 +1330,24 @@ const connById = new Map();            // connId -> connection object (O(1) look
   }
   
 
-function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const gs = (layout.boxes || []).filter(b => b.isParent).map(b => ({ parentId: largeKey(b.id), members: [] })); layout.groups = gs; return gs; }
+function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const gs = [];
+  for (const b of (layout.boxes || [])) {
+    if (b.isParent) {
+      const pk = largeKey(b.id);
+      const ms = dsuGroupMembers(pk);
+      const membersStr = ms ? [...ms].filter(k => k !== pk) : [];
+      gs.push({ parentId: pk, members: membersStr });
+    }
+    for (const sb of (b.children || [])) {
+      if (sb.isParent) {
+        const sp = smallKey(b.id, sb.id);
+        const ms2 = dsuGroupMembers(sp);
+        const membersStr2 = ms2 ? [...ms2].filter(k => k !== sp) : [];
+        gs.push({ parentId: sp, members: membersStr2 });
+      }
+    }
+  }
+  layout.groups = gs; return gs; }
 
   // ── Tiered keys for cross-level connections (BX-DEV-137+) ──────────
   // large:boxId  |  small:largeId:smallId  — addresses any box at any nesting.
@@ -1322,7 +1383,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
   function getGroupByParent(parentId) {
     // A5: lazy DSU rebuild on first access — needed after page reload where
     // groupStar is empty until ensureGroups()/dsuRebuildFromConnections runs.
-    if (parentId && groupStar.size === 0) ensureGroups();
+    if (parentId && !__dsuBuilt) ensureGroups();
     // A5: star determined by groupStar Set (populated from box.isParent)
     if (!parentId || !groupStar.has(parentId)) return null;
     const members = dsuGroupMembers(parentId);
@@ -1337,6 +1398,10 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
       const pk = parentId.startsWith('large:') ? parentId.slice(6) : parentId;
       const lb = getLargeBox(pk);
       if (lb) lb.isParent = false;
+      if (parentId.startsWith('small:')) {
+        const sp = parentId.split(':');
+        if (sp.length >= 3) { const sb2 = getSmallBox(sp[1], sp.slice(2).join(':')); if (sb2) sb2.isParent = false; }
+      }
       markDeleted(parentId);
       debug('toggleStarMark: unstar parent=' + parentId);
       ensureGroups();
@@ -1346,6 +1411,10 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
       const pk = parentId.startsWith('large:') ? parentId.slice(6) : parentId;
       const lb = getLargeBox(pk);
       if (lb) lb.isParent = true;
+      if (parentId.startsWith('small:')) {
+        const sp = parentId.split(':');
+        if (sp.length >= 3) { const sb2 = getSmallBox(sp[1], sp.slice(2).join(':')); if (sb2) sb2.isParent = true; }
+      }
       debug('toggleStarMark: star parent=' + parentId);
     }
     ensureGroups();
@@ -1361,12 +1430,18 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
       boxEl.classList.toggle('box--starred', starred);
     });
   }
-  // A5: addMember no-op - DSU auto-unions on addConnection
+  // addMember: unions parent+member in DSU (compat API for external callers)
   function addMember(parentId, memberId) {
     if (parentId === memberId) return;
     ensureConnArrays();
+    dsuUnion(parentId, memberId); // Bug2: union DSU
+    // Compat: update layout.groups shim members WITHOUT calling ensureGroups (would wipe DSU)
+    if (!layout.groups) layout.groups = [];
+    let g = layout.groups.find(x => x.parentId === parentId);
+    if (!g) { g = { parentId, members: [] }; layout.groups.push(g); }
+    if (!g.members.includes(memberId)) g.members.push(memberId);
+    __dsuBuilt = true; // DSU is valid after dsuUnion
   }
-
   // During parent drag we apply the same delta to every member. Members collide
   // against OUT-of-group boxes only; intra-group siblings move as a rigid set.
   // BX-DEV-137+: group drag now performs a continuous elastic sweep against
@@ -1786,7 +1861,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     const bar = document.createElement('div');
     bar.className = 'large-box__bar';
     // bar is the drag area
-    bar.addEventListener('mousedown', e => { if (!e.target.closest('.large-box__title') && !e.target.closest('.large-box__delete')) onBoxDragStart(e, 'large', box.id, el); });
+    bar.addEventListener('mousedown', e => { if (!e.target.closest('.large-box__title') && !e.target.closest('.large-box__delete') && !e.target.closest('.box-star-btn')) onBoxDragStart(e, 'large', box.id, el); });
 
     const icon = document.createElement('span');
     icon.className = 'large-box__icon';
@@ -2128,7 +2203,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     const bar = document.createElement('div');
     bar.className = 'small-box__bar';
     bar.addEventListener('mousedown', e => {
-      if (!e.target.closest('.small-box__title') && !e.target.closest('.small-box__delete')) {
+      if (!e.target.closest('.small-box__title') && !e.target.closest('.small-box__delete') && !e.target.closest('.box-star-btn')) {
         // BX-DEV-111j: validate box still exists before allowing drag
         if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
         onBoxDragStart(e, 'small', { largeId, smallId: sb.id }, el);
