@@ -1415,6 +1415,9 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
         const sp = parentId.split(':');
         if (sp.length >= 3) { const sb2 = getSmallBox(sp[1], sp.slice(2).join(':')); if (sb2) sb2.isParent = true; }
       }
+      // Bug2: clear any stale tombstone for this parentId so the dsuRebuildFromConnections
+      // tombstone-clear loop (L1310) does NOT re-clear the isParent=true we just set above.
+      if (layout._meta?.deleted?.[parentId]) delete layout._meta.deleted[parentId];
       debug('toggleStarMark: star parent=' + parentId);
     }
     ensureGroups();
@@ -2520,7 +2523,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
       removePopupTracker(popup);
     });
     // Enter key to save (BX-DEV-057)
-    titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); } });
+    // Feat-4: Enter on title field advances focus to URL field (not save). Enter on URL saves.
+    titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); urlInput.focus(); urlInput.select(); } });
     urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); } });
 
     const deleteBtn = document.createElement('button');
@@ -2650,8 +2654,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
       removePopupTracker(popup);
     };
     // Update addBtn click to delegate:
-    // Already handled above; add Enter key listeners:
-    titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addBmAction(); } });
+    // Feat-4: Enter on title advances to URL field; Enter on URL adds the bookmark.
+    titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); urlInput.focus(); urlInput.select(); } });
     urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addBmAction(); } });
 
     const cancelBtn = document.createElement('button');
@@ -3392,6 +3396,23 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     renderConnections(); // BX-DEV-137+++: re-render connections after small box deletion
   }
 
+  // BX-DEV-122: sync settings-DOM from layout.settings. Used by openSettingsModal init
+  // AND by applyExternalLayout so cross-tab settings writes (e.g. urlOpenMode flip) reflect
+  // in the local settings modal even before the user reopens it. Without this, the local
+  // select.value stays stale and the user sees the old choice — Bug3.
+  function syncSettingsDOM() {
+    if (typeof langSelect !== 'undefined' && langSelect) langSelect.value = layout.settings.selectedLanguage || 'en';
+    if (typeof rememberCheck !== 'undefined' && rememberCheck) rememberCheck.checked = layout.settings.rememberLastPos !== false;
+    if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'newTab';
+    if (typeof darkModeCB !== 'undefined' && darkModeCB) darkModeCB.checked = layout.settings.darkMode === true;
+    if (typeof zoomSlider !== 'undefined' && zoomSlider) zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
+    if (typeof zoomSliderVal !== 'undefined' && zoomSliderVal) zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
+    if (typeof fontSlider !== 'undefined' && fontSlider) fontSlider.value = layout.settings.fontSize || 14;
+    if (typeof fontSliderVal !== 'undefined' && fontSliderVal) fontSliderVal.textContent = (layout.settings.fontSize || 14) + 'px';
+    const squareCB = document.getElementById('square-corners-cb');
+    if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
+  }
+
   function applyExternalLayout(raw) {
     if (!raw || applyingExternalLayout) return false;
     const incoming = migrateLayout(raw);
@@ -3462,6 +3483,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
         renderCanvas();
       }
       if (needsReconcileWrite && incomingWins) saveLayoutDebounced();
+      // BX-DEV-122 Bug3: re-sync settings DOM so modal reflects cross-tab updated urlOpenMode etc.
+      try { syncSettingsDOM(); } catch (_) {}
       debug('external layout applied', { revision: incomingRevision, boxes: layout.boxes.length });
       return true;
     } finally {
@@ -3474,17 +3497,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const
     debug('openSettingsModal called, current hidden=' + settingsModal.hidden);
     settingsModal.hidden = false;
     debug('openSettingsModal set hidden=false, now=' + settingsModal.hidden + ' display=' + getComputedStyle(settingsModal).display);
-    langSelect.value = layout.settings.selectedLanguage || 'en';
-    rememberCheck.checked = layout.settings.rememberLastPos !== false;
-  if (urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'newTab';
-    darkModeCB.checked = layout.settings.darkMode === true;
-    zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
-    zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
-    fontSlider.value = layout.settings.fontSize || 14;
-    fontSliderVal.textContent = (layout.settings.fontSize || 14) + 'px';
-    // square corners
-    const squareCB = document.getElementById('square-corners-cb');
-    if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
+    syncSettingsDOM();
     const firstTab = document.querySelector('.settings-nav__item');
     const lastTabId = layout.settings.lastSettingsTab || 'general';
     const targetTabBtn = document.querySelector('.settings-nav__item[data-tab="' + lastTabId + '"]');
