@@ -5,7 +5,7 @@
   // ── cross-browser API ──────────────────────────────────
   let api = (typeof browser !== 'undefined' ? browser : typeof chrome !== 'undefined' ? chrome : null);
   // In file:/// or non-extension contexts, chrome/browser may exist but storage is unavailable.
-  if (!api || !api.storage || !api.storage.sync) {
+  if (!api || !api.storage || !(api.storage.local || api.storage.sync)) {
     const mockChangeListeners = new Set();
     window.addEventListener('storage', event => {
       if (event.key !== 'boxingLayout' || !event.newValue) return;
@@ -38,7 +38,7 @@
     };
     api = mock; /* SEC-01: mock stays local — no global chrome/browser pollution */
   }
-  const layoutStorage = api.storage.sync;
+  const layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
 
   // ── constants ──────────────────────────────────────────
   const CANVAS_GRID = 24;
@@ -603,7 +603,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       } else {
         const legacy = layoutStorage === api.storage.sync ? data : await api.storage.sync.get({ boxingLayout: null });
         layout = legacy.boxingLayout ? migrateLayout(legacy.boxingLayout) : defaultLayout();
-        if (legacy.boxingLayout && layoutStorage !== api.storage.sync) await layoutStorage.set({ boxingLayout: layout });
+        if (legacy.boxingLayout && layoutStorage !== api.storage.sync) {
+          await layoutStorage.set({ boxingLayout: layout });
+          // A6: one-time cleanup — remove stale sync data after successful local migration
+          try { await api.storage.sync.remove("boxingLayout"); } catch (_) {}
+        }
       }
     } catch (e) { debugErr('loadLayout', e); layout = defaultLayout(); }
   }
