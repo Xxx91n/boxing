@@ -152,6 +152,10 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | BX-EXPLORE-001 | MUST | All project exploration (searching files, reading source, analyzing structure) MUST use .codegraph (ctx tools / codegraph DB) as the primary index. Direct filesystem traversal (ls, dir, Get-ChildItem for source discovery) is prohibited unless .codegraph is unavailable or the task is trivially scoped to one known file. |
 | BX-EXPLORE-002 | MUST | Before answering any "where is X", "how many Y", "what does Z do" question about the codebase, query .codegraph first (via ctx_search or ctx_execute_file over the DB). Only fall back to direct file reads when .codegraph lacks the needed granularity. |
 | BX-EXPLORE-003 | MUST | Keep .codegraph/index.json in sync with the actual file tree after each session that adds, removes, or renames source files (use the codegraph CLI or regenerate via the project script). |
+## CSS Dual-Write Convention (Global)
+
+> **Global convention document: [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md)** — every CSS rule that affects both `.large-box` and `.small-box` MUST use paired selectors and a code comment marker. See BX-DEV-013 above for the MUST rule. When adding a new visual rule, check the convention doc first to confirm the required markers.
+
 
 ## Debug Development
 
@@ -225,6 +229,6 @@ Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-D
 | SEC-01 | MUST | Mock fallback api = mock MUST NOT pollute self.chrome / self.browser globals. Keep mock local to avoid breaking other extensions or browser internals in file:// test mode. |
 | SEC-03 | MUST | All contentEditable title elements MUST have a paste event listener that forces plain-text insertion via document.execCommand('insertText', false, ...). Prevents rich-text/HTML injection through paste. Applies to: large box title, small box title, inner crumb title. |
 | SEC-06 | MUST | Import JSON payloads MUST be size-capped at 2MB (JSON.stringify(data).length > 2_000_000 → rejected). Prevents stack overflow / OOM from excessively deep or large malicious imports. |
-| SEC-08 | MUST | High-frequency saveLayout() calls (drag end, pan end, zoom) MUST use saveLayoutDebounced() with 300ms debounce. Direct saveLayout() retained for critical paths: enter/exit boxes, delete, pin/expand toggle, title blur, import. Prevents exceeding Chrome's ~120 writes/min storage.sync rate limit. |
+| SEC-08 | MUST | High-frequency saveLayout() calls (drag end, pan end, zoom) MUST use saveLayoutDebounced() with 300ms debounce. Direct saveLayout() retained for critical paths: enter/exit boxes, delete, pin/expand toggle, title blur, import. Note: as of A6, layoutStorage uses storage.local (10MB / unlimited with permission), not storage.sync — storage.sync has a 100KB total / 8KB per-item quota and a 120 writes/min (2/sec) rate limit. storage.local removes the rate limit but keep the debounce for I/O performance. |
 | SEC-11 | MUST | ensureHttpsUrl() MUST reject javascript:, data:, vbscript: protocols before any URL construction. These dangerous protocols are returned as-is (unmodified) so callers can reject them further. |
 | SEC-15 | MUST | ntp/index.html MUST include a <meta> Content-Security-Policy header: default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' https: data:; connect-src 'self' https:;. This prevents XSS, inline script injection, and unauthorized external resource loading. |
