@@ -15,8 +15,12 @@
         newValue = JSON.parse(event.newValue);
         oldValue = event.oldValue ? JSON.parse(event.oldValue) : null;
       } catch (_) { return; }
+      // A6-fix: emit BOTH area names so listeners using either 'local' or 'sync' fire.
+      // In file:// test/mock contexts the source tap is a single localStorage key, so
+      // emitting both is safe — the listener's expectedArea filter discards the wrong one.
       for (const listener of mockChangeListeners) {
         listener({ boxingLayout: { oldValue, newValue } }, 'sync');
+        listener({ boxingLayout: { oldValue, newValue } }, 'local');
       }
     });
     const mock = {
