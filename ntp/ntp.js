@@ -1457,10 +1457,10 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
       provisionalLine.setAttribute('stroke', 'var(--connection-color, #333)');
       provisionalLine.setAttribute('stroke-width', '1.5');
       provisionalLine.setAttribute('stroke-dasharray', '5,3');
-      provisionalLine.setAttribute('x1', mp.x.toFixed(1));
-      provisionalLine.setAttribute('y1', mp.y.toFixed(1));
-      provisionalLine.setAttribute('x2', initLX.toFixed(1));
-      provisionalLine.setAttribute('y2', initLY.toFixed(1));
+      provisionalLine.setAttribute('x1', Math.round(mp.x));
+      provisionalLine.setAttribute('y1', Math.round(mp.y));
+      provisionalLine.setAttribute('x2', Math.round(initLX));
+      provisionalLine.setAttribute('y2', Math.round(initLY));
       svg.appendChild(provisionalLine);
       provisionalGhost = { x: initLX, y: initLY, surface: mp.surface };
     }
@@ -3819,8 +3819,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); retur
         const zoom = isInner ? innerZoom : canvasZoom;
         const lx = (e.clientX - rect.left) / zoom;
         const ly = (e.clientY - rect.top) / zoom;
-        provisionalLine.setAttribute('x2', lx.toFixed(1));
-        provisionalLine.setAttribute('y2', ly.toFixed(1));
+        provisionalLine.setAttribute('x2', Math.round(lx));
+        provisionalLine.setAttribute('y2', Math.round(ly));
       });
     }, { passive: true });
     document.addEventListener('mouseup', e => {
