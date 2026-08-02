@@ -736,6 +736,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   function mergeConcurrentLayout(localValue, remoteValue) {
+    debug('mergeConcurrentLayout: local='+(localValue?.boxes?.length||0)+' remote='+(remoteValue?.boxes?.length||0));
     if (!remoteValue) return localValue;
     const localDeleted = localValue._meta?.deleted || {};
     const remoteDeleted = remoteValue._meta?.deleted || {};
@@ -975,6 +976,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     connById.delete(connId);
     // BX-DSU: rebuild group connectivity after connection removal
     dsuRebuildFromConnections();
+    debug('removeConnection '+connId+', conns='+layout.connections.length);
   }
 
   // ── ARCHITECTURAL INVARIANT ──────────────────────────────────────────
@@ -1276,6 +1278,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     for (const c of layout.connections) {
       if (c.from && c.to) dsuUnion(c.from, c.to);
     }
+    debugSampled('dsuRebuild: conns='+layout.connections.length);
   // Apply layout.groups -> box.isParent before reading stars (BX-144: remote star adoption)
   // BX-144: skip tombstoned parents — unstarred locally must NOT be re-adopted from stale layout.groups
   if (Array.isArray(layout.groups)) {
@@ -1330,7 +1333,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
   }
   
 
-function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); const gs = [];
+function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debugSampled('ensureGroups: boxes='+(layout.boxes||[]).length+' conns='+(layout.connections||[]).length); const gs = [];
   for (const b of (layout.boxes || [])) {
     if (b.isParent) {
       const pk = largeKey(b.id);
