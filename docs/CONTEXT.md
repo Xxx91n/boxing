@@ -1,0 +1,61 @@
+# CONTEXT.md — Boxing Domain Glossary & Architecture
+
+> Source-of-truth glossary for the Boxing browser extension project.
+> Maintained alongside ADRs under `docs/adr/`.
+> Update this file when adding domain concepts, data structures, or architectural invariants.
+
+## Project Summary
+Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookmarks hierarchically on an infinite canvas. Large boxes contain small boxes; small boxes contain bookmarks. Boxes can be connected with lines to form visual relationships. A DSU (disjoint-set union) groups boxes that share connection lines, enabling parent-star propagation and group movement.
+
+## Core Domain Terms
+
+### Boxes
+- **Large box** — top-level container rendered on the outer canvas. Has `id: 'L<n>'`, `x`, `y`, `w`, `h`, `title`, `isParent` (star mark), `autoExpand`, `viewState` (inner zoom/pan).
+- **Small box** — leaf container inside a large box's inner surface. Has `id: 'S<n>'`, same geometry fields, `bookmarks: [{title,url}]`.
+- **isParent** — boolean star-mark on a box indicating it's the movement-leader of its DSU group. Visualized as a filled star (empty star = not parent). See ADR-0003.
+- **autoExpand** — boolean: when true, the box renders expanded on hover without needing a click toggle.
+
+### Connections (Lines)
+- **Connection** — `{ id: 'C<n>', from: boxId, to: boxId }` — undirected edge between two boxes.
+- **connLine** — SVG `<line>` element rendered on a dedicated SVG layer (`connSvg`). Tracked in `connLines: Map<connId, SVGLineElement>`.
+- **connById** — `Map<connId, Connection>` O(1) lookup.
+- **boxConnIdx** — `Map<boxId, Set<connId>>` O(1) reverse index: which conns touch which box.
+- **DSU** — Disjoint-Set Union over box ids. `dsuRebuildFromConnections()` rebuilds parent/child after connect/disconnect. A group is all boxes sharing the same DSU root.
+- **scheduleConnRefresh(ids)** — rAF-coalesced refresh that updates SVG line endpoints from box DOM positions. Avoids sync layout thrash (BX-DEV-PERF).
+- **Viewport culling** — lines outside the visible canvas/inner area get `display:none` to avoid SVG GPU cost. Pan/zoom handlers must call `scheduleConnRefresh(all conn ids)` to re-evaluate culling. See ADR-0004, BX-EXPLORE-008.
+
+### Connection Delete Action (ADR-0006)
+- **connDeleteAction** — `layout.settings.connDeleteAction: string` enum field. Determines how the user deletes a connection line.
+  - `'alt+click'` (default) — Alt + left mouse down on a conn-line
+  - `'ctrl+click'` — Ctrl + left mouse down
+  - `'shift+click'` — Shift + left mouse down
+  - `'right-click'` — contextmenu event; suppresses native menu via preventDefault
+  - `'double-click'` — dblclick event on conn-line
+  - `'select+delete'` — click selects line (CSS `conn-line--selected`), Backspace/Delete removes
+- **onConnLinePointerDown(e)** — unified event detector; reads connDeleteAction to decide if removeConnection fires.
+- **selectedConnId** — state for select+delete mode; the currently-selected conn-line id. Cleared on mode change.
+- **conn-line--selected** — CSS class for visual highlight of selected line.
+
+### Settings
+- **layout.settings** — persisted settings object inside `layout`. Spread-merged on cross-tab sync: `{ ...remote.settings, ...local.settings }`.
+- Fields: `selectedLanguage`, `rememberLastPos`, `zoomLevel`, `darkMode`, `fontSize`, `squareCorners`, `autoBackupInterval`, `headerPinned`, `syncProvider`, `urlOpenMode`, `connDeleteAction`.
+- **syncSettingsDOM()** — reads layout.settings → DOM (select values, checkboxes). Called on modal open and after applyExternalLayout.
+- **addEventListener('change')** — settings modal writes DOM → layout.settings + `saveLayoutDebounced()`.
+
+### Storage
+- **saveLayoutDebounced()** — debounced persist to `chrome.storage.sync` / `browser.storage.sync`. Correct function name (BX-EXPLORE-009: `persistLayoutDebounced` was a typo that was never defined).
+- **mergeConcurrentLayout** — cross-tab merge at L780: `settings: { ...remote.settings, ...local.settings }` — new fields covered automatically.
+- **diagnostics** — bounded log ring buffer under `.omx/logs/`; exportable via Diagnostics UI (BX-AUD-05).
+
+## Architectural Invariants (BX-EXPLORE-005..009)
+- **BX-EXPLORE-005**: Box dragging uses `left`/`top` only — NEVER `translate3d()` (causes 2x position flash).
+- **BX-EXPLORE-006**: NEVER add `will-change: transform` / `translateZ(0)` to `.large-box`, `.small-box`, `--dragging`, `canvasSurface`, `innerSurfaceContent`, or `.conn-line`. Chrome rasterizes to fixed bitmaps → blurry text at low zoom.
+- **BX-EXPLORE-007**: Hot-path mousemove functions use O(1) lookups via `connById` Map — never `.find()`.
+- **BX-EXPLORE-008**: Pan/zoom handlers call `scheduleConnRefresh(all conn ids)` after `applyCanvasTransform`/`applyInnerTransform`.
+- **BX-EXPLORE-009**: Persistence calls `saveLayoutDebounced()` — never `persistLayoutDebounced()` (undefined typo).
+
+## CSS Dual-Write Convention
+Both large-box and small-box canvases share the same CSS class for conn-line styles. Single source of truth in `ntp/ntp.css`. See `docs/css-dual-write-convention.md` for rules on properties that MUST stay in sync across large/small box selectors.
+
+## Disposal Invariant
+Any code that clears `canvasSurface.innerHTML` or `innerSurfaceContent.innerHTML` MUST call `disposeAllConns()` first — otherwise `connLines` Map holds stale SVG refs and `renderConnections()` skips rebuild (lines invisible forever).

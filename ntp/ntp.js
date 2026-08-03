@@ -258,7 +258,10 @@
     squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded',
     smallBoxCountLabel: '$1$ small boxes',
     autoExpand: 'Auto expand', autoExpandHover: 'Hover to expand',
-    headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Header unpinned'
+    headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Header unpinned',
+    connDeleteActionLabel: 'Delete connection by', connDeleteActionHint: 'Choose how to delete a connection line between two boxes',
+    connDeleteActionAltClick: 'Alt + Click', connDeleteActionCtrlClick: 'Ctrl + Click', connDeleteActionShiftClick: 'Shift + Click',
+    connDeleteActionRightClick: 'Right-click', connDeleteActionDoubleClick: 'Double-click', connDeleteActionSelectDelete: 'Click + Delete key'
     ,
     confirmDeleteTitle: 'Confirm Delete', confirmYes: 'Delete', confirmCancel: 'Cancel',
     confirmDeleteLargeBody: 'Delete this large box and all its small boxes? This action cannot be undone.',
@@ -519,6 +522,8 @@
   const rememberCheck = $('#remember-last-pos');
   // BX-DEV-120: urlOpenMode select — bookmarks open in newTab (default) or sameTab.
   const urlOpenModeSelect = $('#url-open-mode-select');
+  // ADR-0006: conn-delete-action select — configurable gesture for deleting connection lines.
+  const connDeleteActionSelect = $('#conn-delete-action-select');
   const fontSlider = $('#font-slider');
   const fontSliderVal = $('#font-slider-value');
   const zoomSlider = $('#zoom-slider');
@@ -832,7 +837,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function defaultLayout() {
     return {
       version: 3.5, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab' }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click' }
     };
   }
 
@@ -979,18 +984,80 @@ const connById = new Map();            // connId -> connection object (O(1) look
     debug('removeConnection '+connId+', conns='+layout.connections.length);
   }
 
-  // BX-EXPLORE-008: Alt+Click on a connection line deletes it (React Flow community style).
-  // Listener attached in renderConnections; CSS pointer-events:stroke enables hit-test on line only.
-  function onConnLineAltDown(e) {
-    if (!e.altKey) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const connId = e.currentTarget.getAttribute('data-conn-id');
+  // ADR-0006: Configurable connection delete action (tldraw Actions pattern, vanilla JS).
+  // Single config field layout.settings.connDeleteAction drives which gesture deletes a line.
+  let selectedConnId = null;
+
+  function getConnDeleteTrigger() { return (layout.settings && layout.settings.connDeleteAction) || 'alt+click'; }
+
+  function deleteConnById(connId) {
     if (!connId) return;
     removeConnection(connId);
+    if (selectedConnId === connId) selectedConnId = null;
     renderConnections();
     saveLayoutDebounced();
-    debug('Alt+down deleted connection ' + connId);
+    debug('deleteConnById ' + connId + ' mode=' + getConnDeleteTrigger());
+  }
+
+  // BX-EXPLORE-008++: unified primary detector for click-family modes.
+  // Listener attached in renderConnections; CSS pointer-events:stroke enables hit-test on line only.
+  function onConnLinePointerDown(e) {
+    const mode = getConnDeleteTrigger();
+    if (mode === 'alt+click' && !e.altKey) return;
+    if (mode === 'ctrl+click' && !e.ctrlKey) return;
+    if (mode === 'shift+click' && !e.shiftKey) return;
+    if (mode === 'select+delete') { // click selects; delete handled by keydown
+      e.preventDefault(); e.stopPropagation();
+      const connId = e.currentTarget.getAttribute('data-conn-id');
+      if (selectedConnId && selectedConnId !== connId) {
+        const prev = connLines.get(selectedConnId); if (prev) prev.classList.remove('conn-line--selected');
+      }
+      selectedConnId = connId;
+      e.currentTarget.classList.add('conn-line--selected');
+      return;
+    }
+    e.preventDefault(); e.stopPropagation();
+    const connId = e.currentTarget.getAttribute('data-conn-id');
+    if (!connId) return;
+    deleteConnById(connId);
+  }
+
+  // double-click mode
+  function onConnLineDblClick(e) {
+    if (getConnDeleteTrigger() !== 'double-click') return;
+    e.preventDefault(); e.stopPropagation();
+    const connId = e.currentTarget.getAttribute('data-conn-id');
+    if (!connId) return;
+    deleteConnById(connId);
+  }
+
+  // right-click mode: suppress browser menu + delete
+  function onConnLineContextMenu(e) {
+    if (getConnDeleteTrigger() !== 'right-click') return;
+    e.preventDefault(); e.stopPropagation();
+    const connId = e.currentTarget.getAttribute('data-conn-id');
+    if (!connId) return;
+    deleteConnById(connId);
+  }
+
+  // select+delete mode: Backspace/Delete removes selected line
+  function onConnLineKeydown(e) {
+    if (getConnDeleteTrigger() !== 'select+delete') return;
+    if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+    if (!selectedConnId) return;
+    // Avoid hijacking Backspace while editing text inputs / contenteditable
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+    e.preventDefault();
+    deleteConnById(selectedConnId);
+  }
+
+  // ADR-0006: idempotent global keydown installer for select+delete mode.
+  let __connKeydocInstalled = false;
+  function applyConnDeleteKeydoc() {
+    if (__connKeydocInstalled) return;
+    document.addEventListener('keydown', onConnLineKeydown, true);
+    __connKeydocInstalled = true;
   }
 
   // ── ARCHITECTURAL INVARIANT ──────────────────────────────────────────
@@ -1191,6 +1258,9 @@ const connById = new Map();            // connId -> connection object (O(1) look
         try { line.remove(); } catch (_) {}
         connLines.delete(id);
         dirtyConns.delete(id);
+      } else {
+        // ADR-0006: ensure visual selection reflects current mode — strip stale highlight when not selecting.
+        if (id !== selectedConnId) line.classList.remove('conn-line--selected');
       }
     }
     // Create new SVG <line> elements for pending connections.
@@ -1204,8 +1274,13 @@ const connById = new Map();            // connId -> connection object (O(1) look
       line.setAttribute('stroke-width', '1.5');
       line.setAttribute('shape-rendering', 'geometricPrecision');
       line.setAttribute('data-conn-id', c.id);
-      // BX-EXPLORE-008: Alt+Click on connection line deletes it (React Flow style)
-      line.addEventListener('mousedown', onConnLineAltDown);
+      // ADR-0006: register delete-action listeners based on layout.settings.connDeleteAction
+      {
+        const mode = getConnDeleteTrigger();
+        line.addEventListener('mousedown', onConnLinePointerDown);
+        if (mode === 'double-click') line.addEventListener('dblclick', onConnLineDblClick);
+        if (mode === 'right-click') line.addEventListener('contextmenu', onConnLineContextMenu);
+      }
       updateSvgLine(line, c);
       svg.appendChild(line);
       connLines.set(c.id, line);
@@ -3445,6 +3520,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     if (typeof langSelect !== 'undefined' && langSelect) langSelect.value = layout.settings.selectedLanguage || 'en';
     if (typeof rememberCheck !== 'undefined' && rememberCheck) rememberCheck.checked = layout.settings.rememberLastPos !== false;
     if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'newTab';
+    if (typeof connDeleteActionSelect !== 'undefined' && connDeleteActionSelect) connDeleteActionSelect.value = layout.settings.connDeleteAction || 'alt+click';
     if (typeof darkModeCB !== 'undefined' && darkModeCB) darkModeCB.checked = layout.settings.darkMode === true;
     if (typeof zoomSlider !== 'undefined' && zoomSlider) zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
     if (typeof zoomSliderVal !== 'undefined' && zoomSliderVal) zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
@@ -4077,6 +4153,18 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     urlOpenModeSelect?.addEventListener('change', () => {
       layout.settings.urlOpenMode = urlOpenModeSelect.value === 'sameTab' ? 'sameTab' : 'newTab';
       saveLayout();
+    });
+
+    connDeleteActionSelect?.addEventListener('change', () => {
+      layout.settings.connDeleteAction = connDeleteActionSelect.value || 'alt+click';
+      // ADR-0006: force full re-create so new-mode listeners (dblclick/contextmenu/keydoc) attach to fresh <line> elements.
+      // renderConnections only registers listeners on pending (new) lines — existing connLines stay with stale mode listeners.
+      selectedConnId = null;
+      disposeAllConns();
+      ensureConnArrays(); // rebuild indices after dispose
+      applyConnDeleteKeydoc();
+      renderConnections();
+      saveLayoutDebounced();
     });
     zoomSlider?.addEventListener('input', () => {
       zoomSliderVal.textContent = zoomSlider.value + '%';
@@ -5111,6 +5199,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
   }
 
   await init();
+  // ADR-0006: install global keydown listener if select+delete mode is active at startup
+  try { applyConnDeleteKeydoc(); } catch (_) {}
 })();
 // BX-DEV-111 v2: Fastest-CDN race — probe all sources on first request, lock winner for session
 const FAVICON_SOURCES = [
