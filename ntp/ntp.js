@@ -832,7 +832,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function defaultLayout() {
     return {
       version: 3.5, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local' }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab' }
     };
   }
 
@@ -1101,19 +1101,22 @@ const connById = new Map();            // connId -> connection object (O(1) look
   const CONN_VP_MARGIN = 60;
 
   function connSvgVisibleRect(svg) {
-    // Returns {w, h} of the visible area in svg-local (world) coordinates.
-    // The svg lives inside a surface with transform: scale(zoom).
-    // svg.clientWidth is screen px; world range = clientWidth / zoom.
-    // Without dividing by zoom, lines at world coords > clientWidth get
-    // erroneously culled at low zoom (Bug1: lines vanish bottom-right).
+    // Returns {minX, minY, maxX, maxY} of the visible world window in svg-local coords.
+    // The svg lives inside a surface with transform: translate(panX,panY) scale(zoom).
+    // Visible world region = [-panX/zoom, (-panY+h)/zoom] — accounts for pan offset.
+    // WITHOUT pan, low-zoom + clamped-pan shifts the world window past 0..w, culling
+    // visible lines at right/bottom (Bug1: lines vanish right side at ~50-60% zoom).
     const w = svg.clientWidth || 0, h = svg.clientHeight || 0;
     if (!w || !h) return null;
+    const isInner = svg.closest('.inner__surface') || svg.closest('.inner-surface-content');
     const z = (svg.closest('.canvas__surface') || svg.closest('[style*="scale"]'))
-      ? (svg.closest('.inner__surface') || svg.closest('.inner-surface-content')
+      ? (isInner
         ? (typeof innerZoom !== 'undefined' ? innerZoom : 1)
         : (typeof canvasZoom !== 'undefined' ? canvasZoom : 1))
       : 1;
-    return { w: w / z, h: h / z };
+    const panX = isInner ? (typeof innerPanX !== 'undefined' ? innerPanX : 0) : (typeof canvasPanX !== 'undefined' ? canvasPanX : 0);
+    const panY = isInner ? (typeof innerPanY !== 'undefined' ? innerPanY : 0) : (typeof canvasPanY !== 'undefined' ? canvasPanY : 0);
+    return { minX: -panX / z, minY: -panY / z, maxX: (w - panX) / z, maxY: (h - panY) / z };
   }
 
   function updateSvgLine(lineEl, c) {
@@ -1126,8 +1129,8 @@ const connById = new Map();            // connId -> connection object (O(1) look
     const svg = lineEl.ownerSVGElement || lineEl.parentNode;
     const vr = svg ? connSvgVisibleRect(svg) : null;
     if (vr) {
-      const minX = -CONN_VP_MARGIN, maxX = vr.w + CONN_VP_MARGIN;
-      const minY = -CONN_VP_MARGIN, maxY = vr.h + CONN_VP_MARGIN;
+      const minX = vr.minX - CONN_VP_MARGIN, maxX = vr.maxX + CONN_VP_MARGIN;
+      const minY = vr.minY - CONN_VP_MARGIN, maxY = vr.maxY + CONN_VP_MARGIN;
       const aOut = a.x < minX || a.x > maxX || a.y < minY || a.y > maxY;
       const bOut = b.x < minX || b.x > maxX || b.y < minY || b.y > maxY;
       if (aOut && bOut) { lineEl.style.display = 'none'; return; }
