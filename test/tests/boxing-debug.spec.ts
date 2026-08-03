@@ -70,7 +70,7 @@ test.describe('Boxing v3 — Deep Debug', () => {
     await expect(page.locator('#inner')).toBeVisible();
     await expect(page.locator('#canvas')).toBeHidden();
     // Breadcrumb should show
-    await expect(page.locator('.crumbs--inner')).toBeVisible();
+    await expect(page.locator('#inner-crumb-title')).toBeVisible();
     // Inner title should be editable
     await expect(page.locator('#inner-crumb-title')).toBeVisible();
 

@@ -2249,8 +2249,8 @@ html.ntp--dark {
 .ntp--dark { --connection-color: var(--color-ink); /* #E8E4DB in dark mode — light line on dark bg */ }
 .ntp--dark .conn-line { opacity: 0.82; } /* BX-145: reduce high-contrast aliasing visibility in dark mode */
 .conn-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 0; }
-.conn-line { stroke: var(--connection-color, #333); stroke-width: 1.5; fill: none; shape-rendering: geometricPrecision; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: default; }
-.conn-line:hover { stroke-width: 3; cursor: pointer; }
+.conn-line { stroke: var(--connection-color, #333); stroke-width: 2.5; fill: none; shape-rendering: geometricPrecision; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: default; }
+.conn-line:hover { stroke-width: 4; cursor: pointer; }
 .conn-line--provisional { stroke-dasharray: 5,3; opacity: 0.7; vector-effect: non-scaling-stroke; }
 .box-tool-btn { background: transparent; border: 0; cursor: pointer;
   color: var(--color-ink-soft); font-size: 12px; line-height: 1; padding: 0 4px;

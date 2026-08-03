@@ -160,7 +160,6 @@ Updated CSS Tokens (v3.4)
 ### Audit fixes applied
 - M-001: Removed duplicate ersion field in manifest.json
 - M-002: Added ookmarks permission to manifest.json
-- L-002: Renamed __qlearly_last_install__ → __boxing_last_install__
 - L-003: Catch blocks now log to console.error instead of silent swallow
 
 

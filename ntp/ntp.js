@@ -981,7 +981,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
 
   // BX-EXPLORE-008: Alt+Click on a connection line deletes it (React Flow community style).
   // Listener attached in renderConnections; CSS pointer-events:stroke enables hit-test on line only.
-  function onConnLineClick(e) {
+  function onConnLineAltDown(e) {
     if (!e.altKey) return;
     e.preventDefault();
     e.stopPropagation();
@@ -989,8 +989,8 @@ const connById = new Map();            // connId -> connection object (O(1) look
     if (!connId) return;
     removeConnection(connId);
     renderConnections();
-    persistLayoutDebounced();
-    debug('Alt+Click deleted connection ' + connId);
+    saveLayoutDebounced();
+    debug('Alt+down deleted connection ' + connId);
   }
 
   // ── ARCHITECTURAL INVARIANT ──────────────────────────────────────────
@@ -1205,7 +1205,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
       line.setAttribute('shape-rendering', 'geometricPrecision');
       line.setAttribute('data-conn-id', c.id);
       // BX-EXPLORE-008: Alt+Click on connection line deletes it (React Flow style)
-      line.addEventListener('click', onConnLineClick);
+      line.addEventListener('mousedown', onConnLineAltDown);
       updateSvgLine(line, c);
       svg.appendChild(line);
       connLines.set(c.id, line);
