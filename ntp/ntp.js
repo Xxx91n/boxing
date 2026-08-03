@@ -979,6 +979,20 @@ const connById = new Map();            // connId -> connection object (O(1) look
     debug('removeConnection '+connId+', conns='+layout.connections.length);
   }
 
+  // BX-EXPLORE-008: Alt+Click on a connection line deletes it (React Flow community style).
+  // Listener attached in renderConnections; CSS pointer-events:stroke enables hit-test on line only.
+  function onConnLineClick(e) {
+    if (!e.altKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const connId = e.currentTarget.getAttribute('data-conn-id');
+    if (!connId) return;
+    removeConnection(connId);
+    renderConnections();
+    persistLayoutDebounced();
+    debug('Alt+Click deleted connection ' + connId);
+  }
+
   // ── ARCHITECTURAL INVARIANT ──────────────────────────────────────────
   // Any code that clears a transform surface (canvasSurface.innerHTML = ''
   // or innerSurfaceContent.innerHTML = '') MUST call disposeAllConns() first.
@@ -1189,6 +1203,9 @@ const connById = new Map();            // connId -> connection object (O(1) look
       line.setAttribute('stroke', 'var(--connection-color, #333)');
       line.setAttribute('stroke-width', '1.5');
       line.setAttribute('shape-rendering', 'geometricPrecision');
+      line.setAttribute('data-conn-id', c.id);
+      // BX-EXPLORE-008: Alt+Click on connection line deletes it (React Flow style)
+      line.addEventListener('click', onConnLineClick);
       updateSvgLine(line, c);
       svg.appendChild(line);
       connLines.set(c.id, line);
@@ -3025,8 +3042,11 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     applyCanvasTransform();
     e.preventDefault();
     try { repositionAllPopups(); } catch (_) {}
-    // BX-DEV-145: refreshAllConns removed — applyCanvasTransform no longer
-    // calls it, and CSS transform moves SVG lines automatically.
+    // BX-DEV-145/EXPLORE-008: CSS transform moves SVG coords automatically,
+    // but viewport culling (display:none) must be re-evaluated on pan —
+    // previously-culled lines may re-enter the visible window. scheduleConnRefresh
+    // is rAF-coalesced → at most once per frame, not per mousemove event.
+    if (connLines.size) scheduleConnRefresh(Array.from(connLines.keys()));
   }
 
   function onCanvasPanEnd(e) {
@@ -3097,6 +3117,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     // BX-DEV-111N+ : propagate live inner pan to other tabs within ~25ms (throttled).
     if (currentLargeBoxId) scheduleLargeBoxViewStatePersist(currentLargeBoxId);
     try { repositionAllPopups(); } catch (_) {}
+    // BX-DEV-145/EXPLORE-008: re-evaluate viewport culling on inner pan too.
+    if (connLines.size) scheduleConnRefresh(Array.from(connLines.keys()));
   }
 
   function onInnerPanEnd(e) {
