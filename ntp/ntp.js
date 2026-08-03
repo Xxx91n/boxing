@@ -1027,7 +1027,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     if (layerVar && surface.contains(layerVar)) return layerVar;
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'conn-layer');
-    svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;';
+    svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:2;';
     // Add arrow marker definition
     const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
     const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
@@ -1102,11 +1102,18 @@ const connById = new Map();            // connId -> connection object (O(1) look
 
   function connSvgVisibleRect(svg) {
     // Returns {w, h} of the visible area in svg-local (world) coordinates.
-    // The svg lives inside a transformed surface; its clientWidth/Height reflect
-    // the on-screen viewport. Lines are in world coords (1:1 with svg viewBox 0..w).
+    // The svg lives inside a surface with transform: scale(zoom).
+    // svg.clientWidth is screen px; world range = clientWidth / zoom.
+    // Without dividing by zoom, lines at world coords > clientWidth get
+    // erroneously culled at low zoom (Bug1: lines vanish bottom-right).
     const w = svg.clientWidth || 0, h = svg.clientHeight || 0;
     if (!w || !h) return null;
-    return { w, h };
+    const z = (svg.closest('.canvas__surface') || svg.closest('[style*="scale"]'))
+      ? (svg.closest('.inner__surface') || svg.closest('.inner-surface-content')
+        ? (typeof innerZoom !== 'undefined' ? innerZoom : 1)
+        : (typeof canvasZoom !== 'undefined' ? canvasZoom : 1))
+      : 1;
+    return { w: w / z, h: h / z };
   }
 
   function updateSvgLine(lineEl, c) {

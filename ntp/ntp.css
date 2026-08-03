@@ -339,6 +339,7 @@ body {
   /* virtual infinite canvas; size grows with content + padding */
   min-width: 100%;
   min-height: 100%;
+  backface-visibility: hidden;
 }
 
 .canvas__empty {
@@ -413,7 +414,7 @@ body {
   z-index: 5;
   border-radius: var(--radius-card);
   overflow: hidden;
-  will-change: left, top;
+  will-change: transform;
 }
 
 /* BX-DUAL-WRITE: --ghost vs --ghost */
@@ -743,6 +744,7 @@ body {
   min-width: 100%;
   cursor: grab;
   overflow: hidden;
+  backface-visibility: hidden;
   /* Surface is below inner__canvas-head (flex column); small-box world origin
      is at surface top; world height = canvas - head. inner__canvas-head
      (z-index:5) sits above in DOM stacking order. */
@@ -776,7 +778,7 @@ body {
   cursor: grabbing;
   border-radius: var(--radius-card);
   overflow: hidden;
-  will-change: left, top;
+  will-change: transform;
 }
 
 .small-box--ghost {
