@@ -42,21 +42,20 @@ node .github/scripts/build.mjs        # Dev build → dist/boxing-chrome + dist/
 node scripts/build-release.js         # Release build → dist/boxing-{chrome,firefox}/release/{chrome,firefox}/ (6 artifacts)
 ```
 
-### Playwright Testing
+### Playwright Testing (in-tree at `test/`)
 ```bash
-cd ../playwright
-npm test                    # All browsers
-npm run test:firefox        # Firefox-specific
+cd boxing  # repo root; run tests from here
+npm test                    # All browsers (uses --config=test/playwright.config.ts)
+npm run test:firefox        # Firefox-specific (firefox-extension project)
 ```
 
-### web-ext (Firefox)
-These commands run from the `playwright/` directory (which holds `package.json` and dev dependencies):
+### web-ext Dev Server
+These commands run from the `boxing/` directory (`package.json` has `web-ext` as devDependency):
 ```bash
-cd ../playwright
-npm run dev:firefox         # Hot-reload dev
-npm run build:firefox       # Package .xpi
-npm run lint                # Manifest validation
+npm run dev:chrome          # Hot-reload Chrome dev (requires `npm run build` first)
+npm run dev:firefox         # Hot-reload Firefox dev (requires `npm run build` first)
 ```
+Tests live in-tree at `test/tests/`; Playwright config at `test/playwright.config.ts`. After `npm install`, run `npx playwright test --config=test/playwright.config.ts`. Specs are portable (use path-relative `__dirname`, no hardcoded drive letters).
 
 ## Privacy
 
