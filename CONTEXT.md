@@ -48,6 +48,10 @@ _Avoid_: firefox symlink, firefox dev-link
 Packaged extension bundles produced by build.mjs inside dist/boxing-chrome/release/chrome/{boxing/, boxing-<ver>.zip, boxing-<ver>.crx} and dist/boxing-firefox/release/firefox/{boxing/, boxing-<ver>.zip, boxing-<ver>.xpi}. Three files per browser: unzipped dir, zip, and browser-native package (.crx for Chrome, .xpi for Firefox).
 _Avoid_: packaged build, distribution bundle
 
+**test/**:
+In-tree Playwright test root at `test/` (NOT a separate `playwright/` sibling repo). `test/playwright.config.ts` resolves EXTENSION_PATH to repo root via `__dirname/..`. Specs in `test/tests/boxing-*.spec.ts` use a POSIX-safe `fileURLToPath` `__dirname` shim (required because `package.json` has `"type":"module"`). Run via `npm test` (= `npx playwright test --config=test/playwright.config.ts`). After `npm install`, browsers are NOT auto-installed; first-time users run `npx playwright install`. No hardcoded absolute paths; portable across Windows/Linux/macOS.
+_Avoid_: playwright repo, separate test repo, ../playwright
+
 **web-ext**:
 Mozilla official dev tool (npm devDependency). npm run dev:chrome / dev:firefox launches browser with --source-dir pointing directly at dist/boxing-chrome / dist/boxing-firefox. Does not use dev-junctions.
 _Avoid_: web-ext-cli, dev launcher

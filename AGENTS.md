@@ -67,15 +67,15 @@
 | Existing unpacked extension validation | Load unpacked extension in Chrome/Firefox | Extension loads without manifest errors. |
 | UI verification | Use available browser runtime screenshot/DOM/console inspection | Visual result matches requested state. |
 | Syntax pre-check | `node --check ntp.js && node --check background.js` | Both exit 0. |
-| Full e2e | `cd D:/Aworker/crx/playwright && npx playwright test --project=chromium --reporter=line` | ~3-4 min, all Boxing specs PASS (`extension-test.spec.ts` + `boxing-*` specs). |
+| Full e2e | `cd D:/Aworker/crx/boxing && npx playwright test --config=test/playwright.config.ts --project=chromium --reporter=line` | ~3-4 min, all Boxing specs PASS (`extension-test.spec.ts` + `boxing-*` specs). |
 
 ## Playwright & Browser Testing
 
-Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` points to `../boxing`). Specs live in `tests/` and are prefixed `boxing-*`.
+Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test/playwright.config.ts` `EXTENSION_PATH` path-resolves to `..` = repo root. Specs live in `test/tests/` and are prefixed `boxing-*`.
 - Chromium project (headed, persistent context, `--load-extension`) is the primary lane.
 - Firefox project uses `-no-remote`; LibreWolf is manual-verify only (no remote debug).
-- Run a single spec: `npx playwright test tests/boxing-viewstate-sync.spec.ts --project=chromium`.
-- Test files: `boxing-*.spec.ts` (11 specs) + `data-recovery.spec.ts` + `extension-test.spec.ts` cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, and export/import. No historical `extension-load.test.ts` exists anymore.
+- Run a single spec: `npx playwright test --config=test/playwright.config.ts test/tests/boxing-viewstate-sync.spec.ts --project=chromium`.
+- Test files: `boxing-*.spec.ts` (28 specs total, including `boxing-audit`, `data-recovery`, `extension-test`, and conn/DSU specs) cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, connections, and export/import. Run from repo root via `npm test` (alias for `npx playwright test --config=test/playwright.config.ts`).
 
 ## Chrome Extension Workflow
 
@@ -168,7 +168,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | Rule ID | Type | Rule |
 |---|---|---|
 | BX-DEBUG-001 | INFO | Set DEBUG = true in ntp.js during development; all [Boxing] prefixed console logs help trace issues. |
-| BX-DEBUG-002 | MUST | Use Playwright (D:\Aworker\crx\playwright) for automated e2e testing during development. |
+| BX-DEBUG-002 | MUST | Use Playwright (`test/playwright.config.ts`) for automated e2e testing during development. Run from repo root: `npm test` or `npx playwright test --config=test/playwright.config.ts`. |
 | BX-DEBUG-003 | MUST | After each major change, run "node --check ntp.js" to verify syntax before testing in browser. |
 ## CSS Token Baseline (Boxing v3.7)
 

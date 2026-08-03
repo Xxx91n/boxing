@@ -9,9 +9,14 @@
     "dev:chrome": "web-ext run -t chromium --source-dir=dist/boxing-chrome",
     "dev:firefox": "web-ext run --source-dir=dist/boxing-firefox",
     "dev:chrome:no-build": "web-ext run -t chromium --source-dir=dist/boxing-chrome --no-reload",
-    "dev:firefox:no-build": "web-ext run --source-dir=dist/boxing-firefox --no-reload"
+    "dev:firefox:no-build": "web-ext run --source-dir=dist/boxing-firefox --no-reload",
+    "test": "playwright test --config=test/playwright.config.ts",
+    "test:chromium": "playwright test --config=test/playwright.config.ts --project=chromium",
+    "test:firefox": "playwright test --config=test/playwright.config.ts --project=firefox-extension",
+    "test:debug": "playwright test --config=test/playwright.config.ts --project=chromium --debug"
   },
   "devDependencies": {
-    "web-ext": "^8.10.0"
+    "web-ext": "^8.10.0",
+    "@playwright/test": "^1.48.0"
   }
 }

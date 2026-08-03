@@ -85,3 +85,14 @@ release/
 # Dev load junctions (build artifacts)
 dev-chrome/
 dev-firefox/
+
+# Test (Playwright)
+test/node_modules/
+test/.cache/
+test-results/
+# Firefox profile dir created by playwright firefox-extension project at runtime
+test/tests/.firefox-profile/
+# Playwright HTML report output
+playwright-report/
+test/playwright-report/
+test/test-results/
