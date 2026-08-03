@@ -60,7 +60,7 @@ npm run lint                # Manifest validation
 
 ## Privacy
 
-- Bookmark and layout data stored locally in `chrome.storage.sync`
+- Bookmark and layout data stored locally in `chrome.storage.local`
 - Optional WebDAV / GitHub Gist backup is the only outbound network usage; configured by user in Settings > Sync & Backup
 - No analytics, tracking, or third-party services
 - Permissions: `storage`, `tabs`, `bookmarks`; host_permissions `https://*/*` used only for user-initiated WebDAV backup

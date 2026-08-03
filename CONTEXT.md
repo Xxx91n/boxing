@@ -59,3 +59,14 @@ _Avoid_: build script, packaging script
 **build-release.js**:
 Thin cross-platform wrapper at scripts/build-release.js that spawns build.mjs. Supports BOXING_BUILD_VERSION env override.
 _Avoid_: release wrapper
+
+
+## Architecture Glossary (Post-Grill)
+
+- **box.isParent**: Per-box boolean field (large + small). Replaces the deleted `layout.groups` array as the primary star-mark source. `groupStar` Set is populated from this field in `dsuRebuildFromConnections` and `ensureGroups`.
+- **DSU (Disjoint Set Union)**: Group system for connection-based box grouping. `dsuRebuildFromConnections` unions connected boxes on tab load. `getGroupByParent(key)` returns members. `layout.groups` is a compat shim rebuilt by `ensureGroups()` — tests may reference it but new code should prefer DSU API.
+- **SVG connection layer**: Self-drawn `<line>` elements in a `.conn-layer` SVG overlay (`z-index:0`, `pointer-events:none`). Replaces the previous LeaderLine vendor library (BX-142). Lines live inside `canvasSurface` / `innerSurfaceContent` and transform with the surface.
+- **translate3d drag**: Box dragging uses `el.style.transform = translate3d(x,y,0)` for GPU compositing instead of `left`/`top` (avoids Firefox layout reflow). On drag end, `left`/`top` are written back and `transform` is cleared.
+- **shape-rendering dynamic**: SVG lines switch `shape-rendering` to `crispEdges` at `zoom < 0.5` and `geometricPrecision` at `zoom >= 0.5` to prevent Chrome jagged-line rendering at low zoom.
+- **storage.local**: Layout storage migrated from `storage.sync` (8KB/item, 120 writes/min) to `storage.local` (10MB / unlimited with permission) in A6. `saveLayoutDebounced()` retained for I/O performance.
+- **web-ext**: Mozilla dev tool (npm devDependency). `npm run dev:chrome` / `dev:firefox` launches browser pointing at `dist/boxing-chrome` / `dist/boxing-firefox`.

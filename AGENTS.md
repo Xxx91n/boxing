@@ -95,7 +95,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | Field | Value |
 |---|---|
 | Project path | D:\Aworker\crx\boxing |
-| Current extension | Boxing v3.1.0 |
+| Current extension | Boxing v3.7.0 |
 | Current manifest | Manifest V3 |
 | Target browsers | Chrome + Firefox |
 | Main UI surface | New tab override: ntp/index.html, ntp/ntp.css, ntp/ntp.js |
@@ -104,8 +104,8 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 
 | Rule ID | Type | Rule |
 |---|---|---|
-| BX-I18N-001 | MUST | All 13 supported languages (en, zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi) must have complete translations for every i18n key used in the UI. |
-| BX-I18N-002 | MUST | New i18n keys must be added to _locales/<lang>/messages.json for all 13 languages before claiming completion. |
+| BX-I18N-001 | MUST | All 14 supported languages (en, zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi, zh_TW) must have complete translations for every i18n key used in the UI. |
+| BX-I18N-002 | MUST | New i18n keys must be added to _locales/<lang>/messages.json for all 14 languages before claiming completion. |
 | BX-I18N-003 | MUST | Keys with $1$ or $2$ must include a placeholders object: { "1": { "content": "$1" } }. |
 | BX-I18N-004 | MUST | Chrome i18n API (chrome.i18n.getMessage) is NOT used; the custom i18n store in ntp.js loads messages.json via fetch. |
 | BX-I18N-005 | MUST | English fallback (I18N_FALLBACK) in ntp.js must cover every i18n key in case fetch fails. |
@@ -128,6 +128,12 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | BX-DEV-011 | MUST NOT | Do not add shadcn/ui, Tailwind, React, Vue, or npm dependencies. |
 | BX-DEV-012 | MUST NOT | Do not use brand__mark brown color block (removed). |
 | BX-DEV-013 | MUST | CSS rules that affect both large-box and small-box canvases MUST be written in paired selectors (`.large-box` + `.small-box`). See [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md) for the full convention. |
+| BX-DEV-014 | MUST | SVG connection lines live in a `.conn-layer` SVG overlay with `pointer-events:none;z-index:0` — lines render BELOW boxes (z-index:1). Inline `z-index:2` on the SVG overlay is FORBIDDEN (Bug2 regression: lines appear above boxes). |
+| BX-DEV-015 | MUST | Box dragging uses `translate3d(x,y,0)` on `el.style.transform` during active drag for GPU compositing. On drag end, write back final `left`/`top` and clear `transform`. NEVER use `left`/`top` during drag — it triggers layout reflow (Firefox perf regression). |
+| BX-DEV-016 | MUST | Canvas/inner surface transforms MUST include `translateZ(0)` suffix (`translate(x,y) scale(z) translateZ(0)`) to force a dedicated GPU compositing layer in Chrome — prevents subpixel font blur on non-hovered elements (Chromium 149 Bug3). |
+| BX-DEV-017 | MUST | SVG `shape-rendering` MUST be dynamic: `crispEdges` at zoom<0.5, `geometricPrecision` at zoom>=0.5. Fixed `geometricPrecision` at low zoom causes jagged lines in Chrome (Bug4). |
+| BX-DEV-018 | MUST | Connection line updates during drag MUST use `connById.get(id)` (O(1) Map lookup), NOT `layout.connections.find()` (O(n) scan). The latter causes frame drops with many connections (Bug1). |
+| BX-DEV-019 | MUST | DSU (Disjoint Set Union) is the group system: `box.isParent` marks parents, `groupStar` Set tracks starred keys, `dsuRebuildFromConnections` rebuilds on tab load. `layout.groups` is a compat shim rebuilt by `ensureGroups()` — tests may reference it but new code should use `getGroupByParent()` / `dsuGroupMembers()`. |
 
 
 ## i18n Development Requirements
@@ -135,7 +141,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | Rule ID | Type | Rule |
 |---|---|---|
 | BX-I18N-DEV-001 | MUST | Every UI string visible to users must use the i18n(key) function, never hard-coded English/Chinese text. |
-| BX-I18N-DEV-002 | MUST | All 13 supported languages (en, zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi) must have translations for every i18n key. |
+| BX-I18N-DEV-002 | MUST | All 14 supported languages (en, zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi, zh_TW) must have translations for every i18n key. |
 | BX-I18N-DEV-003 | MUST | When adding a new i18n key, add it to _locales/en/messages.json first, then copy to all 12 other locale files with proper translations. |
 | BX-I18N-DEV-004 | MUST | I18N_FALLBACK in ntp.js must contain every i18n key as a fallback for when fetch fails. |
 | BX-I18N-DEV-005 | MUST | All data-i18n, data-i18n-title, data-i18n-placeholder attributes in HTML must match an existing key in messages.json. |
@@ -164,7 +170,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | BX-DEBUG-001 | INFO | Set DEBUG = true in ntp.js during development; all [Boxing] prefixed console logs help trace issues. |
 | BX-DEBUG-002 | MUST | Use Playwright (D:\Aworker\crx\playwright) for automated e2e testing during development. |
 | BX-DEBUG-003 | MUST | After each major change, run "node --check ntp.js" to verify syntax before testing in browser. |
-## CSS Token Baseline (Boxing v3.1)
+## CSS Token Baseline (Boxing v3.7)
 
 | Token | Value | Purpose |
 |---|---|---|
@@ -175,7 +181,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 | --color-accent | #A08060 | Muted warm earth accent. |
 | --font-size-base | 14px | Adjustable base font size. |
 
-## Architecture (v3.1)
+## Architecture (v3.7)
 
 - Infinite canvas: CSS transform(translateX, translateY) scale(Z) on canvas__surface
 - Pan: drag empty canvas area (mousedown+mousemove)
@@ -196,7 +202,7 @@ Test repo: `D:/Aworker/crx/playwright` (`playwright.config.ts` `EXTENSION_PATH` 
 
 Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) have been moved to `docs/boxing-changelog.md` to keep this operating contract lean. See that file for per-version feature lists, BX-DEV rule additions, and i18n key references by version.
 
-Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..013). All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
+Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..019). All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
 
 ## Manifest Source-of-Truth Contract (v3.7.0+)
 

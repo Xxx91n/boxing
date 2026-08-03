@@ -45,18 +45,17 @@ npm test                    # All browsers
 npm run test:firefox        # Firefox-specific
 ```
 
-### web-ext (Firefox)
-These commands run from the `playwright/` directory (which holds `package.json` and dev dependencies):
+### web-ext Dev Server
+These commands run from the `boxing/` directory (`package.json` has `web-ext` as devDependency):
 ```bash
-cd ../playwright
-npm run dev:firefox         # Hot-reload dev
-npm run build:firefox       # Package .xpi
-npm run lint                # Manifest validation
+npm run dev:chrome          # Hot-reload Chrome dev (requires `npm run build` first)
+npm run dev:firefox         # Hot-reload Firefox dev (requires `npm run build` first)
 ```
+Playwright tests have separate web-ext scripts in `playwright/package.json` for browser-specific testing.
 
 ## Privacy
 
-- Bookmark and layout data stored locally in `chrome.storage.sync`
+- Bookmark and layout data stored locally in `chrome.storage.local`
 - Optional WebDAV / GitHub Gist backup is the only outbound network usage; configured by user in Settings > Sync & Backup
 - No analytics, tracking, or third-party services
 - Permissions: `storage`, `tabs`, `bookmarks`; host_permissions `https://*/*` used only for user-initiated WebDAV backup
