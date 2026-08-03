@@ -1027,7 +1027,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     if (layerVar && surface.contains(layerVar)) return layerVar;
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'conn-layer');
-    svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:2;';
+    svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:0;';
     // Add arrow marker definition
     const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
     const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
@@ -1141,6 +1141,9 @@ const connById = new Map();            // connId -> connection object (O(1) look
     // and saves fill-rate. At >=80% zoom keep the default 1.5, below 50% use 1,
     // below 35% use 0.75. CSS var --connection-color stays the same.
     const z = a.surface === 'inner' ? (typeof innerZoom !== 'undefined' ? innerZoom : 1) : canvasZoom;
+    // Bug4: Chrome renders SVG lines jagged at low zoom due to subpixel sampling.
+    // crispEdges forces integer-aligned rasterization at low zoom; geometricPrecision at high zoom.
+    lineEl.setAttribute('shape-rendering', z < 0.5 ? 'crispEdges' : 'geometricPrecision');
     const sw = z >= 0.8 ? 1.5 : z >= 0.5 ? 1 : 0.75;
     lineEl.setAttribute('stroke-width', sw);
     lineEl.style.display = '';
@@ -1700,7 +1703,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
   // ── Obsidian-style zoom & pan ──────────────────────────
   function applyCanvasTransform() {
     canvasSurface.style.willChange = 'transform';
-    canvasSurface.style.transform = `translate(${canvasPanX}px, ${canvasPanY}px) scale(${canvasZoom})`;
+    canvasSurface.style.transform = `translate(${canvasPanX}px, ${canvasPanY}px) scale(${canvasZoom}) translateZ(0)`;
     canvasSurface.style.transformOrigin = '0 0';
     canvasZoomVal.textContent = Math.round(canvasZoom * 100) + '%';
     zoomSlider.value = Math.round(canvasZoom * 100);
@@ -1711,7 +1714,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
 
   function applyInnerTransform() {
     const content = ensureInnerSurfaceContent();
-    content.style.transform = `translate(${innerPanX}px, ${innerPanY}px) scale(${innerZoom})`;
+    content.style.transform = `translate(${innerPanX}px, ${innerPanY}px) scale(${innerZoom}) translateZ(0)`;
     content.style.transformOrigin = '0 0';
     innerZoomVal.textContent = Math.round(innerZoom * 100) + '%';
     zoomSlider.value = Math.round(innerZoom * 100);
@@ -2826,6 +2829,11 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
 
     el.classList.add(type === 'large' ? 'large-box--dragging' : 'small-box--dragging');
     el.style.zIndex = '10';
+    // Bug5: initialize transform to current left/top so the switch from left/top
+    // to translate3d doesn't cause a visual jump on first mousemove.
+    const _initL = parseInt(el.style.left, 10) || 0;
+    const _initT = parseInt(el.style.top, 10) || 0;
+    el.style.transform = `translate3d(${_initL}px, ${_initT}px, 0)`;
 
     document.addEventListener('mousemove', onBoxDragMove);
     document.addEventListener('mouseup', onBoxDragEnd);
@@ -2855,8 +2863,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     const newX = dragState.origLeft + worldDx;
     const newY = dragState.origTop + worldDy;
 
-    dragState.el.style.left = newX + 'px';
-    dragState.el.style.top = newY + 'px';
+    dragState.el.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
     // BX-DEV-PERF: only reposition popups if any exist — skip getBoundingClientRect on hot path
     if (__popupTrackers.size > 0) { try { repositionAllPopups(); } catch (_) {} }
     if (dragState.type === 'large') {
@@ -2910,8 +2917,12 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     el.classList.remove(type === 'large' ? 'large-box--dragging' : 'small-box--dragging');
     el.style.zIndex = '';
 
-    const finalX = parseInt(el.style.left, 10) || 0;
-    const finalY = parseInt(el.style.top, 10) || 0;
+    const finalX = type === 'large'
+      ? (getLargeBox(id)?.x ?? (parseInt(el.style.left, 10) || 0))
+      : (getSmallBox(id.largeId, id.smallId)?.x ?? (parseInt(el.style.left, 10) || 0));
+    const finalY = type === 'large'
+      ? (getLargeBox(id)?.y ?? (parseInt(el.style.top, 10) || 0))
+      : (getSmallBox(id.largeId, id.smallId)?.y ?? (parseInt(el.style.top, 10) || 0));
 
     if (type === 'large') {
       const box = getLargeBox(id);
@@ -2927,6 +2938,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       box.x = clamped.x; box.y = clamped.y;
       el.style.left = box.x + 'px';
       el.style.top = box.y + 'px';
+      el.style.transform = '';
       if (getGroupByParent(largeKey(box.id))) {
         const dX = box.x - dragState.origLeft;
         const dY = box.y - dragState.origTop;
@@ -2952,6 +2964,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       sb.y = Math.max(0, Math.min(snapped.y, worldMaxY2));
       el.style.left = sb.x + 'px';
       el.style.top = sb.y + 'px';
+      el.style.transform = '';
       // BX-DEV-137+: refresh cross-level lines connected to this small box
       const sKey = smallKey(id.largeId, id.smallId);
       refreshConnsForBox(sKey);
