@@ -1003,6 +1003,9 @@ const connById = new Map();            // connId -> connection object (O(1) look
   // Listener attached in renderConnections; CSS pointer-events:stroke enables hit-test on line only.
   function onConnLinePointerDown(e) {
     const mode = getConnDeleteTrigger();
+    // mousedown detector only owns the three modifier-click modes.
+    // right-click ("contextmenu") and double-click ("dblclick") are handled by their own listeners.
+    if (mode === 'right-click' || mode === 'double-click') return;
     if (mode === 'alt+click' && !e.altKey) return;
     if (mode === 'ctrl+click' && !e.ctrlKey) return;
     if (mode === 'shift+click' && !e.shiftKey) return;
@@ -1277,9 +1280,15 @@ const connById = new Map();            // connId -> connection object (O(1) look
       // ADR-0006: register delete-action listeners based on layout.settings.connDeleteAction
       {
         const mode = getConnDeleteTrigger();
-        line.addEventListener('mousedown', onConnLinePointerDown);
+        // mousedown is the detector for the three click-family modes; select+delete uses mousedown for selection.
+        if (mode === 'alt+click' || mode === 'ctrl+click' || mode === 'shift+click' || mode === 'select+delete') {
+          line.addEventListener('mousedown', onConnLinePointerDown);
+        }
         if (mode === 'double-click') line.addEventListener('dblclick', onConnLineDblClick);
-        if (mode === 'right-click') line.addEventListener('contextmenu', onConnLineContextMenu);
+        if (mode === 'right-click') {
+          line.addEventListener('contextmenu', onConnLineContextMenu);
+          // NB: intentionally NO mousedown listener; native right-click triggers contextmenu.
+        }
       }
       updateSvgLine(line, c);
       svg.appendChild(line);
