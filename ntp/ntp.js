@@ -1232,7 +1232,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     for (const id of connSet) {
       const line = connLines.get(id);
       if (!line) continue;
-      const conn = layout.connections.find(x => x.id === id);
+      const conn = connById.get(id);
       if (conn) updateSvgLine(line, conn);
     }
   }
@@ -1702,8 +1702,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
 
   // ── Obsidian-style zoom & pan ──────────────────────────
   function applyCanvasTransform() {
-    canvasSurface.style.willChange = 'transform';
-    canvasSurface.style.transform = `translate(${canvasPanX}px, ${canvasPanY}px) scale(${canvasZoom}) translateZ(0)`;
+    canvasSurface.style.transform = `translate(${canvasPanX}px, ${canvasPanY}px) scale(${canvasZoom})`;
     canvasSurface.style.transformOrigin = '0 0';
     canvasZoomVal.textContent = Math.round(canvasZoom * 100) + '%';
     zoomSlider.value = Math.round(canvasZoom * 100);
@@ -1714,7 +1713,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
 
   function applyInnerTransform() {
     const content = ensureInnerSurfaceContent();
-    content.style.transform = `translate(${innerPanX}px, ${innerPanY}px) scale(${innerZoom}) translateZ(0)`;
+    content.style.transform = `translate(${innerPanX}px, ${innerPanY}px) scale(${innerZoom})`;
     content.style.transformOrigin = '0 0';
     innerZoomVal.textContent = Math.round(innerZoom * 100) + '%';
     zoomSlider.value = Math.round(innerZoom * 100);
@@ -2169,7 +2168,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     if (!innerSurfaceContent) {
       innerSurfaceContent = document.createElement('div');
       innerSurfaceContent.className = 'inner__surface-content';
-      innerSurfaceContent.style.cssText = 'position:absolute;inset:0;transform-origin:0 0;will-change:transform;';
+      innerSurfaceContent.style.cssText = 'position:absolute;inset:0;transform-origin:0 0;';
       innerSurface.appendChild(innerSurfaceContent);
     }
     return innerSurfaceContent;
@@ -2829,11 +2828,6 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
 
     el.classList.add(type === 'large' ? 'large-box--dragging' : 'small-box--dragging');
     el.style.zIndex = '10';
-    // Bug5: initialize transform to current left/top so the switch from left/top
-    // to translate3d doesn't cause a visual jump on first mousemove.
-    const _initL = parseInt(el.style.left, 10) || 0;
-    const _initT = parseInt(el.style.top, 10) || 0;
-    el.style.transform = `translate3d(${_initL}px, ${_initT}px, 0)`;
 
     document.addEventListener('mousemove', onBoxDragMove);
     document.addEventListener('mouseup', onBoxDragEnd);
@@ -2863,7 +2857,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     const newX = dragState.origLeft + worldDx;
     const newY = dragState.origTop + worldDy;
 
-    dragState.el.style.transform = `translate3d(${newX}px, ${newY}px, 0)`;
+    dragState.el.style.left = newX + 'px';
+    dragState.el.style.top = newY + 'px';
     // BX-DEV-PERF: only reposition popups if any exist — skip getBoundingClientRect on hot path
     if (__popupTrackers.size > 0) { try { repositionAllPopups(); } catch (_) {} }
     if (dragState.type === 'large') {
@@ -2918,11 +2913,11 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     el.style.zIndex = '';
 
     const finalX = type === 'large'
-      ? (getLargeBox(id)?.x ?? (parseInt(el.style.left, 10) || 0))
-      : (getSmallBox(id.largeId, id.smallId)?.x ?? (parseInt(el.style.left, 10) || 0));
+      ? (parseInt(el.style.left, 10) || getLargeBox(id)?.x || 0)
+      : (parseInt(el.style.left, 10) || getSmallBox(id.largeId, id.smallId)?.x || 0);
     const finalY = type === 'large'
-      ? (getLargeBox(id)?.y ?? (parseInt(el.style.top, 10) || 0))
-      : (getSmallBox(id.largeId, id.smallId)?.y ?? (parseInt(el.style.top, 10) || 0));
+      ? (parseInt(el.style.top, 10) || getLargeBox(id)?.y || 0)
+      : (parseInt(el.style.top, 10) || getSmallBox(id.largeId, id.smallId)?.y || 0);
 
     if (type === 'large') {
       const box = getLargeBox(id);
@@ -2938,7 +2933,6 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       box.x = clamped.x; box.y = clamped.y;
       el.style.left = box.x + 'px';
       el.style.top = box.y + 'px';
-      el.style.transform = '';
       if (getGroupByParent(largeKey(box.id))) {
         const dX = box.x - dragState.origLeft;
         const dY = box.y - dragState.origTop;
@@ -2964,7 +2958,6 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       sb.y = Math.max(0, Math.min(snapped.y, worldMaxY2));
       el.style.left = sb.x + 'px';
       el.style.top = sb.y + 'px';
-      el.style.transform = '';
       // BX-DEV-137+: refresh cross-level lines connected to this small box
       const sKey = smallKey(id.largeId, id.smallId);
       refreshConnsForBox(sKey);
