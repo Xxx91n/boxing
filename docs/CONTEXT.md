@@ -29,7 +29,6 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
   - `'alt+click'` (default) — Alt + left mouse down on a conn-line
   - `'ctrl+click'` — Ctrl + left mouse down
   - `'shift+click'` — Shift + left mouse down
-  - `'right-click'` — contextmenu event; suppresses native menu via preventDefault
   - `'double-click'` — dblclick event on conn-line
   - `'select+delete'` — click selects line (CSS `conn-line--selected`), Backspace/Delete removes
 - **onConnLinePointerDown(e)** — unified event detector; reads connDeleteAction to decide if removeConnection fires.

@@ -754,5 +754,33 @@
   "connStart": {
     "message": "ابدأ الاتصال بصندوق آخر",
     "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connDeleteActionLabel": {
+    "message": "طريقة حذف الاتصال",
+    "description": "Label for connection delete action selector"
+  },
+  "connDeleteActionHint": {
+    "message": "اختر كيفية حذف خط الاتصال بين مربعين",
+    "description": "Hint text for connection delete action"
+  },
+  "connDeleteActionAltClick": {
+    "message": "Alt + نقرة",
+    "description": "Alt + Click option"
+  },
+  "connDeleteActionCtrlClick": {
+    "message": "Ctrl + نقرة",
+    "description": "Ctrl + Click option"
+  },
+  "connDeleteActionShiftClick": {
+    "message": "Shift + نقرة",
+    "description": "Shift + Click option"
+  },
+  "connDeleteActionDoubleClick": {
+    "message": "نقر مزدوج",
+    "description": "Double-click option"
+  },
+  "connDeleteActionSelectDelete": {
+    "message": "نقرة + مفتاح Delete",
+    "description": "Click + Delete key option"
   }
 }

@@ -754,5 +754,33 @@
   "connStart": {
     "message": "別のボックスへの接続を開始",
     "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connDeleteActionLabel": {
+    "message": "接続線の削除方法",
+    "description": "Label for connection delete action selector"
+  },
+  "connDeleteActionHint": {
+    "message": "2つのボックス間の接続線を削除する方法を選択",
+    "description": "Hint text for connection delete action"
+  },
+  "connDeleteActionAltClick": {
+    "message": "Alt + クリック",
+    "description": "Alt + Click option"
+  },
+  "connDeleteActionCtrlClick": {
+    "message": "Ctrl + クリック",
+    "description": "Ctrl + Click option"
+  },
+  "connDeleteActionShiftClick": {
+    "message": "Shift + クリック",
+    "description": "Shift + Click option"
+  },
+  "connDeleteActionDoubleClick": {
+    "message": "ダブルクリック",
+    "description": "Double-click option"
+  },
+  "connDeleteActionSelectDelete": {
+    "message": "クリック + Deleteキー",
+    "description": "Click + Delete key option"
   }
 }

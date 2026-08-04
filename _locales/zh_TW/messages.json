@@ -757,5 +757,33 @@
   "connStart": {
     "message": "開始連接到另一個盒子",
     "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connDeleteActionLabel": {
+    "message": "刪除連線方式",
+    "description": "Label for connection delete action selector"
+  },
+  "connDeleteActionHint": {
+    "message": "選擇如何刪除兩個盒子之間的連線",
+    "description": "Hint text for connection delete action"
+  },
+  "connDeleteActionAltClick": {
+    "message": "Alt + 點擊",
+    "description": "Alt + Click option"
+  },
+  "connDeleteActionCtrlClick": {
+    "message": "Ctrl + 點擊",
+    "description": "Ctrl + Click option"
+  },
+  "connDeleteActionShiftClick": {
+    "message": "Shift + 點擊",
+    "description": "Shift + Click option"
+  },
+  "connDeleteActionDoubleClick": {
+    "message": "雙擊",
+    "description": "Double-click option"
+  },
+  "connDeleteActionSelectDelete": {
+    "message": "點擊 + Delete鍵",
+    "description": "Click + Delete key option"
   }
 }

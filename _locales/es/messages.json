@@ -754,5 +754,33 @@
   "connStart": {
     "message": "Iniciar conexión con otra caja",
     "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connDeleteActionLabel": {
+    "message": "Eliminar conexión por",
+    "description": "Label for connection delete action selector"
+  },
+  "connDeleteActionHint": {
+    "message": "Elige cómo eliminar una línea de conexión entre dos cajas",
+    "description": "Hint text for connection delete action"
+  },
+  "connDeleteActionAltClick": {
+    "message": "Alt + Clic",
+    "description": "Alt + Click option"
+  },
+  "connDeleteActionCtrlClick": {
+    "message": "Ctrl + Clic",
+    "description": "Ctrl + Click option"
+  },
+  "connDeleteActionShiftClick": {
+    "message": "Shift + Clic",
+    "description": "Shift + Click option"
+  },
+  "connDeleteActionDoubleClick": {
+    "message": "Doble clic",
+    "description": "Double-click option"
+  },
+  "connDeleteActionSelectDelete": {
+    "message": "Clic + Tecla Delete",
+    "description": "Click + Delete key option"
   }
 }

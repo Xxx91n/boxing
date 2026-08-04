@@ -754,5 +754,33 @@
   "connStart": {
     "message": "Verbindung zu anderer Box starten",
     "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connDeleteActionLabel": {
+    "message": "Verbindung löschen durch",
+    "description": "Label for connection delete action selector"
+  },
+  "connDeleteActionHint": {
+    "message": "Wählen, wie eine Verbindungslinie zwischen zwei Boxen gelöscht wird",
+    "description": "Hint text for connection delete action"
+  },
+  "connDeleteActionAltClick": {
+    "message": "Alt + Klick",
+    "description": "Alt + Click option"
+  },
+  "connDeleteActionCtrlClick": {
+    "message": "Ctrl + Klick",
+    "description": "Ctrl + Click option"
+  },
+  "connDeleteActionShiftClick": {
+    "message": "Shift + Klick",
+    "description": "Shift + Click option"
+  },
+  "connDeleteActionDoubleClick": {
+    "message": "Doppelklick",
+    "description": "Double-click option"
+  },
+  "connDeleteActionSelectDelete": {
+    "message": "Klick + Entf-Taste",
+    "description": "Click + Delete key option"
   }
 }

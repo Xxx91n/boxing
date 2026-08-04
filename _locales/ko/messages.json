@@ -754,5 +754,33 @@
   "connStart": {
     "message": "다른 상자와 연결 시작",
     "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connDeleteActionLabel": {
+    "message": "연결선 삭제 방법",
+    "description": "Label for connection delete action selector"
+  },
+  "connDeleteActionHint": {
+    "message": "두 박스 간의 연결선을 삭제하는 방법 선택",
+    "description": "Hint text for connection delete action"
+  },
+  "connDeleteActionAltClick": {
+    "message": "Alt + 클릭",
+    "description": "Alt + Click option"
+  },
+  "connDeleteActionCtrlClick": {
+    "message": "Ctrl + 클릭",
+    "description": "Ctrl + Click option"
+  },
+  "connDeleteActionShiftClick": {
+    "message": "Shift + 클릭",
+    "description": "Shift + Click option"
+  },
+  "connDeleteActionDoubleClick": {
+    "message": "더블클릭",
+    "description": "Double-click option"
+  },
+  "connDeleteActionSelectDelete": {
+    "message": "클릭 + Delete키",
+    "description": "Click + Delete key option"
   }
 }

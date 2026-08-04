@@ -155,7 +155,7 @@
 
   // Expose debug API for extension DevTools console inspection
   window.__boxingDebug = {
-    addConnection, removeConnection, toggleStarMark, addMember, moveGroupTogether, enterConnectMode, exitConnectMode, getGroupByParent,
+    addConnection, removeConnection, deleteConnById, getConnDeleteTrigger, setConnDeleteAction, toggleStarMark, addMember, moveGroupTogether, enterConnectMode, exitConnectMode, getGroupByParent,
     largeKey, smallKey, resolveBoxEl, allValidKeys,
     getLargeBox, renderCanvas,
     pruneConnArrays, renderConnections, disposeAllConns, enterLargeBox,
@@ -261,7 +261,7 @@
     headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Header unpinned',
     connDeleteActionLabel: 'Delete connection by', connDeleteActionHint: 'Choose how to delete a connection line between two boxes',
     connDeleteActionAltClick: 'Alt + Click', connDeleteActionCtrlClick: 'Ctrl + Click', connDeleteActionShiftClick: 'Shift + Click',
-    connDeleteActionRightClick: 'Right-click', connDeleteActionDoubleClick: 'Double-click', connDeleteActionSelectDelete: 'Click + Delete key'
+    connDeleteActionDoubleClick: 'Double-click', connDeleteActionSelectDelete: 'Click + Delete key'
     ,
     confirmDeleteTitle: 'Confirm Delete', confirmYes: 'Delete', confirmCancel: 'Cancel',
     confirmDeleteLargeBody: 'Delete this large box and all its small boxes? This action cannot be undone.',
@@ -979,6 +979,10 @@ const connById = new Map();            // connId -> connection object (O(1) look
     ensureConnArrays();
     layout.connections = layout.connections.filter(c => c.id !== connId);
     connById.delete(connId);
+    // Bug 3+4 fix: tombstone the connId so mergeConcurrentLayout's
+    // mergeByIdUnion doesn't resurrect it from the stored remote copy.
+    // Same mechanism as box deletion (markDeleted → _meta.deleted → tombstones set).
+    markDeleted(connId);
     // BX-DSU: rebuild group connectivity after connection removal
     dsuRebuildFromConnections();
     debug('removeConnection '+connId+', conns='+layout.connections.length);
@@ -999,13 +1003,16 @@ const connById = new Map();            // connId -> connection object (O(1) look
     debug('deleteConnById ' + connId + ' mode=' + getConnDeleteTrigger());
   }
 
+  // ADR-0006: convenience API for tests/debug — sets connDeleteAction in one call.
+  function setConnDeleteAction(mode) { layout.settings.connDeleteAction = mode || 'alt+click'; }
+
   // BX-EXPLORE-008++: unified primary detector for click-family modes.
   // Listener attached in renderConnections; CSS pointer-events:stroke enables hit-test on line only.
   function onConnLinePointerDown(e) {
     const mode = getConnDeleteTrigger();
     // mousedown detector only owns the three modifier-click modes.
     // right-click ("contextmenu") and double-click ("dblclick") are handled by their own listeners.
-    if (mode === 'right-click' || mode === 'double-click') return;
+    if (mode === 'double-click') return;
     if (mode === 'alt+click' && !e.altKey) return;
     if (mode === 'ctrl+click' && !e.ctrlKey) return;
     if (mode === 'shift+click' && !e.shiftKey) return;
@@ -1034,14 +1041,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     deleteConnById(connId);
   }
 
-  // right-click mode: suppress browser menu + delete
-  function onConnLineContextMenu(e) {
-    if (getConnDeleteTrigger() !== 'right-click') return;
-    e.preventDefault(); e.stopPropagation();
-    const connId = e.currentTarget.getAttribute('data-conn-id');
-    if (!connId) return;
-    deleteConnById(connId);
-  }
+  // right-click delete mode removed (conflicts with right-click → back navigation)
 
   // select+delete mode: Backspace/Delete removes selected line
   function onConnLineKeydown(e) {
@@ -1285,10 +1285,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
           line.addEventListener('mousedown', onConnLinePointerDown);
         }
         if (mode === 'double-click') line.addEventListener('dblclick', onConnLineDblClick);
-        if (mode === 'right-click') {
-          line.addEventListener('contextmenu', onConnLineContextMenu);
-          // NB: intentionally NO mousedown listener; native right-click triggers contextmenu.
-        }
+        // right-click delete removed — conflicts with right-click → back navigation.
       }
       updateSvgLine(line, c);
       svg.appendChild(line);

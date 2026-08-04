@@ -754,5 +754,33 @@
   "connStart": {
     "message": "เริ่มเชื่อมต่อไปยังกล่องอื่น",
     "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connDeleteActionLabel": {
+    "message": "ลบการเชื่อมต่อโดย",
+    "description": "Label for connection delete action selector"
+  },
+  "connDeleteActionHint": {
+    "message": "เลือกวิธีลบเส้นการเชื่อมต่อระหว่างสองกล่อง",
+    "description": "Hint text for connection delete action"
+  },
+  "connDeleteActionAltClick": {
+    "message": "Alt + คลิก",
+    "description": "Alt + Click option"
+  },
+  "connDeleteActionCtrlClick": {
+    "message": "Ctrl + คลิก",
+    "description": "Ctrl + Click option"
+  },
+  "connDeleteActionShiftClick": {
+    "message": "Shift + คลิก",
+    "description": "Shift + Click option"
+  },
+  "connDeleteActionDoubleClick": {
+    "message": "ดับเบิลคลิก",
+    "description": "Double-click option"
+  },
+  "connDeleteActionSelectDelete": {
+    "message": "คลิก + ปุ่ม Delete",
+    "description": "Click + Delete key option"
   }
 }

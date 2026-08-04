@@ -754,5 +754,33 @@
   "connStart": {
     "message": "दूसरे बॉक्स से कनेक्शन शुरू करें",
     "description": "BX-DEV-137 box connections / star-mark"
+  },
+  "connDeleteActionLabel": {
+    "message": "कनेक्शन हटाने का तरीका",
+    "description": "Label for connection delete action selector"
+  },
+  "connDeleteActionHint": {
+    "message": "दो बॉक्स के बीच कनेक्शन लाइन को हटाने का तरीका चुनें",
+    "description": "Hint text for connection delete action"
+  },
+  "connDeleteActionAltClick": {
+    "message": "Alt + क्लिक",
+    "description": "Alt + Click option"
+  },
+  "connDeleteActionCtrlClick": {
+    "message": "Ctrl + क्लिक",
+    "description": "Ctrl + Click option"
+  },
+  "connDeleteActionShiftClick": {
+    "message": "Shift + क्लिक",
+    "description": "Shift + Click option"
+  },
+  "connDeleteActionDoubleClick": {
+    "message": "डबल-क्लिक",
+    "description": "Double-click option"
+  },
+  "connDeleteActionSelectDelete": {
+    "message": "क्लिक + Delete कुंजी",
+    "description": "Click + Delete key option"
   }
 }

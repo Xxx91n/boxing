@@ -6,7 +6,7 @@
 
 ## Context
 
-The connection line system (ADR-0004) started with a single hardcoded delete trigger: Alt+mousedown on a conn-line SVG element (React Flow community pattern). As the extension grows, different users have different muscle memory — some prefer Backspace-on-selected (tldraw), some prefer double-click, some want right-click. The hardcoded approach violates the grill principle of decoupling user-configurable concerns from core data operations.
+The connection line system (ADR-0004) started with a single hardcoded delete trigger: Alt+mousedown on a conn-line SVG element (React Flow community pattern). As the extension grows, different users have different muscle memory — some prefer Backspace-on-selected (tldraw), some prefer double-click. The hardcoded approach violates the grill principle of decoupling user-configurable concerns from core data operations.
 
 Prior agent (commit 5ce971c) fixed two related bugs:
 - BX-EXPLORE-009: onConnLineAltDown called `persistLayoutDebounced()` (undefined) instead of `saveLayoutDebounced()` — Alt+Click delete silently failed to persist
@@ -29,12 +29,11 @@ Adopt a **single config field + unified event detector** pattern (tldraw simplif
 ### Data
 - Add `layout.settings.connDeleteAction: string` to `defaultLayout().settings`
 - Default: `'alt+click'` (matches existing behavior, no user-visible change on upgrade)
-- Enum: `'alt+click' | 'ctrl+click' | 'shift+click' | 'right-click' | 'double-click' | 'select+delete'`
+- Enum: `'alt+click' | 'ctrl+click' | 'shift+click' | 'double-click' | 'select+delete'`
 - Spread-merge at L780 covers new field for existing users automatically
 
 ### Event Architecture
 - Single `onConnLinePointerDown(e)` replaces `onConnLineAltDown` — reads `layout.settings.connDeleteAction` to decide if delete fires
-- For `right-click` mode: register `contextmenu` listener with `preventDefault`
 - For `double-click` mode: register `dblclick` listener
 - For `select+delete` mode: click selects line (CSS class), Backspace/Delete removes
 - `renderConnections` registers the appropriate listener per mode (cheap — called on connection changes only, not every drag frame)
@@ -64,8 +63,8 @@ Adopt a **single config field + unified event detector** pattern (tldraw simplif
 **Q1: Is alt+click the right default?**
 YES — matches React Flow community pattern, user already chose it in prior round, no behavior change on upgrade.
 
-**Q2: Should right-click mode suppress the browser context menu?**
-YES — `preventDefault()` on `contextmenu` event when mode is `right-click`. Without this, the browser's native menu pops up alongside the delete.
+**Q2: ~~Should right-click mode suppress the browser context menu?~~**
+**Decision**: Right-click delete mode was **removed** — it conflicts with the right-click → back-to-parent navigation gesture, a core extension UX flow. The enum no longer includes 'right-click'.
 
 **Q3: Should select+delete highlight the selected line?**
 YES — `.conn-line--selected` with `stroke-width: 4` + `filter: drop-shadow(0 0 3px var(--color-accent))`. Without visual feedback the user doesn't know which line is selected.
@@ -88,7 +87,7 @@ YES — it lives in `layout.settings`, covered by the spread-merge `{ ...remote.
 **Negative**:
 - 6 modes = 6 event handler paths to test (mitigated: Playwright tests cover each)
 - select+delete mode requires keyboard listener on document/connSvg — tiny global state (`selectedConnId`)
-- right-click mode disables browser context menu on lines only (users who want browser menu on lines must switch mode)
+- right-click delete mode removed — conflicts with right-click → back navigation
 
 **Neutral**:
 - Old `onConnLineAltDown` function removed — any external references would break (none exist in this codebase per codegraph)

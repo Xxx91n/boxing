@@ -32,7 +32,7 @@ async function setConnDeleteAction(page, mode) {
   // so that mode-specific listeners (dblclick/contextmenu/mousedown) attach fresh.
   await page.evaluate((m) => {
     const dbg = (window as any).__boxingDebug;
-    dbg.layout.settings.connDeleteAction = m;
+    dbg.setConnDeleteAction(m);
     dbg.disposeAllConns();
     dbg.renderConnections();
     dbg.saveLayout();
@@ -115,22 +115,8 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
     await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
   });
 
-  test('configures right-click mode and deletes (with preventDefault)', async ({ page }) => {
-    await setupConnected(page);
-    await setConnDeleteAction(page, 'right-click');
-    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
-    let defaultPrevented = false;
-    await page.evaluate(() => {
-      const line = document.querySelector('.conn-line');
-      if (!line) throw new Error('no conn-line');
-      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
-      line.dispatchEvent(ev);
-      (window as any).__testDefaultPrevented = ev.defaultPrevented;
-    });
-    defaultPrevented = await page.evaluate(() => (window as any).__testDefaultPrevented);
-    expect(defaultPrevented).toBe(true);
-    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
-  });
+  // right-click delete mode removed — conflicts with right-click → back navigation
+
 
   test('configures select+delete mode: click selects, Backspace removes', async ({ page }) => {
     await setupConnected(page);
@@ -206,5 +192,113 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
       return l ? l.classList.contains('conn-line--selected') : false;
     });
     expect(stillSelected).toBe(false);
+  });
+
+  // ── Bug 3+4: close-loop persistence tests ──────────────────────────
+  test('alt+click delete persists across reload', async ({ page }) => {
+    await setupConnected(page);
+    // Default mode is alt+click; dispatch alt+mousedown on the line
+    await page.evaluate(() => {
+      const line = document.querySelector('.conn-line');
+      if (!line) throw new Error('no conn-line');
+      line.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, altKey: true }));
+    });
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
+    // Reload and verify the connection is still gone
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
+    const connCount = await page.evaluate(() => (window as any).__boxingDebug.connCount());
+    expect(connCount).toBe(0);
+  });
+
+  test('ctrl+click delete persists across reload', async ({ page }) => {
+    await setupConnected(page);
+    await setConnDeleteAction(page, 'ctrl+click');
+    await page.evaluate(() => {
+      const line = document.querySelector('.conn-line');
+      if (!line) throw new Error('no conn-line');
+      line.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, ctrlKey: true }));
+    });
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
+    const connCount = await page.evaluate(() => (window as any).__boxingDebug.connCount());
+    expect(connCount).toBe(0);
+  });
+
+  test('shift+click delete persists across reload', async ({ page }) => {
+    await setupConnected(page);
+    await setConnDeleteAction(page, 'shift+click');
+    await page.evaluate(() => {
+      const line = document.querySelector('.conn-line');
+      if (!line) throw new Error('no conn-line');
+      line.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, shiftKey: true }));
+    });
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
+    const connCount = await page.evaluate(() => (window as any).__boxingDebug.connCount());
+    expect(connCount).toBe(0);
+  });
+
+  test('double-click delete persists across reload', async ({ page }) => {
+    await setupConnected(page);
+    await setConnDeleteAction(page, 'double-click');
+    await page.evaluate(() => {
+      const line = document.querySelector('.conn-line');
+      if (!line) throw new Error('no conn-line');
+      line.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true, button: 0 }));
+    });
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
+    const connCount = await page.evaluate(() => (window as any).__boxingDebug.connCount());
+    expect(connCount).toBe(0);
+  });
+
+  test('select+delete persists across reload', async ({ page }) => {
+    await setupConnected(page);
+    await setConnDeleteAction(page, 'select+delete');
+    // Click to select
+    await page.evaluate(() => {
+      const line = document.querySelector('.conn-line');
+      if (!line) throw new Error('no conn-line');
+      line.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 }));
+    });
+    // Dispatch Backspace
+    await page.evaluate(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
+    });
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
+    const connCount = await page.evaluate(() => (window as any).__boxingDebug.connCount());
+    expect(connCount).toBe(0);
+  });
+
+  // ── Bug 3: re-connect after delete → line visible ──────────────────
+  test('re-connect after delete shows the line again', async ({ page }) => {
+    await setupConnected(page);
+    const ids = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const boxes = dbg.layout.boxes;
+      return [boxes[0].id, boxes[1].id];
+    });
+    // Delete the connection
+    await page.evaluate(() => {
+      const line = document.querySelector('.conn-line');
+      if (!line) throw new Error('no conn-line');
+      line.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, altKey: true }));
+    });
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
+    // Re-connect
+    await page.evaluate(([a, b]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.addConnection(dbg.largeKey(a), dbg.largeKey(b));
+      dbg.renderConnections();
+    }, ids);
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(1);
+    const hasLine = await page.evaluate(() => !!document.querySelector('.conn-line'));
+    expect(hasLine).toBe(true);
   });
 });
