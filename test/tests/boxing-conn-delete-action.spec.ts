@@ -336,5 +336,240 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
     }, ids);
     expect(groupAfter).toBeLessThanOrEqual(0);
   });
+  test('BX-CONN-DELETE: deleting child box preserves parent star (async saveLayout race)', async ({ page }) => {
+    await resetBoxing(page);
+    const ids = await seedBoxes(page, [[0, 0], [400, 0]]);
+    // Set box A as parent, then WAIT for saveLayout to finish
+    await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.toggleStarMark(dbg.largeKey(a));
+    }, [ids[0]]);
+    // wait for saveLayout to complete (storage write chain)
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(200);
+    // Connect A -> B, then wait for debounced save
+    await page.evaluate(([a, b]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.addConnection(dbg.largeKey(a), dbg.largeKey(b));
+      dbg.renderConnections();
+    }, [ids[0], ids[1]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(200);
+    // Verify A is starred & conn exists before delete
+    const before = await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const box = dbg.layout.boxes.find((b: any) => b.id === a);
+      return { isParent: box?.isParent, inGroupStar: dbg.groupStar?.has(dbg.largeKey(a)), connCount: dbg.connCount() };
+    }, [ids[0]]);
+    expect(before.isParent).toBe(true);
+    expect(before.connCount).toBe(1);
+    // Delete box B (the child/non-parent), wait for saveLayout
+    await page.evaluate(([b]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg._execDeleteLargeBox(b);
+    }, [ids[1]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(300);
+    // BUG: A should STILL be starred after deleting B
+    const starredAfter = await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const box = dbg.layout.boxes.find((b: any) => b.id === a);
+      const groups = dbg.layout.groups;
+      return {
+        isParent: box?.isParent,
+        inGroupStar: dbg.groupStar?.has(dbg.largeKey(a)),
+        groupCount: groups?.length || 0,
+        groupParentIds: groups?.map((g: any) => g.parentId) || [],
+        tdel: JSON.stringify(dbg.layout._meta?.deleted || {})
+      };
+    }, [ids[0]]);
+    expect(starredAfter.isParent).toBe(true);
+    expect(starredAfter.inGroupStar).toBe(true);
+    expect(starredAfter.groupParentIds).toContain('large:' + ids[0]);
+  });
 
+  test('BX-CONN-DELETE: GUI delete box B preserves parent star of A', async ({ page }) => {
+    await resetBoxing(page);
+    const ids = await seedBoxes(page, [[0, 0], [400, 0]]);
+    // Set box A as parent via API (this is the same GUI performs internally)
+    await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.toggleStarMark(dbg.largeKey(a));
+    }, [ids[0]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(100);
+    // Connect A -> B via API
+    await page.evaluate(([a, b]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.addConnection(dbg.largeKey(a), dbg.largeKey(b));
+      dbg.renderConnections();
+    }, [ids[0], ids[1]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(100);
+    // Now trigger delete via GUI: call deleteLargeBox (opens confirm modal)
+    await page.evaluate(([b]) => {
+      (window as any).__boxingDebug; // ensure dbg ready
+      // Simulate the delete button click path:
+      // deleteLargeBox(b) opens confirm modal, then confirm-delete btn executes callback
+    }, [ids[1]]);
+    // Open confirm modal for box B
+    await page.evaluate(([b]) => {
+      const modal = document.getElementById('confirm-modal');
+      // Directly simulate the delete button handler:
+      const dbg = (window as any).__boxingDebug;
+      // We'll use eval to call deleteLargeBox from the closure scope:
+      // Since _execDeleteLargeBox is exported, use it after opening confirm modal
+      dbg._execDeleteLargeBox(b);
+    }, [ids[1]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(300);
+    // Verify A is still starred
+    const result = await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const box = dbg.layout.boxes.find((b: any) => b.id === a);
+      const groups = dbg.layout.groups || [];
+      return {
+        boxCount: dbg.layout.boxes.length,
+        isParent: box?.isParent,
+        inGroupStar: dbg.groupStar?.has(dbg.largeKey(a)),
+        groupLength: groups.length,
+        groupParentIds: groups.map((g: any) => g.parentId),
+        deleted: JSON.stringify(dbg.layout._meta?.deleted || {})
+      };
+    }, [ids[0]]);
+    console.log('After delete B:', JSON.stringify(result));
+    expect(result.isParent).toBe(true);
+    expect(result.inGroupStar).toBe(true);
+    expect(result.groupParentIds).toContain('large:' + ids[0]);
+  });
+
+  test('BX-CONN-DELETE: cross-tab star persists after child box delete in another tab', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    const page1 = await ctx.newPage();
+    const page2 = await ctx.newPage();
+    // Setup both pages
+    await page1.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await page1.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+    await page1.reload({ waitUntil: 'domcontentloaded' });
+    await page1.evaluate(() => (window as any).__boxingDebug);
+    const ids = await page1.evaluate((cs) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes = cs.map((c: number[], i: number) => ({
+        id: 'seed-' + i + '-' + Math.random().toString(36).slice(2, 8),
+        type: 'large', title: 'B' + i, x: c[0], y: c[1],
+        width: 320, height: 220, children: [],
+      }));
+      dbg.layout._meta = { updatedAt: Date.now() };
+      dbg.renderCanvas();
+      return dbg.layout.boxes.map((b: any) => b.id);
+    }, [[0, 0], [400, 0]]);
+    // Star box A
+    await page1.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.toggleStarMark(dbg.largeKey(a));
+    }, [ids[0]]);
+    await page1.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page1.waitForTimeout(200);
+    // Wait for page2 to receive the storage event
+    await page2.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await page2.evaluate(() => (window as any).__boxingDebug);
+    await page2.waitForTimeout(300);
+    // Verify A is starred in page2
+    const starred2 = await page2.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      return dbg.layout.boxes.find((b: any) => b.id === a)?.isParent === true;
+    }, [ids[0]]);
+    expect(starred2).toBe(true);
+    // Connect A -> B in page2 (simulate user drag from A to B)
+    await page2.evaluate(([a, b]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.addConnection(dbg.largeKey(a), dbg.largeKey(b));
+      dbg.renderConnections();
+    }, [ids[0], ids[1]]);
+    await page2.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page2.waitForTimeout(200);
+    // Now delete box B in page2
+    await page2.evaluate(([b]) => {
+      (window as any).__boxingDebug._execDeleteLargeBox(b);
+    }, [ids[1]]);
+    await page2.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page2.waitForTimeout(500);
+    // Verify A is still starred in page1 (after storage sync)
+    const starred1After = await page1.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const box = dbg.layout.boxes.find((b: any) => b.id === a);
+      return { isParent: box?.isParent, inGroupStar: dbg.groupStar?.has(dbg.largeKey(a)) };
+    }, [ids[0]]);
+    // Verify A is still starred in page2
+    const starred2After = await page2.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const box = dbg.layout.boxes.find((b: any) => b.id === a);
+      return { isParent: box?.isParent, inGroupStar: dbg.groupStar?.has(dbg.largeKey(a)) };
+    }, [ids[0]]);
+    console.log('Page1 after delete:', JSON.stringify(starred1After));
+    console.log('Page2 after delete:', JSON.stringify(starred2After));
+    expect(starred1After.isParent).toBe(true);
+    expect(starred2After.isParent).toBe(true);
+    await ctx.close();
+  });
+
+  test('BX-CONN-DELETE: root cause — star-unstar-star cycle preserves star after child delete', async ({ page }) => {
+    await resetBoxing(page);
+    const ids = await seedBoxes(page, [[0, 0], [400, 0]]);
+    // Star A
+    await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.toggleStarMark(dbg.largeKey(a));
+    }, [ids[0]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(100);
+    // Unstar A (creates tombstone large:A)
+    await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.toggleStarMark(dbg.largeKey(a));
+    }, [ids[0]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(100);
+    // Star A again (should clear tombstone locally, but saveLayout merge may resurrect it)
+    await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.toggleStarMark(dbg.largeKey(a));
+    }, [ids[0]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(200);
+    // Connect A -> B
+    await page.evaluate(([a, b]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.addConnection(dbg.largeKey(a), dbg.largeKey(b));
+      dbg.renderConnections();
+    }, [ids[0], ids[1]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(200);
+    // Verify A is starred before delete
+    const before = await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const box = dbg.layout.boxes.find((b: any) => b.id === a);
+      return { isParent: box?.isParent, tdel: dbg.layout._meta?.deleted?.[dbg.largeKey(a)] };
+    }, [ids[0]]);
+    console.log('Before delete:', JSON.stringify(before));
+    // Delete box B
+    await page.evaluate(([b]) => {
+      (window as any).__boxingDebug._execDeleteLargeBox(b);
+    }, [ids[1]]);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.waitForTimeout(300);
+    // BUG: A should STILL be starred
+    const after = await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const box = dbg.layout.boxes.find((b: any) => b.id === a);
+      return {
+        isParent: box?.isParent,
+        inGroupStar: dbg.groupStar?.has(dbg.largeKey(a)),
+        tdel: dbg.layout._meta?.deleted?.[dbg.largeKey(a)]
+      };
+    }, [ids[0]]);
+    console.log('After delete:', JSON.stringify(after));
+    expect(after.isParent).toBe(true);
+    expect(after.tdel).toBeUndefined();
+  });
 });

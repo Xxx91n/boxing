@@ -24,6 +24,21 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **scheduleConnRefresh(ids)** — rAF-coalesced refresh that updates SVG line endpoints from box DOM positions. Avoids sync layout thrash (BX-DEV-PERF).
 - **Viewport culling** — lines outside the visible canvas/inner area get `display:none` to avoid SVG GPU cost. Pan/zoom handlers must call `scheduleConnRefresh(all conn ids)` to re-evaluate culling. See ADR-0004, BX-EXPLORE-008.
 
+### Box Key Format (Tiered Keys)
+- **Large box key**: `large:L1` (prefix `large:` + box id)
+- **Small box key**: `small:L1:S1` (prefix `small:` + large box id + `:` + small box id)
+- **Legacy keys**: Raw ids (`L1`, `S1`) without prefix — supported for backwards compat, normalized in `ensureConnArrays`
+- Used in: `connection.from`, `connection.to`, `layout.groups.members`, `groupStar` Set, `boxConnIdx` Map, DSU `boxGroupId`/`groupMembers`
+- **MUST be documented** when adding new data structures that reference box identities
+
+### Architecture Audit Reference
+- **Full audit document**: [docs/architecture-audit.md](architecture-audit.md) — covers bug fix retrospective, data structure alignment, connection coupling analysis, algorithm complexity audit
+- **Key findings**:
+  - `layout.groups` should eventually stop being persisted (it's both derived and input = circular dependency)
+  - `moveGroupTogether` is O(m*n) per frame — main performance hotspot
+  - `getLargeBox`/`getSmallBox` should use O(1) Map lookups instead of Array.find
+  - Mutation paths are scattered across 4 functions — should be unified into `mutateLayout(operation)`
+
 ### Connection Delete Action (ADR-0006)
 - **connDeleteAction** — `layout.settings.connDeleteAction: string` enum field. Determines how the user deletes a connection line.
   - `'alt+click'` (default) — Alt + left mouse down on a conn-line

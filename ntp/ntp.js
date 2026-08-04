@@ -155,7 +155,7 @@
 
   // Expose debug API for extension DevTools console inspection
   window.__boxingDebug = {
-    addConnection, removeConnection, deleteConnById, getConnDeleteTrigger, setConnDeleteAction, toggleStarMark, addMember, moveGroupTogether, enterConnectMode, exitConnectMode, getGroupByParent,
+    addConnection, removeConnection, deleteConnById, getConnDeleteTrigger, setConnDeleteAction, toggleStarMark, addMember, moveGroupTogether, enterConnectMode, exitConnectMode, getGroupByParent, _execDeleteLargeBox, _execDeleteSmallBox,
     largeKey, smallKey, resolveBoxEl, allValidKeys,
     getLargeBox, renderCanvas,
     pruneConnArrays, renderConnections, disposeAllConns, enterLargeBox,
@@ -211,6 +211,8 @@
     get backupToGist() { if (window.__bxSync) return window.__bxSync.backupToGist; return null; },
     // BX-DEV-126: expose loadFavicon for Playwright tests verifying parallel CDN race.
     loadFavicon,
+    get groupStar() { return groupStar; },
+    get connById() { return connById; },
   };
   // Log mock usage (must be after DEBUG init)
   if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');
@@ -745,7 +747,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     if (!remoteValue) return localValue;
     const localDeleted = localValue._meta?.deleted || {};
     const remoteDeleted = remoteValue._meta?.deleted || {};
-    const deleted = { ...remoteDeleted, ...localDeleted };
+    let deleted = { ...remoteDeleted, ...localDeleted };
+    // BX-144: in-memory clearedTombstones Set (this tab only) overrides any
+    // tombstone keys coming from remote. Requires localValue to be layout —
+    // the in-memory current state. When localValue === layout (saveLayout's
+    // own merge), clearedTombstones applies. When localValue === incoming
+    // (applyExternalLayout path where incoming wins), the local in-memory
+    // set still applies because mergeConcurrentLayout only sees one in locals.
+    if (localValue === layout && clearedTombstones.size > 0) {
+      for (const k of Object.keys(deleted)) if (clearedTombstones.has(k)) delete deleted[k];
+    }
     const tombstones = new Set(Object.keys(deleted));
     const boxes = mergeById(localValue.boxes, remoteValue.boxes, tombstones);
     // AUD-PERF: pre-index remote boxes & children by id to avoid O(N²) nested find
@@ -923,6 +934,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
   const boxGroupId = new Map();      // boxKey -> groupId (DSU find root)
   const groupMembers = new Map();    // groupId -> Set<boxKey> (all members)
   const groupStar = new Set();       // boxKeys marked as parent (starred)
+  let clearedTombstones = new Set(); // BX-144: in-memory set of tombstone keys this tab has explicitly cleared (per-tab, never persisted)
   const groupIdx = new Map();       // kept for compat: parentId -> group object
   let __dsuBuilt = false;            // Bug1: track DSU build to avoid O(n) rebuild per mousemove when groupStar stays empty
   let canvasConnSvg = null;     // SVG overlay inside canvasSurface
@@ -1539,9 +1551,12 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
         const sp = parentId.split(':');
         if (sp.length >= 3) { const sb2 = getSmallBox(sp[1], sp.slice(2).join(':')); if (sb2) sb2.isParent = true; }
       }
-      // Bug2: clear any stale tombstone for this parentId so the dsuRebuildFromConnections
-      // tombstone-clear loop (L1310) does NOT re-clear the isParent=true we just set above.
+      // BX-144: clear stale tombstone for this parentId AND record it in
+      // the in-memory clearedTombstones Set so mergeConcurrentLayout cannot
+      // resurrect it from remote. This set is per-tab state — never persisted,
+      // never written into _meta, never propagated cross-tab.
       if (layout._meta?.deleted?.[parentId]) delete layout._meta.deleted[parentId];
+      clearedTombstones.add(parentId);
       debug('toggleStarMark: star parent=' + parentId);
     }
     ensureGroups();
