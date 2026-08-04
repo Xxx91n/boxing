@@ -28,16 +28,23 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **Large box key**: `large:L1` (prefix `large:` + box id)
 - **Small box key**: `small:L1:S1` (prefix `small:` + large box id + `:` + small box id)
 - **Legacy keys**: Raw ids (`L1`, `S1`) without prefix — supported for backwards compat, normalized in `ensureConnArrays`
-- Used in: `connection.from`, `connection.to`, `layout.groups.members`, `groupStar` Set, `boxConnIdx` Map, DSU `boxGroupId`/`groupMembers`
+- Used in: `connection.from`, `connection.to`, `groupStar` Set, `boxConnIdx` Map, DSU `boxGroupId`/`groupMembers`
+- Note: `layout.groups` will stop being persisted after ADR-0007 implementation (runtime-only computed value)
 - **MUST be documented** when adding new data structures that reference box identities
 
-### Architecture Audit Reference
-- **Full audit document**: [docs/architecture-audit.md](architecture-audit.md) — covers bug fix retrospective, data structure alignment, connection coupling analysis, algorithm complexity audit
-- **Key findings**:
-  - `layout.groups` should eventually stop being persisted (it's both derived and input = circular dependency)
-  - `moveGroupTogether` is O(m*n) per frame — main performance hotspot
-  - `getLargeBox`/`getSmallBox` should use O(1) Map lookups instead of Array.find
-  - Mutation paths are scattered across 4 functions — should be unified into `mutateLayout(operation)`
+### Architecture Audit & Refactor Roadmap (ADR-0007)
+- **Audit document**: [docs/architecture-audit.md](architecture-audit.md) — bug retrospective, data structure alignment, coupling analysis, complexity audit
+- **ADR-0007**: [docs/adr/0007-architecture-refactor-decisions.md](adr/0007-architecture-refactor-decisions.md) — grill-confirmed decisions for all 9 audit recommendations
+- **Roadmap**: [docs/roadmap-architecture-refactor.md](roadmap-architecture-refactor.md) — phased implementation plan with verification criteria
+- **Confirmed decisions (grill Q1-Q4)**:
+  - Q1: layout.groups stops being persisted -> computed-only runtime value + one-time migration (ADR-0007)
+  - Q2: Unified commit(op) mutation API with modular handlers — all 6 paths route through one entry
+  - Q3a: boxById/smallBoxById Map for O(1) lookups (replacing Array.find)
+  - Q3b: elasticSnap spatial hash grid, threshold=32 (GDevelop pattern), cell size = 2x max box dimension
+  - Q4a: Tombstone GC — trim _meta.deleted older than 24h after saveLayout
+  - Q4b: DSU dirty flag — replace __dsuBuilt boolean with __dsuDirty, skip rebuild when clean
+  - Q4c: connection objects get props:{} field (migrateLayout backfills)
+  - Q4d: viewState explicitly cleared on box delete
 
 ### Connection Delete Action (ADR-0006)
 - **connDeleteAction** — `layout.settings.connDeleteAction: string` enum field. Determines how the user deletes a connection line.
