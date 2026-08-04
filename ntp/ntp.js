@@ -1011,7 +1011,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
   function onConnLinePointerDown(e) {
     const mode = getConnDeleteTrigger();
     // mousedown detector only owns the three modifier-click modes.
-    // right-click ("contextmenu") and double-click ("dblclick") are handled by their own listeners.
+    // double-click mode is handled by its own dblclick listener.
     if (mode === 'double-click') return;
     if (mode === 'alt+click' && !e.altKey) return;
     if (mode === 'ctrl+click' && !e.ctrlKey) return;
