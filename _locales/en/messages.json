@@ -60,8 +60,8 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+scroll to zoom · Drag empty area to pan · Double-click to add box · Right-click to return · Drag titlebar to move · Pin header button (⊙) in top-right of canvas — unpin to go fullscreen",
-    "description": "Comprehensive shortcut/action guide in page footer"
+    "message": "Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "Canvas",

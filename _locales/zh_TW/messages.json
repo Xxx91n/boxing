@@ -60,7 +60,8 @@
     "description": "打開大盒子提示"
   },
   "footerHint": {
-    "message": "Ctrl+滾輪縮放 · 拖拽空白平移 · 雙擊創建盒子 · 右鍵返回 · 拖拽標題欄移動 · 畫布右上角⊙按鈕：取消固定進入全屏模式"
+    "message": "Ctrl+滾輪縮放 · 拖拽空白平移 · 雙擊建立盒子 · 右鍵返回 · 拖拽標題欄移動 · 畫布右上角⊙按鈕：取消固定進入全螢幕模式",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "畫布",

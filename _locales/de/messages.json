@@ -60,7 +60,8 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+Scrollen zoomen · Leere Fläche ziehen verschieben · Doppelklick hinzufügen · Rechtsklick zurück · Titelleiste ziehen verschieben · ⊙-Button oben rechts: lösen für Vollbild"
+    "message": "Ctrl+Scrollen zum Zoomen · Leere Fläche ziehen zum Verschieben · Doppelklick zum Erstellen · Rechtsklick zurück · Titelleiste ziehen zum Bewegen · ⊙ oben rechts: Fixierung aufheben für Vollbild",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "Leinwand",

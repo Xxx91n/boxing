@@ -237,7 +237,7 @@
     emptyCanvasTitle: 'No large boxes yet', dblclickHint: 'Double-click canvas to add a large box',
     clickPlusHint: 'or click + above', emptyLargeHint: 'Click to add small boxes',
     emptyInnerHint: 'Click + to add your first small box', emptySmallHint: 'No bookmarks yet',
-    clickToOpen: 'Click to open →', footerHint: 'Ctrl+scroll to zoom · Left-drag to pan · / to search · Dblclick to add',
+    clickToOpen: 'Click to open →', footerHint: 'Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen',
     canvasRoot: 'Canvas', untitledBox: 'Untitled box',
     untitledLargeBox: 'Untitled large box', untitledSmallBox: 'Untitled small box',
     newLargeBox: 'Box $1$', newSmallBox: 'New small box',
@@ -977,6 +977,16 @@ const connById = new Map();            // connId -> connection object (O(1) look
 
   function removeConnection(connId) {
     ensureConnArrays();
+    // Bug1 fix: capture from/to BEFORE filtering, then prune layout.groups
+    // so dsuRebuildFromConnections (L1411-1417) doesn't re-union stale members.
+    const conn = layout.connections.find(c => c.id === connId);
+    if (conn && Array.isArray(layout.groups)) {
+      for (const g of layout.groups) {
+        if (!g || !Array.isArray(g.members)) continue;
+        // Remove either endpoint from the other's group member list.
+        g.members = g.members.filter(m => m !== conn.from && m !== conn.to);
+      }
+    }
     layout.connections = layout.connections.filter(c => c.id !== connId);
     connById.delete(connId);
     // Bug 3+4 fix: tombstone the connId so mergeConcurrentLayout's
@@ -3405,7 +3415,21 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       k === id ||                                    // legacy raw id
       k === largeK ||                               // 'large:id'
       (typeof k === 'string' && k.startsWith(smallPrefix));  // 'small:id:smallId'
+    // Bug4 fix: tombstone each deleted connection's id so mergeConcurrentLayout
+    // doesn't resurrect them from the stored remote copy.
+    for (const rc of layout.connections) {
+      if (rc && (matchesDeletedKey(rc.from) || matchesDeletedKey(rc.to))) markDeleted(rc.id);
+    }
     layout.connections = layout.connections.filter(c => !matchesDeletedKey(c.from) && !matchesDeletedKey(c.to));
+    // Bug4 fix: prune layout.groups of stale member entries for deleted box keys.
+    if (Array.isArray(layout.groups)) {
+      for (const g of layout.groups) {
+        if (!g || !Array.isArray(g.members)) continue;
+        g.members = g.members.filter(m => !matchesDeletedKey(m));
+        if (g.parentId && matchesDeletedKey(g.parentId)) { markDeleted(g.parentId); }
+      }
+    }
+    dsuRebuildFromConnections();
     // A5: groups cleanup no longer needed
     layout.boxes = layout.boxes.filter(b => b.id !== id);
     layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title || '').match(/\d+/) || [0]) || 0) + 1), 1);
@@ -3509,8 +3533,20 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     // BX-DEV-137+: prune connections/groups referencing this small box's tiered key.
     const sk = smallKey(largeId, smallId);
     ensureConnArrays();
+    // Bug4 fix: tombstone each deleted connection's id.
+    for (const rc of layout.connections) {
+      if (rc && (rc.from === sk || rc.to === sk)) markDeleted(rc.id);
+    }
     layout.connections = layout.connections.filter(c => c.from !== sk && c.to !== sk);
-    // A5: groups cleanup no longer needed
+    // Bug4 fix: prune layout.groups of stale member entries.
+    if (Array.isArray(layout.groups)) {
+      for (const g of layout.groups) {
+        if (!g || !Array.isArray(g.members)) continue;
+        g.members = g.members.filter(m => m !== sk);
+        if (g.parentId === sk) markDeleted(g.parentId);
+      }
+    }
+    dsuRebuildFromConnections();
     lb.children = lb.children.filter(s => s.id !== smallId);
     saveLayout();
     disposeAllConns(); // BX-DEV-137+++: clear stale lines before re-rendering inner surface

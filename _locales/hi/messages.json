@@ -60,7 +60,8 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+स्क्रॉल ज़ूम · खाली खींचें पैन · डबल-क्लिक जोड़ें · राइट-क्लिक वापस · शीर्षक खींचें · ⊙ बटन ऊपर दाएं: अनपिन करें फुलस्क्रीन"
+    "message": "Ctrl+स्क्रॉल से ज़ूम · खाली जगह खींचें · डबल-क्लिक से बॉक्स बनाएँ · राइट-क्लिक वापस · टाइटलबार खींचें · ऊपर-दाएँ ⊙: पिन हटाकर फुलस्क्रीन",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "कैनवास",

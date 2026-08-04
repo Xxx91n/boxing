@@ -60,7 +60,8 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+rueda zoom · Arrastrar vacío mover · Doble clic añadir · Clic derecho volver · Arrastrar título mover · Botón ⊙ arriba derecha: desanclar para pantalla completa"
+    "message": "Ctrl+rueda para zoom · Arrastrar espacio vacío para desplazar · Doble clic para crear caja · Clic derecho para volver · Arrastrar barra de título para mover · ⊙ arriba derecha: desanclar para pantalla completa",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "Lienzo",

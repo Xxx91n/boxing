@@ -60,7 +60,8 @@
     "description": "大ボックスを開くヒント"
   },
   "footerHint": {
-    "message": "Ctrl+スクロールでズーム · 空白ドラッグでパン · ダブルクリックで追加 · 右クリックで戻る · タイトルバーをドラッグで移動 · 右上の⊙ボタン：固定解除でフルスクリーン"
+    "message": "Ctrl+スクロールでズーム · 空白ドラッグで移動 · ダブルクリックでボックス作成 · 右クリックで戻る · タイトルバーをドラッグで移動 · 右上の⊙ボタン：固定解除でフルスクリーン",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "キャンバス",

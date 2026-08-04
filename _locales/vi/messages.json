@@ -60,7 +60,8 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+cuộn thu phóng · Kéo vùng trống di chuyển · Nhấp đúp thêm · Nhấp phải quay lại · Kéo tiêu đề di chuyển · Nút ⊙ góc trên phải: bỏ ghim để toàn màn hình"
+    "message": "Ctrl+lăn để phóng · Kéo khoảng trống để di chuyển · Nhấp đôi tạo hộp · Nhấp phải quay lại · Kéo thanh tiêu đề để di chuyển · ⊙ góc trên phải: bỏ ghim cho toàn màn hình",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "Khung vẽ",

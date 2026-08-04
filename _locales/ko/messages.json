@@ -60,7 +60,8 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+스크롤 확대 · 빈 영역 드래그 이동 · 더블클릭 추가 · 오른쪽 클릭 뒤로 · 제목 표시줄 드래그 이동 · 우측 상단 ⊙ 버튼: 고정 해제 시 전체 화면"
+    "message": "Ctrl+스크롤 확대 · 빈 곳 드래그로 이동 · 더블클릭으로 박스 생성 · 우클릭으로 뒤로 · 타이틀바 드래그로 이동 · 우상단 ⊙버튼: 고정 해제 시 전체화면",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "캔버스",

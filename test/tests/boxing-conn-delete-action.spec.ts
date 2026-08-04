@@ -301,4 +301,40 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
     const hasLine = await page.evaluate(() => !!document.querySelector('.conn-line'));
     expect(hasLine).toBe(true);
   });
+  // ── Bug1: delete conn disconnects parent-child group ───────────────
+  test('deleting connection dissolves parent-child group drag', async ({ page }) => {
+    await setupConnected(page);
+    const ids = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const boxes = dbg.layout.boxes;
+      return [boxes[0].id, boxes[1].id];
+    });
+    // Star box A as parent
+    await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.toggleStarMark(dbg.largeKey(a));
+    }, ids);
+    // Verify group exists
+    let group = await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const g = dbg.getGroupByParent(dbg.largeKey(a));
+      return g ? g.members.length : -1;
+    }, ids);
+    expect(group).toBe(1); // one member (box B)
+    // Delete the connection
+    await page.evaluate(() => {
+      const line = document.querySelector('.conn-line');
+      if (!line) throw new Error('no conn-line');
+      line.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0, altKey: true }));
+    });
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.connCount())).toBe(0);
+    // Verify group is now empty or null
+    const groupAfter = await page.evaluate(([a]) => {
+      const dbg = (window as any).__boxingDebug;
+      const g = dbg.getGroupByParent(dbg.largeKey(a));
+      return g ? g.members.length : -1;
+    }, ids);
+    expect(groupAfter).toBeLessThanOrEqual(0);
+  });
+
 });

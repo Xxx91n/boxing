@@ -60,7 +60,8 @@
     "description": "Hint to open large box"
   },
   "footerHint": {
-    "message": "Ctrl+rolagem zoom · Arrastar vazio mover · Clique duplo adicionar · Clique direito voltar · Arrastar título mover · Botão ⊙ canto superior direito: desafixar para tela cheia"
+    "message": "Ctrl+rolagem para zoom · Arrastar vazio para mover · Duplo-clique para criar caixa · Clique direito para voltar · Arrastar barra de título para mover · ⊙ canto superior direito: desafixar para tela cheia",
+    "description": "Footer hint text with usage instructions"
   },
   "canvasRoot": {
     "message": "Tela",
