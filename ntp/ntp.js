@@ -621,6 +621,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         }
       }
     } catch (e) { debugErr('loadLayout', e); layout = defaultLayout(); }
+    rebuildBoxMaps();
   }
 
   function currentViewSnapshot() {
@@ -912,8 +913,23 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
   }
 
+  // -- box index maps (ADR-0007 Phase 1.3: O(1) lookups) --
+  const boxById = new Map();       // largeBoxId -> box object
+  const smallBoxById = new Map();  // smallKey ("largeId:smallId") -> small box object
+
+  function rebuildBoxMaps() {
+    boxById.clear();
+    smallBoxById.clear();
+    for (const lb of layout.boxes) {
+      boxById.set(lb.id, lb);
+      for (const sb of (lb.children || [])) {
+        smallBoxById.set(lb.id + ":" + sb.id, sb);
+      }
+    }
+  }
+
   // ── helpers ────────────────────────────────────────────
-  function getLargeBox(id) { return layout.boxes.find(b => b.id === id); }
+  function getLargeBox(id) { return boxById.get(id) || null; }
 
   // ── Box Connections / Groups (BX-DEV-137) ────────────────────────────
   // leader-line draws mid-edge SVG between two DOM elements; we vendored
@@ -1103,6 +1119,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     connLines.clear();
     dirtyConns.clear();
     boxConnIdx.clear();
+    rebuildBoxMaps();
     connById.clear();
     if (__connRefreshRAF) { cancelAnimationFrame(__connRefreshRAF); __connRefreshRAF = 0; }
     // Clear SVG overlay DOM too
@@ -1735,8 +1752,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
   }
 
   function getSmallBox(largeId, smallId) {
-    const lb = getLargeBox(largeId);
-    return lb?.children?.find(s => s.id === smallId) || null;
+    return smallBoxById.get(largeId + ":" + smallId) || null;
   }
 
   function snapCanvas(x, y) { return { x: Math.round(x / CANVAS_GRID) * CANVAS_GRID, y: Math.round(y / CANVAS_GRID) * CANVAS_GRID }; }
@@ -3372,6 +3388,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     const unsnapped = elasticSnap({ x: snapped.x, y: snapped.y }, LARGE_DEF_W, LARGE_DEF_H, others, CANVAS_GRID, snapCanvas);
     newBox.x = Math.max(0, unsnapped.x); newBox.y = Math.max(0, unsnapped.y);
     layout.boxes.push(newBox);
+    boxById.set(newBox.id, newBox);
     debug('addLargeBoxAt pushed, count=' + layout.boxes.length);
     await saveLayout();
     debug('addLargeBoxAt saved, calling renderCanvas');
@@ -3447,6 +3464,8 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     dsuRebuildFromConnections();
     // A5: groups cleanup no longer needed
     layout.boxes = layout.boxes.filter(b => b.id !== id);
+    boxById.delete(id);
+    for (const sb of ((removed||{}).children||[])) smallBoxById.delete(id + ":" + sb.id);
     layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title || '').match(/\d+/) || [0]) || 0) + 1), 1);
     if (currentLargeBoxId === id) exitToCanvas();
     saveLayout();
@@ -3509,6 +3528,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       width: SMALL_DEF_W, height: SMALL_DEF_H,
       pinned: false, bookmarks: []
     });
+    smallBoxById.set(lb.id + ":" + lb.children[lb.children.length - 1].id, lb.children[lb.children.length - 1]);
     saveLayout();
     renderInnerSurface(lb);
   }
@@ -3527,6 +3547,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       width: SMALL_DEF_W, height: SMALL_DEF_H,
       pinned: false, bookmarks: []
     });
+    smallBoxById.set(lb.id + ":" + lb.children[lb.children.length - 1].id, lb.children[lb.children.length - 1]);
     // BX-DEV-106: elastic-snap to avoid overlapping existing small boxes
     const others = lb.children.filter(s => s.id !== lb.children[lb.children.length - 1].id).map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
     const last = lb.children[lb.children.length - 1];
@@ -3563,6 +3584,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     }
     dsuRebuildFromConnections();
     lb.children = lb.children.filter(s => s.id !== smallId);
+    smallBoxById.delete(largeId + ":" + smallId);
     saveLayout();
     disposeAllConns(); // BX-DEV-137+++: clear stale lines before re-rendering inner surface
     renderInnerSurface(lb);
