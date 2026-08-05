@@ -4201,9 +4201,6 @@ function ensureGroups() {
     } catch (_) { return null; }
   }
 
-  function ensureHttpsUrl(url) {
-    return normalizeBookmarkUrl(url);
-  }
   function onWindowResize() {
     debug(`window resize: ${window.innerWidth}x${window.innerHeight}`);
     applyCanvasTransform();
