@@ -155,7 +155,7 @@
 
   // Expose debug API for extension DevTools console inspection
   window.__boxingDebug = {
-    addConnection, removeConnection, deleteConnById, getConnDeleteTrigger, setConnDeleteAction, toggleStarMark, addMember, moveGroupTogether, enterConnectMode, exitConnectMode, getGroupByParent, _execDeleteLargeBox, _execDeleteSmallBox,
+    addConnection, removeConnection, commit, deleteConnById, getConnDeleteTrigger, setConnDeleteAction, toggleStarMark, addMember, moveGroupTogether, enterConnectMode, exitConnectMode, getGroupByParent, ensureGroups, _execDeleteLargeBox, _execDeleteSmallBox,
     largeKey, smallKey, resolveBoxEl, allValidKeys,
     getLargeBox, renderCanvas,
     pruneConnArrays, renderConnections, disposeAllConns, enterLargeBox,
@@ -615,13 +615,15 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         const legacy = layoutStorage === api.storage.sync ? data : await api.storage.sync.get({ boxingLayout: null });
         layout = legacy.boxingLayout ? migrateLayout(legacy.boxingLayout) : defaultLayout();
         if (legacy.boxingLayout && layoutStorage !== api.storage.sync) {
-          await layoutStorage.set({ boxingLayout: layout });
+          await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
           // A6: one-time cleanup — remove stale sync data after successful local migration
           try { await api.storage.sync.remove("boxingLayout"); } catch (_) {}
         }
       }
     } catch (e) { debugErr('loadLayout', e); layout = defaultLayout(); }
     rebuildBoxMaps();
+    markDsuDirty(); // ADR-0007 Q4b: layout replaced — DSU must rebuild on first use
+    try { ensureGroups(); } catch (_) {} // runtime groups mirror after load
   }
 
   function currentViewSnapshot() {
@@ -796,9 +798,34 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       nextLargeIndex: Math.max(Number(localValue.nextLargeIndex) || 1, Number(remoteValue.nextLargeIndex) || 1),
       settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}) },
       connections: mergeByIdUnion(localValue.connections, remoteValue.connections),
-      groups: mergeByIdUnion(localValue.groups, remoteValue.groups, "parentId"),
       _meta: { ...(remoteValue._meta || {}), ...(localValue._meta || {}), deleted: trimmedDeleted }
     };
+  }
+
+  // ADR-0007: persist helper — groups are computed-only (Q1).
+  function stripGroupsForPersist(src) {
+    const out = Object.assign({}, src);
+    delete out.groups;
+    return JSON.parse(JSON.stringify(out));
+  }
+
+  // ADR-0007 Q4a: drop tombstones older than 24h (Excalidraw soft-delete GC pattern).
+  const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
+  function gcTombstones(target) {
+    const del = target && target._meta && target._meta.deleted;
+    if (!del) return 0;
+    const cutoff = Date.now() - TOMBSTONE_TTL_MS;
+    let n = 0;
+    for (const k of Object.keys(del)) {
+      if (Number(del[k]) < cutoff) { delete del[k]; n++; }
+    }
+    // still honor MAX_TOMBSTONES hard cap after time GC
+    const keys = Object.keys(del);
+    if (keys.length > MAX_TOMBSTONES) {
+      keys.sort((a, b) => Number(del[a]) - Number(del[b]));
+      for (let i = 0; i < keys.length - MAX_TOMBSTONES; i++) delete del[keys[i]];
+    }
+    return n;
   }
 
   function markDeleted(...ids) {
@@ -822,13 +849,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       // BX-AUD-04: explicit chrome.storage.sync quota failure handling — sets a user-visible flag
       // and writes a emergency localStorage snapshot so data is never silently lost.
       try {
-        await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+        // ADR-0007 Q1: groups is runtime-only — never persist.
+        const persisted = stripGroupsForPersist(layout);
+        await layoutStorage.set({ boxingLayout: persisted });
+        try { gcTombstones(layout); } catch (_gc) { /* non-fatal */ }
         if (layout.settings && layout.settings.__lastSaveError) { layout.settings.__lastSaveError = null; }
       } catch (e) {
         debugErr('saveLayout: set failed (quota?) — writing fallback snapshot', e);
         try {
           if (layout.settings) layout.settings.__lastSaveError = (e && e.message ? e.message : String(e)) + ' @ ' + new Date().toISOString();
-          localStorage.setItem('boxingLayoutFallback.v1', JSON.stringify(layout));
+          localStorage.setItem('boxingLayoutFallback.v1', JSON.stringify(stripGroupsForPersist(layout)));
         } catch (_fbErr) { debugErr('saveLayout: fallback snapshot also failed', _fbErr); }
         // Rethrow so the storage-write-chain catch below records it; the next saveLayout will retry.
         throw e;
@@ -859,14 +889,33 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // Unknown future versions (>= 4) are still accepted to prevent upgrade-then-downgrade data loss.
     if (raw.version >= 3) {
       const defaults = defaultLayout();
-      return {
+      const result = {
         ...defaults,
         ...raw,
         boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
         connections: Array.isArray(raw.connections) ? raw.connections : [],
-        groups: Array.isArray(raw.groups) ? raw.groups : [],
+        groups: [], // ADR-0007 Q1: groups no longer persisted
         settings: { ...defaults.settings, ...(raw.settings || {}) }
       };
+    // ADR-0007 Q1: one-time migration — restore box.isParent from old layout.groups, then discard
+    if (!raw._meta || !raw._meta.__groupsMigrated) {
+      if (Array.isArray(raw.groups) && raw.groups.length > 0) {
+        for (const g of raw.groups) {
+          if (!g || !g.parentId) continue;
+          if (g.parentId.startsWith("large:")) {
+            const lb = result.boxes.find(b => b.id === g.parentId.slice(6)); if (lb) lb.isParent = true;
+          } else if (g.parentId.startsWith("small:")) {
+            const sp = g.parentId.split(":");
+            if (sp.length >= 3) { const lb2 = result.boxes.find(b => b.id === sp[1]);
+              if (lb2) { const sc = lb2.children?.find(s => s.id === sp.slice(2).join(":")); if (sc) sc.isParent = true; } }
+          }
+        }
+      }
+      result._meta = result._meta || {}; result._meta.__groupsMigrated = true;
+    }
+    // ADR-0007 Q4c: backfill connection.props for older layouts
+    for (const c of result.connections) { if (c && c.props == null) c.props = {}; }
+    return result;
     }
     if (raw.version === 2) {
       return {
@@ -952,7 +1001,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
   const groupStar = new Set();       // boxKeys marked as parent (starred)
   let clearedTombstones = new Set(); // BX-144: in-memory set of tombstone keys this tab has explicitly cleared (per-tab, never persisted)
   const groupIdx = new Map();       // kept for compat: parentId -> group object
-  let __dsuBuilt = false;            // Bug1: track DSU build to avoid O(n) rebuild per mousemove when groupStar stays empty
+  let __dsuDirty = true;              // ADR-0007 Q4b: rebuild DSU only when dirty (replaces __dsuDirty)
   let canvasConnSvg = null;     // SVG overlay inside canvasSurface
   let innerConnSvg = null;     // SVG overlay inside innerSurfaceContent
   let connectMode = null;               // { fromId, fromEl, fromSide } | null
@@ -985,19 +1034,164 @@ const connById = new Map();            // connId -> connection object (O(1) look
       (c.from === from && c.to === to) || (c.from === to && c.to === from)) || null;
   }
 
+  // ── ADR-0007 Phase 1.2: unified commit(op) (tldraw Store put/remove pattern) ──
+  // Handlers mutate data only. commit() owns tombstones, DSU dirty, viewState clear,
+  // optional save/render. Public wrappers keep call-site behavior stable.
+  function getBoxByTieredKey(key) {
+    if (!key || typeof key !== "string") return null;
+    if (key.startsWith("large:")) return getLargeBox(key.slice(6));
+    if (key.startsWith("small:")) {
+      const sp = key.split(":");
+      if (sp.length < 3) return null;
+      return getSmallBox(sp[1], sp.slice(2).join(":"));
+    }
+    return getLargeBox(key);
+  }
+
+  const mutationHandlers = {
+    addConn(state, { from, to }) {
+      const id = "conn-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6);
+      state.connections.push({ id, from, to, createdAt: Date.now(), props: {} });
+      return { connId: id, affectedBoxKeys: [from, to], connChanged: true };
+    },
+    removeConn(state, { connId }) {
+      const conn = state.connections.find(c => c.id === connId) || connById.get(connId);
+      state.connections = state.connections.filter(c => c.id !== connId);
+      connById.delete(connId);
+      return {
+        tombstoneIds: connId ? [connId] : [],
+        affectedBoxKeys: conn ? [conn.from, conn.to] : [],
+        connChanged: true
+      };
+    },
+    toggleStar(state, { parentId }) {
+      const box = getBoxByTieredKey(parentId);
+      if (!box) return { skipped: true };
+      if (box.isParent || groupStar.has(parentId)) {
+        box.isParent = false;
+        groupStar.delete(parentId);
+        return { tombstoneIds: [parentId], starChanged: true, unstarred: true };
+      }
+      box.isParent = true;
+      groupStar.add(parentId);
+      return { clearedTombstoneKeys: [parentId], starChanged: true, starred: true };
+    },
+    deleteLargeBox(state, { id }) {
+      const removed = getLargeBox(id);
+      if (!removed) return { skipped: true };
+      // ADR-0007 Q4d: clear viewState while object still reachable
+      try { delete removed.viewState; } catch (_) {}
+      const tomb = [id, largeKey(id)];
+      for (const child of (removed.children || [])) {
+        tomb.push(child.id, smallKey(id, child.id));
+        for (const bm of (child.bookmarks || [])) if (bm && bm.id) tomb.push(bm.id);
+      }
+      const largeK = largeKey(id);
+      const smallPrefix = "small:" + id + ":";
+      const matchesDeletedKey = k =>
+        k === id || k === largeK || (typeof k === "string" && k.startsWith(smallPrefix));
+      for (const rc of state.connections) {
+        if (rc && (matchesDeletedKey(rc.from) || matchesDeletedKey(rc.to))) tomb.push(rc.id);
+      }
+      state.connections = state.connections.filter(c => !matchesDeletedKey(c.from) && !matchesDeletedKey(c.to));
+      state.boxes = state.boxes.filter(b => b.id !== id);
+      boxById.delete(id);
+      for (const sb of (removed.children || [])) smallBoxById.delete(id + ":" + sb.id);
+      state.nextLargeIndex = state.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title || "").match(/\d+/) || [0]) || 0) + 1), 1);
+      return {
+        tombstoneIds: tomb,
+        viewStateClear: [id],
+        connChanged: true,
+        deletedLargeId: id
+      };
+    },
+    deleteSmallBox(state, { largeId, smallId }) {
+      const lb = getLargeBox(largeId);
+      if (!lb) return { skipped: true };
+      const removed = (lb.children || []).find(s => s.id === smallId);
+      const sk = smallKey(largeId, smallId);
+      const tomb = [smallId, sk];
+      for (const bm of (removed?.bookmarks || [])) if (bm && bm.id) tomb.push(bm.id);
+      for (const rc of state.connections) {
+        if (rc && (rc.from === sk || rc.to === sk)) tomb.push(rc.id);
+      }
+      state.connections = state.connections.filter(c => c.from !== sk && c.to !== sk);
+      lb.children = (lb.children || []).filter(s => s.id !== smallId);
+      smallBoxById.delete(largeId + ":" + smallId);
+      return {
+        tombstoneIds: tomb,
+        viewStateClearIds: [], // small boxes do not own viewState on large
+        connChanged: true,
+        deletedSmall: { largeId, smallId },
+        parentLargeId: largeId
+      };
+    },
+    applyExternal(state, { incoming, incomingWins }) {
+      // merge already applied by caller onto layout; handler only signals rebuild
+      return { isExternal: true, connChanged: true, forceMaps: true };
+    }
+  };
+
+  function commit(op, payload, opts) {
+    opts = opts || {};
+    const handler = mutationHandlers[op];
+    if (!handler) throw new Error("Unknown mutation: " + op);
+    const result = handler(layout, payload || {}) || {};
+    if (result.skipped) return result;
+
+    if (result.tombstoneIds && result.tombstoneIds.length) {
+      markDeleted(...result.tombstoneIds);
+    }
+    if (result.clearedTombstoneKeys) {
+      for (const k of result.clearedTombstoneKeys) {
+        if (layout._meta && layout._meta.deleted && layout._meta.deleted[k]) delete layout._meta.deleted[k];
+        clearedTombstones.add(k);
+      }
+    }
+
+    // ADR-0007 Q4d: clear per-box viewState on delete
+    if (result.viewStateClear) {
+      for (const id of result.viewStateClear) {
+        const lb = boxById.get(id) || (layout.boxes || []).find(b => b.id === id);
+        // box already removed from map — clear on removed snapshot if still reachable is N/A;
+        // ensure no stale viewState remains on any remaining box with same id (none).
+        if (lb) delete lb.viewState;
+        // Also drop any scheduled persist timer for this id
+        try {
+          if (typeof __viewStatePersistTimers !== "undefined" && __viewStatePersistTimers.has(id)) {
+            clearTimeout(__viewStatePersistTimers.get(id));
+            __viewStatePersistTimers.delete(id);
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (result.forceMaps) rebuildBoxMaps();
+
+    // DSU dirty + rebuild (Q4b). External/load paths also force dirty.
+    if (result.connChanged || result.starChanged || result.isExternal || opts.forceDsu) {
+      markDsuDirty();
+      if (opts.skipDsuRebuild) {
+        /* caller will rebuild */
+      } else {
+        dsuRebuildFromConnections();
+        // ADR-0007 Q1: keep runtime layout.groups mirror in sync for tests/debug/getters.
+        try { ensureGroups(); } catch (_) {}
+      }
+    }
+
+    if (opts.save) saveLayout();
+    else if (opts.saveDebounced) saveLayoutDebounced();
+    if (opts.renderConns) renderConnections();
+    return result;
+  }
+
   function addConnection(fromId, toId) {
     ensureConnArrays();
     if (fromId === toId) return false;
     if (findConn(fromId, toId)) return false;     // dedupe
-    layout.connections.push({
-      id: 'conn-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
-      from: fromId, to: toId, createdAt: Date.now()
-    });
-    // BX-DSU: union the two boxes' groups when a connection is created
-    dsuUnion(fromId, toId);
+    commit("addConn", { from: fromId, to: toId });
     // Bug 4: auto-join connection endpoints to a starred parent group.
-    // If from is a starred parent, the to-end joins as a member;
-    // if to is a starred parent, the from-end joins as a member.
     if (getGroupByParent(fromId)) addMember(fromId, toId);
     else if (getGroupByParent(toId)) addMember(toId, fromId);
     return true;
@@ -1005,25 +1199,8 @@ const connById = new Map();            // connId -> connection object (O(1) look
 
   function removeConnection(connId) {
     ensureConnArrays();
-    // Bug1 fix: capture from/to BEFORE filtering, then prune layout.groups
-    // so dsuRebuildFromConnections (L1411-1417) doesn't re-union stale members.
-    const conn = layout.connections.find(c => c.id === connId);
-    if (conn && Array.isArray(layout.groups)) {
-      for (const g of layout.groups) {
-        if (!g || !Array.isArray(g.members)) continue;
-        // Remove either endpoint from the other's group member list.
-        g.members = g.members.filter(m => m !== conn.from && m !== conn.to);
-      }
-    }
-    layout.connections = layout.connections.filter(c => c.id !== connId);
-    connById.delete(connId);
-    // Bug 3+4 fix: tombstone the connId so mergeConcurrentLayout's
-    // mergeByIdUnion doesn't resurrect it from the stored remote copy.
-    // Same mechanism as box deletion (markDeleted → _meta.deleted → tombstones set).
-    markDeleted(connId);
-    // BX-DSU: rebuild group connectivity after connection removal
-    dsuRebuildFromConnections();
-    debug('removeConnection '+connId+', conns='+layout.connections.length);
+    commit("removeConn", { connId });
+    debug("removeConnection " + connId + ", conns=" + layout.connections.length);
   }
 
   // ADR-0006: Configurable connection delete action (tldraw Actions pattern, vanilla JS).
@@ -1419,42 +1596,18 @@ const connById = new Map();            // connId -> connection object (O(1) look
   
   function dsuReset() {
     boxGroupId.clear(); groupMembers.clear(); groupStar.clear();
-    __dsuBuilt = false; // Bug1: reset build flag
+    // ADR-0007 Q4b: dirty flag is owned by markDsuDirty/dsuRebuild — not reset here
   }
+  function markDsuDirty() { __dsuDirty = true; }
   
   function dsuRebuildFromConnections() {
+    if (!__dsuDirty) return; // ADR-0007 Q4b: skip full rebuild when clean
     dsuReset();
     // Rebuild DSU from layout.connections — each connection unions two boxes
     for (const c of layout.connections) {
       if (c.from && c.to) dsuUnion(c.from, c.to);
     }
     debugSampled('dsuRebuild: conns='+layout.connections.length);
-  // Apply layout.groups -> box.isParent before reading stars (BX-144: remote star adoption)
-  // BX-144: skip tombstoned parents — unstarred locally must NOT be re-adopted from stale layout.groups
-  if (Array.isArray(layout.groups)) {
-    const tdel = layout._meta?.deleted || {};
-    for (const g of layout.groups) {
-      if (!g || !g.parentId) continue;
-      if (tdel[g.parentId]) continue; // tombstoned — skip
-      if (g.parentId.startsWith("large:")) {
-        const lb = getLargeBox(g.parentId.slice(6));
-        if (lb) lb.isParent = true;
-      } else if (g.parentId.startsWith("small:")) {
-        const sp = g.parentId.split(":");
-        if (sp.length >= 3) { const sb = getSmallBox(sp[1], sp.slice(2).join(":")); if (sb) sb.isParent = true; }
-      }
-    }
-  }
-  // BX-144: DSU union group members so getGroupByParent returns members even without connections
-  // BX-144: skip tombstoned parents — unstarred locally must NOT re-union stale members
-  if (Array.isArray(layout.groups)) {
-    const tdel2 = layout._meta?.deleted || {};
-    for (const g of layout.groups) {
-      if (!g || !g.parentId || !Array.isArray(g.members)) continue;
-      if (tdel2[g.parentId]) continue; // tombstoned — skip
-      for (const m of g.members) { if (m && m !== g.parentId && !tdel2[m]) dsuUnion(g.parentId, m); }
-    }
-  }
   // A5: Re-apply star marks from box.isParent field
   // BX-144: clear isParent for tombstoned parents before applying star marks
   // (mergeById filters by box.id, but tombstones are keyed by box key — e.g. "large:<id>").
@@ -1468,12 +1621,22 @@ const connById = new Map();            // connId -> connection object (O(1) look
     }
   }
   for (const b of (layout.boxes || [])) {
-    if (b.isParent) groupStar.add(largeKey(b.id));
+    if (b.isParent) {
+      const pk = largeKey(b.id);
+      groupStar.add(pk);
+      // ADR-0007 / BX-144: starred parent is a valid group even with zero connections.
+      // Without dsuMake, getGroupByParent() would fail (dsuGroupMembers null) after remote star adopt.
+      dsuMake(pk);
+    }
     for (const sb of (b.children || [])) {
-      if (sb.isParent) groupStar.add(smallKey(b.id, sb.id));
+      if (sb.isParent) {
+        const sp = smallKey(b.id, sb.id);
+        groupStar.add(sp);
+        dsuMake(sp);
+      }
     }
   }
-  __dsuBuilt = true; // Bug1: mark DSU as built so getGroupByParent skips ensureGroups on subsequent calls
+  __dsuDirty = false; // Bug1: mark DSU as built so getGroupByParent skips ensureGroups on subsequent calls
 }
   
   function dsuGroupMembers(key) {
@@ -1483,7 +1646,11 @@ const connById = new Map();            // connId -> connection object (O(1) look
   }
   
 
-function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debugSampled('ensureGroups: boxes='+(layout.boxes||[]).length+' conns='+(layout.connections||[]).length); const gs = [];
+function ensureGroups() {
+  ensureConnArrays();
+  dsuRebuildFromConnections();
+  debugSampled('ensureGroups: boxes='+(layout.boxes||[]).length+' conns='+(layout.connections||[]).length);
+  const gs = [];
   for (const b of (layout.boxes || [])) {
     if (b.isParent) {
       const pk = largeKey(b.id);
@@ -1500,7 +1667,10 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       }
     }
   }
-  layout.groups = gs; return gs; }
+  // ADR-0007 Q1: runtime mirror only — stripGroupsForPersist removes groups on save.
+  layout.groups = gs;
+  return gs;
+}
 
   // ── Tiered keys for cross-level connections (BX-DEV-137+) ──────────
   // large:boxId  |  small:largeId:smallId  — addresses any box at any nesting.
@@ -1536,7 +1706,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
   function getGroupByParent(parentId) {
     // A5: lazy DSU rebuild on first access — needed after page reload where
     // groupStar is empty until ensureGroups()/dsuRebuildFromConnections runs.
-    if (parentId && !__dsuBuilt) ensureGroups();
+    if (parentId && __dsuDirty) ensureGroups();
     // A5: star determined by groupStar Set (populated from box.isParent)
     if (!parentId || !groupStar.has(parentId)) return null;
     const members = dsuGroupMembers(parentId);
@@ -1545,48 +1715,19 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
   }
   function toggleStarMark(parentId) {
     ensureConnArrays();
-    if (groupStar.has(parentId)) {
-      // unstar: remove from groupStar, clear box.isParent
-      groupStar.delete(parentId);
-      const pk = parentId.startsWith('large:') ? parentId.slice(6) : parentId;
-      const lb = getLargeBox(pk);
-      if (lb) lb.isParent = false;
-      if (parentId.startsWith('small:')) {
-        const sp = parentId.split(':');
-        if (sp.length >= 3) { const sb2 = getSmallBox(sp[1], sp.slice(2).join(':')); if (sb2) sb2.isParent = false; }
-      }
-      markDeleted(parentId);
-      debug('toggleStarMark: unstar parent=' + parentId);
-      ensureGroups();
-    } else {
-      // star: add to groupStar, set box.isParent
-      groupStar.add(parentId);
-      const pk = parentId.startsWith('large:') ? parentId.slice(6) : parentId;
-      const lb = getLargeBox(pk);
-      if (lb) lb.isParent = true;
-      if (parentId.startsWith('small:')) {
-        const sp = parentId.split(':');
-        if (sp.length >= 3) { const sb2 = getSmallBox(sp[1], sp.slice(2).join(':')); if (sb2) sb2.isParent = true; }
-      }
-      // BX-144: clear stale tombstone for this parentId AND record it in
-      // the in-memory clearedTombstones Set so mergeConcurrentLayout cannot
-      // resurrect it from remote. This set is per-tab state — never persisted,
-      // never written into _meta, never propagated cross-tab.
-      if (layout._meta?.deleted?.[parentId]) delete layout._meta.deleted[parentId];
-      clearedTombstones.add(parentId);
-      debug('toggleStarMark: star parent=' + parentId);
-    }
-    ensureGroups();
-    saveLayout();
-    // Update star button visual state
-    document.querySelectorAll('.box-star-btn').forEach(btn => {
-      const boxEl = btn.closest('[data-box-key]');
+    const result = commit("toggleStar", { parentId }, { save: true });
+    if (result && result.skipped) return;
+    if (result && result.unstarred) debug("toggleStarMark: unstar parent=" + parentId);
+    if (result && result.starred) debug("toggleStarMark: star parent=" + parentId);
+    // Update star button visual state (large + small parity)
+    document.querySelectorAll(".box-star-btn").forEach(btn => {
+      const boxEl = btn.closest("[data-box-key]");
       if (!boxEl) return;
       const key = boxEl.dataset.boxKey;
       const starred = groupStar.has(key);
-      btn.classList.toggle('box-tool-btn--on', starred);
-      btn.textContent = starred ? '★' : '☆';
-      boxEl.classList.toggle('box--starred', starred);
+      btn.classList.toggle("box-tool-btn--on", starred);
+      btn.textContent = starred ? "★" : "☆";
+      boxEl.classList.toggle("box--starred", starred);
     });
   }
   // addMember: unions parent+member in DSU (compat API for external callers)
@@ -1594,12 +1735,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
     if (parentId === memberId) return;
     ensureConnArrays();
     dsuUnion(parentId, memberId); // Bug2: union DSU
-    // Compat: update layout.groups shim members WITHOUT calling ensureGroups (would wipe DSU)
-    if (!layout.groups) layout.groups = [];
-    let g = layout.groups.find(x => x.parentId === parentId);
-    if (!g) { g = { parentId, members: [] }; layout.groups.push(g); }
-    if (!g.members.includes(memberId)) g.members.push(memberId);
-    __dsuBuilt = true; // DSU is valid after dsuUnion
+    __dsuDirty = false; // DSU is valid after dsuUnion
   }
   // During parent drag we apply the same delta to every member. Members collide
   // against OUT-of-group boxes only; intra-group siblings move as a rigid set.
@@ -1802,26 +1938,78 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
   }
 
   // Elastic snap: iterative while-loop to resolve all overlaps (BX-DEV-013)
+  // ADR-0007 Q3b: GDevelop-style spatial hash for elasticSnap when N >= 32.
+  const SPATIAL_THRESHOLD = 32;
+  function buildSpatialGrid(boxes) {
+    if (!boxes || boxes.length < SPATIAL_THRESHOLD) return null;
+    let maxW = 0, maxH = 0;
+    for (const b of boxes) {
+      maxW = Math.max(maxW, b.width || LARGE_DEF_W);
+      maxH = Math.max(maxH, b.height || LARGE_DEF_H);
+    }
+    const cell = Math.max(32, Math.max(maxW, maxH) * 2);
+    const grid = new Map();
+    for (const b of boxes) {
+      const bw = b.width || LARGE_DEF_W, bh = b.height || LARGE_DEF_H;
+      const x0 = Math.floor(b.x / cell), y0 = Math.floor(b.y / cell);
+      const x1 = Math.floor((b.x + bw) / cell), y1 = Math.floor((b.y + bh) / cell);
+      for (let cx = x0; cx <= x1; cx++) {
+        for (let cy = y0; cy <= y1; cy++) {
+          const key = cx + ":" + cy;
+          let bucket = grid.get(key);
+          if (!bucket) { bucket = []; grid.set(key, bucket); }
+          bucket.push(b);
+        }
+      }
+    }
+    return { grid, cell };
+  }
+  function querySpatialNearby(spatial, x, y, w, h) {
+    if (!spatial) return null;
+    const { grid, cell } = spatial;
+    const x0 = Math.floor(x / cell) - 1, y0 = Math.floor(y / cell) - 1;
+    const x1 = Math.floor((x + w) / cell) + 1, y1 = Math.floor((y + h) / cell) + 1;
+    const seen = new Set();
+    const out = [];
+    for (let cx = x0; cx <= x1; cx++) {
+      for (let cy = y0; cy <= y1; cy++) {
+        const bucket = grid.get(cx + ":" + cy);
+        if (!bucket) continue;
+        for (const b of bucket) {
+          if (seen.has(b)) continue;
+          seen.add(b);
+          out.push(b);
+        }
+      }
+    }
+    return out;
+  }
+
   function elasticSnap(pos, w, h, others, grid, snapFn) {
     let { x, y } = pos;
     let maxIter = 50;
     let movedThisPass = true;
+    // ADR-0007 Q3b: build spatial once per snap call when N large; fall back to full list below threshold.
+    const spatial = buildSpatialGrid(others);
     while (movedThisPass && maxIter-- > 0) {
       movedThisPass = false;
-      for (const other of others) {
+      const near = querySpatialNearby(spatial, x, y, w, h) || others;
+      for (const other of near) {
         const ow = other.width || LARGE_DEF_W, oh = other.height || LARGE_DEF_H;
         if (!rectsOverlap({ x, y, w, h }, { x: other.x, y: other.y, w: ow, h: oh })) continue;
         const candidates = [
           { x: other.x + ow + grid, y },
-          { x: other.x - w - grid, y: y },
+          { x: other.x - w - grid, y },
           { x, y: other.y + oh + grid },
           { x, y: other.y - h - grid }
         ];
         let best = null, bestDist = Infinity;
         for (const c of candidates) {
           if (c.x < 0 || c.y < 0) continue;
-          const collides = others.some(o =>
-            rectsOverlap({ x: c.x, y: c.y, w, h }, { x: o.x, y: o.y, w: ow, h: oh }));
+          // check collisions against nearby set (or all when small N)
+          const checkSet = querySpatialNearby(spatial, c.x, c.y, w, h) || others;
+          const collides = checkSet.some(o =>
+            rectsOverlap({ x: c.x, y: c.y, w, h }, { x: o.x, y: o.y, w: (o.width || LARGE_DEF_W), h: (o.height || LARGE_DEF_H) }));
           if (!collides) {
             const dist = Math.abs(c.x - x) + Math.abs(c.y - y);
             if (dist < bestDist) { bestDist = dist; best = c; }
@@ -3435,40 +3623,10 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
   }
 
   function _execDeleteLargeBox(id) {
-    const removed = getLargeBox(id);
-    markDeleted(id, ...(removed?.children || []).flatMap(child => [child.id, ...(child.bookmarks || []).map(bookmark => bookmark.id)]));
-    ensureConnArrays();
-    // BX-DEV-137+: connections/groups now use tiered keys. Drop connections where
-    // from/to is 'large:id' or any 'small:id:*' (small boxes inside this large box).
-    // Also keep back-compat with legacy raw-id connections (Round 1 format).
-    const largeK = largeKey(id);
-    const smallPrefix = 'small:' + id + ':';
-    const matchesDeletedKey = k =>
-      k === id ||                                    // legacy raw id
-      k === largeK ||                               // 'large:id'
-      (typeof k === 'string' && k.startsWith(smallPrefix));  // 'small:id:smallId'
-    // Bug4 fix: tombstone each deleted connection's id so mergeConcurrentLayout
-    // doesn't resurrect them from the stored remote copy.
-    for (const rc of layout.connections) {
-      if (rc && (matchesDeletedKey(rc.from) || matchesDeletedKey(rc.to))) markDeleted(rc.id);
-    }
-    layout.connections = layout.connections.filter(c => !matchesDeletedKey(c.from) && !matchesDeletedKey(c.to));
-    // Bug4 fix: prune layout.groups of stale member entries for deleted box keys.
-    if (Array.isArray(layout.groups)) {
-      for (const g of layout.groups) {
-        if (!g || !Array.isArray(g.members)) continue;
-        g.members = g.members.filter(m => !matchesDeletedKey(m));
-        if (g.parentId && matchesDeletedKey(g.parentId)) { markDeleted(g.parentId); }
-      }
-    }
-    dsuRebuildFromConnections();
-    // A5: groups cleanup no longer needed
-    layout.boxes = layout.boxes.filter(b => b.id !== id);
-    boxById.delete(id);
-    for (const sb of ((removed||{}).children||[])) smallBoxById.delete(id + ":" + sb.id);
-    layout.nextLargeIndex = layout.boxes.reduce((max, b) => Math.max(max, (parseInt((b.title || '').match(/\d+/) || [0]) || 0) + 1), 1);
+    const result = commit("deleteLargeBox", { id }, { save: true });
+    if (result && result.skipped) return;
+    // ADR-0007 Q4d: viewState cleared inside commit; box already removed from maps
     if (currentLargeBoxId === id) exitToCanvas();
-    saveLayout();
     renderCanvas();
   }
 
@@ -3564,31 +3722,11 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
   function _execDeleteSmallBox(largeId, smallId) {
     const lb = getLargeBox(largeId);
     if (!lb) return;
-    const removed = lb.children.find(s => s.id === smallId);
-    markDeleted(smallId, ...(removed?.bookmarks || []).map(bookmark => bookmark.id));
-    // BX-DEV-137+: prune connections/groups referencing this small box's tiered key.
-    const sk = smallKey(largeId, smallId);
-    ensureConnArrays();
-    // Bug4 fix: tombstone each deleted connection's id.
-    for (const rc of layout.connections) {
-      if (rc && (rc.from === sk || rc.to === sk)) markDeleted(rc.id);
-    }
-    layout.connections = layout.connections.filter(c => c.from !== sk && c.to !== sk);
-    // Bug4 fix: prune layout.groups of stale member entries.
-    if (Array.isArray(layout.groups)) {
-      for (const g of layout.groups) {
-        if (!g || !Array.isArray(g.members)) continue;
-        g.members = g.members.filter(m => m !== sk);
-        if (g.parentId === sk) markDeleted(g.parentId);
-      }
-    }
-    dsuRebuildFromConnections();
-    lb.children = lb.children.filter(s => s.id !== smallId);
-    smallBoxById.delete(largeId + ":" + smallId);
-    saveLayout();
+    const result = commit("deleteSmallBox", { largeId, smallId }, { save: true });
+    if (result && result.skipped) return;
     disposeAllConns(); // BX-DEV-137+++: clear stale lines before re-rendering inner surface
     renderInnerSurface(lb);
-    renderConnections(); // BX-DEV-137+++: re-render connections after small box deletion
+    renderConnections();
   }
 
   // BX-DEV-122: sync settings-DOM from layout.settings. Used by openSettingsModal init
@@ -3631,7 +3769,9 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
       : mergeConcurrentLayout(layout, incoming);
     const needsReconcileWrite = JSON.stringify(layout) !== incomingSerialized;
     // A5: groupIdx no longer needed; dsuRebuild reads box.isParent
-    dsuRebuildFromConnections();
+    markDsuDirty(); dsuRebuildFromConnections();
+    try { ensureGroups(); } catch (_) {}
+    rebuildBoxMaps();
     connIdx.clear();
     boxConnIdx.clear();
     try {
@@ -4803,7 +4943,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
             layout._meta.revision = lossRev;
             // Direct write — avoid saveLayout restoring the truncated local.
             try {
-              await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+              await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
             } catch (e) { debugErr('WebDAV sync: data-loss restore set failed', e); }
             renderCanvas();
             const cnt = computeBoxCount(layout).total;
@@ -4848,7 +4988,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
         setBaselineBoxCount(computeBoxCount(layout).total);
         // Direct write — do NOT merge with old local (we are intentionally discarding it).
         try {
-          await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+          await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
         } catch (e) { debugErr('WebDAV sync: first-time pull set failed', e); }
         renderCanvas();
         debug('WebDAV sync: first-time pull', { boxes: layout.boxes.length });
@@ -4877,7 +5017,7 @@ function ensureGroups() { ensureConnArrays(); dsuRebuildFromConnections(); debug
           setBaselineBoxCount(computeBoxCount(layout).total);
           // Direct write — avoid saveLayout merging old local boxes back in.
           try {
-            await layoutStorage.set({ boxingLayout: JSON.parse(JSON.stringify(layout)) });
+            await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
           } catch (e) { debugErr('WebDAV sync: cloud-newer pull set failed', e); }
           renderCanvas();
           debug('WebDAV sync: cloud newer, pulled', { boxes: layout.boxes.length });

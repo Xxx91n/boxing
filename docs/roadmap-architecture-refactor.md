@@ -394,6 +394,20 @@ if (result.viewStateClear) {
 
 ---
 
+## 落地状态（实现记录）
+
+> 2026-08-05 复核：语法损坏的 `loadLayout` 已修复；`commit`/`applyExternalLayout`/`loadLayout` 均刷新 runtime groups mirror；star-only parent 经 `dsuMake` 可被 `getGroupByParent` 识别。关键测试 38/38 + Bug1b/1c 通过。
+
+| 阶段 | 状态 | 证据 |
+|---|---|---|
+| 1.3 boxById Map | done | `boxById`/`smallBoxById` + `rebuildBoxMaps` |
+| 1.1 groups computed-only | done | `stripGroupsForPersist`, migrate `__groupsMigrated`, no merge groups; `ensureGroups` mirrors `layout.groups` in-memory only; star-only parents `dsuMake` |
+| 1.2 commit(op) | done | `mutationHandlers` + `commit` wrappers |
+| 2.3 __dsuDirty | done | `markDsuDirty` + early-out rebuild |
+| 2.2 tombstone GC | done | `gcTombstones` 24h after save |
+| 2.1 spatial index | done | `SPATIAL_THRESHOLD=32` in `elasticSnap` |
+| 3 props/viewState | done | conn `props:{}`, delete clears `viewState` |
+
 ## 实施顺序与依赖
 
 ```

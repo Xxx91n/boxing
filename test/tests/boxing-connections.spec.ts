@@ -892,7 +892,9 @@ test.describe('Boxing BX-144: cross-tab star-mark + conn refresh regression', ()
       const beforeStar = !!dbg.getGroupByParent(dbg.largeKey(ids[0]));
       const remotePayload = JSON.parse(JSON.stringify(dbg.layout));
       const aKey = dbg.largeKey(ids[0]);
-      remotePayload.groups = [{ parentId: aKey, members: [dbg.largeKey(ids[1]), dbg.largeKey(ids[2])] }];
+      // ADR-0007: star truth is box.isParent (groups are runtime-only, not a sync source)
+      const remoteBox = (remotePayload.boxes || []).find((b) => b.id === ids[0]);
+      if (remoteBox) remoteBox.isParent = true;
       remotePayload._meta = { ...(remotePayload._meta || {}), revision: (remotePayload._meta?.revision || 0) + 1, updatedAt: Date.now() + 1, writerId: 'test-remote-star' };
       const applied = dbg.applyExternalLayout(remotePayload);
       const afterApply = !!dbg.getGroupByParent(aKey);
@@ -1027,7 +1029,10 @@ test.describe('Boxing BX-144: cross-tab star-mark + conn refresh regression', ()
       const beforeStar = !!dbg.getGroupByParent(dbg.smallKey(lgId, smIds[0]));
       const remotePayload = JSON.parse(JSON.stringify(dbg.layout));
       const aKey = dbg.smallKey(lgId, smIds[0]);
-      remotePayload.groups = [{ parentId: aKey, members: [dbg.smallKey(lgId, smIds[1])] }];
+      // ADR-0007: star truth is box.isParent on the small box object
+      const remoteLarge = (remotePayload.boxes || []).find((b) => b.id === lgId);
+      const remoteSmall = remoteLarge && (remoteLarge.children || []).find((c) => c.id === smIds[0]);
+      if (remoteSmall) remoteSmall.isParent = true;
       remotePayload._meta = { ...(remotePayload._meta || {}), revision: (remotePayload._meta?.revision || 0) + 1, updatedAt: Date.now() + 1, writerId: 'test-remote-inner-star' };
       const applied = dbg.applyExternalLayout(remotePayload);
       const afterApply = !!dbg.getGroupByParent(aKey);

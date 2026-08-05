@@ -4,7 +4,7 @@
 2026-08-05
 
 ## Status
-Accepted (grill-with-docs Q1-Q4 confirmed by user)
+Accepted + Implemented (2026-08-05) — all phases in ntp/ntp.js; critical Playwright suite green
 
 ## Context
 

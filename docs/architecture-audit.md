@@ -1,3 +1,5 @@
+# ADR-0007 implementation landed — see roadmap 落地状态 + CONTEXT Mutation API.
+
 # Architecture Audit — Connection System & Data Structure Health
 
 > Generated: 2026-08-04

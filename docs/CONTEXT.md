@@ -16,7 +16,7 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **autoExpand** — boolean: when true, the box renders expanded on hover without needing a click toggle.
 
 ### Connections (Lines)
-- **Connection** — `{ id: 'C<n>', from: boxId, to: boxId }` — undirected edge between two boxes.
+- **Connection** — `{ id, from, to, createdAt?, props:{} }` — undirected edge between two boxes.
 - **connLine** — SVG `<line>` element rendered on a dedicated SVG layer (`connSvg`). Tracked in `connLines: Map<connId, SVGLineElement>`.
 - **connById** — `Map<connId, Connection>` O(1) lookup.
 - **boxConnIdx** — `Map<boxId, Set<connId>>` O(1) reverse index: which conns touch which box.
@@ -29,13 +29,21 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **Small box key**: `small:L1:S1` (prefix `small:` + large box id + `:` + small box id)
 - **Legacy keys**: Raw ids (`L1`, `S1`) without prefix — supported for backwards compat, normalized in `ensureConnArrays`
 - Used in: `connection.from`, `connection.to`, `groupStar` Set, `boxConnIdx` Map, DSU `boxGroupId`/`groupMembers`
-- Note: `layout.groups` will stop being persisted after ADR-0007 implementation (runtime-only computed value)
+- Note: `layout.groups` is **runtime-only** after ADR-0007 Phase 1.1 — never persisted (`stripGroupsForPersist`); `ensureGroups()` computes on demand and mirrors into in-memory `layout.groups` for debug/tests; star truth is `box.isParent`; starred parents with zero connections still get `dsuMake` so `getGroupByParent` works
 - **MUST be documented** when adding new data structures that reference box identities
+
+### Mutation API (ADR-0007)
+- **commit(op, payload, opts)** — single mutation entry (tldraw Store pattern). Ops: `addConn`, `removeConn`, `toggleStar`, `deleteLargeBox`, `deleteSmallBox`, `applyExternal`. Owns tombstones, DSU dirty, viewState clear, optional save/render.
+- **boxById / smallBoxById** — O(1) box lookups; rebuilt on load/external apply.
+- **__dsuDirty / markDsuDirty()** — skip full DSU rebuild on hot path when clean.
+- **Spatial hash (elasticSnap)** — threshold 32; cell = 2× max box dim (GDevelop pattern).
 
 ### Architecture Audit & Refactor Roadmap (ADR-0007)
 - **Audit document**: [docs/architecture-audit.md](architecture-audit.md) — bug retrospective, data structure alignment, coupling analysis, complexity audit
 - **ADR-0007**: [docs/adr/0007-architecture-refactor-decisions.md](adr/0007-architecture-refactor-decisions.md) — grill-confirmed decisions for all 9 audit recommendations
 - **Roadmap**: [docs/roadmap-architecture-refactor.md](roadmap-architecture-refactor.md) — phased implementation plan with verification criteria
+- **Implementation status (ADR-0007)**: Phase 1.1–1.3 + Phase 2.1–2.3 + Phase 3 landed in `ntp/ntp.js` (groups computed-only, `commit(op)`, `boxById` maps, `__dsuDirty`, spatial hash ≥32, tombstone 24h GC, conn `props`, delete viewState clear).
+- **Verification evidence (2026-08-05)**: `boxing-star-sync-audit` + `boxing-conn-delete-action` + `boxing-conn-dsu` + `boxing-conn-persist` = 38/38 pass; BX-144 Bug 1b/1c pass after star-only `dsuMake` + isParent remote payload.
 - **Confirmed decisions (grill Q1-Q4)**:
   - Q1: layout.groups stops being persisted -> computed-only runtime value + one-time migration (ADR-0007)
   - Q2: Unified commit(op) mutation API with modular handlers — all 6 paths route through one entry
