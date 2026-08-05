@@ -4,7 +4,7 @@
 2026-08-05
 
 ## Status
-Accepted + Implemented (2026-08-05) — all phases in ntp/ntp.js; critical Playwright suite green
+Accepted + Implemented (2026-08-05) — all phases in ntp/ntp.js; acceptance gates + critical Playwright suite green
 
 ## Context
 

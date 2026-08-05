@@ -396,7 +396,7 @@ if (result.viewStateClear) {
 
 ## 落地状态（实现记录）
 
-> 2026-08-05 复核：语法损坏的 `loadLayout` 已修复；`commit`/`applyExternalLayout`/`loadLayout` 均刷新 runtime groups mirror；star-only parent 经 `dsuMake` 可被 `getGroupByParent` 识别。关键测试 38/38 + Bug1b/1c 通过。
+> 2026-08-05 复核：语法损坏的 `loadLayout` 已修复；`commit`/`applyExternalLayout`/`loadLayout` 均刷新 runtime groups mirror；star-only parent 经 `dsuMake` 可被 `getGroupByParent` 识别。关键测试 38/38 + Bug1b/1c 通过；ADR acceptance gates 5/5；`__boxingDebug` 导出 strip/migrate/GC/spatial 供验收。
 
 | 阶段 | 状态 | 证据 |
 |---|---|---|

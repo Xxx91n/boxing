@@ -213,6 +213,14 @@
     loadFavicon,
     get groupStar() { return groupStar; },
     get connById() { return connById; },
+    // ADR-0007 acceptance hooks (Playwright)
+    stripGroupsForPersist,
+    migrateLayout,
+    gcTombstones,
+    buildSpatialGrid,
+    querySpatialNearby,
+    get SPATIAL_THRESHOLD() { return SPATIAL_THRESHOLD; },
+    get TOMBSTONE_TTL_MS() { return TOMBSTONE_TTL_MS; },
   };
   // Log mock usage (must be after DEBUG init)
   if (!api || !api.storage || !api.storage.sync) debug('Using localStorage mock for storage');

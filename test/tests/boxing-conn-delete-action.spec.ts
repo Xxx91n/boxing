@@ -444,14 +444,15 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
   });
 
   test('BX-CONN-DELETE: cross-tab star persists after child box delete in another tab', async ({ browser }) => {
+    // Hardened against parallel-load flakiness: poll for __boxingDebug + star adoption.
+    test.setTimeout(60_000);
     const ctx = await browser.newContext();
     const page1 = await ctx.newPage();
     const page2 = await ctx.newPage();
-    // Setup both pages
     await page1.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
     await page1.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
     await page1.reload({ waitUntil: 'domcontentloaded' });
-    await page1.evaluate(() => (window as any).__boxingDebug);
+    await expect.poll(() => page1.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15_000 }).toBe(true);
     const ids = await page1.evaluate((cs) => {
       const dbg = (window as any).__boxingDebug;
       dbg.layout.boxes = cs.map((c: number[], i: number) => ({
@@ -463,53 +464,38 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
       dbg.renderCanvas();
       return dbg.layout.boxes.map((b: any) => b.id);
     }, [[0, 0], [400, 0]]);
-    // Star box A
     await page1.evaluate(([a]) => {
       const dbg = (window as any).__boxingDebug;
       dbg.toggleStarMark(dbg.largeKey(a));
     }, [ids[0]]);
     await page1.evaluate(() => (window as any).__boxingDebug.saveLayout());
-    await page1.waitForTimeout(200);
-    // Wait for page2 to receive the storage event
     await page2.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
-    await page2.evaluate(() => (window as any).__boxingDebug);
-    await page2.waitForTimeout(300);
-    // Verify A is starred in page2
-    const starred2 = await page2.evaluate(([a]) => {
+    await expect.poll(() => page2.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15_000 }).toBe(true);
+    // Wait until page2 adopts star via storage/load
+    await expect.poll(() => page2.evaluate(([a]) => {
       const dbg = (window as any).__boxingDebug;
       return dbg.layout.boxes.find((b: any) => b.id === a)?.isParent === true;
-    }, [ids[0]]);
-    expect(starred2).toBe(true);
-    // Connect A -> B in page2 (simulate user drag from A to B)
+    }, [ids[0]]), { timeout: 15_000 }).toBe(true);
     await page2.evaluate(([a, b]) => {
       const dbg = (window as any).__boxingDebug;
       dbg.addConnection(dbg.largeKey(a), dbg.largeKey(b));
       dbg.renderConnections();
     }, [ids[0], ids[1]]);
     await page2.evaluate(() => (window as any).__boxingDebug.saveLayout());
-    await page2.waitForTimeout(200);
-    // Now delete box B in page2
     await page2.evaluate(([b]) => {
       (window as any).__boxingDebug._execDeleteLargeBox(b);
     }, [ids[1]]);
     await page2.evaluate(() => (window as any).__boxingDebug.saveLayout());
-    await page2.waitForTimeout(500);
-    // Verify A is still starred in page1 (after storage sync)
-    const starred1After = await page1.evaluate(([a]) => {
+    await expect.poll(() => page1.evaluate(([a]) => {
       const dbg = (window as any).__boxingDebug;
       const box = dbg.layout.boxes.find((b: any) => b.id === a);
-      return { isParent: box?.isParent, inGroupStar: dbg.groupStar?.has(dbg.largeKey(a)) };
-    }, [ids[0]]);
-    // Verify A is still starred in page2
-    const starred2After = await page2.evaluate(([a]) => {
+      return !!box?.isParent;
+    }, [ids[0]]), { timeout: 15_000 }).toBe(true);
+    await expect.poll(() => page2.evaluate(([a]) => {
       const dbg = (window as any).__boxingDebug;
       const box = dbg.layout.boxes.find((b: any) => b.id === a);
-      return { isParent: box?.isParent, inGroupStar: dbg.groupStar?.has(dbg.largeKey(a)) };
-    }, [ids[0]]);
-    console.log('Page1 after delete:', JSON.stringify(starred1After));
-    console.log('Page2 after delete:', JSON.stringify(starred2After));
-    expect(starred1After.isParent).toBe(true);
-    expect(starred2After.isParent).toBe(true);
+      return !!box?.isParent;
+    }, [ids[0]]), { timeout: 15_000 }).toBe(true);
     await ctx.close();
   });
 

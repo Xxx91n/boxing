@@ -43,7 +43,7 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **ADR-0007**: [docs/adr/0007-architecture-refactor-decisions.md](adr/0007-architecture-refactor-decisions.md) — grill-confirmed decisions for all 9 audit recommendations
 - **Roadmap**: [docs/roadmap-architecture-refactor.md](roadmap-architecture-refactor.md) — phased implementation plan with verification criteria
 - **Implementation status (ADR-0007)**: Phase 1.1–1.3 + Phase 2.1–2.3 + Phase 3 landed in `ntp/ntp.js` (groups computed-only, `commit(op)`, `boxById` maps, `__dsuDirty`, spatial hash ≥32, tombstone 24h GC, conn `props`, delete viewState clear).
-- **Verification evidence (2026-08-05)**: `boxing-star-sync-audit` + `boxing-conn-delete-action` + `boxing-conn-dsu` + `boxing-conn-persist` = 38/38 pass; BX-144 Bug 1b/1c pass after star-only `dsuMake` + isParent remote payload.
+- **Verification evidence (2026-08-05)**: ADR acceptance gates (`boxing-adr-0007-acceptance`) 5/5; critical suite (`star-sync`+`conn-delete`+`conn-dsu`+`conn-persist`) 38/38 isolated; acceptance+critical combined 43/43 (workers=2). BX-144 Bug1b/1c + star-only `dsuMake` covered.
 - **Confirmed decisions (grill Q1-Q4)**:
   - Q1: layout.groups stops being persisted -> computed-only runtime value + one-time migration (ADR-0007)
   - Q2: Unified commit(op) mutation API with modular handlers — all 6 paths route through one entry
