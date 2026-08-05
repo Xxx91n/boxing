@@ -2,22 +2,10 @@
 
 Boxing is a Chrome/Firefox browser extension built from a single source tree. The source manifest.json is intentionally Firefox-loadable / Chrome-rejectable (MV3 + browserSettings permission incompatibility). A cross-platform build script (.github/scripts/build.mjs) produces browser-tailored output trees.
 
-## Grill Audit 2026-08-02 — Phase Status
+## Implementation Status
 
-Six-phase plan executed. Phases 1-6 done.
+Historical grill phase tables live in git history and `docs/roadmap-architecture-refactor.md` / `docs/adr/`. This file is a **glossary only** — not a status board.
 
-| Phase | Status | Commit | Summary |
-|---|---|---|---|
-| 1 Baseline tests | ✅ done | cc45cbf | 10 conn-DSU Playwright specs + CONTEXT.md + ADR-0001 |
-| 2 A5: star-mark on box.isParent | ✅ done | b570908 | layout.groups deleted; groupStar populated from box.isParent; lazy DSU rebuild guard in getGroupByParent |
-| 3 A6: storage.sync -> storage.local | ✅ done | 959d6bb | layoutStorage = storage.local; unlimitedStorage permission; one-time sync->local migration cleanup in loadLayout |
-| 4 A4: 4 perf optimizations | ✅ done | 4e29804 | viewport culling + LOD stroke + zoom-triggered refreshAllConns |
-| 5 A7+A8: build-time validators | ✅ done | 80c182f | i18n key consistency + CSS dual-write marker validators in build.mjs |
-| 6 Docs + ADRs + AGENTS.md | ✅ done | 1d76ca2 + this commit | CSS dual-write global section in AGENTS.md; SEC-08 corrected; ADR-0002..0005 written |
-| Bug-4 regression test | ✅ done | (worktree+playwright) | A4/Bug4 spec asserts parent drag moves members rigidly |
-
-Bug 4 (DSU group drag members flying off) is not a regression: verified by new spec
-that B moves by dX=100 with grid-snap slack (observed dx=56; snapped back to grid)
 
 
 Boxing is a Chrome/Firefox browser extension built from a single source tree. The source manifest.json is intentionally Firefox-loadable / Chrome-rejectable (MV3 + browserSettings permission incompatibility). A cross-platform build script (.github/scripts/build.mjs) produces browser-tailored output trees.
@@ -70,7 +58,7 @@ _Avoid_: release wrapper
 - **box.isParent**: Per-box boolean field (large + small). Replaces the deleted `layout.groups` array as the primary star-mark source. `groupStar` Set is populated from this field in `dsuRebuildFromConnections` and `ensureGroups`.
 - **DSU (Disjoint Set Union)**: Group system for connection-based box grouping. `dsuRebuildFromConnections` unions connected boxes on tab load. `getGroupByParent(key)` returns members. `layout.groups` is a compat shim rebuilt by `ensureGroups()` — tests may reference it but new code should prefer DSU API.
 - **SVG connection layer**: Self-drawn `<line>` elements in a `.conn-layer` SVG overlay (`z-index:0`, `pointer-events:none`). Replaces the previous LeaderLine vendor library (BX-142). Lines live inside `canvasSurface` / `innerSurfaceContent` and transform with the surface.
-- **translate3d drag**: Box dragging uses `el.style.transform = translate3d(x,y,0)` for GPU compositing instead of `left`/`top` (avoids Firefox layout reflow). On drag end, `left`/`top` are written back and `transform` is cleared.
+- **box drag positioning (BX-EXPLORE-005)**: Box dragging writes `el.style.left` / `el.style.top` only. Never use `transform: translate3d()` during drag (double-offset flash). See AGENTS.md BX-EXPLORE-005.
 - **shape-rendering dynamic**: SVG lines switch `shape-rendering` to `crispEdges` at `zoom < 0.5` and `geometricPrecision` at `zoom >= 0.5` to prevent Chrome jagged-line rendering at low zoom.
 - **storage.local**: Layout storage migrated from `storage.sync` (8KB/item, 120 writes/min) to `storage.local` (10MB / unlimited with permission) in A6. `saveLayoutDebounced()` retained for I/O performance.
 - **web-ext**: Mozilla dev tool (npm devDependency). `npm run dev:chrome` / `dev:firefox` launches browser pointing at `dist/boxing-chrome` / `dist/boxing-firefox`.

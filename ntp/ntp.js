@@ -1128,7 +1128,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
       smallBoxById.delete(largeId + ":" + smallId);
       return {
         tombstoneIds: tomb,
-        viewStateClearIds: [], // small boxes do not own viewState on large
+        // small boxes do not own large-box viewState; no viewStateClear
         connChanged: true,
         deletedSmall: { largeId, smallId },
         parentLargeId: largeId

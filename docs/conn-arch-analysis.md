@@ -1,10 +1,15 @@
 # Boxing 连线系统架构分析
 
+> **HISTORICAL (pre-BX-142)**. This note describes the old LeaderLine era and early redesign options.
+> Current truth: self-drawn SVG `.conn-line` layer, DSU groups, `commit(op)`, `box.isParent` star truth,
+> ADR-0006/0007. Do not implement from this file. Prefer `docs/CONTEXT.md`, ADRs, and `AGENTS.md`.
+
+
 ## 问题概述
 
 用户报告 6 个 bug（问题1-6），根因都指向同一架构问题（问题7）：连线系统数据结构和渲染机制存在根本性设计缺陷。
 
-## 参考项目对比
+## External pattern notes (not project lineage)
 
 ### ai-api-route (D:\Aworker\ai-api-route)
 
