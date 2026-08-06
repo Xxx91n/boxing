@@ -137,13 +137,13 @@
    Browser auto-skips layout/paint of offscreen boxes; 7x render boost per web.dev/MDN.
    Must pair with contain-intrinsic-size to prevent scrollbar jumping.
    Exclude dragging/hover-expand/dragged states to keep interaction smooth. */
-/* BX-DUAL-WRITE: content-visibility:auto (paired) */
+/* BX-CSS-DUAL-WRITE: content-visibility:auto (paired) */
 .large-box:not(.large-box--dragging):not(.large-box--ghost) {
   content-visibility: auto;
   contain-intrinsic-size: auto 320px auto 220px;
 }
 /* Bug1: disable content-visibility during canvas pan — avoids per-box viewport check on every transform tick */
-/* BX-DUAL-WRITE: .panning override (paired) */
+/* BX-CSS-DUAL-WRITE: .panning override (paired) */
 .panning .large-box {
   content-visibility: visible !important;
 }
@@ -157,12 +157,12 @@
 }
 
 /* BX-DEV-SEARCH (B9): search highlight — match boxes glow, non-match dim */
-/* BX-DUAL-WRITE-SHARED: --search-match — both in one rule, safe */
+/* BX-CSS-DUAL-WRITE-SHARED: --search-match — both in one rule, safe */
 .large-box--search-match, .small-box--search-match {
   box-shadow: 0 0 0 2px var(--color-accent, #5b8def), var(--shadow-2);
   opacity: 1;
 }
-/* BX-DUAL-WRITE-SHARED: --search-hidden — both in one rule, safe */
+/* BX-CSS-DUAL-WRITE-SHARED: --search-hidden — both in one rule, safe */
 .large-box--search-hidden, .small-box--search-hidden {
   opacity: 0.25;
   filter: grayscale(0.5);

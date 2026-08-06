@@ -385,7 +385,7 @@ body {
  * Rules touching .large-box and .small-box share the same visual language.
  * Any CSS property added/changed for one surface MUST be mirrored on the other.
  * Markers:
- *   BX-DUAL-WRITE  — paired rule; changing one requires changing the other.
+ *   BX-CSS-DUAL-WRITE  — paired rule; changing one requires changing the other.
  *   LARGE-ONLY     — large-box design difference (no small-box counterpart).
  *   SMALL-ONLY     — small-box design difference (no large-box counterpart).
  * See: docs/css-dual-write-convention.md
@@ -405,13 +405,13 @@ body {
   user-select: none;
 }
 
-/* BX-DUAL-WRITE: :hover vs :hover */
+/* BX-CSS-DUAL-WRITE: :hover vs :hover */
 .large-box:hover {
   box-shadow: var(--shadow-2);
   border-color: var(--color-card-edge);
 }
 
-/* BX-DUAL-WRITE: --dragging vs --dragging */
+/* BX-CSS-DUAL-WRITE: --dragging vs --dragging */
 .large-box--dragging {
   box-shadow: var(--shadow-pop);
   border-color: var(--color-accent);
@@ -421,12 +421,12 @@ body {
   overflow: hidden;
 }
 
-/* BX-DUAL-WRITE: --ghost vs --ghost */
+/* BX-CSS-DUAL-WRITE: --ghost vs --ghost */
 .large-box--ghost {
   box-shadow: 0 0 0 2px var(--color-accent-soft-2);
 }
 
-/* BX-DUAL-WRITE: __bar vs __bar */
+/* BX-CSS-DUAL-WRITE: __bar vs __bar */
 .large-box__bar {
   display: flex;
   align-items: center;
@@ -448,7 +448,7 @@ body {
   opacity: .8;
 }
 
-/* BX-DUAL-WRITE: __title vs __title */
+/* BX-CSS-DUAL-WRITE: __title vs __title */
 .large-box__title {
   flex: 1;
   font-size: 13px;
@@ -463,7 +463,7 @@ body {
   white-space: nowrap;
 }
 
-/* BX-DUAL-WRITE: __title[contenteditable]:focus */
+/* BX-CSS-DUAL-WRITE: __title[contenteditable]:focus */
 .large-box__title[contenteditable="true"]:focus {
   background: var(--color-elevated);
   padding: 2px 6px;
@@ -496,7 +496,7 @@ body {
   font-size: 13px;
 }
 
-/* BX-DUAL-WRITE: __delete vs __delete */
+/* BX-CSS-DUAL-WRITE: __delete vs __delete */
 .large-box__delete {
   background: transparent;
   border: 0;
@@ -508,7 +508,7 @@ body {
   line-height: 1;
 }
 
-/* BX-DUAL-WRITE: __delete:hover */
+/* BX-CSS-DUAL-WRITE: __delete:hover */
 .large-box__delete:hover {
   color: var(--color-accent-ink);
   background: var(--color-accent-soft);
@@ -542,7 +542,7 @@ body {
 }
 
 /* Pinned box: no drag */
-/* BX-DUAL-WRITE: __bar (second rule) vs __bar */
+/* BX-CSS-DUAL-WRITE: __bar (second rule) vs __bar */
 .box--pinned .large-box__bar {
   cursor: default;
 }
@@ -584,7 +584,7 @@ body {
   /* Material deceleration — smooth collapse */
 }
 
-/* BX-DUAL-WRITE-SHARED: __body hover-expand pair — both in one rule, safe */
+/* BX-CSS-DUAL-WRITE-SHARED: __body hover-expand pair — both in one rule, safe */
 .box--hover-expand.box--collapsed .large-box__body,
 .box--hover-expand.box--collapsed .small-box__body {
   opacity: 0;

@@ -31,7 +31,8 @@
     "storage",
     "tabs",
     "bookmarks",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "alarms"
   ],
   "host_permissions": [
     "https://*/*"

@@ -23,7 +23,7 @@ body.cx--connecting, body.cx--connecting * { cursor: crosshair !important; }
   content: ''; width: 6px; height: 6px; border-radius: 50%;
   background: var(--color-accent, #A08060); opacity: 0.6;
 }
-/* BX-DUAL-WRITE-SHARED: :hover .box-edge-anchor — both in one rule, safe */
+/* BX-CSS-DUAL-WRITE-SHARED: :hover .box-edge-anchor — both in one rule, safe */
 .large-box:hover .box-edge-anchor,
 .small-box:hover .box-edge-anchor { opacity: 0.7; }
 .box-edge-anchor:hover { opacity: 1 !important; cursor: crosshair; }

@@ -11,9 +11,10 @@
     "dev:chrome:no-build": "web-ext run -t chromium --source-dir=dist/boxing-chrome --no-reload",
     "dev:firefox:no-build": "web-ext run --source-dir=dist/boxing-firefox --no-reload",
     "test": "playwright test --config=test/playwright.config.ts",
-    "test:chromium": "playwright test --config=test/playwright.config.ts --project=chromium",
+    "test:chromium": "playwright test --config=test/playwright.config.ts --project=chromium-extension",
     "test:firefox": "playwright test --config=test/playwright.config.ts --project=firefox-extension",
-    "test:debug": "playwright test --config=test/playwright.config.ts --project=chromium --debug"
+    "postinstall": "node -e \"console.warn('[boxing] Playwright browsers not installed. Run: npx playwright install firefox chromium')\"",
+    "test:debug": "playwright test --config=test/playwright.config.ts --project=chromium-extension --debug"
   },
   "devDependencies": {
     "web-ext": "^8.10.0",

@@ -14,14 +14,14 @@ Every CSS rule that affects a box selector MUST be classified with one of three 
 
 | Marker | Meaning | Action when modifying |
 |--------|---------|----------------------|
-| `BX-DUAL-WRITE` | Paired rule — large-box and small-box share the same property | Changing one side **requires** changing the other side in the same commit |
-| `BX-DUAL-WRITE-SHARED` | Both selectors already in one rule (comma-separated) | Safe — no duplication needed; just edit the shared rule |
+| `BX-CSS-DUAL-WRITE` | Paired rule — large-box and small-box share the same property | Changing one side **requires** changing the other side in the same commit |
+| `BX-CSS-DUAL-WRITE-SHARED` | Both selectors already in one rule (comma-separated) | Safe — no duplication needed; just edit the shared rule |
 | `LARGE-ONLY` | Large-box design difference (no small-box counterpart) | No mirroring needed; document why large-box is unique |
 | `SMALL-ONLY` | Small-box design difference (no large-box counterpart) | No mirroring needed; document why small-box is unique |
 
 ## Marked Rules (as of BX-145)
 
-### BX-DUAL-WRITE (paired — editing one requires editing the other)
+### BX-CSS-DUAL-WRITE (paired — editing one requires editing the other)
 
 | Large-box rule | Small-box counterpart | Property shared |
 |---------------|---------------------|-----------------|
@@ -38,7 +38,7 @@ Every CSS rule that affects a box selector MUST be classified with one of three 
 | `.large-box:not(...)` content-visibility:auto | `.small-box:not(...)` content-visibility:auto | perf: skip offscreen box rendering |
 | `.panning .large-box` | `.panning .small-box` | override content-visibility during canvas pan |
 
-### BX-DUAL-WRITE-SHARED (comma-separated — both selectors in one rule)
+### BX-CSS-DUAL-WRITE-SHARED (comma-separated — both selectors in one rule)
 
 | Rule | Property |
 |------|----------|
@@ -71,8 +71,8 @@ Every CSS rule that affects a box selector MUST be classified with one of three 
 
 When adding or modifying a CSS rule that touches `.large-box` or `.small-box`:
 
-1. Does the same property apply to both surfaces? → Add the rule to **both** selectors and mark with `/* BX-DUAL-WRITE */`.
-2. Is it a comma-separated shared rule? → Put both selectors in one rule and mark with `/* BX-DUAL-WRITE-SHARED */`.
+1. Does the same property apply to both surfaces? → Add the rule to **both** selectors and mark with `/* BX-CSS-DUAL-WRITE */`.
+2. Is it a comma-separated shared rule? → Put both selectors in one rule and mark with `/* BX-CSS-DUAL-WRITE-SHARED */`.
 3. Is it surface-specific (e.g. only large-box has `__icon`)? → Mark with `/* LARGE-ONLY */` or `/* SMALL-ONLY */` and document the reason.
 4. **If you skip the marker, the code review will block the commit.**
 
@@ -101,7 +101,7 @@ add the pair — it is a one-line, zero-cost invariant.
 Checklist:
 
 1. New CSS selector sets `display: flex|block|grid|inline-flex` on a container? → add `.selector[hidden] { display: none; }`.
-2. Touching `.large-box` AND `.small-box`? → follow BX-DUAL-WRITE (the previous section) AND the hidden pair rule above.
+2. Touching `.large-box` AND `.small-box`? → follow BX-CSS-DUAL-WRITE (the previous section) AND the hidden pair rule above.
 3. Build-time check: `.github/scripts/build.mjs` (CSS source-concat / dual-write validator / strip-dist) will surface syntax errors; the `[hidden]` invariant is enforced by the Playwright regression test `boxing-canvas-hidden.spec.ts`.
 
 ## Related

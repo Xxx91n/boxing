@@ -20,6 +20,31 @@ try {
     typeof globalThis !== "undefined" ? globalThis : null);
   if (!root) return;
 
+  // ── ADR-0009: chrome.alarms for auto-backup (survives NTP page close) ──
+  // The NTP page creates the alarm; the background SW listens and sends a message
+  // back to any open NTP tab to trigger performBackup. If no NTP tab is open, the
+  // backup is deferred until the next NTP open.
+  if (typeof chrome !== 'undefined' && chrome.alarms && chrome.alarms.onAlarm) {
+    chrome.alarms.onAlarm.addListener(function(alarm) {
+      if (alarm.name !== 'boxing-auto-backup') return;
+      bgLog('Auto-backup alarm fired');
+      // Try to send message to any open NTP tab to trigger backup
+      try {
+        chrome.tabs.query({}, function(tabs) {
+          if (!tabs) return;
+          for (var i = 0; i < tabs.length; i++) {
+            var tab = tabs[i];
+            if (tab.url && tab.url.indexOf('chrome://newtab') === 0 || (tab.url && tab.url.indexOf('moz-extension://') === 0)) {
+              chrome.tabs.sendMessage(tab.id, { action: 'boxing-auto-backup-trigger' }, function() {
+                if (chrome.runtime.lastError) { /* tab may not have listener */ }
+              });
+            }
+          }
+        });
+      } catch (e) { bgErr('Auto-backup alarm handler error', e); }
+    });
+  }
+
   // ── WebDAV message proxy ────────────────────────────────────
   // The background service worker bypasses page-level CSP and CORS
   // restrictions that block cross-origin fetch from extension pages.

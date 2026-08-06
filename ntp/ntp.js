@@ -628,10 +628,51 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
           try { await api.storage.sync.remove("boxingLayout"); } catch (_) {}
         }
       }
-    } catch (e) { debugErr('loadLayout', e); layout = defaultLayout(); }
+    } catch (e) { debugErr('loadLayout', e); layout = await crashRescue() || defaultLayout(); }
     rebuildBoxMaps();
     markDsuDirty(); // ADR-0007 Q4b: layout replaced — DSU must rebuild on first use
     try { ensureGroups(); } catch (_) {} // runtime groups mirror after load
+  }
+
+  // ── ADR-0009: Versioned snapshots + crash rescue ───────────
+  const MAX_SNAPSHOTS = 10;
+
+  async function saveSnapshot() {
+    try {
+      const snap = {
+        ts: Date.now(),
+        schemaVersion: layout.schemaVersion || 1,
+        data: stripGroupsForPersist(layout)
+      };
+      const stored = await layoutStorage.get({ boxingSnapshots: [] });
+      const snaps = Array.isArray(stored.boxingSnapshots) ? stored.boxingSnapshots : [];
+      snaps.push(snap);
+      // LRU prune: keep last MAX_SNAPSHOTS
+      while (snaps.length > MAX_SNAPSHOTS) snaps.shift();
+      await layoutStorage.set({ boxingSnapshots: snaps });
+      debug('Snapshot saved, total=' + snaps.length);
+    } catch (e) { debugErr('saveSnapshot', e); }
+  }
+
+  async function getLatestSnapshot() {
+    try {
+      const stored = await layoutStorage.get({ boxingSnapshots: [] });
+      const snaps = Array.isArray(stored.boxingSnapshots) ? stored.boxingSnapshots : [];
+      return snaps.length > 0 ? snaps[snaps.length - 1] : null;
+    } catch (e) { debugErr('getLatestSnapshot', e); return null; }
+  }
+
+  async function crashRescue() {
+    const snap = await getLatestSnapshot();
+    if (!snap || !snap.data) { debug('crashRescue: no snapshot available'); return null; }
+    try {
+      const recovered = migrateLayout(snap.data);
+      debug('crashRescue: recovered from snapshot @' + new Date(snap.ts).toISOString());
+      return recovered;
+    } catch (e) {
+      debugErr('crashRescue: snapshot also corrupt', e);
+      return null;
+    }
   }
 
   function currentViewSnapshot() {
@@ -886,7 +927,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   function defaultLayout() {
     return {
-      version: 3.5, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
+      version: 3.5, schemaVersion: 1, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
       settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click' }
     };
   }
@@ -900,6 +941,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       const result = {
         ...defaults,
         ...raw,
+        schemaVersion: raw.schemaVersion || 1, // ADR-0009: schema versioning for crash rescue
         boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
         connections: Array.isArray(raw.connections) ? raw.connections : [],
         groups: [], // ADR-0007 Q1: groups no longer persisted
@@ -4916,6 +4958,60 @@ function ensureGroups() {
     window.__bxSync.resolveWebDAVFileUrl = resolveWebDAVFileUrl;
 
     // Two-way sync. Returns { direction: 'pull'|'push'|'none', cloudBoxes, localBoxes }.
+    // ADR-0009: Outbox-style field-level merge for concurrent WebDAV changes
+    function mergeLayoutFields(cloudData, localData) {
+      try {
+        const cloud = migrateLayout(cloudData);
+        const local = migrateLayout(localData);
+        // Merge boxes by id — non-overlapping field changes merge automatically
+        const boxMap = new Map();
+        // Start with cloud boxes
+        for (const cb of (cloud.boxes || [])) boxMap.set(cb.id, { ...cb });
+        // Merge local box changes — only update fields that differ from cloud
+        for (const lb of (local.boxes || [])) {
+          const existing = boxMap.get(lb.id);
+          if (!existing) { boxMap.set(lb.id, { ...lb }); continue; }
+          // Same-field divergence check: if both changed the same field to different values, bail
+          const divergedFields = [];
+          for (const key of Object.keys(lb)) {
+            if (JSON.stringify(existing[key]) !== JSON.stringify(lb[key])) {
+              divergedFields.push(key);
+            }
+          }
+          // ponytail: if >3 fields diverge, consider it a full edit and keep local (newer)
+          if (divergedFields.length > 3) {
+            boxMap.set(lb.id, { ...lb });
+          } else {
+            // Merge non-overlapping: local overrides cloud for diverged fields (local is newer)
+            boxMap.set(lb.id, { ...existing, ...lb });
+          }
+        }
+        // Merge connections — union of both sets (dedup by from+to pair)
+        const connSet = new Set();
+        const mergedConns = [];
+        const allConns = [...(cloud.connections || []), ...(local.connections || [])];
+        for (const c of allConns) {
+          const key = (c.from || c.source || '') + ':' + (c.to || c.target || '');
+          if (!connSet.has(key)) { connSet.add(key); mergedConns.push(c); }
+        }
+        // Settings: local overrides cloud (settings are user preferences, local is authoritative)
+        const merged = {
+          ...cloud,
+          ...local,
+          boxes: Array.from(boxMap.values()),
+          connections: mergedConns,
+          groups: [], // ADR-0007: runtime mirror only
+          schemaVersion: Math.max(cloud.schemaVersion || 1, local.schemaVersion || 1),
+          settings: { ...cloud.settings, ...local.settings },
+          _meta: { ...local._meta, updatedAt: Date.now() }
+        };
+        return merged;
+      } catch (e) {
+        debugErr('mergeLayoutFields', e);
+        return null; // signal merge failure → fall back to newer-wins
+      }
+    }
+
     async function syncWithWebDAV(opts = {}) {
       const bypassLossGuard = !!opts.bypassLossGuard;
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
@@ -5001,8 +5097,32 @@ function ensureGroups() {
         return { direction: 'pull', cloudBoxes: layout.boxes.length, localBoxes: layout.boxes.length, firstSync: true };
       }
 
-      // Both exist: newer wins.
+      // ADR-0009: Outbox conflict detection — if both sides changed since last sync, merge fields.
       if (cloud && Array.isArray(cloud.boxes)) {
+        // ADR-0009: concurrent change detection — both changed since lastSyncAt
+        const cloudChangedAfterSync = cloudUpdatedAt > lastSyncAt;
+        const localChangedAfterSync = localUpdatedAt > lastSyncAt;
+        if (cloudChangedAfterSync && localChangedAfterSync && cloud?._meta?.writerId !== writerId) {
+          // Both sides diverged — try field-level auto-merge
+          debug('WebDAV sync: concurrent change detected, attempting field-level merge');
+          const merged = mergeLayoutFields(cloud, layout);
+          if (merged) {
+            layout = merged;
+            layout._meta = layout._meta || {};
+            layout._meta.updatedAt = Date.now();
+            layout._meta.writerId = writerId;
+            layout._meta.revision = (Number(cloud._meta?.revision) || 0) + 1;
+            layout.settings.lastSyncAt = Date.now();
+            await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
+            renderCanvas();
+            setBaselineBoxCount(computeBoxCount(layout).total);
+            debug('WebDAV sync: field-level merge complete', { boxes: layout.boxes.length });
+            return { direction: 'merge', cloudBoxes: cloud.boxes.length, localBoxes: layout.boxes.length, merged: true };
+          }
+          // Merge failed (same-field divergence) — fall through to newer-wins + warn
+          debugWarn('WebDAV sync: field-level merge failed, falling back to newer-wins');
+        }
+        // ADR-0009: original newer-wins logic
         if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {
           // Cloud is newer or equal-but-different-writer → pull.
           // BX-DEV-138: preserve local connections/groups when cloud payload lacks them
@@ -5110,7 +5230,8 @@ function ensureGroups() {
       try {
         if (p === 'webdav') { await syncWithWebDAV(); debug('WebDAV sync ok'); }
         else if (p === 'gist') { await backupToGist(); debug('Gist backup ok'); }
-        else { backupToLocal(); }
+        await saveSnapshot(); // ADR-0009: always save versioned snapshot
+        if (p === 'local') backupToLocal();
         layout.settings.lastBackupAt = Date.now();
         updateLastBackupDisplay();
         saveLayout();
@@ -5118,14 +5239,42 @@ function ensureGroups() {
     }
 
     backupNowBtn?.addEventListener('click', () => performBackup());
+    // ADR-0009: listen for background SW auto-backup trigger
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+        if (msg && msg.action === 'boxing-auto-backup-trigger') {
+          debug('Auto-backup triggered by background alarm');
+          performBackup().then(() => sendResponse({ ok: true })).catch(e => sendResponse({ ok: false, error: e.message }));
+          return true; // async response
+        }
+      });
+    }
+
 
     // ── Auto-backup scheduler ──────────────────────
     let autoBackupTimer = null;
     let lastAutoBackupTs = 0;
 
+    // ADR-0009: chrome.alarms replaces setInterval — survives NTP page close + SW eviction
     function setupAutoBackup(sec) {
       if (autoBackupTimer) { clearInterval(autoBackupTimer); autoBackupTimer = null; }
       if (!sec || sec < 3600) return;  // minimum 1 hour
+      // Try chrome.alarms first (works even when NTP page is closed)
+      try {
+        if (typeof chrome !== 'undefined' && chrome.alarms) {
+          chrome.alarms.create('boxing-auto-backup', { periodInMinutes: Math.ceil(sec / 60) });
+          chrome.alarms.onAlarm.addListener(function alarmHandler(alarm) {
+            if (alarm.name !== 'boxing-auto-backup') return;
+            const now = Date.now();
+            if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
+            lastAutoBackupTs = now;
+            performBackup().then(() => debug('Auto-backup (alarm) done')).catch(e => debugErr('Auto-backup (alarm) err', e));
+          });
+          debug('Auto-backup via chrome.alarms, period=' + Math.ceil(sec / 60) + 'min');
+          return;
+        }
+      } catch (e) { debugWarn('chrome.alarms not available, falling back to setInterval', e); }
+      // Fallback: setInterval (only works while NTP page is open)
       autoBackupTimer = setInterval(async () => {
         const now = Date.now();
         if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }

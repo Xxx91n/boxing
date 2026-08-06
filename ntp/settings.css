@@ -318,7 +318,7 @@
   border-radius: 0 0 var(--radius-card) 0;
 }
 
-/* BX-DUAL-WRITE-SHARED: :hover .box-resize-handle — both in one rule, safe */
+/* BX-CSS-DUAL-WRITE-SHARED: :hover .box-resize-handle — both in one rule, safe */
 .large-box:hover .box-resize-handle,
 .small-box:hover .box-resize-handle {
   opacity: 0.7;
@@ -337,7 +337,7 @@ body.box-resizing {
 }
 
 /* Corner style: square corners override */
-/* BX-DUAL-WRITE-SHARED: .ntp--square-corners — both in one rule, safe */
+/* BX-CSS-DUAL-WRITE-SHARED: .ntp--square-corners — both in one rule, safe */
 .ntp--square-corners .large-box,
 .ntp--square-corners .small-box,
 .ntp--square-corners .canvas,
