@@ -333,6 +333,12 @@ body {
   overflow: hidden;
 }
 
+/* BX-DEV-020: CSS `display:flex` overrides HTML `hidden` attribute (MDN:
+   "changing the value of the CSS display property on a hidden element will
+   override the hidden state"). Without this fallback, a container carrying
+   `<div class="canvas" hidden>` stays visible despite the attribute. */
+.canvas[hidden] { display: none; }
+
 .canvas__surface {
   position: absolute;
   inset: 0;
@@ -684,6 +690,12 @@ body {
   flex: 1;
   min-height: 0;
 }
+
+/* BX-DEV-020: CSS `display:flex` overrides HTML `hidden` attribute (MDN:
+   "changing the value of the CSS display property on a hidden element will
+   override the hidden state"). Without this fallback, a container carrying
+   `<div class="inner" hidden>` stays visible despite the attribute. */
+.inner[hidden] { display: none; }
 
 /* inner surface — mirrors canvas for true infinite canvas */
 .inner__canvas {

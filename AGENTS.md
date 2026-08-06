@@ -59,7 +59,6 @@
 | Cross-browser validation | Firefox behavior checks and Chrome/Firefox parity | Use when feature behavior may differ by browser. |
 | WXT framework | New Chrome+Firefox extension scaffolds | Use only for new scaffolds or explicit migration requests. |
 
-
 ## Build and Verification
 
 | Scenario | Command or action | Expected result |
@@ -134,7 +133,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 | BX-DEV-017 | MUST | SVG `shape-rendering` MUST be dynamic: `crispEdges` at zoom<0.5, `geometricPrecision` at zoom>=0.5. Fixed `geometricPrecision` at low zoom causes jagged lines in Chrome (Bug4). |
 | BX-DEV-018 | MUST | Connection line updates during drag MUST use `connById.get(id)` (O(1) Map lookup), NOT `layout.connections.find()` (O(n) scan). The latter causes frame drops with many connections (Bug1). |
 | BX-DEV-019 | MUST | DSU is the group system: `box.isParent` marks parent; membership from connections via DSU; `layout.groups` is runtime-only computed (ADR-0007). |
-
+| BX-DEV-020 | MUST | CSS selectors that carry a layout `display` value (flex/block/grid/inline-flex) MUST be paired with a `.selector[hidden] { display: none; }` fallback, OR fully own visibility via JS toggling a class whose rules NEVER set `display` directly. Without the pair, HTML `hidden` attribute is overridden by CSS `display:flex|block` and the container stays visible despite `hidden` (MDN: changing `display` on a hidden element overrides the `hidden` state). Bug: `<div class="inner" hidden>` rendered because `.inner { display:flex }` lacked `.inner[hidden] { display:none }` fallback; `#inner` stayed under `#canvas`, surfacing an inner-canvas under the large-canvas. Apply to `.inner` and `.canvas` (handled in base.css). |
 
 ## i18n Development Requirements
 
@@ -149,7 +148,6 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 | BX-I18N-DEV-007 | MUST | The custom i18n loader in ntp.js fetches _locales/<lang>/messages.json; chrome.i18n.getMessage API is NOT used. |
 | BX-I18N-DEV-008 | MUST NOT | Never add hardcoded language strings in JS or HTML that bypass the i18n(key) function. |
 | BX-I18N-DEV-009 | MUST | After changing language in settings, re-render all visible UI (canvas, inner surface, crumbs, caption) to reflect new language immediately. |
-
 
 ## Code Exploration
 
@@ -169,7 +167,6 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 
 > **Global convention document: [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md)**
 **Design system document: [docs/DESIGN.md](docs/DESIGN.md)** — token architecture (primitive→semantic→component), palette, typography, component state specs, dark mode strategy. See ADR-0008. — every CSS rule that affects both `.large-box` and `.small-box` MUST use paired selectors and a code comment marker. See BX-DEV-013 above for the MUST rule. When adding a new visual rule, check the convention doc first to confirm the required markers.
-
 
 ## Debug Development
 
@@ -219,7 +216,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 
 Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) have been moved to `docs/boxing-changelog.md` to keep this operating contract lean. See that file for per-version feature lists, BX-DEV rule additions, and i18n key references by version.
 
-Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..019). All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
+Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..020). All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
 
 ## Manifest Source-of-Truth Contract (v3.7.0+)
 

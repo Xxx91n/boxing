@@ -76,8 +76,37 @@ When adding or modifying a CSS rule that touches `.large-box` or `.small-box`:
 3. Is it surface-specific (e.g. only large-box has `__icon`)? → Mark with `/* LARGE-ONLY */` or `/* SMALL-ONLY */` and document the reason.
 4. **If you skip the marker, the code review will block the commit.**
 
+## hidden override pairing (BX-DEV-020)
+
+Any CSS selector that sets a layout `display` value (**flex/block/grid/inline-flex**)
+MUST also define `.selector[hidden] { display: none; }` as a fallback pair.
+Without the pair, the HTML `hidden` attribute is overridden by the CSS `display` rule
+and the container stays visible despite `hidden`.
+
+Reference: MDN — "changing the value of the CSS `display` property on a hidden element
+will override the `hidden` state."
+(https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden)
+
+Pairs currently enforced in `ntp/base.css`:
+
+| Layout selector | Hidden fallback | Note |
+|----------------|----------------|------|
+| `.canvas { display: flex; … }` | `.canvas[hidden] { display: none; }` | `#canvas` is the large-box surface; defensive pair for any future code path that sets `canvasContainer.hidden = true` |
+| `.inner  { display: flex; … }` | `.inner[hidden]  { display: none; }` | `#inner` is the inner (small-box) surface; initial `hidden` attribute on `<div id="inner" class="inner" hidden>` would otherwise be overridden |
+
+Exceptions: a container that owns visibility purely through a class toggle (and whose
+rules NEVER set `display` directly) does not need the `[hidden]` pair. When in doubt,
+add the pair — it is a one-line, zero-cost invariant.
+
+Checklist:
+
+1. New CSS selector sets `display: flex|block|grid|inline-flex` on a container? → add `.selector[hidden] { display: none; }`.
+2. Touching `.large-box` AND `.small-box`? → follow BX-DUAL-WRITE (the previous section) AND the hidden pair rule above.
+3. Build-time check: `.github/scripts/build.mjs` (CSS source-concat / dual-write validator / strip-dist) will surface syntax errors; the `[hidden]` invariant is enforced by the Playwright regression test `boxing-canvas-hidden.spec.ts`.
+
 ## Related
 
 - [ntp/ntp.css](../ntp/ntp.css) — the CSS file with all markers
 - [docs/design-box-connections.md](design-box-connections.md) — connection line system architecture
 - BX-145: the commit that introduced this convention after finding `.panning .small-box` was missing while `.panning .large-box` existed
+- BX-DEV-020: hidden override pairing rule (see above)

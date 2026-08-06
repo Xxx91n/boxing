@@ -3865,6 +3865,7 @@ function ensureGroups() {
   window._boxingAddLargeBox = addLargeBox;
   window._boxingAddSmallBox = addSmallBox;
   window._boxingEnterLargeBox = enterLargeBox; // BX-DEV-111k: exposed for test
+  window._boxingExitToCanvas = exitToCanvas; // BX-DEV-020: exposed for hidden-override regression test (pair with _boxingEnterLargeBox)
   window._boxingDeleteLargeBox = _execDeleteLargeBox; // BX-DEV-111k: exposed for cross-tab delete test
 
   // ── confirm modal (in-page, replaces browser confirm()) ──
