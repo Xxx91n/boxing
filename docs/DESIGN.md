@@ -97,8 +97,8 @@ implement these exact mappings.
 
 | Property | Default | Hover | Active (dragging) | Disabled |
 |----------|---------|-------|--------------------|---------|
-| background | `var(--color-canvas)` | (same) | (same) | `var(--color-surface)` |
-| border-color | `var(--color-card-edge)` | `var(--color-accent)` | `var(--color-accent)` | `var(--color-hairline)` |
+| background | `var(--color-elevated)` | (same) | (same) | `var(--color-surface)` |
+| border-color | `var(--color-card-edge)` | `var(--color-card-edge)` | `var(--color-card-edge)` | `var(--color-hairline)` |
 | box-shadow | `var(--shadow-1)` | `var(--shadow-2)` | `var(--shadow-2)` | none |
 | cursor | default | default | grabbing | not-allowed |
 | z-index | 1 | 2 | 5 | 0 |
@@ -109,8 +109,8 @@ implement these exact mappings.
 | Property | Default | Hover | Active | Disabled |
 |----------|---------|-------|--------|---------|
 | background | `var(--color-elevated)` | `var(--color-surface)` | `var(--color-surface)` | `var(--color-canvas)` |
-| color | `var(--color-ink)` | `var(--color-accent-ink)` | `var(--color-accent-ink)` | `var(--color-faint)` |
-| border | 1px solid `var(--color-hairline)` | 1px solid `var(--color-accent)` | 1px solid `var(--color-accent)` | 1px solid `var(--color-hairline)` |
+| color | `var(--color-ink)` | `var(--color-card-edge)` | `var(--color-card-edge)` | `var(--color-faint)` |
+| border | 1px solid `var(--color-hairline)` | 1px solid `var(--color-card-edge)` | 1px solid `var(--color-card-edge)` | 1px solid `var(--color-hairline)` |
 | cursor | pointer | pointer | pointer | not-allowed |
 | opacity | 1 | 1 | 0.9 | 0.5 |
 
@@ -129,7 +129,7 @@ implement these exact mappings.
 | background | `var(--color-elevated)` | (same) | — | — |
 | border | 1px solid `var(--color-hairline)` | (same) | — | — |
 | item bg | transparent | `var(--color-surface)` | — | — |
-| box-shadow | `var(--shadow-pop)` | (same) | — | — |
+| box-shadow | `var(--shadow-2)` | (same) | — | — |
 
 ### 5. Modal (.modal)
 
@@ -160,8 +160,7 @@ implement these exact mappings.
 
 | Property | Default | Hover | Current (--active) | (no disabled) |
 |----------|---------|-------|--------------------|---------------|
-| color | `var(--color-muted)` | `var(--color-ink)` | `var(--color-ink)` | — |
-| text-decoration | none | underline | none | — |
+| background | transparent | `var(--color-surface)` | (same) | — |
 
 ### 9. Onboarding (.onboarding__step)
 

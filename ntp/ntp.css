@@ -1175,6 +1175,10 @@ body {
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
+.checkbox-label input[type="checkbox"]:hover {
+  border-color: var(--color-accent);
+}
+
 .checkbox-label input[type="checkbox"]:checked {
   background: var(--color-accent);
   border-color: var(--color-accent);
