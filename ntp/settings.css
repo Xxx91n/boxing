@@ -545,31 +545,15 @@ body.box-resizing {
   color: var(--color-ink);
 }
 
-.ntp--dark .brand__sub {
-  color: var(--color-muted);
-}
 
 .ntp--dark .search {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .search input {
-  color: var(--color-ink);
-}
 
-.ntp--dark .search input::placeholder {
-  color: var(--color-muted);
-}
 
-.ntp--dark .search__icon {
-  color: var(--color-muted);
-}
 
-.ntp--dark .search__hint {
-  background: var(--color-surface);
-  color: var(--color-muted);
-}
 
 .ntp--dark .btn {
   background: var(--color-elevated);
@@ -577,10 +561,6 @@ body.box-resizing {
   color: var(--color-ink);
 }
 
-.ntp--dark .btn:hover {
-  background: var(--color-surface);
-  border-color: var(--color-card-edge);
-}
 
 .ntp--dark .btn--ghost {
   color: var(--color-muted);
@@ -588,32 +568,15 @@ body.box-resizing {
   border-color: transparent;
 }
 
-.ntp--dark .btn--ghost:hover {
-  background: var(--color-surface);
-  color: var(--color-ink);
-  border-color: var(--color-hairline);
-}
 
-.ntp--dark .header-count {
-  color: var(--color-muted);
-}
 
 .ntp--dark .modal {
   background: var(--color-surface);
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .modal__title {
-  color: var(--color-ink);
-}
 
-.ntp--dark .modal__label {
-  color: var(--color-ink-soft);
-}
 
-.ntp--dark .modal__hint {
-  color: var(--color-muted);
-}
 
 .ntp--dark .modal__select {
   background: var(--color-elevated);
@@ -621,17 +584,8 @@ body.box-resizing {
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .modal__row input[type="range"] {
-  background: var(--color-elevated);
-}
 
-.ntp--dark .modal__value {
-  color: var(--color-accent-ink);
-}
 
-.ntp--dark .modal__version {
-  color: var(--color-faint);
-}
 
 .ntp--dark .modal-overlay {
   background: rgba(24, 22, 20, 0.94);
@@ -649,32 +603,19 @@ body.box-resizing {
   color: var(--color-ink);
 }
 
-.ntp--dark .checkbox-label__text {
-  color: var(--color-ink);
-}
 
 .ntp--dark .checkbox-label input[type="checkbox"] {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .checkbox-label input[type="checkbox"]:checked {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
 
 .ntp--dark .canvas {
   background: radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 24px 24px, var(--color-surface);
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .canvas__empty {
-  color: var(--color-muted);
-}
 
-.ntp--dark .canvas__empty-title {
-  color: var(--color-ink);
-}
 
 .ntp--dark .large-box {
   background: var(--color-elevated);
@@ -686,17 +627,8 @@ body.box-resizing {
   border-bottom-color: var(--color-hairline);
 }
 
-.ntp--dark .large-box__title {
-  color: var(--color-ink);
-}
 
-.ntp--dark .large-box__title[contenteditable="true"]:focus {
-  background: var(--color-elevated);
-}
 
-.ntp--dark .large-box__meta {
-  color: var(--color-muted);
-}
 
 .ntp--dark .large-box__chip {
   background: var(--color-surface);
@@ -704,18 +636,8 @@ body.box-resizing {
   color: var(--color-muted);
 }
 
-.ntp--dark .large-box__empty-hint {
-  color: var(--color-muted);
-}
 
-.ntp--dark .large-box__open-hint {
-  color: var(--color-faint);
-}
 
-.ntp--dark .large-box__delete:hover {
-  color: var(--color-accent-ink);
-  background: var(--color-accent-soft);
-}
 
 .ntp--dark .inner__canvas {
   background: radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px, var(--color-surface);
@@ -727,13 +649,7 @@ body.box-resizing {
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .inner__title {
-  color: var(--color-ink);
-}
 
-.ntp--dark .inner__title[contenteditable="true"]:focus {
-  background: var(--color-surface);
-}
 
 .ntp--dark .small-box {
   background: var(--color-elevated);
@@ -745,62 +661,22 @@ body.box-resizing {
   border-bottom-color: var(--color-hairline);
 }
 
-.ntp--dark .small-box__title {
-  color: var(--color-ink);
-}
 
-.ntp--dark .small-box__title[contenteditable="true"]:focus {
-  background: var(--color-elevated);
-}
 
-.ntp--dark .small-box__mode {
-  color: var(--color-faint);
-}
 
-.ntp--dark .small-box__mode:hover {
-  color: var(--color-accent-ink);
-  background: var(--color-accent-soft);
-}
 
-.ntp--dark .small-box__delete:hover {
-  color: var(--color-accent-ink);
-  background: var(--color-accent-soft);
-}
 
-.ntp--dark .bm-row {
-  color: var(--color-ink);
-}
 
-.ntp--dark .bm-row:hover {
-  background: var(--color-surface);
-}
 
-.ntp--dark .bm-row__dot {
-  background: var(--color-card-edge);
-}
 
-.ntp--dark .bm-empty {
-  color: var(--color-muted);
-}
 
-.ntp--dark .bm-add-row input {
-  background: var(--color-canvas-2);
-  color: var(--color-ink);
-}
 
-.ntp--dark .bm-add-row input::placeholder {
-  color: var(--color-faint);
-}
 
 .ntp--dark .bm-add-row button {
   background: var(--color-accent);
   color: var(--color-ink);
 }
 
-.ntp--dark .bm-edit-popup {
-  background: var(--color-elevated);
-  border-color: var(--color-hairline);
-}
 
 .ntp--dark .bm-edit-popup input {
   background: var(--color-surface);
@@ -808,27 +684,14 @@ body.box-resizing {
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .bm-edit-popup input:focus {
-  border-color: var(--color-focus);
-}
 
 .ntp--dark .zoom-controls {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .zoom-value {
-  color: var(--color-muted);
-}
 
-.ntp--dark .zoom-btn {
-  color: var(--color-ink-soft);
-}
 
-.ntp--dark .zoom-btn:hover {
-  background: var(--color-surface);
-  color: var(--color-ink);
-}
 
 .ntp--dark .box-resize-handle {
   background: linear-gradient(135deg, transparent calc(50% - 1px), var(--color-muted) calc(50% - 1px), var(--color-muted) calc(50% + 1px), transparent calc(50% + 1px));
@@ -849,21 +712,9 @@ body.box-resizing {
   color: var(--color-ink);
 }
 
-.ntp--dark .crumbs__item {
-  color: var(--color-ink);
-}
 
-.ntp--dark .crumbs__item:hover {
-  background: var(--color-surface);
-}
 
-.ntp--dark .crumbs__item--current {
-  color: var(--color-accent-ink);
-}
 
-.ntp--dark .crumbs__sep {
-  color: var(--color-faint);
-}
 
 .ntp--dark #confirm-delete-btn {
   background: var(--color-accent-ink);
@@ -871,13 +722,7 @@ body.box-resizing {
   border-color: var(--color-accent-ink);
 }
 
-.ntp--dark .box-pin-btn:hover {
-  background: var(--color-accent-soft);
-}
 
-.ntp--dark .box-expand-btn:hover {
-  background: var(--color-accent-soft);
-}
 
 /* --- dark mode: ntp container + body background --- */
 .ntp--dark body,
@@ -907,37 +752,13 @@ html.ntp--dark {
 }
 
 /* dark mode settings nav */
-.ntp--dark .settings-nav {
-  border-right-color: var(--color-hairline);
-}
 
-.ntp--dark .settings-nav__item {
-  color: var(--color-muted);
-}
 
-.ntp--dark .settings-nav__item:hover {
-  background: var(--color-surface);
-  color: var(--color-ink);
-}
 
-.ntp--dark .settings-nav__item--active {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-ink);
-}
 
-.ntp--dark .settings-nav__item--active:hover {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-ink);
-}
 
 /* dark mode settings label + checkbox */
-.ntp--dark .modal__label {
-  color: var(--color-ink-soft);
-}
 
-.ntp--dark .checkbox-label__text {
-  color: var(--color-ink);
-}
 
 /* dark mode font-size slider value */
 .ntp--dark #font-slider-value,
@@ -1029,23 +850,9 @@ html.ntp--dark {
   display: none;
 }
 
-.ntp--dark .settings-nav {
-  border-right-color: var(--color-hairline);
-}
 
-.ntp--dark .settings-nav__item {
-  color: var(--color-muted);
-}
 
-.ntp--dark .settings-nav__item:hover {
-  background: var(--color-surface);
-  color: var(--color-ink);
-}
 
-.ntp--dark .settings-nav__item--active {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-ink);
-}
 
 /* ══════════════════════════════════════════════
    Header Pin Float Button (v3.6.2 — canvas-relative)
@@ -1081,10 +888,6 @@ html.ntp--dark {
   cursor: pointer;
 }
 
-.ntp--dark .header-pin--floating {
-  background: var(--color-elevated);
-  box-shadow: var(--shadow-2);
-}
 
 .inner__canvas .header-pin--floating {
   /* BX-DEV-136: inner-canvas-head was de-coupled from the canvas and floated
