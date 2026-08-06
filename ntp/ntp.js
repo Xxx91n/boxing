@@ -636,6 +636,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
 
   // ── ADR-0009: Versioned snapshots + crash rescue ───────────
   const MAX_SNAPSHOTS = 10;
+  const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;  // ponytail: single-snapshot cap, total ~10MB ceiling under unlimitedStorage
+  const MAX_SNAPSHOTS_TOTAL_BYTES = 8 * 1024 * 1024;
 
   async function saveSnapshot() {
     try {
@@ -644,11 +646,19 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         schemaVersion: layout.schemaVersion || 1,
         data: stripGroupsForPersist(layout)
       };
+      // ponytail: skip if single snapshot too large (storage.local has real quota even with unlimitedStorage)
+      const snapJson = JSON.stringify(snap);
+      if (snapJson.length > MAX_SNAPSHOT_BYTES) {
+        debug('Snapshot skipped: single snapshot ' + snapJson.length + 'B exceeds cap ' + MAX_SNAPSHOT_BYTES);
+        return;
+      }
       const stored = await layoutStorage.get({ boxingSnapshots: [] });
       const snaps = Array.isArray(stored.boxingSnapshots) ? stored.boxingSnapshots : [];
       snaps.push(snap);
       // LRU prune: keep last MAX_SNAPSHOTS
       while (snaps.length > MAX_SNAPSHOTS) snaps.shift();
+      // ponytail: also prune by total bytes — prevents runaway snapshot growth on large layouts
+      while (snaps.length > 1 && JSON.stringify(snaps).length > MAX_SNAPSHOTS_TOTAL_BYTES) snaps.shift();
       await layoutStorage.set({ boxingSnapshots: snaps });
       debug('Snapshot saved, total=' + snaps.length);
     } catch (e) { debugErr('saveSnapshot', e); }
@@ -5255,21 +5265,37 @@ function ensureGroups() {
     let autoBackupTimer = null;
     let lastAutoBackupTs = 0;
 
-    // ADR-0009: chrome.alarms replaces setInterval — survives NTP page close + SW eviction
+    // ADR-0009: chrome.alarms replaces setInterval — survives NTP page close + SW eviction.
+    // Listener registered ONCE at module scope; setupAutoBackup only creates/refreshes the alarm.
+    // Avoids leaking duplicate listeners on every settings change.
+    let __autoBackupAlarmListenerRegistered = false;
+    function ensureAutoBackupAlarmListener() {
+      if (__autoBackupAlarmListenerRegistered) return;
+      __autoBackupAlarmListenerRegistered = true;
+      try {
+        if (typeof chrome !== 'undefined' && chrome.alarms && chrome.alarms.onAlarm) {
+          chrome.alarms.onAlarm.addListener(function alarmHandler(alarm) {
+            if (alarm.name !== 'boxing-auto-backup') return;
+            const sec = layout.settings.autoBackupInterval || 0;
+            if (sec < 3600) return;
+            const now = Date.now();
+            if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
+            lastAutoBackupTs = now;
+            performBackup().then(() => debug('Auto-backup (alarm) done')).catch(e => debugErr('Auto-backup (alarm) err', e));
+          });
+        }
+      } catch (e) { debugWarn('chrome.alarms.onAlarm unavailable', e); }
+    }
+
+        // ADR-0009: chrome.alarms replaces setInterval — survives NTP page close + SW eviction
     function setupAutoBackup(sec) {
       if (autoBackupTimer) { clearInterval(autoBackupTimer); autoBackupTimer = null; }
       if (!sec || sec < 3600) return;  // minimum 1 hour
       // Try chrome.alarms first (works even when NTP page is closed)
       try {
         if (typeof chrome !== 'undefined' && chrome.alarms) {
+          ensureAutoBackupAlarmListener();
           chrome.alarms.create('boxing-auto-backup', { periodInMinutes: Math.ceil(sec / 60) });
-          chrome.alarms.onAlarm.addListener(function alarmHandler(alarm) {
-            if (alarm.name !== 'boxing-auto-backup') return;
-            const now = Date.now();
-            if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
-            lastAutoBackupTs = now;
-            performBackup().then(() => debug('Auto-backup (alarm) done')).catch(e => debugErr('Auto-backup (alarm) err', e));
-          });
           debug('Auto-backup via chrome.alarms, period=' + Math.ceil(sec / 60) + 'min');
           return;
         }

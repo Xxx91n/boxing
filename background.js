@@ -34,7 +34,7 @@ try {
           if (!tabs) return;
           for (var i = 0; i < tabs.length; i++) {
             var tab = tabs[i];
-            if (tab.url && tab.url.indexOf('chrome://newtab') === 0 || (tab.url && tab.url.indexOf('moz-extension://') === 0)) {
+            if (tab.url && (tab.url.indexOf('chrome://newtab') === 0 || tab.url.indexOf('moz-extension://') === 0 || tab.url.indexOf('chrome-extension://') === 0)) {
               chrome.tabs.sendMessage(tab.id, { action: 'boxing-auto-backup-trigger' }, function() {
                 if (chrome.runtime.lastError) { /* tab may not have listener */ }
               });
