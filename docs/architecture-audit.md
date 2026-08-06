@@ -283,6 +283,6 @@ Current DSU operations:
 
 ## ADR-0008: Design System Three-Layer Token Architecture
 
-Status: Phase 1 implemented (primitive + semantic layers in design-system.css).
+Status: Phase 1-4 implemented (primitive + semantic layers; CSS source split + build cat; dark override deletion; DESIGN.md component state specs aligned).
 
 See: [ADR-0008](adr/0008-design-system-three-layer-tokens.md) | [DESIGN.md](DESIGN.md)

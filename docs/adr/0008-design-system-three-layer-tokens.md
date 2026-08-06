@@ -4,7 +4,11 @@
 2026-08-06
 
 ## Status
-Accepted — Phase 1 (primitive + semantic layers) implemented in design-system.css; Phase 2-4 pending.
+Accepted — Phase 1-4 implemented (2026-08-06).
+- Phase 1: three-layer token architecture in design-system.css (34 primitive + 26 semantic)
+- Phase 2: ntp.css split into 4 sources (base/settings/onboarding/conn), build.mjs cat step (commit 0801c3a)
+- Phase 3: 60 redundant dark-mode overrides deleted (commit cb66f17); 31 true-exception blocks kept
+- Phase 4: 10 component state spec tables in docs/DESIGN.md aligned to code reality; checkbox hover rule added (commit 6da765a)
 
 ## Context
 The architecture audit (docs/architecture-audit.md) and grill-with-docs review identified
@@ -73,21 +77,23 @@ that Boxing's design system has 6 structural problems:
 - Dark mode overrides reference dark primitives
 - ntp.css zero changes
 
-### Phase 2: CSS source split + build concatenation
-- Split ntp.css into `ntp/base.css`, `box.css`, `settings.css`, `canvas.css`, `search.css`,
-  `conn.css`, `zoom.css`, `onboarding.css`
-- build.mjs: cat step produces `ntp.css` artifact
-- Verify: git diff --check, build output byte-identical to pre-split ntp.css
+### Phase 2: CSS source split + build concatenation ✅ (commit 0801c3a)
+- Split ntp.css into 4 contiguous source files: `ntp/base.css`, `ntp/settings.css`, `ntp/onboarding.css`, `ntp/conn.css`
+  (Sections map: base = layout/header/search/library/canvas/largebox/boxpin/inner/smallbox/footer; settings = modal/zoom/resize/bookmark-add/edit; onboarding; conn)
+- build.mjs A8.0: concatenate source files → `ntp.css` artifact; A8.0b: strip CSS source files from dist (only ntp.css ships)
+- Verify: byte-identical (cat output == original ntp.css 55444 chars); git diff --check clean
 
-### Phase 3: Dark mode override audit + deletion
-- For each of 105 `.ntp--dark .xxx` blocks: test if token layer covers the property
-- Delete if tokenizable; keep with `/* DARK-EXCEPTION */` if structural
-- Verify: visual parity test (light + dark) via Playwright screenshot
+### Phase 3: Dark mode override audit + deletion ✅ (commit cb66f17)
+- Audited 91 `.ntp--dark .xxx` blocks against design-system.css dark semantic layer (L126-155, 19 tokens)
+- Deleted 60 fully-safe blocks (197 lines / 4870 chars) — same var(--xxx) token in light and dark, dark semantic layer already covers
+- Kept 31 true-EXCEPTION blocks: 17 "prop not in light rule" (dark adds new behavior), 14 different-token light vs dark (semantic switch), 1 mixed (checkbox bg vs transparent)
+- new ntp.css: 50574 chars (was 55444); build DONE_BUILD; node --check OK
 
-### Phase 4: docs/DESIGN.md + 10 component state tables
-- Write DESIGN.md with token architecture, palette, typography, dark mode strategy
-- Write state tables for all 10 core components
-- Update AGENTS.md to reference DESIGN.md
+### Phase 4: docs/DESIGN.md + 10 component state tables ✅ (commit 6da765a)
+- DESIGN.md created with token architecture, palette, typography, dark mode strategy, 10 component state spec tables
+- Phase 4 audit found 6 spec/code mismatches; resolved by updating DESIGN.md 4 tables to match code reality (box/button hover border accent→card-edge; box default bg canvas→elevated; search-results shadow pop→shadow-2; crumbs hover color+underline→bg surface) and adding code hover rule for checkbox per spec
+- CONTEXT.md keeps domain glossary only (per Q4 decision A)
+- css-dual-write-convention.md remains independent (per Q4 decision A)
 
 ## Anti-Regression
 - Pre-split: snapshot ntp.css for byte comparison after Phase 2 cat
