@@ -167,7 +167,8 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 | BX-DEV-139 | MUST | Connection line delete is user-configurable via `layout.settings.connDeleteAction` (string enum: `alt+click`/`ctrl+click`/`shift+click`/`double-click`/`select+delete`). Never hardcode a single delete trigger — use `getConnDeleteTrigger()` and the unified `onConnLinePointerDown(e)` detector. When mode changes, UI handler MUST `disposeAllConns()` + `renderConnections()` so mode-specific listeners (dblclick/mousedown) re-attach to fresh `<line>` elements; the renderConnections pending path is the only place that registers them. See ADR-0006 (`docs/adr/0006-conn-delete-action-system.md`). |
 ## CSS Dual-Write Convention (Global)
 
-> **Global convention document: [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md)** — every CSS rule that affects both `.large-box` and `.small-box` MUST use paired selectors and a code comment marker. See BX-DEV-013 above for the MUST rule. When adding a new visual rule, check the convention doc first to confirm the required markers.
+> **Global convention document: [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md)**
+**Design system document: [docs/DESIGN.md](docs/DESIGN.md)** — token architecture (primitive→semantic→component), palette, typography, component state specs, dark mode strategy. See ADR-0008. — every CSS rule that affects both `.large-box` and `.small-box` MUST use paired selectors and a code comment marker. See BX-DEV-013 above for the MUST rule. When adding a new visual rule, check the convention doc first to confirm the required markers.
 
 
 ## Debug Development

@@ -278,3 +278,11 @@ Current DSU operations:
 7. **Add `props: {}` to connection objects** — future-proofs for connection metadata.
 8. **Document key format** (`large:L1`, `small:L1:S1`) in CONTEXT.md.
 9. **Clean up `viewState` on box delete** — minor memory leak fix.
+
+---
+
+## ADR-0008: Design System Three-Layer Token Architecture
+
+Status: Phase 1 implemented (primitive + semantic layers in design-system.css).
+
+See: [ADR-0008](adr/0008-design-system-three-layer-tokens.md) | [DESIGN.md](DESIGN.md)

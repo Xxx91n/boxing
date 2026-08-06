@@ -1,26 +1,86 @@
-/* Boxing — design system (warm neutral, modern, minimal, high readability) */
-:root {
-  /* Canvas — warm neutral (less red-brown, higher clarity) */
-  --color-canvas: #F1EEE8;
-  --color-canvas-2: #ECE8E0;
-  --color-surface: #EEE9E1;
-  --color-elevated: #EBE5DB;
-  --color-card-edge: #E0D8CB;
-  --color-hairline: rgba(42, 37, 32, 0.06);
-  --color-hairline-strong: rgba(42, 37, 32, 0.12);
+/* design-system.css — Boxing Design System (ADR-0008 three-layer token architecture)
+ *
+ * Layer 1: Primitive (raw values — the source palette, never referenced directly in components)
+ * Layer 2: Semantic (purpose aliases — components reference these; dark mode overrides this layer)
+ * Layer 3: Component (component-specific — defined per-component in DESIGN.md, applied via ntp.css)
+ *
+ * When to edit:
+ *   - Changing the palette hue/saturation range → edit Layer 1 primitive values
+ *   - Adding a new semantic role → edit Layer 2
+ *   - Tweaking a specific component's color → edit Layer 3 in ntp.css (after Q2/D split)
+ * Reference: docs/DESIGN.md, ADR-0008, W3C DTCG spec (designtokens.org)
+ */
 
-  /* Ink */
-  --color-ink: #2A2520;
-  --color-ink-soft: #3B342C;
-  --color-muted: #7B7167;
-  --color-faint: #A89F92;
+/* ═══════════════════════════════════════════════
+ * Layer 1 — Primitive Palette
+ * Raw hex values. Never use directly in component CSS.
+ * ═══════════════════════════════════════════════ */
+
+:root {
+  /* --- Warm neutral ramp (light) --- */
+  --color-warm-50: #F1EEE8;
+  --color-warm-100: #EEE9E1;
+  --color-warm-150: #EBE5DB;
+  --color-warm-200: #E0D8CB;
+  --color-warm-300: #ECE8E0;
+  --color-warm-700: #A89F92;
+  --color-warm-800: #7B7167;
+  --color-warm-850: #3B342C;
+  --color-warm-900: #2A2520;
+  --warm-900-rgb: 42, 37, 32;   /* for rgba() derivation */
+
+  /* --- Accent (warm earth) ramp (light) --- */
+  --color-accent-300: #B89878;
+  --color-accent-500: #A08060;
+  --color-accent-600: #6E5540;
+  --accent-500-rgb: 160, 128, 96;  /* for rgba() derivation */
+
+  /* --- Dark warm neutral ramp --- */
+  --color-warm-dark-50: #1E1C1A;
+  --color-warm-dark-100: #252320;
+  --color-warm-dark-150: #2A2724;
+  --color-warm-dark-200: #302D29;
+  --color-warm-dark-300: #3E3A34;
+  --color-warm-dark-700: #6A6356;
+  --color-warm-dark-800: #9A9285;
+  --color-warm-dark-850: #C8C2B6;
+  --color-warm-dark-900: #E8E4DB;
+  --warm-dark-900-rgb: 232, 228, 219;
+
+  /* --- Dark accent ramp --- */
+  --color-accent-dark-300: #C4A882;
+  --color-accent-dark-500: #C4A882;
+  --color-accent-dark-600: #D4B88C;
+  --accent-dark-500-rgb: 196, 168, 130;
+
+  /* ═══════════════════════════════════════════════
+   * Layer 2 — Semantic Tokens (light mode defaults)
+   * Components reference these. Dark mode overrides below.
+   * ═══════════════════════════════════════════════ */
+
+  /* Canvas — warm neutral surface hierarchy */
+  --color-canvas: var(--color-warm-50);
+  --color-canvas-2: var(--color-warm-300);
+  --color-surface: var(--color-warm-100);
+  --color-elevated: var(--color-warm-150);
+  --color-card-edge: var(--color-warm-200);
+
+  /* Ink — text color hierarchy */
+  --color-ink: var(--color-warm-900);
+  --color-ink-soft: var(--color-warm-850);
+  --color-muted: var(--color-warm-800);
+  --color-faint: var(--color-warm-700);
+
+  /* Hairline / divider — derived from ink base via rgba */
+  --color-hairline: rgba(var(--warm-900-rgb), 0.06);
+  --color-hairline-strong: rgba(var(--warm-900-rgb), 0.12);
 
   /* Accents — muted warm earth */
-  --color-accent: #A08060;
-  --color-accent-ink: #6E5540;
-  --color-accent-soft: rgba(160, 128, 96, 0.10);
-  --color-accent-soft-2: rgba(160, 128, 96, 0.18);
-  --color-focus: #B89878;
+  --color-accent: var(--color-accent-500);
+  --color-accent-ink: var(--color-accent-600);
+  --color-accent-soft: rgba(var(--accent-500-rgb), 0.10);
+  --color-accent-soft-2: rgba(var(--accent-500-rgb), 0.18);
+  --color-focus: var(--color-accent-300);
 
   /* Radii / spacing */
   --radius-card: 18px;
@@ -52,103 +112,44 @@
   --dur-base: 220ms;
   --dur-slow: 360ms;
 
-  /* Shadow */
-  --shadow-1: 0 1px 2px rgba(42, 37, 32, 0.04), 0 1px 1px rgba(42, 37, 32, 0.03);
-  --shadow-2: 0 6px 18px rgba(42, 37, 32, 0.08), 0 2px 6px rgba(42, 37, 32, 0.04);
-  --shadow-pop: 0 18px 48px rgba(42, 37, 32, 0.16);
+  /* Shadow — derived from ink base via rgba */
+  --shadow-1: 0 1px 2px rgba(var(--warm-900-rgb), 0.04), 0 1px 1px rgba(var(--warm-900-rgb), 0.03);
+  --shadow-2: 0 6px 18px rgba(var(--warm-900-rgb), 0.08), 0 2px 6px rgba(var(--warm-900-rgb), 0.04);
+  --shadow-pop: 0 18px 48px rgba(var(--warm-900-rgb), 0.16);
 }
 
-/* ── Dark mode ────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+ * Layer 2 — Dark Mode Semantic Overrides
+ * Only primitive references change; component CSS stays unchanged.
+ * ═══════════════════════════════════════════════ */
+
 .ntp--dark {
-  --color-canvas: #1E1C1A;
-  --color-canvas-2: #252320;
-  --color-surface: #2A2724;
-  --color-elevated: #302D29;
-  --color-card-edge: #3E3A34;
+  /* Canvas */
+  --color-canvas: var(--color-warm-dark-50);
+  --color-canvas-2: var(--color-warm-dark-100);
+  --color-surface: var(--color-warm-dark-150);
+  --color-elevated: var(--color-warm-dark-200);
+  --color-card-edge: var(--color-warm-dark-300);
+
+  /* Ink (inverted ramp — light text on dark bg) */
+  --color-ink: var(--color-warm-dark-900);
+  --color-ink-soft: var(--color-warm-dark-850);
+  --color-muted: var(--color-warm-dark-800);
+  --color-faint: var(--color-warm-dark-700);
+
+  /* Hairline — derived from white base in dark mode */
   --color-hairline: rgba(255, 255, 255, 0.06);
   --color-hairline-strong: rgba(255, 255, 255, 0.10);
 
-  --color-ink: #E8E4DB;
-  --color-ink-soft: #C8C2B6;
-  --color-muted: #9A9285;
-  --color-faint: #6A6356;
+  /* Accents */
+  --color-accent: var(--color-accent-dark-300);
+  --color-accent-ink: var(--color-accent-dark-600);
+  --color-accent-soft: rgba(var(--accent-dark-500-rgb), 0.12);
+  --color-accent-soft-2: rgba(var(--accent-dark-500-rgb), 0.20);
+  --color-focus: var(--color-accent-dark-300);
 
-  --color-accent: #C4A882;
-  --color-accent-ink: #D4B88C;
-  --color-accent-soft: rgba(196, 168, 130, 0.12);
-  --color-accent-soft-2: rgba(196, 168, 130, 0.20);
-  --color-focus: #C4A882;
-
+  /* Shadow — black-based in dark mode */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 1px rgba(0, 0, 0, 0.12);
   --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.30), 0 2px 6px rgba(0, 0, 0, 0.16);
   --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.40);
-}
-.ntp--dark .canvas {
-  background:
-    radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 24px 24px,
-    var(--color-surface);
-}
-.ntp--dark .inner__canvas {
-  background:
-    radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px,
-    var(--color-surface);
-}
-/* Dark mode bookmark add button */
-.ntp--dark .bm-add-row button { background: #3E3A34; color: #E8E4DB; }
-/* Dark mode modal overlay */
-.ntp--dark .modal-overlay { background: rgba(24, 22, 20, 0.82); }
-/* Dark mode kbd */
-.ntp--dark .kbd { background: var(--color-elevated); border-color: var(--color-hairline); }
-
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body {
-  font-family: var(--font-stack-ui);
-  font-size: var(--font-size-base);
-  color: var(--color-ink);
-  background: var(--color-canvas);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  font-variant-ligatures: contextual common-ligatures;
-  font-feature-settings: "kern" 1;
-  -webkit-text-size-adjust: 100%;
-}
-
-button, input, select, textarea {
-  font: inherit;
-  color: inherit;
-  /* BX-DEV-130 (B8): font-smoothing is NOT inherited by form controls — re-apply
-     so native buttons/selects render crisp on Chrome + Firefox (addresses "字体发虚"
-     on zoom-arrow chars, select option text, settings modal inputs). Matches body. */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-::selection {
-  background: var(--color-accent-soft-2);
-  color: var(--color-ink);
-}
-
-/* Helpers */
-.sr-only {
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-}
-[hidden] { display: none !important; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
