@@ -1,0 +1,173 @@
+/* === Onboarding (first-run guided tour) === */
+.onboarding-modal {
+  width: min(520px, 92vw);
+  height: auto;
+  min-height: 0;
+  max-height: min(620px, 90vh);
+  overflow: hidden;
+}
+
+.onboarding__body {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-5) var(--space-3);
+  box-sizing: border-box;
+  gap: var(--space-3);
+}
+.onboarding__step {
+  /* Single step never scrolls on its own; the modal itself owns the
+     legit max-height. Avoids the right vertical scrollbar on Step 3
+     (which has restore button + long description). */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 420px;
+}
+
+.onboarding__step[hidden] {
+  display: none;
+}
+
+.onboarding__step-icon {
+  font-size: 48px;
+  line-height: 1;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline);
+  margin-bottom: var(--space-2);
+}
+
+.onboarding__step-num {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.onboarding__step-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--color-ink);
+}
+
+.onboarding__step-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+
+.onboarding__dots {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.onboarding__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-hairline);
+  transition: background 0.2s ease;
+}
+
+.onboarding__dot.is-active {
+  background: var(--color-accent-ink);
+}
+
+.onboarding__foot {
+  justify-content: space-between;
+}
+
+.ntp--dark .onboarding-modal {
+  background: var(--color-surface);
+}
+
+.ntp--dark .onboarding__step-icon {
+  background: var(--color-elevated);
+}
+
+.ntp--dark .onboarding__step-title {
+  color: var(--color-ink);
+}.onboarding__lang {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 420px;            /* match .onboarding__step so divider spans the same content width */
+  margin: 0 auto var(--space-2);
+  padding: var(--space-3) 0 var(--space-2);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border-soft, rgba(0,0,0,0.08));
+}
+.onboarding__lang-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.onboarding__lang-select {
+  width: 100%;
+  max-width: 260px;
+}
+.onboarding__lang-hint {
+  font-size: 0.82rem;
+  opacity: 0.7;
+  margin: 0;
+}
+.ntp--dark .onboarding__lang {
+  border-bottom-color: rgba(255,255,255,0.12);
+}
+
+/* BX-DEV-123: Performance — content-visibility for engineering-scale canvas (1000+ boxes).
+   Browser auto-skips layout/paint of offscreen boxes; 7x render boost per web.dev/MDN.
+   Must pair with contain-intrinsic-size to prevent scrollbar jumping.
+   Exclude dragging/hover-expand/dragged states to keep interaction smooth. */
+/* BX-DUAL-WRITE: content-visibility:auto (paired) */
+.large-box:not(.large-box--dragging):not(.large-box--ghost) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px auto 220px;
+}
+/* Bug1: disable content-visibility during canvas pan — avoids per-box viewport check on every transform tick */
+/* BX-DUAL-WRITE: .panning override (paired) */
+.panning .large-box {
+  content-visibility: visible !important;
+}
+.panning .small-box {
+  content-visibility: visible !important;
+}
+
+.small-box:not(.small-box--dragging):not(.small-box--ghost) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px auto 340px;
+}
+
+/* BX-DEV-SEARCH (B9): search highlight — match boxes glow, non-match dim */
+/* BX-DUAL-WRITE-SHARED: --search-match — both in one rule, safe */
+.large-box--search-match, .small-box--search-match {
+  box-shadow: 0 0 0 2px var(--color-accent, #5b8def), var(--shadow-2);
+  opacity: 1;
+}
+/* BX-DUAL-WRITE-SHARED: --search-hidden — both in one rule, safe */
+.large-box--search-hidden, .small-box--search-hidden {
+  opacity: 0.25;
+  filter: grayscale(0.5);
+}
+
+
+/* BX-DEV-137: box-connections / star-mark UI (leader-line draws the actual SVG)
+   color uses --color-ink so it adapts to dark mode automatically. */

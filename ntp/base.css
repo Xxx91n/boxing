@@ -1,0 +1,979 @@
+/* Boxing — NTP Styles (Warm Neutral, Modern, Minimal) */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-stack-ui);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  /* BX-DEV-135 (B3 font crispness): preserve the design-system font stack's
+     smoothing + features here — ntp.css loads AFTER design-system.css so its
+     body block silently dropped -moz-osx-font-smoothing / ligatures / kern,
+     which was the actual root of the “字体发虚不清晰” symptom (Firefox lost
+     grayscale smoothing; Chrome Fontations stack had no kerning/ligature hints). */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-variant-ligatures: common-ligatures contextual;
+  /* prevent fake synth bold/italic that adds visual noise on Windows */
+  font-synthesis: weight style;
+}
+
+/* === MAIN LAYOUT === */
+.ntp {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  gap: var(--space-4);
+}
+
+/* === HEADER === */
+.ntp__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-hairline);
+  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Header auto-hide mode: header slides up & fades out, canvas fills viewport */
+.ntp--autohide .ntp__bar {
+  pointer-events: none;
+  transform: translateY(-100%);
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  border-bottom-width: 0;
+  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1), transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ntp--autohide .ntp {
+  padding: 0;
+  overflow: hidden;
+  /* prevent browser scroll when header is hidden */
+  transition: padding 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ntp--autohide .library {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  /* extend canvas to fill entire viewport including footer space */
+  overflow: hidden;
+  /* canvas fills viewport, no scroll */
+  transition: margin 0.35s cubic-bezier(0.22, 1, 0.36, 1), padding 0.35s cubic-bezier(0.22, 1, 0.36, 1), height 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ntp--autohide .foot {
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  border-top-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease, max-height 0.35s ease, padding 0.35s ease, margin 0.35s ease;
+}
+
+#back-btn {
+  order: 0;
+  margin-right: auto;
+  display: none;
+}
+
+#back-btn[data-show="1"] {
+  display: inline-flex;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  order: 1;
+}
+
+.brand__label {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand__name {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+.brand__sub {
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+/* === SEARCH === */
+.search {
+  flex: 1;
+  max-width: 420px;
+  order: 2;
+  display: flex;
+  align-items: center;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline);
+  padding: var(--space-2) var(--space-3);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.search:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.search__icon {
+  color: var(--color-muted);
+  margin-right: var(--space-2);
+  font-size: 14px;
+}
+
+.search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  color: var(--color-ink);
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--color-muted);
+}
+
+.search__hint {
+  color: var(--color-muted);
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: var(--space-2);
+}
+.search-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: min(360px, 60vh);
+  overflow-y: auto;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-2);
+  z-index: 50;
+  padding: var(--space-1) 0;
+  font-size: 13px;
+}
+.search-results[hidden] { display: none; }
+.search-results__empty,
+.search-results__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px var(--space-3);
+  cursor: pointer;
+  color: var(--color-ink);
+}
+.search-results__empty {
+  cursor: default;
+  color: var(--color-muted);
+  font-style: italic;
+}
+.search-results__item:hover {
+  background: var(--color-surface);
+}
+.search-results__item-title {
+  font-weight: 500;
+}
+.search-results__item-meta {
+  font-size: 11px;
+  color: var(--color-muted);
+}
+.search-results__item-url {
+  font-size: 11px;
+  color: var(--color-muted);
+  word-break: break-all;
+}
+.ntp--dark .search-results {
+  background: var(--color-elevated);
+  border-color: var(--color-hairline);
+}
+.ntp--dark .search-results__item:hover {
+  background: var(--color-surface);
+}
+
+/* === ACTIONS === */
+.actions {
+  order: 3;
+  display: flex;
+  gap: var(--space-1);
+}
+
+.header-count {
+  order: 2;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-muted);
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-elevated);
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-card-edge);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-muted);
+}
+
+.btn--ghost:hover {
+  background: var(--color-surface);
+  border-color: var(--color-hairline);
+  color: var(--color-ink);
+}
+
+.btn--icon {
+  padding: var(--space-2);
+  min-width: 36px;
+  justify-content: center;
+}
+
+/* === LIBRARY === */
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1;
+  min-height: 360px;
+}
+
+/* library__head removed — crumbs moved to inner view */
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 13px;
+  font-weight: 500;
+  padding: var(--space-2) 0;
+}
+
+.crumbs__item {
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--color-ink);
+}
+
+.crumbs__item:hover {
+  background: var(--color-surface);
+}
+
+.crumbs__item--current {
+  color: var(--color-accent-ink);
+  cursor: default;
+}
+
+.crumbs__sep {
+  color: var(--color-faint);
+}
+
+.library__caption {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* === CANVAS (TOP LEVEL) === */
+.canvas {
+  position: relative;
+  flex: 1;
+  min-height: 440px;
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  overflow: hidden;
+}
+
+.canvas__surface {
+  position: absolute;
+  inset: 0;
+  /* virtual infinite canvas; size grows with content + padding */
+  min-width: 100%;
+  min-height: 100%;
+  backface-visibility: hidden;
+}
+
+.canvas__empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  pointer-events: none;
+  color: var(--color-muted);
+}
+
+.canvas__empty-icon {
+  font-size: 36px;
+  opacity: .5;
+}
+
+.canvas__empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.canvas__empty-hint {
+  font-size: 12px;
+}
+
+.canvas__empty[hidden] {
+  display: none;
+}
+
+/* === LARGE BOX (draggable, fixed size) === */
+/* ========================================================================
+ * BX-CSS-DUAL-WRITE CONVENTION
+ * Rules touching .large-box and .small-box share the same visual language.
+ * Any CSS property added/changed for one surface MUST be mirrored on the other.
+ * Markers:
+ *   BX-DUAL-WRITE  — paired rule; changing one requires changing the other.
+ *   LARGE-ONLY     — large-box design difference (no small-box counterpart).
+ *   SMALL-ONLY     — small-box design difference (no large-box counterpart).
+ * See: docs/css-dual-write-convention.md
+ * ======================================================================== */
+.large-box {
+  position: absolute;
+  z-index: 1;
+  width: 320px;
+  height: 220px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  transition: box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  user-select: none;
+}
+
+/* BX-DUAL-WRITE: :hover vs :hover */
+.large-box:hover {
+  box-shadow: var(--shadow-2);
+  border-color: var(--color-card-edge);
+}
+
+/* BX-DUAL-WRITE: --dragging vs --dragging */
+.large-box--dragging {
+  box-shadow: var(--shadow-pop);
+  border-color: var(--color-accent);
+  cursor: grabbing;
+  z-index: 5;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+/* BX-DUAL-WRITE: --ghost vs --ghost */
+.large-box--ghost {
+  box-shadow: 0 0 0 2px var(--color-accent-soft-2);
+}
+
+/* BX-DUAL-WRITE: __bar vs __bar */
+.large-box__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-hairline);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.large-box--dragging .large-box__bar {
+  cursor: grabbing;
+}
+
+/* LARGE-ONLY: __icon (large-box only content) */
+.large-box__icon {
+  font-size: 14px;
+  opacity: .8;
+}
+
+/* BX-DUAL-WRITE: __title vs __title */
+.large-box__title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--color-ink);
+  outline: none;
+  cursor: text;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* BX-DUAL-WRITE: __title[contenteditable]:focus */
+.large-box__title[contenteditable="true"]:focus {
+  background: var(--color-elevated);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+/* LARGE-ONLY: __meta (large-box only content) */
+.large-box__meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+/* pin + expand buttons — minimal icons */
+.box-pin-btn,
+.box-expand-btn {
+  font-family: inherit;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+.box-pin-btn {
+  font-size: 12px;
+}
+
+.box-expand-btn {
+  font-size: 13px;
+}
+
+/* BX-DUAL-WRITE: __delete vs __delete */
+.large-box__delete {
+  background: transparent;
+  border: 0;
+  color: var(--color-faint);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+/* BX-DUAL-WRITE: __delete:hover */
+.large-box__delete:hover {
+  color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+}
+
+/* === BOX PIN & AUTO-EXPAND BUTTONS === */
+.box-pin-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.box-pin-btn:hover {
+  opacity: 0.9 !important;
+  background: var(--color-accent-soft);
+  border-radius: 3px;
+}
+
+.box-expand-btn {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.box-expand-btn:hover {
+  opacity: 0.9 !important;
+  background: var(--color-accent-soft);
+  border-radius: 3px;
+}
+
+/* Pinned box: no drag */
+/* BX-DUAL-WRITE: __bar (second rule) vs __bar */
+.box--pinned .large-box__bar {
+  cursor: default;
+}
+
+.box--pinned .small-box__bar {
+  cursor: default;
+}
+
+.box--pinned .box-pin-btn {
+  opacity: 0.9;
+}
+
+/* BX-140: parent box highlight — subtle accent ring on starred boxes */
+.box--starred {
+  box-shadow: 0 0 0 2px var(--color-accent, #A08060), 0 2px 8px rgba(160, 128, 96, 0.15);
+}
+
+/* Auto-expand: true drawer pull-down from under title bar (BX-DEV-111)
+   Uses pure max-height transition on the __body panel itself.
+   When collapsed, body has max-height:0 + overflow:hidden — entire panel,
+   including background, borders, and content, is hidden cleanly under the title bar.
+   On hover, body slides down with its full measured height.
+   No scaleY — that squishes content; this pulls the entire panel out like a tissue drawer. */
+/* BX-DEV-111 v2: Real tissue-pull drawer.
+   Strategy: collapsed = box shrinks to bar-only height via max-height on the BOX itself.
+   Body & resize-handle hidden. On hover: box max-height expands, body fades in.
+   The whole box panel (including background/border) grows/shrinks — true drawer. */
+
+/* Collapsed state: box shrinks to bar-only, body hidden */
+.box--hover-expand.box--collapsed {
+  height: auto !important;
+  /* override JS inline style */
+  max-height: 60px;
+  /* bar + padding, tightly clipped */
+  overflow: hidden;
+  border-radius: var(--radius-card) !important;
+  /* BX-DEV-111i: preserve rounded corners when collapsed clips body */
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Material deceleration — smooth collapse */
+}
+
+/* BX-DUAL-WRITE-SHARED: __body hover-expand pair — both in one rule, safe */
+.box--hover-expand.box--collapsed .large-box__body,
+.box--hover-expand.box--collapsed .small-box__body {
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.box--hover-expand.box--collapsed .box-resize-handle {
+  display: none;
+  /* BX-DEV-111g: instantly gone while collapsed, no flash during animation */
+}
+
+/* Hover: tissue-pull expand — box grows to measured height, body fades in */
+.box--hover-expand.box--collapsed:hover {
+  max-height: var(--expand-height, 800px);
+  /* JS-measured exact content height, avoids empty-range animation */
+  overflow: visible;
+  border-radius: var(--radius-card) !important;
+  /* BX-DEV-111i: keep rounded during expand */
+  transition: max-height 0.35s cubic-bezier(0, 0, 0.2, 1);
+  /* Material acceleration — crisp expand */
+}
+
+.box--hover-expand.box--collapsed:hover .large-box__body,
+.box--hover-expand.box--collapsed:hover .small-box__body {
+  opacity: 1;
+  transition: opacity 0.3s ease-out 0.08s;
+}
+.box--hover-expand.box--collapsed:hover .large-box__body,
+.box--hover-expand.box--collapsed:hover .small-box__body {
+  /* Auto-expand drawer fully fits body (box max-height = measured full
+     scrollHeight via JS --expand-height), so no scrollbar should appear
+     when popped. While collapsed body uses its own overflow; here override
+     to visible to prevent the right vertical scrollbar popping out at the
+     edge of the expanded drawer. */
+  overflow: visible;
+}
+.box--hover-expand:not(.box--collapsed) .large-box__body,
+.box--hover-expand:not(.box--collapsed) .small-box__body {
+  /* BOX-DEV-124 (B6): auto-expand mode uncollapsed state — no vertical scrollbar.
+     Box owns overflow:hidden on its border; body uses overflow:visible so the
+     drawer shows full content without a scrollbar at the right edge. */
+  overflow: visible;
+}
+
+.box--hover-expand.box--collapsed:hover .box-resize-handle {
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-out 0.35s;
+  /* BX-DEV-111g: fade in after drawer fully expanded */
+}
+
+.large-box__body {
+  flex: 1;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  cursor: pointer;
+}
+
+/* LARGE-ONLY: __chips (large-box only content) */
+.large-box__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+  align-content: flex-start;
+}
+
+/* LARGE-ONLY: __chip (large-box only content) */
+.large-box__chip {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-hairline);
+}
+
+/* LARGE-ONLY: __empty-hint (large-box only content) */
+.large-box__empty-hint {
+  font-size: 12px;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* LARGE-ONLY: __open-hint (large-box only content) */
+.large-box__open-hint {
+  font-size: 11px;
+  color: var(--color-faint);
+  text-align: right;
+  margin-top: auto;
+}
+
+/* === INNER (DRILL-IN) VIEW === */
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  min-height: 0;
+}
+
+/* inner surface — mirrors canvas for true infinite canvas */
+.inner__canvas {
+  position: relative;
+  flex: 1;
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-card);
+  background:
+    radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px,
+    var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  overflow: hidden;
+}
+
+/* BX-DEV-111Pv2: mirror large .canvas / .canvas:active pan cursor for inner canvas (fix 5 cursor-shadowing bug) */
+
+/* inner__canvas-head: lightweight bar inside canvas (v3.7.3 - replaced inner__head) */
+.inner__canvas-head {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--color-elevated);
+  border-bottom: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.inner__crumb-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  outline: none;
+  cursor: text;
+  min-width: 0;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.inner__crumb-title[contenteditable="true"]:focus {
+  background: var(--color-surface);
+}
+
+.inner__canvas-head .btn {
+  flex-shrink: 0;
+}
+
+.inner__surface {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 100%;
+  cursor: grab;
+  overflow: hidden;
+  backface-visibility: hidden;
+  /* Surface is below inner__canvas-head (flex column); small-box world origin
+     is at surface top; world height = canvas - head. inner__canvas-head
+     (z-index:5) sits above in DOM stacking order. */
+}
+
+/* === SMALL BOX (fixed, second-level container) === */
+.small-box {
+  position: absolute;
+  z-index: 1;
+  width: 300px;
+  height: 340px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  transition: box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+  user-select: none;
+}
+
+.small-box:hover {
+  box-shadow: var(--shadow-2);
+  border-color: var(--color-card-edge);
+}
+
+.small-box--dragging {
+  box-shadow: var(--shadow-pop);
+  border-color: var(--color-accent);
+  z-index: 5;
+  cursor: grabbing;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.small-box--ghost {
+  box-shadow: 0 0 0 2px var(--color-accent-soft-2);
+}
+
+.small-box__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-hairline);
+  cursor: grab;
+  flex-shrink: 0;
+  min-height: 40px;
+}
+
+.small-box__title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--color-ink);
+  outline: none;
+  cursor: text;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.small-box--dragging .small-box__bar {
+  cursor: grabbing;
+}
+
+
+/* SMALL-ONLY: __mode (small-box only view toggle) */
+.small-box__mode {
+  background: transparent;
+  border: 0;
+  color: var(--color-faint);
+  font-size: 12px;
+  padding: 0 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.small-box__mode:hover {
+  color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+}
+
+.small-box__delete {
+  background: transparent;
+  border: 0;
+  color: var(--color-faint);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 2px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.small-box__delete:hover {
+  color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+}
+
+/* small-box body: list or grid */
+.small-box__body {
+  flex: 1;
+  padding: 4px 6px;
+  overflow: auto;
+}
+
+/* SMALL-ONLY: --list .small-box__body (small-box only view mode) */
+.small-box--list .small-box__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* SMALL-ONLY: --grid .small-box__body (small-box only view mode) */
+.small-box--grid .small-box__body {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  align-content: flex-start;
+}
+
+.bm-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-ink);
+  text-decoration: none;
+  border-radius: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.bm-row:hover {
+  background: var(--color-surface);
+}
+
+.bm-row__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--color-card-edge);
+}
+
+.bm-row__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.small-box--grid .bm-row {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px;
+  gap: 2px;
+  height: 100%;
+}
+
+.small-box--grid .bm-row__title {
+  white-space: normal;
+}
+
+.bm-empty {
+  font-size: 11px;
+  color: var(--color-muted);
+  font-style: italic;
+  padding: 4px 6px;
+}
+
+/* === FOOTER === */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  margin-top: auto;
+  border-top: 1px solid var(--color-hairline);
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+.foot__dot {
+  width: 4px;
+  height: 4px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  opacity: .6;
+}
+
+.foot__txt {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: 3px;
+  font-family: var(--font-stack-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+/* === GLOBAL UI === */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+

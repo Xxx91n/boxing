@@ -202,6 +202,23 @@ function build() {
     }
   }
 
+
+  // ── A8.0: CSS source concatenation (ntp.cat → ntp.css artifact) ──
+  // Per ADR-0008 Phase 2: ntp.css is a build artifact produced by
+  // concatenating source files: base.css + settings.css + onboarding.css + conn.css.
+  // Source files are build inputs; HTML loads the produced ntp.css (no change).
+  function buildNtpCss() {
+    const srcDir = path.join(ROOT, "ntp");
+    const srcFiles = ["base.css", "settings.css", "onboarding.css", "conn.css"];
+    const parts = srcFiles.map(f => fs.readFileSync(path.join(srcDir, f), "utf8"));
+    const css = parts.join("");
+    fs.writeFileSync(path.join(srcDir, "ntp.css"), css, "utf8");
+    console.log("A8.0: ntp.css built from " + srcFiles.length + " sources (" + css.length + " chars)");
+  }
+
+  buildNtpCss();
+
+
   // ── A8: CSS dual-write marker validator ──
   // Checks ntp/ntp.css for rules that touch BOTH .large-box AND .small-box but
   // lack the BX-CSS-DUAL-WRITE marker. Per docs/css-dual-write-convention.md.
@@ -248,6 +265,19 @@ function build() {
   const firefoxDir = path.join(DIST, "boxing-firefox");
   copyTree(ROOT, chromeDir);
   copyTree(ROOT, firefoxDir);
+
+  // ── A8.0b: strip CSS source files from dist (ntp.css is the only artifact) ──
+  // Per ADR-0008 Phase 2: dist/ must contain ntp.css (cat product) only;
+  // source files (base/settings/onboarding/conn) are build inputs, not shipped.
+  const cssSrcNames = ["base.css", "settings.css", "onboarding.css", "conn.css"];
+  for (const dir of [chromeDir, firefoxDir]) {
+    for (const f of cssSrcNames) {
+      const fp = path.join(dir, "ntp", f);
+      fs.rmSync(fp, { force: true });
+    }
+  }
+  console.log("A8.0b: stripped CSS source files from " + cssSrcNames.length + " sources x 2 dists");
+
   const chrManifest = tailorManifest(base, "chrome");
   const ffManifest = tailorManifest(base, "firefox");
   writeManifest(chromeDir, chrManifest);
