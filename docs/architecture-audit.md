@@ -137,7 +137,7 @@ Runtime-only (not persisted):
 ### 3.1 Coupling Map
 
 ```
-removeConnection (L990)
+removeConnection (L1208)
   ├─ layout.connections.filter     ← data mutation
   ├─ connById.delete               ← runtime index
   ├─ markDeleted                   ← tombstone
@@ -145,7 +145,7 @@ removeConnection (L990)
   ├─ dsuRebuildFromConnections     ← DSU rebuild O(n)
   └─ (caller must) renderConnections + saveLayoutDebounced
 
-_execDeleteLargeBox (L3420)
+_execDeleteLargeBox (L3633)
   ├─ markDeleted (box + children + bookmarks)
   ├─ ensureConnArrays
   ├─ matchesDeletedKey filter on connections
@@ -157,7 +157,7 @@ _execDeleteLargeBox (L3420)
   ├─ saveLayout (NOT debounced — immediate)
   └─ renderCanvas
 
-toggleStarMark (L1529)
+toggleStarMark (L1724)
   ├─ groupStar add/delete
   ├─ box.isParent set/clear
   ├─ markDeleted (on unstar) / clear tombstone (on star)
@@ -234,12 +234,12 @@ Current connection state:
 - m = group members, n = total boxes on canvas
 - For each member, `elasticSnap` scans all non-group boxes
 - At 10+ boxes with 5+ group members, this is 50+ iterations per frame
-- Comment at L1593: "ponytail: O(m*n) elastic pass per group; swap in rbush R-tree at >100 boxes"
+- Comment at L1754: "ponytail: O(m*n) elastic pass per group; swap in rbush R-tree at >100 boxes"
 
 **Fix:** Pre-compute a spatial index (grid hash or rbush) once per drag-start, update incrementally during drag. This reduces `elasticSnap` from O(n) to O(log n) or O(1) with grid hash.
 
 **Hotspot 2: `getLargeBox` is O(n) Array.find.**
-- Called from `dsuRebuildFromConnections` (L1401), `moveGroupTogether` (L1621), `toggleStarMark` (L1535)
+- Called from `dsuRebuildFromConnections` (L1611), `moveGroupTogether` (L1755), `toggleStarMark` (L1724)
 - Should be O(1) via a `boxById: Map<id, LargeBox>` index
 
 **Fix:** Add `boxById` Map, rebuild on `renderCanvas`. `getLargeBox` becomes `boxById.get(id)`.
