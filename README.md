@@ -55,10 +55,22 @@ Tests live in-tree at `test/tests/`; Playwright config at `test/playwright.confi
 
 ## Privacy
 
-- Bookmark and layout data stored locally in `chrome.storage.local`
+- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
 - Optional WebDAV / GitHub Gist backup is the only outbound network usage; configured by user in Settings > Sync & Backup
 - No analytics, tracking, or third-party services
-- Permissions: `storage`, `tabs`, `bookmarks`; host_permissions `https://*/*` used only for user-initiated WebDAV backup
+- Permissions: `storage`, `tabs`, `bookmarks`; HTTPS host access is optional on Chrome (requested at runtime when you configure WebDAV backup) and required on Firefox
+- Full privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md) (will be hosted at `https://xxx91n.github.io/boxing/privacy-policy.html` via GitHub Pages)
+- 100% open source (Apache-2.0) — audit every line at [https://github.com/Xxx91n/boxing](https://github.com/Xxx91n/boxing)
+
+## Store Publishing
+
+See [docs/store-publishing-plan.md](docs/store-publishing-plan.md) for the full release readiness plan and [docs/publishing-guide.md](docs/publishing-guide.md) for step-by-step CRX3 + AMO signing setup.
+
+- Chrome Web Store: `boxing-chrome-<ver>.zip` + `boxing-chrome-<ver>.crx` (signed with `CRX_PRIVATE_KEY_PEM` secret)
+- Firefox AMO: `boxing-firefox-<ver>.zip` + `boxing-firefox-<ver>.xpi` (signed with `AMO_API_KEY`/`AMO_API_SECRET`)
+- Store listing text: [docs/store-assets/store-listing.md](docs/store-assets/store-listing.md)
+- Screenshot placeholders: [docs/store-assets/screenshots/](docs/store-assets/screenshots/)
+- Build workflow: manual `workflow_dispatch` only — see [.github/workflows/build.yml](.github/workflows/build.yml)
 
 ## License
 

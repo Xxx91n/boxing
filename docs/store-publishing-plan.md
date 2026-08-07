@@ -20,13 +20,13 @@
 | Step | File | Change | Status |
 |------|------|--------|--------|
 | A1 | .github/scripts/build.mjs | tailorManifest Chrome: move host_permissions to optional_host_permissions | Done |
-| A2 | background.js | ensureWebDAVPermission(url): check chrome.permissions.contains before fetch | Pending |
-| A2b | ntp/ntp.js | WebDAV: if needPermission, call chrome.permissions.request from user gesture | Pending |
-| A3 | docs/privacy-policy.md | Privacy policy for GitHub Pages | Pending |
-| A4 | docs/store-assets/screenshots/ | 5 transparent 1280x800 PNG + README | Pending |
-| A5 | docs/store-assets/store-listing.md | Short + detailed description | Pending |
-| A6 | .github/workflows/build.yml | AMO signing step with web-ext sign | Pending |
-| A6b | docs/publishing-guide.md | CRX pem + AMO API key setup guide | Pending |
+| A2 | background.js | ensureWebDAVPermission(url): check chrome.permissions.contains before fetch | Done |
+| A2b | ntp/ntp.js | WebDAV: if needPermission, call chrome.permissions.request from user gesture | Done |
+| A3 | docs/privacy-policy.md | Privacy policy for GitHub Pages | Done |
+| A4 | docs/store-assets/screenshots/ | 5 transparent 1280x800 PNG + README | Done |
+| A5 | docs/store-assets/store-listing.md | Short + detailed description | Done |
+| A6 | .github/workflows/build.yml | AMO signing step with web-ext sign | Done |
+| A6b | docs/publishing-guide.md | CRX pem + AMO API key setup guide | Done |
 
 ### Phase 2: Verification (autonomous, nighttime)
 
