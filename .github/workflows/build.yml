@@ -32,7 +32,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: .nvmrc
 
       - name: Build browser-specific trees + release subdirs
         env:
@@ -66,6 +66,25 @@ jobs:
             echo "$CRX_KEY" | base64 -d > /tmp/crx.pem
             npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing-${{ steps.ver.outputs.version }}.zip -o dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx -p /tmp/crx.pem
             echo "CRX3 signed OK"
+          fi
+
+      - name: Sign Firefox XPI (when AMO secrets present)
+        env:
+          AMO_KEY: ${{ secrets.AMO_API_KEY }}
+          AMO_SECRET: ${{ secrets.AMO_API_SECRET }}
+        run: |
+          if [ -z "$AMO_KEY" ] || [ -z "$AMO_SECRET" ]; then
+            echo "AMO_API_KEY/AMO_API_SECRET secrets not set -> boxing-firefox.xpi stays unsigned (dev XPI)."
+          else
+            npx --yes web-ext sign --api-key "$AMO_KEY" --api-secret "$AMO_SECRET" --source-dir dist/boxing-firefox/release/firefox/boxing --channel unlisted --artifacts-dir dist
+            # web-ext sign outputs <id>-<ver>.xpi in dist/, copy to our naming
+            SIGNED=$(ls dist/*.xpi 2>/dev/null | head -1)
+            if [ -n "$SIGNED" ]; then
+              cp "$SIGNED" dist/boxing-firefox-${{ steps.ver.outputs.version }}.xpi
+              echo "AMO signed XPI OK"
+            else
+              echo "WARN: web-ext sign did not produce a signed XPI"
+            fi
           fi
 
       - name: Verify all 4 artifacts exist

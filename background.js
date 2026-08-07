@@ -81,6 +81,23 @@ try {
     return null;
   }
 
+  // A2: Chrome MV3 — host_permissions moved to optional_host_permissions for store compliance.
+  // Check whether the extension currently holds origin permission for the WebDAV URL.
+  // Firefox keeps host_permissions as required, so this check always passes there.
+  async function ensureWebDAVPermission(url) {
+    try {
+      const u = new URL(url);
+      const origin = u.origin + '/*';
+      const apiNs = typeof browser !== 'undefined' ? browser : chrome;
+    if (!apiNs.permissions || !apiNs.permissions.contains) return { ok: true }; // older Chrome/missing API
+      const granted = await apiNs.permissions.contains({ origins: [origin] });
+      if (granted) return { ok: true };
+      return { ok: false, needPermission: true, origin };
+    } catch (_) {
+      return { ok: true }; // fail open on unexpected API issues
+    }
+  }
+
   // BX-AUD-01: only messages sent from our own extension (sender.id === our runtime id) may use the WebDAV proxy.
   // This blocks other installed extensions or arbitrary extension pages from driving Boxing as a blind fetch proxy.
   function isOwnSender(sender) {
@@ -202,6 +219,11 @@ try {
     } else if (msg.type === 'webdav-put') {
       const block = guardWebDAVRequest(msg, true);
       if (block) return block;
+    }
+    // A2: Chrome optional_host_permissions — verify origin access before fetch.
+    if (msg.type === 'webdav-test' || msg.type === 'webdav-put' || msg.type === 'webdav-get') {
+      const perm = await ensureWebDAVPermission(msg.url);
+      if (!perm.ok) return { success: false, needPermission: true, error: 'host permission not granted', origin: perm.origin };
     }
     try {
       if (msg.type === 'webdav-test') {

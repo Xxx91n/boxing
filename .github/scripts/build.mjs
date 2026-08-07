@@ -50,6 +50,12 @@ function tailorManifest(base, browser) {
     m.background = { service_worker: "background.js" };
     if (m.browser_specific_settings) delete m.browser_specific_settings;
     m.permissions = (m.permissions || []).filter(p => p !== "browserSettings");
+    // A9: Chrome Web Store compliance — move broad host_permissions to optional,
+    // request at runtime when user enables WebDAV backup (chrome.permissions.request).
+    if (m.host_permissions && m.host_permissions.length) {
+      m.optional_host_permissions = (m.optional_host_permissions || []).concat(m.host_permissions);
+      m.host_permissions = [];
+    }
   }
   if (process.env.BOXING_BUILD_VERSION) m.version = process.env.BOXING_BUILD_VERSION;
   return m;

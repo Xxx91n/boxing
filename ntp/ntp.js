@@ -4735,7 +4735,21 @@ function ensureGroups() {
       return Promise.reject(new Error('No extension runtime available'));
     }
 
-    async function testWebDAVConnection() {
+    // A2b: Chrome MV3 — request optional host permission from user gesture (click handler context).
+  async function ensureWebDAVPermissionGranted(url) {
+    const u = new URL(url);
+    const origin = u.origin + '/*';
+    const apiNs = typeof browser !== 'undefined' ? browser : chrome;
+    if (!apiNs.permissions) return true; // no permissions API — assume granted
+    try {
+      const has = await apiNs.permissions.contains({ origins: [origin] });
+      if (has) return true;
+      const granted = await apiNs.permissions.request({ origins: [origin] });
+      return !!granted;
+    } catch (_) { return true; } // fail open on Firefox (host_permissions required)
+  }
+
+  async function testWebDAVConnection() {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
       const pass = webdavPassInput?.value || '';
@@ -4759,7 +4773,16 @@ function ensureGroups() {
         // Primary: route through background SW (bypasses CORS in Firefox MV3)
         try {
           const resp = await sendToBackground({ type: 'webdav-test', url: target.href, user, pass });
-          status = resp.status; ok = resp.ok;
+          if (resp.needPermission) {
+            debug('WebDAV test: needPermission, requesting origin', resp.origin);
+            const granted = await ensureWebDAVPermissionGranted(target.href);
+            if (!granted) throw new Error(i18n('webdavErrNetwork'));
+            // Retry after permission granted
+            const resp2 = await sendToBackground({ type: 'webdav-test', url: target.href, user, pass });
+            status = resp2.status; ok = resp2.ok;
+          } else {
+            status = resp.status; ok = resp.ok;
+          }
           debug('WebDAV test via BG:', { status, ok });
         } catch (bgErr) {
           debug('WebDAV test via BG failed, falling back to direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
@@ -4831,7 +4854,15 @@ function ensureGroups() {
         // Primary: route through background SW
         try {
           const resp = await sendToBackground({ type: 'webdav-put', url: fileUrl, user, pass, body });
-          status = resp.status; ok = resp.ok;
+          if (resp.needPermission) {
+            debug('WebDAV backup: needPermission, requesting origin', resp.origin);
+            const granted = await ensureWebDAVPermissionGranted(fileUrl);
+            if (!granted) throw new Error(i18n('webdavErrNetwork'));
+            const resp2 = await sendToBackground({ type: 'webdav-put', url: fileUrl, user, pass, body });
+            status = resp2.status; ok = resp2.ok;
+          } else {
+            status = resp.status; ok = resp.ok;
+          }
           debug('WebDAV backup via BG: PUT', { status, ok });
         } catch (bgErr) {
           debug('WebDAV backup via BG failed, falling back to direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
