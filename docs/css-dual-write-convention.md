@@ -107,6 +107,5 @@ Checklist:
 ## Related
 
 - [ntp/ntp.css](../ntp/ntp.css) — the CSS file with all markers
-- [docs/design-box-connections.md](design-box-connections.md) — connection line system architecture
 - BX-145: the commit that introduced this convention after finding `.panning .small-box` was missing while `.panning .large-box` existed
 - BX-DEV-020: hidden override pairing rule (see above)

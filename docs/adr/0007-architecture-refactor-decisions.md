@@ -8,7 +8,7 @@ Accepted + Implemented (2026-08-05) — all phases in ntp/ntp.js; acceptance gat
 
 ## Context
 
-The architecture audit (docs/architecture-audit.md) identified 9 recommendations across
+The architecture audit (docs/archive/architecture-audit.md, archived) identified 9 recommendations across
 3 priorities. Through a grill-with-docs process, the user confirmed decisions for each
 recommendation after reviewing industrial patterns (tldraw Store/BindingUtil, React Flow
 Edge, Excalidraw Delta, GDevelop SpatialHashGrid) and code-level analysis of the current

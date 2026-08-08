@@ -39,11 +39,11 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **Spatial hash (elasticSnap)** — threshold 32; cell = 2× max box dim (GDevelop pattern).
 
 ### Architecture Audit & Refactor Roadmap (ADR-0007)
-- **Audit document**: [docs/architecture-audit.md](architecture-audit.md) — bug retrospective, data structure alignment, coupling analysis, complexity audit
+- **Audit document**: [docs/archive/architecture-audit.md](archive/architecture-audit.md) — bug pattern taxonomy (archived, absorbed into ADRs)
 - **ADR-0007**: [docs/adr/0007-architecture-refactor-decisions.md](adr/0007-architecture-refactor-decisions.md)
 - **ADR-0008**: [docs/adr/0008-design-system-three-layer-tokens.md](adr/0008-design-system-three-layer-tokens.md) — three-layer token architecture + CSS source split + dark mode consolidation
 - **DESIGN.md**: [docs/DESIGN.md](DESIGN.md) — visual design system: token architecture, palette, typography, component state specs, dark mode strategy — grill-confirmed decisions for all 9 audit recommendations
-- **Roadmap**: [docs/roadmap-architecture-refactor.md](roadmap-architecture-refactor.md) — phased implementation plan with verification criteria
+- **Roadmap**: [docs/archive/roadmap-architecture-refactor.md](archive/roadmap-architecture-refactor.md) — decision matrix (archived, implemented in ADR-0007)
 - **Implementation status (ADR-0007)**: Phase 1.1–1.3 + Phase 2.1–2.3 + Phase 3 landed in `ntp/ntp.js` (groups computed-only, `commit(op)`, `boxById` maps, `__dsuDirty`, spatial hash ≥32, tombstone 24h GC, conn `props`, delete viewState clear).
 - **Verification evidence (2026-08-05)**: ADR acceptance gates (`boxing-adr-0007-acceptance`) 5/5; critical suite (`star-sync`+`conn-delete`+`conn-dsu`+`conn-persist`) 38/38 isolated; acceptance+critical combined 43/43 (workers=2). BX-144 Bug1b/1c + star-only `dsuMake` covered.
 - **Confirmed decisions (grill Q1-Q4)**:

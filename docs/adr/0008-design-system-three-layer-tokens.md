@@ -11,7 +11,7 @@ Accepted — Phase 1-4 implemented (2026-08-06).
 - Phase 4: 10 component state spec tables in docs/DESIGN.md aligned to code reality; checkbox hover rule added (commit 6da765a)
 
 ## Context
-The architecture audit (docs/architecture-audit.md) and grill-with-docs review identified
+The architecture audit (docs/archive/architecture-audit.md, archived) and grill-with-docs review identified
 that Boxing's design system has 6 structural problems:
 
 1. **Flat token architecture** — 42 CSS variables in a single :root block, no primitive→semantic→component

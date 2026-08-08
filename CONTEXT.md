@@ -4,7 +4,7 @@ Boxing is a Chrome/Firefox browser extension built from a single source tree. Th
 
 ## Implementation Status
 
-Historical grill phase tables live in git history and `docs/roadmap-architecture-refactor.md` / `docs/adr/`. This file is a **glossary only** — not a status board.
+Historical grill phase tables live in git history and `docs/archive/` / `docs/adr/`. This file is a **glossary only** — not a status board.
 
 
 
