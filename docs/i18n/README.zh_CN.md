@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**语言:** [English](README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**语言:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -9,8 +9,8 @@
 Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平文件夹,而是在无限画布上用标签盒子组织书签 — 拖拽、连接、嵌套,按你的思维空间排列。可以理解为 Obsidian 画布遇见书签管理。
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing 画布总览" width="1280">
+  <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing 画布总览" width="1280">
 </picture>
 
 > [!NOTE]
@@ -41,8 +41,8 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 **14 种语言** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi,自动检测浏览器语言。
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="docs/store-assets/screenshots/screenshot-2-boxes.png" alt="盒子层级与书签" width="1280">
+  <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="盒子层级与书签" width="1280">
 </picture>
 
 > [!NOTE]
@@ -88,7 +88,7 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 - 可选的 WebDAV / GitHub Gist 备份是唯一的出站网络访问
 - 无分析、无追踪、无第三方服务
 - 100% 开源(Apache-2.0)— 可审计每一行代码
-- 完整隐私政策: [docs/privacy-policy.md](docs/privacy-policy.md)
+- 完整隐私政策: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## 开发
 
@@ -114,12 +114,16 @@ npm run build     # 开发构建 → dist/boxing-chrome + dist/boxing-firefox
 npm test          # Playwright 测试 (Chrome + Firefox)
 ```
 
-详见 [CONTRIBUTING.md](CONTRIBUTING.md) 了解完整开发指南。
+详见 [CONTRIBUTING.md](../../CONTRIBUTING.md) 了解完整开发指南。
 
 ## 贡献
 
-欢迎贡献! 详见 [CONTRIBUTING.md](CONTRIBUTING.md) 了解环境配置、工作流和代码风格。
+欢迎贡献! 详见 [CONTRIBUTING.md](../../CONTRIBUTING.md) 了解环境配置、工作流和代码风格。
 
 ## 许可证
 
-Apache-2.0 — 见 [LICENSE](LICENSE)
+Apache-2.0 — 见 [LICENSE](../../LICENSE)
+
+<!-- README-I18N:START:FOOTER -->
+> 其他语言: [English](../../README.md) — 欢迎社区贡献翻译,详见 [TRANSLATIONS.md](../../TRANSLATIONS.md)
+<!-- README-I18N:END:FOOTER -->

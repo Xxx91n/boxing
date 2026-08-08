@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**Languages:** [English](README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](README.md) · [简体中文](docs/i18n/README.zh_CN.md) · [繁體中文](#) · [日本語](#) · [한국어](#) · [Français](#) · [Deutsch](#) · [Español](#) · [Português (Brasil)](#) · [Русский](#) · [العربية](#) · [हिन्दी](#) · [ไทย](#) · [Tiếng Việt](#)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -125,5 +125,5 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, wor
 Apache-2.0 — see [LICENSE](LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
-> Translations: [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+> Translations: [简体中文](docs/i18n/README.zh_CN.md) — other languages welcome via [community contribution](TRANSLATIONS.md)
 <!-- README-I18N:END:FOOTER -->
