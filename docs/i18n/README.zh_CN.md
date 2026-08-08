@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**语言:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](../../README.md) · **简体中文** · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -125,5 +125,5 @@ npm test          # Playwright 测试 (Chrome + Firefox)
 Apache-2.0 — 见 [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
-> 其他语言: [English](../../README.md) — 欢迎社区贡献翻译,详见 [TRANSLATIONS.md](../../TRANSLATIONS.md)
+> Translations: [English](../../README.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END:FOOTER -->

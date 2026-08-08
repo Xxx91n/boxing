@@ -1,6 +1,10 @@
 <!-- README-I18N:START -->
-**Languages:** **English** · [简体中文](docs/i18n/README.zh_CN.md) · [繁體中文](docs/i18n/README.zh_TW.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [Français](docs/i18n/README.fr.md) · [Deutsch](docs/i18n/README.de.md) · [Español](docs/i18n/README.es.md) · [Português (Brasil)](docs/i18n/README.pt_BR.md) · [Русский](docs/i18n/README.ru.md) · [العربية](docs/i18n/README.ar.md) · [हिन्दी](docs/i18n/README.hi.md) · [ไทย](docs/i18n/README.th.md) · [Tiếng Việt](docs/i18n/README.vi.md)
+**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · **ไทย** · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
+
+> [!WARNING]
+> **Translation in progress.** This file currently mirrors the English README. If you can help translate to Thai, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
+
 
 # Boxing
 
@@ -9,8 +13,8 @@ A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
 Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
 </picture>
 
 > [!NOTE]
@@ -41,8 +45,8 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
 **14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
 </picture>
 
 > [!NOTE]
@@ -88,7 +92,7 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
 - Optional WebDAV / GitHub Gist backup is the only outbound network usage
 - No analytics, no tracking, no third-party services
 - 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md)
+- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Development
 
@@ -114,16 +118,16 @@ npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
 npm test          # Playwright tests (Chrome + Firefox)
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
 
 ## Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and code style.
+Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE)
+Apache-2.0 — see [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
-> Translations: [简体中文](docs/i18n/README.zh_CN.md) · [繁體中文](docs/i18n/README.zh_TW.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [Français](docs/i18n/README.fr.md) · [Deutsch](docs/i18n/README.de.md) · [Español](docs/i18n/README.es.md) · [Português (Brasil)](docs/i18n/README.pt_BR.md) · [Русский](docs/i18n/README.ru.md) · [العربية](docs/i18n/README.ar.md) · [हिन्दी](docs/i18n/README.hi.md) · [ไทย](docs/i18n/README.th.md) · [Tiếng Việt](docs/i18n/README.vi.md) — see [TRANSLATIONS.md](TRANSLATIONS.md)
+> Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END:FOOTER -->
