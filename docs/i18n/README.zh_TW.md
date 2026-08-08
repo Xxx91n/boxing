@@ -2,106 +2,102 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · **繁體中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to Traditional Chinese, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+層級化無限畫布書籤管理器，米白極簡設計。
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資料夾，而是在無限畫布上用標籤盒子組織書籤 — 拖曳、連結、巢狀排列，按你的思維空間組織。可以理解為 Obsidian 畫布遇見書籤管理。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing 畫布總覽" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
+> 此處為佔位圖，請替換為真實截圖：展示主畫布、盒子和連線。
 
-## Table of Contents
+## 目錄
 
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [功能](#features)
+- [安裝](#install)
+- [**雙擊**空白畫布 → 建立新盒子,**拖曳**盒子標題列 → 移動盒子,**Ctrl+滾輪** → 縮放畫布（30% 到 200%）,**拖曳**空白畫布 → 平移,**右鍵** → 返回父級畫布,**點擊**盒子 → 進入子畫布,從盒子邊緣中點 **拖曳** → 連結到另一個盒子,**Alt+點擊**連線 → 刪除連線,盒子上的 **星號** → 標記為父盒子（子盒子跟隨移動）,**圖釘** → 鎖定盒子位置,畫布右上角 **圓圈按鈕** → 取消固定進入全螢幕模式](#usage)
+- [所有資料本地儲存在 `chrome.storage.local` — 除非你設定了可選的雲端備份，否則不會離開你的裝置,可選的 WebDAV / GitHub Gist 備份是唯一的對外網路使用,無分析、無追蹤、無第三方服務,100% 開源（Apache-2.0）— 可稽核每一行原始碼,完整隱私政策：[docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
+- [開發](#development)
+- [貢獻](#contributing)
+- [授權](#license)
 
-## Features
+## 功能
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**無限畫布** — 自由平移和縮放（Ctrl+滾輪）。在單一畫布上建立無限盒子。用連線表示盒子間的關係。設定父子關係 — 移動父盒子時子盒子跟隨移動。
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**兩級層級** — 大盒子包含小盒子，小盒子包含書籤。點擊盒子進入其子畫布。麵包屑導航顯示路徑。可任意深度巢狀。
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**書籤管理** — 每個盒子有自己的書籤集合，支援列表和網格檢視。新增、編輯、刪除，操作簡潔。可在目前分頁或新分頁開啟（可設定）。拖曳排序。
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**連線** — 盒子間的視覺 SVG 連線。Alt+點擊連線刪除（可設定：單擊或雙擊）。父子移動傳播，帶彈性邊界約束。
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**設計與主題** — 米白/奶油色極簡美學。深色模式，自動跟隨系統。可調字型和縮放。方角/圓角切換。
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 種語言** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi，自動偵測瀏覽器語言。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="盒子層級與書籤" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+> 此處為佔位圖，請替換為真實截圖：展示盒子層級和書籤管理。
 
-## Install
+## 安裝
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+1. 下載最新 [release ZIP](https://github.com/Xxx91n/boxing/releases)
+2. 解壓縮到資料夾
+3. 前往 `chrome://extensions`（或 `edge://extensions`）
+4. 啟用右上角 **開發者模式**
+5. 點擊 **載入未封裝擴充功能**，選擇解壓縮後的資料夾
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. 下載最新 [release XPI](https://github.com/Xxx91n/boxing/releases)
+2. 前往 `about:addons`
+3. 點擊齒輪圖示 → **從檔案安裝附加元件**
+4. 選擇下載的 XPI 檔案
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> 一般使用者不需要 Node.js 或 npm，那些僅供開發使用。
 
-## Usage
+## **雙擊**空白畫布 → 建立新盒子,**拖曳**盒子標題列 → 移動盒子,**Ctrl+滾輪** → 縮放畫布（30% 到 200%）,**拖曳**空白畫布 → 平移,**右鍵** → 返回父級畫布,**點擊**盒子 → 進入子畫布,從盒子邊緣中點 **拖曳** → 連結到另一個盒子,**Alt+點擊**連線 → 刪除連線,盒子上的 **星號** → 標記為父盒子（子盒子跟隨移動）,**圖釘** → 鎖定盒子位置,畫布右上角 **圓圈按鈕** → 取消固定進入全螢幕模式
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- **雙擊**空白畫布 → 建立新盒子
+- **拖曳**盒子標題列 → 移動盒子
+- **Ctrl+滾輪** → 縮放畫布（30% 到 200%）
+- **拖曳**空白畫布 → 平移
+- **右鍵** → 返回父級畫布
+- **點擊**盒子 → 進入子畫布
+- 從盒子邊緣中點 **拖曳** → 連結到另一個盒子
+- **Alt+點擊**連線 → 刪除連線
+- 盒子上的 **星號** → 標記為父盒子（子盒子跟隨移動）
+- **圖釘** → 鎖定盒子位置
+- 畫布右上角 **圓圈按鈕** → 取消固定進入全螢幕模式
 
-## Privacy
+## 所有資料本地儲存在 `chrome.storage.local` — 除非你設定了可選的雲端備份，否則不會離開你的裝置,可選的 WebDAV / GitHub Gist 備份是唯一的對外網路使用,無分析、無追蹤、無第三方服務,100% 開源（Apache-2.0）— 可稽核每一行原始碼,完整隱私政策：[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+- 所有資料本地儲存在 `chrome.storage.local` — 除非你設定了可選的雲端備份，否則不會離開你的裝置
+- 可選的 WebDAV / GitHub Gist 備份是唯一的對外網路使用
+- 無分析、無追蹤、無第三方服務
+- 100% 開源（Apache-2.0）— 可稽核每一行原始碼
+- 完整隱私政策：[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## 開發
 
-### Prerequisites
+### 前置條件
 
 - Node.js >= 18
 - npm
 
-### Setup
+### 設定
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -111,22 +107,22 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### 建置
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # 開發建置 → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Playwright 測試（Chrome + Firefox）
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+詳見 [CONTRIBUTING.md](../../CONTRIBUTING.md) 了解完整開發指南。
 
-## Contributing
+## 貢獻
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+歡迎貢獻！詳見 [CONTRIBUTING.md](../../CONTRIBUTING.md) 了解環境設定、工作流程和程式碼風格。
 
-## License
+## 授權
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+Apache-2.0 — 見 [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
 > Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)

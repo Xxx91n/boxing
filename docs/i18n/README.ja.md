@@ -2,106 +2,102 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · **日本語** · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to Japanese, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+階層型無限キャンバスのブックマークオーガナイザー。ベージュミニマリストデザイン。
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing はブラウザの新しいタブページをビジュアルなブックマークワークスペースに変えます。フラットなフォルダの代わりに、無限キャンバス上にラベル付きボックスを作成し、ブックマークを整理します — ドラッグ、接続、ネストして、あなたの思考通りに配置できます。Obsidian キャンバスとブックマークが出会ったようなものです。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing キャンバス概要" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
+> これはプレースホルダーです。メインキャンバスのボックスと接続を示す実際のスクリーンショットに置き換えてください。
 
-## Table of Contents
+## 目次
 
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [機能](#features)
+- [インストール](#install)
+- [**ダブルクリック** 空白キャンバス → 新規ボックス作成,**ドラッグ** ボックスタイトルバー → ボックス移動,**Ctrl+スクロール** → キャンバスズーム（30%〜200%）,**ドラッグ** 空白キャンバス → パン,**右クリック** → 親キャンバスレベルに戻る,**クリック** ボックス → サブキャンバスに入る,ボックスの辺の中点から **ドラッグ** → 別のボックスに接続,**Alt+クリック** 接続線 → 削除,ボックスの **スター** → 親ボックスとしてマーク（子が一緒に移動）,**ピン** → ボックス位置をロック,キャンバス右上の **丸いボタン** → ヘッダーのピン解除でフルスクリーン](#usage)
+- [すべてのデータは `chrome.storage.local` にローカル保存 — オプションのクラウドバックアップを設定しない限りデバイスから出ません,オプションの WebDAV / GitHub Gist バックアップが唯一の外部ネットワーク通信です,アナリティクスなし、トラッキングなし、サードパーティサービスなし,100% オープンソース（Apache-2.0）— すべてのコードを監査可能,プライバシーポリシー：[docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
+- [開発](#development)
+- [貢献](#contributing)
+- [ライセンス](#license)
 
-## Features
+## 機能
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**無限キャンバス** — 自由にパンとズーム（Ctrl+スクロール）。1つのキャンバスに無制限のボックスを作成。線で接続して関係を表示。親子関係を設定 — 親ボックスを動かすと子ボックスも追従。
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**2階層構造** — 大きなボックスの中に小さなボックス、小さなボックスの中にブックマーク。ボックスをクリックしてサブキャンバスに入る。パンくずナビでパスを表示。必要な深さまでネスト可能。
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**ブックマーク管理** — 各ボックスに独自のブックマークコレクション（リスト＆グリッド表示）。追加、編集、削除がシンプルなダイアログで。現在のタブまたは新規タブで開く（設定可能）。ドラッグで並べ替え。
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**接続** — ボックス間のビジュアル SVG 接続線。Alt+クリックで線を削除（設定可能：シングルクリックまたはダブルクリック）。親子移動伝播、弾性境界クランプ付き。
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**デザイン＆テーマ** — ベージュ/クリームのミニマル美学。ライト/ダークモード、システム自動検出。フォントサイズとズーム調整可能。角丸/角張の切り替え。
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14言語対応** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi、ブラウザ言語の自動検出。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="ボックス階層とブックマーク" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+> これはプレースホルダーです。ボックス階層とブックマーク管理を示す実際のスクリーンショットに置き換えてください。
 
-## Install
+## インストール
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+1. 最新の [リリース ZIP](https://github.com/Xxx91n/boxing/releases) をダウンロード
+2. フォルダに解凍
+3. `chrome://extensions`（または `edge://extensions`）を開く
+4. 右上の **デベロッパーモード** を有効化
+5. **パッケージ化されていない拡張機能を読み込む** をクリックし、解凍したフォルダを選択
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. 最新の [リリース XPI](https://github.com/Xxx91n/boxing/releases) をダウンロード
+2. `about:addons` を開く
+3. 歯車アイコン → **ファイルからアドオンをインストール**
+4. ダウンロードした XPI ファイルを選択
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> エンドユーザーに Node.js や npm は不要です。それらは開発用のみです。
 
-## Usage
+## **ダブルクリック** 空白キャンバス → 新規ボックス作成,**ドラッグ** ボックスタイトルバー → ボックス移動,**Ctrl+スクロール** → キャンバスズーム（30%〜200%）,**ドラッグ** 空白キャンバス → パン,**右クリック** → 親キャンバスレベルに戻る,**クリック** ボックス → サブキャンバスに入る,ボックスの辺の中点から **ドラッグ** → 別のボックスに接続,**Alt+クリック** 接続線 → 削除,ボックスの **スター** → 親ボックスとしてマーク（子が一緒に移動）,**ピン** → ボックス位置をロック,キャンバス右上の **丸いボタン** → ヘッダーのピン解除でフルスクリーン
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- **ダブルクリック** 空白キャンバス → 新規ボックス作成
+- **ドラッグ** ボックスタイトルバー → ボックス移動
+- **Ctrl+スクロール** → キャンバスズーム（30%〜200%）
+- **ドラッグ** 空白キャンバス → パン
+- **右クリック** → 親キャンバスレベルに戻る
+- **クリック** ボックス → サブキャンバスに入る
+- ボックスの辺の中点から **ドラッグ** → 別のボックスに接続
+- **Alt+クリック** 接続線 → 削除
+- ボックスの **スター** → 親ボックスとしてマーク（子が一緒に移動）
+- **ピン** → ボックス位置をロック
+- キャンバス右上の **丸いボタン** → ヘッダーのピン解除でフルスクリーン
 
-## Privacy
+## すべてのデータは `chrome.storage.local` にローカル保存 — オプションのクラウドバックアップを設定しない限りデバイスから出ません,オプションの WebDAV / GitHub Gist バックアップが唯一の外部ネットワーク通信です,アナリティクスなし、トラッキングなし、サードパーティサービスなし,100% オープンソース（Apache-2.0）— すべてのコードを監査可能,プライバシーポリシー：[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+- すべてのデータは `chrome.storage.local` にローカル保存 — オプションのクラウドバックアップを設定しない限りデバイスから出ません
+- オプションの WebDAV / GitHub Gist バックアップが唯一の外部ネットワーク通信です
+- アナリティクスなし、トラッキングなし、サードパーティサービスなし
+- 100% オープンソース（Apache-2.0）— すべてのコードを監査可能
+- プライバシーポリシー：[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## 開発
 
-### Prerequisites
+### 前提条件
 
 - Node.js >= 18
 - npm
 
-### Setup
+### セットアップ
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -111,22 +107,22 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### ビルド
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # 開発ビルド → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Playwright テスト（Chrome + Firefox）
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+完全な開発ガイドは [CONTRIBUTING.md](../../CONTRIBUTING.md) を参照してください。
 
-## Contributing
+## 貢献
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+貢献を歓迎します！セットアップ、ワークフロー、コードスタイルは [CONTRIBUTING.md](../../CONTRIBUTING.md) を参照してください。
 
-## License
+## ライセンス
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+Apache-2.0 — [LICENSE](../../LICENSE) を参照
 
 <!-- README-I18N:START:FOOTER -->
 > Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)

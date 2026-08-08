@@ -2,106 +2,102 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Français** · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to French, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+Organisateur de signets hierarchique sur canevas infini, design minimaliste beige.
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing transforme votre page de nouvel onglet en espace de travail visuel pour vos signets. Au lieu de dossiers plats, organisez vos signets dans des boites etiquetees sur un canevas infini — glissez, connectez et imbriquez-les spatialment. Pensez Obsidian canvas rencontre signets.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Apercu du canevas Boxing" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
+> Ceci est un emplacement reserve. Remplacez-le par une capture d ecran reelle montrant le canevas principal avec les boites et les connexions.
 
-## Table of Contents
+## Sommaire
 
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [Fonctionnalites](#features)
+- [Installation](#install)
+- [**Double-clic** sur canevas vide → creer une nouvelle boite,**Glisser** la barre de titre de la boite → deplacer la boite,**Ctrl+molette** → zoomer le canevas (30% a 200%),**Glisser** le canevas vide → pan,**Clic droit** → revenir au niveau de canevas parent,**Clic** sur une boite → entrer dans son sous-canevas,**Glisser** depuis le milieu d un bord de boite → connecter a une autre boite,**Alt+Clic** sur une ligne de connexion → la supprimer,**Etoile** sur une boite → marquer comme parent (les enfants bougent ensemble),**Epingle** → verrouiller la position de la boite,**Bouton cercle** en haut a droite du canevas → detacher l en-tete pour le mode plein ecran](#usage)
+- [Toutes les donnees stockees localement dans `chrome.storage.local` — rien ne quitte votre appareil sauf si vous configurez la sauvegarde cloud optionnelle,La sauvegarde WebDAV / GitHub Gist optionnelle est la seule utilisation reseau sortante,Pas d analytics, pas de tracking, pas de services tiers,100% open source (Apache-2.0) — auditez chaque ligne,Politique de confidentialite complete: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
+- [Developpement](#development)
+- [Contribuer](#contributing)
+- [Licence](#license)
 
-## Features
+## Fonctionnalites
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**Canevas infini** — Pan et zoom libres (Ctrl+molette). Creez un nombre illimite de boites sur un seul canevas. Connectez les boites avec des lignes pour montrer les relations. Definissez des relations parent-enfant — deplacez un parent et ses enfants suivent.
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**Hierarchie a deux niveaux** — Les grandes boites contiennent des petites boites, les petites boites contiennent des signets. Cliquez sur une boite pour entrer dans son sous-canevas. Le fil d Ariane montre votre chemin. Imbriquez aussi profondement que necessaire.
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**Gestion des signets** — Chaque boite a sa propre collection de signets avec vues liste et grille. Ajouter, modifier, supprimer avec un dialogue eclaire. Ouvrir dans l onglet actuel ou un nouvel onglet (configurable). Glisser pour reorganiser.
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**Connectivite** — Lignes de connexion SVG visuelles entre boites. Alt+Clic sur une ligne pour la supprimer (configurable: clic simple ou double-clic). Propagation du deplacement parent-enfant avec limite elastique.
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**Design et theme** — Esthetique minimaliste beige/creme. Mode clair et sombre avec detection automatique du systeme. Taille de police et zoom ajustables. Bascule coins carres/arrondis.
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 langues** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi avec detection automatique de la langue du navigateur.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Hierarchie des boites et signets" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+> Ceci est un emplacement reserve. Remplacez-le par une capture d ecran reelle montrant la hierarchie des boites et la gestion des signets.
 
-## Install
+## Installation
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+1. Telechargez la derniere [version ZIP](https://github.com/Xxx91n/boxing/releases)
+2. Decompressez dans un dossier
+3. Allez sur `chrome://extensions` (ou `edge://extensions`)
+4. Activez le **Mode developpeur** (en haut a droite)
+5. Cliquez sur **Charger l extension non empaquetee** et selectionnez le dossier decompresse
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. Telechargez la derniere [version XPI](https://github.com/Xxx91n/boxing/releases)
+2. Allez sur `about:addons`
+3. Cliquez sur l icone engrenage → **Installer un module depuis un fichier**
+4. Selectionnez le fichier XPI telecharge
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> Les utilisateurs finaux n ont pas besoin de Node.js ou npm. Ils ne sont necessaires que pour le developpement.
 
-## Usage
+## **Double-clic** sur canevas vide → creer une nouvelle boite,**Glisser** la barre de titre de la boite → deplacer la boite,**Ctrl+molette** → zoomer le canevas (30% a 200%),**Glisser** le canevas vide → pan,**Clic droit** → revenir au niveau de canevas parent,**Clic** sur une boite → entrer dans son sous-canevas,**Glisser** depuis le milieu d un bord de boite → connecter a une autre boite,**Alt+Clic** sur une ligne de connexion → la supprimer,**Etoile** sur une boite → marquer comme parent (les enfants bougent ensemble),**Epingle** → verrouiller la position de la boite,**Bouton cercle** en haut a droite du canevas → detacher l en-tete pour le mode plein ecran
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- **Double-clic** sur canevas vide → creer une nouvelle boite
+- **Glisser** la barre de titre de la boite → deplacer la boite
+- **Ctrl+molette** → zoomer le canevas (30% a 200%)
+- **Glisser** le canevas vide → pan
+- **Clic droit** → revenir au niveau de canevas parent
+- **Clic** sur une boite → entrer dans son sous-canevas
+- **Glisser** depuis le milieu d un bord de boite → connecter a une autre boite
+- **Alt+Clic** sur une ligne de connexion → la supprimer
+- **Etoile** sur une boite → marquer comme parent (les enfants bougent ensemble)
+- **Epingle** → verrouiller la position de la boite
+- **Bouton cercle** en haut a droite du canevas → detacher l en-tete pour le mode plein ecran
 
-## Privacy
+## Toutes les donnees stockees localement dans `chrome.storage.local` — rien ne quitte votre appareil sauf si vous configurez la sauvegarde cloud optionnelle,La sauvegarde WebDAV / GitHub Gist optionnelle est la seule utilisation reseau sortante,Pas d analytics, pas de tracking, pas de services tiers,100% open source (Apache-2.0) — auditez chaque ligne,Politique de confidentialite complete: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+- Toutes les donnees stockees localement dans `chrome.storage.local` — rien ne quitte votre appareil sauf si vous configurez la sauvegarde cloud optionnelle
+- La sauvegarde WebDAV / GitHub Gist optionnelle est la seule utilisation reseau sortante
+- Pas d analytics, pas de tracking, pas de services tiers
+- 100% open source (Apache-2.0) — auditez chaque ligne
+- Politique de confidentialite complete: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## Developpement
 
-### Prerequisites
+### Prerequis
 
 - Node.js >= 18
 - npm
 
-### Setup
+### Configuration
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -114,19 +110,19 @@ npm run build
 ### Build
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # Build dev → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Tests Playwright (Chrome + Firefox)
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+Voir [CONTRIBUTING.md](../../CONTRIBUTING.md) pour le guide de developpement complet.
 
-## Contributing
+## Contribuer
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+Les contributions sont les bienvenues! Voir [CONTRIBUTING.md](../../CONTRIBUTING.md) pour la configuration, le flux de travail et le style de code.
 
-## License
+## Licence
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+Apache-2.0 — voir [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
 > Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)

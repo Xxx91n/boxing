@@ -2,106 +2,102 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · **العربية** · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to Arabic, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+منظم إشارات مرجعية هرمي على لوحة لا نهائية، تصميم بيج مينيمالي.
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing يحول صفحة التبويب الجديدة إلى مساحة عمل مرئية للإشارات المرجعية. بدلاً من المجلدات المسطحة، نظّم إشاراتك المرجعية في صناديق معنونة على لوحة لا نهائية — اسحبها وصِلها وداخلها مكانيّاً. فكّر في لوحة Obsidian تلتقي بالإشارات المرجعية.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="نظرة عامة على لوحة Boxing" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
+> هذا عنصر نائب. استبدله بلقطة شاشة حقيقية تُظهر اللوحة الرئيسية مع الصناديق والاتصالات.
 
-## Table of Contents
+## الفهرس
 
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [الميزات](#features)
+- [التثبيت](#install)
+- [**نقر مزدوج** على لوحة فارغة → إنشاء صندوق جديد,**سحب** شريط عنوان الصندوق → تحريك الصندوق,**Ctrl+عجلة** → تكبير اللوحة (30% إلى 200%),**سحب** لوحة فارغة → تحريك,**نقر يمين** → العودة إلى مستوى اللوحة الأب,**نقر** على صندوق → دخول لوحته الفرعية,**سحب** من منتصف حافة الصندوق → ربط بصندوق آخر,**Alt+نقر** على خط الاتصال → حذفه,**نجمة** على صندوق → تعليم كأب (الأبناء يتحركون معاً),**دبوس** → قفل موضع الصندوق,**زر دائري** أعلى يمين اللوحة → فك التثبيت للوضع بملء الشاشة](#usage)
+- [جميع البيانات مخزنة محلياً في `chrome.storage.local` — لا شيء يغادر جهازك إلا إذا قمت بتكوين نسخة احتياطية سحابية اختيارية,النسخ الاحتياطي الاختياري WebDAV / GitHub Gist هو الاستخدام الصادر الوحيد للشبكة,بدون تحليلات، بدون تتبع، بدون خدمات طرف ثالث,100% مفتوح المصدر (Apache-2.0) — تدقيق كل سطر,سياسة الخصوصية الكاملة: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
+- [التطوير](#development)
+- [المساهمة](#contributing)
+- [الترخيص](#license)
 
-## Features
+## الميزات
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**لوحة لا نهائية** — تحريك وتكبير حر (Ctrl+عجلة الفأرة). إنشاء صناديق غير محدودة على لوحة واحدة. ربط الصناديق بخطوط لإظهار العلاقات. تعيين علاقات أب-ابن — حرّك الأب ويتبعه الأبناء.
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**هيكل هرمي من مستويين** — الصناديق الكبيرة تحتوي صغيرة، والصغيرة تحتوي إشارات مرجعية. انقر على صندوق لدخول لوحته الفرعية. فتات الخبز يظهر مسارك. التداخل لأي عمق تحتاجه.
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**إدارة الإشارات المرجعية** — كل صندوق له مجموعته الخاصة من الإشارات المرجعية مع عروض القائمة والشبكة. إضافة، تحرير، حذف بحوار نظيف. الفتح في التبويب الحالي أو تبويب جديد (قابل للتخصيص). السحب لإعادة الترتيب.
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**الاتصالات** — خطوط اتصال SVG مرئية بين الصناديق. Alt+نقر على خط لحذفه (قابل للتخصيص: نقرة واحدة أو نقرة مزدوجة). انتشار حركة أب-ابن مع تثبيت حدود مرن.
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**التصميم والمظهر** — جماليات بيج/كريمي مينيمالية. الوضع الفاتح والداكن مع كشف تلقائي للنظام. حجم خط وتكبير قابلان للتعديل. تبديل زوايا مربعة/دائرية.
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 لغة** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi مع كشف تلقائي للغة المتصفح.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="هرمية الصناديق والإشارات المرجعية" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+> هذا عنصر نائب. استبدله بلقطة شاشة حقيقية تُظهر هرمية الصناديق وإدارة الإشارات المرجعية.
 
-## Install
+## التثبيت
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+1. حمّل أحدث [إصدار ZIP](https://github.com/Xxx91n/boxing/releases)
+2. فك الضغط إلى مجلد
+3. اذهب إلى `chrome://extensions` (أو `edge://extensions`)
+4. فعّل **وضع المطور** (أعلى اليمين)
+5. انقر **تحميل غير معبأ** واختر المجلد غير المعبأ
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. حمّل أحدث [إصدار XPI](https://github.com/Xxx91n/boxing/releases)
+2. اذهب إلى `about:addons`
+3. انقر على أيقونة الترس → **تثبيت إضافة من ملف**
+4. اختر ملف XPI المحمّل
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> المستخدمون النهائيون لا يحتاجون Node.js أو npm. هي فقط للتطوير.
 
-## Usage
+## **نقر مزدوج** على لوحة فارغة → إنشاء صندوق جديد,**سحب** شريط عنوان الصندوق → تحريك الصندوق,**Ctrl+عجلة** → تكبير اللوحة (30% إلى 200%),**سحب** لوحة فارغة → تحريك,**نقر يمين** → العودة إلى مستوى اللوحة الأب,**نقر** على صندوق → دخول لوحته الفرعية,**سحب** من منتصف حافة الصندوق → ربط بصندوق آخر,**Alt+نقر** على خط الاتصال → حذفه,**نجمة** على صندوق → تعليم كأب (الأبناء يتحركون معاً),**دبوس** → قفل موضع الصندوق,**زر دائري** أعلى يمين اللوحة → فك التثبيت للوضع بملء الشاشة
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- **نقر مزدوج** على لوحة فارغة → إنشاء صندوق جديد
+- **سحب** شريط عنوان الصندوق → تحريك الصندوق
+- **Ctrl+عجلة** → تكبير اللوحة (30% إلى 200%)
+- **سحب** لوحة فارغة → تحريك
+- **نقر يمين** → العودة إلى مستوى اللوحة الأب
+- **نقر** على صندوق → دخول لوحته الفرعية
+- **سحب** من منتصف حافة الصندوق → ربط بصندوق آخر
+- **Alt+نقر** على خط الاتصال → حذفه
+- **نجمة** على صندوق → تعليم كأب (الأبناء يتحركون معاً)
+- **دبوس** → قفل موضع الصندوق
+- **زر دائري** أعلى يمين اللوحة → فك التثبيت للوضع بملء الشاشة
 
-## Privacy
+## جميع البيانات مخزنة محلياً في `chrome.storage.local` — لا شيء يغادر جهازك إلا إذا قمت بتكوين نسخة احتياطية سحابية اختيارية,النسخ الاحتياطي الاختياري WebDAV / GitHub Gist هو الاستخدام الصادر الوحيد للشبكة,بدون تحليلات، بدون تتبع، بدون خدمات طرف ثالث,100% مفتوح المصدر (Apache-2.0) — تدقيق كل سطر,سياسة الخصوصية الكاملة: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+- جميع البيانات مخزنة محلياً في `chrome.storage.local` — لا شيء يغادر جهازك إلا إذا قمت بتكوين نسخة احتياطية سحابية اختيارية
+- النسخ الاحتياطي الاختياري WebDAV / GitHub Gist هو الاستخدام الصادر الوحيد للشبكة
+- بدون تحليلات، بدون تتبع، بدون خدمات طرف ثالث
+- 100% مفتوح المصدر (Apache-2.0) — تدقيق كل سطر
+- سياسة الخصوصية الكاملة: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## التطوير
 
-### Prerequisites
+### المتطلبات
 
 - Node.js >= 18
 - npm
 
-### Setup
+### الإعداد
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -111,22 +107,22 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### البناء
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # بناء التطوير → dist/boxing-chrome + dist/boxing-firefox
+npm test          # اختبارات Playwright (Chrome + Firefox)
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+انظر [CONTRIBUTING.md](../../CONTRIBUTING.md) لدليل التطوير الكامل.
 
-## Contributing
+## المساهمة
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+المساهمات مرحب بها! انظر [CONTRIBUTING.md](../../CONTRIBUTING.md) للإعداد وسير العمل وأسلوب الكود.
 
-## License
+## الترخيص
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+Apache-2.0 — انظر [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
 > Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)

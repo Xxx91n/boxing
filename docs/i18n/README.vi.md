@@ -2,106 +2,102 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · **Tiếng Việt**
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to Vietnamese, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+Trình tổ chức dấu trang phân cấp trên khung vẽ vô hạn, thiết kế tối giản màu be.
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing biến trang tab mới của bạn thành không gian làm việc trực quan cho dấu trang. Thay vì các thư mục phẳng, hãy tổ chức dấu trang của bạn trong các hộp có nhãn trên khung vẽ vô hạn — kéo, kết nối và lồng chúng theo không gian. Hãy nghĩ về canvas Obsidian gặp gỡ dấu trang.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Tổng quan khung vẽ Boxing" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
+> Đây là chỗ giữ chỗ. Thay thế bằng ảnh chụp màn hình thực tế hiển thị khung vẽ chính với các hộp và kết nối.
 
-## Table of Contents
+## Mục lục
 
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [Tính năng](#features)
+- [Cài đặt](#install)
+- [Sử dụng](#usage)
+- [Quyền riêng tư](#privacy)
+- [Phát triển](#development)
+- [Đóng góp](#contributing)
+- [Giấy phép](#license)
 
-## Features
+## Tính năng
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**Khung vẽ vô hạn** — Pan và zoom tự do (Ctrl+lăn chuột). Tạo không giới hạn hộp trên một khung vẽ. Kết nối các hộp bằng đường thẳng để hiển thị mối quan hệ. Thiết lập quan hệ cha-con — di chuyển cha và các con theo sau.
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**Phân cấp hai cấp** — Hộp lớn chứa hộp nhỏ, hộp nhỏ chứa dấu trang. Nhấp vào hộp để vào khung vẽ con. Điều hướng breadcrumb hiển thị đường đi. Lồng sâu bao nhiêu tùy ý.
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**Quản lý dấu trang** — Mỗi hộp có bộ sưu tập dấu trang riêng với chế độ xem danh sách và lưới. Thêm, chỉnh sửa, xóa bằng hộp thoại gọn gàng. Mở trong tab hiện tại hoặc tab mới (có thể cấu hình). Kéo để sắp xếp lại.
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**Kết nối** — Đường kết nối SVG trực quan giữa các hộp. Alt+nhấp vào đường kết nối để xóa (có thể cấu hình: nhấp đơn hoặc nhấp đôi). Truyền lan di chuyển cha-con với kẹp biên đàn hồi.
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**Thiết kế và chủ đề** — Thẩm mỹ tối giản be/cream. Chế độ sáng và tối với tự động phát hiện hệ thống. Cỡ chữ và zoom có thể điều chỉnh. Chuyển đổi góc vuông/bo tròn.
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 ngôn ngữ** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi với tự động phát hiện ngôn ngữ trình duyệt.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Phân cấp hộp và dấu trang" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+> Đây là chỗ giữ chỗ. Thay thế bằng ảnh chụp màn hình thực tế hiển thị phân cấp hộp và quản lý dấu trang.
 
-## Install
+## Cài đặt
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+1. Tải xuống [bản phát hành ZIP mới nhất](https://github.com/Xxx91n/boxing/releases)
+2. Giải nén vào một thư mục
+3. Đi đến `chrome://extensions` (hoặc `edge://extensions`)
+4. Bật **Chế độ nhà phát triển** (trên cùng bên phải)
+5. Nhấp **Tải tiện ích đã giải nén** và chọn thư mục đã giải nén
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. Tải xuống [bản phát hành XPI mới nhất](https://github.com/Xxx91n/boxing/releases)
+2. Đi đến `about:addons`
+3. Nhấp vào biểu tượng bánh răng → **Cài đặt tiện ích từ tệp**
+4. Chọn tệp XPI đã tải xuống
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> Người dùng cuối không cần Node.js hay npm. Chúng chỉ dành cho phát triển.
 
-## Usage
+## Sử dụng
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- **Nhấp đúp** khung vẽ trống → tạo hộp mới
+- **Kéo** thanh tiêu đề hộp → di chuyển hộp
+- **Ctrl+lăn chuột** → zoom khung vẽ (30% đến 200%)
+- **Kéo** khung vẽ trống → pan
+- **Nhấp chuột phải** → quay lại cấp khung vẽ cha
+- **Nhấp** vào hộp → vào khung vẽ con
+- **Kéo** từ điểm giữa cạnh hộp → kết nối với hộp khác
+- **Alt+nhấp** đường kết nối → xóa
+- **Sao** trên hộp → đánh dấu là cha (các con di chuyển cùng)
+- **Ghim** → khóa vị trí hộp
+- **Nút hình tròn** trên cùng bên phải khung vẽ → bỏ ghim tiêu đề cho chế độ toàn màn hình
 
-## Privacy
+## Quyền riêng tư
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+- Tất cả dữ liệu được lưu trữ cục bộ trong `chrome.storage.local` — không có gì rời khỏi thiết bị của bạn trừ khi bạn cấu hình sao lưu đám mây tùy chọn
+- Sao lưu WebDAV / GitHub Gist tùy chọn là sử dụng mạng ra duy nhất
+- Không phân tích, không theo dõi, không dịch vụ bên thứ ba
+- 100% mã nguồn mở (Apache-2.0) — kiểm toán từng dòng
+- Chính sách quyền riêng tư đầy đủ: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## Phát triển
 
-### Prerequisites
+### Điều kiện tiên quyết
 
 - Node.js >= 18
 - npm
 
-### Setup
+### Thiết lập
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -114,19 +110,19 @@ npm run build
 ### Build
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # Build phát triển → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Kiểm thử Playwright (Chrome + Firefox)
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+Xem [CONTRIBUTING.md](../../CONTRIBUTING.md) để biết hướng dẫn phát triển đầy đủ.
 
-## Contributing
+## Đóng góp
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+Chào đón đóng góp! Xem [CONTRIBUTING.md](../../CONTRIBUTING.md) để biết thiết lập, quy trình và phong cách mã.
 
-## License
+## Giấy phép
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+Apache-2.0 — xem [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
 > Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)

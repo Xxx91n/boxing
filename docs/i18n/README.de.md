@@ -2,106 +2,102 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · **Deutsch** · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to German, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+Hierarchischer Lesezeichen-Organisator auf unendlicher Leinwand, im beige-minimalistischen Design.
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Lesezeichen um. Statt flacher Ordner organisieren Sie Lesezeichen in beschrifteten Boxen auf einer unendlichen Leinwand — ziehen, verbinden und schachteln Sie sie raeumlich. Obsidian-Canvas trifft auf Lesezeichen.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing Canvas-Uebersicht" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
+> Dies ist ein Platzhalter. Ersetzen Sie ihn durch einen echten Screenshot, der die Haupt-Leinwand mit Boxen und Verbindungen zeigt.
 
-## Table of Contents
+## Inhaltsverzeichnis
 
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [Funktionen](#features)
+- [Installation](#install)
+- [**Doppelklick** auf leere Leinwand → neue Box erstellen,**Ziehen** an Box-Titelleiste → Box bewegen,**Strg+Scrollen** → Leinwand zoomen (30% bis 200%),**Ziehen** der leeren Leinwand → Schwenken,**Rechtsklick** → zurueck zur uebergeordneten Canvas-Ebene,**Klick** auf eine Box → Unter-Canvas betreten,**Ziehen** von Box-Kantenmitte → mit anderer Box verbinden,**Alt+Klick** auf Verbindungslinie → loeschen,**Stern** auf einer Box → als Eltern-Box markieren (Kinder bewegen sich mit),**Pin** → Box-Position sperren,**Kreis-Schaltflaeche** oben rechts auf Leinwand → Kopfzeile loesen fuer Vollbildmodus](#usage)
+- [Alle Daten werden lokal in `chrome.storage.local` gespeichert — nichts verlaesst Ihr Geraet, es sei denn, Sie konfigurieren optionales Cloud-Backup,Optionales WebDAV / GitHub Gist Backup ist die einzige ausgehende Netzwerkverwendung,Keine Analytik, kein Tracking, keine Drittanbieter-Dienste,100% Open Source (Apache-2.0) — jede Zeile pruefbar,Vollstaendige Datenschutzrichtlinie: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
+- [Entwicklung](#development)
+- [Mitwirken](#contributing)
+- [Lizenz](#license)
 
-## Features
+## Funktionen
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**Unendliche Leinwand** — Frei schwenken und zoomen (Strg+Scrollen). Unbegrenzt viele Boxen auf einer einzigen Leinwand erstellen. Boxen mit Linien verbinden, um Beziehungen darzustellen. Eltern-Kind-Beziehungen festlegen — eine Eltern-Box bewegen, und die Kinder folgen.
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**Zweistufige Hierarchie** — Grosse Boxen enthalten kleine Boxen, kleine Boxen enthalten Lesezeichen. Auf eine Box klicken, um ihren Unter-Canvas zu betreten. Brotkrumelnavigation zeigt den Pfad. So tief schachteln wie noetig.
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**Lesezeichen-Verwaltung** — Jede Box hat ihre eigene Lesezeichensammlung mit Listen- und Rasteransicht. Hinzufuegen, bearbeiten, loeschen mit einem klaren Dialog. In aktuellem Tab oder neuem Tab oeffnen (konfigurierbar). Ziehen zum Sortieren.
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**Verbindungen** — Visuelle SVG-Verbindungslinien zwischen Boxen. Alt+Klick auf eine Linie zum Loeschen (konfigurierbar: Einfachklick oder Doppelklick). Eltern-Kind-Bewegungspropagierung mit elastischer Begrenzung.
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**Design und Theme** — Beige/Creme-minimalistische Aesthetik. Hell- und Dunkelmodus mit automatischer Systemerkennung. Einstellbare Schriftgroesse und Zoom. Eckig/abgerundet umschalten.
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 Sprachen** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi mit automatischer Browser-Sprachenerkennung.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box-Hierarchie und Lesezeichen" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+> Dies ist ein Platzhalter. Ersetzen Sie ihn durch einen echten Screenshot, der die Box-Hierarchie und Lesezeichenverwaltung zeigt.
 
-## Install
+## Installation
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+1. Neueste [Release-ZIP](https://github.com/Xxx91n/boxing/releases) herunterladen
+2. In einen Ordner entpacken
+3. Zu `chrome://extensions` (oder `edge://extensions`) gehen
+4. Entwicklermodus aktivieren (oben rechts)
+5. Auf **Entpackte Erweiterung laden** klicken und den entpackten Ordner auswaehlen
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. Neueste [Release-XPI](https://github.com/Xxx91n/boxing/releases) herunterladen
+2. Zu `about:addons` gehen
+3. Auf das Zahnrad-Symbol klicken → **Add-on aus Datei installieren**
+4. Die heruntergeladene XPI-Datei auswaehlen
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> Endbenutzer benoetigen kein Node.js oder npm. Diese sind nur fuer die Entwicklung.
 
-## Usage
+## **Doppelklick** auf leere Leinwand → neue Box erstellen,**Ziehen** an Box-Titelleiste → Box bewegen,**Strg+Scrollen** → Leinwand zoomen (30% bis 200%),**Ziehen** der leeren Leinwand → Schwenken,**Rechtsklick** → zurueck zur uebergeordneten Canvas-Ebene,**Klick** auf eine Box → Unter-Canvas betreten,**Ziehen** von Box-Kantenmitte → mit anderer Box verbinden,**Alt+Klick** auf Verbindungslinie → loeschen,**Stern** auf einer Box → als Eltern-Box markieren (Kinder bewegen sich mit),**Pin** → Box-Position sperren,**Kreis-Schaltflaeche** oben rechts auf Leinwand → Kopfzeile loesen fuer Vollbildmodus
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- **Doppelklick** auf leere Leinwand → neue Box erstellen
+- **Ziehen** an Box-Titelleiste → Box bewegen
+- **Strg+Scrollen** → Leinwand zoomen (30% bis 200%)
+- **Ziehen** der leeren Leinwand → Schwenken
+- **Rechtsklick** → zurueck zur uebergeordneten Canvas-Ebene
+- **Klick** auf eine Box → Unter-Canvas betreten
+- **Ziehen** von Box-Kantenmitte → mit anderer Box verbinden
+- **Alt+Klick** auf Verbindungslinie → loeschen
+- **Stern** auf einer Box → als Eltern-Box markieren (Kinder bewegen sich mit)
+- **Pin** → Box-Position sperren
+- **Kreis-Schaltflaeche** oben rechts auf Leinwand → Kopfzeile loesen fuer Vollbildmodus
 
-## Privacy
+## Alle Daten werden lokal in `chrome.storage.local` gespeichert — nichts verlaesst Ihr Geraet, es sei denn, Sie konfigurieren optionales Cloud-Backup,Optionales WebDAV / GitHub Gist Backup ist die einzige ausgehende Netzwerkverwendung,Keine Analytik, kein Tracking, keine Drittanbieter-Dienste,100% Open Source (Apache-2.0) — jede Zeile pruefbar,Vollstaendige Datenschutzrichtlinie: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+- Alle Daten werden lokal in `chrome.storage.local` gespeichert — nichts verlaesst Ihr Geraet, es sei denn, Sie konfigurieren optionales Cloud-Backup
+- Optionales WebDAV / GitHub Gist Backup ist die einzige ausgehende Netzwerkverwendung
+- Keine Analytik, kein Tracking, keine Drittanbieter-Dienste
+- 100% Open Source (Apache-2.0) — jede Zeile pruefbar
+- Vollstaendige Datenschutzrichtlinie: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## Entwicklung
 
-### Prerequisites
+### Voraussetzungen
 
 - Node.js >= 18
 - npm
 
-### Setup
+### Einrichtung
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -114,19 +110,19 @@ npm run build
 ### Build
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # Dev-Build → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Playwright-Tests (Chrome + Firefox)
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+Siehe [CONTRIBUTING.md](../../CONTRIBUTING.md) fuer die vollstaendige Entwicklungsanleitung.
 
-## Contributing
+## Mitwirken
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+Beitraege sind willkommen! Siehe [CONTRIBUTING.md](../../CONTRIBUTING.md) fuer Einrichtung, Workflow und Code-Stil.
 
-## License
+## Lizenz
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+Apache-2.0 — siehe [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
 > Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)

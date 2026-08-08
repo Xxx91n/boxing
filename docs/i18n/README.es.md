@@ -2,106 +2,102 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · **Español** · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to Spanish, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+Organizador jerarquico de marcadores en lienzo infinito, con diseno minimalista beige.
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing transforma tu pagina de nueva pestana en un espacio de trabajo visual para marcadores. En lugar de carpetas planas, organiza tus marcadores en cajas etiquetadas en un lienzo infinito — arrastra, conecta y anidalos espacialmente. Piensa en Obsidian canvas conociendo a los marcadores.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Vista general del lienzo de Boxing" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
+> Esto es un marcador de posicion. Reemplazalo con una captura de pantalla real que muestre el lienzo principal con cajas y conexiones.
 
-## Table of Contents
+## Indice
 
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [Funciones](#features)
+- [Instalacion](#install)
+- [**Doble clic** en lienzo vacio → crear nueva caja,**Arrastrar** barra de titulo de caja → mover caja,**Ctrl+rueda** → zoom del lienzo (30% a 200%),**Arrastrar** lienzo vacio → pan,**Clic derecho** → volver al nivel de lienzo padre,**Clic** en una caja → entrar en su sub-lienzo,**Arrastrar** desde el punto medio del borde de una caja → conectar a otra caja,**Alt+Clic** en linea de conexion → eliminarla,**Estrella** en una caja → marcar como padre (los hijos se mueven juntos),**Alfiler** → bloquear posicion de caja,**Boton circular** arriba a la derecha del lienzo → desbloquear encabezado para modo pantalla completa](#usage)
+- [Todos los datos almacenados localmente en `chrome.storage.local` — nada sale de tu dispositivo a menos que configures la copia de seguridad en la nube opcional,La copia de seguridad WebDAV / GitHub Gist opcional es el unico uso de red saliente,Sin analiticas, sin seguimiento, sin servicios de terceros,100% codigo abierto (Apache-2.0) — audita cada linea,Politica de privacidad completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
+- [Desarrollo](#development)
+- [Contribuir](#contributing)
+- [Licencia](#license)
 
-## Features
+## Funciones
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**Lienzo infinito** — Pan y zoom libres (Ctrl+rueda). Crea cajas ilimitadas en un solo lienzo. Conecta cajas con lineas para mostrar relaciones. Establece relaciones padre-hijo — mueve un padre y sus hijos lo siguen.
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**Jerarquia de dos niveles** — Las cajas grandes contienen cajas pequenas, las cajas pequenas contienen marcadores. Haz clic en una caja para entrar en su sub-lienzo. La navegacion de migas de pan muestra tu ruta. Anida tan profundo como necesites.
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**Gestion de marcadores** — Cada caja tiene su propia coleccion de marcadores con vistas de lista y cuadricula. Agregar, editar, eliminar con un dialogo limpio. Abrir en pestana actual o nueva pestana (configurable). Arrastrar para reordenar.
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**Conectividad** — Lineas de conexion SVG visuales entre cajas. Alt+Clic en una linea para eliminarla (configurable: clic simple o doble clic). Propagacion de movimiento padre-hijo con fijacion de limites elastica.
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**Diseno y tema** — Estetica minimalista beige/crema. Modo claro y oscuro con deteccion automatica del sistema. Tamano de fuente y zoom ajustables. Alternancia de esquinas cuadradas/redondeadas.
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 idiomas** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi con deteccion automatica del idioma del navegador.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Jerarquia de cajas y marcadores" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+> Esto es un marcador de posicion. Reemplazalo con una captura de pantalla real que muestre la jerarquia de cajas y la gestion de marcadores.
 
-## Install
+## Instalacion
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+1. Descarga el ultimo [ZIP de release](https://github.com/Xxx91n/boxing/releases)
+2. Descomprime en una carpeta
+3. Ve a `chrome://extensions` (o `edge://extensions`)
+4. Activa el **Modo desarrollador** (arriba a la derecha)
+5. Haz clic en **Cargar descomprimida** y selecciona la carpeta descomprimida
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. Descarga el ultimo [XPI de release](https://github.com/Xxx91n/boxing/releases)
+2. Ve a `about:addons`
+3. Haz clic en el icono de engranaje → **Instalar complemento desde archivo**
+4. Selecciona el archivo XPI descargado
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> Los usuarios finales no necesitan Node.js ni npm. Son solo para desarrollo.
 
-## Usage
+## **Doble clic** en lienzo vacio → crear nueva caja,**Arrastrar** barra de titulo de caja → mover caja,**Ctrl+rueda** → zoom del lienzo (30% a 200%),**Arrastrar** lienzo vacio → pan,**Clic derecho** → volver al nivel de lienzo padre,**Clic** en una caja → entrar en su sub-lienzo,**Arrastrar** desde el punto medio del borde de una caja → conectar a otra caja,**Alt+Clic** en linea de conexion → eliminarla,**Estrella** en una caja → marcar como padre (los hijos se mueven juntos),**Alfiler** → bloquear posicion de caja,**Boton circular** arriba a la derecha del lienzo → desbloquear encabezado para modo pantalla completa
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- **Doble clic** en lienzo vacio → crear nueva caja
+- **Arrastrar** barra de titulo de caja → mover caja
+- **Ctrl+rueda** → zoom del lienzo (30% a 200%)
+- **Arrastrar** lienzo vacio → pan
+- **Clic derecho** → volver al nivel de lienzo padre
+- **Clic** en una caja → entrar en su sub-lienzo
+- **Arrastrar** desde el punto medio del borde de una caja → conectar a otra caja
+- **Alt+Clic** en linea de conexion → eliminarla
+- **Estrella** en una caja → marcar como padre (los hijos se mueven juntos)
+- **Alfiler** → bloquear posicion de caja
+- **Boton circular** arriba a la derecha del lienzo → desbloquear encabezado para modo pantalla completa
 
-## Privacy
+## Todos los datos almacenados localmente en `chrome.storage.local` — nada sale de tu dispositivo a menos que configures la copia de seguridad en la nube opcional,La copia de seguridad WebDAV / GitHub Gist opcional es el unico uso de red saliente,Sin analiticas, sin seguimiento, sin servicios de terceros,100% codigo abierto (Apache-2.0) — audita cada linea,Politica de privacidad completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+- Todos los datos almacenados localmente en `chrome.storage.local` — nada sale de tu dispositivo a menos que configures la copia de seguridad en la nube opcional
+- La copia de seguridad WebDAV / GitHub Gist opcional es el unico uso de red saliente
+- Sin analiticas, sin seguimiento, sin servicios de terceros
+- 100% codigo abierto (Apache-2.0) — audita cada linea
+- Politica de privacidad completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## Desarrollo
 
-### Prerequisites
+### Requisitos
 
 - Node.js >= 18
 - npm
 
-### Setup
+### Configuracion
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -114,19 +110,19 @@ npm run build
 ### Build
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # Build de desarrollo → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Tests de Playwright (Chrome + Firefox)
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+Ver [CONTRIBUTING.md](../../CONTRIBUTING.md) para la guia de desarrollo completa.
 
-## Contributing
+## Contribuir
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+Las contribuciones son bienvenidas! Ver [CONTRIBUTING.md](../../CONTRIBUTING.md) para configuracion, flujo de trabajo y estilo de codigo.
 
-## License
+## Licencia
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+Apache-2.0 — ver [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
 > Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)

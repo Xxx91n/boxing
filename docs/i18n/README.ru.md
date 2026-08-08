@@ -2,106 +2,102 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · **Русский** · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to Russian, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+Иерархический органайзер закладок на бесконечном холсте, бежевый минималистичный дизайн.
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing превращает новую вкладку в визуальное рабочее пространство для закладок. Вместо плоских папок вы организуете закладки в помеченные блоки на бесконечном холсте — перетаскивайте, соединяйте и вкладывайте их пространственно. Представьте холст Obsidian, встретившийся с закладками.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Обзор холста Boxing" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
+> Это плейсхолдер. Замените его реальным скриншотом, показывающим основной холст с блоками и соединениями.
 
-## Table of Contents
+## Содержание
 
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [Возможности](#features)
+- [Установка](#install)
+- [**Двойной клик** по пустому холсту → создать новый блок,**Перетащить** заголовок блока → переместить блок,**Ctrl+колесо** → масштаб холста (от 30% до 200%),**Перетащить** пустой холст → панорамирование,**Правый клик** → вернуться на родительский уровень холста,**Клик** по блоку → войти в под-холст,**Перетащить** от середины края блока → соединить с другим блоком,**Alt+клик** по линии соединения → удалить,**Звезда** на блоке → отметить как родитель (потомки двигаются вместе),**Булавка** → заблокировать позицию блока,**Кнопка-круг** вверху справа холста → открепить заголовок для полноэкранного режима](#usage)
+- [Все данные хранятся локально в `chrome.storage.local` — ничего не покидает ваше устройство, если вы не настроите опциональное облачное резервное копирование,Опциональное резервное копирование WebDAV / GitHub Gist — единственное исходящее сетевое использование,Никакой аналитики, никакого отслеживания, никаких сторонних сервисов,100% открытый исходный код (Apache-2.0) — аудит каждой строки,Полная политика конфиденциальности: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
+- [Разработка](#development)
+- [Участие](#contributing)
+- [Лицензия](#license)
 
-## Features
+## Возможности
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**Бесконечный холст** — Свободное панорамирование и масштабирование (Ctrl+колесо). Создавайте неограниченное количество блоков на одном холсте. Соединяйте блоки линиями для отображения связей. Устанавливайте отношения родитель-потомок — двигаете родителя, потомки следуют.
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**Двухуровневая иерархия** — Большие блоки содержат малые блоки, малые блоки содержат закладки. Нажмите на блок, чтобы войти в его под-холст. Хлебные крошки показывают путь. Вкладывайте на любую глубину.
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**Управление закладками** — Каждый блок имеет свою коллекцию закладок с видами списка и сетки. Добавление, редактирование, удаление через чистый диалог. Открытие в текущей или новой вкладке (настраиваемо). Перетаскивание для сортировки.
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**Соединения** — Визуальные SVG-линии соединений между блоками. Alt+клик по линии для удаления (настраиваемо: одинарный или двойной клик). Распространение движения родитель-потомок с упругим ограничением границ.
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**Дизайн и тема** — Бежевая/кремовая минималистичная эстетика. Светлый и тёмный режим с автоматическим определением системы. Регулируемый размер шрифта и масштаб. Переключение квадратных/закруглённых углов.
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 языков** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi с автоматическим определением языка браузера.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Иерархия блоков и закладки" width="1280">
 </picture>
 
 > [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+> Это плейсхолдер. Замените его реальным скриншотом, показывающим иерархию блоков и управление закладками.
 
-## Install
+## Установка
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+1. Скачайте последний [ZIP-релиз](https://github.com/Xxx91n/boxing/releases)
+2. Распакуйте в папку
+3. Перейдите на `chrome://extensions` (или `edge://extensions`)
+4. Включите **Режим разработчика** (вверху справа)
+5. Нажмите **Загрузить распакованное расширение** и выберите распакованную папку
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. Скачайте последний [XPI-релиз](https://github.com/Xxx91n/boxing/releases)
+2. Перейдите на `about:addons`
+3. Нажмите на значок шестерёнки → **Установить дополнение из файла**
+4. Выберите скачанный XPI-файл
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> Конечным пользователям не нужен Node.js или npm. Они нужны только для разработки.
 
-## Usage
+## **Двойной клик** по пустому холсту → создать новый блок,**Перетащить** заголовок блока → переместить блок,**Ctrl+колесо** → масштаб холста (от 30% до 200%),**Перетащить** пустой холст → панорамирование,**Правый клик** → вернуться на родительский уровень холста,**Клик** по блоку → войти в под-холст,**Перетащить** от середины края блока → соединить с другим блоком,**Alt+клик** по линии соединения → удалить,**Звезда** на блоке → отметить как родитель (потомки двигаются вместе),**Булавка** → заблокировать позицию блока,**Кнопка-круг** вверху справа холста → открепить заголовок для полноэкранного режима
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- **Двойной клик** по пустому холсту → создать новый блок
+- **Перетащить** заголовок блока → переместить блок
+- **Ctrl+колесо** → масштаб холста (от 30% до 200%)
+- **Перетащить** пустой холст → панорамирование
+- **Правый клик** → вернуться на родительский уровень холста
+- **Клик** по блоку → войти в под-холст
+- **Перетащить** от середины края блока → соединить с другим блоком
+- **Alt+клик** по линии соединения → удалить
+- **Звезда** на блоке → отметить как родитель (потомки двигаются вместе)
+- **Булавка** → заблокировать позицию блока
+- **Кнопка-круг** вверху справа холста → открепить заголовок для полноэкранного режима
 
-## Privacy
+## Все данные хранятся локально в `chrome.storage.local` — ничего не покидает ваше устройство, если вы не настроите опциональное облачное резервное копирование,Опциональное резервное копирование WebDAV / GitHub Gist — единственное исходящее сетевое использование,Никакой аналитики, никакого отслеживания, никаких сторонних сервисов,100% открытый исходный код (Apache-2.0) — аудит каждой строки,Полная политика конфиденциальности: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+- Все данные хранятся локально в `chrome.storage.local` — ничего не покидает ваше устройство, если вы не настроите опциональное облачное резервное копирование
+- Опциональное резервное копирование WebDAV / GitHub Gist — единственное исходящее сетевое использование
+- Никакой аналитики, никакого отслеживания, никаких сторонних сервисов
+- 100% открытый исходный код (Apache-2.0) — аудит каждой строки
+- Полная политика конфиденциальности: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## Разработка
 
-### Prerequisites
+### Требования
 
 - Node.js >= 18
 - npm
 
-### Setup
+### Настройка
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -111,22 +107,22 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### Сборка
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # Сборка для разработки → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Тесты Playwright (Chrome + Firefox)
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+См. [CONTRIBUTING.md](../../CONTRIBUTING.md) для полного руководства разработчика.
 
-## Contributing
+## Участие
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+Вклады приветствуются! См. [CONTRIBUTING.md](../../CONTRIBUTING.md) для настройки, рабочего процесса и стиля кода.
 
-## License
+## Лицензия
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+Apache-2.0 — см. [LICENSE](../../LICENSE)
 
 <!-- README-I18N:START:FOOTER -->
 > Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
