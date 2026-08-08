@@ -1,114 +1,125 @@
-# 🥊 Boxing — 分层管理书签
+<!-- README-I18N:START -->
+**语言:** [English](README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+<!-- README-I18N:END -->
 
-**Languages:** [English](README.md) · **简体中文** · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+# Boxing
 
-### 分层管理书签
+> 层级化无限画布书签管理器,米白极简设计。
 
-> 点击 + 创建第一个大盒子
+Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平文件夹,而是在无限画布上用标签盒子组织书签 — 拖拽、连接、嵌套,按你的思维空间排列。可以理解为 Obsidian 画布遇见书签管理。
 
-> 简体中文 README — canonical feature list and technical specs are in the [English README](README.md).
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-1-canvas.png">
+  <img src="docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing 画布总览" width="1280">
+</picture>
 
----
+> [!NOTE]
+> 此处为占位图,请替换为真实截图:展示主画布、盒子和连线。
 
-## ✨ Features
+## 目录
 
-- **Infinite canvas** — Obsidian-style pan & zoom (Ctrl+scroll, zoom buttons, drag pan) with 30% boundary clamping
-- **Two-level hierarchy** — Large boxes → Small boxes → Bookmarks
-- **Drag & drop boxes** — Manual drag with elastic iterative snap alignment
-- **Pin boxes** — Lock boxes in place to prevent accidental dragging
-- **Auto-expand toggle** — Set boxes to expand only on hover
-- **Resizable boxes** — Drag the bottom-right handle
-- **Bookmark management** — Add bookmarks via popup (title + URL), edit inline with three-dots button, right-click edit
-- **14 languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection
-- **Settings modal** — In-page overlay with tabbed layout (General / Appearance / Data / Sync & Backup)
-- **Dark mode** — Full dark theme toggle, visually comprehensive across all elements
-- **Header auto-hide** — Default pinned header; toggle for fullscreen immersive canvas
-- **Export / Import** — Backup data to JSON, restore from file
-- **Debug-ready** — DEBUG flag + console logging for troubleshooting
-- **Warm neutral design** — Beige-based design system with high readability and adjustable font size
-- **Square/rounded corners** — Settings toggle for corner style
+- [功能](#功能)
+- [安装](#安装)
+- [使用](#使用)
+- [隐私](#隐私)
+- [开发](#开发)
+- [贡献](#贡献)
+- [许可证](#许可证)
 
-## Development
+## 功能
 
-### Syntax Check
+**无限画布** — 自由平移和缩放(Ctrl+滚轮)。在单个画布上创建无限盒子。用连线表示盒子间的关系。设置父子关系 — 移动父盒子时子盒子跟随移动。
+
+**两级层级** — 大盒子包含小盒子,小盒子包含书签。点击盒子进入其子画布。面包屑导航显示路径。可任意深度嵌套。
+
+**书签管理** — 每个盒子有自己的书签集合,支持列表和网格视图。添加、编辑、删除,操作简洁。可在当前标签页或新标签页打开(可配置)。拖拽排序。
+
+**连线** — 盒子间的可视化 SVG 连线。Alt+点击连线删除(可配置:单击或双击)。父子移动传播,带弹性边界约束。
+
+**设计与主题** — 米白/奶油色极简美学。深色模式,自动跟随系统。可调字号和缩放。方角/圆角切换。
+
+**14 种语言** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi,自动检测浏览器语言。
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-2-boxes.png">
+  <img src="docs/store-assets/screenshots/screenshot-2-boxes.png" alt="盒子层级与书签" width="1280">
+</picture>
+
+> [!NOTE]
+> 此处为占位图,请替换为真实截图:展示盒子层级和书签管理。
+
+## 安装
+
+### Chrome / Edge (Chromium)
+
+1. 下载最新 [release ZIP](https://github.com/Xxx91n/boxing/releases)
+2. 解压到文件夹
+3. 打开 `chrome://extensions`(或 `edge://extensions`)
+4. 开启右上角 **开发者模式**
+5. 点击 **加载已解压的扩展程序**,选择解压后的文件夹
+
+### Firefox
+
+1. 下载最新 [release XPI](https://github.com/Xxx91n/boxing/releases)
+2. 打开 `about:addons`
+3. 点击齿轮图标 → **从文件安装附加组件**
+4. 选择下载的 XPI 文件
+
+> [!TIP]
+> 普通用户不需要 Node.js 或 npm,那些仅供开发使用。
+
+## 使用
+
+- **双击**空白画布 → 创建新盒子
+- **拖拽**盒子标题栏 → 移动盒子
+- **Ctrl+滚轮** → 缩放画布(30% 到 200%)
+- **拖拽**空白画布 → 平移
+- **右键** → 返回父级画布
+- **点击**盒子 → 进入子画布
+- 从盒子边缘中点 **拖拽** → 连接到另一个盒子
+- **Alt+点击**连线 → 删除连线
+- 盒子上的 **星标** → 标记为父盒子(子盒子跟随移动)
+- **图钉** → 锁定盒子位置
+- 画布右上角 **圆圈按钮** → 取消固定进入全屏模式
+
+## 隐私
+
+- 所有数据本地存储在 `chrome.storage.local` — 除非你配置了可选的云备份,否则不会离开你的设备
+- 可选的 WebDAV / GitHub Gist 备份是唯一的出站网络访问
+- 无分析、无追踪、无第三方服务
+- 100% 开源(Apache-2.0)— 可审计每一行代码
+- 完整隐私政策: [docs/privacy-policy.md](docs/privacy-policy.md)
+
+## 开发
+
+### 前置条件
+
+- Node.js >= 18
+- npm
+
+### 安装
+
 ```bash
-node --check ntp/ntp.js
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm install
+npx playwright install firefox chromium
+npm run build
 ```
 
-### Build
-Both commands run from the project root (`boxing/` directory):
+### 构建
+
 ```bash
-node .github/scripts/build.mjs        # Dev build → dist/boxing-chrome + dist/boxing-firefox
-node scripts/build-release.js         # Release build → dist/boxing-{chrome,firefox}/release/{chrome,firefox}/ (6 artifacts)
+npm run build     # 开发构建 → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Playwright 测试 (Chrome + Firefox)
 ```
 
-### Playwright Testing (in-tree at `test/`)
-```bash
-cd boxing  # repo root; run tests from here
-npm test                    # All browsers (uses --config=test/playwright.config.ts)
-npm run test:firefox        # Firefox-specific (firefox-extension project)
-```
+详见 [CONTRIBUTING.md](CONTRIBUTING.md) 了解完整开发指南。
 
-### web-ext Dev Server
-These commands run from the `boxing/` directory (`package.json` has `web-ext` as devDependency):
-```bash
-npm run dev:chrome          # Hot-reload Chrome dev (requires `npm run build` first)
-npm run dev:firefox         # Hot-reload Firefox dev (requires `npm run build` first)
-```
-Tests live in-tree at `test/tests/`; Playwright config at `test/playwright.config.ts`. After `npm install`, run `npx playwright test --config=test/playwright.config.ts`. Specs are portable (use path-relative `__dirname`, no hardcoded drive letters).
+## 贡献
 
-## Privacy
+欢迎贡献! 详见 [CONTRIBUTING.md](CONTRIBUTING.md) 了解环境配置、工作流和代码风格。
 
-- Bookmark and layout data stored locally in `chrome.storage.local`
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage; configured by user in Settings > Sync & Backup
-- No analytics, tracking, or third-party services
-- Permissions: `storage`, `tabs`, `bookmarks`; host_permissions `https://*/*` used only for user-initiated WebDAV backup
+## 许可证
 
-## License
-
-Apache-2.0 (see [LICENSE](LICENSE))
-
-## Changelog
-
-### v3.7.0 (2026-07-26)
-- SVG connection layer: self-drawn `<line>` elements replace LeaderLine vendor lib (BX-142)
-- Edge-midpoint drag-to-connect: mousedown on 4 edge anchors, drag to target box, mouseup connects
-- Star-mark parent boxes: group drag moves members together with elastic boundary clamp (BX-143)
-- Connection persistence: cross-tab sync, state-change refresh, zoom-follow lines
-- Vietnamese (vi) + Chinese Traditional (zh_TW) i18n added — 14 locales total
-- Security audit: manifest permissions hardened, WebDAV import guards, CORS redirect blocked
-
-### v3.6.0 (2026-07-10)
-- Box drag clamp: boxes now constrained to visible canvas area with edge-snap
-- Elastic snap rewritten with while-loop for complete overlap resolution
-- Dark mode comprehensive fix: body/html now dark, all edges covered, settings synced
-- Header pin defaults ON: header visible, button on bar; toggle for fullscreen animation
-- Small boxes now rounded (border-radius: var(--radius-card)) matching large boxes
-- All i18n gaps fixed: smallBoxCountLabel, bookmark placeholders, settings nav labels — all 14 locales
-- Remember-last-position now saves/restores zoom + pan for both canvas and inner surfaces
-- New i18n keys: settingsNavGeneral/Appearance/Data/Sync, syncProviderHint — all locales translated
-- Tests: boxing-v3.spec.ts 10/10 passing, updated for current version
-
-### v3.5.0 (2026-07-10)
-- Canvas boundary clamp at 30% zoom, inner canvas pan support
-- Dark mode comprehensive UI adaptation, header autohide fullscreen mode
-- Settings tabbed layout (General/Appearance/Data/Sync & Backup)
-- Bookmark right-click edit, URL open fix for all browsers
-- Square corners toggle, 9 new i18n keys, small box bar enlarged
-
-### v3.4.0 (2026-07-10)
-- Background clarity (colors lighter/less saturated)
-- Dark mode initial, in-page delete confirm, settings modal enlarged
-- Export/Import data, header autohide default ON, 12 new i18n keys
-
-### v3.3.0 (2026-07-10)
-- Browser language auto-detect, header auto-hide on scroll
-- Pin/expand buttons redesigned, small box default size 640×420
-- Elastic snap iterative, box index recycling, auto-expand transition
-
-### v2.0.0
-- Dual-level boxes, infinite canvas, drag/snap, list/grid, i18n, storage
-
-### v1.0.0
-- Initial scaffold: beige design system, MV3 skeleton
-
+Apache-2.0 — 见 [LICENSE](LICENSE)

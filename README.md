@@ -1,121 +1,129 @@
-# 🥊 Boxing — Hierarchical Bookmark Manager
-
+<!-- README-I18N:START -->
 **Languages:** [English](README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+<!-- README-I18N:END -->
 
-**v3.7** · Chrome Extension (MV3) · Firefox compatible
+# Boxing
 
-Boxing organizes your bookmarks in a two-level infinite canvas — large boxes hold small boxes, small boxes hold bookmarks. Think Obsidian canvas meets bookmarks.
+> A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
 
-## ✨ Features
+Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
 
-- **Infinite canvas** — Obsidian-style pan & zoom (Ctrl+scroll, zoom buttons, drag pan) with 30% boundary clamping
-- **Two-level hierarchy** — Large boxes → Small boxes → Bookmarks
-- **Drag & drop boxes** — Manual drag with elastic iterative snap alignment
-- **Pin boxes** — Lock boxes in place to prevent accidental dragging
-- **Auto-expand toggle** — Set boxes to expand only on hover
-- **Resizable boxes** — Drag the bottom-right handle
-- **Bookmark management** — Add bookmarks via popup (title + URL), edit inline with three-dots button, right-click edit
-- **14 languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection
-- **Settings modal** — In-page overlay with tabbed layout (General / Appearance / Data / Sync & Backup)
-- **Dark mode** — Full dark theme toggle, visually comprehensive across all elements
-- **Header auto-hide** — Default pinned header; toggle for fullscreen immersive canvas
-- **Export / Import** — Backup data to JSON, restore from file
-- **Debug-ready** — DEBUG flag + console logging for troubleshooting
-- **Warm neutral design** — Beige-based design system with high readability and adjustable font size
-- **Square/rounded corners** — Settings toggle for corner style
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-1-canvas.png">
+  <img src="docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+</picture>
 
-## Development
+> [!NOTE]
+> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
 
-### Syntax Check
-```bash
-node --check ntp/ntp.js
-```
+## Table of Contents
 
-### Build
-Both commands run from the project root (`boxing/` directory):
-```bash
-node .github/scripts/build.mjs        # Dev build → dist/boxing-chrome + dist/boxing-firefox
-node scripts/build-release.js         # Release build → dist/boxing-{chrome,firefox}/release/{chrome,firefox}/ (6 artifacts)
-```
+- [Features](#features)
+- [Install](#install)
+- [Usage](#usage)
+- [Privacy](#privacy)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
 
-### Playwright Testing (in-tree at `test/`)
-```bash
-cd boxing  # repo root; run tests from here
-npm test                    # All browsers (uses --config=test/playwright.config.ts)
-npm run test:firefox        # Firefox-specific (firefox-extension project)
-```
+## Features
 
-### web-ext Dev Server
-These commands run from the `boxing/` directory (`package.json` has `web-ext` as devDependency):
-```bash
-npm run dev:chrome          # Hot-reload Chrome dev (requires `npm run build` first)
-npm run dev:firefox         # Hot-reload Firefox dev (requires `npm run build` first)
-```
-Tests live in-tree at `test/tests/`; Playwright config at `test/playwright.config.ts`. After `npm install`, run `npx playwright test --config=test/playwright.config.ts`. Specs are portable (use path-relative `__dirname`, no hardcoded drive letters).
+**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+
+**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+
+**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+
+**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+
+**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+
+**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-2-boxes.png">
+  <img src="docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+</picture>
+
+> [!NOTE]
+> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
+
+## Install
+
+### Chrome / Edge (Chromium)
+
+1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
+2. Unzip to a folder
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable **Developer mode** (top-right toggle)
+5. Click **Load unpacked** and select the unzipped folder
+
+### Firefox
+
+1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
+2. Go to `about:addons`
+3. Click the gear icon → **Install Add-on From File**
+4. Select the downloaded XPI
+
+> [!TIP]
+> End users don't need Node.js or npm. Those are only for development.
+
+## Usage
+
+- **Double-click** empty canvas → create a new box
+- **Drag** box title bar → move box
+- **Ctrl+scroll** → zoom canvas (30% to 200%)
+- **Drag** empty canvas → pan
+- **Right-click** → go back to parent canvas level
+- **Click** a box → enter its sub-canvas
+- **Drag** from box edge midpoint → connect to another box
+- **Alt+Click** a connection line → delete it
+- **Star icon** on a box → mark as parent (children move together)
+- **Pin icon** → lock box position
+- **Canvas top-right circle button** → unpin header for fullscreen mode
 
 ## Privacy
 
 - All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage; configured by user in Settings > Sync & Backup
-- No analytics, tracking, or third-party services
-- Permissions: `storage`, `tabs`, `bookmarks`; HTTPS host access is optional on Chrome (requested at runtime when you configure WebDAV backup) and required on Firefox
-- Full privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md) (will be hosted at `https://xxx91n.github.io/boxing/privacy-policy.html` via GitHub Pages)
-- 100% open source (Apache-2.0) — audit every line at [https://github.com/Xxx91n/boxing](https://github.com/Xxx91n/boxing)
+- Optional WebDAV / GitHub Gist backup is the only outbound network usage
+- No analytics, no tracking, no third-party services
+- 100% open source (Apache-2.0) — audit every line
+- Full privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md)
 
-## Store Publishing
+## Development
 
-See [docs/store-publishing-plan.md](docs/store-publishing-plan.md) for the full release readiness plan and [docs/publishing-guide.md](docs/publishing-guide.md) for step-by-step CRX3 + AMO signing setup.
+### Prerequisites
 
-- Chrome Web Store: `boxing-chrome-<ver>.zip` + `boxing-chrome-<ver>.crx` (signed with `CRX_PRIVATE_KEY_PEM` secret)
-- Firefox AMO: `boxing-firefox-<ver>.zip` + `boxing-firefox-<ver>.xpi` (signed with `AMO_API_KEY`/`AMO_API_SECRET`)
-- Store listing text: [docs/store-assets/store-listing.md](docs/store-assets/store-listing.md)
-- Screenshot placeholders: [docs/store-assets/screenshots/](docs/store-assets/screenshots/)
-- Build workflow: manual `workflow_dispatch` only — see [.github/workflows/build.yml](.github/workflows/build.yml)
+- Node.js >= 18
+- npm
+
+### Setup
+
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm install
+npx playwright install firefox chromium
+npm run build
+```
+
+### Build
+
+```bash
+npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Playwright tests (Chrome + Firefox)
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and code style.
 
 ## License
 
-Apache-2.0 (see [LICENSE](LICENSE))
+Apache-2.0 — see [LICENSE](LICENSE)
 
-## Changelog
-
-### v3.7.0 (2026-07-26)
-- SVG connection layer: self-drawn `<line>` elements replace LeaderLine vendor lib (BX-142)
-- Edge-midpoint drag-to-connect: mousedown on 4 edge anchors, drag to target box, mouseup connects
-- Star-mark parent boxes: group drag moves members together with elastic boundary clamp (BX-143)
-- Connection persistence: cross-tab sync, state-change refresh, zoom-follow lines
-- Vietnamese (vi) + Chinese Traditional (zh_TW) i18n added — 14 locales total
-- Security audit: manifest permissions hardened, WebDAV import guards, CORS redirect blocked
-
-### v3.6.0 (2026-07-10)
-- Box drag clamp: boxes now constrained to visible canvas area with edge-snap
-- Elastic snap rewritten with while-loop for complete overlap resolution
-- Dark mode comprehensive fix: body/html now dark, all edges covered, settings synced
-- Header pin defaults ON: header visible, button on bar; toggle for fullscreen animation
-- Small boxes now rounded (border-radius: var(--radius-card)) matching large boxes
-- All i18n gaps fixed: smallBoxCountLabel, bookmark placeholders, settings nav labels — all 14 locales
-- Remember-last-position now saves/restores zoom + pan for both canvas and inner surfaces
-- New i18n keys: settingsNavGeneral/Appearance/Data/Sync, syncProviderHint — all locales translated
-- Tests: in-tree Playwright suite at `test/tests/`; 28 specs portable across Windows/Linux/macOS
-
-### v3.5.0 (2026-07-10)
-- Canvas boundary clamp at 30% zoom, inner canvas pan support
-- Dark mode comprehensive UI adaptation, header autohide fullscreen mode
-- Settings tabbed layout (General/Appearance/Data/Sync & Backup)
-- Bookmark right-click edit, URL open fix for all browsers
-- Square corners toggle, 9 new i18n keys, small box bar enlarged
-
-### v3.4.0 (2026-07-10)
-- Background clarity (colors lighter/less saturated)
-- Dark mode initial, in-page delete confirm, settings modal enlarged
-- Export/Import data, header autohide default ON, 12 new i18n keys
-
-### v3.3.0 (2026-07-10)
-- Browser language auto-detect, header auto-hide on scroll
-- Pin/expand buttons redesigned, small box default size 640×420
-- Elastic snap iterative, box index recycling, auto-expand transition
-
-### v2.0.0
-- Dual-level boxes, infinite canvas, drag/snap, list/grid, i18n, storage
-
-### v1.0.0
-- Initial scaffold: beige design system, MV3 skeleton
+<!-- README-I18N:START:FOOTER -->
+> Translations: [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+<!-- README-I18N:END:FOOTER -->
