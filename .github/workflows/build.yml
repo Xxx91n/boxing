@@ -68,6 +68,14 @@ jobs:
             echo "CRX3 signed OK"
           fi
 
+      # ── AMO SIGN SAFETY ──────────────────────────────────────────────
+      # DO NOT run web-ext sign locally with real API keys to "test" the
+      # pipeline — it uploads to AMO and permanently burns the version
+      # number. For local validation use: npx web-ext lint --source-dir ...
+      # If you absolutely must verify signing end-to-end locally, use a
+      # throwaway version number (e.g. 99.9.x) and delete the version
+      # from AMO afterwards. See docs/publishing-guide.md § Local Testing
+      # ────────────────────────────────────────────────────────────────
       - name: Sign Firefox XPI (when AMO secrets present)
         env:
           AMO_KEY: ${{ secrets.AMO_API_KEY }}

@@ -32,3 +32,15 @@ node .github/scripts/build.mjs
 # -> dist/boxing-chrome/, dist/boxing-firefox/
 # then zip each: (cd dist/boxing-chrome && zip -r -X ../boxing-chrome.zip .)
 ```
+
+## ⚠ AMO Signing Safety
+
+`web-ext sign` uploads to AMO and **permanently burns the version number**,
+even with `--channel unlisted`. Do NOT run it locally with real API keys
+just to "test" the pipeline.
+
+- **Local validation**: use `npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing`
+- **End-to-end signing test**: use a throwaway version (e.g. `99.9.x`), then delete from AMO
+- **Production signing**: only in CI with proper version management
+
+See `docs/publishing-guide.md § Local Testing Safety` for full details.

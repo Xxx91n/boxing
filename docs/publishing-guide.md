@@ -119,6 +119,43 @@ After the build completes, download the **boxing-release** artifact:
 
 Note: GitHub Pages may need a _config.yml or index file. If Pages doesn't work with just markdown, create a simple `docs/_config.yml` or convert `privacy-policy.md` to `privacy-policy.html`.
 
+## Part 6: Local Testing Safety
+
+> **CRITICAL**: `web-ext sign` with real API credentials uploads to AMO and
+> permanently occupies the version number — even with `--channel unlisted`.
+> Deleted versions cannot be reused. This is not a bug; it is AMO policy.
+
+### Rule 1: Local validation uses `web-ext lint`, not `web-ext sign`
+
+```bash
+npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
+```
+
+This checks manifest, permissions, and code style without uploading anything.
+
+### Rule 2: If you absolutely must verify signing end-to-end
+
+Use a throwaway version number that you will never use for a real release:
+
+```bash
+# Temporarily set version to 99.9.1 in the Firefox dist manifest
+npx web-ext sign --channel unlisted --api-key "$AMO_KEY" --api-secret "$AMO_SECRET" \
+  --source-dir dist/boxing-firefox/release/firefox/boxing --artifacts-dir dist
+# Delete version 99.9.1 from AMO Developer Hub afterwards
+```
+
+Throwaway version numbers like `99.9.x` are safe because you will never use
+them for a real release. After signing, delete the version from the AMO
+Developer Hub versions page.
+
+### What happened (lesson learned)
+
+During K5 local CI simulation, `web-ext sign --channel unlisted` was run
+with real API keys and the production version numbers 3.7.0 and 3.7.1. Both
+versions were uploaded to AMO and approved as unlisted. The version numbers
+are now permanently consumed and cannot be reused even after deletion.
+Future releases start from 3.7.2.
+
 ## Security Checklist
 
 - [ ] CRX private key stored securely (not in the repo)
