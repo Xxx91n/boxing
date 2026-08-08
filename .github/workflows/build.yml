@@ -64,7 +64,7 @@ jobs:
             echo "CRX_PRIVATE_KEY_PEM secret not set -> boxing-chrome.crx is a placeholder (zip-copy)."
           else
             echo "$CRX_KEY" | base64 -d > /tmp/crx.pem
-            npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing-${{ steps.ver.outputs.version }}.zip -o dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx -p /tmp/crx.pem
+            npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing -o dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx -p /tmp/crx.pem
             echo "CRX3 signed OK"
           fi
 

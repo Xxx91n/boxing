@@ -43,8 +43,12 @@ function tailorManifest(base, browser) {
     if (!m.browser_specific_settings) m.browser_specific_settings = {};
     m.browser_specific_settings.gecko = Object.assign({
       id: "{2F5A8F1E-9B3C-4D7E-A2B1-6F4C8E9D3A7F}",
-      strict_min_version: "109.0"
+      strict_min_version: "112.0",
+      data_collection_permissions: ["none"]
     }, m.browser_specific_settings.gecko || {});
+    // Force-override to ensure AMO compliance regardless of source manifest
+    m.browser_specific_settings.gecko.strict_min_version = "112.0";
+    m.browser_specific_settings.gecko.data_collection_permissions = ["none"];
     if (!m.permissions.includes("browserSettings")) m.permissions.push("browserSettings");
   } else if (browser === "chrome") {
     m.background = { service_worker: "background.js" };
