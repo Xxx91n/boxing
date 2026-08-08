@@ -4,7 +4,7 @@
 
 # Boxing
 
-> A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
 
 Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
 
