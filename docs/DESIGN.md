@@ -202,3 +202,63 @@ Based on PWM research (W3C DTCG spec 2025.10, Vercel Geist, Linear, Stripe, Appl
 - [css-dual-write-convention.md](css-dual-write-convention.md) — large-box/small-box CSS parity rule
 - [CONTEXT.md](CONTEXT.md) — domain glossary (no CSS implementation details)
 - AGENTS.md BX-DEV-013/014/135 — CSS development rules
+
+## Accent Theme System (ADR-0010)
+
+Users can customize the overall color tone via Settings → Appearance → Accent Color.
+The system uses a hybrid approach: 6 curated presets + a hue slider for fine-tuning.
+
+### Presets
+
+| Preset | hue | Mode | Reference |
+|--------|-----|------|-----------|
+| 暖土 Warm Earth | 30° | HSL | Existing default |
+| 雾蓝 Mist Blue | 212° | HSL | Vercel Geist / Apple blue |
+| 墨绿 Ink Green | 142° | HSL | Forest green |
+| 暮紫 Dusk Plum | 267° | HSL | Obsidian accent |
+| 砖红 Brick Red | 347° | HSL | Rose |
+| 素白 Pure White | null | mono | Codex App (grayscale) |
+
+### HSL Derivation Constants
+
+**Light mode:**
+| Token | S | L | Example (hue=30) |
+|-------|---|---|-------------------|
+| accent-300 | 29% | 60% | #B89878 |
+| accent-500 | 25% | 50% | #A08060 |
+| accent-600 | 27% | 34% | #6E5540 |
+
+**Dark mode:**
+| Token | S | L | Example (hue=30) |
+|-------|---|---|-------------------|
+| accent-dark-300 | 30% | 64% | #C4A882 |
+| accent-dark-500 | 30% | 58% | #BEA075 (corrected from 64%) |
+| accent-dark-600 | 33% | 69% | #D4B88C |
+
+### Runtime Override Flow
+
+1. On init: read layout.settings.accentHue (default 30).
+2. If null → inject grayscale mono ramp.
+3. Else → hslToHex(hue, s, l) for each of the 6 tokens (3 light + 3 dark).
+4. document.documentElement.style.setProperty('--color-accent-300', hex) etc.
+5. Also update --accent-500-rgb and --accent-dark-500-rgb triplet vars for rgba-derived tokens.
+6. Layer 2 semantic tokens (--color-accent, --color-accent-ink) auto-update because they reference Layer 1 via ar().
+7. On slider drag: repeat steps 3-6 with real-time preview (only 6 vars change, negligible repaint).
+8. On preset click: set hue, update slider position, repeat steps 3-6, highlight active preset.
+
+### Storage
+
+- layout.settings.accentHue: integer 0-360 (default 30) or null (mono preset).
+- layout.settings.accentPreset: string key for UI highlight state (e.g. 'warm', 'pure').
+- Persisted via existing saveLayoutDebounced() → chrome.storage.local.
+
+### No-JS Fallback
+
+design-system.css still contains hardcoded accent values (the warm-earth defaults).
+If JS fails to load or no user preference is stored, the extension renders with the default palette.
+JS setProperty overrides are additive — they shadow the CSS values, never delete them.
+
+### Dark Accent-500 Correction (ADR-0010 Q10)
+
+Previous: dark accent-300 and accent-500 were both #C4A882 (identical — no visual hierarchy).
+Fixed: dark accent-500 L adjusted from 64% → 58%, creating 3-tier progression: 300(64%) > 500(58%) > 600(69%).

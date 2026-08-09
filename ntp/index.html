@@ -174,6 +174,22 @@
               </label>
               <p class="modal__hint" data-i18n="darkModeHint">Switch between light and dark appearance</p>
             </section>
+            <section class="modal__section" id="accent-theme-section">
+              <label class="modal__label" data-i18n="accentColorLabel">Accent Color</label>
+              <div class="accent-presets" id="accent-presets">
+                <button class="accent-preset" data-hue="30" data-preset="warm" title="Warm Earth"><span class="accent-preset__swatch" style="background:hsl(30,25%,50%)"></span></button>
+                <button class="accent-preset" data-hue="212" data-preset="mist" title="Mist Blue"><span class="accent-preset__swatch" style="background:hsl(212,25%,50%)"></span></button>
+                <button class="accent-preset" data-hue="142" data-preset="ink" title="Ink Green"><span class="accent-preset__swatch" style="background:hsl(142,25%,50%)"></span></button>
+                <button class="accent-preset" data-hue="267" data-preset="plum" title="Dusk Plum"><span class="accent-preset__swatch" style="background:hsl(267,25%,50%)"></span></button>
+                <button class="accent-preset" data-hue="347" data-preset="brick" title="Brick Red"><span class="accent-preset__swatch" style="background:hsl(347,25%,50%)"></span></button>
+                <button class="accent-preset" data-hue="" data-preset="pure" title="Pure White"><span class="accent-preset__swatch accent-preset__swatch--mono"></span></button>
+              </div>
+              <div class="modal__row">
+                <input type="range" id="accent-hue-slider" min="0" max="360" value="30" step="1" class="accent-hue-slider">
+                <span id="accent-hue-value" class="modal__value">30°</span>
+              </div>
+              <p class="modal__hint" data-i18n="accentColorHint">Choose a preset or drag the slider to fine-tune the accent color hue</p>
+            </section>
             <section class="modal__section">
               <label class="modal__label" for="font-slider" data-i18n="fontSizeLabel">Font Size</label>
               <div class="modal__row">

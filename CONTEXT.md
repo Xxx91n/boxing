@@ -76,3 +76,12 @@ _Avoid_: release wrapper
 - **AMO signing**: Firefox add-on signing via `web-ext sign --api-key XXX --api-secret YYY --source-dir path --channel unlisted`. Credentials from AMO Developer Hub → API Keys page. Stored as GitHub Secrets `AMO_API_KEY` + `AMO_API_SECRET`.
 - **store listing**: Chrome Web Store / AMO listing metadata. Short description (132 chars, from manifest `description`), detailed description (up to 16K chars, store-specific), screenshots (1280x800 PNG), promo images (440x280 small, 920x680 large).
 - **dev-junctions**: NTFS junctions (`dev-chrome` → `dist/boxing-chrome`, `dev-firefox` → `dist/boxing-firefox`) created by build.mjs for browser GUI Load Unpacked convenience. Gitignored, machine-specific.
+
+## Accent Theme Glossary (ADR-0010)
+
+- **AccentHue**: Integer 0-360 stored in layout.settings.accentHue. Drives HSL derivation of accent-300/500/600 (light + dark). Default 30 (warm earth). 
+ull means mono (grayscale) preset.
+- **AccentPreset**: String key stored in layout.settings.accentPreset (e.g. 'warm', 'mist', 'ink', 'plum', 'brick', 'pure'). Maps to a preset hue value for UI button highlight; the actual color source is ccentHue.
+- **themeManager**: ~80-line inline module in ntp.js. Contains preset list, HSL constants (ACCENT_LIGHT/ACCENT_DARK), derivation function, and pplyAccent(hue) entry point. Overrides Layer 1 accent primitives at runtime via document.documentElement.style.setProperty.
+- **HSL derivation**: Fixed S/L constants per accent tier. Light: {300:{29%,60%}, 500:{25%,50%}, 600:{27%,34%}}. Dark: {300:{30%,64%}, 500:{30%,58%}, 600:{33%,69%}}. Hue is the only variable. Low saturation preserves brand matte aesthetic.
+- **Mono preset (Pure White)**: Special preset where ccentHue = null. JS injects grayscale ramp (#888/#777/#555 light, #AAA/#AAA/#CCC dark) instead of HSL derivation. Inspired by Codex App's minimalist white aesthetic.

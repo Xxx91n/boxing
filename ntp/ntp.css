@@ -1891,6 +1891,110 @@ html.ntp--dark {
      an in-canvas head strip. Small offset keeps it off the canvas top edge. */
   top: var(--space-2) !important;
 }
+/* ══════════════════════════════════════════════
+   Accent Theme System (ADR-0010)
+   Preset swatches + hue slider for user-customizable accent color
+   ══════════════════════════════════════════════ */
+.accent-presets {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.accent-preset {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-tile);
+  border: 2px solid var(--color-hairline);
+  background: var(--color-elevated);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+
+.accent-preset:hover {
+  border-color: var(--color-card-edge);
+  box-shadow: var(--shadow-1);
+}
+
+.accent-preset--active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-soft-2);
+}
+
+.accent-preset__swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: block;
+}
+
+/* Pure White mono preset — grayscale swatch */
+.accent-preset__swatch--mono {
+  background: linear-gradient(135deg, #f0f0f0 0%, #888 50%, #555 100%);
+}
+
+/* Rainbow gradient track for hue slider */
+.accent-hue-slider {
+  background: linear-gradient(to right,
+    hsl(0,25%,50%), hsl(60,25%,50%), hsl(120,25%,50%),
+    hsl(180,25%,50%), hsl(240,25%,50%), hsl(300,25%,50%), hsl(360,25%,50%)
+  ) !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+}
+
+.accent-hue-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: transparent;
+}
+
+.accent-hue-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  margin-top: -5px;
+  border: 2px solid var(--color-card-edge);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.accent-hue-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: 2px solid var(--color-card-edge);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Dark mode parity */
+.ntp--dark .accent-preset {
+  background: var(--color-elevated);
+  border-color: var(--color-hairline);
+}
+.ntp--dark .accent-preset:hover {
+  border-color: var(--color-card-edge);
+}
+.ntp--dark .accent-preset--active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-soft-2);
+}
+.ntp--dark .accent-hue-slider::-webkit-slider-thumb {
+  border-color: var(--color-hairline);
+}
+.ntp--dark .accent-hue-slider::-moz-range-thumb {
+  border-color: var(--color-hairline);
+}
+/* BX-CSS-DUAL-WRITE-SHARED: accent theme controls — shared selectors, no dual-write needed */
 
 /* === Onboarding (first-run guided tour) === */
 .onboarding-modal {

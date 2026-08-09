@@ -276,8 +276,9 @@
     confirmDeleteTitle: 'Confirm Delete', confirmYes: 'Delete', confirmCancel: 'Cancel',
     confirmDeleteLargeBody: 'Delete this large box and all its small boxes? This action cannot be undone.',
     confirmDeleteSmallBody: 'Delete this small box and all its bookmarks? This action cannot be undone.',
-    darkMode: 'Dark Mode', darkModeHint: 'Switch between light and dark appearance',
-    exportData: 'Export Data', importData: 'Import Data',
+   darkMode: 'Dark Mode', darkModeHint: 'Switch between light and dark appearance',
+    accentColorLabel: 'Accent Color', accentColorHint: 'Choose a preset or drag the slider to fine-tune the accent color hue',
+   exportData: 'Export Data', importData: 'Import Data',
     importSuccess: 'Data imported successfully', importFailed: 'Import failed: invalid data format',
     importTooLarge: 'Import failed: file too large (max 5MB)',
     dblclickCreateHint: 'Double-click to create',
@@ -932,13 +933,66 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     saveDebounceTimer = setTimeout(() => {
       saveDebounceTimer = null;
       saveLayout();
-    }, 120);
+   }, 120);
+ }
+
+  // ═══════════════════════════════════════════════════
+  // Accent Theme Manager (ADR-0010)
+  // Hue-based preset + slider for user-customizable accent color
+  // ═══════════════════════════════════════════════════
+  const ACCENT_SL = {
+    light:  { 300: { s: 30, l: 60 }, 500: { s: 25, l: 50 }, 600: { s: 26, l: 34 } },
+    dark:   { 300: { s: 36, l: 64 }, 500: { s: 36, l: 58 }, 600: { s: 45, l: 69 } },
+  };
+
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n) => {
+      const k = (n + h / 30) % 12;
+      const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+      return Math.round(c * 255).toString(16).padStart(2, '0');
+    };
+    return '#' + f(0) + f(8) + f(4);
   }
 
-  function defaultLayout() {
-    return {
+  function hexToRgbTriplet(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return r + ', ' + g + ', ' + b;
+  }
+
+  function applyAccent(hue) {
+    const root = document.documentElement;
+    if (hue === null || hue === undefined) {
+      root.style.setProperty('--color-accent-300', '#888888');
+      root.style.setProperty('--color-accent-500', '#777777');
+      root.style.setProperty('--color-accent-600', '#555555');
+      root.style.setProperty('--color-accent-dark-300', '#AAAAAA');
+      root.style.setProperty('--color-accent-dark-500', '#AAAAAA');
+      root.style.setProperty('--color-accent-dark-600', '#CCCCCC');
+      root.style.setProperty('--accent-500-rgb', '119, 119, 119');
+      root.style.setProperty('--accent-dark-500-rgb', '170, 170, 170');
+      return;
+    }
+    for (const mode of ['light', 'dark']) {
+      const p = ACCENT_SL[mode];
+      const pre = mode === 'light' ? '--color-accent-' : '--color-accent-dark-';
+      for (const tier of ['300', '500', '600']) {
+        root.style.setProperty(pre + tier, hslToHex(hue, p[tier].s, p[tier].l));
+      }
+    }
+    const light500 = hslToHex(hue, ACCENT_SL.light[500].s, ACCENT_SL.light[500].l);
+    const dark500  = hslToHex(hue, ACCENT_SL.dark[500].s, ACCENT_SL.dark[500].l);
+    root.style.setProperty('--accent-500-rgb', hexToRgbTriplet(light500));
+    root.style.setProperty('--accent-dark-500-rgb', hexToRgbTriplet(dark500));
+  }
+
+ function defaultLayout() {
+   return {
       version: 3.5, schemaVersion: 1, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click' }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click', accentHue: undefined, accentPreset: undefined }
     };
   }
 
@@ -988,8 +1042,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
             pinned: s.pinned !== false, bookmarks: s.bookmarks || []
           }))
         })),
-        nextLargeIndex: (raw.boxes?.length || 0) + 1,
-        settings: raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }
+       nextLargeIndex: (raw.boxes?.length || 0) + 1,
+       settings: Object.assign(raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }, { accentHue: raw.settings?.accentHue, accentPreset: raw.settings?.accentPreset })
       };
     }
     return defaultLayout();
@@ -1010,13 +1064,17 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const fs = layout.settings.fontSize || 14;
     document.documentElement.style.setProperty('--font-size-base', fs + 'px');
 
-    // dark mode
-    if (layout.settings.darkMode) {
-      document.getElementById('app').classList.add('ntp--dark');
-      document.body.classList.add('ntp--dark');
-      if (darkModeBtn) darkModeBtn.querySelector('span').textContent = '☽';
+   // dark mode
+   if (layout.settings.darkMode) {
+     document.getElementById('app').classList.add('ntp--dark');
+     document.body.classList.add('ntp--dark');
+     if (darkModeBtn) darkModeBtn.querySelector('span').textContent = '☽';
+   }
+    // accent theme (ADR-0010) — only override if user has chosen a theme
+    if (layout.settings.accentHue !== undefined) {
+      applyAccent(layout.settings.accentHue);
     }
-    // square corners
+   // square corners
     if (layout.settings.squareCorners) {
       document.getElementById('app').classList.add('ntp--square-corners');
     }
@@ -3804,8 +3862,22 @@ function ensureGroups() {
     if (typeof fontSlider !== 'undefined' && fontSlider) fontSlider.value = layout.settings.fontSize || 14;
     if (typeof fontSliderVal !== 'undefined' && fontSliderVal) fontSliderVal.textContent = (layout.settings.fontSize || 14) + 'px';
     const squareCB = document.getElementById('square-corners-cb');
-    if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
-  }
+   if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
+    // ADR-0010: accent theme UI sync
+    const accentSlider = document.getElementById('accent-hue-slider');
+    const accentVal = document.getElementById('accent-hue-value');
+    const hue = layout.settings.accentHue;
+    if (accentSlider) {
+      accentSlider.value = (hue === null || hue === undefined) ? 0 : hue;
+      if (accentVal) accentVal.textContent = (hue === null || hue === undefined) ? '—' : hue + '°';
+    }
+    document.querySelectorAll('.accent-preset').forEach(btn => {
+      const p = btn.dataset.preset;
+      const isActive = (hue === null && p === 'pure') ||
+                       (hue !== null && hue !== undefined && String(hue) === btn.dataset.hue && p === layout.settings.accentPreset);
+      btn.classList.toggle('accent-preset--active', isActive);
+    });
+ }
 
   function applyExternalLayout(raw) {
     if (!raw || applyingExternalLayout) return false;
@@ -4478,10 +4550,48 @@ function ensureGroups() {
       appEl.classList.toggle('ntp--square-corners', squareCB.checked);
       saveLayout();
     });
-    // apply square corners on load
-    if (layout.settings.squareCorners) {
-      appEl.classList.add('ntp--square-corners');
+   // apply square corners on load
+   if (layout.settings.squareCorners) {
+     appEl.classList.add('ntp--square-corners');
+   }
+
+    // ADR-0010: Accent theme — hue slider + preset buttons
+    const accentHueSlider = document.getElementById('accent-hue-slider');
+    const accentHueVal = document.getElementById('accent-hue-value');
+    if (accentHueSlider) {
+      accentHueSlider.addEventListener('input', () => {
+        const h = parseInt(accentHueSlider.value, 10);
+        layout.settings.accentHue = h;
+        layout.settings.accentPreset = '';
+        applyAccent(h);
+        if (accentHueVal) accentHueVal.textContent = h + '°';
+        document.querySelectorAll('.accent-preset').forEach(b => b.classList.remove('accent-preset--active'));
+        saveLayoutDebounced();
+      });
     }
+    document.querySelectorAll('.accent-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const presetKey = btn.dataset.preset;
+        const hueStr = btn.dataset.hue;
+        if (hueStr === '') {
+          // mono / pure white preset
+          layout.settings.accentHue = null;
+          applyAccent(null);
+          if (accentHueSlider) accentHueSlider.value = 0;
+          if (accentHueVal) accentHueVal.textContent = '—';
+        } else {
+          const h = parseInt(hueStr, 10);
+          layout.settings.accentHue = h;
+          layout.settings.accentPreset = presetKey;
+          applyAccent(h);
+          if (accentHueSlider) accentHueSlider.value = h;
+          if (accentHueVal) accentHueVal.textContent = h + '°';
+        }
+        document.querySelectorAll('.accent-preset').forEach(b => b.classList.remove('accent-preset--active'));
+        btn.classList.add('accent-preset--active');
+        saveLayout();
+      });
+    });
 
     if (darkModeBtn) {
       darkModeBtn.addEventListener('click', () => {

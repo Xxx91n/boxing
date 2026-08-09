@@ -109,3 +109,16 @@ Checklist:
 - [ntp/ntp.css](../ntp/ntp.css) — the CSS file with all markers
 - BX-145: the commit that introduced this convention after finding `.panning .small-box` was missing while `.panning .large-box` existed
 - BX-DEV-020: hidden override pairing rule (see above)
+
+## Accent Theme Tokens (ADR-0010)
+
+Accent color tokens (--color-accent-300/500/600, --color-accent-dark-*) are **shared** across
+large-box and small-box surfaces — they flow through Layer 2 semantic tokens (--color-accent,
+--color-accent-ink) which both box types reference identically.
+
+Therefore accent theme CSS is **not** subject to BX-CSS-DUAL-WRITE pairing. The 	hemeManager
+in 
+tp.js overrides Layer 1 primitives at runtime via document.documentElement.style.setProperty,
+which automatically propagates to both surfaces through the token cascade. No CSS dual-write is needed
+for accent-theme-related rules (.accent-presets, .accent-hue-slider, .accent-preset are
+settings-panel-only selectors that affect neither .large-box nor .small-box).
