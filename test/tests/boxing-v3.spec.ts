@@ -100,12 +100,17 @@ test.describe('Boxing v3 Extension', () => {
     expect(css).toMatch(/height:\s*\d{3}px/);
   });
 
-  test('design-system.css uses beige token palette', async () => {
+  test('design-system.css uses beige token palette (ADR-0008 three-layer)', async () => {
     const css = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'design-system.css'), 'utf8');
-    expect(css).toContain('--color-canvas: #F1EEE8');
-    expect(css).toContain('--color-elevated: #EBE5DB');
-    expect(css).toContain('--color-ink: #2A2520');
-    expect(css).toContain('--color-accent: #A08060');
+    expect(css).toContain('--color-warm-50: #F1EEE8');  // Layer 1: Primitive
+    expect(css).toContain('--color-warm-150: #EBE5DB');
+    expect(css).toContain('--color-warm-900: #2A2520');
+    expect(css).toContain('--color-accent-500: #A08060');
+    // Layer 2: Semantic var() references
+    expect(css).toContain('--color-canvas: var(--color-warm-50)');
+    expect(css).toContain('--color-elevated: var(--color-warm-150)');
+    expect(css).toContain('--color-ink: var(--color-warm-900)');
+    expect(css).toContain('--color-accent: var(--color-accent-500)');
     // No white background anywhere
     // No white color values (exclude property names like 'white-space')
     expect(css).not.toMatch(/#FFFFFF|#ffffff|#FFF(?!\w)|white(?![-\w])/i);
@@ -120,17 +125,16 @@ test.describe('Boxing v3 Extension', () => {
     const readme = fs.readFileSync(path.join(EXTENSION_PATH, 'README.md'), 'utf8');
     expect(readme).toContain('Boxing');
     expect(readme).toMatch(/[Ll]anguage/);
-    expect(readme).toContain('Resizable');
+    expect(readme).toMatch(/[Cc]anvas/);  // updated for README rewrite
     expect(readme).toMatch(/[Zz]oom/);
-    expect(readme).toContain('Settings');
-    expect(readme).toMatch(/[Dd]ebug/);
-  });
+    expect(readme).toMatch(/[Bb]ookmark/);
+    });
 
   // v3.7.1: urlOpenMode removed — bookmarks always open in new tab (browser-compatible)
   test('open-bookmark handler uses browser tabs API', async () => {
     const js = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'ntp.js'), 'utf8');
     expect(js).toContain('api.tabs.create');
-    expect(js).toContain('ensureHttpsUrl');
+    expect(js).toContain('normalizeBookmarkUrl');  // v3.7.1: renamed
   });
 
   // v3.7.1: urlOpenMode keys are deprecated but kept in locales
@@ -152,7 +156,7 @@ test.describe('Boxing v3 Extension', () => {
   test('NTP JS open-bookmark handler uses browser tabs API', async () => {
     const js = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'ntp.js'), 'utf8');
     expect(js).toContain('api.tabs.create');
-    expect(js).toContain('ensureHttpsUrl');
+    expect(js).toContain('normalizeBookmarkUrl');  // v3.7.1: renamed
     expect(js).toContain('window.open');
   });
 

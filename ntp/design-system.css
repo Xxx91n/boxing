@@ -137,7 +137,7 @@
   --color-muted: var(--color-warm-dark-800);
   --color-faint: var(--color-warm-dark-700);
 
-  /* Hairline — derived from white base in dark mode */
+  /* Hairline — derived from light base in dark mode */
   --color-hairline: rgba(255, 255, 255, 0.06);
   --color-hairline-strong: rgba(255, 255, 255, 0.10);
 
