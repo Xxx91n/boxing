@@ -796,10 +796,10 @@
     "message": "Click + Delete key",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "Accent Color"
+  "themeColorLabel": {
+    "message": "Color Theme"
   },
-  "accentColorHint": {
-    "message": "Choose a preset or drag the slider to fine-tune the accent color hue"
+  "themeColorHint": {
+    "message": "Select a color theme for the entire interface"
   }
 }

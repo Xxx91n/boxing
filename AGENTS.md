@@ -97,7 +97,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 | Current extension | Boxing v3.7.0 |
 | Current manifest | Manifest V3 |
 | Target browsers | Chrome + Firefox |
-| Main UI surface | New tab override: ntp/index.html, ntp/ntp.css, ntp/ntp.js |
+| Main UI surface | New tab override: ntp/index.html, ntp/ntp.js (CSS via build artifact ntp/ntp.css — see ADR-0011) |
 
 ## i18n Requirements
 
@@ -163,7 +163,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 | BX-EXPLORE-008 | MUST | Pan/zoom handlers (`onCanvasPanMove`, `onInnerPanMove`) MUST call `scheduleConnRefresh(all conn ids)` after `applyCanvasTransform`/`applyInnerTransform`. Without this, viewport-culled lines (`display:none` set by `updateSvgLine`) never get re-evaluated when the world window shifts via pan, causing lines to remain hidden after panning them back into view. The SVG coordinates update via CSS transform automatically, but the cull decision does NOT. Regression introduced in commit a715a44 (pan-aware `connSvgVisibleRect`), fixed immediately after. |
 | BX-EXPLORE-009 | MUST | When adding new event handlers that modify layout state (connections, groups, box properties), the persistence call MUST match an existing function name. Do NOT write `persistLayoutDebounced()` — the correct name is `saveLayoutDebounced()`. A typo'd function name silently fails (ReferenceError caught by try/catch in upper frames), leaving state un-persisted, causing data loss after cross-tab merge or reload. Regression: Alt+Click conn delete used `persistLayoutDebounced` (never defined) → star status lost on re-link. |
 | BX-DEV-139 | MUST | Connection line delete is user-configurable via `layout.settings.connDeleteAction` (string enum: `alt+click`/`ctrl+click`/`shift+click`/`double-click`/`select+delete`). Never hardcode a single delete trigger — use `getConnDeleteTrigger()` and the unified `onConnLinePointerDown(e)` detector. When mode changes, UI handler MUST `disposeAllConns()` + `renderConnections()` so mode-specific listeners (dblclick/mousedown) re-attach to fresh `<line>` elements; the renderConnections pending path is the only place that registers them. See ADR-0006 (`docs/adr/0006-conn-delete-action-system.md`). |
-| BX-DEV-140 | MUST | Accent color theme is user-customizable via `layout.settings.accentHue` (integer 0-360 or null for mono). The `themeManager` (`applyAccent(hue)` in ntp.js) overrides Layer 1 accent primitives at runtime via `setProperty`. Default sentinel: `accentHue === undefined` skips JS override; CSS hardcoded values remain. See ADR-0010 (`docs/adr/0010-user-customizable-accent-theme.md`). |
+| BX-DEV-140 | MUST | Color theme is user-selectable via `layout.settings.theme` (string: 'beige'/'graphite'/'coastal'/'forest'/'pure', default 'beige'). The `applyTheme(themeKey)` function in ntp.js injects all theme CSS variables (warm bg + accent ramps) via `setProperty`. Default 'beige' matches CSS hardcoded values (no override). See ADR-0012 (`docs/adr/0012-curated-theme-packs.md`). |
 ## CSS Dual-Write Convention (Global)
 
 > **Global convention document: [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md)**
@@ -184,7 +184,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 | --color-surface | #F3EFE7 | Card surface. |
 | --color-elevated | #F0EBE2 | Hover/selected/elevated layer. |
 | --color-ink | #2A2520 | Primary near-black text. |
-| --color-accent | #A08060 | Muted warm earth accent. |
+| --color-accent | #A08060 | Muted warm earth accent (beige theme default; overridden by applyTheme for other themes). |
 | --font-size-base | 14px | Adjustable base font size. |
 
 ## Architecture (v3.7)

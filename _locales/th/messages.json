@@ -784,10 +784,10 @@
     "message": "คลิก + ปุ่ม Delete",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "สีเน้น"
+  "themeColorLabel": {
+    "message": "ธีมสี"
   },
-  "accentColorHint": {
-    "message": "เลือกพรีเซ็ตหรือลากแถบเลื่อนเพื่อปรับสีเน้น"
+  "themeColorHint": {
+    "message": "เลือกธีมสีสำหรับทั้งอินเทอร์เฟซ"
   }
 }

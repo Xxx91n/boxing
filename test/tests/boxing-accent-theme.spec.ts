@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const NTP_URL = `file:///${path.resolve(__dirname, '..', '..', 'ntp', 'index.html').replace(/\\/g, '/')}`;
+const NTP_URL = `file:///${path.resolve(__dirname, '..', '..', 'ntp', 'index.html').replace(/\\\\/g, '/')}`;
 
 async function resetBoxing(page) {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
@@ -12,95 +12,78 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 10000 }).toBe(true);
 }
 
-test.describe('ADR-0010: Accent Theme System', () => {
-  test('hue slider changes CSS accent variables', async ({ page }) => {
+test.describe('ADR-0012: Curated Theme Pack System', () => {
+  test('theme button click applies CSS variables', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug, undefined, { timeout: 8000 });
-    // Set accentHue to 212 (mist blue) via the slider
+    // Click the 'coastal' theme button
     await page.evaluate(() => {
-      const slider = document.getElementById('accent-hue-slider');
-      if (slider) { slider.value = '212'; slider.dispatchEvent(new Event('input', { bubbles: true })); }
+      const btn = document.querySelector('.theme-preset[data-theme="coastal"]') as HTMLButtonElement;
+      if (btn) btn.click();
     });
-    // Verify CSS var was injected
+    // Verify CSS accent-500 was injected with coastal theme value
     const cssVar = await page.evaluate(() => {
       return getComputedStyle(document.documentElement).getPropertyValue('--color-accent-500').trim();
     });
-    // hsl(212, 25%, 50%) = #607D9F
-    expect(cssVar.toLowerCase()).toContain('607d9f');
+    // Coastal accent-500 = #5A8A9A
+    expect(cssVar.toLowerCase()).toContain('5a8a9a');
   });
 
-  test('preset button persists accentHue in layout.settings', async ({ page }) => {
+  test('theme button persists theme in layout.settings', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 8000 });
-    // Click the 'mist' preset (hue=212)
+    // Click the 'forest' theme button
     await page.evaluate(() => {
-      const btn = document.querySelector('.accent-preset[data-preset="mist"]') as HTMLButtonElement;
+      const btn = document.querySelector('.theme-preset[data-theme="forest"]') as HTMLButtonElement;
       if (btn) btn.click();
     });
-    const r = await page.evaluate(() => {
+    const theme = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
-      return { hue: dbg.layout.settings.accentHue, preset: dbg.layout.settings.accentPreset };
+      return dbg.layout.settings.theme;
     });
-    expect(r.hue).toBe(212);
-    expect(r.preset).toBe('mist');
+    expect(theme).toBe('forest');
   });
 
-  test('mono preset injects grayscale values', async ({ page }) => {
+  test('pure theme injects grayscale accent values', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug, undefined, { timeout: 8000 });
-    // Click the 'pure' preset (mono)
+    // Click the 'pure' theme button
     await page.evaluate(() => {
-      const btn = document.querySelector('.accent-preset[data-preset="pure"]') as HTMLButtonElement;
+      const btn = document.querySelector('.theme-preset[data-theme="pure"]') as HTMLButtonElement;
       if (btn) btn.click();
     });
     const cssVar = await page.evaluate(() => {
       return getComputedStyle(document.documentElement).getPropertyValue('--color-accent-500').trim();
     });
-    // Mono preset: accent-500 = #777777
+    // Pure theme: accent-500 = #777777
     expect(cssVar.toLowerCase()).toContain('777777');
   });
 
-  test('dark mode + custom hue applies dark S/L constants', async ({ page }) => {
+  test('graphite theme applies warm bg ramp', async ({ page }) => {
     await resetBoxing(page);
-    await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 8000 });
-    // Enable dark mode
+    await page.waitForFunction(() => (window as any).__boxingDebug, undefined, { timeout: 8000 });
+    // Click the 'graphite' theme button
     await page.evaluate(() => {
-      (window as any).__boxingDebug.layout.settings.darkMode = true;
-      document.getElementById('app').classList.add('ntp--dark');
-      document.body.classList.add('ntp--dark');
+      const btn = document.querySelector('.theme-preset[data-theme="graphite"]') as HTMLButtonElement;
+      if (btn) btn.click();
     });
-    // Set hue to 142 (ink green)
-    await page.evaluate(() => {
-      const slider = document.getElementById('accent-hue-slider');
-      if (slider) { slider.value = '142'; slider.dispatchEvent(new Event('input', { bubbles: true })); }
+    // Verify warm bg ramp was injected — graphite warm-50 = #F2F2F2
+    const warmVar = await page.evaluate(() => {
+      return getComputedStyle(document.documentElement).getPropertyValue('--color-warm-50').trim();
     });
-    // Check that dark accent-500 is hsl(142, 36%, 58%) = #6DBA8A
-    const darkVar = await page.evaluate(() => {
-      return getComputedStyle(document.documentElement).getPropertyValue('--color-accent-dark-500').trim();
-    });
-    // Since .ntp--dark overrides --color-accent to reference dark primitives, check the primitive
-    expect(darkVar.toLowerCase()).toContain('6dba8a');
+    expect(warmVar.toLowerCase()).toContain('f2f2f2');
   });
 
-  test('default sentinel: no CSS override when accentHue undefined', async ({ page }) => {
+  test('default theme: beige stays as-is without override', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 8000 });
-    // Ensure accentHue is undefined (default)
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
-      dbg.layout.settings.accentHue = undefined;
-      delete dbg.layout.settings.accentHue;
-      // Trigger a re-init of accent (simulating fresh load)
-      const slider = document.getElementById('accent-hue-slider');
-      if (slider) slider.value = '30';
-      // But don't dispatch input — simulating that no user choice was made
-      // CSS should still have hardcoded values from design-system.css
+      const theme = dbg.layout.settings.theme;
+      // Beige theme should not override CSS (it matches hardcoded values)
       const css500 = getComputedStyle(document.documentElement).getPropertyValue('--color-accent-500').trim();
-      return { css500, accentHue: dbg.layout.settings.accentHue };
+      return { theme, css500 };
     });
-    // With undefined accentHue, the CSS hardcoded value stays
-    // No setProperty call was made, so CSS original value: #A08060
-    // But getComputedStyle may return rgb() notation, so check loosely
-    expect(r.accentHue).toBeUndefined();
+    expect(r.theme).toBe('beige');
   });
 });

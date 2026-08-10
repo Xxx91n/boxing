@@ -784,10 +784,10 @@
     "message": "Nhấp + Phím Delete",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "Màu nhấn"
+  "themeColorLabel": {
+    "message": "Chủ đề màu"
   },
-  "accentColorHint": {
-    "message": "Chọn mẫu hoặc kéo thanh trượt để tinh chỉnh màu nhấn"
+  "themeColorHint": {
+    "message": "Chọn chủ đề màu cho toàn bộ giao diện"
   }
 }

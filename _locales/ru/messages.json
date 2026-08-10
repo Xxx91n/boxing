@@ -784,10 +784,10 @@
     "message": "Клик + клавиша Delete",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "Цвет акцента"
+  "themeColorLabel": {
+    "message": "Цветовая тема"
   },
-  "accentColorHint": {
-    "message": "Выберите пресет или перетащите ползунок для настройки оттенка"
+  "themeColorHint": {
+    "message": "Выберите цветовую тему для всего интерфейса"
   }
 }

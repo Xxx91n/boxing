@@ -787,10 +787,10 @@
     "message": "点击 + Delete键",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "强调色"
+  "themeColorLabel": {
+    "message": "色彩主题"
   },
-  "accentColorHint": {
-    "message": "选择预设或拖动滑块以微调强调色色相"
+  "themeColorHint": {
+    "message": "为整个界面选择一个色彩主题"
   }
 }

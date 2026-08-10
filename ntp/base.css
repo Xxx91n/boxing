@@ -487,6 +487,10 @@ body {
   font-family: inherit;
   line-height: 1;
   -webkit-font-smoothing: antialiased;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  box-shadow: none;
 }
 
 .box-pin-btn {
@@ -521,6 +525,10 @@ body {
   border: 0;
   cursor: pointer;
   flex-shrink: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  box-shadow: none;
 }
 
 .box-pin-btn:hover {
@@ -534,6 +542,10 @@ body {
   border: 0;
   cursor: pointer;
   flex-shrink: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  box-shadow: none;
 }
 
 .box-expand-btn:hover {
@@ -991,3 +1003,21 @@ body {
   border: 0;
 }
 
+
+/* BX-CSS-DUAL-WRITE-SHARED: decorative button focus-visible — keyboard-only outline */
+.box-pin-btn:focus-visible,
+.box-expand-btn:focus-visible,
+.box-star-btn:focus-visible,
+.large-box__delete:focus-visible,
+.small-box__delete:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+/* Mouse focus: no outline for decorative buttons */
+.box-pin-btn:focus:not(:focus-visible),
+.box-expand-btn:focus:not(:focus-visible),
+.box-star-btn:focus:not(:focus-visible),
+.large-box__delete:focus:not(:focus-visible),
+.small-box__delete:focus:not(:focus-visible) {
+  outline: none;
+}

@@ -4,7 +4,7 @@
 2026-08-10
 
 ## Status
-Proposed — grill-confirmed, pending implementation.
+Superseded by ADR-0012 (curated theme packs). The hue slider approach was replaced by curated theme packs for better design control.
 
 ## Context
 ADR-0008 established a three-layer CSS token architecture (primitive → semantic → component) with

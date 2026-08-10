@@ -277,7 +277,7 @@
     confirmDeleteLargeBody: 'Delete this large box and all its small boxes? This action cannot be undone.',
     confirmDeleteSmallBody: 'Delete this small box and all its bookmarks? This action cannot be undone.',
    darkMode: 'Dark Mode', darkModeHint: 'Switch between light and dark appearance',
-    accentColorLabel: 'Accent Color', accentColorHint: 'Choose a preset or drag the slider to fine-tune the accent color hue',
+    themeColorLabel: 'Color Theme', themeColorHint: 'Select a color theme for the entire interface',
    exportData: 'Export Data', importData: 'Import Data',
     importSuccess: 'Data imported successfully', importFailed: 'Import failed: invalid data format',
     importTooLarge: 'Import failed: file too large (max 5MB)',
@@ -940,21 +940,67 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // Accent Theme Manager (ADR-0010)
   // Hue-based preset + slider for user-customizable accent color
   // ═══════════════════════════════════════════════════
-  const ACCENT_SL = {
-    light:  { 300: { s: 30, l: 60 }, 500: { s: 25, l: 50 }, 600: { s: 26, l: 34 } },
-    dark:   { 300: { s: 36, l: 64 }, 500: { s: 36, l: 58 }, 600: { s: 45, l: 69 } },
+  // ADR-0012: Curated theme pack system — replaces free hue slider (supersedes ADR-0010)
+  // 5 designer-curated themes: beige (default), graphite, coastal, forest, pure
+  // Each theme stores complete warm bg ramp (9 tiers) + accent ramp (3 tiers) for light + dark.
+  // User picks a theme by key — no free hue slider.
+  const THEME_PACKS = {
+    beige: {
+      name: 'themeBeige',
+      light: {
+        warm: { '50': '#F1EEE8', '100': '#EEE9E1', '150': '#EBE5DB', '200': '#E0D8CB', '300': '#ECE8E0', '700': '#A89F92', '800': '#7B7167', '850': '#3B342C', '900': '#2A2520' },
+        accent: { '300': '#B89878', '500': '#A08060', '600': '#6E5540' },
+      },
+      dark: {
+        warm: { '50': '#1C1814', '100': '#242019', '150': '#27231C', '200': '#2C2820', '300': '#322E25', '700': '#928878', '800': '#A89E8E', '850': '#C4B89E', '900': '#D8D0C0' },
+        accent: { '300': '#C4A882', '500': '#BFA075', '600': '#D4B88C' },
+      },
+    },
+    graphite: {
+      name: 'themeGraphite',
+      light: {
+        warm: { '50': '#F2F2F2', '100': '#ECECEC', '150': '#E6E6E6', '200': '#D8D8D8', '300': '#E2E2E2', '700': '#9A9A9A', '800': '#6E6E6E', '850': '#3A3A3A', '900': '#282828' },
+        accent: { '300': '#787878', '500': '#5C5C5C', '600': '#3A3A3A' },
+      },
+      dark: {
+        warm: { '50': '#1A1A1A', '100': '#222222', '150': '#262626', '200': '#2A2A2A', '300': '#303030', '700': '#909090', '800': '#A8A8A8', '850': '#C0C0C0', '900': '#D4D4D4' },
+        accent: { '300': '#A8A8A8', '500': '#989898', '600': '#B8B8B8' },
+      },
+    },
+    coastal: {
+      name: 'themeCoastal',
+      light: {
+        warm: { '50': '#EDF2F3', '100': '#E6EDF0', '150': '#DFE8EC', '200': '#CDDDE4', '300': '#E4EDF2', '700': '#7A99A8', '800': '#5A7B8C', '850': '#2E4452', '900': '#1E2E38' },
+        accent: { '300': '#7EAAB8', '500': '#5A8A9A', '600': '#3E6A7A' },
+      },
+      dark: {
+        warm: { '50': '#141C20', '100': '#1A242A', '150': '#1E2830', '200': '#242E36', '300': '#28343C', '700': '#8AAAB8', '800': '#A0C0CE', '850': '#BED8E4', '900': '#D4E8F0' },
+        accent: { '300': '#A8C8D8', '500': '#92B4C8', '600': '#C0DCEC' },
+      },
+    },
+    forest: {
+      name: 'themeForest',
+      light: {
+        warm: { '50': '#EDF1EC', '100': '#E6EBE2', '150': '#DFE6DB', '200': '#CDD9C8', '300': '#E2E9DF', '700': '#7A9478', '800': '#5A7458', '850': '#2E3E2C', '900': '#1E2E1C' },
+        accent: { '300': '#88BA8A', '500': '#6A9870', '600': '#4A7850' },
+      },
+      dark: {
+        warm: { '50': '#141C14', '100': '#1A2418', '150': '#1E2820', '200': '#242E28', '300': '#28342C', '700': '#88A88C', '800': '#A0C8A4', '850': '#BED8C2', '900': '#D4E8D8' },
+        accent: { '300': '#A8C8AC', '500': '#92B496', '600': '#C0DCC4' },
+      },
+    },
+    pure: {
+      name: 'themePure',
+      light: {
+        warm: { '50': '#F8F8F8', '100': '#F4F4F4', '150': '#F0F0F0', '200': '#E4E4E4', '300': '#E8E8E8', '700': '#A0A0A0', '800': '#747474', '850': '#3A3A3A', '900': '#1E1E1E' },
+        accent: { '300': '#888888', '500': '#777777', '600': '#555555' },
+      },
+      dark: {
+        warm: { '50': '#1A1A1A', '100': '#222222', '150': '#262626', '200': '#2C2C2C', '300': '#303030', '700': '#909090', '800': '#AAAAAA', '850': '#C4C4C4', '900': '#D4D4D4' },
+        accent: { '300': '#AAAAAA', '500': '#999999', '600': '#CCCCCC' },
+      },
+    },
   };
-
-  function hslToHex(h, s, l) {
-    s /= 100; l /= 100;
-    const a = s * Math.min(l, 1 - l);
-    const f = (n) => {
-      const k = (n + h / 30) % 12;
-      const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-      return Math.round(c * 255).toString(16).padStart(2, '0');
-    };
-    return '#' + f(0) + f(8) + f(4);
-  }
 
   function hexToRgbTriplet(hex) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -963,58 +1009,30 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     return r + ', ' + g + ', ' + b;
   }
 
-  function applyAccent(hue) {
+  function applyTheme(themeKey) {
+    const theme = THEME_PACKS[themeKey] || THEME_PACKS.beige;
     const root = document.documentElement;
-    if (hue === null || hue === undefined) {
-      root.style.setProperty('--color-accent-300', '#888888');
-      root.style.setProperty('--color-accent-500', '#777777');
-      root.style.setProperty('--color-accent-600', '#555555');
-      root.style.setProperty('--color-accent-dark-300', '#AAAAAA');
-      root.style.setProperty('--color-accent-dark-500', '#AAAAAA');
-      root.style.setProperty('--color-accent-dark-600', '#CCCCCC');
-      root.style.setProperty('--accent-500-rgb', '119, 119, 119');
-      root.style.setProperty('--accent-dark-500-rgb', '170, 170, 170');
-      return;
+    // ADR-0012: delta-diff (pwm gpt5.6 enterprise pattern) only setProperty for changed vars
+    for (const tier of Object.keys(theme.light.warm)) {
+      const v = theme.light.warm[tier], vd = theme.dark.warm[tier];
+      if (root.style.getPropertyValue('--color-warm-' + tier) !== v) root.style.setProperty('--color-warm-' + tier, v);
+      if (root.style.getPropertyValue('--color-warm-dark-' + tier) !== vd) root.style.setProperty('--color-warm-dark-' + tier, vd);
     }
-    for (const mode of ['light', 'dark']) {
-      const p = ACCENT_SL[mode];
-      const pre = mode === 'light' ? '--color-accent-' : '--color-accent-dark-';
-      for (const tier of ['300', '500', '600']) {
-        root.style.setProperty(pre + tier, hslToHex(hue, p[tier].s, p[tier].l));
-      }
+    for (const tier of ['300', '500', '600']) {
+      const v = theme.light.accent[tier], vd = theme.dark.accent[tier];
+      if (root.style.getPropertyValue('--color-accent-' + tier) !== v) root.style.setProperty('--color-accent-' + tier, v);
+      if (root.style.getPropertyValue('--color-accent-dark-' + tier) !== vd) root.style.setProperty('--color-accent-dark-' + tier, vd);
     }
-    const light500 = hslToHex(hue, ACCENT_SL.light[500].s, ACCENT_SL.light[500].l);
-    const dark500  = hslToHex(hue, ACCENT_SL.dark[500].s, ACCENT_SL.dark[500].l);
-    root.style.setProperty('--accent-500-rgb', hexToRgbTriplet(light500));
-    root.style.setProperty('--accent-dark-500-rgb', hexToRgbTriplet(dark500));
-    applyBgHue(hue);
-  }
-
-  // BG neutral surface hue constants (ADR-0010 extension — background hue)
-  // Light: ~27% saturation, L ranges 93%→84% across surface tiers
-  // Dark: ~8% saturation, L ranges 11%→17% for inverted dark surfaces
-  const BG_SL = {
-    light: { 50: { s: 27, l: 93 }, 100: { s: 27, l: 91 }, 150: { s: 27, l: 89 }, 200: { s: 27, l: 84 }, 300: { s: 27, l: 90 }, 700: { s: 27, l: 78 }, 800: { s: 27, l: 73 }, 850: { s: 27, l: 68 }, 900: { s: 27, l: 63 } },
-    dark:  { 50: { s: 8, l: 11 }, 100: { s: 8, l: 14 }, 150: { s: 8, l: 15 }, 200: { s: 8, l: 17 }, 700: { s: 8, l: 20 }, 800: { s: 8, l: 23 }, 850: { s: 8, l: 26 }, 900: { s: 8, l: 29 } },
-  };
-  const DEFAULT_BG_HUE = 38;  // warm earth neutral — matches original design-system.css values
-
-  function applyBgHue(hue) {
-    const root = document.documentElement;
-    if (hue === null || hue === undefined) hue = DEFAULT_BG_HUE;
-    for (const mode of ['light', 'dark']) {
-      const p = BG_SL[mode];
-      const pre = mode === 'light' ? '--color-warm-' : '--color-warm-dark-';
-      for (const tier of Object.keys(p)) {
-        root.style.setProperty(pre + tier, hslToHex(hue, p[tier].s, p[tier].l));
-      }
-    }
+    const rgb500 = hexToRgbTriplet(theme.light.accent['500']);
+    const rgbDark500 = hexToRgbTriplet(theme.dark.accent['500']);
+    if (root.style.getPropertyValue('--accent-500-rgb') !== rgb500) root.style.setProperty('--accent-500-rgb', rgb500);
+    if (root.style.getPropertyValue('--accent-dark-500-rgb') !== rgbDark500) root.style.setProperty('--accent-dark-500-rgb', rgbDark500);
   }
 
   function defaultLayout() {
    return {
       version: 3.5, schemaVersion: 1, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click', accentHue: undefined, accentPreset: undefined }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click', theme: 'beige' }
     };
   }
 
@@ -1065,7 +1083,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
           }))
         })),
        nextLargeIndex: (raw.boxes?.length || 0) + 1,
-       settings: Object.assign(raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }, { accentHue: raw.settings?.accentHue, accentPreset: raw.settings?.accentPreset })
+       settings: Object.assign(raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }, { theme: raw.settings?.theme || 'beige' })
       };
     }
     return defaultLayout();
@@ -1092,9 +1110,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
      document.body.classList.add('ntp--dark');
      if (darkModeBtn) darkModeBtn.querySelector('span').textContent = '☽';
    }
-    // accent theme (ADR-0010) — only override if user has chosen a theme
-    if (layout.settings.accentHue !== undefined) {
-      applyAccent(layout.settings.accentHue);
+    // accent theme (ADR-0012) — apply curated theme pack
+    if (layout.settings.theme && layout.settings.theme !== 'beige') {
+      applyTheme(layout.settings.theme);
     }
    // square corners
     if (layout.settings.squareCorners) {
@@ -2378,6 +2396,7 @@ function ensureGroups() {
 
     const delBtn = document.createElement('button');
     delBtn.className = 'large-box__delete';
+    delBtn.tabIndex = -1;
     delBtn.title = i18n('deleteBox');
     delBtn.textContent = '×';
     delBtn.addEventListener('click', e => { e.stopPropagation(); deleteLargeBox(box.id); });
@@ -2386,10 +2405,11 @@ function ensureGroups() {
     // ── pin button (lock box position)
     const pinBtn = document.createElement('button');
     pinBtn.className = 'box-pin-btn';
+    pinBtn.tabIndex = -1;
     pinBtn.title = i18n('pin');
     pinBtn.textContent = '⊙';
     pinBtn.title = box.pinned ? i18n('unpin') : i18n('pin');
-    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;';
+    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;';
     // Default: NOT pinned
     box.pinned = box.pinned === true;  // normalize
     pinBtn.textContent = box.pinned ? '⊙' : '○';
@@ -2408,10 +2428,11 @@ function ensureGroups() {
     // ── auto-expand button (hover vs always)
     const expandBtn = document.createElement('button');
     expandBtn.className = 'box-expand-btn';
+    expandBtn.tabIndex = -1;
     expandBtn.title = i18n('autoExpand');
     expandBtn.textContent = '⊟';
     expandBtn.title = box.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
-    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;';
+    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       box.collapseHover = !box.collapseHover;
@@ -2500,6 +2521,7 @@ function ensureGroups() {
     starBtn.type = 'button';
     const _starred = !!getGroupByParent(largeKey(box.id));
     starBtn.className = 'box-star-btn box-tool-btn' + (_starred ? ' box-tool-btn--on' : '');
+    starBtn.tabIndex = -1;
     starBtn.textContent = _starred ? '★' : '☆';
     starBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
     starBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(largeKey(box.id)); });
@@ -2714,6 +2736,7 @@ function ensureGroups() {
 
     const delBtn = document.createElement('button');
     delBtn.className = 'small-box__delete';
+    delBtn.tabIndex = -1;
     delBtn.title = i18n('deleteBox');
     delBtn.textContent = '×';
     delBtn.addEventListener('click', e => { e.stopPropagation(); deleteSmallBox(largeId, sb.id); });
@@ -2722,10 +2745,11 @@ function ensureGroups() {
     // ── pin button
     const pinBtn = document.createElement('button');
     pinBtn.className = 'box-pin-btn';
+    pinBtn.tabIndex = -1;
     pinBtn.title = i18n('pin');
     pinBtn.textContent = '⊙';
     pinBtn.title = sb.pinned ? i18n('unpin') : i18n('pin');
-    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;';
+    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;';
     // Default: NOT pinned
     sb.pinned = sb.pinned === true;  // normalize
     pinBtn.textContent = sb.pinned ? '⊙' : '○';
@@ -2743,10 +2767,11 @@ function ensureGroups() {
     // ── auto-expand button
     const expandBtn = document.createElement('button');
     expandBtn.className = 'box-expand-btn';
+    expandBtn.tabIndex = -1;
     expandBtn.title = i18n('autoExpand');
     expandBtn.textContent = '⊟';
     expandBtn.title = sb.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
-    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;';
+    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       sb.collapseHover = !sb.collapseHover;
@@ -2774,6 +2799,7 @@ function ensureGroups() {
     sbStarBtn.type = 'button';
     const _sbStarred = !!getGroupByParent(smallKey(largeId, sb.id));
     sbStarBtn.className = 'box-star-btn box-tool-btn' + (_sbStarred ? ' box-tool-btn--on' : '');
+    sbStarBtn.tabIndex = -1;
     sbStarBtn.textContent = _sbStarred ? '★' : '☆';
     sbStarBtn.title = i18n('connStarParent') || 'Star-mark as group parent';
     sbStarBtn.addEventListener('click', e => { e.stopPropagation(); toggleStarMark(smallKey(largeId, sb.id)); });
@@ -3722,8 +3748,7 @@ function ensureGroups() {
     debug('addLargeBoxAt saved, calling renderCanvas');
     renderCanvas();
     debug('addLargeBoxAt done, surface children=' + canvasSurface.children.length);
-    // BX-DEV-140a: Chrome auto-focuses nearest focusable element (fullscreen ⊙ button) after dblclick creates a box. Blur to prevent.
-    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+    // BX-DEV-140a: Chrome focus-steal fixed at source via tabIndex=-1 on decorative buttons + CSS :focus-visible. Blur removed.
   }
 
   async function addLargeBox() {
@@ -3754,8 +3779,7 @@ function ensureGroups() {
     debug('addLargeBox saved, calling renderCanvas');
     renderCanvas();
     debug('addLargeBox done, surface children=' + canvasSurface.children.length);
-    // BX-DEV-140a: Chrome auto-focuses nearest focusable after box creation. Blur to prevent.
-    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+    // BX-DEV-140a: Chrome focus-steal fixed at source via tabIndex=-1 on decorative buttons + CSS :focus-visible. Blur removed.
   }
   debug('addLargeBox function defined');
   function updateInnerCaption(lb) {
@@ -3889,19 +3913,10 @@ function ensureGroups() {
     if (typeof fontSliderVal !== 'undefined' && fontSliderVal) fontSliderVal.textContent = (layout.settings.fontSize || 14) + 'px';
     const squareCB = document.getElementById('square-corners-cb');
    if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
-    // ADR-0010: accent theme UI sync
-    const accentSlider = document.getElementById('accent-hue-slider');
-    const accentVal = document.getElementById('accent-hue-value');
-    const hue = layout.settings.accentHue;
-    if (accentSlider) {
-      accentSlider.value = (hue === null || hue === undefined) ? 0 : hue;
-      if (accentVal) accentVal.textContent = (hue === null || hue === undefined) ? '—' : hue + '°';
-    }
-    document.querySelectorAll('.accent-preset').forEach(btn => {
-      const p = btn.dataset.preset;
-      const isActive = (hue === null && p === 'pure') ||
-                       (hue !== null && hue !== undefined && String(hue) === btn.dataset.hue && p === layout.settings.accentPreset);
-      btn.classList.toggle('accent-preset--active', isActive);
+    // ADR-0012: curated theme pack UI sync
+    const currentTheme = layout.settings.theme || 'beige';
+    document.querySelectorAll('.theme-preset').forEach(btn => {
+      btn.classList.toggle('theme-preset--active', btn.dataset.theme === currentTheme);
     });
 
  }
@@ -4582,41 +4597,14 @@ function ensureGroups() {
      appEl.classList.add('ntp--square-corners');
    }
 
-    // ADR-0010: Accent theme — hue slider + preset buttons
-    const accentHueSlider = document.getElementById('accent-hue-slider');
-    const accentHueVal = document.getElementById('accent-hue-value');
-    if (accentHueSlider) {
-      accentHueSlider.addEventListener('input', () => {
-        const h = parseInt(accentHueSlider.value, 10);
-        layout.settings.accentHue = h;
-        layout.settings.accentPreset = '';
-        applyAccent(h);
-        if (accentHueVal) accentHueVal.textContent = h + '°';
-        document.querySelectorAll('.accent-preset').forEach(b => b.classList.remove('accent-preset--active'));
-        saveLayoutDebounced();
-      });
-    }
-
-    document.querySelectorAll('.accent-preset').forEach(btn => {
+    // ADR-0012: Curated theme pack — theme button click handlers
+    document.querySelectorAll('.theme-preset').forEach(btn => {
       btn.addEventListener('click', () => {
-        const presetKey = btn.dataset.preset;
-        const hueStr = btn.dataset.hue;
-        if (hueStr === '') {
-          // mono / pure white preset
-          layout.settings.accentHue = null;
-          applyAccent(null);
-          if (accentHueSlider) accentHueSlider.value = 0;
-          if (accentHueVal) accentHueVal.textContent = '—';
-        } else {
-          const h = parseInt(hueStr, 10);
-          layout.settings.accentHue = h;
-          layout.settings.accentPreset = presetKey;
-          applyAccent(h);
-          if (accentHueSlider) accentHueSlider.value = h;
-          if (accentHueVal) accentHueVal.textContent = h + '°';
-        }
-        document.querySelectorAll('.accent-preset').forEach(b => b.classList.remove('accent-preset--active'));
-        btn.classList.add('accent-preset--active');
+        const themeKey = btn.dataset.theme;
+        layout.settings.theme = themeKey;
+        applyTheme(themeKey);
+        document.querySelectorAll('.theme-preset').forEach(b => b.classList.remove('theme-preset--active'));
+        btn.classList.add('theme-preset--active');
         saveLayout();
       });
     });

@@ -784,10 +784,10 @@
     "message": "Klick + Entf-Taste",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "Akzentfarbe"
+  "themeColorLabel": {
+    "message": "Farbschema"
   },
-  "accentColorHint": {
-    "message": "Preset wählen oder Schieberegler ziehen um Akzentfarbe anzupassen"
+  "themeColorHint": {
+    "message": "Wählen Sie ein Farbschema für die gesamte Oberfläche"
   }
 }

@@ -784,10 +784,10 @@
     "message": "نقرة + مفتاح Delete",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "لون التمييز"
+  "themeColorLabel": {
+    "message": "موضوع اللون"
   },
-  "accentColorHint": {
-    "message": "اختر إعدادًا مسبقًا أو اسحب المنزلق لضبط لون التمييز"
+  "themeColorHint": {
+    "message": "اختر موضوعًا للألوان للواجهة بأكملها"
   }
 }

@@ -784,10 +784,10 @@
     "message": "Clic + Touche Delete",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "Couleur accent"
+  "themeColorLabel": {
+    "message": "Thème de couleur"
   },
-  "accentColorHint": {
-    "message": "Choisissez un preset ou glissez le curseur pour ajuster la teinte"
+  "themeColorHint": {
+    "message": "Sélectionnez un thème de couleur pour toute l'interface"
   }
 }

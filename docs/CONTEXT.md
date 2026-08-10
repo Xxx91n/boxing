@@ -69,7 +69,15 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 
 ### Settings
 - **layout.settings** — persisted settings object inside `layout`. Spread-merged on cross-tab sync: `{ ...remote.settings, ...local.settings }`.
-- Fields: `selectedLanguage`, `rememberLastPos`, `zoomLevel`, `darkMode`, `fontSize`, `squareCorners`, `autoBackupInterval`, `headerPinned`, `syncProvider`, `urlOpenMode`, `connDeleteAction`.
+- Fields: `selectedLanguage`, `rememberLastPos`, `zoomLevel`, `darkMode`, `fontSize`, `squareCorners`, `autoBackupInterval`, `headerPinned`, `syncProvider`, `urlOpenMode`, `connDeleteAction`, `theme`.
+
+### Theme Pack System (ADR-0012)
+- **THEME_PACKS** — static object in ntp.js with 5 curated themes: `beige` (default), `graphite`, `coastal`, `forest`, `pure`. Each stores complete warm bg ramp (9 tiers) + accent ramp (3 tiers) for light + dark.
+- **theme** — `layout.settings.theme: string` (default `'beige'`). Replaces old `accentHue` + `accentPreset` (migrated in migrateLayout).
+- **applyTheme(themeKey)** — injects all theme CSS variables via setProperty. Called on init if theme !== 'beige', and on theme button click.
+- **theme-preset** — CSS class for the 5 theme buttons in settings modal (`.theme-preset`, `.theme-preset--active`).
+- **ADR-0010** — superseded by ADR-0012 (free hue slider replaced by curated themes).
+- **ADR-0011** — ntp.css is a build artifact, gitignored, validator reads source files.
 - **syncSettingsDOM()** — reads layout.settings → DOM (select values, checkboxes). Called on modal open and after applyExternalLayout.
 - **addEventListener('change')** — settings modal writes DOM → layout.settings + `saveLayoutDebounced()`.
 

@@ -784,10 +784,10 @@
     "message": "क्लिक + Delete कुंजी",
     "description": "Click + Delete key option"
   },
-  "accentColorLabel": {
-    "message": "एक्सेंट रंग"
+  "themeColorLabel": {
+    "message": "रंग थीम"
   },
-  "accentColorHint": {
-    "message": "प्रीसेट चुनें या स्लाइडर खींचें ताकि एक्सेंट रंग बदला जा सके"
+  "themeColorHint": {
+    "message": "पूरे इंटरफ़ेस के लिए एक रंग थीम चुनें"
   }
 }
