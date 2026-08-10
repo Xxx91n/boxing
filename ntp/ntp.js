@@ -487,6 +487,7 @@
   const $$ = (sel, ctx = document) => ctx.querySelectorAll(sel);
 
   const canvasContainer = $('#canvas');
+  canvasContainer.tabIndex = -1; // BX-DEV-140c: focus sink — Chrome dblclick focus-steal prevention
   const canvasSurface = $('#canvas-surface');
   const canvasEmpty = $('#canvas-empty');
   const canvasZoomOut = $('#canvas-zoom [data-zoom="out"]');
@@ -494,6 +495,7 @@
   const canvasZoomVal = $('#canvas-zoom-value');
   const canvasZoomCtrl = $('#canvas-zoom');
   const innerSurface = $('#inner-surface');
+  innerSurface.tabIndex = -1; // BX-DEV-140c: focus sink for inner canvas
   const innerZoomOut = $('#inner-zoom [data-zoom="out"]');
   const innerZoomIn = $('#inner-zoom [data-zoom="in"]');
   const innerZoomVal = $('#inner-zoom-value');
@@ -2329,16 +2331,9 @@ function ensureGroups() {
     const body = el.querySelector('.large-box__body') || el.querySelector('.small-box__body');
     if (!body) return;
     requestAnimationFrame(() => {
-      // BX-DEV-111 v2: measure FULL box scrollHeight (bar+body+resize) for expand target
-      // Temporarily remove max-height constraint to measure natural height
-      const wasCollapsed = el.classList.contains('box--collapsed');
-      const savedMaxH = el.style.maxHeight;
-      el.style.maxHeight = 'none';
-      // Force reflow: read offsetHeight triggers layout recalculation with new max-height
-      void el.offsetHeight;
+      // BX-DEV-140d: read scrollHeight WITHOUT modifying maxHeight — avoids scrollbar flash
+      // scrollHeight returns full content height even when overflow:hidden clamps visible region.
       const fullH = el.scrollHeight;
-      el.style.maxHeight = savedMaxH;
-      void el.offsetHeight; // reflow again after restoring
       debug('setBodyExpandHeight measured', { id: el.dataset.id, fullH, savedMaxH, wasCollapsed });
       if (fullH > 0) el.style.setProperty('--expand-height', fullH + 'px');
       // Also keep --body-max-height for compatibility
@@ -3757,7 +3752,8 @@ function ensureGroups() {
     // BX-DEV-140a: Chrome focus-steal fixed at source via tabIndex=-1 on decorative buttons + CSS :focus-visible. Blur removed.
   }
 
-  async function addLargeBox() {
+  async function addLargeBox(e) {
+    if (e && e.preventDefault) e.preventDefault(); // BX-DEV-140c: prevent Chrome click focus-steal
 
     debug('addLargeBox (button) called', { boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex });
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
@@ -3838,7 +3834,8 @@ function ensureGroups() {
     setTimeout(() => { if (warn.parentNode) warn.remove(); }, 10000);
   }
 
-  function addSmallBox() {
+  function addSmallBox(e) {
+    if (e && e.preventDefault) e.preventDefault(); // BX-DEV-140c: prevent Chrome click focus-steal
     const lb = validateCurrentBox();
     if (!lb) return;
     if ((lb.children?.length || 0) >= MAX_SMALL_BOXES) { debug('max small boxes'); return; }
@@ -4321,6 +4318,7 @@ function ensureGroups() {
       return;
     }
     debug('onCanvasDblClick on empty area, calling addLargeBoxAt');
+    e.preventDefault(); // BX-DEV-140c: prevent Chrome dblclick focus-steal
     addLargeBoxAt(e.clientX, e.clientY);
   }
 
@@ -4353,6 +4351,7 @@ function ensureGroups() {
     }
     const targetBox = e.target.closest('.small-box');
     if (targetBox) return;
+    e.preventDefault(); // BX-DEV-140c: prevent Chrome dblclick focus-steal
     addSmallBoxAt(e.clientX, e.clientY);
   }
 
