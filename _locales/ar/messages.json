@@ -783,5 +783,17 @@
   "connDeleteActionSelectDelete": {
     "message": "نقرة + مفتاح Delete",
     "description": "Click + Delete key option"
+  },
+  "accentColorLabel": {
+    "message": "لون التمييز"
+  },
+  "accentColorHint": {
+    "message": "اختر إعدادًا مسبقًا أو اسحب المنزلق لضبط لون التمييز"
+  },
+  "backgroundColorLabel": {
+    "message": "نبرة الخلفية"
+  },
+  "backgroundColorHint": {
+    "message": "اسحب لضبط درجة لون سطح اللوحة"
   }
 }

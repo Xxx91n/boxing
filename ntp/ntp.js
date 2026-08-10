@@ -278,6 +278,7 @@
     confirmDeleteSmallBody: 'Delete this small box and all its bookmarks? This action cannot be undone.',
    darkMode: 'Dark Mode', darkModeHint: 'Switch between light and dark appearance',
     accentColorLabel: 'Accent Color', accentColorHint: 'Choose a preset or drag the slider to fine-tune the accent color hue',
+      backgroundColorLabel: 'Background Tone', backgroundColorHint: 'Drag to shift the canvas surface color hue',
    exportData: 'Export Data', importData: 'Import Data',
     importSuccess: 'Data imported successfully', importFailed: 'Import failed: invalid data format',
     importTooLarge: 'Import failed: file too large (max 5MB)',
@@ -989,10 +990,31 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     root.style.setProperty('--accent-dark-500-rgb', hexToRgbTriplet(dark500));
   }
 
- function defaultLayout() {
+  // BG neutral surface hue constants (ADR-0010 extension — background hue)
+  // Light: ~27% saturation, L ranges 93%→84% across surface tiers
+  // Dark: ~8% saturation, L ranges 11%→17% for inverted dark surfaces
+  const BG_SL = {
+    light: { 50: { s: 27, l: 93 }, 100: { s: 27, l: 91 }, 150: { s: 27, l: 89 }, 200: { s: 27, l: 84 }, 300: { s: 27, l: 90 } },
+    dark:  { 50: { s: 8, l: 11 }, 100: { s: 8, l: 14 }, 150: { s: 8, l: 15 }, 200: { s: 8, l: 17 } },
+  };
+  const DEFAULT_BG_HUE = 38;  // warm earth neutral — matches original design-system.css values
+
+  function applyBgHue(hue) {
+    const root = document.documentElement;
+    if (hue === null || hue === undefined) hue = DEFAULT_BG_HUE;
+    for (const mode of ['light', 'dark']) {
+      const p = BG_SL[mode];
+      const pre = mode === 'light' ? '--color-warm-' : '--color-warm-dark-';
+      for (const tier of Object.keys(p)) {
+        root.style.setProperty(pre + tier, hslToHex(hue, p[tier].s, p[tier].l));
+      }
+    }
+  }
+
+  function defaultLayout() {
    return {
       version: 3.5, schemaVersion: 1, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click', accentHue: undefined, accentPreset: undefined }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click', accentHue: undefined, accentPreset: undefined, bgHue: undefined }
     };
   }
 
@@ -1043,7 +1065,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
           }))
         })),
        nextLargeIndex: (raw.boxes?.length || 0) + 1,
-       settings: Object.assign(raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }, { accentHue: raw.settings?.accentHue, accentPreset: raw.settings?.accentPreset })
+       settings: Object.assign(raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }, { accentHue: raw.settings?.accentHue, bgHue: raw.settings?.bgHue, accentPreset: raw.settings?.accentPreset })
       };
     }
     return defaultLayout();
@@ -1073,6 +1095,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     // accent theme (ADR-0010) — only override if user has chosen a theme
     if (layout.settings.accentHue !== undefined) {
       applyAccent(layout.settings.accentHue);
+      applyBgHue(layout.settings.bgHue);
     }
    // square corners
     if (layout.settings.squareCorners) {
@@ -3700,6 +3723,8 @@ function ensureGroups() {
     debug('addLargeBoxAt saved, calling renderCanvas');
     renderCanvas();
     debug('addLargeBoxAt done, surface children=' + canvasSurface.children.length);
+    // BX-DEV-140a: Chrome auto-focuses nearest focusable element (fullscreen ⊙ button) after dblclick creates a box. Blur to prevent.
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   }
 
   async function addLargeBox() {
@@ -3730,6 +3755,8 @@ function ensureGroups() {
     debug('addLargeBox saved, calling renderCanvas');
     renderCanvas();
     debug('addLargeBox done, surface children=' + canvasSurface.children.length);
+    // BX-DEV-140a: Chrome auto-focuses nearest focusable after box creation. Blur to prevent.
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   }
   debug('addLargeBox function defined');
   function updateInnerCaption(lb) {
@@ -3877,6 +3904,14 @@ function ensureGroups() {
                        (hue !== null && hue !== undefined && String(hue) === btn.dataset.hue && p === layout.settings.accentPreset);
       btn.classList.toggle('accent-preset--active', isActive);
     });
+    // ADR-0010: bg hue UI sync
+    const bgHueSliderSync = document.getElementById('bg-hue-slider');
+    const bgHueValSync = document.getElementById('bg-hue-value');
+    const bgHue = layout.settings.bgHue;
+    if (bgHueSliderSync) {
+      bgHueSliderSync.value = (bgHue === null || bgHue === undefined) ? 38 : bgHue;
+      if (bgHueValSync) bgHueValSync.textContent = (bgHue === null || bgHue === undefined) ? '38' : bgHue + '\u00b0';
+    }
  }
 
   function applyExternalLayout(raw) {
@@ -4566,6 +4601,18 @@ function ensureGroups() {
         applyAccent(h);
         if (accentHueVal) accentHueVal.textContent = h + '°';
         document.querySelectorAll('.accent-preset').forEach(b => b.classList.remove('accent-preset--active'));
+        saveLayoutDebounced();
+      });
+    }
+    // BX-DEV-140c: BG hue slider
+    const bgHueSlider = document.getElementById('bg-hue-slider');
+    const bgHueVal = document.getElementById('bg-hue-value');
+    if (bgHueSlider) {
+      bgHueSlider.addEventListener('input', () => {
+        const h = parseInt(bgHueSlider.value, 10);
+        layout.settings.bgHue = h;
+        applyBgHue(h);
+        if (bgHueVal) bgHueVal.textContent = h + '\u00b0';
         saveLayoutDebounced();
       });
     }

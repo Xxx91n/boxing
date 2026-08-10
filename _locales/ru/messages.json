@@ -783,5 +783,17 @@
   "connDeleteActionSelectDelete": {
     "message": "Клик + клавиша Delete",
     "description": "Click + Delete key option"
+  },
+  "accentColorLabel": {
+    "message": "Цвет акцента"
+  },
+  "accentColorHint": {
+    "message": "Выберите пресет или перетащите ползунок для настройки оттенка"
+  },
+  "backgroundColorLabel": {
+    "message": "Тон фона"
+  },
+  "backgroundColorHint": {
+    "message": "Перетащите ползунок для настройки оттенка поверхности холста"
   }
 }

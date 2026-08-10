@@ -786,5 +786,17 @@
   "connDeleteActionSelectDelete": {
     "message": "点击 + Delete键",
     "description": "Click + Delete key option"
+  },
+  "accentColorLabel": {
+    "message": "强调色"
+  },
+  "accentColorHint": {
+    "message": "选择预设或拖动滑块以微调强调色色相"
+  },
+  "backgroundColorLabel": {
+    "message": "背景色调"
+  },
+  "backgroundColorHint": {
+    "message": "拖动滑块以调整画布表面的色调"
   }
 }

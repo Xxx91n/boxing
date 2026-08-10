@@ -783,5 +783,17 @@
   "connDeleteActionSelectDelete": {
     "message": "क्लिक + Delete कुंजी",
     "description": "Click + Delete key option"
+  },
+  "accentColorLabel": {
+    "message": "एक्सेंट रंग"
+  },
+  "accentColorHint": {
+    "message": "प्रीसेट चुनें या स्लाइडर खींचें ताकि एक्सेंट रंग बदला जा सके"
+  },
+  "backgroundColorLabel": {
+    "message": "बैकग्राउंड टोन"
+  },
+  "backgroundColorHint": {
+    "message": "कैनवास सतह का रंग बदलने के लिए खींचें"
   }
 }

@@ -783,5 +783,17 @@
   "connDeleteActionSelectDelete": {
     "message": "Clic + Touche Delete",
     "description": "Click + Delete key option"
+  },
+  "accentColorLabel": {
+    "message": "Couleur accent"
+  },
+  "accentColorHint": {
+    "message": "Choisissez un preset ou glissez le curseur pour ajuster la teinte"
+  },
+  "backgroundColorLabel": {
+    "message": "Ton de fond"
+  },
+  "backgroundColorHint": {
+    "message": "Glissez pour ajuster la teinte de la surface du canevas"
   }
 }

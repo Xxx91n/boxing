@@ -1996,6 +1996,18 @@ html.ntp--dark {
 }
 /* BX-CSS-DUAL-WRITE-SHARED: accent theme controls — shared selectors, no dual-write needed */
 
+
+/* BX-DEV-140c: Background hue slider — neutral gradient (not rainbow) */
+#bg-hue-slider {
+  background: linear-gradient(to right,
+    hsl(0,15%,90%), hsl(60,15%,90%), hsl(120,15%,90%),
+    hsl(180,15%,90%), hsl(240,15%,90%), hsl(300,15%,90%), hsl(360,15%,90%)) !important;
+}
+.ntp--dark #bg-hue-slider {
+  background: linear-gradient(to right,
+    hsl(0,8%,15%), hsl(60,8%,15%), hsl(120,8%,15%),
+    hsl(180,8%,15%), hsl(240,8%,15%), hsl(300,8%,15%), hsl(360,8%,15%)) !important;
+}
 /* === Onboarding (first-run guided tour) === */
 .onboarding-modal {
   width: min(520px, 92vw);

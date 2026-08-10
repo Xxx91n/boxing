@@ -783,5 +783,17 @@
   "connDeleteActionSelectDelete": {
     "message": "Nhấp + Phím Delete",
     "description": "Click + Delete key option"
+  },
+  "accentColorLabel": {
+    "message": "Màu nhấn"
+  },
+  "accentColorHint": {
+    "message": "Chọn mẫu hoặc kéo thanh trượt để tinh chỉnh màu nhấn"
+  },
+  "backgroundColorLabel": {
+    "message": "Tông nền"
+  },
+  "backgroundColorHint": {
+    "message": "Kéo để điều chỉnh tông màu bề mặt canvas"
   }
 }

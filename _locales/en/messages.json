@@ -795,5 +795,17 @@
   "connDeleteActionSelectDelete": {
     "message": "Click + Delete key",
     "description": "Click + Delete key option"
+  },
+  "accentColorLabel": {
+    "message": "Accent Color"
+  },
+  "accentColorHint": {
+    "message": "Choose a preset or drag the slider to fine-tune the accent color hue"
+  },
+  "backgroundColorLabel": {
+    "message": "Background Tone"
+  },
+  "backgroundColorHint": {
+    "message": "Drag to shift the canvas surface color hue"
   }
 }
