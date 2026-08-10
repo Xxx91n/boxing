@@ -901,8 +901,8 @@ html.ntp--dark {
   top: var(--space-2) !important;
 }
 /* ══════════════════════════════════════════════
-   Accent Theme System (ADR-0010)
-   Preset swatches + hue slider for user-customizable accent color
+   Curated Theme Pack System (ADR-0012)
+   Curated theme presets — user picks a complete theme, no free hue slider
    ══════════════════════════════════════════════ */
 .theme-presets {
   display: flex;
