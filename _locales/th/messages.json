@@ -789,11 +789,5 @@
   },
   "accentColorHint": {
     "message": "เลือกพรีเซ็ตหรือลากแถบเลื่อนเพื่อปรับสีเน้น"
-  },
-  "backgroundColorLabel": {
-    "message": "โทนพื้นหลัง"
-  },
-  "backgroundColorHint": {
-    "message": "ลากเพื่อปรับโทนสีของพื้นผิวผ้าใบ"
   }
 }

@@ -789,11 +789,5 @@
   },
   "accentColorHint": {
     "message": "Choisissez un preset ou glissez le curseur pour ajuster la teinte"
-  },
-  "backgroundColorLabel": {
-    "message": "Ton de fond"
-  },
-  "backgroundColorHint": {
-    "message": "Glissez pour ajuster la teinte de la surface du canevas"
   }
 }

@@ -789,11 +789,5 @@
   },
   "accentColorHint": {
     "message": "프리셋을 선택하거나 슬라이더를 드래그하여 악센트 색상을 미세 조정"
-  },
-  "backgroundColorLabel": {
-    "message": "배경 톤"
-  },
-  "backgroundColorHint": {
-    "message": "슬라이더를 드래그하여 캔버스 표면 색상을 조정"
   }
 }

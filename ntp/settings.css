@@ -1004,16 +1004,24 @@ html.ntp--dark {
   border-color: var(--color-hairline);
 }
 /* BX-CSS-DUAL-WRITE-SHARED: accent theme controls — shared selectors, no dual-write needed */
-
-
-/* BX-DEV-140c: Background hue slider — neutral gradient (not rainbow) */
-#bg-hue-slider {
-  background: linear-gradient(to right,
-    hsl(0,15%,90%), hsl(60,15%,90%), hsl(120,15%,90%),
-    hsl(180,15%,90%), hsl(240,15%,90%), hsl(300,15%,90%), hsl(360,15%,90%)) !important;
+/* Q4: Chrome UA button reset */
+.box-expand-btn, .box-pin-btn, .box-mode-btn, .box-resize-handle,
+.large-box__delete, .small-box__delete {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none !important;
+  box-shadow: none !important;
 }
-.ntp--dark #bg-hue-slider {
-  background: linear-gradient(to right,
-    hsl(0,8%,15%), hsl(60,8%,15%), hsl(120,8%,15%),
-    hsl(180,8%,15%), hsl(240,8%,15%), hsl(300,8%,15%), hsl(360,8%,15%)) !important;
+
+/* Q5: Chrome select/input focus ring reset */
+.modal select:focus,
+.modal input:focus,
+.modal button:focus,
+.modal textarea:focus {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  border-color: var(--color-focus) !important;
 }

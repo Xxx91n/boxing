@@ -789,11 +789,5 @@
   },
   "accentColorHint": {
     "message": "Elige un preset o arrastra el deslizador para ajustar el tono"
-  },
-  "backgroundColorLabel": {
-    "message": "Tono de fondo"
-  },
-  "backgroundColorHint": {
-    "message": "Arrastra para ajustar el tono de la superficie del lienzo"
   }
 }

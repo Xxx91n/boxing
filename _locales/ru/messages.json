@@ -789,11 +789,5 @@
   },
   "accentColorHint": {
     "message": "Выберите пресет или перетащите ползунок для настройки оттенка"
-  },
-  "backgroundColorLabel": {
-    "message": "Тон фона"
-  },
-  "backgroundColorHint": {
-    "message": "Перетащите ползунок для настройки оттенка поверхности холста"
   }
 }

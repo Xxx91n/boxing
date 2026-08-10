@@ -789,11 +789,5 @@
   },
   "accentColorHint": {
     "message": "Preset wählen oder Schieberegler ziehen um Akzentfarbe anzupassen"
-  },
-  "backgroundColorLabel": {
-    "message": "Hintergrundton"
-  },
-  "backgroundColorHint": {
-    "message": "Ziehen Sie den Regler, um den Farbton der Leinwandfläche anzupassen"
   }
 }

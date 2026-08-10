@@ -789,11 +789,5 @@
   },
   "accentColorHint": {
     "message": "Escolha um preset ou arraste o controle para ajustar o tom"
-  },
-  "backgroundColorLabel": {
-    "message": "Tom de fundo"
-  },
-  "backgroundColorHint": {
-    "message": "Arraste para ajustar o tom da superf�cie da tela"
   }
 }

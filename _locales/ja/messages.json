@@ -789,11 +789,5 @@
   },
   "accentColorHint": {
     "message": "プリセットを選択するかスライダーをドラッグしてアクセント色相を微調整"
-  },
-  "backgroundColorLabel": {
-    "message": "背景の色調"
-  },
-  "backgroundColorHint": {
-    "message": "ドラッグしてキャンバスの表面の色相を調整"
   }
 }
