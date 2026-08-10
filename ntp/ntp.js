@@ -939,7 +939,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
  }
 
   // ═══════════════════════════════════════════════════
-  // Accent Theme Manager (ADR-0010)
+  // Accent Theme Manager (ADR-0012)
   // Hue-based preset + slider for user-customizable accent color
   // ═══════════════════════════════════════════════════
   // ADR-0012: Curated theme pack system — replaces free hue slider (supersedes ADR-0010)

@@ -94,7 +94,7 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **BX-EXPLORE-009**: Persistence calls `saveLayoutDebounced()` — never `persistLayoutDebounced()` (undefined typo).
 
 ## CSS Dual-Write Convention
-Both large-box and small-box canvases share the same CSS class for conn-line styles. Single source of truth in `ntp/ntp.css`. See `docs/css-dual-write-convention.md` for rules on properties that MUST stay in sync across large/small box selectors.
+Both large-box and small-box canvases share the same CSS class for conn-line styles. Source files: `ntp/src/base.css` + `ntp/src/conn.css` + `ntp/src/settings.css` + `ntp/src/onboarding.css` (ADR-0011: `ntp/ntp.css` is a build artifact produced by `build.mjs`; edit source files, not the concatenated output). See `docs/css-dual-write-convention.md` for rules on properties that MUST stay in sync across large/small box selectors.
 
 ## Disposal Invariant
 Any code that clears `canvasSurface.innerHTML` or `innerSurfaceContent.innerHTML` MUST call `disposeAllConns()` first — otherwise `connLines` Map holds stale SVG refs and `renderConnections()` skips rebuild (lines invisible forever).
