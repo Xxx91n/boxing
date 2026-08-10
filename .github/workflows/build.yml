@@ -18,6 +18,10 @@ on:
         description: "Also create a draft GitHub Release attaching the 4 artifacts."
         required: false
         default: "false"
+      release_tag:
+        description: "Custom release tag name (e.g. v3.7.0-beta). Empty defaults to v<version>."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -114,7 +118,7 @@ jobs:
         if: github.event.inputs.make_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.ver.outputs.version }}
+          tag_name: ${{ github.event.inputs.release_tag != '' && github.event.inputs.release_tag || format('v{0}', steps.ver.outputs.version) }}
           name: Boxing ${{ steps.ver.outputs.version }}
           files: |
             dist/boxing-chrome-${{ steps.ver.outputs.version }}.zip
