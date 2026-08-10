@@ -2,7 +2,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(240, 235, 224, 0.94);
+  background: var(--color-surface); /* BX-DEV-140: was hardcoded rgba — now follows theme */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -593,7 +593,7 @@ body.box-resizing {
 
 
 .ntp--dark .modal-overlay {
-  background: rgba(24, 22, 20, 0.94);
+  background: var(--color-surface); /* BX-DEV-140: was hardcoded rgba — now follows theme */
 }
 
 .ntp--dark .confirm-modal {

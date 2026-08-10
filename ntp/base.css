@@ -491,6 +491,7 @@ body {
   appearance: none;
   outline: none;
   box-shadow: none;
+  color: inherit;
 }
 
 .box-pin-btn {
@@ -529,6 +530,7 @@ body {
   appearance: none;
   outline: none;
   box-shadow: none;
+  color: inherit;
 }
 
 .box-pin-btn:hover {
@@ -546,6 +548,7 @@ body {
   appearance: none;
   outline: none;
   box-shadow: none;
+  color: inherit;
 }
 
 .box-expand-btn:hover {

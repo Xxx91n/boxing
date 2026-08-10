@@ -959,7 +959,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     graphite: {
       name: 'themeGraphite',
       light: {
-        warm: { '50': '#F2F2F2', '100': '#ECECEC', '150': '#E6E6E6', '200': '#D8D8D8', '300': '#E2E2E2', '700': '#9A9A9A', '800': '#6E6E6E', '850': '#3A3A3A', '900': '#282828' },
+        warm: { '50': '#E8E8E8', '100': '#DEDEDE', '150': '#D6D6D6', '200': '#CCCCCC', '300': '#DCDCDC', '700': '#9A9A9A', '800': '#6E6E6E', '850': '#3A3A3A', '900': '#282828' },
         accent: { '300': '#787878', '500': '#5C5C5C', '600': '#3A3A3A' },
       },
       dark: {
@@ -2294,8 +2294,11 @@ function ensureGroups() {
     const hasBoxes = layout.boxes.length > 0;
     // BX-DEV-111: hide empty placeholder BEFORE clearing surface to avoid flash
     canvasEmpty.hidden = true;
-    // Bug2: clear DOM synchronously then rebuild in same tick — no flash
-    canvasSurface.innerHTML = '';
+   // Bug2: clear DOM synchronously then rebuild in same tick — no flash
+    // BX-DEV-140b: blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
+    const _ae1 = document.activeElement;
+    if (_ae1 && _ae1 !== document.body && canvasSurface.contains(_ae1)) _ae1.blur();
+   canvasSurface.innerHTML = '';
     disposeAllConns(); // clear stale connLines Map after DOM wipe
     // Then re-show empty state only if truly empty
     canvasEmpty.hidden = hasBoxes;
@@ -2409,7 +2412,7 @@ function ensureGroups() {
     pinBtn.title = i18n('pin');
     pinBtn.textContent = '⊙';
     pinBtn.title = box.pinned ? i18n('unpin') : i18n('pin');
-    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;';
+    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
     // Default: NOT pinned
     box.pinned = box.pinned === true;  // normalize
     pinBtn.textContent = box.pinned ? '⊙' : '○';
@@ -2432,7 +2435,7 @@ function ensureGroups() {
     expandBtn.title = i18n('autoExpand');
     expandBtn.textContent = '⊟';
     expandBtn.title = box.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
-    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;';
+    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       box.collapseHover = !box.collapseHover;
@@ -2672,8 +2675,11 @@ function ensureGroups() {
     // BX-143: dispose connection state BEFORE clearing innerHTML — content.innerHTML=''
     // orphans innerConnSvg + all connLines SVG elements. Without this, renderConnections
     // skips creating new lines because connLines.has(c.id) returns true for stale refs.
-    disposeAllConns();
-    content.innerHTML = '';
+   disposeAllConns();
+    // BX-DEV-140b: blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
+    const _ae2 = document.activeElement;
+    if (_ae2 && _ae2 !== document.body && content.contains(_ae2)) _ae2.blur();
+   content.innerHTML = '';
     const frag = document.createDocumentFragment();
     for (const sb of lb.children || []) {
       frag.appendChild(createSmallBoxEl(lb.id, sb));
@@ -2749,7 +2755,7 @@ function ensureGroups() {
     pinBtn.title = i18n('pin');
     pinBtn.textContent = '⊙';
     pinBtn.title = sb.pinned ? i18n('unpin') : i18n('pin');
-    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;';
+    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
     // Default: NOT pinned
     sb.pinned = sb.pinned === true;  // normalize
     pinBtn.textContent = sb.pinned ? '⊙' : '○';
@@ -2771,7 +2777,7 @@ function ensureGroups() {
     expandBtn.title = i18n('autoExpand');
     expandBtn.textContent = '⊟';
     expandBtn.title = sb.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
-    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;';
+    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       sb.collapseHover = !sb.collapseHover;

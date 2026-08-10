@@ -71,7 +71,7 @@ test.describe('ADR-0012: Curated Theme Pack System', () => {
     const warmVar = await page.evaluate(() => {
       return getComputedStyle(document.documentElement).getPropertyValue('--color-warm-50').trim();
     });
-    expect(warmVar.toLowerCase()).toContain('f2f2f2');
+    expect(warmVar.toLowerCase()).toContain('e8e8e8');
   });
 
   test('default theme: beige stays as-is without override', async ({ page }) => {
