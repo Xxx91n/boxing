@@ -15,7 +15,7 @@
 <body>
   <main id="app" class="ntp" aria-label="New tab dashboard">
     <header class="ntp__bar" role="banner">
-      <button id="back-btn" class="btn btn--ghost btn--icon" aria-label="Go back" data-i18n-title="backTooltip">
+      <button id="back-btn" tabindex="-1" class="btn btn--ghost btn--icon" aria-label="Go back" data-i18n-title="backTooltip">
         <span aria-hidden="true">←</span>
       </button>
       <div class="brand">
@@ -34,18 +34,18 @@
       <div id="search-results" class="search-results" hidden role="listbox" aria-label="Search results"></div>
       <span class="header-count" id="caption"></span>
       <nav class="actions" aria-label="Page actions">
-        <button id="add-box" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
+        <button id="add-box" tabindex="-1" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
           <span aria-hidden="true">+</span>
         </button>
-        <button id="settings-btn" class="btn btn--ghost" aria-label="Open settings" data-i18n-title="settingsTooltip">
+        <button id="settings-btn" tabindex="-1" class="btn btn--ghost" aria-label="Open settings" data-i18n-title="settingsTooltip">
           <span aria-hidden="true">⚙</span>
         </button>
-        <button id="dark-mode-btn" class="btn btn--ghost" aria-label="Dark mode" data-i18n-title="darkMode"
+        <button id="dark-mode-btn" tabindex="-1" class="btn btn--ghost" aria-label="Dark mode" data-i18n-title="darkMode"
           style="font-size:14px;">
           <span aria-hidden="true">☀</span>
         </button>
       </nav>
-      <button id="header-pin-btn" class="btn btn--ghost header-pin-float" aria-label="Pin header"
+      <button id="header-pin-btn" tabindex="-1" class="btn btn--ghost header-pin-float" aria-label="Pin header"
         data-i18n-title="headerPinOff" style="font-size:14px;">
         <span aria-hidden="true">○</span>
       </button>
@@ -65,16 +65,16 @@
           </p>
         </div>
         <div class="zoom-controls" id="canvas-zoom">
-          <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut"><span class="zoom-arrow" aria-hidden="true"></span></button>
+          <button class="zoom-btn" data-zoom="out" tabindex="-1" aria-label="Zoom out" data-i18n-title="zoomOut"><span class="zoom-arrow" aria-hidden="true"></span></button>
           <span class="zoom-value" id="canvas-zoom-value">100%</span>
-          <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn"><span class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
+          <button class="zoom-btn" data-zoom="in" tabindex="-1" aria-label="Zoom in" data-i18n-title="zoomIn"><span class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
         </div>
       </div>
 
       <div id="inner" class="inner" hidden>
         <div id="inner-canvas-head" class="inner__canvas-head">
           <span class="inner__crumb-title" id="inner-crumb-title" contenteditable="true" spellcheck="false"></span>
-          <button id="add-small" class="btn btn--ghost btn--icon" aria-label="Add small box"
+          <button id="add-small" tabindex="-1" class="btn btn--ghost btn--icon" aria-label="Add small box"
             data-i18n-title="addSmallBoxTooltip" style="font-size:18px;">
             <span aria-hidden="true">+</span>
           </button>
@@ -82,9 +82,9 @@
         <div id="inner-canvas" class="inner__canvas">
           <div id="inner-surface" class="inner__surface"></div>
           <div class="zoom-controls" id="inner-zoom">
-            <button class="zoom-btn" data-zoom="out" aria-label="Zoom out" data-i18n-title="zoomOut"><span class="zoom-arrow" aria-hidden="true"></span></button>
+            <button class="zoom-btn" data-zoom="out" tabindex="-1" aria-label="Zoom out" data-i18n-title="zoomOut"><span class="zoom-arrow" aria-hidden="true"></span></button>
             <span class="zoom-value" id="inner-zoom-value">100%</span>
-            <button class="zoom-btn" data-zoom="in" aria-label="Zoom in" data-i18n-title="zoomIn"><span class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
+            <button class="zoom-btn" data-zoom="in" tabindex="-1" aria-label="Zoom in" data-i18n-title="zoomIn"><span class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -211,8 +211,8 @@
           <div class="settings-tab" id="tab-data" hidden>
             <section class="modal__section">
               <div style="display:flex;gap:8px;">
-                <button id="export-data-btn" class="btn" data-i18n="exportData">Export Data</button>
-                <button id="import-data-btn" class="btn" data-i18n="importData">Import Data</button>
+                <button id="export-data-btn" tabindex="-1" class="btn" data-i18n="exportData">Export Data</button>
+                <button id="import-data-btn" tabindex="-1" class="btn" data-i18n="importData">Import Data</button>
                 <input type="file" id="import-file-input" accept=".json" hidden>
               </div>
             </section>
@@ -226,8 +226,8 @@
                 of recent Boxing events to help diagnose issues. The buffer holds up to 300 entries
                 and never persists across browser restarts.</p>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <button id="diag-export-log-btn" class="btn" data-i18n="diagExportLog">Export Log</button>
-                <button id="diag-clear-log-btn" class="btn btn--ghost" data-i18n="diagClearLog">Clear Log</button>
+                <button id="diag-export-log-btn" tabindex="-1" class="btn" data-i18n="diagExportLog">Export Log</button>
+                <button id="diag-clear-log-btn" tabindex="-1" class="btn btn--ghost" data-i18n="diagClearLog">Clear Log</button>
                 <label class="modal__label" for="diag-log-level-select" data-i18n="diagLogLevelLabel" style="font-weight:normal;margin:0;">Log level</label>
                 <select id="diag-log-level-select" class="modal__select" style="width:auto;">
                   <option value="1" data-i18n="diagLogLevelError">Error</option>
@@ -281,7 +281,7 @@
                 <input id="webdav-user" class="modal__input" type="text" placeholder="" spellcheck="false">
                 <label class="modal__label" for="webdav-pass" data-i18n="webdavPass">Password</label>
                 <input id="webdav-pass" class="modal__input" type="password" placeholder="" spellcheck="false">
-                <button id="webdav-test-btn" class="btn" data-i18n="webdavTestBtn" style="margin-top:8px;">Test
+                <button id="webdav-test-btn" tabindex="-1" class="btn" data-i18n="webdavTestBtn" style="margin-top:8px;">Test
                   Connection</button>
               </section>
               <!-- GitHub Gist config -->
@@ -302,7 +302,7 @@
                 </select>
               </section>
               <section class="modal__section">
-                <button id="backup-now-btn" class="btn" data-i18n="syncNow">Sync Now</button>
+                <button id="backup-now-btn" tabindex="-1" class="btn" data-i18n="syncNow">Sync Now</button>
               </section>
             </div>
           </div>
@@ -324,8 +324,8 @@
         <p id="confirm-body" style="margin:0;font-size:14px;line-height:1.6;"></p>
       </div>
       <div class="modal__foot" style="justify-content:space-between;">
-        <button id="confirm-cancel-btn" class="btn" data-i18n="confirmCancel">Cancel</button>
-        <button id="confirm-delete-btn" class="btn"
+        <button id="confirm-cancel-btn" tabindex="-1" class="btn" data-i18n="confirmCancel">Cancel</button>
+        <button id="confirm-delete-btn" tabindex="-1" class="btn"
           style="background:var(--color-accent-ink);color:#F4EFE5;border-color:var(--color-accent-ink);"
           data-i18n="confirmYes">Delete</button>
       </div>
@@ -340,7 +340,7 @@
     <div class="modal onboarding-modal">
       <div class="modal__head">
         <h2 class="modal__title" id="onboarding-title" data-i18n="onboardingTitle">Welcome to Boxing</h2>
-        <button class="btn btn--ghost" id="onboarding-skip-btn" aria-label="Skip tour"
+        <button class="btn btn--ghost" id="onboarding-skip-btn" tabindex="-1" aria-label="Skip tour"
           data-i18n="onboardingSkipTour" data-i18n-title="onboardingSkipTour">Skip</button>
       </div>
       <!-- BX-DEV-111O: new-user language picker — first-run onboarding, mirrors Settings > Language -->
@@ -375,7 +375,7 @@
             server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way
             sync.</p>
           <div style="margin-top:8px;">
-            <button type="button" class="btn btn--ghost" id="onboarding-restore-btn" data-i18n="onboardingRestore">Restore from backup</button>
+            <button type="button" class="btn btn--ghost" id="onboarding-restore-btn" tabindex="-1" data-i18n="onboardingRestore">Restore from backup</button>
           </div>
         </div>
         <div class="onboarding__dots" aria-hidden="true">
@@ -385,8 +385,8 @@
         </div>
       </div>
       <div class="modal__foot onboarding__foot">
-        <button class="btn btn--ghost" id="onboarding-prev-btn" disabled data-i18n="onboardingPrev">Previous</button>
-        <button class="btn" id="onboarding-next-btn" data-i18n="onboardingNext">Next</button>
+        <button class="btn btn--ghost" id="onboarding-prev-btn" tabindex="-1" disabled data-i18n="onboardingPrev">Previous</button>
+        <button class="btn" id="onboarding-next-btn" tabindex="-1" data-i18n="onboardingNext">Next</button>
       </div>
     </div>
   </div>

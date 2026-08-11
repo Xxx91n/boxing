@@ -2297,9 +2297,11 @@ function ensureGroups() {
     // BX-DEV-111: hide empty placeholder BEFORE clearing surface to avoid flash
     canvasEmpty.hidden = true;
    // Bug2: clear DOM synchronously then rebuild in same tick — no flash
-    // BX-DEV-140b: blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
+    // BX-DEV-140b/d: blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
+    // BX-DEV-140d: also blur if activeElement is a contenteditable inside canvasSurface
+    // or a toolbar button that Chrome will redirect to after the wipe.
     const _ae1 = document.activeElement;
-    if (_ae1 && _ae1 !== document.body && canvasSurface.contains(_ae1)) _ae1.blur();
+    if (_ae1 && _ae1 !== document.body) _ae1.blur();
    canvasSurface.innerHTML = '';
     disposeAllConns(); // clear stale connLines Map after DOM wipe
     // Then re-show empty state only if truly empty
@@ -2671,9 +2673,9 @@ function ensureGroups() {
     // orphans innerConnSvg + all connLines SVG elements. Without this, renderConnections
     // skips creating new lines because connLines.has(c.id) returns true for stale refs.
    disposeAllConns();
-    // BX-DEV-140b: blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
+    // BX-DEV-140b/d: blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
     const _ae2 = document.activeElement;
-    if (_ae2 && _ae2 !== document.body && content.contains(_ae2)) _ae2.blur();
+    if (_ae2 && _ae2 !== document.body) _ae2.blur();
    content.innerHTML = '';
     const frag = document.createDocumentFragment();
     for (const sb of lb.children || []) {
@@ -3748,8 +3750,11 @@ function ensureGroups() {
     await saveLayout();
     debug('addLargeBoxAt saved, calling renderCanvas');
     renderCanvas();
+    // BX-DEV-140d: after DOM rebuild, Chrome redirects focus to the first
+    // focusable element in DOM order (contenteditable title / toolbar button).
+    // Explicitly park focus on our tabindex=-1 sink to prevent the steal.
+    canvasContainer.focus({ preventScroll: true });
     debug('addLargeBoxAt done, surface children=' + canvasSurface.children.length);
-    // BX-DEV-140a: Chrome focus-steal fixed at source via tabIndex=-1 on decorative buttons + CSS :focus-visible. Blur removed.
   }
 
   async function addLargeBox(e) {
@@ -3780,8 +3785,8 @@ function ensureGroups() {
     await saveLayout();
     debug('addLargeBox saved, calling renderCanvas');
     renderCanvas();
+    canvasContainer.focus({ preventScroll: true }); // BX-DEV-140d: prevent Chrome focus-steal
     debug('addLargeBox done, surface children=' + canvasSurface.children.length);
-    // BX-DEV-140a: Chrome focus-steal fixed at source via tabIndex=-1 on decorative buttons + CSS :focus-visible. Blur removed.
   }
   debug('addLargeBox function defined');
   function updateInnerCaption(lb) {
