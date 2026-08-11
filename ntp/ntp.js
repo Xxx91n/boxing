@@ -391,6 +391,11 @@
   I18N_FALLBACK.lastPageLabel = 'Last page';
   I18N_FALLBACK.boxDeletedWarning = 'This box has been deleted. Please refresh the page.';
   I18N_FALLBACK.refreshPage = 'Refresh';
+  I18N_FALLBACK.themeBeige = 'Beige';
+  I18N_FALLBACK.themeGraphite = 'Graphite';
+  I18N_FALLBACK.themeCoastal = 'Coastal';
+  I18N_FALLBACK.themeForest = 'Forest';
+  I18N_FALLBACK.themePure = 'Pure White';
 
   // BX-DEV-SYNC: WebDAV sync i18n keys
   I18N_FALLBACK.syncNow = 'Sync Now';
@@ -2340,7 +2345,7 @@ function ensureGroups() {
       // BX-DEV-140d: read scrollHeight WITHOUT modifying maxHeight — avoids scrollbar flash
       // scrollHeight returns full content height even when overflow:hidden clamps visible region.
       const fullH = el.scrollHeight;
-      debug('setBodyExpandHeight measured', { id: el.dataset.id, fullH, savedMaxH, wasCollapsed });
+      debug('setBodyExpandHeight measured', { id: el.dataset.id, fullH });
       if (fullH > 0) el.style.setProperty('--expand-height', fullH + 'px');
       // Also keep --body-max-height for compatibility
       const bh = body.scrollHeight;
