@@ -789,5 +789,20 @@
   },
   "themeColorHint": {
     "message": "Seleccione un tema de color para toda la interfaz"
+  },
+  "themeBeige": {
+    "message": "Beige"
+  },
+  "themeGraphite": {
+    "message": "Grafito"
+  },
+  "themeCoastal": {
+    "message": "Costero"
+  },
+  "themeForest": {
+    "message": "Bosque"
+  },
+  "themePure": {
+    "message": "Blanco Puro"
   }
 }

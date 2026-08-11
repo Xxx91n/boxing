@@ -789,5 +789,20 @@
   },
   "themeColorHint": {
     "message": "インターフェース全体のカラーテーマを選択"
+  },
+  "themeBeige": {
+    "message": "ベージュ"
+  },
+  "themeGraphite": {
+    "message": "グラファイト"
+  },
+  "themeCoastal": {
+    "message": "コースタル"
+  },
+  "themeForest": {
+    "message": "フォレスト"
+  },
+  "themePure": {
+    "message": "ピュアホワイト"
   }
 }

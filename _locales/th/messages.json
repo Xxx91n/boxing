@@ -789,5 +789,20 @@
   },
   "themeColorHint": {
     "message": "เลือกธีมสีสำหรับทั้งอินเทอร์เฟซ"
+  },
+  "themeBeige": {
+    "message": "เบจ"
+  },
+  "themeGraphite": {
+    "message": "กราไฟต์"
+  },
+  "themeCoastal": {
+    "message": "ชายฝั่ง"
+  },
+  "themeForest": {
+    "message": "ป่า"
+  },
+  "themePure": {
+    "message": "ขาวบริสุทธิ์"
   }
 }

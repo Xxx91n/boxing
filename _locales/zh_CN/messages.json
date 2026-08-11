@@ -792,5 +792,20 @@
   },
   "themeColorHint": {
     "message": "为整个界面选择一个色彩主题"
+  },
+  "themeBeige": {
+    "message": "米色"
+  },
+  "themeGraphite": {
+    "message": "石墨灰"
+  },
+  "themeCoastal": {
+    "message": "海岸蓝"
+  },
+  "themeForest": {
+    "message": "森林绿"
+  },
+  "themePure": {
+    "message": "素雅白"
   }
 }

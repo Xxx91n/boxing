@@ -792,5 +792,20 @@
   },
   "themeColorHint": {
     "message": "為整個介面選擇一個色彩主題"
+  },
+  "themeBeige": {
+    "message": "米色"
+  },
+  "themeGraphite": {
+    "message": "石墨灰"
+  },
+  "themeCoastal": {
+    "message": "海岸藍"
+  },
+  "themeForest": {
+    "message": "森林綠"
+  },
+  "themePure": {
+    "message": "素雅白"
   }
 }

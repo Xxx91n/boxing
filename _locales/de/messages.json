@@ -789,5 +789,20 @@
   },
   "themeColorHint": {
     "message": "Wählen Sie ein Farbschema für die gesamte Oberfläche"
+  },
+  "themeBeige": {
+    "message": "Beige"
+  },
+  "themeGraphite": {
+    "message": "Graphit"
+  },
+  "themeCoastal": {
+    "message": "Küste"
+  },
+  "themeForest": {
+    "message": "Wald"
+  },
+  "themePure": {
+    "message": "Reines Weiß"
   }
 }

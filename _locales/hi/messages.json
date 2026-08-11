@@ -789,5 +789,20 @@
   },
   "themeColorHint": {
     "message": "पूरे इंटरफ़ेस के लिए एक रंग थीम चुनें"
+  },
+  "themeBeige": {
+    "message": "बेज"
+  },
+  "themeGraphite": {
+    "message": "ग्रेफाइट"
+  },
+  "themeCoastal": {
+    "message": "तटीय"
+  },
+  "themeForest": {
+    "message": "वन"
+  },
+  "themePure": {
+    "message": "शुद्ध सफेद"
   }
 }

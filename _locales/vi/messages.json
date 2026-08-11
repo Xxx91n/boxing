@@ -789,5 +789,20 @@
   },
   "themeColorHint": {
     "message": "Chọn chủ đề màu cho toàn bộ giao diện"
+  },
+  "themeBeige": {
+    "message": "Be"
+  },
+  "themeGraphite": {
+    "message": "Graphit"
+  },
+  "themeCoastal": {
+    "message": "Ven biển"
+  },
+  "themeForest": {
+    "message": "Rừng"
+  },
+  "themePure": {
+    "message": "Trắng Tuyết"
   }
 }

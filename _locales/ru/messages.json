@@ -789,5 +789,20 @@
   },
   "themeColorHint": {
     "message": "Выберите цветовую тему для всего интерфейса"
+  },
+  "themeBeige": {
+    "message": "Бежевый"
+  },
+  "themeGraphite": {
+    "message": "Графит"
+  },
+  "themeCoastal": {
+    "message": "Прибрежный"
+  },
+  "themeForest": {
+    "message": "Лес"
+  },
+  "themePure": {
+    "message": "Чистый Белый"
   }
 }

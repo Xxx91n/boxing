@@ -789,5 +789,20 @@
   },
   "themeColorHint": {
     "message": "اختر موضوعًا للألوان للواجهة بأكملها"
+  },
+  "themeBeige": {
+    "message": "بيج"
+  },
+  "themeGraphite": {
+    "message": "جرافيت"
+  },
+  "themeCoastal": {
+    "message": "ساحلي"
+  },
+  "themeForest": {
+    "message": "غابة"
+  },
+  "themePure": {
+    "message": "أبيض نقي"
   }
 }

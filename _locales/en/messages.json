@@ -801,5 +801,20 @@
   },
   "themeColorHint": {
     "message": "Select a color theme for the entire interface"
+  },
+  "themeBeige": {
+    "message": "Beige"
+  },
+  "themeGraphite": {
+    "message": "Graphite"
+  },
+  "themeCoastal": {
+    "message": "Coastal"
+  },
+  "themeForest": {
+    "message": "Forest"
+  },
+  "themePure": {
+    "message": "Pure White"
   }
 }
