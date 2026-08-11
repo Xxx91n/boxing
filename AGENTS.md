@@ -74,7 +74,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 - Chromium project (headed, persistent context, `--load-extension`) is the primary lane.
 - Firefox project uses `-no-remote`; LibreWolf is manual-verify only (no remote debug).
 - Run a single spec: `npx playwright test --config=test/playwright.config.ts test/tests/boxing-viewstate-sync.spec.ts --project=chromium`.
-- Test files: `boxing-*.spec.ts` (28 specs total, including `boxing-audit`, `data-recovery`, `extension-test`, and conn/DSU specs) cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, connections, and export/import. Run from repo root via `npm test` (alias for `npx playwright test --config=test/playwright.config.ts`).
+- Test files: `boxing-*.spec.ts` (29 specs total, including `boxing-audit, boxing-auto-expand`, `data-recovery`, `extension-test`, and conn/DSU specs) cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, connections, and export/import. Run from repo root via `npm test` (alias for `npx playwright test --config=test/playwright.config.ts`).
 
 ## Chrome Extension Workflow
 
