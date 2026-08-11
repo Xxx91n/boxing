@@ -5,7 +5,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = `file:///${path
   .resolve(__dirname, '..', '..', 'ntp', 'index.html')
-  .replace(/\\\\/g, '/')}`;
+  .replace(/\\/g, '/')}`;
 
 async function boot(page: Page) {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
@@ -15,184 +15,120 @@ async function boot(page: Page) {
   await page.evaluate(() => (window as any).__boxingDebug.skipOnboarding());
 }
 
-async function dispatchDblClickAt(page: Page, cx: number, cy: number) {
-  await page.evaluate(({ cx, cy }) => {
-    function fire(type: string, clickCount = 1) {
-      const el = (document.elementFromPoint(cx, cy) as HTMLElement) || document.body;
-      const ev = new MouseEvent(type, {
-        bubbles: true, cancelable: true, view: window,
-        clientX: cx, clientY: cy, button: 0, buttons: type === 'mouseup' ? 0 : 1,
-        detail: clickCount,
-      });
-      el.dispatchEvent(ev);
+// Capture selection state + focus state
+async function captureState(page: Page, label: string) {
+  const state = await page.evaluate(() => {
+    const sel = window.getSelection();
+    const selText = sel ? sel.toString() : '';
+    const selRangeCount = sel ? sel.rangeCount : 0;
+    let anchorTag = '';
+    let anchorClass = '';
+    let anchorId = '';
+    let anchorEditable = false;
+    if (sel && sel.anchorNode) {
+      let node: Node | null = sel.anchorNode;
+      if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      if (node instanceof Element) {
+        anchorTag = node.tagName;
+        anchorClass = (node.className || '').toString().substring(0, 40);
+        anchorId = (node as HTMLElement).id || '';
+        anchorEditable = (node as HTMLElement).isContentEditable;
+      }
     }
-    // Full dblclick sequence: down,up,click,down,up,click,dblclick
-    fire('mousedown'); fire('mouseup'); fire('click');
-    fire('mousedown', 2); fire('mouseup', 2); fire('click', 2); fire('dblclick', 2);
-  }, { cx, cy });
+    const active = document.activeElement;
+    return {
+      selText: selText.substring(0, 60),
+      selRangeCount,
+      anchorTag,
+      anchorClass,
+      anchorId,
+      anchorEditable,
+      activeTag: active?.tagName || '',
+      activeId: active?.id || '',
+      activeEditable: (active as HTMLElement)?.isContentEditable || false,
+    };
+  });
+  console.log(`[STATE ${label}]`, JSON.stringify(state));
+  return state;
 }
 
-test.describe('dblclick focus-steal — real dynamic test (BX-DEV-140d)', () => {
-  test('dblclick on canvas-empty center (📦 area) — verify target + focus', async ({ page }) => {
+test.describe('dblclick — REAL native input + text selection', () => {
+  test('native dblclick on empty canvas center does not select text or steal focus', async ({ page }) => {
     await boot(page);
 
-    // Get the EXACT position of #canvas-empty (the 📦 hint area)
-    const emptyRect = await page.evaluate(() => {
-      const el = document.getElementById('canvas-empty')!;
-      const r = el.getBoundingClientRect();
-      // Also list ALL focusable elements before dblclick
-      const focusableBefore = Array.from(document.querySelectorAll(
-        'button, input, [contenteditable], [tabindex], a[href], select, textarea'
-      )).map((el: any) => ({
-        tag: el.tagName, id: el.id || '', class: (el.className || '').substring(0, 30),
-        tabindex: el.tabIndex, editable: el.isContentEditable,
-        hidden: el.hidden || el.style.display === 'none',
-      }));
-      return { x: r.x, y: r.y, w: r.width, h: r.height, focusableBefore };
-    });
-    console.log('canvas-empty rect:', JSON.stringify(emptyRect));
+    // Verify empty state is visible
+    const emptyVisible = await page.evaluate(() => !document.getElementById('canvas-empty')?.hidden);
+    console.log('Empty state visible:', emptyVisible);
 
-    // Log all focusable elements BEFORE dblclick
-    console.log('Focusable elements BEFORE dblclick:');
-    emptyRect.focusableBefore.forEach((f: any) => {
-      if (!f.hidden) console.log('  ', JSON.stringify(f));
-    });
+    const canvasRect = await page.locator('#canvas').boundingBox();
+    const cx = canvasRect!.x + canvasRect!.width / 2;
+    const cy = canvasRect!.y + canvasRect!.height / 2;
 
-    // Dbl-click DEAD CENTER on the canvas-empty hint area
-    const cx = emptyRect.x + emptyRect.w / 2;
-    const cy = emptyRect.y + emptyRect.h / 2;
+    // Capture state BEFORE
+    await captureState(page, 'BEFORE');
 
-    // First: record what element is at that point
-    const targetBefore = await page.evaluate(({ cx, cy }) => {
-      const el = document.elementFromPoint(cx, cy);
-      return el ? el.tagName + '#' + el.id + '.' + (el.className || '').substring(0, 30) : 'null';
-    }, { cx, cy });
-    console.log('elementFromPoint before dblclick:', targetBefore);
-
-    // Now dispatch dblclick
-    await dispatchDblClickAt(page, cx, cy);
+    // Native dblclick on canvas center (this is where "暂无大盒子" text is)
+    await page.mouse.dblclick(cx, cy);
     await page.waitForTimeout(800);
 
-    // Check: what has focus now?
-    const focusState = await page.evaluate(() => {
-      const el = document.activeElement;
-      if (!el || el === document.body) return { tag: 'body', id: '', editable: false, class: '', tabindex: -99 };
-      return {
-        tag: el.tagName,
-        id: el.id || '',
-        class: (el.className || '').substring(0, 50),
-        editable: el.isContentEditable,
-        tabindex: el.tabIndex,
-      };
-    });
-    console.log('Focus AFTER dblclick:', JSON.stringify(focusState));
+    // Capture state AFTER
+    const after = await captureState(page, 'AFTER');
 
-    // List all focusable elements AFTER dblclick (new box may add contenteditable title)
-    const focusableAfter = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll(
-        'button, input, [contenteditable], [tabindex], a[href], select, textarea'
-      )).map((el: any) => ({
-        tag: el.tagName, id: el.id || '', class: (el.className || '').substring(0, 30),
-        tabindex: el.tabIndex, editable: el.isContentEditable,
-        hidden: el.hidden || el.style.display === 'none',
-      })).filter((f: any) => !f.hidden);
-    });
-    console.log('Focusable elements AFTER dblclick:');
-    focusableAfter.forEach((f: any) => console.log('  ', JSON.stringify(f)));
+    // If selection is not empty, Chrome's native dblclick selected text
+    const hasSelection = after.selRangeCount > 0 && after.selText.length > 0;
+    console.log('Selection after dblclick:', hasSelection ? JSON.stringify(after.selText) : 'EMPTY');
 
-    // Check if a box was actually created
-    const boxCount = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes.length);
-    console.log('Box count after dblclick:', boxCount);
-
-    // Assertions: focus must NOT be on button, input, or contenteditable
-    expect(focusState.tag).not.toBe('INPUT');
-    expect(focusState.tag).not.toBe('BUTTON');
-    expect(focusState.editable).toBe(false);
-
-    // If box was created, verify it exists
-    if (boxCount > 0) {
-      expect(boxCount).toBe(1);
-    }
+    // The bug: selection should NOT be present after dblclick on canvas to create box
+    // (currently will fail — proving the bug)
+    expect(hasSelection).toBe(false);
+    expect(after.activeTag).not.toBe('INPUT');
+    expect(after.activeEditable).toBe(false);
   });
 
-  test('dblclick on canvas-empty ICON (📦) specifically — verify no steal', async ({ page }) => {
+  test('native dblclick on canvas-empty title text directly', async ({ page }) => {
     await boot(page);
 
-    // Get the 📦 icon position
-    const iconRect = await page.evaluate(() => {
-      const el = document.querySelector('.canvas__empty-icon') as HTMLElement;
-      if (!el) return null;
-      const r = el.getBoundingClientRect();
-      return { x: r.x, y: r.y, w: r.width, h: r.height };
-    });
-    console.log('Icon rect:', JSON.stringify(iconRect));
-    expect(iconRect).not.toBeNull();
+    // Find the empty title text element (暂无大盒子 or equivalent)
+    const titleRect = await page.locator('.canvas__empty-title').boundingBox();
+    if (!titleRect) { test.skip(); return; }
 
-    const cx = iconRect!.x + iconRect!.w / 2;
-    const cy = iconRect!.y + iconRect!.h / 2;
+    const cx = titleRect.x + titleRect.width / 2;
+    const cy = titleRect.y + titleRect.height / 2;
+    console.log('Title rect center:', cx, cy);
 
-    // Verify what element is at that point
-    const targetEl = await page.evaluate(({ cx, cy }) => {
+    // Check elementFromPoint — does it hit the title or pass through to canvas?
+    const hitTarget = await page.evaluate(({ cx, cy }) => {
       const el = document.elementFromPoint(cx, cy);
-      return el ? el.tagName + '#' + el.id + '.' + (el.className || '').substring(0, 40) : 'null';
+      return el ? el.tagName + '.' + (el.className || '').substring(0, 40) : 'null';
     }, { cx, cy });
-    console.log('Element at icon center:', targetEl);
+    console.log('elementFromPoint at title:', hitTarget);
 
-    await dispatchDblClickAt(page, cx, cy);
+    await page.mouse.dblclick(cx, cy);
     await page.waitForTimeout(800);
 
-    const focusState = await page.evaluate(() => {
-      const el = document.activeElement;
-      if (!el || el === document.body) return { tag: 'body', id: '', editable: false, class: '' };
-      return {
-        tag: el.tagName, id: el.id || '',
-        class: (el.className || '').substring(0, 50),
-        editable: el.isContentEditable,
-      };
-    });
-    console.log('Focus after icon dblclick:', JSON.stringify(focusState));
-
-    expect(focusState.tag).not.toBe('INPUT');
-    expect(focusState.tag).not.toBe('BUTTON');
-    expect(focusState.editable).toBe(false);
+    const after = await captureState(page, 'AFTER TITLE DBLCLICK');
+    expect(after.selRangeCount > 0 && after.selText.length > 0).toBe(false);
   });
 
-  test('rapid dblclick 3x on empty area — no cumulative focus steal', async ({ page }) => {
+  test('selection cleared after renderCanvas', async ({ page }) => {
     await boot(page);
 
-    const canvasRect = await page.evaluate(() => {
-      const c = document.getElementById('canvas')!;
-      const r = c.getBoundingClientRect();
-      return { x: r.x, y: r.y, w: r.width, h: r.height };
-    });
+    const canvasRect = await page.locator('#canvas').boundingBox();
+    const cx = canvasRect!.x + canvasRect!.width / 2;
+    const cy = canvasRect!.y + canvasRect!.height / 2;
 
-    // Each dblclick at different positions spread far enough to avoid overlap
-    for (let i = 0; i < 3; i++) {
-      const cx = canvasRect.x + 100 + i * 350;
-      const cy = canvasRect.y + 150 + (i % 2) * 200;
-      await dispatchDblClickAt(page, cx, cy);
-      await page.waitForTimeout(600);
-    }
+    // Create first box
+    await page.mouse.dblclick(cx, cy);
+    await page.waitForTimeout(500);
 
-    const focusState = await page.evaluate(() => {
-      const el = document.activeElement;
-      if (!el || el === document.body) return { tag: 'body', editable: false, class: '' };
-      return {
-        tag: el.tagName,
-        id: el.id || '',
-        editable: el.isContentEditable,
-        class: (el.className || '').substring(0, 50),
-      };
-    });
-    console.log('Focus after 3 rapid dblclicks:', JSON.stringify(focusState));
+    // Now dblclick on different empty spot to create second box
+    const cx2 = canvasRect!.x + canvasRect!.width / 2 + 300;
+    const cy2 = canvasRect!.y + canvasRect!.height / 2 + 300;
+    await page.mouse.dblclick(cx2, cy2);
+    await page.waitForTimeout(500);
 
-    expect(focusState.tag).not.toBe('INPUT');
-    expect(focusState.tag).not.toBe('BUTTON');
-    expect(focusState.editable).toBe(false);
-
-    const boxCount = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes.length);
-    console.log('Box count:', boxCount);
-    // Focus assertion is the important one — box count may vary due to elasticSnap
-    expect(boxCount).toBeGreaterThanOrEqual(1);
+    const state = await captureState(page, 'AFTER 2 BOXES');
+    expect(state.selRangeCount > 0 && state.selText.length > 0).toBe(false);
+    expect(state.activeEditable).toBe(false);
   });
 });

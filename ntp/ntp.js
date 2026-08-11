@@ -2301,6 +2301,10 @@ function ensureGroups() {
     // BX-DEV-140d: also blur if activeElement is a contenteditable inside canvasSurface
     // or a toolbar button that Chrome will redirect to after the wipe.
     const _ae1 = document.activeElement;
+    // BX-SEL-01: clear residual text selection before DOM wipe — Chrome native dblclick
+    // on selectable text creates a Selection range that survives innerHTML=''; when new text
+    // nodes appear, Chrome re-anchors the stale range to them.
+    window.getSelection()?.removeAllRanges();
     if (_ae1 && _ae1 !== document.body) _ae1.blur();
    canvasSurface.innerHTML = '';
     disposeAllConns(); // clear stale connLines Map after DOM wipe
