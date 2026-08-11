@@ -2342,9 +2342,17 @@ function ensureGroups() {
     const body = el.querySelector('.large-box__body') || el.querySelector('.small-box__body');
     if (!body) return;
     requestAnimationFrame(() => {
-      // BX-DEV-140d: read scrollHeight WITHOUT modifying maxHeight — avoids scrollbar flash
-      // scrollHeight returns full content height even when overflow:hidden clamps visible region.
+      // BX-EXP-REGR: must measure NATURAL content height, not the max-height-clamped value.
+      // Temporarily remove max-height so scrollHeight reflects the full content the drawer
+      // needs to expand to. Restore before the frame paints to avoid any visible flash.
+      // (This is the BX-DEV-105 pattern that BX-DEV-140d removed by mistake; 140d kept the
+      // debug referencing the deleted savedMaxH/wasCollapsed locals, masking the regression
+      // with a ReferenceError that prevented setProperty from running at all.)
+      const savedMaxH = el.style.maxHeight;
+      el.style.maxHeight = 'none';
+      void el.offsetHeight; // force reflow under the unconstrained max-height
       const fullH = el.scrollHeight;
+      el.style.maxHeight = savedMaxH;
       debug('setBodyExpandHeight measured', { id: el.dataset.id, fullH });
       if (fullH > 0) el.style.setProperty('--expand-height', fullH + 'px');
       // Also keep --body-max-height for compatibility
