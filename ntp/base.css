@@ -604,7 +604,6 @@ body {
   max-height: 60px;
   /* bar + padding, tightly clipped */
   overflow: hidden;
-  scrollbar-gutter: stable; /* BX-DEV-140d: prevent scrollbar flash during transition */
   border-radius: var(--radius-card) !important;
   /* BX-DEV-111i: preserve rounded corners when collapsed clips body */
   transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
