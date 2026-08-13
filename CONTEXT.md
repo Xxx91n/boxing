@@ -2,6 +2,15 @@
 
 Boxing is a Chrome/Firefox browser extension built from a single source tree. The source manifest.json is intentionally Firefox-loadable / Chrome-rejectable (MV3 + browserSettings permission incompatibility). A cross-platform build script (.github/scripts/build.mjs) produces browser-tailored output trees.
 
+## Cross-Platform Pipeline Invariants (BX-XPLAT)
+
+- **BX-XPLAT-001**: build.mjs is the single canonical build entry. tools/build.sh and tools/build.ps1 are thin wrappers (5 lines each) that call it — no duplicate build logic. The deleted scripts/build-release.js is NOT a valid reference.
+- **BX-XPLAT-002**: dev-junctions created via fs.symlinkSync(target, path, type) where type is "junction" on Windows (no admin rights needed) or "dir" on Unix. Never use execSync mklink.
+- **BX-XPLAT-003**: Test files use url.pathToFileURL(path.resolve(...)).href for file:// URLs. Never manually concatenate "file:///" + path.replace(/\\/g, '/').
+- **BX-XPLAT-004**: CI workflows use OS matrix [ubuntu-latest, macos-latest, windows-latest]. Playwright browser cache paths differ per runner.os (~/.cache/ms-playwright on Linux, ~/Library/Caches/ms-playwright on macOS, ~\AppData\Local\ms-playwright on Windows).
+- **BX-XPLAT-005**: CRX signing uses crx3 npm devDependency (Node-based, cross-platform). CRX key decoded via node -e Buffer.from(base64), not base64 -d (Linux-only).
+- **BX-XPLAT-006**: .gitattributes has explicit text eol=lf rules for .sh, .mjs, .ts, .json, plus eol=crlf for .bat, .cmd, .ps1.
+
 ## Implementation Status
 
 Historical grill phase tables live in git history and `docs/archive/` / `docs/adr/`. This file is a **glossary only** — not a status board.
@@ -48,8 +57,8 @@ _Avoid_: web-ext-cli, dev launcher
 Single canonical cross-platform build entry point at .github/scripts/build.mjs. Produces dist/boxing-chrome + dist/boxing-firefox + release artifacts + dev-junctions. Zero third-party deps (Node fs + minimal STORE-mode zip writer). No hardcoded absolute paths.
 _Avoid_: build script, packaging script
 
-**build-release.js**:
-Thin cross-platform wrapper at scripts/build-release.js that spawns build.mjs. Supports BOXING_BUILD_VERSION env override.
+**tools/build.sh / tools/build.ps1**:
+Thin cross-platform wrappers that spawn build.mjs. `tools/build.sh` (Linux/macOS bash) and `tools/build.ps1` (Windows PowerShell) — both just call `node .github/scripts/build.mjs`. No duplicate build logic.
 _Avoid_: release wrapper
 
 
