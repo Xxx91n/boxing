@@ -324,11 +324,9 @@ function build() {
       if (fs.existsSync(linkPath) || fs.lstatSync(linkPath, { throwIfNoEntry: false })) {
         fs.rmSync(linkPath, { recursive: true, force: true });
       }
-      if (process.platform === "win32") {
-        execSync('mklink /J "' + linkPath + '" "' + link.target + '"', { stdio: "pipe" });
-      } else {
-        fs.symlinkSync(link.target, linkPath, "dir");
-      }
+      // Cross-platform dev-link: Windows junction (no admin needed), Unix symlink
+      const linkType = process.platform === "win32" ? "junction" : "dir";
+      fs.symlinkSync(link.target, linkPath, linkType);
       console.log("  dev link: " + linkPath + " -> " + link.target);
     } catch (e) {
       console.log("  dev link skipped: " + link.name + " (" + e.message + ")");

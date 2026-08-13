@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const NTP_URL = `file:///${path.resolve(__dirname, '..', '..', 'ntp', 'index.html').replace(/\\/g, '/')}`;
+const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 
 // BX-DEV-111M/N/L regression: permanent memory + per-box viewState + credential flush.
 // Covers: (1) closing-tab loses credential bug fix via flushUnsavedCredentials,

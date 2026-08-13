@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import fs from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -169,7 +169,7 @@ test.describe('Boxing v3 Extension', () => {
     const page = await context.newPage();
 
     // Open the NTP page from the extension files directly
-    const ntpUrl = `file:///${path.join(EXTENSION_PATH, NTP_PATH).replace(/\\/g, '/')}`;
+    const ntpUrl = pathToFileURL(path.join(EXTENSION_PATH, NTP_PATH)).href;
     await page.goto(ntpUrl, { waitUntil: 'networkidle', timeout: 15000 });
     // Capture ALL console from page
     page.on('console', msg => console.log('[PAGE]', msg.type(), msg.text()));
@@ -225,7 +225,7 @@ test.describe('Boxing v3 Extension', () => {
   test('Pin header button: visible, clickable, toggles header hide/show', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    await page.goto(`file:///${path.join(EXTENSION_PATH, 'ntp/index.html?debug').replace(/\\/g, '/')}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html?debug')).href}`, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1500);
 
     // BX-ONBOARDING: dismiss first-run onboarding overlay so canvas interaction works.
@@ -274,7 +274,7 @@ test.describe('Boxing v3 Extension', () => {
     page.on('console', msg => logs.push(`[${msg.type()}] ${msg.text()}`));
     page.on('pageerror', err => logs.push(`[ERROR] ${err.message}`));
 
-    await page.goto(`file:///${path.join(EXTENSION_PATH, 'ntp/index.html').replace(/\\/g, '/')}`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    await page.goto(`${pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html')).href}`, { waitUntil: 'domcontentloaded', timeout: 10000 });
     await page.waitForTimeout(2500);
 
     // BX-ONBOARDING: dismiss first-run onboarding overlay so canvas interaction works.

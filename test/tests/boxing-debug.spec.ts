@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -12,7 +12,7 @@ test.describe('Boxing v3 — Deep Debug', () => {
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    const ntpUrl = `file:///${path.join(EXT_PATH, 'ntp/index.html').replace(/\\/g, '/')}`;
+    const ntpUrl = pathToFileURL(path.join(EXT_PATH, 'ntp/index.html')).href;
     await page.goto(ntpUrl, { waitUntil: 'networkidle', timeout: 15000 });
 
     // Dismiss onboarding overlay so it doesn't intercept pointer events

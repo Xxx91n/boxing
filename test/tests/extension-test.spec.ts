@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -11,7 +11,7 @@ test.describe('Boxing Extension — Basic Rendering', () => {
     const page = await context.newPage();
 
     const ntpPath = path.join(EXT_PATH, 'ntp', 'index.html');
-    const fileUrl = `file:///${ntpPath.replace(/\\/g, '/')}`;
+    const fileUrl = pathToFileURL(ntpPath).href;
 
     await page.goto(fileUrl);
     await page.waitForLoadState('domcontentloaded');
@@ -60,7 +60,7 @@ test.describe('Boxing Extension — Basic Rendering', () => {
     const page = await context.newPage();
 
     const popupPath = path.join(EXT_PATH, 'popup', 'popup.html');
-    const fileUrl = `file:///${popupPath.replace(/\\/g, '/')}`;
+    const fileUrl = pathToFileURL(popupPath).href;
 
     await page.goto(fileUrl);
     await page.waitForLoadState('domcontentloaded');

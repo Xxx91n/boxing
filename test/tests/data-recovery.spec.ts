@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import fs from 'fs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
-const NTP_URL = `file:///${path.join(EXTENSION_PATH, 'ntp/index.html').replace(/\\/g, '/')}`;
+const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html')).href;
 
 // BX-DEV-111j: Full data recovery test — export/import cycle with structural verification
 // Note: file:// protocol blocks CORS for i18n JSON fetch, so i18n fallback (en) is used.

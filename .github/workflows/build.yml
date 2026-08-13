@@ -28,7 +28,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,8 +71,7 @@ jobs:
           if [ -z "$CRX_KEY" ]; then
             echo "CRX_PRIVATE_KEY_PEM secret not set -> boxing-chrome.crx is a placeholder (zip-copy)."
           else
-            echo "$CRX_KEY" | base64 -d > /tmp/crx.pem
-            npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing -o dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx -p /tmp/crx.pem
+            node -e "require('fs').writeFileSync(require('os').tmpdir()+'/crx.pem', Buffer.from(process.env.CRX_KEY,'base64'))" && npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing -o dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx -p "${{ runner.os == 'Windows' && '' || '' }}${{ runner.temp }}/crx.pem"
             echo "CRX3 signed OK"
           fi
 

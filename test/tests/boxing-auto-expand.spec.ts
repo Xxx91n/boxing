@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
@@ -10,7 +10,7 @@ test.describe('Auto-expand box survives enter+exit (BX-EXP-REGR)', () => {
     test.setTimeout(30000);
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
-    const ntpUrl = `file:///${path.join(EXTENSION_PATH, NTP_PATH).replace(/\\/g, '/')}`;
+    const ntpUrl = pathToFileURL(path.join(EXTENSION_PATH, NTP_PATH)).href;
     await page.goto(ntpUrl, { waitUntil: 'networkidle', timeout: 15000 });
     page.on('pageerror', e => console.log('[PAGE ERROR]', e.message));
     await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });

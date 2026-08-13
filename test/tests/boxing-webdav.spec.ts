@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const NTP_URL = `file:///${path.resolve(__dirname, '..', '..', 'ntp', 'index.html').replace(/\\/g, '/')}`;
+const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 const WEBDAV_URL = 'https://app.koofr.net/dav/Koofr';
 
 // Mock chrome.runtime.sendMessage so ntp.js's sendToBackground works in file:// context.

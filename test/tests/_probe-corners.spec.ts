@@ -1,9 +1,9 @@
 import { test, expect, chromium } from '@playwright/test';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const NTP_URL = 'file:///' + path.resolve(__dirname, '..', '..', 'ntp', 'index.html').replace(/\\/g, '/');
+const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 
 test('probe collapsed box computed styles', async () => {
   const browser = await chromium.launch({ headless: false });
