@@ -14,7 +14,7 @@
       try {
         newValue = JSON.parse(event.newValue);
         oldValue = event.oldValue ? JSON.parse(event.oldValue) : null;
-      } catch (_) { return; }
+      } catch (e) { /* silent: storage event JSON parse, non-boxing keys */ return; }
       // A6-fix: emit BOTH area names so listeners using either 'local' or 'sync' fire.
       // In file:// test/mock contexts the source tap is a single localStorage key, so
       // emitting both is safe — the listener's expectedArea filter discards the wrong one.
@@ -88,7 +88,13 @@
   const LOG_RING_MAX = 300;
   // Default level = WARN in production (records errors + warnings), elevate to DEBUG with ?debug=verbose.
   let __logLevel = LOG_WARN;
-  const __logRing = []; // FIFO entries newest-at-end; cap LOG_RING_MAX; not persisted to chrome.storage.
+  const __logRing = [];
+  // BX-DEV-115C: background error log cache - synced from chrome.storage.local.bgErrLog
+  let __bgErrLogCache = [];
+  try {
+    chrome.storage && chrome.storage.local && chrome.storage.local.get && chrome.storage.local.get({ bgErrLog: [] }, function(r){ if (r && Array.isArray(r.bgErrLog)) __bgErrLogCache = r.bgErrLog.slice(-50); });
+    chrome.storage && chrome.storage.onChanged && chrome.storage.onChanged.addListener && chrome.storage.onChanged.addListener(function(changes, area){ if (area === 'local' && changes.bgErrLog && Array.isArray(changes.bgErrLog.newValue)) __bgErrLogCache = changes.bgErrLog.newValue.slice(-50); });
+  } catch (e) { /* silent: bgErrLog sync, non-critical */ } // FIFO entries newest-at-end; cap LOG_RING_MAX; not persisted to chrome.storage.
   // Sample rate for the most chatty DEBUG call sites (pan/zoom/saveLayout done) — 1 in N preserved to avoid log spam.
   let __logSampleSlot = 0;
 
@@ -202,13 +208,18 @@
     getLogLevel: () => __logLevel,
     setLogLevel: (n) => { const v = Math.max(1, Math.min(4, Number(n) | 0)); __logLevel = v; debugInfo('log level set to', v); return v; },
     getLogRing: () => __logRing.slice(),
-    exportLog: () => __logRing.map(e => (e.ts + ' ' + e.prefix + ' ' + e.text)).join('\n'),
+    exportLog: () => {
+      var all = __logRing.slice();
+      if (__bgErrLogCache && __bgErrLogCache.length) all.push.apply(all, __bgErrLogCache.map(function(e){ return { ts: e.ts, prefix: e.prefix || '[Boxing:BG]', text: e.text || String(e) }; }));
+      all.sort(function(a,b){ return a.ts - b.ts; });
+      return all.map(function(e){ return e.ts + ' ' + e.prefix + ' ' + e.text; }).join('\n');
+    },
     clearLog: () => { __logRing.length = 0; return true; },
     LOG_LEVELS: { ERROR: 1, WARN: 2, INFO: 3, DEBUG: 4 },
     // BX-DEV-122: expose sync payload helpers for Playwright tests
-    get buildSyncPayload() { if (window.__bxSync) return window.__bxSync.buildSyncPayload; return null; },
-    get resolveWebDAVFileUrl() { if (window.__bxSync) return window.__bxSync.resolveWebDAVFileUrl; return null; },
-    get backupToGist() { if (window.__bxSync) return window.__bxSync.backupToGist; return null; },
+    get buildSyncPayload() { if (window.__bxSync) return window.__bxSync.buildSyncPayload; debugWarn("buildSyncPayload: __bxSync not ready"); return () => undefined; },
+    get resolveWebDAVFileUrl() { if (window.__bxSync) return window.__bxSync.resolveWebDAVFileUrl; debugWarn("resolveWebDAVFileUrl: __bxSync not ready"); return () => undefined; },
+    get backupToGist() { if (window.__bxSync) return window.__bxSync.backupToGist; debugWarn("backupToGist: __bxSync not ready"); return () => undefined; },
     // BX-DEV-126: expose loadFavicon for Playwright tests verifying parallel CDN race.
     loadFavicon,
     get groupStar() { return groupStar; },
@@ -522,8 +533,8 @@
   function initSizeObserver() {
     refreshContainerSizes();
     if (__sizeObserver || typeof ResizeObserver === 'undefined') return;
-    __sizeObserver = new ResizeObserver(() => { try { refreshContainerSizes(); } catch (_) {} });
-    try { __sizeObserver.observe(canvasContainer); __sizeObserver.observe(innerSurface); } catch (_) {}
+    __sizeObserver = new ResizeObserver(() => { try { refreshContainerSizes(); } catch (e) { /* silent: RO callback, layout recalc on next tick */ } });
+    try { __sizeObserver.observe(canvasContainer); __sizeObserver.observe(innerSurface); } catch (e) { /* silent: RO observe, container may be detached */ }
   }
   const innerCrumbTitle = $('#inner-crumb-title');
   const crumbsEl = $('#crumbs');
@@ -633,13 +644,13 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         if (legacy.boxingLayout && layoutStorage !== api.storage.sync) {
           await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
           // A6: one-time cleanup — remove stale sync data after successful local migration
-          try { await api.storage.sync.remove("boxingLayout"); } catch (_) {}
+          try { await api.storage.sync.remove("boxingLayout"); } catch (e) { debugErr("storage.sync.remove stale data", e); }
         }
       }
     } catch (e) { debugErr('loadLayout', e); layout = await crashRescue() || defaultLayout(); }
     rebuildBoxMaps();
     markDsuDirty(); // ADR-0007 Q4b: layout replaced — DSU must rebuild on first use
-    try { ensureGroups(); } catch (_) {} // runtime groups mirror after load
+    try { ensureGroups(); } catch (e) { debugErr("ensureGroups after load", e); } // runtime groups mirror after load
   }
 
   // ── ADR-0009: Versioned snapshots + crash rescue ───────────
@@ -734,11 +745,11 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     try {
       const hist = JSON.parse(localStorage.getItem(TAB_VIEW_HISTORY_KEY) || '[]');
       if (Array.isArray(hist) && hist.length) { const latest = hist[hist.length - 1]; return latest && typeof latest === 'object' ? latest : null; }
-    } catch (_) {}
+    } catch (e) { /* silent: tab view history parse, non-critical */ }
     return null;
   }
 
-  window.__boxingClearTabViewHistory = function () { try { localStorage.removeItem(TAB_VIEW_HISTORY_KEY); localStorage.removeItem(LAST_ACTIVE_VIEW_KEY); localStorage.removeItem(TAB_VIEW_KEY); sessionStorage.removeItem(TAB_VIEW_KEY); } catch (_) {} return true; };
+  window.__boxingClearTabViewHistory = function () { try { localStorage.removeItem(TAB_VIEW_HISTORY_KEY); localStorage.removeItem(LAST_ACTIVE_VIEW_KEY); localStorage.removeItem(TAB_VIEW_KEY); sessionStorage.removeItem(TAB_VIEW_KEY); } catch (e) { /* silent: localStorage clear, already gone */ } return true; };
 
   // BX-DEV-111N: persist the inner canvas zoom/pan into the large box record so it survives tab/browser close
   // and syncs across tabs via chrome.storage.onChanged. Cheap write — called on pan-end/zoom-end/exit.
@@ -907,7 +918,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
       persistViewState(true);
       layout.settings.headerPinned = headerPinned;
-      try { pruneConnArrays(); } catch (_) {}
+      try { pruneConnArrays(); } catch (e) { debugErr("pruneConnArrays", e); }
       const stored = await layoutStorage.get({ boxingLayout: null });
       const remote = stored.boxingLayout ? migrateLayout(stored.boxingLayout) : null;
       layout = mergeConcurrentLayout(layout, remote);
@@ -931,7 +942,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         throw e;
       }
       debug('saveLayout done, revision=' + revision);
-    });
+    }).catch(err => { debugErr('storageWriteChain stage failed - chain kept alive', err); });
     try { await storageWriteChain; } catch (e) { debugWarn('saveLayout', e); }
   }
 
@@ -1245,7 +1256,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
       const removed = getLargeBox(id);
       if (!removed) return { skipped: true };
       // ADR-0007 Q4d: clear viewState while object still reachable
-      try { delete removed.viewState; } catch (_) {}
+      try { delete removed.viewState; } catch (e) { debugErr("delete removed.viewState", e); }
       const tomb = [id, largeKey(id)];
       for (const child of (removed.children || [])) {
         tomb.push(child.id, smallKey(id, child.id));
@@ -1327,7 +1338,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
             clearTimeout(__viewStatePersistTimers.get(id));
             __viewStatePersistTimers.delete(id);
           }
-        } catch (_) {}
+        } catch (e) { debugErr("inner render", e); }
       }
     }
 
@@ -1341,7 +1352,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
       } else {
         dsuRebuildFromConnections();
         // ADR-0007 Q1: keep runtime layout.groups mirror in sync for tests/debug/getters.
-        try { ensureGroups(); } catch (_) {}
+        try { ensureGroups(); } catch (e) { debugErr("ensureGroups after render", e); }
       }
     }
 
@@ -1456,7 +1467,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
   // ── END INVARIANT ──────────────────────────────────────────────────────
   function disposeAllConns() {
     for (const line of connLines.values()) {
-      try { line.remove(); } catch (_) {}
+      try { line.remove(); } catch (e) { /* silent: DOM line already detached */ }
     }
     connLines.clear();
     dirtyConns.clear();
@@ -1639,7 +1650,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     }
     for (const [id, line] of connLines.entries()) {
       if (!wanted.has(id)) {
-        try { line.remove(); } catch (_) {}
+        try { line.remove(); } catch (e) { /* silent: DOM line already detached */ }
         connLines.delete(id);
         dirtyConns.delete(id);
       } else {
@@ -2036,7 +2047,7 @@ function ensureGroups() {
     document.body.classList.remove('cx--connecting');
     document.body.style.cursor = '';
     // BX-142: dispose provisional SVG line + ghost coords.
-    if (provisionalLine) { try { provisionalLine.remove(); } catch (_) {} provisionalLine = null; }
+    if (provisionalLine) { try { provisionalLine.remove(); } catch (e) { /* silent: DOM line already detached */ } provisionalLine = null; }
     provisionalGhost = null;
     if (cm && commitToId && cm.fromId && cm.fromId !== commitToId) {
       if (addConnection(cm.fromId, commitToId)) {
@@ -2901,7 +2912,7 @@ function ensureGroups() {
               const s = await browser.browserSettings.openBookmarksInNewTabs.get({});
               openInNewTab = s.value;
             }
-          } catch (_) { }
+          } catch (e) { /* silent: inner render variant, non-critical */ }
           if (openInNewTab) {
             api.tabs?.create ? api.tabs.create({ url, active: true }) : window.open(url, '_blank');
           } else {
@@ -2996,7 +3007,7 @@ function ensureGroups() {
     for (const k of [...__popupTrackers.keys()]) {
       if (!document.body.contains(k)) __popupTrackers.delete(k);
     }
-    __popupTrackers.forEach(fn => { try { fn(); } catch (_) {} });
+    __popupTrackers.forEach(fn => { try { fn(); } catch (e) { /* silent: popup tracker callback, tracker auto-cleaned */ } });
   }
 
   // Inline bookmark edit popup
@@ -3376,7 +3387,7 @@ function ensureGroups() {
     dragState.el.style.left = newX + 'px';
     dragState.el.style.top = newY + 'px';
     // BX-DEV-PERF: only reposition popups if any exist — skip getBoundingClientRect on hot path
-    if (__popupTrackers.size > 0) { try { repositionAllPopups(); } catch (_) {} }
+    if (__popupTrackers.size > 0) { try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ } }
     if (dragState.type === 'large') {
       // Real-time data model update so boxMidPoint reads live coords during drag
       const lb = getLargeBox(dragState.id);
@@ -3537,7 +3548,7 @@ function ensureGroups() {
     canvasPanY = clamped.y;
     applyCanvasTransform();
     e.preventDefault();
-    try { repositionAllPopups(); } catch (_) {}
+    try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ }
     // BX-DEV-145/EXPLORE-008: CSS transform moves SVG coords automatically,
     // but viewport culling (display:none) must be re-evaluated on pan —
     // previously-culled lines may re-enter the visible window. scheduleConnRefresh
@@ -3612,7 +3623,7 @@ function ensureGroups() {
     e.preventDefault();
     // BX-DEV-111N+ : propagate live inner pan to other tabs within ~25ms (throttled).
     if (currentLargeBoxId) scheduleLargeBoxViewStatePersist(currentLargeBoxId);
-    try { repositionAllPopups(); } catch (_) {}
+    try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ }
     // BX-DEV-145/EXPLORE-008: re-evaluate viewport culling on inner pan too.
     if (connLines.size) scheduleConnRefresh(Array.from(connLines.keys()));
   }
@@ -3654,7 +3665,7 @@ function ensureGroups() {
       // A4: refresh conn lines so LOD stroke-width + viewport-culling react to the new zoom.
       if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
       saveLayout();
-      try { repositionAllPopups(); } catch (_) {}
+      try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ }
     }
   }
 
@@ -3670,7 +3681,7 @@ function ensureGroups() {
       applyInnerTransform();
       // A4: refresh inner conn lines after zoom so LOD/culling reacts.
       if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
-      try { repositionAllPopups(); } catch (_) {}
+      try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ }
       // BX-DEV-111N+v2 : single saveLayout path per wheel event via the throttled
       // schedulePersist (Map-based, 80ms). Previously this block called saveLayout()
       // AND saveLargeBoxViewState() AND schedulePersist() — three storage writes per
@@ -3969,7 +3980,7 @@ function ensureGroups() {
     const needsReconcileWrite = JSON.stringify(layout) !== incomingSerialized;
     // A5: groupIdx no longer needed; dsuRebuild reads box.isParent
     markDsuDirty(); dsuRebuildFromConnections();
-    try { ensureGroups(); } catch (_) {}
+    try { ensureGroups(); } catch (e) { debugErr("ensureGroups conn ops", e); }
     rebuildBoxMaps();
     connIdx.clear();
     boxConnIdx.clear();
@@ -4019,7 +4030,7 @@ function ensureGroups() {
       }
       if (needsReconcileWrite && incomingWins) saveLayoutDebounced();
       // BX-DEV-122 Bug3: re-sync settings DOM so modal reflects cross-tab updated urlOpenMode etc.
-      try { syncSettingsDOM(); } catch (_) {}
+      try { syncSettingsDOM(); } catch (e) { debugErr("syncSettingsDOM", e); }
       debug('external layout applied', { revision: incomingRevision, boxes: layout.boxes.length });
       return true;
     } finally {
@@ -5436,7 +5447,7 @@ function ensureGroups() {
     // ADR-0009: listen for background SW auto-backup trigger
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-        if (msg && msg.action === 'boxing-auto-backup-trigger') {
+        if (msg && msg.type === 'boxing-auto-backup-trigger') {
           debug('Auto-backup triggered by background alarm');
           performBackup().then(() => sendResponse({ ok: true })).catch(e => sendResponse({ ok: false, error: e.message }));
           return true; // async response
@@ -5522,7 +5533,7 @@ function ensureGroups() {
       const file = importFile.files[0];
       if (!file) return;
       // BX-DEV-111f: File size sanity check — reject imports > 5MB
-      if (file.size > 5 * 1024 * 1024) { try { alert(i18n('importTooLarge')); } catch (_) { } importFile.value = ''; return; }
+      if (file.size > 5 * 1024 * 1024) { try { alert(i18n('importTooLarge')); } catch (e) { /* silent: alert may be blocked */ } importFile.value = ''; return; }
       try {
         const text = await file.text();
         // BX-DEV-111f: Strip UTF-8 BOM if present
@@ -5576,9 +5587,9 @@ function ensureGroups() {
         applyCanvasTransform();
         applyInnerTransform();
         updateCaption();
-        try { /* silent success — no alert needed */ } catch (_) { }
+        try { /* silent success — no alert needed */ } catch (e) { /* silent: no-op */ }
         debug('Import succeeded, layout replaced');
-      } catch (_) { try { alert(i18n('importFailed')); } catch (_) { } }
+      } catch (e) { try { alert(i18n('importFailed')); } catch (e2) { /* silent: alert may be blocked */ } }
       importFile.value = '';
     });
 
@@ -5586,7 +5597,7 @@ function ensureGroups() {
     diagExportLogBtn?.addEventListener('click', () => {
       try {
         const text = (window.__boxingDebug && typeof window.__boxingDebug.exportLog === 'function') ? window.__boxingDebug.exportLog() : '';
-        if (!text) { try { alert(i18n('diagNoLogs') || 'No log entries yet'); } catch (_) {} return; }
+        if (!text) { try { alert(i18n('diagNoLogs') || 'No log entries yet'); } catch (e) { /* silent: alert may be blocked */ } return; }
         const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         const blob = new Blob([text], { type: 'text/plain; charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -5631,10 +5642,10 @@ function ensureGroups() {
     window.addEventListener('resize', onWindowResize);
 
     // Per-tab session state survives reload but is isolated from every other tab.
-    window.addEventListener('pagehide', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (_) {} persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (_) {} });
+    window.addEventListener('pagehide', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } });
     // BX-DEV-111M: flush credentials on tab switch / window hide / beforeunload —
     // fixes the 'close browser loses WebDAV password' bug (blur never fires in those paths).
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (_) {} persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (_) {} } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } } });
     // BX-DEV-120 (Bug8 return freeze): when returning to the Boxing tab after
     // opening a bookmark in a new tab, any lingering dragState/panState + a
     // stalled async storage-write chain could leave the UI trapped. On visibility
@@ -5646,7 +5657,7 @@ function ensureGroups() {
         try {
           // BX-DEV-135 (B8): tab-hide may have deferred RO; refresh geometry cache so
           // the re-applied transform does not use a stale container/surface size
-          try { if (typeof refreshContainerSizes === 'function') refreshContainerSizes(); } catch (_) {}
+          try { if (typeof refreshContainerSizes === 'function') refreshContainerSizes(); } catch (e) { /* silent: container sizes refresh, non-critical */ }
           if (panState && typeof onCanvasPanEnd === 'function') onCanvasPanEnd({ type: 'visibilitychange' });
           if (panState && typeof onInnerPanEnd === 'function') onInnerPanEnd({ type: 'visibilitychange' });
           if (typeof dragState === 'object' && dragState && typeof onBoxDragEnd === 'function') {
@@ -5659,7 +5670,7 @@ function ensureGroups() {
         } catch (e) { debugWarn('visibility-visible recovery', e); }
       }
     });
-    window.addEventListener('beforeunload', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (_) {} try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (_) {} });
+    window.addEventListener('beforeunload', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } });
 
     api.storage.onChanged?.addListener?.((changes, areaName) => {
       const expectedArea = layoutStorage === api.storage.local ? 'local' : 'sync';
@@ -5743,7 +5754,7 @@ function ensureGroups() {
       const restoreBtn = document.getElementById('onboarding-restore-btn');
       if (restoreBtn) {
         restoreBtn.addEventListener('click', () => {
-          try { close(false); } catch (_) {}
+          try { close(false); } catch (e) { /* silent: window.close may be blocked */ }
           try {
             if (typeof openSettingsModal === 'function') openSettingsModal();
             const tabBtn = document.querySelector('.settings-nav__item[data-tab="data"]');
@@ -5784,7 +5795,7 @@ function ensureGroups() {
 
   await init();
   // ADR-0006: install global keydown listener if select+delete mode is active at startup
-  try { applyConnDeleteKeydoc(); } catch (_) {}
+  try { applyConnDeleteKeydoc(); } catch (e) { /* silent: conn delete keydoc init, feature may be absent */ }
 })();
 // BX-DEV-111 v2: Fastest-CDN race — probe all sources on first request, lock winner for session
 const FAVICON_SOURCES = [
@@ -5895,7 +5906,7 @@ function persistFaviconCacheDebounced() {
   setTimeout(() => { __favPersistPending = false; persistFaviconCacheNow(); }, 400);
 }
 // BX-DEV-121: hydrate the mem cache on first script load.
-try { loadFaviconCacheFromStorage(); } catch (_) {}
+try { loadFaviconCacheFromStorage(); } catch (e) { /* silent: favicon cache hydration, regenerates on demand */ }
 
 async function loadFavicon(img, url) {
   // BX-DEV-126 (B10): parallel CDN race via Promise.any — fastest token wins, no serial waterfall.
@@ -5926,9 +5937,9 @@ async function loadFavicon(img, url) {
   try {
     // Promise.any: returns first fulfilled (winning url). Removed serial waterfall blocking.
     const winningUrl = await Promise.any(tokens.map(probe));
-    faviconCache.set(host, winningUrl); try { persistFaviconCacheDebounced(); } catch (_) {} img.src = winningUrl;
+    faviconCache.set(host, winningUrl); try { persistFaviconCacheDebounced(); } catch (e) { /* silent: favicon cache persist, debounced retry */ } img.src = winningUrl;
   } catch (_) {
     // All tokens failed — cache the miss with 90-day TTL so we don't re-race dead hosts.
-    faviconCache.set(host, null); try { persistFaviconCacheDebounced(); } catch (_) {} img.style.display = 'none';
+    faviconCache.set(host, null); try { persistFaviconCacheDebounced(); } catch (e) { /* silent: favicon cache persist, debounced retry */ } img.style.display = 'none';
   }
 }

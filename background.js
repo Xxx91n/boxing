@@ -5,13 +5,26 @@ const BG_LOG_PREFIX = '[Boxing:BG]';
 // Debug mode toggle — set boxing_debug_mode in storage.sync to enable
 let BG_DEBUG_ENABLED = false;
 function bgLog(...a) { if (BG_DEBUG_ENABLED) console.log(BG_LOG_PREFIX, ...a); }
-function bgErr(...a) { console.error(BG_LOG_PREFIX, ...a); } // errors always log
+function bgErr(...a) {
+  console.error(BG_LOG_PREFIX, ...a); // errors always log
+  // BX-DEV-115C: persist bg errors to storage.local so NTP diagnostics panel can surface them
+  try {
+    const entry = { ts: Date.now(), prefix: '[Boxing:BG]', text: a.map(function(x){ return x instanceof Error ? x.message : String(x); }).join(' ') };
+    chrome.storage && chrome.storage.local && chrome.storage.local.get && chrome.storage.local.get({ bgErrLog: [] }, function(r) {
+      try {
+        var log = (r.bgErrLog || []).slice(-49);
+        log.push(entry);
+        if (chrome.storage && chrome.storage.local && chrome.storage.local.set) chrome.storage.local.set({ bgErrLog: log });
+      } catch (_) {}
+    });
+  } catch (_) {}
+}
 try {
   chrome.storage?.sync?.get?.('boxing_debug_mode', r => {
     BG_DEBUG_ENABLED = !!(r && r.boxing_debug_mode);
     bgLog('background debug:', BG_DEBUG_ENABLED ? 'enabled' : 'disabled');
   });
-} catch(_) {}
+} catch (e) { /* silent: top-level init guard, extension loads anyway */ }
 (() => {
   const api = (typeof browser !== "undefined" ? browser :
     typeof chrome !== "undefined" ? chrome : null) || null;
@@ -35,7 +48,7 @@ try {
           for (var i = 0; i < tabs.length; i++) {
             var tab = tabs[i];
             if (tab.url && (tab.url.indexOf('chrome://newtab') === 0 || tab.url.indexOf('moz-extension://') === 0 || tab.url.indexOf('chrome-extension://') === 0)) {
-              chrome.tabs.sendMessage(tab.id, { action: 'boxing-auto-backup-trigger' }, function() {
+              chrome.tabs.sendMessage(tab.id, { type: 'boxing-auto-backup-trigger' }, function() {
                 if (chrome.runtime.lastError) { /* tab may not have listener */ }
               });
             }
@@ -253,7 +266,7 @@ try {
     // and we return true to keep the message channel open for the async response.
     if (typeof sendResponse === 'function') {
       promise.then(result => {
-        try { sendResponse(result); } catch (_) {}
+        try { sendResponse(result); } catch (e) { bgErr("sendResponse", e); }
       });
       return true; // keep channel open for async sendResponse
     }
