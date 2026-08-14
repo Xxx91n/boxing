@@ -272,6 +272,27 @@ function build() {
 
   validateI18nKeys();
   validateCssDualWriteMarkers();
+
+  // ── Stale dist detection ──
+  // Warn if existing dist/BUILD_INFO.json commit != current HEAD.
+  // Helps catch the "dev loaded stale dist" class of bugs where
+  // source changed but dist was never rebuilt.
+  function warnStaleDist() {
+    const oldInfoPath = path.join(DIST, "boxing-chrome", "BUILD_INFO.json");
+    if (!fs.existsSync(oldInfoPath)) return; // no prior build, nothing to warn
+    let oldCommit = "unknown";
+    try {
+      const oldInfo = JSON.parse(fs.readFileSync(oldInfoPath, "utf8"));
+      oldCommit = oldInfo.commit || "unknown";
+    } catch (_) { return; }
+    let curCommit = "unknown";
+    try { curCommit = execSync("git -C " + ROOT + " rev-parse --short HEAD", { encoding: "utf8" }).trim(); } catch (_) {}
+    if (oldCommit !== "unknown" && curCommit !== "unknown" && oldCommit !== curCommit) {
+      console.warn("[STALE_DIST] Previous build commit " + oldCommit + " != current " + curCommit + " — dist was outdated. Rebuilding...");
+    }
+  }
+  warnStaleDist();
+
     fs.rmSync(DIST, { recursive: true, force: true });
   fs.mkdirSync(DIST, { recursive: true });
 

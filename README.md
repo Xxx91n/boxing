@@ -111,6 +111,10 @@ npm run build
 
 ```bash
 npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
+npm run dev:chrome   # Build + launch Chrome with extension loaded (web-ext)
+npm run dev:firefox  # Build + launch Firefox with extension loaded (web-ext)
+npm run dev:chrome:no-build   # Fast reload without rebuilding (requires prior build)
+npm run dev:firefox:no-build  # Fast reload without rebuilding (requires prior build)
 npm test          # Playwright tests (Chrome + Firefox)
 ```
 
