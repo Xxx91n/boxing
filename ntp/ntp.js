@@ -1167,10 +1167,26 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // SVG overlay lives INSIDE the transform surface, so line coords = box logical coords.
   // No BCR reads, no transform-commit timing issues, lines clipped by surface overflow.
   const connLines = new Map();          // connId -> SVG <line> element
-const connById = new Map();            // connId -> connection object (O(1) lookup)
+  const connById = new Map();            // connId -> connection object (O(1) lookup)
   const dirtyConns = new Set();         // connIds needing path update
   const connIdx = new Map();              // O(1) conn lookup by key-pair
   const boxConnIdx = new Map();            // O(1) reverse: boxKey -> Set<connId>
+  // ADR-0013 BX-PERF-002: SVG <line> element pool — recycle instead of createElementNS per render cycle.
+  const LINE_POOL_CAP = 64; // ponytail: cap prevents unbounded growth; 64 is generous for typical layouts.
+  const __linePool = [];
+  function acquireLineEl() {
+    const el = __linePool.pop();
+    if (el) return el;
+    return document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  }
+  function recycleLineEl(el) {
+    if (!el || __linePool.length >= LINE_POOL_CAP) return;
+    // Strip attributes so reused element starts clean
+    el.removeAttribute('data-conn-id');
+    el.classList.remove('conn-line--selected');
+    el.style.display = '';
+    __linePool.push(el);
+  }
   // BX-DSU: Union-Find with path compression for O(α) group connectivity
   const boxGroupId = new Map();      // boxKey -> groupId (DSU find root)
   const groupMembers = new Map();    // groupId -> Set<boxKey> (all members)
@@ -1467,7 +1483,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
   // ── END INVARIANT ──────────────────────────────────────────────────────
   function disposeAllConns() {
     for (const line of connLines.values()) {
-      try { line.remove(); } catch (e) { /* silent: DOM line already detached */ }
+      try { line.remove(); recycleLineEl(line); } catch (e) { /* silent: DOM line already detached */ }
     }
     connLines.clear();
     dirtyConns.clear();
@@ -1650,7 +1666,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     }
     for (const [id, line] of connLines.entries()) {
       if (!wanted.has(id)) {
-        try { line.remove(); } catch (e) { /* silent: DOM line already detached */ }
+        try { line.remove(); recycleLineEl(line); } catch (e) { /* silent: DOM line already detached */ }
         connLines.delete(id);
         dirtyConns.delete(id);
       } else {
@@ -1663,7 +1679,7 @@ const connById = new Map();            // connId -> connection object (O(1) look
     for (const c of pending) {
       const svg = connSvgForConn(c);
       if (!svg) continue;
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      const line = acquireLineEl();
       line.setAttribute('class', 'conn-line');
       line.setAttribute('stroke', 'var(--connection-color, #333)');
       line.setAttribute('stroke-width', '1.5');
@@ -1918,8 +1934,9 @@ function ensureGroups() {
   // BX-DEV-137+: group drag now performs a continuous elastic sweep against
   // OUT-of-group large boxes, not just a rigid delta translate. Each member
   // is resolved via elasticSnap with siblings (group + parent) excluded, so the
-  // whole group visits new positions as a rigid set, then collisions push back.
-  // ponytail: O(m*n) elastic pass per group; swap in rbush R-tree at >100 boxes.
+ // whole group visits new positions as a rigid set, then collisions push back.
+  // ADR-0013 BX-PERF-001: build spatial grid ONCE per moveGroupTogether call, pass to elasticSnap for all members.
+  // Old: O(m*n) — elasticSnap rebuilt grid per member per frame. New: grid built once, O(m*k) where k = neighbors.
   function moveGroupTogether(parentId, deltaX, deltaY, origins) {
     // BX-DSU: use DSU to find ALL group members (multi-level, not just direct children)
     const members = dsuGroupMembers(parentId);
@@ -1945,6 +1962,8 @@ function ensureGroups() {
       }
       if (isLarge) { const parentRawId = parentId.slice(6); groupBoxIds.add(parentRawId); }
       const others = layout.boxes.filter(b => !groupBoxIds.has(b.id));
+      // ADR-0013 BX-PERF-001: build spatial grid once for this call — reuse across all large members.
+      const largeSpatial = buildSpatialGrid(others);
       for (const mId of largeMembers) {
         const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
         const m = getLargeBox(rawId);
@@ -1952,7 +1971,7 @@ function ensureGroups() {
         const w = m.width || LARGE_DEF_W, h = m.height || LARGE_DEF_H;
         const base = (origins && origins.get(mId)) || { x: m.x, y: m.y };
         const nx0 = base.x + deltaX, ny0 = base.y + deltaY;
-        const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, CANVAS_GRID, snapCanvas);
+        const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, CANVAS_GRID, snapCanvas, largeSpatial);
         const worldMaxX = (canvasContainer.clientWidth / 0.3) - w;
         const worldMaxY = (canvasContainer.clientHeight / 0.3) - h;
         m.x = Math.max(0, Math.min(resolved.x, worldMaxX));
@@ -1977,6 +1996,8 @@ function ensureGroups() {
         if (mp.length >= 3 && mp[1] === parentLargeId) memberSmallIds.add(mp.slice(2).join(':'));
       }
       const others = (lb.children || []).filter(s => !memberSmallIds.has(s.id) && (!isLarge || s.id !== parentId.split(':').slice(2).join(':')));
+      // ADR-0013 BX-PERF-001: build spatial grid once for this call — reuse across all small members.
+      const smallSpatial = buildSpatialGrid(others);
       for (const mId of smallMembers) {
         const mp = mId.split(':');
         if (!mp || mp.length < 3 || mp[1] !== parentLargeId) continue;
@@ -1986,7 +2007,7 @@ function ensureGroups() {
         const w = m.width || SMALL_DEF_W, h = m.height || SMALL_DEF_H;
         const base = (origins && origins.get(mId)) || { x: m.x, y: m.y };
         const nx0 = base.x + deltaX, ny0 = base.y + deltaY;
-        const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, INNER_GRID, snapInner);
+        const resolved = elasticSnap({ x: nx0, y: ny0 }, w, h, others, INNER_GRID, snapInner, smallSpatial);
         const sw2 = innerSurface.clientWidth || innerCanvas.clientWidth;
         const sh2 = innerSurface.clientHeight || (innerCanvas.clientHeight - 40);
         const worldMaxX2 = (sw2 / 0.3) - w;
@@ -2166,7 +2187,8 @@ function ensureGroups() {
     let maxIter = 50;
     let movedThisPass = true;
     // ADR-0007 Q3b: build spatial once per snap call when N large; fall back to full list below threshold.
-    const spatial = buildSpatialGrid(others);
+    // ADR-0013 BX-PERF-001: accept pre-built spatial grid as 7th arg to avoid O(n) rebuild per member in moveGroupTogether.
+    const spatial = arguments.length > 6 ? arguments[6] : buildSpatialGrid(others);
     while (movedThisPass && maxIter-- > 0) {
       movedThisPass = false;
       const near = querySpatialNearby(spatial, x, y, w, h) || others;

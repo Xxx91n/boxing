@@ -111,3 +111,26 @@ Chrome native `dblclick` on selectable canvas text (empty-state title, footer hi
 
 ## Build Pipeline Invariant (BX-MANIFEST-004b)
 `npm run dev:chrome` and `npm run dev:firefox` MUST chain `npm run build && web-ext run ...` — the dev script compiles (build) before loading `dist/` into the browser. This prevents the "stale dist" bug (session 019ffa4d): LLM or developer runs `npm run dev:chrome` thinking the latest source changes are loaded, but `dist/` was never rebuilt — the browser loads the old compiled output. The `dev:chrome:no-build` / `dev:firefox:no-build` variants skip build for fast reload and MUST retain `--no-reload`. `build.mjs` emits `[STALE_DIST]` warnings when the prior build's `BUILD_INFO.json` commit differs from current `git HEAD`. The deleted `dev-load.mjs` (commit ab436d7) had this stale-detection; web-ext npm scripts replaced it but lost the guard — BX-MANIFEST-004b restores it at the script level.
+
+## Performance Optimization (ADR-0013)
+- **ADR-0013**: [docs/adr/0013-performance-optimization-grid-hash.md](adr/0013-performance-optimization-grid-hash.md) -- grid hash spatial index for moveGroupTogether
+- **moveGroupTogether** (ntp.js:1923) -- O(m x n) per drag frame: each group member calls elasticSnap against all non-member boxes. Main performance hotspot. ADR-0013 replaces linear scan with grid hash O(k) neighbor query.
+- **Grid hash** -- cell size = 2x max box dimension (GDevelop pattern). Built at drag-start O(n), queried per member O(k) where k = 0-5 neighboring boxes. Reuses existing spatial hash >=32 threshold pattern from elasticSnap.
+- **__spatialGridDirty** / **markSpatialGridDirty()** -- lazy rebuild flag, same pattern as __dsuDirty / markDsuDirty(). Set on box create/delete/move/cross-tab sync. Grid rebuilt on next drag-start.
+- **Q3=B**: renderConnections SVG line pooling only -- renderCanvas full rebuild semantics preserved (multi-tab sync safety). renderCanvas DOM diff deferred (9 callers depend on clean DOM after rebuild).
+- **Q4=C**: No rAF batching (adds 1-frame latency, violates follow-hand UX). No WeakMap geometry caches (boxMidPoint is O(1)).
+- **Q5=C**: No saveLayout incremental storage (cold-path, 120ms debounced, 30KB << 5MB quota).
+
+### Performance Grill Decisions (2026-08-15)
+- **Q1**: A -- all three layers (frame rate + memory + storage) planned together, executed in phases. Only frame rate (grid hash) confirmed as needed; memory and storage confirmed YAGNI.
+- **Q2**: Grid hash spatial index (confirmed) -- boxing uses <200 boxes, R-tree overkill. Grid hash matches existing elasticSnap >=32 threshold pattern.
+- **Q3**: B -- SVG line pooling only. Multi-tab sync analysis: applyExternalLayout (ntp.js:3960) calls renderCanvas() and depends on full rebuild semantics to handle cross-tab add/delete/move. DOM diff would require auditing all 9 renderCanvas callers for fresh-DOM assumptions -- risk too high for incremental gain.
+- **Q4**: C -- no rAF batching, no WeakMap caches. onBoxDragMove hot path: style.left/top O(1), refreshConnsForBoxSync O(k), moveGroupTogether O(m x n) -> fixed by grid hash. All other operations O(1)/O(k). No additional optimization needed.
+- **Q5**: C -- no storage optimization. saveLayout cold-path only (drag end, create/delete/rename, settings change). 120ms debounced. Pan/zoom uses persistViewState(true), not saveLayout(). 100-box layout = 15-30KB, chrome.storage.local limit 5MB.
+
+### Performance Invariants (BX-PERF-001..003)
+- **BX-PERF-001 (MUST)**: moveGroupTogether MUST use spatial grid query for collision candidates, not linear others array scan. Grid built at drag-start, queried per member. Mark grid dirty on box position change outside drag (same pattern as __dsuDirty).
+- **BX-PERF-002 (MUST)**: renderConnections SVG line pooling MUST NOT change renderCanvas full-rebuild semantics. Pool only the <line> SVG element creation/disposal in renderConnections. renderCanvas still does innerHTML='' + disposeAllConns() + full box recreation -- this preserves multi-tab sync safety (applyExternalLayout depends on clean DOM after render).
+- **BX-PERF-003 (MUST)**: Do NOT add rAF batching to onBoxDragMove. The drag loop is synchronous per mousemove event: style.left/top update + refreshConnsForBoxSync + moveGroupTogether. rAF batching adds 1-frame (~16ms) latency that violates the follow-hand UX principle. moveGroupTogether O(m x n) is fixed by grid hash, not by frame batching.
+- **BX-PERF-004 (MUST)**: Do NOT add WeakMap geometry caches for boxMidPoint. boxMidPoint reads el.style.left/top + width/height -- already O(1). A WeakMap cache would have near-zero hit rate during drag (the cached box is being moved every frame, invalidating its cache entry). Premature optimization.
+- **BX-PERF-005 (MUST)**: Do NOT split saveLayout into incremental storage writes. chrome.storage.set() does not support partial key updates. Full JSON.stringify of 30KB layout takes <1ms. saveLayout is cold-path + 120ms debounced. Splitting into multiple keys would complicate cross-tab merge and add async round-trips.
