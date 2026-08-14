@@ -816,5 +816,8 @@
   },
   "themePure": {
     "message": "Pure White"
+  },
+  "emptyInnerAction": {
+    "message": "Add small box"
   }
 }

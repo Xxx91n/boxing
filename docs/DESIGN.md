@@ -76,17 +76,33 @@ Dark mode overrides only Layer 2 semantic tokens to reference dark primitives â€
 |-------|-------|-------|
 | `--ease-out` | cubic-bezier(0.22, 1, 0.36, 1) | Most transitions (smooth decel) |
 | `--ease-default` | cubic-bezier(0.4, 0, 0.2, 1) | State toggles |
+| `--ease-hover` | cubic-bezier(0.34, 1.56, 0.64, 1) | Hover: subtle bounce-back |
 | `--dur-fast` | 140ms | Hover, focus |
 | `--dur-base` | 220ms | Modal, panel |
 | `--dur-slow` | 360ms | Header auto-hide, large layout |
 
+#### Entry Choreography (@keyframes)
+| Name | Duration | Usage |
+|------|----------|-------|
+| `fadeInUp` | 0.3s | Modal/panel entrance |
+| `scaleIn` | 0.2s | Popover entrance |
+| `fadeIn` | 0.3s | Empty state entrance |
+| `slideDown` | 0.3s | Dropdown/list entrance |
+
+#### Reduced Motion
+`prefers-reduced-motion: reduce` globally sets all `transition-duration` and `animation-duration` to `0.01ms` (WCAG 2.2 compliance). See `design-system.css` L178.
+
 ### Shadows
-Derived from `--warm-900-rgb` in light mode, black in dark mode.
-| Token | Usage |
-|-------|-------|
-| `--shadow-1` | Subtle elevation (flat surfaces) |
-| `--shadow-2` | Cards, hover elevation |
-| `--shadow-pop` | Modals, popovers |
+5-level elevation gradient (ADR-0008 Phase: Shadow-B). Light mode uses `--warm-900-rgb` for warm shadows; dark mode uses pure black with calibrated opacity.
+| Token | Light | Dark | Usage |
+|-------|-------|------|-------|
+| `--shadow-xs` | warm-900 5% | black 20% | Subtle elevation |
+| `--shadow-sm` | warm-900 6% | black 24% | Hairline separation |
+| `--shadow-md` | warm-900 8% | black 30% | Cards, buttons |
+| `--shadow-lg` | warm-900 10% | black 36% | Modals, popovers |
+| `--shadow-xl` | warm-900 14% | black 44% | Floating panels |
+
+**Aliased for backward compat:** `--shadow-1` = `--shadow-xs`, `--shadow-2` = `--shadow-md`, `--shadow-pop` = `--shadow-lg`.
 
 ## Component State Specifications
 

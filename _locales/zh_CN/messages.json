@@ -807,5 +807,8 @@
   },
   "themePure": {
     "message": "素雅白"
+  },
+  "emptyInnerAction": {
+    "message": "添加小盒子"
   }
 }

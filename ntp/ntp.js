@@ -256,8 +256,9 @@
     fontSizeLabel: 'Font Size', zoomLabel: 'Zoom',
     zoomOut: 'Zoom out', zoomIn: 'Zoom in',
     emptyCanvasTitle: 'No large boxes yet', dblclickHint: 'Double-click canvas to add a large box',
-    clickPlusHint: 'or click + above', emptyLargeHint: 'Click to add small boxes',
+    clickPlusHint: 'or click + above', emptyLargeHint: 'Click to add small boxes', emptyLargeAction: 'Add small boxes',
     emptyInnerHint: 'Click + to add your first small box', emptySmallHint: 'No bookmarks yet',
+    emptyInnerAction: 'Add small box',
     clickToOpen: 'Click to open →', footerHint: 'Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen',
     canvasRoot: 'Canvas', untitledBox: 'Untitled box',
     untitledLargeBox: 'Untitled large box', untitledSmallBox: 'Untitled small box',
@@ -2558,6 +2559,18 @@ function ensureGroups() {
       hint.className = 'large-box__empty-hint';
       hint.textContent = i18n('emptyLargeHint');
       body.appendChild(hint);
+      // Phase 5: Empty State Action Button (ADR-0008 Motion-B)
+      const actionBtn = document.createElement('button');
+      actionBtn.className = 'large-box__empty-action';
+      actionBtn.textContent = i18n('emptyLargeAction');
+      actionBtn.setAttribute('data-box-id', box.id);
+      actionBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        // Enter the large box to add small boxes
+        enterLargeBox(box.id);
+      });
+      body.appendChild(actionBtn);
     }
 
     const openHint = document.createElement('div');
@@ -2727,13 +2740,31 @@ function ensureGroups() {
     const _ae2 = document.activeElement;
     if (_ae2 && _ae2 !== document.body) _ae2.blur();
    content.innerHTML = '';
-    const frag = document.createDocumentFragment();
-    for (const sb of lb.children || []) {
-      frag.appendChild(createSmallBoxEl(lb.id, sb));
-    }
-    content.appendChild(frag);
-    // BX-DEV-133 (B1 search): stamp largeId on inner surface so applySearchHighlight key matches
-    innerSurface.dataset.largeId = lb.id;
+   const frag = document.createDocumentFragment();
+   for (const sb of lb.children || []) {
+     frag.appendChild(createSmallBoxEl(lb.id, sb));
+   }
+   // Phase 5: Empty State Action Button (inner canvas — no small boxes)
+   if (!lb.children || lb.children.length === 0) {
+     const emptyWrap = document.createElement('div');
+     emptyWrap.className = 'inner__empty-state';
+     emptyWrap.innerHTML = '<div class="inner__empty-hint">' + i18n('emptyInnerHint') + '</div>';
+     const actionBtn = document.createElement('button');
+     actionBtn.className = 'inner__empty-action';
+     actionBtn.textContent = i18n('emptyInnerAction');
+     actionBtn.setAttribute('data-large-id', lb.id);
+     actionBtn.setAttribute('tabindex', '-1');
+     actionBtn.addEventListener('click', function (e) {
+       e.stopPropagation();
+       e.preventDefault();
+       addSmallBox(e);
+     });
+     emptyWrap.appendChild(actionBtn);
+     frag.appendChild(emptyWrap);
+   }
+   content.appendChild(frag);
+   // BX-DEV-133 (B1 search): stamp largeId on inner surface so applySearchHighlight key matches
+   innerSurface.dataset.largeId = lb.id;
     // BX-DEV-111 v2: measure each collapsed small box for precise expand animation
     content.querySelectorAll('.small-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
     // BX-143: re-render connections AFTER disposeAllConns cleared them.

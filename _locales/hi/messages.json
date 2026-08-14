@@ -804,5 +804,8 @@
   },
   "themePure": {
     "message": "शुद्ध सफेद"
+  },
+  "emptyInnerAction": {
+    "message": "छोटा बॉक्स जोड़ें"
   }
 }

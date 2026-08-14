@@ -1,4 +1,7 @@
 /* === MODAL (settings overlay) === */
+
+@layer overrides;
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -7,6 +10,8 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
+  backdrop-filter: blur(8px) saturate(180%);
 }
 
 .modal-overlay[hidden] {
@@ -194,7 +199,7 @@
   border-radius: 4px;
   display: grid;
   place-content: center;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--dur-fast) var(--ease-hover), border-color var(--dur-fast) var(--ease-hover);
 }
 
 .checkbox-label input[type="checkbox"]:hover {
@@ -520,7 +525,7 @@ body.box-resizing {
 }
 
 #dark-mode-btn span {
-  transition: transform 0.25s ease;
+  transition: transform var(--dur-base) var(--ease-default);
 }
 
 /* === MODAL EXTENDED (v3.4 wider) === */
@@ -885,7 +890,7 @@ html.ntp--dark {
   border-radius: var(--radius-tile);
   box-shadow: var(--shadow-2);
   padding: 4px 8px;
-  transition: opacity 0.3s ease, box-shadow 0.3s ease;
+  transition: opacity var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
 }
 
 .header-pin--floating:hover {
@@ -962,19 +967,20 @@ html.ntp--dark {
 .large-box__delete, .small-box__delete {
   -webkit-appearance: none;
   appearance: none;
-  outline: none !important;
-  box-shadow: none !important;
+  outline: none;
+  box-shadow: none;
 }
 
 /* Q5: Chrome select/input focus ring reset */
 .modal select:focus,
 .modal input:focus,
 .modal button:focus,
+.modal .modal__input.modal textarea:focus,
 .modal textarea:focus {
   -webkit-appearance: none;
   appearance: none;
-  outline: none !important;
-  outline-offset: 0 !important;
-  box-shadow: none !important;
-  border-color: var(--color-focus) !important;
+  outline: none;
+  outline-offset: 0;
+  box-shadow: none;
+  border-color: var(--color-focus);
 }

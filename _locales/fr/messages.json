@@ -804,5 +804,8 @@
   },
   "themePure": {
     "message": "Blanc Pur"
+  },
+  "emptyInnerAction": {
+    "message": "Ajouter une petite boite"
   }
 }

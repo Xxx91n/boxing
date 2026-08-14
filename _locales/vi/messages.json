@@ -804,5 +804,8 @@
   },
   "themePure": {
     "message": "Trắng Tuyết"
+  },
+  "emptyInnerAction": {
+    "message": "Them hop nho"
   }
 }

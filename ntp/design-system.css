@@ -106,16 +106,26 @@
   --font-size-base: 14px;
 
   /* Motion */
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);    /* enter: smooth decel */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);     /* state toggle: material standard */
+  --ease-hover: cubic-bezier(0.34, 1.56, 0.64, 1); /* hover: subtle bounce-back */
   --dur-fast: 140ms;
   --dur-base: 220ms;
   --dur-slow: 360ms;
 
-  /* Shadow — derived from ink base via rgba */
-  --shadow-1: 0 1px 2px rgba(var(--warm-900-rgb), 0.04), 0 1px 1px rgba(var(--warm-900-rgb), 0.03);
-  --shadow-2: 0 6px 18px rgba(var(--warm-900-rgb), 0.08), 0 2px 6px rgba(var(--warm-900-rgb), 0.04);
-  --shadow-pop: 0 18px 48px rgba(var(--warm-900-rgb), 0.16);
+  /* Shadow — 5-level elevation gradient (ADR-0008 Phase: Shadow-B)
+   * Each level uses 3-4 stacked layers for physical depth (Linear/Vercel pattern).
+   * Near layer = sharp edge, mid = soft body, far = ambient ground, bottom = contact.
+   * --shadow-1/2/pop are aliases for backward compat (zero ref changes needed). */
+  --shadow-xs: 0 1px 2px rgba(var(--warm-900-rgb), 0.05), 0 1px 1px rgba(var(--warm-900-rgb), 0.03);
+  --shadow-sm: 0 2px 4px rgba(var(--warm-900-rgb), 0.06), 0 1px 2px rgba(var(--warm-900-rgb), 0.04);
+  --shadow-md: 0 6px 12px rgba(var(--warm-900-rgb), 0.08), 0 2px 4px rgba(var(--warm-900-rgb), 0.05), 0 1px 1px rgba(var(--warm-900-rgb), 0.03);
+  --shadow-lg: 0 12px 24px rgba(var(--warm-900-rgb), 0.10), 0 4px 8px rgba(var(--warm-900-rgb), 0.06), 0 1px 2px rgba(var(--warm-900-rgb), 0.04);
+  --shadow-xl: 0 24px 48px rgba(var(--warm-900-rgb), 0.14), 0 8px 16px rgba(var(--warm-900-rgb), 0.08), 0 2px 4px rgba(var(--warm-900-rgb), 0.05), 0 1px 1px rgba(var(--warm-900-rgb), 0.03);
+  /* Aliases — map old names to new gradient levels */
+  --shadow-1: var(--shadow-xs);
+  --shadow-2: var(--shadow-md);
+  --shadow-pop: var(--shadow-lg);
 }
 
 /* ═══════════════════════════════════════════════
@@ -148,8 +158,27 @@
   --color-accent-soft-2: rgba(var(--accent-dark-500-rgb), 0.20);
   --color-focus: var(--color-accent-dark-300);
 
-  /* Shadow — black-based in dark mode */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 1px rgba(0, 0, 0, 0.12);
-  --shadow-2: 0 6px 18px rgba(0, 0, 0, 0.30), 0 2px 6px rgba(0, 0, 0, 0.16);
-  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.40);
+  /* Shadow — black-based dark mode calibrated (Phase 6: Shadow-C) */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 1px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.16);
+  --shadow-md: 0 6px 12px rgba(0, 0, 0, 0.30), 0 2px 4px rgba(0, 0, 0, 0.20), 0 1px 1px rgba(0, 0, 0, 0.14);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.36), 0 4px 8px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.16);
+  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.44), 0 8px 16px rgba(0, 0, 0, 0.30), 0 2px 4px rgba(0, 0, 0, 0.20), 0 1px 1px rgba(0, 0, 0, 0.14);
+  /* Aliases */
+  --shadow-1: var(--shadow-xs);
+  --shadow-2: var(--shadow-md);
+  --shadow-pop: var(--shadow-lg);
+}
+
+
+/* ═══════════════════════════════════════════════
+ * prefers-reduced-motion: disable all non-essential motion (WCAG 2.2)
+ * Applied globally so every transition/animation respects user preference.
+ * ═══════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

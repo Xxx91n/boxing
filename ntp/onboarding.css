@@ -83,7 +83,7 @@
   height: 8px;
   border-radius: 50%;
   background: var(--color-hairline);
-  transition: background 0.2s ease;
+  transition: background var(--dur-fast) var(--ease-hover);
 }
 
 .onboarding__dot.is-active {

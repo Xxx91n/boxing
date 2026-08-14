@@ -804,5 +804,8 @@
   },
   "themePure": {
     "message": "Чистый Белый"
+  },
+  "emptyInnerAction": {
+    "message": "Добавить маленькую коробку"
   }
 }
