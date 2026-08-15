@@ -405,30 +405,6 @@ body.box-resizing {
   cursor: pointer;
 }
 
-/* Bug5: Bookmark add (+) button — styled with design tokens, replaces inline cssText */
-.bm-add-row .bm-add-btn {
-  width: 100%;
-  text-align: center;
-  background: transparent;
-  border: 1px dashed var(--color-hairline);
-  color: var(--color-muted);
-  font-size: 13px;
-  font-family: inherit;
-  padding: 4px;
-  border-radius: var(--radius-sm, 4px);
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  outline: none;
-  transition: background var(--dur-fast) var(--ease-hover), border-color var(--dur-fast) var(--ease-hover), color var(--dur-fast) var(--ease-hover);
-}
-
-.bm-add-row .bm-add-btn:hover {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent-soft-2);
-  color: var(--color-accent-ink);
-}
-
 /* === GHOST DRAG === */
 .small-box--ghost {
   box-shadow: 0 0 0 2px var(--color-accent-soft-2);

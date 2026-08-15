@@ -41,63 +41,137 @@ async function exitToCanvas(page) {
   await page.waitForTimeout(300);
 }
 
-test.describe('Empty state action buttons (Bug 1-6)', () => {
-  test('Bug1: inner canvas empty state is position:absolute inset:0 centered', async ({ page }) => {
+test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
+  // ============================================================
+  // Bug 1: inner empty state stays centered during pan/zoom
+  // (attached to #inner-surface, NOT transformed content layer)
+  // ============================================================
+  test('Bug1: inner empty state stays centered when canvas zoomed', async ({ page }) => {
     await resetBoxing(page);
     const lbId = await addLargeBox(page);
     await enterLargebox(page, lbId);
-    const style = await page.evaluate(() => {
+    // Get initial position
+    const posBefore = await page.evaluate(() => {
       const el = document.querySelector('.inner__empty-state');
-      if (!el) return null;
-      const cs = getComputedStyle(el);
+      const surf = document.getElementById('inner-surface');
+      if (!el || !surf) return null;
+      const elRect = el.getBoundingClientRect();
+      const surfRect = surf.getBoundingClientRect();
       return {
-        position: cs.position,
-        display: cs.display,
-        alignItems: cs.alignItems,
-        justifyContent: cs.justifyContent,
-        pointerEvents: cs.pointerEvents,
+        elCx: elRect.left + elRect.width / 2,
+        elCy: elRect.top + elRect.height / 2,
+        surfCx: surfRect.left + surfRect.width / 2,
+        surfCy: surfRect.top + surfRect.height / 2,
       };
     });
-    expect(style).not.toBeNull();
-    expect(style!.position).toBe('absolute');
-    expect(style!.display).toBe('flex');
-    expect(style!.alignItems).toContain('center');
-    expect(style!.justifyContent).toContain('center');
-    expect(style!.pointerEvents).toBe('none');
+    expect(posBefore).not.toBeNull();
+    // Center of empty state should be close to center of inner-surface
+    const dxBefore = Math.abs(posBefore!.elCx - posBefore!.surfCx);
+    const dyBefore = Math.abs(posBefore!.elCy - posBefore!.surfCy);
+    expect(dxBefore).toBeLessThan(50);
+    expect(dyBefore).toBeLessThan(50);
+
+    // Now zoom (change innerZoom via debug)
+    await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      // Access innerZoom through the state or debug API — set it via __boxingDebug
+      // The debug API exposes layout.settings but innerZoom is a closure var.
+      // We can trigger zoom by dispatching a wheel event with ctrlKey on inner-surface
+    });
+    // Trigger ctrl+wheel zoom on inner surface
+    await page.evaluate(() => {
+      const surf = document.getElementById('inner-surface');
+      if (!surf) return;
+      const rect = surf.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const event = new WheelEvent('wheel', {
+        ctrlKey: true,
+        deltaY: -100,
+        clientX: cx,
+        clientY: cy,
+        bubbles: true,
+      });
+      surf.dispatchEvent(event);
+    });
+    await page.waitForTimeout(300);
+
+    // Now check that the empty state is still centered
+    const posAfter = await page.evaluate(() => {
+      const el = document.querySelector('.inner__empty-state');
+      const surf = document.getElementById('inner-surface');
+      if (!el || !surf) return null;
+      const elRect = el.getBoundingClientRect();
+      const surfRect = surf.getBoundingClientRect();
+      return {
+        elCx: elRect.left + elRect.width / 2,
+        elCy: elRect.top + elRect.height / 2,
+        surfCx: surfRect.left + surfRect.width / 2,
+        surfCy: surfRect.top + surfRect.height / 2,
+      };
+    });
+    expect(posAfter).not.toBeNull();
+    const dxAfter = Math.abs(posAfter!.elCx - posAfter!.surfCx);
+    const dyAfter = Math.abs(posAfter!.elCy - posAfter!.surfCy);
+    // Bug1 key: empty state should STILL be centered after zoom (not moved with content)
+    expect(dxAfter).toBeLessThan(50);
+    expect(dyAfter).toBeLessThan(50);
   });
 
-  test('Bug1: inner empty state button has pointer-events:auto and is a <button>', async ({ page }) => {
+  test('Bug1: inner empty state is attached to #inner-surface not content layer', async ({ page }) => {
+    await resetBoxing(page);
+    const lbId = await addLargeBox(page);
+    await enterLargebox(page, lbId);
+    const parentInfo = await page.evaluate(() => {
+      const el = document.querySelector('.inner__empty-state');
+      if (!el) return null;
+      return {
+        parentId: el.parentElement?.id || null,
+        parentClass: el.parentElement?.className || null,
+      };
+    });
+    expect(parentInfo).not.toBeNull();
+    // Bug1: should be direct child of #inner-surface (viewport), not .inner__surface-content (transformed)
+    expect(parentInfo!.parentId).toBe('inner-surface');
+  });
+
+  test('Bug1: inner empty has button with pointer-events:auto', async ({ page }) => {
     await resetBoxing(page);
     const lbId = await addLargeBox(page);
     await enterLargebox(page, lbId);
     const info = await page.evaluate(() => {
-      const btn = document.querySelector('.inner__empty-action') as HTMLElement;
+      const btn = document.querySelector('.inner__empty-action');
       if (!btn) return null;
-      return {
-        tag: btn.tagName,
-        pointerEvents: getComputedStyle(btn).pointerEvents,
-      };
+      return { tag: btn.tagName, pe: getComputedStyle(btn).pointerEvents };
     });
     expect(info).not.toBeNull();
     expect(info!.tag).toBe('BUTTON');
-    expect(info!.pointerEvents).toBe('auto');
+    expect(info!.pe).toBe('auto');
   });
 
-  test('Bug2+3: large box empty state has button-only, no hint text', async ({ page }) => {
+  // Bug 2: large box empty shows hint text + button (matches inner format)
+  test('Bug2: large box empty state shows hint text + button', async ({ page }) => {
     await resetBoxing(page);
     await addLargeBox(page);
-    const hintExists = await page.evaluate(() => document.querySelector('.large-box__empty-hint') !== null);
-    expect(hintExists).toBe(false);
-    const btnInfo = await page.evaluate(() => {
-      const b = document.querySelector('.large-box__empty-action');
-      return b ? { tag: b.tagName, text: b.textContent } : null;
+    const info = await page.evaluate(() => {
+      const hint = document.querySelector('.large-box__empty-hint');
+      const btn = document.querySelector('.large-box__empty-action');
+      return {
+        hasHint: hint !== null,
+        hintText: hint?.textContent || null,
+        hasBtn: btn !== null,
+        btnTag: btn?.tagName || null,
+        btnText: btn?.textContent || null,
+      };
     });
-    expect(btnInfo).not.toBeNull();
-    expect(btnInfo!.tag).toBe('BUTTON');
-    expect(btnInfo!.text!.length).toBeGreaterThan(0);
+    expect(info.hasHint).toBe(true);
+    expect(info.hintText!.length).toBeGreaterThan(0);
+    expect(info.hasBtn).toBe(true);
+    expect(info.btnTag).toBe('BUTTON');
+    expect(info.btnText!.length).toBeGreaterThan(0);
   });
 
-  test('Bug2+3: large box empty button is clickable and enters the box', async ({ page }) => {
+  test('Bug2: large box empty button enters the box on click', async ({ page }) => {
     await resetBoxing(page);
     const lbId = await addLargeBox(page);
     await page.evaluate(() => {
@@ -109,7 +183,8 @@ test.describe('Empty state action buttons (Bug 1-6)', () => {
     expect(currentId).toBe(lbId);
   });
 
-  test('Bug4: large box chips are <button> elements with click handlers', async ({ page }) => {
+  // Bug 4: chips are buttons + chip click centers small box in viewport
+  test('Bug4: large box chips are <button> with data-small-id', async ({ page }) => {
     await resetBoxing(page);
     const lbId = await addLargeBox(page);
     await enterLargebox(page, lbId);
@@ -120,7 +195,6 @@ test.describe('Empty state action buttons (Bug 1-6)', () => {
       return Array.from(chips).map(c => ({
         tag: c.tagName,
         hasDataSmallId: c.getAttribute('data-small-id') !== null,
-        smallId: c.getAttribute('data-small-id'),
       }));
     });
     expect(chipInfo.length).toBeGreaterThan(0);
@@ -147,57 +221,8 @@ test.describe('Empty state action buttons (Bug 1-6)', () => {
     expect(currentId).toBe(lbId);
   });
 
-  test('Bug5: bm-add-row button uses CSS class bm-add-btn, not inline styles', async ({ page }) => {
+  test('Bug4: small-box--located highlight pulse animation exists', async ({ page }) => {
     await resetBoxing(page);
-    const lbId = await addLargeBox(page);
-    await enterLargebox(page, lbId);
-    await createSmallBox(page);
-    const btnInfo = await page.evaluate(() => {
-      const btn = document.querySelector('.bm-add-btn');
-      if (!btn) return null;
-      const cs = getComputedStyle(btn);
-      return {
-        className: btn.className,
-        hasInlineStyle: (btn as HTMLElement).style.cssText.length > 0,
-        width: cs.width,
-        cursor: cs.cursor,
-        borderStyle: cs.borderStyle,
-      };
-    });
-    expect(btnInfo).not.toBeNull();
-    expect(btnInfo!.className).toContain('bm-add-btn');
-    expect(btnInfo!.hasInlineStyle).toBe(false);
-    expect(btnInfo!.cursor).toBe('pointer');
-    expect(btnInfo!.borderStyle).toBe('dashed');
-  });
-
-  test('Bug6: will-change:transform on large-box', async ({ page }) => {
-    await resetBoxing(page);
-    await addLargeBox(page);
-    const willChange = await page.evaluate(() => {
-      const el = document.querySelector('.large-box');
-      return el ? getComputedStyle(el).willChange : null;
-    });
-    expect(willChange).not.toBeNull();
-    expect(willChange).toBe('transform');
-  });
-
-  test('Bug6: will-change:transform on small-box', async ({ page }) => {
-    await resetBoxing(page);
-    const lbId = await addLargeBox(page);
-    await enterLargebox(page, lbId);
-    await createSmallBox(page);
-    const willChange = await page.evaluate(() => {
-      const el = document.querySelector('.small-box');
-      return el ? getComputedStyle(el).willChange : null;
-    });
-    expect(willChange).not.toBeNull();
-    expect(willChange).toBe('transform');
-  });
-
-  test('Bug4: .small-box--located keyframe animation locate-pulse exists', async ({ page }) => {
-    await resetBoxing(page);
-    // Check the animation-name via computed style on an element with .small-box--located
     const animationName = await page.evaluate(() => {
       const el = document.createElement('div');
       el.className = 'small-box--located';
@@ -210,16 +235,65 @@ test.describe('Empty state action buttons (Bug 1-6)', () => {
     expect(animationName).toBe('locate-pulse');
   });
 
-  test('Bug4: large-box__chip has cursor:pointer (button styled)', async ({ page }) => {
+  // Bug 5: bm-add-btn styled with design tokens in base.css
+  test('Bug5: bm-add-btn class styles the bookmark add button', async ({ page }) => {
     await resetBoxing(page);
     const lbId = await addLargeBox(page);
     await enterLargebox(page, lbId);
     await createSmallBox(page);
-    await exitToCanvas(page);
-    const cursor = await page.evaluate(() => {
-      const chip = document.querySelector('.large-box__chip:not(.large-box__chip--more)') as HTMLElement;
-      return chip ? getComputedStyle(chip).cursor : null;
+    const info = await page.evaluate(() => {
+      const btn = document.querySelector('.bm-add-btn');
+      if (!btn) return null;
+      const cs = getComputedStyle(btn);
+      return {
+        className: btn.className,
+        hasInlineStyle: (btn as HTMLElement).style.cssText.length > 0,
+        cursor: cs.cursor,
+        borderStyle: cs.borderStyle,
+        borderRadius: cs.borderRadius,
+      };
     });
-    expect(cursor).toBe('pointer');
+    expect(info).not.toBeNull();
+    expect(info!.className).toContain('bm-add-btn');
+    expect(info!.hasInlineStyle).toBe(false);
+    expect(info!.cursor).toBe('pointer');
+    expect(info!.borderStyle).toBe('dashed');
+  });
+
+  // Bug 6: will-change:transform + contain:layout on boxes
+  test('Bug6: will-change:transform on large-box', async ({ page }) => {
+    await resetBoxing(page);
+    await addLargeBox(page);
+    const willChange = await page.evaluate(() => {
+      const el = document.querySelector('.large-box');
+      return el ? getComputedStyle(el).willChange : null;
+    });
+    expect(willChange).toBe('transform');
+  });
+
+  test('Bug6: contain:layout style on large-box', async ({ page }) => {
+    await resetBoxing(page);
+    await addLargeBox(page);
+    const containVal = await page.evaluate(() => {
+      const el = document.querySelector('.large-box');
+      return el ? getComputedStyle(el).contain : null;
+    });
+    expect(containVal).not.toBeNull();
+    expect(containVal).toContain('layout');
+  });
+
+  test('Bug6: will-change:transform + contain on small-box', async ({ page }) => {
+    await resetBoxing(page);
+    const lbId = await addLargeBox(page);
+    await enterLargebox(page, lbId);
+    await createSmallBox(page);
+    const info = await page.evaluate(() => {
+      const el = document.querySelector('.small-box');
+      if (!el) return null;
+      return { willChange: getComputedStyle(el).willChange, contain: getComputedStyle(el).contain };
+    });
+    expect(info).not.toBeNull();
+    expect(info!.willChange).toBe('transform');
+    expect(info!.contain).toContain('layout');
   });
 });

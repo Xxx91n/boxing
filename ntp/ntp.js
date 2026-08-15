@@ -2563,7 +2563,11 @@ function ensureGroups() {
       }
       body.appendChild(chips);
     } else {
-      // Bug2+3: Replace hint text with button-only — aligns with inner canvas empty state
+      // Bug2: Empty state with hint text + action button (matches inner canvas format)
+      const hint = document.createElement('div');
+      hint.className = 'large-box__empty-hint';
+      hint.textContent = i18n('emptyInnerHint'); // Bug2: same hint as inner canvas
+      body.appendChild(hint);
       const actionBtn = document.createElement('button');
       actionBtn.className = 'large-box__empty-action';
       actionBtn.textContent = i18n('emptyLargeAction');
@@ -2748,7 +2752,11 @@ function ensureGroups() {
    for (const sb of lb.children || []) {
      frag.appendChild(createSmallBoxEl(lb.id, sb));
    }
-   // Phase 5: Empty State Action Button (inner canvas — no small boxes)
+   // Bug1: Empty state attached to innerSurface (viewport — non-transformed)
+   // NOT to content/frag (which is inside innerSurfaceContent = transformed by applyInnerTransform).
+   // This makes it stay centered during pan/zoom, matching #canvas-empty behavior.
+   const existingEmpty = innerSurface.querySelector(':scope > .inner__empty-state');
+   if (existingEmpty) existingEmpty.remove();
    if (!lb.children || lb.children.length === 0) {
      const emptyWrap = document.createElement('div');
      emptyWrap.className = 'inner__empty-state';
@@ -2764,7 +2772,7 @@ function ensureGroups() {
        addSmallBox(e);
      });
      emptyWrap.appendChild(actionBtn);
-     frag.appendChild(emptyWrap);
+     innerSurface.appendChild(emptyWrap); // Bug1: viewport parent, not transformed content
    }
    content.appendChild(frag);
    // BX-DEV-133 (B1 search): stamp largeId on inner surface so applySearchHighlight key matches
@@ -4308,7 +4316,9 @@ function ensureGroups() {
     searchInput.blur();
   }
 
-  // Bug4: Enter a large box and locate/highlight a specific small box — same mental model as openSearchHit
+  // Bug4: Enter a large box and locate/highlight a specific small box.
+  // Same mental model as openSearchHit — pan viewport to center the small box,
+  // then apply a visible highlight pulse.
   function enterAndLocateSmallBox(largeId, smallId) {
     saveLargeBoxViewState(currentLargeBoxId);
     if (currentLargeBoxId && currentLargeBoxId !== largeId) { exitToCanvas(); }
@@ -4318,15 +4328,20 @@ function ensureGroups() {
       if (sb) {
         const sw = innerSurface.clientWidth || innerCanvas.clientWidth || 600;
         const sh = innerSurface.clientHeight || (innerCanvas.clientHeight - 40) || 400;
-        innerPanX = Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + 16));
-        innerPanY = Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + 16));
+        // Bug4: Center the small box in viewport, not corner-align.
+        // Small box world position is (sb.x, sb.y) with size (sb.width||SMALL_DEF_W, sb.height||SMALL_DEF_H).
+        // Pan so the small box center maps to viewport center.
+        var bw = (sb.width || 200) * innerZoom;
+        var bh = (sb.height || 160) * innerZoom;
+        innerPanX = -sb.x * innerZoom + (sw - bw) / 2;
+        innerPanY = -sb.y * innerZoom + (sh - bh) / 2;
         applyInnerTransform();
         if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
-        // Highlight pulse — 2s flash on the located small box
-        const targetEl = innerSurface.querySelector('[data-id="' + smallId + '"]') || innerCanvas.querySelector('[data-id="' + smallId + '"]');
+        // Bug4: Highlight pulse on the located small box — search-like locate behavior
+        var targetEl = innerSurface.querySelector('[data-id="' + smallId + '"]') || innerCanvas.querySelector('[data-id="' + smallId + '"]');
         if (targetEl) {
           targetEl.classList.add('small-box--located');
-          setTimeout(() => targetEl.classList.remove('small-box--located'), 2000);
+          setTimeout(function () { targetEl.classList.remove('small-box--located'); }, 2000);
         }
       }
     } catch (_) { /* no-op */ }

@@ -1168,11 +1168,51 @@ body {
 }
 
 
-/* Bug6: will-change for first-interaction performance — prevents layer creation jank on first drag/resize.
-   -webkit-appearance:none on the dashed-border bookmark add button too. */
+/* Bug6: will-change + contain for first-interaction performance.
+   will-change:transform pre-creates compositor layers.
+   contain:layout style limits layout recalculation scope — counteracts
+   content-visibility:auto first-render cost when box scrolls into view. */
 .large-box {
   will-change: transform;
+  contain: layout style;
 }
 .small-box {
   will-change: transform;
+  contain: layout style;
+}
+
+
+/* Bug5: Bookmark add (+) button — design-token styled, matches empty state button language.
+   Uses same border-radius, transition, hover behavior as .inner__empty-action / .large-box__empty-action. */
+.bm-add-row .bm-add-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: 1px dashed var(--color-hairline);
+  color: var(--color-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  transition: background var(--dur-fast) var(--ease-hover), border-color var(--dur-fast) var(--ease-hover), color var(--dur-fast) var(--ease-hover);
+}
+
+.bm-add-row .bm-add-btn:hover {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-soft-2);
+  border-style: solid;
+  color: var(--color-accent-ink);
+}
+
+.bm-add-row .bm-add-btn:focus-visible {
+  border-color: var(--color-accent);
+  border-style: solid;
 }
