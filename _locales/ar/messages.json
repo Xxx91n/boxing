@@ -55,10 +55,6 @@
     "message": "لا توجد إشارات",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "انقر للفتح →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+تمرير للتكبير · اسحب الفراغ للتحريك · نقر مزدوج لإنشاء صندوق · يمين-نقر للرجوع · اسحب شريط العنوان للتحريك · زر ⊙ أعلى يمين: إلغاء التثبيت للملء الكامل",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "الرأس مثبت"
   },
   "headerPinOff": {
-    "message": "تم تحرير الرأس"
+    "message": "تحرير الرأس"
   },
   "confirmDeleteTitle": {
     "message": "تأكيد الحذف"

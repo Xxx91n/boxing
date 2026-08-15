@@ -55,10 +55,6 @@
     "message": "Aucun favori",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "Cliquez pour ouvrir →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+molette pour zoomer · Glisser vide pour déplacer · Double-clic pour créer une boîte · Clic droit pour revenir · Glisser barre de titre pour déplacer · ⊙ en haut à droite : détacher pour plein écran",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "En-tête épinglé"
   },
   "headerPinOff": {
-    "message": "En-tête libéré"
+    "message": "Libérer l'en-tête"
   },
   "confirmDeleteTitle": {
     "message": "Confirmer la suppression"

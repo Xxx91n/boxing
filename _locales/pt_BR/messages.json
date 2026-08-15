@@ -55,10 +55,6 @@
     "message": "Nenhum favorito",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "Clique para abrir →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+rolagem para zoom · Arrastar vazio para mover · Duplo-clique para criar caixa · Clique direito para voltar · Arrastar barra de título para mover · ⊙ canto superior direito: desafixar para tela cheia",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "Cabeçalho fixado"
   },
   "headerPinOff": {
-    "message": "Cabeçalho liberado"
+    "message": "Liberar cabeçalho"
   },
   "confirmDeleteTitle": {
     "message": "Confirmar exclusão"

@@ -55,10 +55,6 @@
     "message": "ブックマークがありません",
     "description": "空の小ボックス ヒント"
   },
-  "clickToOpen": {
-    "message": "クリックで開く →",
-    "description": "大ボックスを開くヒント"
-  },
   "footerHint": {
     "message": "Ctrl+スクロールでズーム · 空白ドラッグで移動 · ダブルクリックでボックス作成 · 右クリックで戻る · タイトルバーをドラッグで移動 · 右上の⊙ボタン：固定解除でフルスクリーン",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "ヘッダー固定済"
   },
   "headerPinOff": {
-    "message": "ヘッダー固定解除"
+    "message": "ヘッダーの固定を解除"
   },
   "confirmDeleteTitle": {
     "message": "削除の確認"

@@ -55,10 +55,6 @@
     "message": "No bookmarks yet",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "Click to open →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "Header pinned"
   },
   "headerPinOff": {
-    "message": "Header unpinned"
+    "message": "Unpin header"
   },
   "confirmDeleteTitle": {
     "message": "Confirm Delete",

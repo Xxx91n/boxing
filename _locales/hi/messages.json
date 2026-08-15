@@ -55,10 +55,6 @@
     "message": "कोई बुकमार्क नहीं",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "खोलने के लिए क्लिक करें →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+स्क्रॉल से ज़ूम · खाली जगह खींचें · डबल-क्लिक से बॉक्स बनाएँ · राइट-क्लिक वापस · टाइटलबार खींचें · ऊपर-दाएँ ⊙: पिन हटाकर फुलस्क्रीन",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "हेडर पिन किया गया"
   },
   "headerPinOff": {
-    "message": "हेडर अनपिन किया गया"
+    "message": "हेडर अनपिन करें"
   },
   "confirmDeleteTitle": {
     "message": "हटाने की पुष्टि"

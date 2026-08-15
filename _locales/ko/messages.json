@@ -55,10 +55,6 @@
     "message": "북마크 없음",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "클릭하여 열기 →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+스크롤 확대 · 빈 곳 드래그로 이동 · 더블클릭으로 박스 생성 · 우클릭으로 뒤로 · 타이틀바 드래그로 이동 · 우상단 ⊙버튼: 고정 해제 시 전체화면",
     "description": "Footer hint text with usage instructions"

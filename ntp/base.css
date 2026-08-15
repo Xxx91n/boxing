@@ -193,6 +193,8 @@ body {
   right: 0;
   max-height: min(360px, 60vh);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   background: var(--color-elevated);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-card);
@@ -693,6 +695,8 @@ body {
   flex-direction: column;
   gap: var(--space-2);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   cursor: pointer;
 }
 
@@ -749,9 +753,10 @@ body {
 }
 
 @keyframes locate-pulse {
-  0%   { box-shadow: 0 0 0 0 var(--color-accent); }
-  30%  { box-shadow: 0 0 0 4px var(--color-accent-soft-2); }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  /* ADR-0015: outline (not box-shadow) escapes contain:layout clipping */
+  0%   { outline: 0 solid var(--color-accent); outline-offset: 0; }
+  30%  { outline: 4px solid var(--color-accent); outline-offset: 4px; }
+  100% { outline: 0 solid transparent; outline-offset: 0; }
 }
 
 /* LARGE-ONLY: __empty-hint (large-box only content) */
@@ -784,14 +789,6 @@ body {
   background: var(--color-accent-soft-2);
   border-color: var(--color-accent);
   transform: scale(1.02);
-}
-
-/* LARGE-ONLY: __open-hint (large-box only content) */
-.large-box__open-hint {
-  font-size: 11px;
-  color: var(--color-faint);
-  text-align: right;
-  margin-top: auto;
 }
 
 /* Phase 5: Inner Canvas Empty State (ADR-0008 Motion-B) */

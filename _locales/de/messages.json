@@ -55,10 +55,6 @@
     "message": "Keine Lesezeichen",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "Zum Öffnen klicken →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+Scrollen zum Zoomen · Leere Fläche ziehen zum Verschieben · Doppelklick zum Erstellen · Rechtsklick zurück · Titelleiste ziehen zum Bewegen · ⊙ oben rechts: Fixierung aufheben für Vollbild",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "Header angeheftet"
   },
   "headerPinOff": {
-    "message": "Header gelöst"
+    "message": "Header lösen"
   },
   "confirmDeleteTitle": {
     "message": "Löschen bestätigen"

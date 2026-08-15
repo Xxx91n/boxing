@@ -55,10 +55,6 @@
     "message": "暫無書籤",
     "description": "空小盒子提示"
   },
-  "clickToOpen": {
-    "message": "點擊打開 →",
-    "description": "打開大盒子提示"
-  },
   "footerHint": {
     "message": "Ctrl+滾輪縮放 · 拖拽空白平移 · 雙擊建立盒子 · 右鍵返回 · 拖拽標題欄移動 · 畫布右上角⊙按鈕：取消固定進入全螢幕模式",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "頂欄已固定"
   },
   "headerPinOff": {
-    "message": "頂欄未固定"
+    "message": "取消固定頂欄"
   },
   "confirmDeleteTitle": {
     "message": "確認刪除",

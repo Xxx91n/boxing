@@ -55,10 +55,6 @@
     "message": "Нет закладок",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "Нажмите чтобы открыть →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+колесо для масштаба · Тащить пустое для перемещения · Двойной клик создать бокс · Правый клик назад · Тащить заголовок для движения · ⊙ справа сверху: открепить для полноэкранного режима",
     "description": "Footer hint text with usage instructions"
@@ -216,7 +212,7 @@
     "message": "Заголовок закреплен"
   },
   "headerPinOff": {
-    "message": "Заголовок откреплен"
+    "message": "Открепить заголовок"
   },
   "confirmDeleteTitle": {
     "message": "Подтверждение удаления"

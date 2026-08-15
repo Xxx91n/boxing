@@ -259,7 +259,7 @@
     clickPlusHint: 'or click + above', emptyLargeHint: 'Click to add small boxes', emptyLargeAction: 'Add small boxes',
     emptyInnerHint: 'Click + to add your first small box', emptySmallHint: 'No bookmarks yet',
     emptyInnerAction: 'Add small box',
-    clickToOpen: 'Click to open →', footerHint: 'Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen',
+    footerHint: 'Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen',
     canvasRoot: 'Canvas', untitledBox: 'Untitled box',
     untitledLargeBox: 'Untitled large box', untitledSmallBox: 'Untitled small box',
     newLargeBox: 'Box $1$', newSmallBox: 'New small box',
@@ -2306,7 +2306,8 @@ function ensureGroups() {
     if (headerPinBtn) {
       const span = headerPinBtn.querySelector('span');
       if (span) span.textContent = headerPinned ? '⊙' : '○';
-      headerPinBtn.title = headerPinned ? i18n('headerPin') : i18n('headerPinOff');
+      // ADR-0015: tooltip shows available ACTION, not current state
+      headerPinBtn.title = headerPinned ? i18n('headerPinOff') : i18n('headerPin');
       headerPinBtn.classList.toggle('header-pin--floating', !headerPinned);
       headerPinBtn.style.zIndex = headerPinned ? '10' : '1000';
     }
@@ -2580,11 +2581,6 @@ function ensureGroups() {
       });
       body.appendChild(actionBtn);
     }
-
-    const openHint = document.createElement('div');
-    openHint.className = 'large-box__open-hint';
-    openHint.textContent = i18n('clickToOpen');
-    body.appendChild(openHint);
 
     // BX-DEV-137: star-mark (parent) + connect-mode toggle buttons. Cheap per-box UI;
     // theme uses currentColor so it adapts to dark/light automatically.
@@ -4299,8 +4295,11 @@ function ensureGroups() {
         if (sb) {
           const sw = innerSurface.clientWidth || innerCanvas.clientWidth || 600;
           const sh = innerSurface.clientHeight || (innerCanvas.clientHeight - 40) || 400;
-          innerPanX = Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + 16));
-          innerPanY = Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + 16));
+          // ADR-0015: center-align + clamp (unified with enterAndLocateSmallBox pan formula)
+          var bw = (sb.width || 200) * innerZoom;
+          var bh = (sb.height || 160) * innerZoom;
+          innerPanX = Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + (sw - bw) / 2));
+          innerPanY = Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + (sh - bh) / 2));
           applyInnerTransform();
           if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
         }
@@ -4319,32 +4318,33 @@ function ensureGroups() {
   // Bug4: Enter a large box and locate/highlight a specific small box.
   // Same mental model as openSearchHit — pan viewport to center the small box,
   // then apply a visible highlight pulse.
-  function enterAndLocateSmallBox(largeId, smallId) {
-    saveLargeBoxViewState(currentLargeBoxId);
-    if (currentLargeBoxId && currentLargeBoxId !== largeId) { exitToCanvas(); }
-    if (currentLargeBoxId !== largeId) enterLargeBox(largeId, true);
-    try {
-      const sb = getSmallBox(largeId, smallId);
-      if (sb) {
-        const sw = innerSurface.clientWidth || innerCanvas.clientWidth || 600;
-        const sh = innerSurface.clientHeight || (innerCanvas.clientHeight - 40) || 400;
-        // Bug4: Center the small box in viewport, not corner-align.
-        // Small box world position is (sb.x, sb.y) with size (sb.width||SMALL_DEF_W, sb.height||SMALL_DEF_H).
-        // Pan so the small box center maps to viewport center.
-        var bw = (sb.width || 200) * innerZoom;
-        var bh = (sb.height || 160) * innerZoom;
-        innerPanX = -sb.x * innerZoom + (sw - bw) / 2;
-        innerPanY = -sb.y * innerZoom + (sh - bh) / 2;
-        applyInnerTransform();
-        if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
-        // Bug4: Highlight pulse on the located small box — search-like locate behavior
-        var targetEl = innerSurface.querySelector('[data-id="' + smallId + '"]') || innerCanvas.querySelector('[data-id="' + smallId + '"]');
-        if (targetEl) {
-          targetEl.classList.add('small-box--located');
-          setTimeout(function () { targetEl.classList.remove('small-box--located'); }, 2000);
+ function enterAndLocateSmallBox(largeId, smallId) {
+   saveLargeBoxViewState(currentLargeBoxId);
+   if (currentLargeBoxId && currentLargeBoxId !== largeId) { exitToCanvas(); }
+   if (currentLargeBoxId !== largeId) enterLargeBox(largeId, true);
+    // ADR-0015: rAF guard — ensure DOM and innerZoom settled after enterLargeBox
+    requestAnimationFrame(function () {
+      try {
+        const sb = getSmallBox(largeId, smallId);
+        if (sb) {
+          const sw = innerSurface.clientWidth || innerCanvas.clientWidth || 600;
+          const sh = innerSurface.clientHeight || (innerCanvas.clientHeight - 40) || 400;
+          // ADR-0015: center-align + clamp (unified with openSearchHit pan formula)
+          var bw = (sb.width || 200) * innerZoom;
+          var bh = (sb.height || 160) * innerZoom;
+          innerPanX = Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + (sw - bw) / 2));
+          innerPanY = Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + (sh - bh) / 2));
+          applyInnerTransform();
+          if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
+          // ADR-0015: highlight pulse via outline (escapes contain:layout clipping)
+          var targetEl = innerSurface.querySelector('[data-id="' + smallId + '"]') || innerCanvas.querySelector('[data-id="' + smallId + '"]');
+          if (targetEl) {
+            targetEl.classList.add('small-box--located');
+            setTimeout(function () { targetEl.classList.remove('small-box--located'); }, 2000);
+          }
         }
-      }
-    } catch (_) { /* no-op */ }
+      } catch (_) { /* no-op */ }
+    });
   }
 
   // openBookmarkUrl respects settings.urlOpenMode: 'newTab' (default) or 'sameTab'.

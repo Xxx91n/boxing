@@ -126,6 +126,10 @@
   --shadow-1: var(--shadow-xs);
   --shadow-2: var(--shadow-md);
   --shadow-pop: var(--shadow-lg);
+
+  /* Scrollbar (ADR-0014) — thin overlay style, cross-browser standardized */
+  --scrollbar-thumb: var(--color-warm-700);
+  --scrollbar-track: var(--color-warm-100);
 }
 
 /* ═══════════════════════════════════════════════
@@ -168,6 +172,10 @@
   --shadow-1: var(--shadow-xs);
   --shadow-2: var(--shadow-md);
   --shadow-pop: var(--shadow-lg);
+
+  /* Scrollbar dark override (ADR-0014) */
+  --scrollbar-thumb: var(--color-warm-dark-700);
+  --scrollbar-track: var(--color-warm-dark-100);
 }
 
 

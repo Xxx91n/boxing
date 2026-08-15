@@ -54,6 +54,8 @@
   gap: var(--space-6);
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   min-height: 0;
 }
 
@@ -861,8 +863,8 @@ html.ntp--dark {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  contain: layout style paint;
-  will-change: scroll-position;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   -webkit-overflow-scrolling: touch;
 }
 

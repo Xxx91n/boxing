@@ -55,10 +55,6 @@
     "message": "ไม่มีบุ๊กมาร์ก",
     "description": "Empty small box hint"
   },
-  "clickToOpen": {
-    "message": "คลิกเพื่อเปิด →",
-    "description": "Hint to open large box"
-  },
   "footerHint": {
     "message": "Ctrl+ล้อเลื่อนซูม · ลากพื้นที่ว่างเพื่อเลื่อน · ดับเบิลคลิกสร้างกล่อง · คลิกขวาย้อนกลับ · ลากแถบชื่อเพื่อย้าย · ⊙ ขวาบน: ยกเลิกปักหมุดสำหรับเต็มจอ",
     "description": "Footer hint text with usage instructions"
