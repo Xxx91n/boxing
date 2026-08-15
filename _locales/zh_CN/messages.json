@@ -31,6 +31,10 @@
     "message": "暂无大盒子",
     "description": "空画布标题"
   },
+  "emptyCanvasAction": {
+    "message": "添加大盒子",
+    "description": "空画布操作按钮"
+  },
   "emptyCanvasHint": {
     "message": "点击 + 创建第一个大盒子",
     "description": "空画布提示（旧版）"
@@ -213,6 +217,10 @@
   },
   "headerPinOff": {
     "message": "取消固定顶栏"
+  },
+  "headerPinOffState": {
+    "message": "顶栏未固定",
+    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "description": "Delete confirm title",

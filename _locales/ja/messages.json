@@ -31,6 +31,10 @@
     "message": "大ボックスがありません",
     "description": "空のキャンバス タイトル"
   },
+  "emptyCanvasAction": {
+    "message": "大きな箱を追加",
+    "description": "空のキャンバスのアクションボタン"
+  },
   "emptyCanvasHint": {
     "message": "＋ をクリックして最初の大ボックスを作成",
     "description": "空のキャンバス ヒント（旧）"
@@ -213,6 +217,10 @@
   },
   "headerPinOff": {
     "message": "ヘッダーの固定を解除"
+  },
+  "headerPinOffState": {
+    "message": "ヘッダー未固定",
+    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "削除の確認"

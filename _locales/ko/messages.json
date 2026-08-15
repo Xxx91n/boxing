@@ -31,6 +31,10 @@
     "message": "대형 박스 없음",
     "description": "Empty canvas title"
   },
+  "emptyCanvasAction": {
+    "message": "대형 박스 추가",
+    "description": "빈 캔버스 작업 버튼"
+  },
   "emptyCanvasHint": {
     "message": "＋를 클릭하여 첫 대형 박스 생성",
     "description": "Empty canvas hint (legacy)"
@@ -213,6 +217,10 @@
   },
   "headerPinOff": {
     "message": "헤더 고정 해제"
+  },
+  "headerPinOffState": {
+    "message": "헤더 고정 안 됨",
+    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "삭제 확인"

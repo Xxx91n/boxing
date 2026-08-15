@@ -86,6 +86,18 @@ _Avoid_: release wrapper
 - **store listing**: Chrome Web Store / AMO listing metadata. Short description (132 chars, from manifest `description`), detailed description (up to 16K chars, store-specific), screenshots (1280x800 PNG), promo images (440x280 small, 920x680 large).
 - **dev-junctions**: NTFS junctions (`dev-chrome` → `dist/boxing-chrome`, `dev-firefox` → `dist/boxing-firefox`) created by build.mjs for browser GUI Load Unpacked convenience. Gitignored, machine-specific.
 
+## UI Standardization Glossary (ADR-0014, ADR-0015)
+
+- **scrollbar-width: thin**: CSS Scrollbars Styling Module Level 1 standard property. Applied to all scroll containers in the extension. Makes Chrome (121+) and Firefox (64+) render thin overlay scrollbars that don't occupy layout space. Overrides legacy `::-webkit-scrollbar` pseudos when set to non-initial value (CSSWG 2024 resolution). Paired with `scrollbar-color` using `--scrollbar-thumb` / `--scrollbar-track` design tokens.
+_Avoid_: ::-webkit-scrollbar width hack, custom JS scrollbar
+
+- **Pin tooltip action semantic**: Tooltip on the header pin button describes the *action that clicking will perform*, not the current state. When pinned (⊙), tooltip says "Unpin header" (取消固定); when unpinned (○), tooltip says "Pin header" (固定顶栏). JS mapping: `headerPinned ? i18n('headerPinOff') : i18n('headerPin')` — keys are inverted from their message-name intuition because they describe the click action, not the visual state.
+_Avoid_: state-descriptive tooltip ("Header unpinned"), static HTML data-i18n-title without JS sync
+
+- **enterAndLocateSmallBox(largeId, smallId)**: Function that enters a large box and centers a specific small box in the inner canvas viewport, then flashes a 2s highlight ring. Uses the same center-align pan formula as `openSearchHit()` — target box center maps to viewport center, clamped to canvas bounds. Highlight uses `outline` + `outline-offset` (not `box-shadow`) because `contain: layout style` on `.small-box` clips box-shadow spread beyond the border box. Wrapped in `requestAnimationFrame` to ensure DOM and `innerZoom` are settled after `enterLargeBox()`.
+_Avoid_: corner-align pan formula (legacy openSearchHit), box-shadow pulse (clipped by contain)
+
+
 ## Accent Theme Glossary (ADR-0010)
 
 - **AccentHue**: Integer 0-360 stored in layout.settings.accentHue. Drives HSL derivation of accent-300/500/600 (light + dark). Default 30 (warm earth). 

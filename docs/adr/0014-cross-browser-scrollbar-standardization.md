@@ -20,4 +20,13 @@ Use standard CSS `scrollbar-width: thin` + `scrollbar-color` (with design tokens
 - Both Chrome and Firefox render thin, non-space-occupying overlay scrollbars inside the extension.
 - Firefox jank eliminated (contain removed, will-change: scroll-position alone is safe).
 - Scrollbar colors themed via `--scrollbar-thumb` / `--scrollbar-track` tokens with dark mode override.
-- If a future browser version ignores `scrollbar-width`, `scrollbar-gutter: stable` prevents layout shift.
+ - If a future browser version ignores `scrollbar-width`, `scrollbar-gutter: stable` prevents layout shift.
+
+## Update (2026-08-15 v2): Nested Scroll Container Fix
+User reported Firefox jank persisted when `general.smoothScroll` is enabled, specifically in the Sync & Backup tab with tall content. Root cause: `.modal__body` had `overflow-y: auto` creating a **nested scroll container** inside `.settings-content` (which also has `overflow-y: auto`). Two overlapping scroll containers caused Firefox's smooth-scroll animation engine to produce double-animation jank.
+
+Additional fixes:
+- `.modal__body` changed from `overflow-y: auto` to `overflow: hidden` — eliminates the nested scroll container. Only `.settings-content` scrolls.
+- `.settings-content` gains `overflow-anchor: none` — prevents Firefox from auto-scrolling to keep content in view when DOM changes above the fold (a source of jitter when sync/backup panels mutate).
+
+Research: Bugzilla 1490487 (extension popup scroll laggy with `position: sticky`) confirmed APZ limitations in extension contexts. Bugzilla 1989868 (smooth-scroll + JS scroll API jank) fixed in FF146. StackOverflow guidance: reduce DOM complexity, use `will-change` for layer promotion, avoid nested scroll containers.

@@ -414,6 +414,33 @@ body {
   display: none;
 }
 
+/* Phase 5: Canvas Empty State Action Button (ADR-0008 Motion-B)
+   Mirrors .inner__empty-action / .large-box__empty-action language for
+   a single visual shared across all three empty-state entry points. */
+.canvas__empty-action {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--color-accent-ink);
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent-soft-2);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-hover), border-color var(--dur-fast) var(--ease-hover), transform var(--dur-fast) var(--ease-hover);
+}
+
+.canvas__empty-action:hover {
+  background: var(--color-accent-soft-2);
+  border-color: var(--color-accent);
+  transform: scale(1.02);
+}
+
 /* === LARGE BOX (draggable, fixed size) === */
 /* ========================================================================
  * BX-CSS-DUAL-WRITE CONVENTION
@@ -758,14 +785,6 @@ body {
   30%  { outline: 4px solid var(--color-accent); outline-offset: 4px; }
   100% { outline: 0 solid transparent; outline-offset: 0; }
 }
-
-/* LARGE-ONLY: __empty-hint (large-box only content) */
-.large-box__empty-hint {
-  font-size: 12px;
-  color: var(--color-muted);
-  font-style: italic;
-}
-
 /* Phase 5: Empty State Action Button (ADR-0008 Motion-B) */
 .large-box__empty-action {
   pointer-events: auto;

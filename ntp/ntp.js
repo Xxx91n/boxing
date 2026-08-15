@@ -256,7 +256,8 @@
     fontSizeLabel: 'Font Size', zoomLabel: 'Zoom',
     zoomOut: 'Zoom out', zoomIn: 'Zoom in',
     emptyCanvasTitle: 'No large boxes yet', dblclickHint: 'Double-click canvas to add a large box',
-    clickPlusHint: 'or click + above', emptyLargeHint: 'Click to add small boxes', emptyLargeAction: 'Add small boxes',
+    emptyCanvasAction: 'Add large box',
+    clickPlusHint: 'or click + above', emptyLargeAction: 'Add small boxes',
     emptyInnerHint: 'Click + to add your first small box', emptySmallHint: 'No bookmarks yet',
     emptyInnerAction: 'Add small box',
     footerHint: 'Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen',
@@ -280,7 +281,8 @@
     squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded',
     smallBoxCountLabel: '$1$ small boxes',
     autoExpand: 'Auto expand', autoExpandHover: 'Hover to expand',
-    headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Header unpinned',
+   headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Header unpinned', headerPinOffState: 'Header not pinned',
+    headerPin: 'Pin header', headerPinOn: 'Header pinned', headerPinOff: 'Unpin header', headerPinOffState: 'Header not pinned',
     connDeleteActionLabel: 'Delete connection by', connDeleteActionHint: 'Choose how to delete a connection line between two boxes',
     connDeleteActionAltClick: 'Alt + Click', connDeleteActionCtrlClick: 'Ctrl + Click', connDeleteActionShiftClick: 'Shift + Click',
     connDeleteActionDoubleClick: 'Double-click', connDeleteActionSelectDelete: 'Click + Delete key'
@@ -2306,7 +2308,8 @@ function ensureGroups() {
     if (headerPinBtn) {
       const span = headerPinBtn.querySelector('span');
       if (span) span.textContent = headerPinned ? '⊙' : '○';
-      // ADR-0015: tooltip shows available ACTION, not current state
+      // ADR-0015.updated: tooltip shows the ACTION clicking will perform (standard toggle UX).
+      // Pinned → "Unpin header" (headerPinOff), Unpinned → "Pin header" (headerPin).
       headerPinBtn.title = headerPinned ? i18n('headerPinOff') : i18n('headerPin');
       headerPinBtn.classList.toggle('header-pin--floating', !headerPinned);
       headerPinBtn.style.zIndex = headerPinned ? '10' : '1000';
@@ -2323,7 +2326,8 @@ function ensureGroups() {
       if (currentLargeBoxId) updateCaption(); else updateCaption();
       saveLayout();
     });
-    headerPinBtn.title = i18n('headerPin');  // default pinned
+    // ADR-0015.updated: default headerPinned=true → tooltip shows action "Unpin header".
+    headerPinBtn.title = i18n('headerPinOff');
     updateAutohideUI();  // button stays in header bar by default
   }
   function renderCanvas() {
@@ -2564,11 +2568,8 @@ function ensureGroups() {
       }
       body.appendChild(chips);
     } else {
-      // Bug2: Empty state with hint text + action button (matches inner canvas format)
-      const hint = document.createElement('div');
-      hint.className = 'large-box__empty-hint';
-      hint.textContent = i18n('emptyInnerHint'); // Bug2: same hint as inner canvas
-      body.appendChild(hint);
+      // Q2: Empty state — action button only, no hint text line.
+      // User: "删除'点击添加小盒子'的一行字彻底替换成按钮". Button alone carries intent.
       const actionBtn = document.createElement('button');
       actionBtn.className = 'large-box__empty-action';
       actionBtn.textContent = i18n('emptyLargeAction');
@@ -4600,6 +4601,17 @@ function ensureGroups() {
     canvasContainer.addEventListener('mousedown', onCanvasPanStart);
     canvasContainer.addEventListener('click', onCanvasClick);
     canvasContainer.addEventListener('dblclick', onCanvasDblClick);
+    // Phase 5: canvas-empty action button → calls addLargeBox() (统一空态按钮心智模型).
+    const canvasEmptyBtn = canvasEmpty ? canvasEmpty.querySelector('.canvas__empty-action') : null;
+    if (canvasEmptyBtn) {
+      canvasEmptyBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes (empty-state btn)'); return; }
+        // BX-DEV-140c: prevent Chrome click focus-steal (mirror onCanvasDblClick).
+        addLargeBox(e);
+      });
+    }
     // BX-DEV-116: capture-phase wheel on canvas for reliable ctrl+wheel zoom
     canvasContainer.addEventListener('wheel', (e) => {
       if (e.ctrlKey) { e.preventDefault(); onCanvasWheel(e); }
@@ -4666,9 +4678,11 @@ function ensureGroups() {
         if (lb) { renderInnerSurface(lb); renderCrumbs(lb); }
         updateCaption();
       } else { renderCanvas(); }
-      applyI18n();
-      applyCanvasTransform();
-      applyInnerTransform();
+     applyI18n();
+     applyCanvasTransform();
+     // ADR-0015: re-apply pin tooltip after i18n reset (applyI18n overwrites data-i18n-title)
+     updateAutohideUI();
+     applyInnerTransform();
     });
     rememberCheck?.addEventListener('change', () => {
       layout.settings.rememberLastPos = rememberCheck.checked;
@@ -5878,10 +5892,11 @@ function ensureGroups() {
           layout.settings.selectedLanguage = onbLang.value;
           await loadI18nStore(onbLang.value);
           if (langSelect) langSelect.value = onbLang.value;
-          render();
-          if (typeof applyI18n === 'function') applyI18n();
-          saveLayout();
-          debug('onboarding lang changed', onbLang.value);
+         render();
+         if (typeof applyI18n === 'function') applyI18n();
+         if (typeof updateAutohideUI === 'function') updateAutohideUI();
+         saveLayout();
+         debug('onboarding lang changed', onbLang.value);
         });
       }
     } catch (el) { debugErr('onboarding lang setup', el); }

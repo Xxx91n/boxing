@@ -31,6 +31,10 @@
     "message": "Chưa có hộp lớn",
     "description": "Empty canvas title"
   },
+  "emptyCanvasAction": {
+    "message": "Them hop lon",
+    "description": "Nut hanh dong canvas trong"
+  },
   "emptyCanvasHint": {
     "message": "Nhấp ＋ để tạo hộp lớn đầu tiên",
     "description": "Empty canvas hint (legacy)"
@@ -213,6 +217,10 @@
   },
   "headerPinOff": {
     "message": "Tháo ghim tiêu đề"
+  },
+  "headerPinOffState": {
+    "message": "Tiêu đề chưa ghim",
+    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "Xác nhận xóa"

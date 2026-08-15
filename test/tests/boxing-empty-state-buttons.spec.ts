@@ -149,8 +149,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(info!.pe).toBe('auto');
   });
 
-  // Bug 2: large box empty shows hint text + button (matches inner format)
-  test('Bug2: large box empty state shows hint text + button', async ({ page }) => {
+  // Bug 2: large box empty shows button only (hint text removed per Q2)
+  test('Bug2: large box empty state shows button only (no hint text)', async ({ page }) => {
     await resetBoxing(page);
     await addLargeBox(page);
     const info = await page.evaluate(() => {
@@ -158,19 +158,16 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
       const btn = document.querySelector('.large-box__empty-action');
       return {
         hasHint: hint !== null,
-        hintText: hint?.textContent || null,
         hasBtn: btn !== null,
         btnTag: btn?.tagName || null,
         btnText: btn?.textContent || null,
       };
     });
-    expect(info.hasHint).toBe(true);
-    expect(info.hintText!.length).toBeGreaterThan(0);
+    expect(info.hasHint).toBe(false);
     expect(info.hasBtn).toBe(true);
     expect(info.btnTag).toBe('BUTTON');
     expect(info.btnText!.length).toBeGreaterThan(0);
   });
-
   test('Bug2: large box empty button enters the box on click', async ({ page }) => {
     await resetBoxing(page);
     const lbId = await addLargeBox(page);
@@ -295,5 +292,92 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(info).not.toBeNull();
     expect(info!.willChange).toBe('transform');
     expect(info!.contain).toContain('layout');
+  });
+
+  // Q1: Canvas empty state has unified button (not just text hint)
+  test('Q1: canvas empty state has action button', async ({ page }) => {
+    await resetBoxing(page);
+    const info = await page.evaluate(() => {
+      const btn = document.querySelector('.canvas__empty-action');
+      const title = document.querySelector('.canvas__empty-title');
+      const hint = document.querySelector('.canvas__empty-hint');
+      return {
+        hasBtn: btn !== null,
+        btnTag: btn?.tagName || null,
+        hasTitle: title !== null,
+        hasHint: hint !== null,
+      };
+    });
+    expect(info.hasBtn).toBe(true);
+    expect(info.btnTag).toBe('BUTTON');
+    expect(info.hasTitle).toBe(true);
+    expect(info.hasHint).toBe(true);
+  });
+
+  // Q1: clicking canvas empty action button creates a large box
+  test('Q1: clicking canvas empty action button adds a large box', async ({ page }) => {
+    await resetBoxing(page);
+    await page.evaluate(() => {
+      const btn = document.querySelector('.canvas__empty-action') as HTMLElement;
+      if (btn) btn.click();
+    });
+    await page.waitForTimeout(300);
+    const boxCount = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes.length);
+    expect(boxCount).toBe(1);
+  });
+
+  // Q3: pin tooltip shows ACTION semantics (not state)
+  test('Q3: pin tooltip shows action unpin when pinned', async ({ page }) => {
+    await resetBoxing(page);
+    // Default headerPinned=true -> tooltip should say "Unpin header" (the action)
+    const title = await page.evaluate(() => {
+      const btn = document.querySelector('#header-pin-btn') as HTMLElement;
+      return btn?.title || null;
+    });
+    expect(title).toBeTruthy();
+    // Should NOT contain state words like "pinned" or "已固定"
+    expect(title).not.toMatch(/pinned|已固定/i);
+  });
+
+  test('Q3: pin tooltip shows action pin when unpinned', async ({ page }) => {
+    await resetBoxing(page);
+    // Toggle pin off first
+    await page.evaluate(() => {
+      const btn = document.querySelector('#header-pin-btn') as HTMLElement;
+      if (btn) btn.click();
+    });
+    await page.waitForTimeout(200);
+    const title = await page.evaluate(() => {
+      const btn = document.querySelector('#header-pin-btn') as HTMLElement;
+      return btn?.title || null;
+    });
+    expect(title).toBeTruthy();
+    // Should NOT contain state words like "not pinned" or "未固定" or "unpinned"
+    expect(title).not.toMatch(/not pinned|未固定|unpinned/i);
+  });
+
+  // Q4: settings-content has overflow-anchor:none (FF scroll jank fix)
+  test('Q4: settings-content has overflow-anchor none', async ({ page }) => {
+    await resetBoxing(page);
+    await page.evaluate(() => (window as any)._boxingOpenSettings());
+    await page.waitForTimeout(200);
+    const overflowAnchor = await page.evaluate(() => {
+      const el = document.querySelector('.settings-content');
+      return el ? getComputedStyle(el).overflowAnchor : null;
+    });
+    expect(overflowAnchor).toBe('none');
+  });
+
+  // Q4: modal__body does NOT have overflow-y auto (nested scroll jank fix)
+  test('Q4: modal__body does not have overflow-y auto', async ({ page }) => {
+    await resetBoxing(page);
+    await page.evaluate(() => (window as any)._boxingOpenSettings());
+    await page.waitForTimeout(200);
+    const overflowY = await page.evaluate(() => {
+      const el = document.querySelector('.modal__body');
+      return el ? getComputedStyle(el).overflowY : null;
+    });
+    expect(overflowY).not.toBe('auto');
+    expect(overflowY).not.toBe('scroll');
   });
 });

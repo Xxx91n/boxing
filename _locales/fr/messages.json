@@ -31,6 +31,10 @@
     "message": "Aucune grande boîte",
     "description": "Empty canvas title"
   },
+  "emptyCanvasAction": {
+    "message": "Ajouter grande boite",
+    "description": "Bouton action canevas vide"
+  },
   "emptyCanvasHint": {
     "message": "Cliquez ＋ pour créer une grande boîte",
     "description": "Empty canvas hint (legacy)"
@@ -213,6 +217,10 @@
   },
   "headerPinOff": {
     "message": "Libérer l'en-tête"
+  },
+  "headerPinOffState": {
+    "message": "En-tête non épinglé",
+    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "Confirmer la suppression"

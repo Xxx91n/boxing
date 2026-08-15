@@ -31,6 +31,10 @@
     "message": "ไม่มีกล่องใหญ่",
     "description": "Empty canvas title"
   },
+  "emptyCanvasAction": {
+    "message": "เพิ่มกล่องใหญ่",
+    "description": "ปุ่มการกระทำพื้นที่ว่าง"
+  },
   "emptyCanvasHint": {
     "message": "คลิก ＋ เพื่อสร้างกล่องใหญ่แรก",
     "description": "Empty canvas hint (legacy)"
@@ -213,6 +217,10 @@
   },
   "headerPinOff": {
     "message": "เลิกปักหมุดส่วนหัว"
+  },
+  "headerPinOffState": {
+    "message": "ส่วนหัวไม่ได้ปักหมุด",
+    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "ยืนยันการลบ"

@@ -31,6 +31,10 @@
     "message": "No large boxes yet",
     "description": "Empty canvas title"
   },
+  "emptyCanvasAction": {
+    "message": "Add large box",
+    "description": "Empty canvas action button"
+  },
   "emptyCanvasHint": {
     "message": "Click + to create your first large box",
     "description": "Empty canvas hint (legacy)"
@@ -213,6 +217,10 @@
   },
   "headerPinOff": {
     "message": "Unpin header"
+  },
+  "headerPinOffState": {
+    "message": "Header not pinned",
+    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "Confirm Delete",
