@@ -2542,32 +2542,36 @@ function ensureGroups() {
       const chips = document.createElement('div');
       chips.className = 'large-box__chips';
       for (const sb of box.children.slice(0, 6)) {
-        const chip = document.createElement('span');
+        const chip = document.createElement('button');
         chip.className = 'large-box__chip';
         chip.textContent = sb.title || i18n('untitledBox');
+        chip.setAttribute('data-large-id', box.id);
+        chip.setAttribute('data-small-id', sb.id);
+        chip.setAttribute('tabindex', '-1');
+        chip.addEventListener('click', function (e) {
+          e.stopPropagation();
+          e.preventDefault();
+          enterAndLocateSmallBox(box.id, sb.id);
+        });
         chips.appendChild(chip);
       }
       if (childCount > 6) {
         const more = document.createElement('span');
-        more.className = 'large-box__chip';
+        more.className = 'large-box__chip large-box__chip--more';
         more.textContent = `+${childCount - 6}`;
         chips.appendChild(more);
       }
       body.appendChild(chips);
     } else {
-      const hint = document.createElement('div');
-      hint.className = 'large-box__empty-hint';
-      hint.textContent = i18n('emptyLargeHint');
-      body.appendChild(hint);
-      // Phase 5: Empty State Action Button (ADR-0008 Motion-B)
+      // Bug2+3: Replace hint text with button-only — aligns with inner canvas empty state
       const actionBtn = document.createElement('button');
       actionBtn.className = 'large-box__empty-action';
       actionBtn.textContent = i18n('emptyLargeAction');
       actionBtn.setAttribute('data-box-id', box.id);
+      actionBtn.setAttribute('tabindex', '-1');
       actionBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         e.preventDefault();
-        // Enter the large box to add small boxes
         enterLargeBox(box.id);
       });
       body.appendChild(actionBtn);
@@ -3032,7 +3036,7 @@ function ensureGroups() {
     const addBtn = document.createElement('button');
     addBtn.textContent = '+';
     addBtn.title = i18n('addBookmarkBtn');
-    addBtn.style.cssText = 'width:100%;text-align:center;background:transparent;border:1px dashed var(--color-hairline);color:var(--color-muted);font-size:13px;padding:4px;border-radius:4px;cursor:pointer;';
+    addBtn.className = 'bm-add-btn';
     addBtn.addEventListener('click', e => {
       e.stopPropagation();
       showAddBookmarkPopup(sb, largeId);
@@ -4302,6 +4306,30 @@ function ensureGroups() {
       updateCaption();
     }
     searchInput.blur();
+  }
+
+  // Bug4: Enter a large box and locate/highlight a specific small box — same mental model as openSearchHit
+  function enterAndLocateSmallBox(largeId, smallId) {
+    saveLargeBoxViewState(currentLargeBoxId);
+    if (currentLargeBoxId && currentLargeBoxId !== largeId) { exitToCanvas(); }
+    if (currentLargeBoxId !== largeId) enterLargeBox(largeId, true);
+    try {
+      const sb = getSmallBox(largeId, smallId);
+      if (sb) {
+        const sw = innerSurface.clientWidth || innerCanvas.clientWidth || 600;
+        const sh = innerSurface.clientHeight || (innerCanvas.clientHeight - 40) || 400;
+        innerPanX = Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + 16));
+        innerPanY = Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + 16));
+        applyInnerTransform();
+        if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
+        // Highlight pulse — 2s flash on the located small box
+        const targetEl = innerSurface.querySelector('[data-id="' + smallId + '"]') || innerCanvas.querySelector('[data-id="' + smallId + '"]');
+        if (targetEl) {
+          targetEl.classList.add('small-box--located');
+          setTimeout(() => targetEl.classList.remove('small-box--located'), 2000);
+        }
+      }
+    } catch (_) { /* no-op */ }
   }
 
   // openBookmarkUrl respects settings.urlOpenMode: 'newTab' (default) or 'sameTab'.

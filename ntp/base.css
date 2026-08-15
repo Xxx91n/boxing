@@ -706,14 +706,52 @@ body {
 }
 
 /* LARGE-ONLY: __chip (large-box only content) */
+/* Bug4: Chip is now a <button> — add appearance reset + hover + cursor */
 .large-box__chip {
   font-size: 11px;
   font-weight: 500;
+  font-family: inherit;
   color: var(--color-muted);
   background: var(--color-surface);
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--color-hairline);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  transition: background var(--dur-fast) var(--ease-hover), border-color var(--dur-fast) var(--ease-hover), color var(--dur-fast) var(--ease-hover);
+}
+
+.large-box__chip:hover {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-soft-2);
+  color: var(--color-accent-ink);
+}
+
+.large-box__chip:focus-visible {
+  border-color: var(--color-accent);
+}
+
+.large-box__chip--more {
+  cursor: default;
+}
+
+.large-box__chip--more:hover {
+  background: var(--color-surface);
+  border-color: var(--color-hairline);
+  color: var(--color-muted);
+}
+
+/* Bug4: Highlight pulse for located small box — 2s flash */
+.small-box--located {
+  animation: locate-pulse 2s ease-out;
+}
+
+@keyframes locate-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--color-accent); }
+  30%  { box-shadow: 0 0 0 4px var(--color-accent-soft-2); }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 /* LARGE-ONLY: __empty-hint (large-box only content) */
@@ -725,6 +763,7 @@ body {
 
 /* Phase 5: Empty State Action Button (ADR-0008 Motion-B) */
 .large-box__empty-action {
+  pointer-events: auto;
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -758,14 +797,15 @@ body {
 /* Phase 5: Inner Canvas Empty State (ADR-0008 Motion-B) */
 .inner__empty-state {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--space-3);
-  animation: fadeIn 0.3s var(--ease-out);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
 }
 
 .inner__empty-hint {
@@ -775,6 +815,7 @@ body {
 }
 
 .inner__empty-action {
+  pointer-events: auto;
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -1124,4 +1165,14 @@ body {
 .large-box__delete:focus:not(:focus-visible),
 .small-box__delete:focus:not(:focus-visible) {
   outline: none;
+}
+
+
+/* Bug6: will-change for first-interaction performance — prevents layer creation jank on first drag/resize.
+   -webkit-appearance:none on the dashed-border bookmark add button too. */
+.large-box {
+  will-change: transform;
+}
+.small-box {
+  will-change: transform;
 }
