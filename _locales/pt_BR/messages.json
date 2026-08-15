@@ -807,5 +807,8 @@
   },
   "emptyInnerAction": {
     "message": "Adicionar caixa pequena"
+  },
+  "emptyLargeAction": {
+    "message": "Adicionar caixas pequenas"
   }
 }

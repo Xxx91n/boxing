@@ -806,6 +806,9 @@
     "message": "Blanc Pur"
   },
   "emptyInnerAction": {
-    "message": "Ajouter une petite boite"
+    "message": "Ajouter une petite boîte"
+  },
+  "emptyLargeAction": {
+    "message": "Ajouter des petites boîtes"
   }
 }

@@ -806,6 +806,9 @@
     "message": "Trắng Tuyết"
   },
   "emptyInnerAction": {
-    "message": "Them hop nho"
+    "message": "Thêm hộp nhỏ"
+  },
+  "emptyLargeAction": {
+    "message": "Thêm hộp nhỏ"
   }
 }

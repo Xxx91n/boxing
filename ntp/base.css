@@ -585,7 +585,7 @@ body {
 }
 
 .box-expand-btn:hover {
-  opacity: 0.9 !important;
+  opacity: 0.9;
   background: var(--color-accent-soft);
   border-radius: 3px;
 }

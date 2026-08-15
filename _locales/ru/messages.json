@@ -807,5 +807,8 @@
   },
   "emptyInnerAction": {
     "message": "Добавить маленькую коробку"
+  },
+  "emptyLargeAction": {
+    "message": "Добавить маленькие коробки"
   }
 }

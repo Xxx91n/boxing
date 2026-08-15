@@ -806,6 +806,9 @@
     "message": "Reines Weiß"
   },
   "emptyInnerAction": {
-    "message": "Kleine Box hinzufuegen"
+    "message": "Kleine Box hinzufügen"
+  },
+  "emptyLargeAction": {
+    "message": "Kleine Boxen hinzufügen"
   }
 }

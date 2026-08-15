@@ -819,5 +819,8 @@
   },
   "emptyInnerAction": {
     "message": "Add small box"
+  },
+  "emptyLargeAction": {
+    "message": "Add small boxes"
   }
 }

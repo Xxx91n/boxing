@@ -807,5 +807,8 @@
   },
   "emptyInnerAction": {
     "message": "เพิ่มกล่องเล็ก"
+  },
+  "emptyLargeAction": {
+    "message": "เพิ่มกล่องเล็ก"
   }
 }

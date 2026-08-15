@@ -975,7 +975,6 @@ html.ntp--dark {
 .modal select:focus,
 .modal input:focus,
 .modal button:focus,
-.modal .modal__input.modal textarea:focus,
 .modal textarea:focus {
   -webkit-appearance: none;
   appearance: none;

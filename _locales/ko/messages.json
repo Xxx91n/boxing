@@ -807,5 +807,8 @@
   },
   "emptyInnerAction": {
     "message": "작은 상자 추가"
+  },
+  "emptyLargeAction": {
+    "message": "작은 상자 추가"
   }
 }

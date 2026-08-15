@@ -38,7 +38,8 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **__dsuDirty / markDsuDirty()** — skip full DSU rebuild on hot path when clean.
 - **Spatial hash (elasticSnap)** — threshold 32; cell = 2× max box dim (GDevelop pattern).
 
-- **UI-AUDIT.md**: [docs/UI-AUDIT.md](UI-AUDIT.md) - Phase 7 aesthetic audit: 7-dimension findings + remediations, token validation checklist (ADR-0008 Phase 7)
+- **UI-AUDIT.md**: [docs/UI-AUDIT.md](UI-AUDIT.md) — Phase 7 aesthetic audit: 7-dimension findings + remediations, token validation checklist (ADR-0008 Phase 7)
+
 ### Architecture Audit & Refactor Roadmap (ADR-0007)
 - **Audit document**: [docs/archive/architecture-audit.md](archive/architecture-audit.md) — bug pattern taxonomy (archived, absorbed into ADRs)
 - **ADR-0007**: [docs/adr/0007-architecture-refactor-decisions.md](adr/0007-architecture-refactor-decisions.md)

@@ -810,5 +810,8 @@
   },
   "emptyInnerAction": {
     "message": "新增小盒子"
+  },
+  "emptyLargeAction": {
+    "message": "新增小盒子"
   }
 }

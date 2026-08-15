@@ -807,5 +807,8 @@
   },
   "emptyInnerAction": {
     "message": "إضافة صندوق صغير"
+  },
+  "emptyLargeAction": {
+    "message": "إضافة صندوقات صغيرة"
   }
 }

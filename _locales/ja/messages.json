@@ -807,5 +807,8 @@
   },
   "emptyInnerAction": {
     "message": "小さなボックスを追加"
+  },
+  "emptyLargeAction": {
+    "message": "小さなボックスを追加"
   }
 }

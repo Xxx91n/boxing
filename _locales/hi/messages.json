@@ -807,5 +807,8 @@
   },
   "emptyInnerAction": {
     "message": "छोटा बॉक्स जोड़ें"
+  },
+  "emptyLargeAction": {
+    "message": "छोटे बॉक्स जोड़ें"
   }
 }

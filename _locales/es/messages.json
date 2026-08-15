@@ -806,6 +806,9 @@
     "message": "Blanco Puro"
   },
   "emptyInnerAction": {
-    "message": "Anadir caja pequena"
+    "message": "Añadir caja pequeña"
+  },
+  "emptyLargeAction": {
+    "message": "Añadir cajas pequeñas"
   }
 }
