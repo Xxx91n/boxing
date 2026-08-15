@@ -39,18 +39,6 @@
     "message": "Cliquez ＋ pour créer une grande boîte",
     "description": "Empty canvas hint (legacy)"
   },
-  "dblclickHint": {
-    "message": "Double-cliquez sur le canevas pour ajouter",
-    "description": "Double-click canvas hint"
-  },
-  "clickPlusHint": {
-    "message": "ou cliquez ＋ ci-dessus",
-    "description": "or click plus above hint"
-  },
-  "emptyLargeHint": {
-    "message": "Cliquez pour ajouter des petites boîtes",
-    "description": "Empty large box hint"
-  },
   "emptyInnerHint": {
     "message": "Cliquez ＋ pour ajouter une petite boîte",
     "description": "Empty inner canvas hint"
@@ -212,15 +200,8 @@
   "headerPin": {
     "message": "Épingler l'en-tête"
   },
-  "headerPinOn": {
-    "message": "En-tête épinglé"
-  },
   "headerPinOff": {
     "message": "Libérer l'en-tête"
-  },
-  "headerPinOffState": {
-    "message": "En-tête non épinglé",
-    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "Confirmer la suppression"

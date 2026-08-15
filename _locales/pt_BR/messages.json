@@ -39,18 +39,6 @@
     "message": "Clique ＋ para criar primeira caixa grande",
     "description": "Empty canvas hint (legacy)"
   },
-  "dblclickHint": {
-    "message": "Clique duplo na tela para adicionar caixa grande",
-    "description": "Double-click canvas hint"
-  },
-  "clickPlusHint": {
-    "message": "ou clique ＋ acima",
-    "description": "or click plus above hint"
-  },
-  "emptyLargeHint": {
-    "message": "Clique para adicionar caixas pequenas",
-    "description": "Empty large box hint"
-  },
   "emptyInnerHint": {
     "message": "Clique ＋ para primeira caixa pequena",
     "description": "Empty inner canvas hint"
@@ -212,15 +200,8 @@
   "headerPin": {
     "message": "Fixar cabeçalho"
   },
-  "headerPinOn": {
-    "message": "Cabeçalho fixado"
-  },
   "headerPinOff": {
     "message": "Liberar cabeçalho"
-  },
-  "headerPinOffState": {
-    "message": "Cabeçalho não fixado",
-    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "Confirmar exclusão"

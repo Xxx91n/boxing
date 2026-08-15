@@ -1,7 +1,7 @@
 # Chip Locate Highlight — Unify with Search Hit Mental Model
 
 ## Status
-Accepted — pending implementation.
+Accepted — implemented (commit 08a5a1b).
 
 ## Context
 Large box chips (small box preview buttons on collapsed large boxes) called `enterAndLocateSmallBox()` to pan the inner canvas and flash a highlight pulse. But the behavior diverged from `openSearchHit()` (search result navigation) in two ways:

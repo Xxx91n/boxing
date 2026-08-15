@@ -39,18 +39,6 @@
     "message": "Click + to create your first large box",
     "description": "Empty canvas hint (legacy)"
   },
-  "dblclickHint": {
-    "message": "Double-click canvas to add a large box",
-    "description": "Double-click canvas hint"
-  },
-  "clickPlusHint": {
-    "message": "or click + above",
-    "description": "or click plus above hint"
-  },
-  "emptyLargeHint": {
-    "message": "Click to add small boxes",
-    "description": "Empty large box hint"
-  },
   "emptyInnerHint": {
     "message": "Click + to add your first small box",
     "description": "Empty inner canvas hint"
@@ -212,15 +200,8 @@
   "headerPin": {
     "message": "Pin header"
   },
-  "headerPinOn": {
-    "message": "Header pinned"
-  },
   "headerPinOff": {
     "message": "Unpin header"
-  },
-  "headerPinOffState": {
-    "message": "Header not pinned",
-    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "Confirm Delete",

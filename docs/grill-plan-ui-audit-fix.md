@@ -1,9 +1,9 @@
 # Grill Plan: UI Audit Fix (Q1-Q4)
 
-> Status: Ready for execution
+> Status: Completed (commit 08a5a1b + this maintenance commit)
 > Created: 2026-08-15
 > ADRs: [0014](adr/0014-cross-browser-scrollbar-standardization.md), [0015](adr/0015-chip-locate-highlight-unify.md)
-> CONTEXT.md: UI Standardization Glossary section (pending append)
+> CONTEXT.md: UI Standardization Glossary section (appended)
 
 ---
 
@@ -52,11 +52,11 @@ body.appendChild(openHint);
 - `_locales/zh_TW/messages.json`
 
 ### Acceptance Criteria
-- [ ] No `clickToOpen` string remains in ntp.js or any messages.json
-- [ ] No `.large-box__open-hint` CSS rule remains in base.css
-- [ ] Large box initial state shows button-based empty state (not hint text)
-- [ ] Playwright test: navigate to large box with no small boxes, verify no `clickToOpen` text in DOM
-- [ ] Build passes (`npm run build`)
+- [x] No `clickToOpen` string remains in ntp.js or any messages.json
+- [x] No `.large-box__open-hint` CSS rule remains in base.css
+- [x] Large box initial state shows button-based empty state (not hint text)
+- [x] Playwright test: navigate to large box with no small boxes, verify no `clickToOpen` text in DOM
+- [x] Build passes (`npm run build`)
 
 ---
 
@@ -91,14 +91,14 @@ Apply `scrollbar-width: thin` + `scrollbar-color` to ALL scroll containers (not 
 **DO NOT** use global `*` selector — apply only to scroll containers.
 
 ### Acceptance Criteria
-- [ ] Firefox: thin scrollbar, smooth scrolling (no jank)
-- [ ] Chrome: thin overlay scrollbar (not classic wide)
-- [ ] No `contain: layout style paint` on `.settings-content`
-- [ ] No `will-change: scroll-position` on `.settings-content`
-- [ ] `scrollbar-gutter: stable` retained
-- [ ] Playwright Firefox test: scroll settings panel, verify smooth
-- [ ] Playwright Chrome test: verify thin scrollbar rendered
-- [ ] Build passes
+- [x] Firefox: thin scrollbar, smooth scrolling (no jank)
+- [x] Chrome: thin overlay scrollbar (not classic wide)
+- [x] No `contain: layout style paint` on `.settings-content`
+- [x] `will-change: scroll-position` RETAINED on `.settings-content` (GPU layer promotion for FF smooth-scroll; ADR-0014 v2 confirms safe without `contain`)
+- [x] `scrollbar-gutter: stable` retained
+- [x] Playwright Firefox test: scroll settings panel, verify smooth
+- [x] Playwright Chrome test: verify thin scrollbar rendered
+- [x] Build passes
 
 ---
 
@@ -130,12 +130,12 @@ Clicking a small box chip on a collapsed large box should pan the inner canvas t
 `outline` is NOT clipped by `contain: layout` (draws outside border box without affecting layout).
 
 ### Acceptance Criteria
-- [ ] Clicking a chip pans inner canvas to center the target small box
-- [ ] Highlight ring (outline pulse) is visible despite `contain: layout style` on `.small-box`
-- [ ] Pan formula matches `openSearchHit` (center-align + clamp)
-- [ ] rAF guard ensures innerZoom is settled before pan calculation
-- [ ] Playwright test: click chip, verify canvas pan + visible highlight ring
-- [ ] Build passes
+- [x] Clicking a chip pans inner canvas to center the target small box
+- [x] Highlight ring (outline pulse) is visible despite `contain: layout style` on `.small-box`
+- [x] Pan formula matches `openSearchHit` (center-align + clamp)
+- [x] rAF guard ensures innerZoom is settled before pan calculation
+- [x] Playwright test: click chip, verify canvas pan + visible highlight ring
+- [x] Build passes
 
 ---
 
@@ -176,13 +176,13 @@ headerPinBtn.title = headerPinned ? i18n('headerPinOff') : i18n('headerPin');
 | vi | Đa bo ghir tieu de | Bo ghir tieu de |
 
 ### Acceptance Criteria
-- [ ] JS L2309 swapped to `headerPinned ? i18n('headerPinOff') : i18n('headerPin')`
-- [ ] HTML L49 data-i18n-title changed to `headerPin`
-- [ ] All 14 locale `headerPinOff` messages are action-descriptive
-- [ ] When pinned (default), tooltip shows action text (Unpin header / Cancel pin)
-- [ ] When unpinned, tooltip shows action text (Pin header)
-- [ ] Playwright test: hover pin button in pinned state, verify tooltip = action text
-- [ ] Build passes
+- [x] JS L2309 swapped to `headerPinned ? i18n('headerPinOff') : i18n('headerPin')`
+- [x] HTML L49 data-i18n-title changed to `headerPin`
+- [x] All 14 locale `headerPinOff` messages are action-descriptive
+- [x] When pinned (default), tooltip shows action text (Unpin header / Cancel pin)
+- [x] When unpinned, tooltip shows action text (Pin header)
+- [x] Playwright test: hover pin button in pinned state, verify tooltip = action text
+- [x] Build passes
 
 ---
 
@@ -204,6 +204,28 @@ headerPinBtn.title = headerPinned ? i18n('headerPinOff') : i18n('headerPin');
 ```
 
 ---
+
+---
+
+## Implementation Notes (post-commit 08a5a1b)
+
+### Actual Implementation Deviations from Plan
+
+**Phase 2 (Q2) — will-change: scroll-position RETAINED:**
+The original plan called for removing will-change: scroll-position from .settings-content. However, ADR-0014 v2 discovered the real root cause was contain: layout style paint (layout containment interfering with FF smooth-scroll engine), NOT will-change. After removing contain, will-change: scroll-position actually HELPS by promoting the scroll container to a GPU compositor layer. The acceptance criterion was updated accordingly.
+
+**Phase 2 (Q2) — .modal__body overflow:hidden (nested scroll fix):**
+Additional fix not in original plan: .modal__body changed from overflow-y: auto to overflow: hidden to eliminate a nested scroll container that caused double-animation jank in Firefox with smooth-scroll enabled.
+
+**Phase 2 (Q2) — overflow-anchor: none added:**
+Additional CSS property not in original plan: .settings-content gains overflow-anchor: none to prevent Firefox auto-scroll jitter when DOM mutates above the fold.
+
+### Post-Implementation Cleanup (this commit)
+
+- Removed duplicate I18N_FALLBACK line in ntp.js (L284 was a stale 4-space-indented duplicate of L285)
+- Removed stale i18n keys from I18N_FALLBACK: dblclickHint, clickPlusHint, headerPinOffState, headerPinOn
+- Removed stale i18n keys from all 14 locale files: emptyLargeHint, dblclickHint, clickPlusHint, headerPinOffState, headerPinOn (70 entries total)
+- Updated ADR-0014: Status to Implemented, corrected will-change narrative
 
 ## Execution Order
 

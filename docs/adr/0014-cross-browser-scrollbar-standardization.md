@@ -1,24 +1,24 @@
 # Cross-Browser Scrollbar Standardization
 
 ## Status
-Accepted — pending implementation.
+Accepted — implemented (commit 08a5a1b).
 
 ## Date
 2026-08-15
 
 ## Context
-Settings panel scrollbars behaved inconsistently between Chrome and Firefox. Firefox rendered thin overlay scrollbars (via native `scrollbar-width: thin` support since FF64) but scrolling was janky due to `contain: layout style paint` + `will-change: scroll-position` on `.settings-content`. Chrome used classic scrollbars (occupying ~15px gutter) because `scrollbar-gutter: stable` reserved space and no `scrollbar-width` was set, so Chrome fell back to platform default wide scrollbars.
+Settings panel scrollbars behaved inconsistently between Chrome and Firefox. Firefox rendered thin overlay scrollbars (via native `scrollbar-width: thin` support since FF64) but scrolling was janky due to `contain: layout style paint` on `.settings-content` (which forced layout containment that interfered with FF smooth-scroll animation). `will-change: scroll-position` was initially suspected but later confirmed safe — it promotes the scroll container to a compositor layer, which is actually beneficial for FF GPU smooth-scroll. Chrome used classic scrollbars (occupying ~15px gutter) because `scrollbar-gutter: stable` reserved space and no `scrollbar-width` was set, so Chrome fell back to platform default wide scrollbars.
 
 The CSS Scrollbars Styling Module Level 1 spec (`scrollbar-width` + `scrollbar-color`) is Baseline available since Dec 2024 — Chrome 121+, Firefox 64+, Safari 26.2+. CSSWG resolved (2024) that non-initial `scrollbar-width`/`scrollbar-color` values override `::-webkit-scrollbar-*` pseudos entirely.
 
 ## Decision
-Use standard CSS `scrollbar-width: thin` + `scrollbar-color` (with design tokens) on all scroll containers. Remove `contain: layout style paint` from `.settings-content` (root cause of Firefox jank). Do NOT set `::-webkit-scrollbar` width/height — setting width forces Chrome into classic mode (Chrome for Developers docs: "setting width on ::-webkit-scrollbar effectively turns it into a classic scrollbar"). Do NOT use global `*` selector — apply only to scroll containers (kimi + Google modern-web-guidance: global wildcard causes inconsistent results and performance issues).
+Use standard CSS `scrollbar-width: thin` + `scrollbar-color` (with design tokens) on all scroll containers. Remove `contain: layout style paint` from `.settings-content` (root cause of Firefox jank). **Keep** `will-change: scroll-position` — it promotes the scroll container to its own compositor layer, enabling GPU-accelerated smooth scroll in Firefox. Without `contain`, `will-change` alone does NOT cause jank. Do NOT set `::-webkit-scrollbar` width/height — setting width forces Chrome into classic mode (Chrome for Developers docs: "setting width on ::-webkit-scrollbar effectively turns it into a classic scrollbar"). Do NOT use global `*` selector — apply only to scroll containers (kimi + Google modern-web-guidance: global wildcard causes inconsistent results and performance issues).
 
 `scrollbar-gutter: stable` is retained on `.settings-content` — it only affects classic scrollbars (no-op for overlay), so it's harmless on Chrome overlay and protective if Chrome ever falls back to classic.
 
 ## Consequences
 - Both Chrome and Firefox render thin, non-space-occupying overlay scrollbars inside the extension.
-- Firefox jank eliminated (contain removed, will-change: scroll-position alone is safe).
+- Firefox jank eliminated: `contain: layout style paint` removed (was the real root cause). `will-change: scroll-position` retained for GPU layer promotion. Nested scroll container on `.modal__body` eliminated via `overflow: hidden`. `overflow-anchor: none` added to prevent DOM-mutation jitter.
 - Scrollbar colors themed via `--scrollbar-thumb` / `--scrollbar-track` tokens with dark mode override.
  - If a future browser version ignores `scrollbar-width`, `scrollbar-gutter: stable` prevents layout shift.
 

@@ -39,18 +39,6 @@
     "message": "Нажмите ＋ для первого контейнера",
     "description": "Empty canvas hint (legacy)"
   },
-  "dblclickHint": {
-    "message": "Двойной клик на холсте для добавления",
-    "description": "Double-click canvas hint"
-  },
-  "clickPlusHint": {
-    "message": "или нажмите ＋ сверху",
-    "description": "or click plus above hint"
-  },
-  "emptyLargeHint": {
-    "message": "Нажмите чтобы добавить малые контейнеры",
-    "description": "Empty large box hint"
-  },
   "emptyInnerHint": {
     "message": "Нажмите ＋ для первого малого",
     "description": "Empty inner canvas hint"
@@ -212,15 +200,8 @@
   "headerPin": {
     "message": "Закрепить заголовок"
   },
-  "headerPinOn": {
-    "message": "Заголовок закреплен"
-  },
   "headerPinOff": {
     "message": "Открепить заголовок"
-  },
-  "headerPinOffState": {
-    "message": "Заголовок не закреплен",
-    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "Подтверждение удаления"

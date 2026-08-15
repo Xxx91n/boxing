@@ -39,18 +39,6 @@
     "message": "点击 + 创建第一个大盒子",
     "description": "空画布提示（旧版）"
   },
-  "dblclickHint": {
-    "message": "双击画布创建大盒子",
-    "description": "双击画布提示"
-  },
-  "clickPlusHint": {
-    "message": "或点击上方 +",
-    "description": "或点击上方加号提示"
-  },
-  "emptyLargeHint": {
-    "message": "点击添加小盒子",
-    "description": "空大盒子提示"
-  },
   "emptyInnerHint": {
     "message": "点击 + 添加第一个小盒子",
     "description": "空内部画布提示"
@@ -212,15 +200,8 @@
   "headerPin": {
     "message": "固定顶栏"
   },
-  "headerPinOn": {
-    "message": "顶栏已固定"
-  },
   "headerPinOff": {
     "message": "取消固定顶栏"
-  },
-  "headerPinOffState": {
-    "message": "顶栏未固定",
-    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "description": "Delete confirm title",

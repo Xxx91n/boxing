@@ -39,18 +39,6 @@
     "message": "＋ をクリックして最初の大ボックスを作成",
     "description": "空のキャンバス ヒント（旧）"
   },
-  "dblclickHint": {
-    "message": "キャンバスをダブルクリックで大ボックス追加",
-    "description": "ダブルクリック ヒント"
-  },
-  "clickPlusHint": {
-    "message": "または上の ＋ をクリック",
-    "description": "または加号クリック ヒント"
-  },
-  "emptyLargeHint": {
-    "message": "クリックして小ボックスを追加",
-    "description": "空の大ボックス ヒント"
-  },
   "emptyInnerHint": {
     "message": "＋ をクリックして最初の小ボックスを追加",
     "description": "空の内部キャンバス ヒント"
@@ -212,15 +200,8 @@
   "headerPin": {
     "message": "ヘッダーを固定"
   },
-  "headerPinOn": {
-    "message": "ヘッダー固定済"
-  },
   "headerPinOff": {
     "message": "ヘッダーの固定を解除"
-  },
-  "headerPinOffState": {
-    "message": "ヘッダー未固定",
-    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "削除の確認"

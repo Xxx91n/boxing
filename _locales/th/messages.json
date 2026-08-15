@@ -39,18 +39,6 @@
     "message": "คลิก ＋ เพื่อสร้างกล่องใหญ่แรก",
     "description": "Empty canvas hint (legacy)"
   },
-  "dblclickHint": {
-    "message": "ดับเบิลคลิกเพื่อเพิ่มกล่องใหญ่",
-    "description": "Double-click canvas hint"
-  },
-  "clickPlusHint": {
-    "message": "หรือคลิก ＋ ด้านบน",
-    "description": "or click plus above hint"
-  },
-  "emptyLargeHint": {
-    "message": "คลิกเพื่อเพิ่มกล่องเล็ก",
-    "description": "Empty large box hint"
-  },
   "emptyInnerHint": {
     "message": "คลิก ＋ เพื่อเพิ่มกล่องเล็กแรก",
     "description": "Empty inner canvas hint"
@@ -212,15 +200,8 @@
   "headerPin": {
     "message": "ปักหมุดส่วนหัว"
   },
-  "headerPinOn": {
-    "message": "ปักหมุดส่วนหัวแล้ว"
-  },
   "headerPinOff": {
     "message": "เลิกปักหมุดส่วนหัว"
-  },
-  "headerPinOffState": {
-    "message": "ส่วนหัวไม่ได้ปักหมุด",
-    "description": "Header not pinned state (tooltip shows current state)"
   },
   "confirmDeleteTitle": {
     "message": "ยืนยันการลบ"
