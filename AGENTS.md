@@ -91,6 +91,16 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 
 # Boxing Project Specialization
 
+### Documentation governance
+
+Three-layer separation (agent-era practice, 2026-08-19):
+- Human layer: README, CONTRIBUTING, docs/ top-level product docs (CONTEXT, DESIGN, css-dual-write-convention, adr/, publishing, i18n, privacy)
+- Agent instruction layer: this AGENTS.md (canonical) + docs/agents/ (on-demand reference for grill plans, UI audits)
+- History layer: docs/history/ (version history, ponytail debt ledger) + docs/archive/ — not loaded by default, query on demand
+
+docs/agents/ holds one-shot agent workflow deliverables. docs/history/ holds versioned runbooks.
+Both are referenced from here, never bulk-loaded into context.
+
 ## Applicability
 
 | Field | Value |
@@ -234,9 +244,9 @@ These anti-patterns are **permanently documented** so a new model inheriting thi
 
 ## Boxing Version History
 
-Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) have been moved to `docs/boxing-changelog.md` to keep this operating contract lean. See that file for per-version feature lists, BX-DEV rule additions, and i18n key references by version.
+Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) have been moved to `docs/history/boxing-changelog.md` to keep this operating contract lean. See that file for per-version feature lists, BX-DEV rule additions, and i18n key references by version.
 
-Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..020). All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
+Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..020). All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/history/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
 
 ## Manifest Source-of-Truth Contract (v3.7.0+)
 

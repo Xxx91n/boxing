@@ -50,7 +50,7 @@ onboarding.css) and ntp.js for inline styles. Covers 7 audit dimensions.
 
 - Finding: DESIGN.md shadow and motion sections documented only legacy tokens.
 - Remediation: Updated DESIGN.md with 5-level shadow table, motion section with ease-hover and keyframes table, reduced-motion note. This UI-AUDIT.md created. Referenced from CONTEXT.md.
-- Files: docs/DESIGN.md, docs/CONTEXT.md, docs/UI-AUDIT.md
+- Files: docs/DESIGN.md, docs/CONTEXT.md, docs/agents/ui-audit.md
 
 ## Token Architecture Validation
 
