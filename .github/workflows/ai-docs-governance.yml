@@ -1,0 +1,72 @@
+name: AI Docs Governance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'docs/agents/**'
+      - 'docs/history/**'
+      - 'docs/CONTEXT.md'
+      - '.github/workflows/ai-docs-governance.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - 'AGENTS.md'
+      - 'docs/agents/**'
+      - 'docs/history/**'
+      - 'docs/CONTEXT.md'
+      - '.github/workflows/ai-docs-governance.yml'
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dead-link check (docs/agents/ and docs/history/ references)
+        run: |
+          set -e
+          errors=0
+          # Extract docs/agents/ and docs/history/ path references from AGENTS.md and CONTEXT.md
+          for ref in $(grep -ohE 'docs/agents/[^ )"'''>]+|docs/history/[^ )"'''>]+' AGENTS.md docs/CONTEXT.md 2>/dev/null | sort -u); do
+            if [ ! -f "$ref" ]; then
+              echo "::error::Dead link: $ref (referenced in AGENTS.md or CONTEXT.md)"
+              errors=$((errors + 1))
+            else
+              echo "OK: $ref"
+            fi
+          done
+          if [ "$errors" -gt 0 ]; then
+            echo "::error::$errors dead link(s) found in agent/history layer references"
+            exit 1
+          fi
+
+      - name: Layer separation guard (no agent/history files at docs/ top level)
+        run: |
+          set -e
+          violations=0
+          # Files that belong in docs/agents/ or docs/history/ must not be at docs/ top level
+          for f in docs/grill-plan-ui-audit-fix.md docs/UI-AUDIT.md docs/PONYTAIL-DEBT.md docs/boxing-changelog.md; do
+            if [ -f "$f" ]; then
+              echo "::error::Layer violation: $f should be in docs/agents/ or docs/history/"
+              violations=$((violations + 1))
+            fi
+          done
+          if [ "$violations" -gt 0 ]; then
+            echo "::error::$violations layer separation violation(s) found"
+            exit 1
+          fi
+          echo "Layer separation OK: no agent/history files at docs/ top level"
+
+      - name: AGENTS.md size guard
+        run: |
+          lines=$(wc -l < AGENTS.md)
+          bytes=$(wc -c < AGENTS.md)
+          echo "AGENTS.md: $lines lines, $bytes bytes"
+          if [ "$bytes" -gt 32768 ]; then
+            echo "::warning::AGENTS.md exceeds Codex default 32 KiB limit ($bytes bytes). Configure project_doc_max_bytes or split content to docs/agents/"
+          fi
+          if [ "$lines" -gt 300 ]; then
+            echo "::warning::AGENTS.md is $lines lines (>300) — consider disclosing reference to docs/agents/"
+          fi
