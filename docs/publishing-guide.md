@@ -134,7 +134,7 @@ See the [official step-by-step guide](https://learn.microsoft.com/en-us/microsof
 2. Source: **Deploy from a branch**
 3. Branch: `main`, folder: `/docs`
 4. Save
-5. Your privacy policy will be available at `https://<your-username>.github.io/boxing/privacy-policy.html`
+5. Your privacy policy will be available at `https://Xxx91n.github.io/boxing/privacy-policy.html`
 
 Note: GitHub Pages may need a _config.yml or index file. If Pages doesn't work with just markdown, create a simple `docs/_config.yml` or convert `privacy-policy.md` to `privacy-policy.html`.
 
