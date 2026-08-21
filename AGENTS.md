@@ -89,6 +89,20 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 - MV3 requirements: valid `manifest.json`, service worker active, only declared permissions requested.
 - New tab override should load `ntp/index.html` with beige theme and zero console errors.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as GitHub issues in [Xxx91n/boxing](https://github.com/Xxx91n/boxing); use the `gh` CLI for all operations. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical triage roles mapped verbatim: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context layout: root `CONTEXT-MAP.md` points at root `CONTEXT.md` (build/dev-load) and `docs/CONTEXT.md` (domain glossary); all ADRs live in `docs/adr/`. See `docs/agents/domain.md`.
+
 # Boxing Project Specialization
 
 ### Documentation governance
@@ -211,37 +225,10 @@ Both are referenced from here, never bulk-loaded into context.
 
 ## Critical Lessons Learned
 
-1. **Never place executable code before `const`/`let` declarations it references.** `debug()` calling before `const DEBUG` causes TDZ ReferenceError that silently breaks the entire IIFE execution — all subsequent functions and DOM bindings are never defined.
-2. **Never place IIFE-scoped code outside the IIFE closing `})();`.** External references to `I18N_FALLBACK` etc throw ReferenceError and halt execution.
-3. **Function hoisting does NOT mean safe to call before `let`/`const` init.** Functions referencing `let`/`const` variables in their closure will throw TDZ errors if called before the variable declaration executes.
-4. **When debugging "all box creation broken", check console errors FIRST.** Two TDZ errors (`I18N_FALLBACK is not defined`, `Cannot access 'DEBUG' before initialization`) caused the entire init to fail silently — no functions were defined, no events were bound.
-5. **Layout mutations go through `commit(op)` (ADR-0007 Q2)** for conn/star/delete paths — handlers mutate data; commit owns tombstone/DSU/viewState/save side effects. Do not reintroduce parallel prune of `layout.groups`.
-5b. **Every derived index is a liability.** When adding a new data structure (connById, boxConnIdx, groupStar, layout.groups), EVERY mutation path (addConnection, removeConnection, _execDeleteLargeBox, _execDeleteSmallBox, toggleStarMark) must update ALL of them. Missing one = bug. See [docs/archive/architecture-audit.md](docs/archive/architecture-audit.md) Part 1.
-6. **The tombstone system is the cross-tab delete contract.** `markDeleted(id)` + `mergeByIdUnion` filter is the ONLY mechanism that prevents resurrection from remote tab state. Any new delete path MUST call `markDeleted` before filtering the array. Never delete by filter alone.
-7. **`layout.groups` is runtime-only (ADR-0007 Q1), NOT persisted.** Star truth is `box.isParent`; `ensureGroups()` computes membership from DSU. `saveLayout` must call `stripGroupsForPersist`. Never merge `groups` cross-tab.
-8. **CSS invariants are load-bearing.** `z-index` (BX-DEV-014), `will-change`/`translateZ(0)` (BX-EXPLORE-006), `shape-rendering` (BX-DEV-017), `translate3d` vs `left/top` (BX-EXPLORE-005) — each has a specific reason grounded in browser rendering behavior. Violating them causes visual regressions that are extremely hard to debug.
-9. **The "fix one bug, introduce another" pattern exists because mutation paths are scattered.** Each of removeConnection, _execDeleteLargeBox, _execDeleteSmallBox, toggleStarMark has its own cleanup sequence. A single unified `mutateLayout(operation)` API would eliminate this. See docs/archive/architecture-audit.md (archived) — see bug pattern table 3 for the coupling map.
-10. **Hot-path functions (called during mousemove) MUST use O(1) Map/Set lookups.** Never use `layout.connections.find()` or `layout.boxes.find()` in a drag handler. Pre-build `connById`, `boxConnIdx`, and (future) `boxById` indices. See BX-EXPLORE-007, BX-DEV-018.
-11. **DSU rebuild is O(n) — gate it behind `__dsuDirty` / `markDsuDirty()` (ADR-0007 Q4b).** Never rebuild DSU on mousemove; only on conn/star/delete/load/external.
-12. **`moveGroupTogether` is O(m*n) per frame — the main performance hotspot.** For each group member, `elasticSnap` scans all non-group boxes. At >10 boxes this causes frame drops. Future: pre-compute a spatial index (grid hash) at drag-start. See docs/archive/architecture-audit.md (archived) — see bug pattern table 4.2, Hotspot 1.
-13. **ADR-0013 BX-PERF-001: moveGroupTogether now builds spatial grid ONCE per call and passes it to elasticSnap via 7th arg.** elasticSnap accepts (pos, w, h, others, grid, snapFn, prebuiltSpatial) — if prebuiltSpatial is provided, skips internal uildSpatialGrid(others) call. This reduces moveGroupTogether from O(m*n) to O(m*k) where k = 0-5 neighboring cells. Do NOT remove the 7th-arg optimization.
-14. **ADR-0013 BX-PERF-002: SVG <line> elements are pooled via cquireLineEl() / ecycleLineEl() with LINE_POOL_CAP=64.** disposeAllConns and enderConnections dead-line path push to pool; pending-line path pops from pool. Do NOT replace pool calls with bare createElementNS — it defeats the recycling optimization.
-
+See [docs/agents/critical-lessons.md](docs/agents/critical-lessons.md) — Past design traps and mutation-path footguns (TDZ, tombstone contract, derived-index liabilities, DSU/CSS invariants).
 ## Performance Anti-Patterns (DO NOT DO — ADR-0013)
 
-The following optimizations were investigated, confirmed unnecessary by code analysis, and are FORBIDDEN. A new model that proposes any of these has not read this section.
-
-| ID | Anti-Pattern | Why analyzed and rejected |
-|---|---|---|
-| BX-PERF-A1 | renderCanvas DOM diff (replace innerHTML='' with incremental update) | Q3 chose B (SVG line pool only). pplyExternalLayout (ntp.js:3960) calls enderCanvas() and depends on *full rebuild* semantics to handle cross-tab add/delete/move. DOM diff would require auditing all 9 enderCanvas callers for fresh-DOM assumptions — risk to multi-tab sync is too high. enderCanvas full rebuild stays as-is. |
-| BX-PERF-A2 | rAF batching for onBoxDragMove (buffer mousemove coords, apply in next frame) | Q4=C. Adds 1-frame (~16ms) latency that violates the follow-hand UX principle. onBoxDragMove hot path: style.left/top O(1), refreshConnsForBoxSync O(k), moveGroupTogether O(m*n) to fixed by grid hash. All other ops O(1)/O(k). No frame batching needed. |
-| BX-PERF-A3 | WeakMap geometry caches for oxMidPoint | Q4=C. oxMidPoint reads el.style.left/top + width/height — already O(1). WeakMap cache would have near-zero hit rate during drag (the moved box invalidates its entry every frame). Premature optimization. |
-| BX-PERF-A4 | Incremental saveLayout storage (split layout into multiple chrome.storage keys / diff patches) | Q5=C. chrome.storage.set() does not support partial key updates. Full JSON.stringify of 30KB layout takes <1ms. saveLayout is cold-path + 120ms debounced. Pan/zoom uses persistViewState(true), not saveLayout(). Splitting complicates cross-tab merge and adds async round-trips. |
-| BX-PERF-A5 | Event listener audit / cleanup optimization | 154 ddEventListener / 30 emoveEventListener — but dynamic box-DOM listeners are GC'd by innerHTML='', popup listeners are properly removed, drag listeners are removed in onBoxDragEnd. No leak found. Not a performance issue. |
-
-These anti-patterns are **permanently documented** so a new model inheriting this project does not re-investigate them. Every item above was analyzed at the code level (line references, call counts, caller audits) before being rejected. See [docs/adr/0013-performance-optimization-grid-hash.md](docs/adr/0013-performance-optimization-grid-hash.md) for the full analysis.
-
-
+See [docs/agents/performance-anti-patterns.md](docs/agents/performance-anti-patterns.md) — Rejected optimizations permanently documented so a new model does not re-investigate them (BX-PERF-A1..A5).
 ## Boxing Version History
 
 Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) have been moved to `docs/history/boxing-changelog.md` to keep this operating contract lean. See that file for per-version feature lists, BX-DEV rule additions, and i18n key references by version.
@@ -250,29 +237,7 @@ Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-D
 
 ## Manifest Source-of-Truth Contract (v3.7.0+)
 
-> **🔥 HARD CONSTRAINT — DO NOT VIOLATE 🔥**
-> The repository root `manifest.json` is a **full-compat dual-declaration** manifest. It MUST keep
-> `background.service_worker` AND `background.scripts` simultaneously, MUST keep
-> `permissions.browserSettings`, and MUST keep `browser_specific_settings.gecko`. Removing any of
-> these breaks one browser or the other:
-> - Remove `background.scripts` → Firefox fails to load with `background.service_worker is currently disabled. Add background.scripts.`
-> - Remove `permissions.browserSettings` → Firefox loses the permission the extension relies on.
-> - Remove `browser_specific_settings.gecko` → Firefox loses the extension ID needed for upgrade and sync identity.
-> - Keep `background.scripts` in MV3 → Chrome < 121 refuses to load with `'background.scripts' requires manifest version of 2 or lower.` Chrome ≥ 121 ignores it (ignored ≠ rejected), so the dual-declaration is *the* supported cross-browser pattern per MDN.
-> - Keep `permissions.browserSettings` in a Chrome-loadable manifest → Chrome reports `Permission 'browserSettings' is unknown.` on every Chrome version (Chrome never supported this permission).
-> So the source manifest is **intentionally Firefox-loadable and Chrome-rejectable**. Chrome dev/testing MUST load `dist/boxing-chrome/` or `dist/boxing-chrome/release/chrome/boxing/` instead, where the Tailor step has stripped the Firefox-only fields.
-
-| Rule ID | Type | Rule |
-|---|---|---|
-| BX-MANIFEST-001 | **MUST / RED LINE** | The root `manifest.json` is a **full-compat dual-declaration** manifest and MUST keep all four Firefox-compat fields at all times: `background.service_worker`, `background.scripts`, `permissions.browserSettings`, `browser_specific_settings.gecko`. **Removing any of these to "fix Chrome direct loading" is forbidden** — it breaks Firefox direct loading. This constraint exists because a previous round stripped `scripts`/`browserSettings`/`gecko` to make Chrome < 121 happy, and Firefox loading the raw repo then failed with `background.service_worker is currently disabled. Add background.scripts.` — a regression that took the user hours to surface. **Learn from history.** |
-| BX-MANIFEST-002 | MUST | `.github/scripts/build.mjs` is the single canonical build entry point (CI + local). It outputs `dist/boxing-{chrome,firefox}/` + nested `release/{chrome,firefox}/` with 3 artifacts each: unpacked `boxing/`, `.zip`, `.crx`/`.xpi`. Cross-platform thin wrappers `tools/build.ps1` (Windows) and `tools/build.sh` (Linux/macOS) simply call `node .github/scripts/build.mjs` — no duplicate build logic. |
-| BX-MANIFEST-003 | MUST | **Chrome Tailor** MUST remove the Firefox-only fields: replace `m.background` with `{ service_worker: 'background.js' }` (drop `scripts`); filter `browserSettings` out of `permissions`; `delete m.browser_specific_settings`. **Firefox Tailor** MUST drop `service_worker` (full replace `m.background = { scripts: ['background.js'], type: 'module' }` — do NOT `Object.assign` which would leak `service_worker` into the Firefox manifest). Both must add `permissions.browserSettings` only for Firefox and `browser_specific_settings.gecko` only for Firefox. |
-| BX-MANIFEST-004 | MUST | After any change to source `manifest.json` OR `ntp/` OR `background.js`, `build.mjs` MUST be re-run; otherwise `dist/` will be stale vs the source. Run: `node .github/scripts/build.mjs` or use wrapper `tools/build.ps1` (Windows) / `tools/build.sh` (Linux/macOS). Stale `dist/` is the root cause of user-facing "旧版 UI" symptoms when loading the rebuilt package. |
-| BX-MANIFEST-004b | MUST | `npm run dev:chrome` and `npm run dev:firefox` MUST chain `npm run build && web-ext run ...` — the dev script MUST compile (build) before loading `dist/` into the browser. The `dev:chrome:no-build` / `dev:firefox:no-build` variants skip build for fast reload and MUST retain `--no-reload`. Never run `web-ext run` against a stale `dist/` — a fresh build is mandatory before any dev session. `build.mjs` now emits `[STALE_DIST]` warnings when the prior build's commit (`BUILD_INFO.json`) differs from the current `git HEAD`. |
-| BX-MANIFEST-005 | MUST NOT | Do NOT attempt to make the *source* `manifest.json` directly Chrome-loadable by stripping Firefox-compat fields. The supported Chrome dev workflow is to load `dist/boxing-chrome/` (or `dist/boxing-chrome/release/chrome/boxing/`) — both are produced by Chrome-Tailor and contain NO `background.scripts`, NO `browserSettings`, NO `gecko`. The source manifest is Firefox-direct-loadable by design, Chrome-direct-loadUnsupported by design, and this asymmetry is the intended trade. |
-| BX-MANIFEST-006 | INFO | MDN canonical reference ([Cross-browser MV3 background scripts](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background)): dual declaring `scripts` + `service_worker` is the official cross-browser pattern. Chrome < 121 still rejects it (limitation of old Chrome, not the manifest), Chrome ≥ 121 ignores `scripts`. Firefox uses `scripts` and ignores `service_worker`. The source manifest honors this dual-declaration pattern verbatim. |
-| BX-MANIFEST-007 | MUST | When tests verify "loads in both Chrome and Firefox", the Chrome test target is `dist/boxing-chrome` (or `dist/boxing-chrome/release/chrome/boxing/`), NOT the raw repo `D:/Aworker/crx/boxing/`. The Firefox test target is the raw repo (`about:debugging` "Load Temporary Add-on" → point at `D:/Aworker/crx/boxing/manifest.json`) OR `dist/boxing-firefox` — both Firefox-loadable. Mixing the two (loading the raw repo in Chrome, or chrome-tailored build in Firefox) will surface manifest rejection errors. |
-
+See [docs/agents/manifest-contract.md](docs/agents/manifest-contract.md) — HARD CONSTRAINT dual-declaration manifest rules (BX-MANIFEST-001..005) — source manifest Firefox-tailored, Chrome must load dist/.
 ## Security Rules (SEC series — v3.7.9f security audit)
 
 | Rule | Level | Description |
