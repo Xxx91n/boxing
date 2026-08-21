@@ -2,16 +2,32 @@
 **Languages:** **English** · [简体中文](docs/i18n/README.zh_CN.md) · [繁體中文](docs/i18n/README.zh_TW.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [Français](docs/i18n/README.fr.md) · [Deutsch](docs/i18n/README.de.md) · [Español](docs/i18n/README.es.md) · [Português (Brasil)](docs/i18n/README.pt_BR.md) · [Русский](docs/i18n/README.ru.md) · [العربية](docs/i18n/README.ar.md) · [हिन्दी](docs/i18n/README.hi.md) · [ไทย](docs/i18n/README.th.md) · [Tiếng Việt](docs/i18n/README.vi.md) — see [TRANSLATIONS.md](TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-dark-theme.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/brand/logo-light-theme.png">
+  <img src="docs/brand/logo.png" width="128" height="128" alt="Boxing logo" />
+</picture>
+
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+**A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.**
+
+<p>
+  <a href="https://github.com/Xxx91n/boxing/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Xxx91n/boxing" /></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" /></a>
+  <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange" />
+  <img alt="Languages" src="https://img.shields.io/badge/i18n-14%20languages-brightgreen" />
+</p>
+
+</div>
 
 Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-1-canvas.png">
+<p align="center">
   <img src="docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
-</picture>
+</p>
 
 ## Table of Contents
 
@@ -37,10 +53,21 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
 
 **14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
-</picture>
+## Screenshots
+
+| Canvas | Boxes & Bookmarks | Connections |
+|--------|-------------------|-------------|
+| ![Canvas overview](docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Box hierarchy](docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Connection lines](docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| Settings | Bookmark Editing |
+|----------|------------------|
+| ![Settings panel](docs/store-assets/screenshots/screenshot-4-settings.png) | ![Bookmark dialog](docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## Brand Assets
+
+All logos, icons, store tiles, and theme variants live in [`docs/brand/`](docs/brand/) (source: `box_png` asset kit). Includes light/dark logo, extension icons, favicon set, Chrome store tiles, and the 1024 variants showcase:
+
+<img src="docs/brand/boxing_variants_showcase.png" alt="Boxing brand variants" width="720">
 
 ## Install
 

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <g>
+    <polygon id="inner_wall_left" points="512.0,220.0 283.37,352.0 283.37,624.0 512.0,492.0" fill="#181614" />
+    <polygon id="inner_wall_right" points="512.0,220.0 740.63,352.0 740.63,624.0 512.0,492.0" fill="#11100F" />
+    <polygon id="inner_floor" points="512.0,492.0 283.37,624.0 512.0,756.0 740.63,624.0" fill="#0B0A09" />
+    <polygon id="cube_left" points="512.0,492.0 338.79,392.0 338.79,612.0 512.0,712.0" fill="#E06C43" />
+    <polygon id="cube_right" points="512.0,492.0 685.21,392.0 685.21,612.0 512.0,712.0" fill="#C8552D" />
+    <polygon id="cube_top" points="512.0,292.0 338.79,392.0 512.0,492.0 685.21,392.0" fill="#F0825B" />
+    <polygon id="ribbon_top" points="570.89,341.0 617.66,368.0 458.31,460.0 411.54,433.0" fill="#FFFBF5" />
+    <polygon id="ribbon_side" points="411.54,433.0 458.31,460.0 458.31,551.0 434.92,511.5 411.54,524.0" fill="#EAE3D9" />
+    <polygon id="rim_left" points="200.23,352.0 512.0,532.0 512.0,484.0 283.37,352.0" fill="#3E3A35" />
+    <polygon id="rim_right" points="823.77,352.0 512.0,532.0 512.0,484.0 740.63,352.0" fill="#3E3A35" />
+    <polygon id="rim_back_left" points="512.0,172.0 200.23,352.0 283.37,352.0 512.0,220.0" fill="#3E3A35" />
+    <polygon id="rim_back_right" points="512.0,172.0 823.77,352.0 740.63,352.0 512.0,220.0" fill="#3E3A35" />
+    <polygon id="outer_left_wall" points="512.0,532.0 200.23,352.0 200.23,672.0 512.0,852.0" fill="#2B2824" />
+    <polygon id="outer_right_wall" points="512.0,532.0 823.77,352.0 823.77,672.0 512.0,852.0" fill="#1E1C1A" />
+  </g>
+</svg>
