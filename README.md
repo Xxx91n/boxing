@@ -13,9 +13,6 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
   <img src="docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
 </picture>
 
-> [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
-
 ## Table of Contents
 
 - [Features](#features)
@@ -44,9 +41,6 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
   <source media="(prefers-color-scheme: dark)" srcset="docs/store-assets/screenshots/screenshot-2-boxes.png">
   <img src="docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
 </picture>
-
-> [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
 
 ## Install
 
