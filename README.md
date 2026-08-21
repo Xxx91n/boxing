@@ -25,21 +25,13 @@
 
 Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
 
+**Proof — the new tab page, out of the box:**
+
 <p align="center">
-  <img src="docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing new tab page: dotted infinite canvas with top bar for search, box count, add, sync and theme controls" width="1280">
 </p>
 
-## Table of Contents
-
-- [Features](#features)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Features
+## What Makes It Different
 
 **Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
 
@@ -65,9 +57,7 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
 
 ## Brand Assets
 
-All logos, icons, store tiles, and theme variants live in [`docs/brand/`](docs/brand/) (source: `box_png` asset kit). Includes light/dark logo, extension icons, favicon set, Chrome store tiles, and the 1024 variants showcase:
-
-<img src="docs/brand/boxing_variants_showcase.png" alt="Boxing brand variants" width="720">
+Light/dark logos, extension icons, favicons, store tiles, and the variants showcase are vendored in [`docs/brand/`](docs/brand/) (24 files, from the `box_png` asset kit). Reuse these for store listings, docs, and the GitHub social preview.
 
 ## Install
 
