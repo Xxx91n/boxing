@@ -96,7 +96,7 @@ After the build completes, download the **boxing-release** artifact:
 3. **Add new item** > upload `boxing-chrome-<ver>.zip`
 4. Fill in store listing (use `docs/store-assets/store-listing.md`)
 5. Upload screenshots from `docs/store-assets/screenshots/` (replace placeholders first!)
-6. Set privacy policy URL: `https://<your-username>.github.io/boxing/privacy-policy.html`
+6. Set privacy policy URL: `https://Xxx91n.github.io/boxing/privacy-policy.html`
 7. Submit for review (1-3 business days)
 
 ### Firefox Add-ons (AMO)
@@ -106,7 +106,7 @@ After the build completes, download the **boxing-release** artifact:
 3. Choose **On this site** (for listed)
 4. Upload `boxing-firefox-<ver>.zip`
 5. Fill in store listing
-6. Set privacy policy URL: `https://<your-username>.github.io/boxing/privacy-policy.html`
+6. Set privacy policy URL: `https://Xxx91n.github.io/boxing/privacy-policy.html`
 7. Submit for review
 
 ## Part 5: GitHub Pages (Privacy Policy)
