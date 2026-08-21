@@ -7,23 +7,37 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-dark-theme.png">
   <source media="(prefers-color-scheme: light)" srcset="docs/brand/logo-light-theme.png">
-  <img src="docs/brand/logo.png" width="128" height="128" alt="Boxing logo" />
+  <img src="docs/brand/logo.png" width="220" height="220" alt="Boxing logo — beige minimalist cube with orange bookmark stripe" />
 </picture>
 
 # Boxing
 
-**A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.**
+**Your new tab is a spatial bookmark board.** Organize bookmarks into labeled boxes on an infinite, hierarchical canvas — drag, connect, and nest them spatially.
 
 <p>
-  <a href="https://github.com/Xxx91n/boxing/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Xxx91n/boxing" /></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/License-Apache--2.0-yellow.svg" /></a>
-  <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange" />
-  <img alt="Languages" src="https://img.shields.io/badge/i18n-14%20languages-brightgreen" />
+  <a href="#install">Install</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#what-makes-it-different">Why</a> ·
+  <a href="#usage">Usage</a> ·
+  <a href="#privacy">Privacy</a> ·
+  <a href="docs/store-publishing-plan.md">Store rollout</a>
+</p>
+
+<p>
+  <a href="https://github.com/Xxx91n/boxing/releases"><img alt="Install from GitHub Releases" src="https://img.shields.io/badge/GitHub_Releases-Install-orange?style=for-the-badge&logo=github" /></a>
+  <a href="docs/publishing-guide.md"><img alt="Edge Add-ons — rollout in progress" src="https://img.shields.io/badge/Edge_Add--ons-Coming_Soon-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
+</p>
+
+<p>
+  <a href="https://github.com/Xxx91n/boxing/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Xxx91n/boxing?style=flat-square" /></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Xxx91n/boxing?style=flat-square" /></a>
+  <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange?style=flat-square" />
+  <img alt="Languages" src="https://img.shields.io/badge/i18n-14%20languages-brightgreen?style=flat-square" />
 </p>
 
 </div>
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Think Obsidian canvas meets bookmarks.
 
 **Proof — the new tab page, out of the box:**
 
@@ -98,7 +112,6 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 - All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
 - Optional WebDAV / GitHub Gist backup is the only outbound network usage
 - No analytics, no tracking, no third-party services
-- 100% open source (Apache-2.0) — audit every line
 - Full privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md)
 
 ## Development
