@@ -2,6 +2,8 @@
 
 This guide walks you through setting up CRX3 signing and AMO signing for production releases of Boxing.
 
+> **Current rollout order (decided 2026-08-22):** Edge Add-ons first, Chrome Web Store **deferred** until Edge is live. Firefox AMO signing can continue in parallel because it produces the signed `.xpi` used for self-hosted download.
+
 ## Prerequisites
 
 - Clone the repo: `git clone git@github.com:Xxx91n/boxing.git`
@@ -89,7 +91,24 @@ After the build completes, download the **boxing-release** artifact:
 
 ## Part 4: Store Submission
 
-### Chrome Web Store
+### Edge Add-ons (current priority)
+
+Microsoft Edge uses the same Chromium Manifest V3 package format as Chrome — upload the same `boxing-chrome-<ver>.zip`.
+
+1. Sign in to [Microsoft Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) with a Microsoft account and enroll in the Edge Add-ons program (one-time).
+2. Create a new extension from the **Overview** page.
+3. On the **Packages** step, drag `boxing-chrome-<ver>.zip` onto **Drag your package here (.zip)**, wait for validation, click **Continue**.
+4. On **Availability**, choose **Public** (default, discoverable) or **Hidden** (listing URL only), and set target markets.
+5. On **Store listings**, fill `docs/store-assets/store-listing.md`; upload screenshots from `docs/store-assets/screenshots/`.
+6. Set privacy policy URL: `https://Xxx91n.github.io/boxing/privacy-policy.html`
+7. On **Properties / Contact**, set support email and website.
+8. **Publish** to submit for review. Typical review SLA: ~7 business days (often faster than Chrome Web Store).
+
+See the [official step-by-step guide](https://learn.microsoft.com/en-us/microsoft-edge/extensions/publish/publish-extension) for full screenshots of each Partner Center page.
+
+### Chrome Web Store (deferred)
+
+> Do **not** submit to Chrome Web Store yet — postponed until Edge listing is live and stable. Keep this section for later.
 
 1. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole/)
 2. Pay the $5 one-time developer fee (if first time)
