@@ -17,10 +17,10 @@ const DIST = path.resolve(ROOT, "dist");
 const SKIP = new Set([
   ".git", ".github", ".codex-tmp", ".codex", ".omx", ".codegraph",
   "node_modules", "dist", "package", "package.json", "package-lock.json",
-  "playwright", "docs", "scripts", "release",
+  "playwright", "playwright-report", "test", "test-results", "docs", "scripts", "release", "tools",
   "dev-chrome", "dev-firefox",
   "opencode.json",
-  ".gitignore", ".gitattributes", "AGENTS.md", ".DS_Store", "Thumbs.db"
+  ".npmrc", ".nvmrc", ".gitignore", ".gitattributes", "AGENTS.md", ".DS_Store", "Thumbs.db"
 ]);
 
 function copyTree(src, dst) {
