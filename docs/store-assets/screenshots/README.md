@@ -1,8 +1,8 @@
 # Store Listing Screenshots
 
-Placeholder screenshots for Chrome Web Store and AMO listing.
+Real screenshots for Chrome Web Store and AMO listing.
 
-All images are **transparent 1280x800 PNG** placeholders. Replace each file with a real screenshot using the same filename.
+All images are 1280x800 PNG screenshots taken from the Boxing new tab page via Playwright. To regenerate, run: node test/tests/take-store-screenshots.mjs (requires built dist/boxing-chrome/).
 
 ## Required Screenshots
 

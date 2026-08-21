@@ -5,6 +5,15 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.8.21] - 2026-08-21
+
+### Changed
+- Version scheme: SemVer (3.7.0) -> CalVer (2026.8.21, non-zero-padded)
+- Added manifest.json version_name field for store display
+- Added .github/workflows/mirror.yml: push-to-main mirror to GitLab + Codeberg
+- Updated screenshots: 5 real Playwright-captured 1280x800 PNG (was placeholders)
+- docs governance: hard boundaries to docs/agents/, process to docs/history/
+
 ## [3.7.0] - 2026-07-26
 
 ### Added

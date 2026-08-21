@@ -1,0 +1,22 @@
+name: Mirror to GitLab + Codeberg
+
+on:
+  push:
+    branches: [main]
+  create:
+  delete:
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: qte77/gha-github-mirror-action@v1
+        with:
+          gitlab_url: https://gitlab.com/Xxx91n/boxing.git
+          gitlab_pat: ${{ secrets.GITLAB_PAT }}
+          codeberg_url: https://codeberg.org/Xxx91n/boxing.git
+          codeberg_pat: ${{ secrets.CODEBERG_PAT }}
+
