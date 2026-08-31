@@ -12,7 +12,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Local cap: default (all cores) launches 8 headed browsers on this 8-thread
+  // host and starves them — random 30s setup/timeout failures with different
+  // victims each run (ticket 01 gate evidence). 4 keeps every run deterministic.
+  workers: process.env.CI ? 1 : 4,
   reporter: 'html',
   use: {
     trace: 'on-first-retry',
@@ -21,8 +24,10 @@ export default defineConfig({
   projects: [
     {
       name: 'firefox-extension',
-      // @quarantine: ticket 01 (architecture-recovery) — known-failing/unstable tests
-      // are excluded from the main suite; run them via `npm run test:quarantine`.
+      // @quarantine: ticket 01 (architecture-recovery) — Firefox keeps excluding
+      // @quarantine-tagged tests: native-input dispatch on the Firefox persistent
+      // context hangs (playwright#16095), so those specs are environmental there.
+      // Chromium fixed all 30 during ticket 01 and rejoined the main suite.
       grepInvert: /@quarantine/,
       use: {
         ...devices['Desktop Firefox'],
@@ -34,7 +39,9 @@ export default defineConfig({
     },
     {
       name: 'chromium-extension',
-      grepInvert: /@quarantine/,
+      // ticket 01: the 30 quarantined tests were repaired and verified 30/30 on
+      // chromium (see branch arch-recovery-01-quarantine); they run in the main
+      // suite again. Firefox-only flakes stay excluded via the firefox project.
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {

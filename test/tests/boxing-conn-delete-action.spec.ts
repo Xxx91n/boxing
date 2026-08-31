@@ -445,14 +445,16 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
 
   test('BX-CONN-DELETE: cross-tab star persists after child box delete in another tab', async ({ browser }) => {
     // Hardened against parallel-load flakiness: poll for __boxingDebug + star adoption.
-    test.setTimeout(60_000);
+    // 120s budget: two page setups + four 20s polls exceed 60s under 4-worker load
+    // (ticket 01 gate evidence: 60s timeout hit at poll #3).
+    test.setTimeout(120_000);
     const ctx = await browser.newContext();
     const page1 = await ctx.newPage();
     const page2 = await ctx.newPage();
     await page1.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
     await page1.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
     await page1.reload({ waitUntil: 'domcontentloaded' });
-    await expect.poll(() => page1.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15_000 }).toBe(true);
+    await expect.poll(() => page1.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 20_000 }).toBe(true);
     const ids = await page1.evaluate((cs) => {
       const dbg = (window as any).__boxingDebug;
       dbg.layout.boxes = cs.map((c: number[], i: number) => ({
@@ -470,12 +472,12 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
     }, [ids[0]]);
     await page1.evaluate(() => (window as any).__boxingDebug.saveLayout());
     await page2.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
-    await expect.poll(() => page2.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15_000 }).toBe(true);
+    await expect.poll(() => page2.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 20_000 }).toBe(true);
     // Wait until page2 adopts star via storage/load
     await expect.poll(() => page2.evaluate(([a]) => {
       const dbg = (window as any).__boxingDebug;
       return dbg.layout.boxes.find((b: any) => b.id === a)?.isParent === true;
-    }, [ids[0]]), { timeout: 15_000 }).toBe(true);
+    }, [ids[0]]), { timeout: 20_000 }).toBe(true);
     await page2.evaluate(([a, b]) => {
       const dbg = (window as any).__boxingDebug;
       dbg.addConnection(dbg.largeKey(a), dbg.largeKey(b));
@@ -490,12 +492,12 @@ test.describe('Boxing conn delete action (ADR-0006)', () => {
       const dbg = (window as any).__boxingDebug;
       const box = dbg.layout.boxes.find((b: any) => b.id === a);
       return !!box?.isParent;
-    }, [ids[0]]), { timeout: 15_000 }).toBe(true);
+    }, [ids[0]]), { timeout: 20_000 }).toBe(true);
     await expect.poll(() => page2.evaluate(([a]) => {
       const dbg = (window as any).__boxingDebug;
       const box = dbg.layout.boxes.find((b: any) => b.id === a);
       return !!box?.isParent;
-    }, [ids[0]]), { timeout: 15_000 }).toBe(true);
+    }, [ids[0]]), { timeout: 20_000 }).toBe(true);
     await ctx.close();
   });
 

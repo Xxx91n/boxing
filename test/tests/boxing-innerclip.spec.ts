@@ -13,7 +13,7 @@ async function resetBoxing(page) {
 }
 
 test.describe('Boxing inner surface clip (BX-DEV-CLIP)', () => {
-  test('@quarantine small-box at y=0 is not covered by inner__canvas-head', async ({ page }) => {
+  test('small-box at y=0 is not covered by inner__canvas-head', async ({ page }) => {
     await resetBoxing(page);
     // Create a large box and a small box at y=0 (surface top)
     await page.evaluate(() => {

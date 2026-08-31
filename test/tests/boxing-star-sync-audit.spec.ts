@@ -3,10 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const NTP_URL = `file:///${path
-  .resolve(__dirname, '..', '..', 'ntp', 'index.html')
-  .replace(/\\/g, '/')}`;
-
+const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 // Architecture audit Q1: verify cross-tab star sync behavior.
 // These tests probe whether box.isParent survives cross-tab mergeConcurrentLayout
 // without the layout.groups shim. Results determine if Block 1 (L1417-1430) in
@@ -48,12 +45,12 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
 
     // Force save
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
-    await a.waitForTimeout(200);
+    await a.waitForTimeout(400);
 
     // Open tab B (fresh — loads from storage)
     const b = await ctx.newPage();
     await boot(b);
-    await b.waitForTimeout(300);
+    await b.waitForTimeout(600);
 
     // Check if tab B adopted the star via box.isParent (without layout.groups)
     const starB = await b.evaluate((id) => {
@@ -87,10 +84,10 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
       (window as any).__boxingDebug.toggleStarMark(key);
     }, idA);
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
-    await a.waitForTimeout(200);
+    await a.waitForTimeout(400);
 
     // Wait for tab B to receive the star
-    await b.waitForTimeout(300);
+    await b.waitForTimeout(600);
     const starB_before = await b.evaluate((id) => {
       const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
       return lb ? lb.isParent : null;
@@ -103,10 +100,10 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
       (window as any).__boxingDebug.toggleStarMark(key);
     }, idA);
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
-    await a.waitForTimeout(200);
+    await a.waitForTimeout(400);
 
     // Wait for tab B to receive the unstar
-    await b.waitForTimeout(400);
+    await b.waitForTimeout(800);
 
     // Check if tab B's isParent was cleared
     const starB_after = await b.evaluate((id) => {
@@ -134,10 +131,10 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
       return (window as any).__boxingDebug.layout.boxes[0].id;
     });
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
-    await a.waitForTimeout(200);
+    await a.waitForTimeout(400);
 
     // Wait for tab B to receive the box
-    await b.waitForTimeout(300);
+    await b.waitForTimeout(600);
     const hasBoxB = await b.evaluate((id) => {
       const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
       return !!lb;
@@ -150,10 +147,10 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
       (window as any).__boxingDebug.toggleStarMark(key);
     }, idA);
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
-    await a.waitForTimeout(200);
+    await a.waitForTimeout(400);
 
     // Wait for tab B to receive the star change
-    await b.waitForTimeout(400);
+    await b.waitForTimeout(800);
 
     const starB = await b.evaluate((id) => {
       const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);

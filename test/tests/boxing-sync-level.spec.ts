@@ -73,7 +73,7 @@ test.describe('Boxing sync-level + file-name modularity (BX-DEV-SYNC-MOD)', () =
     expect(result.fileUrl).toContain('boxing-backup.json');
   });
 
-  test('@quarantine backupToGist uses makeSyncBody (settingsOnly strips boxes from gist payload)', async ({ page }) => {
+  test('backupToGist uses makeSyncBody (settingsOnly strips boxes from gist payload)', async ({ page }) => {
     await resetBoxing(page);
     // Mock fetch to capture gist body
     await page.evaluate(() => {
