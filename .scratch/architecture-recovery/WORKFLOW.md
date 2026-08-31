@@ -75,3 +75,5 @@
 | 2026-08-31 | 票01 | mock 数据版本字段写字符串 "3.7.0" 会在数值比较中静默为 false 并清空迁移结果 — 数值比较字段一律写数字 |
 | 2026-08-31 | 票03 | ESM 化后 file:// mock 的 CORS 失效是 chromium 独有且可解: `<script type="module">` 在 chromium file:// 默认被 CORS 封锁 (origin 'null', probe 实证), `--allow-file-access-from-files` 启动参数解封; firefox 同目录 file:// module 原生放行无需 pref。file:// 调试/测试车道因此保活 (spec 方案 a), 两个 playwright 配置的 chromium 项目均已加 flag — 04-08 票沿用, 勿再当阻塞 |
 | 2026-08-31 | 票03 | 抽模块前先认 favicon 块的真实边界: 票02 报告 §5 记 favicon 桶仅 1 符号 (probe) 是漏报, 真块 = IIFE 结束 `})();` 之后的 L5949-6094 尾段 (FAVICON_SOURCES/fastestCDN/getFaviconUrl/raceCDN/isValidPublicUrl/faviconCache/TTL/loadFavicon), 自包含仅 export loadFavicon; 搬移用 node 脚本逐字节切 (marker 唯一性 + head 以 `})();` 结尾两条前置断言), 禁止手抄 |
+| 2026-09-01 | 票05 | 逐字节切函数时, 删除区两侧空行会并成新空行串并污染 diff: 搬移脚本须记录每行 origin 行号, 只折叠 "pristine 中不存在的空行串" (且 \n{3,} 正则 = ≥2 连续空行, 别按 3 空行数 — off-by-one 两次踩中); 纯度审计假阳性三源: 对象字面量键名/正则字面量字符($)/同行多声明, 依赖逐函数人读源码定谳 |
+| 2026-09-01 | 票05 | 与票04 并行同改 ntp.js: 提交前必须 `but diff <file>` 逐 hunk 认领, 整文件 id 会把并行窗的未提交改动卷进自己 commit; hunk 与他人纠缠时用隔离法 (暂摘他人行→提交自己 hunk→原样还回→node --check)。纯度排除清单已写入 issues/05 供 06/07/08 认领 (makeId→06, mergeConcurrentLayout→07, clamp*Pan→08) |
