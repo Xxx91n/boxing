@@ -37,21 +37,26 @@ test.describe('Boxing v3 Extension', () => {
 
   test('NTP JS has all core functions', async () => {
     const js = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'ntp.js'), 'utf8');
+    // Ticket 04 (architecture-recovery): i18n dictionary/fallback/store extracted to ./i18n.js
+    const i18nMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'i18n.js'), 'utf8');
+    // Ticket 05 (architecture-recovery, asserted by 04 lane to unblock the shared gate):
+    // pure utils moved to ./utils.js — clampToEdge / migrateLayout live there now.
+    const utilsMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'utils.js'), 'utf8');
     // Core modules must be present
     expect(js).toContain('function addLargeBoxAt');
     expect(js).toContain('function addSmallBoxAt');
     expect(js).toContain('function onResizeStart');
     expect(js).toContain('function applyCanvasTransform');
     expect(js).toContain('function applyInnerTransform');
-    expect(js).toContain('function loadI18nStore');
+    expect(i18nMod).toContain('function loadI18nStore');
     expect(js).toContain('function openSettingsModal');
     expect(js).toContain('function closeSettingsModal');
     expect(js).toContain('function onCanvasDblClick');
     expect(js).toContain('function onInnerDblClick');
-    expect(js).toContain('function clampToEdge');
-    expect(js).toContain('SUPPORTED_LANGS');
+    expect(utilsMod).toContain('function clampToEdge');
+    expect(i18nMod).toContain('SUPPORTED_LANGS');
     expect(js).toContain('const DEBUG = true');
-    expect(js).toContain('function migrateLayout');
+    expect(utilsMod).toContain('function migrateLayout');
     // No security vulnerabilities
     expect(js).not.toContain('eval(');
   });
