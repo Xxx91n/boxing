@@ -11,6 +11,14 @@ async function resetFresh(page) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
   await page.evaluate(() => (window as any).__boxingDebug?.skipOnboarding?.());
+  // __boxingEncryptCredential/__boxingDecryptCredential are exposed inside init()
+  // (after async loadLayout/loadSettings), NOT synchronously with __boxingDebug.
+  // Poll for the functions this suite actually uses, else Firefox hits
+  // "enc is not a function" when init() has not reached the exposure line yet.
+  await expect.poll(() => page.evaluate(() =>
+    typeof (window as any).__boxingEncryptCredential === 'function' &&
+    typeof (window as any).__boxingDecryptCredential === 'function'
+  )).toBe(true);
 }
 
 test.describe('BX-CRED-V2: encrypted credential backup/restore', () => {
