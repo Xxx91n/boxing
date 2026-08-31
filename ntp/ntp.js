@@ -2,6 +2,27 @@
 'use strict';
 // Ticket 03 (architecture-recovery): favicon cache block extracted verbatim to ./favicon.js — first ES module of the zero-build pipeline (spec.md).
 import { loadFavicon } from './favicon.js';
+// Ticket 06 (architecture-recovery): shared mutable state moved verbatim to ./state.js —
+// single explicit state module (ESM live-binding singleton). Reads bind live; every write
+// goes through a set*() setter (imported bindings are read-only in ESM).
+import {
+  MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS, writerId, MAX_TOMBSTONES, MAX_CONNECTIONS,
+  LINE_POOL_CAP, __viewStatePersistTimers, __selfLastWriteTs, boxById, smallBoxById, connLines,
+  connById, dirtyConns, connIdx, boxConnIdx, __linePool, boxGroupId,
+  groupMembers, groupStar, groupIdx, __popupTrackers,
+  layout, currentLargeBoxId, canvasZoom, innerZoom, canvasPanX, canvasPanY,
+  innerPanX, innerPanY, dragState, resizeState, panState, lastClickTime,
+  lastClickTarget, lastDragEndTime, lastEnterLargeBoxAt, suppressInnerDblClickOnce, lastDragEndId, headerPinned,
+  scrollTimeout, idSequence, storageWriteChain, applyingExternalLayout, saveDebounceTimer, clearedTombstones,
+  __dsuDirty, __nextGroupId, canvasConnSvg, innerConnSvg, connectMode, provisionalLine,
+  provisionalGhost, selectedConnId, confirmCallback, __sizeObserver, __connRefreshRAF,
+  setLayout, setCurrentLargeBoxId, setCanvasZoom, setInnerZoom, setCanvasPanX, setCanvasPanY,
+  setInnerPanX, setInnerPanY, setDragState, setResizeState, setPanState, setLastClickTime,
+  setLastClickTarget, setLastDragEndTime, setLastEnterLargeBoxAt, setSuppressInnerDblClickOnce, setLastDragEndId, setHeaderPinned,
+  setScrollTimeout, setIdSequence, setStorageWriteChain, setApplyingExternalLayout, setSaveDebounceTimer, setClearedTombstones,
+  setDsuDirty, setNextGroupId, setCanvasConnSvg, setInnerConnSvg, setConnectMode, setProvisionalLine,
+  setProvisionalGhost, setSelectedConnId, setConfirmCallback, setSizeObserver, setConnRefreshRAF,
+} from './state.js';
 import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, defaultLayout, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, screenToWorld, smallKey, snapCanvas, snapInner } from './utils.js';
 
 (async () => {
@@ -48,9 +69,6 @@ import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_M
   const layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
 
   // ── constants ──────────────────────────────────────────
-  const MAX_LARGE_BOXES = 1000;
-  const MAX_SMALL_BOXES = 500;
-  const MAX_BOOKMARKS = 50;
   const DEBUG = true;
   // BX-AUD-01/03 — front-end WebDAV URL guard (mirrors the stricter guard in background.js).
   // Rejects private / host-only hostnames and oversized URLs so users never silently target a local network.
@@ -519,7 +537,6 @@ import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_M
   // the per-mousemove forced layout that 60-120Hz pan/drag caused. Updated by the RO below.
   const canvasContainerSize = { w: 0, h: 0 };
   const innerSurfaceSize = { w: 0, h: 0 };
-  let __sizeObserver = null;
   function refreshContainerSizes() {
     canvasContainerSize.w = canvasContainer.clientWidth || 0;
     canvasContainerSize.h = canvasContainer.clientHeight || 0;
@@ -529,7 +546,7 @@ import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_M
   function initSizeObserver() {
     refreshContainerSizes();
     if (__sizeObserver || typeof ResizeObserver === 'undefined') return;
-    __sizeObserver = new ResizeObserver(() => { try { refreshContainerSizes(); } catch (e) { /* silent: RO callback, layout recalc on next tick */ } });
+    setSizeObserver(new ResizeObserver(() => { try { refreshContainerSizes(); } catch (e) { /* silent: RO callback, layout recalc on next tick */ } }));
     try { __sizeObserver.observe(canvasContainer); __sizeObserver.observe(innerSurface); } catch (e) { /* silent: RO observe, container may be detached */ }
   }
   const innerCrumbTitle = $('#inner-crumb-title');
@@ -575,75 +592,35 @@ import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_M
   const diagClearLogBtn = $('#diag-clear-log-btn');
   const diagLogLevelSelect = $('#diag-log-level-select');
 
-  // ── state ──────────────────────────────────────────────
-  let layout = {
-    version: 3.5,
-    boxes: [],
-    nextLargeIndex: 1,
-    settings: {
-      selectedLanguage: 'en',
-      rememberLastPos: true,
-      zoomLevel: 1.0,
-      darkMode: false,
-      fontSize: 14
-    }
-  };
-  let currentLargeBoxId = null;
-  let canvasZoom = 1.0;
-  let innerZoom = 1.0;
-  // Obsidian-style pan state
-  let canvasPanX = 0, canvasPanY = 0;
-  let innerPanX = 0, innerPanY = 0;
-  // manual drag state
-  let dragState = null;
-  // resize state
-  let resizeState = null;
-  // canvas pan state (left-drag empty area)
-  let panState = null;
-  // double-click detection
-  let lastClickTime = 0;
-  let lastClickTarget = null;
-  let lastDragEndTime = 0;  // skip click if within 60ms of drag end (BX-DEV-065)
-let lastEnterLargeBoxAt = 0;  // BX-DEV-112C: time of last enterLargeBox via click/dblclick — used to suppress stray inner dblclick
-let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by enterLargeBox to swallow the next inner dblclick
-  let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click (BX-DEV-077)
+  // ── state ── moved verbatim to ./state.js (ticket 06, architecture-recovery) ──
 
-  // header auto-hide state (must be declared before functions that reference it)
-  let headerPinned = true;  // BX-DEV-111: set after loadLayout reads persisted value
-  let scrollTimeout;
   const TAB_VIEW_KEY = 'boxingTabView.v2';
   const LAST_ACTIVE_VIEW_KEY = 'boxingLastActiveView.v2';
   // BX-DEV-111L: permanent tab-view history (survives browser restart). LRU-bounded to prevent heap blow-up.
   const TAB_VIEW_HISTORY_KEY = 'boxingTabViewHistory.v3';
   const MAX_TAB_VIEW_HISTORY = 8;
   // Per-large-box inner view state persisted into layout (auto-syncs across tabs via chrome.storage).
-  const writerId = crypto.randomUUID ? crypto.randomUUID() : `page-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  let idSequence = 0;
   function makeId(prefix) {
-    idSequence = (idSequence + 1) % Number.MAX_SAFE_INTEGER;
+    setIdSequence((idSequence + 1) % Number.MAX_SAFE_INTEGER);
     return `${prefix}-${Date.now().toString(36)}-${writerId.slice(-8)}-${idSequence.toString(36)}`;
   }
-  let storageWriteChain = Promise.resolve();
-  let applyingExternalLayout = false;
-  let saveDebounceTimer = null;
-  const MAX_TOMBSTONES = 2000;
 
   // ── storage ────────────────────────────────────────────
   async function loadLayout() {
     try {
       const data = await layoutStorage.get({ boxingLayout: null });
       if (data.boxingLayout) {
-        layout = migrateLayout(data.boxingLayout);
+        setLayout(migrateLayout(data.boxingLayout));
       } else {
         const legacy = layoutStorage === api.storage.sync ? data : await api.storage.sync.get({ boxingLayout: null });
-        layout = legacy.boxingLayout ? migrateLayout(legacy.boxingLayout) : defaultLayout();
+        setLayout(legacy.boxingLayout ? migrateLayout(legacy.boxingLayout) : defaultLayout());
         if (legacy.boxingLayout && layoutStorage !== api.storage.sync) {
           await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
           // A6: one-time cleanup — remove stale sync data after successful local migration
           try { await api.storage.sync.remove("boxingLayout"); } catch (e) { debugErr("storage.sync.remove stale data", e); }
         }
       }
-    } catch (e) { debugErr('loadLayout', e); layout = await crashRescue() || defaultLayout(); }
+    } catch (e) { debugErr('loadLayout', e); setLayout(await crashRescue() || defaultLayout()); }
     rebuildBoxMaps();
     markDsuDirty(); // ADR-0007 Q4b: layout replaced — DSU must rebuild on first use
     try { ensureGroups(); } catch (e) { debugErr("ensureGroups after load", e); } // runtime groups mirror after load
@@ -775,9 +752,6 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // throttle (up from 25ms) keeps pan/zoom writes under chrome.storage.sync
   // MAX_WRITE_OPERATIONS_PER_MINUTE=1200 (=20/sec) quota with a 4x safety margin.
   // Each large box has its OWN timer (Map<boxId, timerHandle>) so switching boxes
-  // mid-pan no longer overwrites a different box's pending write.
-  const __viewStatePersistTimers = new Map();
-  const __selfLastWriteTs = new Map();
   let __lastViewStatePruneTs = 0;
   function scheduleLargeBoxViewStatePersist(boxId) {
     if (!boxId) return;
@@ -903,14 +877,14 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   async function saveLayout() {
-    storageWriteChain = storageWriteChain.then(async () => {
+    setStorageWriteChain(storageWriteChain.then(async () => {
       debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
       persistViewState(true);
       layout.settings.headerPinned = headerPinned;
       try { pruneConnArrays(); } catch (e) { debugErr("pruneConnArrays", e); }
       const stored = await layoutStorage.get({ boxingLayout: null });
       const remote = stored.boxingLayout ? migrateLayout(stored.boxingLayout) : null;
-      layout = mergeConcurrentLayout(layout, remote);
+      setLayout(mergeConcurrentLayout(layout, remote));
       const revision = Math.max(Number(layout._meta?.revision) || 0, Number(remote?._meta?.revision) || 0) + 1;
       layout._meta = { ...(layout._meta || {}), revision, updatedAt: Date.now(), writerId };
       // BX-AUD-04: explicit chrome.storage.sync quota failure handling — sets a user-visible flag
@@ -931,16 +905,16 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         throw e;
       }
       debug('saveLayout done, revision=' + revision);
-    }).catch(err => { debugErr('storageWriteChain stage failed - chain kept alive', err); });
+    }).catch(err => { debugErr('storageWriteChain stage failed - chain kept alive', err); }));
     try { await storageWriteChain; } catch (e) { debugWarn('saveLayout', e); }
   }
 
   function saveLayoutDebounced() {
     if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
-    saveDebounceTimer = setTimeout(() => {
-      saveDebounceTimer = null;
+    setSaveDebounceTimer(setTimeout(() => {
+      setSaveDebounceTimer(null);
       saveLayout();
-   }, 120);
+   }, 120));
  }
 
   // ═══════════════════════════════════════════════════
@@ -1039,8 +1013,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     const lang = layout.settings.selectedLanguage || 'en';
     if (!SUPPORTED_LANGS.includes(lang)) layout.settings.selectedLanguage = 'en';
     await loadI18nStore(layout.settings.selectedLanguage);
-    canvasZoom = layout.settings.zoomLevel || 1.0;
-    innerZoom = layout.settings.zoomLevel || 1.0;
+    setCanvasZoom(layout.settings.zoomLevel || 1.0);
+    setInnerZoom(layout.settings.zoomLevel || 1.0);
     const fs = layout.settings.fontSize || 14;
     document.documentElement.style.setProperty('--font-size-base', fs + 'px');
 
@@ -1059,10 +1033,6 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       document.getElementById('app').classList.add('ntp--square-corners');
     }
   }
-
-  // -- box index maps (ADR-0007 Phase 1.3: O(1) lookups) --
-  const boxById = new Map();       // largeBoxId -> box object
-  const smallBoxById = new Map();  // smallKey ("largeId:smallId") -> small box object
 
   function rebuildBoxMaps() {
     boxById.clear();
@@ -1084,18 +1054,9 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // `socket: 'auto'` picks the nearest edge midpoint; active-connect mode lets
   // the user click box A then box B; a star-mark makes a box the parent of a
   // group so dragging the parent averages the members and snaps them together.
-  const MAX_CONNECTIONS = 5000; // ponytail: bounded; upgrade to pagination past 5k
   // BX-142: SVG-based connection layer — replaces LeaderLine.
   // SVG overlay lives INSIDE the transform surface, so line coords = box logical coords.
   // No BCR reads, no transform-commit timing issues, lines clipped by surface overflow.
-  const connLines = new Map();          // connId -> SVG <line> element
-  const connById = new Map();            // connId -> connection object (O(1) lookup)
-  const dirtyConns = new Set();         // connIds needing path update
-  const connIdx = new Map();              // O(1) conn lookup by key-pair
-  const boxConnIdx = new Map();            // O(1) reverse: boxKey -> Set<connId>
-  // ADR-0013 BX-PERF-002: SVG <line> element pool — recycle instead of createElementNS per render cycle.
-  const LINE_POOL_CAP = 64; // ponytail: cap prevents unbounded growth; 64 is generous for typical layouts.
-  const __linePool = [];
   function acquireLineEl() {
     const el = __linePool.pop();
     if (el) return el;
@@ -1109,18 +1070,6 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     el.style.display = '';
     __linePool.push(el);
   }
-  // BX-DSU: Union-Find with path compression for O(α) group connectivity
-  const boxGroupId = new Map();      // boxKey -> groupId (DSU find root)
-  const groupMembers = new Map();    // groupId -> Set<boxKey> (all members)
-  const groupStar = new Set();       // boxKeys marked as parent (starred)
-  let clearedTombstones = new Set(); // BX-144: in-memory set of tombstone keys this tab has explicitly cleared (per-tab, never persisted)
-  const groupIdx = new Map();       // kept for compat: parentId -> group object
-  let __dsuDirty = true;              // ADR-0007 Q4b: rebuild DSU only when dirty (replaces __dsuDirty)
-  let canvasConnSvg = null;     // SVG overlay inside canvasSurface
-  let innerConnSvg = null;     // SVG overlay inside innerSurfaceContent
-  let connectMode = null;               // { fromId, fromEl, fromSide } | null
-  let provisionalLine = null;        // temp SVG <line> during drag
-  let provisionalGhost = null;      // { x, y } logical coords of drag endpoint
 
   function ensureConnArrays() {
     if (!Array.isArray(layout.connections)) layout.connections = [];
@@ -1318,15 +1267,13 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   }
 
   // ADR-0006: Configurable connection delete action (tldraw Actions pattern, vanilla JS).
-  // Single config field layout.settings.connDeleteAction drives which gesture deletes a line.
-  let selectedConnId = null;
 
   function getConnDeleteTrigger() { return (layout.settings && layout.settings.connDeleteAction) || 'alt+click'; }
 
   function deleteConnById(connId) {
     if (!connId) return;
     removeConnection(connId);
-    if (selectedConnId === connId) selectedConnId = null;
+    if (selectedConnId === connId) setSelectedConnId(null);
     renderConnections();
     saveLayoutDebounced();
     debug('deleteConnById ' + connId + ' mode=' + getConnDeleteTrigger());
@@ -1351,7 +1298,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       if (selectedConnId && selectedConnId !== connId) {
         const prev = connLines.get(selectedConnId); if (prev) prev.classList.remove('conn-line--selected');
       }
-      selectedConnId = connId;
+      setSelectedConnId(connId);
       e.currentTarget.classList.add('conn-line--selected');
       return;
     }
@@ -1412,7 +1359,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     boxConnIdx.clear();
     rebuildBoxMaps();
     connById.clear();
-    if (__connRefreshRAF) { cancelAnimationFrame(__connRefreshRAF); __connRefreshRAF = 0; }
+    if (__connRefreshRAF) { cancelAnimationFrame(__connRefreshRAF); setConnRefreshRAF(0); }
     // Clear SVG overlay DOM too
     if (canvasConnSvg) { while (canvasConnSvg.firstChild) canvasConnSvg.removeChild(canvasConnSvg.firstChild); }
     if (innerConnSvg) { while (innerConnSvg.firstChild) innerConnSvg.removeChild(innerConnSvg.firstChild); }
@@ -1569,8 +1516,8 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   function renderConnections() {
     ensureConnArrays();
     // Ensure SVG overlays exist
-    if (canvasSurface) canvasConnSvg = getConnSvg(canvasSurface, canvasConnSvg);
-    if (typeof innerSurfaceContent !== 'undefined' && innerSurfaceContent) innerConnSvg = getConnSvg(innerSurfaceContent, innerConnSvg);
+    if (canvasSurface) setCanvasConnSvg(getConnSvg(canvasSurface, canvasConnSvg));
+    if (typeof innerSurfaceContent !== 'undefined' && innerSurfaceContent) setInnerConnSvg(getConnSvg(innerSurfaceContent, innerConnSvg));
     // Reconcile live lines with layout.connections: drop dead.
     const wanted = new Set(layout.connections.map(c => c.id));
     connIdx.clear();
@@ -1623,14 +1570,13 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     }
     scheduleConnRefresh(Array.from(connLines.keys()));
   }
-  let __connRefreshRAF = 0;
   function scheduleConnRefresh(connIds) {
     if (!connIds || !connIds.length) return;
     for (const id of connIds) dirtyConns.add(id);
     // BX-DEV-PERF: rAF-batch to avoid sync layout thrash on Firefox during drag
     if (__connRefreshRAF) return;
-    __connRefreshRAF = requestAnimationFrame(() => {
-      __connRefreshRAF = 0;
+    setConnRefreshRAF(requestAnimationFrame(() => {
+      setConnRefreshRAF(0);
       const ids = Array.from(dirtyConns);
       dirtyConns.clear();
       for (const id of ids) {
@@ -1639,7 +1585,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
         const conn = connById.get(id);
         if (conn) updateSvgLine(line, conn);
       }
-    });
+    }));
   }
 
   function refreshConnsForBox(boxKey) {
@@ -1673,7 +1619,6 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
   // ── Star-mark / group drag ──────────────────────────
   
   // ── BX-DSU: Union-Find with path compression ──
-  let __nextGroupId = 1;
   
   function dsuFind(key) {
     if (!boxGroupId.has(key)) return 0;
@@ -1712,7 +1657,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
     boxGroupId.clear(); groupMembers.clear(); groupStar.clear();
     // ADR-0007 Q4b: dirty flag is owned by markDsuDirty/dsuRebuild — not reset here
   }
-  function markDsuDirty() { __dsuDirty = true; }
+  function markDsuDirty() { setDsuDirty(true); }
   
   function dsuRebuildFromConnections() {
     if (!__dsuDirty) return; // ADR-0007 Q4b: skip full rebuild when clean
@@ -1750,7 +1695,7 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       }
     }
   }
-  __dsuDirty = false; // Bug1: mark DSU as built so getGroupByParent skips ensureGroups on subsequent calls
+  setDsuDirty(false); // Bug1: mark DSU as built so getGroupByParent skips ensureGroups on subsequent calls
 }
   
   function dsuGroupMembers(key) {
@@ -1847,7 +1792,7 @@ function ensureGroups() {
     if (parentId === memberId) return;
     ensureConnArrays();
     dsuUnion(parentId, memberId); // Bug2: union DSU
-    __dsuDirty = false; // DSU is valid after dsuUnion
+    setDsuDirty(false); // DSU is valid after dsuUnion
   }
   // During parent drag we apply the same delta to every member. Members collide
   // against OUT-of-group boxes only; intra-group siblings move as a rigid set.
@@ -1946,7 +1891,7 @@ function ensureGroups() {
   // provisionalGhost is now { x, y } logical coords, updated on mousemove via rAF throttle.
   function enterConnectMode(fromId, fromEl, initCx, initCy) {
     if (connectMode) { exitConnectMode(); return; }   // second click cancels
-    connectMode = { fromId, fromEl };
+    setConnectMode({ fromId, fromEl });
     document.body.classList.add('cx--connecting');
     document.body.style.cursor = 'crosshair';
     // Determine which surface this box lives in
@@ -1954,7 +1899,7 @@ function ensureGroups() {
     const isInner = mp && mp.surface === 'inner';
     const surface = isInner ? innerSurfaceContent : canvasSurface;
     const svg = surface ? getConnSvg(surface, isInner ? innerConnSvg : canvasConnSvg) : null;
-    if (isInner) innerConnSvg = svg; else canvasConnSvg = svg;
+    if (isInner) setInnerConnSvg(svg); else setCanvasConnSvg(svg);
     // Create provisional SVG <line> with dashed stroke
     if (svg && mp) {
       // Bug 1 fix: immediately snap line endpoint to mouse position — line follows cursor from first frame
@@ -1969,7 +1914,7 @@ function ensureGroups() {
         initLX = (initCx - rect.left) / zoom;
         initLY = (initCy - rect.top) / zoom;
       }
-      provisionalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      setProvisionalLine(document.createElementNS('http://www.w3.org/2000/svg', 'line'));
       provisionalLine.setAttribute('class', 'conn-line conn-line--provisional');
       provisionalLine.setAttribute('stroke', 'var(--connection-color, #333)');
       provisionalLine.setAttribute('stroke-width', '1.5');
@@ -1979,17 +1924,17 @@ function ensureGroups() {
       provisionalLine.setAttribute('x2', Math.round(initLX));
       provisionalLine.setAttribute('y2', Math.round(initLY));
       svg.appendChild(provisionalLine);
-      provisionalGhost = { x: initLX, y: initLY, surface: mp.surface };
+      setProvisionalGhost({ x: initLX, y: initLY, surface: mp.surface });
     }
     debug('enterConnectMode from=' + fromId);
   }
   function exitConnectMode(commitToId) {
-    const cm = connectMode; connectMode = null;
+    const cm = connectMode; setConnectMode(null);
     document.body.classList.remove('cx--connecting');
     document.body.style.cursor = '';
     // BX-142: dispose provisional SVG line + ghost coords.
-    if (provisionalLine) { try { provisionalLine.remove(); } catch (e) { /* silent: DOM line already detached */ } provisionalLine = null; }
-    provisionalGhost = null;
+    if (provisionalLine) { try { provisionalLine.remove(); } catch (e) { /* silent: DOM line already detached */ } setProvisionalLine(null); }
+    setProvisionalGhost(null);
     if (cm && commitToId && cm.fromId && cm.fromId !== commitToId) {
       if (addConnection(cm.fromId, commitToId)) {
         saveLayout();
@@ -2131,7 +2076,7 @@ function ensureGroups() {
     headerPinBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
-      headerPinned = !headerPinned;
+      setHeaderPinned(!headerPinned);
       updateAutohideUI();
       // When repinning: header reappears, canvas layout changes — reapply transforms
       if (headerPinned) { applyCanvasTransform(); applyInnerTransform(); }
@@ -2339,7 +2284,7 @@ function ensureGroups() {
     body.addEventListener('click', (ev) => {
       if (ev.target.closest('.box-resize-handle') || ev.target.closest('.large-box__delete')) return;
       // BX-DEV-077: clear stale drag state FIRST before any other checks
-      if (lastDragEndId === box.id) { lastDragEndId = null; barDownWasDragZone = false; barDownX = 0; barDownY = 0; }
+      if (lastDragEndId === box.id) { setLastDragEndId(null); barDownWasDragZone = false; barDownX = 0; barDownY = 0; }
       // If mousedown was on drag zone and click moved >3px, treat as drag
       if (barDownWasDragZone) {
         const dx = Math.abs(ev.clientX - barDownX);
@@ -2351,8 +2296,8 @@ function ensureGroups() {
       if (Date.now() - lastDragEndTime < 60) { debug('skip click: drag just ended'); return; }
       // BX-DEV-112C: this click enters — set suppress guard so any follow-on
       // inner dblclick from the same physical click/dblclick does NOT create a stray small box.
-      lastEnterLargeBoxAt = Date.now();
-      suppressInnerDblClickOnce = true;
+      setLastEnterLargeBoxAt(Date.now());
+      setSuppressInnerDblClickOnce(true);
       enterLargeBox(box.id);
     });
     if (childCount) {
@@ -2449,20 +2394,20 @@ function ensureGroups() {
   function _enterLargeBox(id, skipPosRestore) {
     // BX-DEV-111N: stash the previous large box inner view state into its own record before switching.
     if (currentLargeBoxId && currentLargeBoxId !== id) { saveLargeBoxViewState(currentLargeBoxId); }
-    currentLargeBoxId = id;
+    setCurrentLargeBoxId(id);
     const lb = getLargeBox(id);
     if (!lb) { exitToCanvas(); return; }
     persistViewState(true);
     // BX-DEV-111N: restore per-box inner view state (zoom/pan) saved earlier, unless caller asked to skip.
     if (!skipPosRestore && lb.viewState && typeof lb.viewState.innerZoom === 'number') {
-      innerZoom = lb.viewState.innerZoom;
-      innerPanX = Number(lb.viewState.innerPanX) || 0;
-      innerPanY = Number(lb.viewState.innerPanY) || 0;
+      setInnerZoom(lb.viewState.innerZoom);
+      setInnerPanX(Number(lb.viewState.innerPanX) || 0);
+      setInnerPanY(Number(lb.viewState.innerPanY) || 0);
       debug('enterLargeBox: restored viewState for', id, { innerZoom, innerPanX, innerPanY });
     } else if (skipPosRestore) {
       // caller (reload/restore) will set inner* values externally after this returns
     } else {
-      innerZoom = layout.settings.zoomLevel || 1.0; innerPanX = 0; innerPanY = 0;
+      setInnerZoom(layout.settings.zoomLevel || 1.0); setInnerPanX(0); setInnerPanY(0);
     }
 
     canvasContainer.hidden = true;
@@ -2511,8 +2456,8 @@ function ensureGroups() {
     debug(`exitToCanvas: leaving box, back to canvas`);
     // BX-DEV-111N: stash inner view before resetting — preserves per-box view across exits.
     saveLargeBoxViewState(currentLargeBoxId);
-    currentLargeBoxId = null;
-    innerPanX = 0; innerPanY = 0; innerZoom = 1.0;
+    setCurrentLargeBoxId(null);
+    setInnerPanX(0); setInnerPanY(0); setInnerZoom(1.0);
     persistViewState(true);
     if (addLargeBtn) addLargeBtn.style.display = '';  // BX-DEV-101: restore + button
     disposeAllConns(); // BX-DEV-137+++: clear inner-view lines before canvas re-renders them
@@ -2868,8 +2813,6 @@ function ensureGroups() {
   }
 
   // BX-DEV-122 (Bug12 popup-followf-box): maintain a live tracker of open bookmark edit/add
-  // popups so that pan/zoom/box-drag can reposition them to follow the attached small box.
-  const __popupTrackers = new Map(); // DOMNode -> reposition fn
   function addPopupTracker(popupEl, repositionFn) {
     if (!popupEl || typeof repositionFn !== 'function') return;
     __popupTrackers.set(popupEl, repositionFn);
@@ -3219,7 +3162,7 @@ function ensureGroups() {
         }
       }
     }
-    dragState = {
+    setDragState({
       type, id, el,
       startMouseX: e.clientX,
       startMouseY: e.clientY,
@@ -3229,7 +3172,7 @@ function ensureGroups() {
       container,
       memberOrigins,
       hasMoved: false // BX-DEV-137+++++: track actual drag movement to suppress accidental button click
-    };
+    });
 
     el.classList.add(type === 'large' ? 'large-box--dragging' : 'small-box--dragging');
     el.style.zIndex = '10';
@@ -3326,7 +3269,7 @@ function ensureGroups() {
 
     if (type === 'large') {
       const box = getLargeBox(id);
-      if (!box) { dragState = null; return; }
+      if (!box) { setDragState(null); return; }
       const w = box.width || LARGE_DEF_W, h = box.height || LARGE_DEF_H;
       const others = layout.boxes.filter(b => b.id !== box.id);
       // elastic snap
@@ -3346,7 +3289,7 @@ function ensureGroups() {
       refreshConnsForBox(largeKey(box.id));
     } else {
       const sb = getSmallBox(id.largeId, id.smallId);
-      if (!sb) { dragState = null; return; }
+      if (!sb) { setDragState(null); return; }
       const lb = getLargeBox(id.largeId);
       const others = (lb?.children || []).filter(s => s.id !== sb.id);
       const w = sb.width || SMALL_DEF_W, h = sb.height || SMALL_DEF_H;
@@ -3376,9 +3319,9 @@ function ensureGroups() {
     }
 
     saveLayout();
-    dragState = null;
-    lastDragEndTime = Date.now();  // prevent click-from-drag (BX-DEV-065)
-    if (type === "large") lastDragEndId = id;  // signal large box to clear barDownWasDragZone on next click (BX-DEV-077)
+    setDragState(null);
+    setLastDragEndTime(Date.now());  // prevent click-from-drag (BX-DEV-065)
+    if (type === "large") setLastDragEndId(id);  // signal large box to clear barDownWasDragZone on next click (BX-DEV-077)
   }
 
   // ── Canvas Pan (left-drag empty area) ────────────────
@@ -3388,13 +3331,13 @@ function ensureGroups() {
     if (e.button !== 0) return;
 
     canvasSurface.classList.add('panning');
-    panState = {
+    setPanState({
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       origPanX: canvasPanX,
       origPanY: canvasPanY,
       moved: false
-    };
+    });
     document.addEventListener('mousemove', onCanvasPanMove);
     document.addEventListener('mouseup', onCanvasPanEnd);
     // BX-DEV-120A: window-blur safety net — if the user alt-tabs/releases the
@@ -3422,8 +3365,8 @@ function ensureGroups() {
     }
     const raw = { x: panState.origPanX + dx, y: panState.origPanY + dy };
     const clamped = clampCanvasPan(raw.x, raw.y, canvasZoom);
-    canvasPanX = clamped.x;
-    canvasPanY = clamped.y;
+    setCanvasPanX(clamped.x);
+    setCanvasPanY(clamped.y);
     applyCanvasTransform();
     e.preventDefault();
     try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ }
@@ -3443,7 +3386,7 @@ function ensureGroups() {
     document.removeEventListener('pointerup', onCanvasPanEnd);
     document.removeEventListener('pointercancel', onCanvasPanEnd);
     if (panState && panState.moved) canvasContainer.style.cursor = '';
-    panState = null;
+    setPanState(null);
     persistViewState(true);
   }
 
@@ -3463,13 +3406,13 @@ function ensureGroups() {
     if (e.button !== 0) return;
 
     innerCanvas.classList.add('panning');
-    panState = {
+    setPanState({
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       origPanX: innerPanX,
       origPanY: innerPanY,
       moved: false
-    };
+    });
     // Cursor switch deferred to first onInnerPanMove beyond threshold.
     document.addEventListener('mousemove', onInnerPanMove);
     document.addEventListener('mouseup', onInnerPanEnd);
@@ -3495,8 +3438,8 @@ function ensureGroups() {
     }
     const raw = { x: panState.origPanX + dx, y: panState.origPanY + dy };
     const clamped = clampInnerPan(raw.x, raw.y, innerZoom);
-    innerPanX = clamped.x;
-    innerPanY = clamped.y;
+    setInnerPanX(clamped.x);
+    setInnerPanY(clamped.y);
     applyInnerTransform();
     e.preventDefault();
     // BX-DEV-111N+ : propagate live inner pan to other tabs within ~25ms (throttled).
@@ -3517,7 +3460,7 @@ function ensureGroups() {
     if (panState && panState.moved) {
       innerCanvas.style.cursor = ''; innerSurface.style.cursor = '';
     }
-    panState = null;
+    setPanState(null);
     persistViewState(true);
     // BX-DEV-111N: persist inner pan into the current large box record.
     if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
@@ -3533,11 +3476,11 @@ function ensureGroups() {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
       const result = zoomAtPoint(canvasContainer, canvasZoom, canvasPanX, canvasPanY, e.clientX, e.clientY, factor);
-      canvasZoom = result.zoom;
+      setCanvasZoom(result.zoom);
       // Clamp pan immediately to prevent flash-back on next move (BX-DEV-049)
       const clampedZoomPan = clampCanvasPan(result.panX, result.panY, canvasZoom);
-      canvasPanX = clampedZoomPan.x;
-      canvasPanY = clampedZoomPan.y;
+      setCanvasPanX(clampedZoomPan.x);
+      setCanvasPanY(clampedZoomPan.y);
       layout.settings.zoomLevel = canvasZoom;
       applyCanvasTransform();
       // A4: refresh conn lines so LOD stroke-width + viewport-culling react to the new zoom.
@@ -3552,10 +3495,10 @@ function ensureGroups() {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
       const result = zoomAtPoint(innerCanvas, innerZoom, innerPanX, innerPanY, e.clientX, e.clientY, factor);
-      innerZoom = result.zoom;
+      setInnerZoom(result.zoom);
       const clampedInnerPan = clampInnerPan(result.panX, result.panY, innerZoom);
-      innerPanX = clampedInnerPan.x;
-      innerPanY = clampedInnerPan.y;
+      setInnerPanX(clampedInnerPan.x);
+      setInnerPanY(clampedInnerPan.y);
       applyInnerTransform();
       // A4: refresh inner conn lines after zoom so LOD/culling reacts.
       if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
@@ -3578,14 +3521,14 @@ function ensureGroups() {
     e.stopPropagation();
     if (e.button !== 0) return;
 
-    resizeState = {
+    setResizeState({
       type, id, el,
       startX: e.clientX,
       startY: e.clientY,
       origW: parseInt(el.style.width, 10) || (type === 'large' ? LARGE_DEF_W : SMALL_DEF_W),
       origH: parseInt(el.style.height, 10) || (type === 'large' ? LARGE_DEF_H : SMALL_DEF_H),
       zoom: type === 'large' ? canvasZoom : innerZoom
-    };
+    });
     document.body.classList.add('box-resizing');
 
     const onMove = (ev) => {
@@ -3622,7 +3565,7 @@ function ensureGroups() {
       // BX-DEV-137++: refresh connections after resize — box dimensions changed,
       // leader-line cached stale bounding rect. rAF-coalesced via refreshAllConns.
       if (connLines.size) refreshAllConns();
-      resizeState = null;
+      setResizeState(null);
     };
 
     document.addEventListener('mousemove', onMove);
@@ -3745,7 +3688,7 @@ function ensureGroups() {
     if (!lb) {
       // Large box was deleted on another tab — block operations and warn
       showBoxDeletedWarning(currentLargeBoxId);
-      currentLargeBoxId = null;
+      setCurrentLargeBoxId(null);
       exitToCanvas();
       return false;
     }
@@ -3879,12 +3822,12 @@ function ensureGroups() {
       || (incomingUpdatedAt === currentUpdatedAt
         && String(incoming._meta?.writerId || '') > String(layout._meta?.writerId || ''));
 
-    applyingExternalLayout = true;
+    setApplyingExternalLayout(true);
     const staleLargeBoxId = currentLargeBoxId;
     const incomingSerialized = JSON.stringify(incoming);
-    layout = incomingWins
+    setLayout(incomingWins
       ? mergeConcurrentLayout(incoming, layout)
-      : mergeConcurrentLayout(layout, incoming);
+      : mergeConcurrentLayout(layout, incoming));
     const needsReconcileWrite = JSON.stringify(layout) !== incomingSerialized;
     // A5: groupIdx no longer needed; dsuRebuild reads box.isParent
     markDsuDirty(); dsuRebuildFromConnections();
@@ -3894,10 +3837,10 @@ function ensureGroups() {
     boxConnIdx.clear();
     try {
       if (staleLargeBoxId && !getLargeBox(staleLargeBoxId)) {
-        currentLargeBoxId = null;
-        innerPanX = 0;
-        innerPanY = 0;
-        innerZoom = 1;
+        setCurrentLargeBoxId(null);
+        setInnerPanX(0);
+        setInnerPanY(0);
+        setInnerZoom(1);
         renderCanvas();
         showBoxDeletedWarning(staleLargeBoxId);
       } else if (currentLargeBoxId) {
@@ -3919,9 +3862,9 @@ function ensureGroups() {
               // Only adopt when the remote viewState is strictly newer than what this tab
               // most recently wrote; avoids ping-pong when both tabs idle on the same box.
               if (remoteTs > ownTs + 100) {
-                innerZoom = Number(lb.viewState.innerZoom) || innerZoom;
-                innerPanX = Number(lb.viewState.innerPanX) || 0;
-                innerPanY = Number(lb.viewState.innerPanY) || 0;
+                setInnerZoom(Number(lb.viewState.innerZoom) || innerZoom);
+                setInnerPanX(Number(lb.viewState.innerPanX) || 0);
+                setInnerPanY(Number(lb.viewState.innerPanY) || 0);
                 debug('applyExternalLayout: adopted remote viewState', { box: lb.id, innerZoom, innerPanX, innerPanY, remoteTs });
               }
             }
@@ -3942,7 +3885,7 @@ function ensureGroups() {
       debug('external layout applied', { revision: incomingRevision, boxes: layout.boxes.length });
       return true;
     } finally {
-      applyingExternalLayout = false;
+      setApplyingExternalLayout(false);
     }
   }
 
@@ -3979,20 +3922,19 @@ function ensureGroups() {
   window._boxingDeleteLargeBox = _execDeleteLargeBox; // BX-DEV-111k: exposed for cross-tab delete test
 
   // ── confirm modal (in-page, replaces browser confirm()) ──
-  let confirmCallback = null;
   function openConfirmModal(type, id, largeId) {
     confirmModal.hidden = false;
     confirmTitle.textContent = i18n('confirmDeleteTitle');
     const bodyText = type === 'large' ? i18n('confirmDeleteLargeBody') : i18n('confirmDeleteSmallBody');
     confirmBody.textContent = bodyText;
-    confirmCallback = () => {
+    setConfirmCallback(() => {
       if (type === 'large') _execDeleteLargeBox(id);
       else _execDeleteSmallBox(largeId, id);
-    };
+    });
   }
   function closeConfirmModal() {
     confirmModal.hidden = true;
-    confirmCallback = null;
+    setConfirmCallback(null);
   }
 
   // ── search / caption ───────────────────────────────────
@@ -4145,8 +4087,8 @@ function ensureGroups() {
           // ADR-0015: center-align + clamp (unified with enterAndLocateSmallBox pan formula)
           var bw = (sb.width || 200) * innerZoom;
           var bh = (sb.height || 160) * innerZoom;
-          innerPanX = Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + (sw - bw) / 2));
-          innerPanY = Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + (sh - bh) / 2));
+          setInnerPanX(Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + (sw - bw) / 2)));
+          setInnerPanY(Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + (sh - bh) / 2)));
           applyInnerTransform();
           if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
         }
@@ -4179,8 +4121,8 @@ function ensureGroups() {
           // ADR-0015: center-align + clamp (unified with openSearchHit pan formula)
           var bw = (sb.width || 200) * innerZoom;
           var bh = (sb.height || 160) * innerZoom;
-          innerPanX = Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + (sw - bw) / 2));
-          innerPanY = Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + (sh - bh) / 2));
+          setInnerPanX(Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + (sw - bw) / 2)));
+          setInnerPanY(Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + (sh - bh) / 2)));
           applyInnerTransform();
           if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
           // ADR-0015: highlight pulse via outline (escapes contain:layout clipping)
@@ -4243,12 +4185,12 @@ function ensureGroups() {
     if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
       e.preventDefault();
       if (currentLargeBoxId) {
-        innerZoom = zoomStep(innerZoom, 'in');
-        const ci = clampInnerPan(innerPanX, innerPanY, innerZoom); innerPanX = ci.x; innerPanY = ci.y;
+        setInnerZoom(zoomStep(innerZoom, 'in'));
+        const ci = clampInnerPan(innerPanX, innerPanY, innerZoom); setInnerPanX(ci.x); setInnerPanY(ci.y);
         applyInnerTransform();
       } else {
-        canvasZoom = zoomStep(canvasZoom, 'in');
-        const cc = clampCanvasPan(canvasPanX, canvasPanY, canvasZoom); canvasPanX = cc.x; canvasPanY = cc.y;
+        setCanvasZoom(zoomStep(canvasZoom, 'in'));
+        const cc = clampCanvasPan(canvasPanX, canvasPanY, canvasZoom); setCanvasPanX(cc.x); setCanvasPanY(cc.y);
         layout.settings.zoomLevel = canvasZoom;
         applyCanvasTransform();
         saveLayout();
@@ -4257,12 +4199,12 @@ function ensureGroups() {
     if (e.ctrlKey && e.key === '-') {
       e.preventDefault();
       if (currentLargeBoxId) {
-        innerZoom = zoomStep(innerZoom, 'out');
-        const ci = clampInnerPan(innerPanX, innerPanY, innerZoom); innerPanX = ci.x; innerPanY = ci.y;
+        setInnerZoom(zoomStep(innerZoom, 'out'));
+        const ci = clampInnerPan(innerPanX, innerPanY, innerZoom); setInnerPanX(ci.x); setInnerPanY(ci.y);
         applyInnerTransform();
       } else {
-        canvasZoom = zoomStep(canvasZoom, 'out');
-        const cc = clampCanvasPan(canvasPanX, canvasPanY, canvasZoom); canvasPanX = cc.x; canvasPanY = cc.y;
+        setCanvasZoom(zoomStep(canvasZoom, 'out'));
+        const cc = clampCanvasPan(canvasPanX, canvasPanY, canvasZoom); setCanvasPanX(cc.x); setCanvasPanY(cc.y);
         layout.settings.zoomLevel = canvasZoom;
         applyCanvasTransform();
         saveLayout();
@@ -4288,8 +4230,8 @@ function ensureGroups() {
     if (targetBox) {
       debug('onCanvasDblClick on existing box, entering', targetBox.dataset.id);
       // BX-DEV-112C: suppress stray inner dblclick that synthesizes from the entry click.
-      lastEnterLargeBoxAt = Date.now();
-      suppressInnerDblClickOnce = true;
+      setLastEnterLargeBoxAt(Date.now());
+      setSuppressInnerDblClickOnce(true);
       enterLargeBox(targetBox.dataset.id);
       return;
     }
@@ -4301,7 +4243,7 @@ function ensureGroups() {
   function onInnerClick(e) {
     const now = Date.now();
     const target = e.target.closest('.small-box');
-    if (target) { lastClickTime = 0; return; }
+    if (target) { setLastClickTime(0); return; }
     // Click on empty inner — no action (dblclick handles creation)
   }
 
@@ -4313,12 +4255,12 @@ function ensureGroups() {
     const withinEnterWindow = (Date.now() - lastEnterLargeBoxAt) < 350;
     if (suppressInnerDblClickOnce) {
       if (withinEnterWindow) {
-        suppressInnerDblClickOnce = false;
+        setSuppressInnerDblClickOnce(false);
         debug('onInnerDblClick suppressed: one-shot from enterLargeBox');
         return;
       } else {
         // Stale one-shot flag; discard so user dblclicks are no longer blocked.
-        suppressInnerDblClickOnce = false;
+        setSuppressInnerDblClickOnce(false);
       }
     }
     if (withinEnterWindow) {
@@ -4347,7 +4289,7 @@ function ensureGroups() {
     initSizeObserver();
 
     // BX-DEV-111: Now that layout is loaded, restore headerPinned from persisted state
-    headerPinned = layout.settings.headerPinned !== false;  // true if not explicitly set to false
+    setHeaderPinned(layout.settings.headerPinned !== false);  // true if not explicitly set to false
 
     // events
     searchInput.addEventListener('input', e => {
@@ -4468,23 +4410,23 @@ function ensureGroups() {
     }, { capture: true, passive: false });
     // Zoom buttons
     canvasZoomOut?.addEventListener('click', () => {
-      canvasZoom = zoomStep(canvasZoom, 'out');
+      setCanvasZoom(zoomStep(canvasZoom, 'out'));
       layout.settings.zoomLevel = canvasZoom;
       applyCanvasTransform();
       saveLayout();
     });
     canvasZoomIn?.addEventListener('click', () => {
-      canvasZoom = zoomStep(canvasZoom, 'in');
+      setCanvasZoom(zoomStep(canvasZoom, 'in'));
       layout.settings.zoomLevel = canvasZoom;
       applyCanvasTransform();
       saveLayout();
     });
     innerZoomOut?.addEventListener('click', () => {
-      innerZoom = zoomStep(innerZoom, 'out');
+      setInnerZoom(zoomStep(innerZoom, 'out'));
       applyInnerTransform();
     });
     innerZoomIn?.addEventListener('click', () => {
-      innerZoom = zoomStep(innerZoom, 'in');
+      setInnerZoom(zoomStep(innerZoom, 'in'));
       applyInnerTransform();
       if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
     });
@@ -4533,7 +4475,7 @@ function ensureGroups() {
       layout.settings.connDeleteAction = connDeleteActionSelect.value || 'alt+click';
       // ADR-0006: force full re-create so new-mode listeners (dblclick/contextmenu/keydoc) attach to fresh <line> elements.
       // renderConnections only registers listeners on pending (new) lines — existing connLines stay with stale mode listeners.
-      selectedConnId = null;
+      setSelectedConnId(null);
       disposeAllConns();
       ensureConnArrays(); // rebuild indices after dispose
       applyConnDeleteKeydoc();
@@ -4545,7 +4487,7 @@ function ensureGroups() {
     });
     zoomSlider?.addEventListener('change', () => {
       const v = parseInt(zoomSlider.value, 10) / 100;
-      canvasZoom = v; innerZoom = v;
+      setCanvasZoom(v); setInnerZoom(v);
       layout.settings.zoomLevel = v;
       applyCanvasTransform(); applyInnerTransform();
       saveLayout();
@@ -5185,7 +5127,7 @@ function ensureGroups() {
             // Replace local layout with cloud (keep sync meta).
             const savedMeta = layout._meta;
             const savedSettings = layout.settings;
-            layout = cloud;
+            setLayout(cloud);
             if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
             if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
             layout._meta = layout._meta || {};
@@ -5228,7 +5170,7 @@ function ensureGroups() {
       if (lastSyncAt === 0 && cloud && Array.isArray(cloud.boxes) && localBoxCountTotal === 0) {
         const savedSettings = layout.settings;
         const savedMeta = layout._meta;
-        layout = cloud;
+        setLayout(cloud);
         if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
         if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
         layout._meta = layout._meta || {};
@@ -5257,7 +5199,7 @@ function ensureGroups() {
           debug('WebDAV sync: concurrent change detected, attempting field-level merge');
           const merged = mergeLayoutFields(cloud, layout);
           if (merged) {
-            layout = merged;
+            setLayout(merged);
             layout._meta = layout._meta || {};
             layout._meta.updatedAt = Date.now();
             layout._meta.writerId = writerId;
@@ -5280,7 +5222,7 @@ function ensureGroups() {
           const savedSettings = layout.settings;
           const savedMeta = layout._meta;
           const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
-          layout = cloud;
+          setLayout(cloud);
           if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
           if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
           if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
@@ -5520,7 +5462,7 @@ function ensureGroups() {
         }
         const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
         // A5: savedGroups guard removed (groups derived from box.isParent)
-        layout = migrateLayout(data);
+        setLayout(migrateLayout(data));
         // AUD-SEC: preserve local connections/groups if import file lacks them
         // (older backups predate the connections system; full replace would lose user lines).
         if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
@@ -5634,13 +5576,13 @@ function ensureGroups() {
 
     const shouldRestoreView = navigationType === 'reload' || layout.settings.rememberLastPos !== false;
     if (view && shouldRestoreView) {
-      canvasZoom = Number(view.canvasZoom) || 1;
-      canvasPanX = Number(view.canvasPanX) || 0;
-      canvasPanY = Number(view.canvasPanY) || 0;
-      innerZoom = Number(view.innerZoom) || 1;
-      innerPanX = Number(view.innerPanX) || 0;
-      innerPanY = Number(view.innerPanY) || 0;
-      if (view.headerPinned !== undefined) headerPinned = view.headerPinned;
+      setCanvasZoom(Number(view.canvasZoom) || 1);
+      setCanvasPanX(Number(view.canvasPanX) || 0);
+      setCanvasPanY(Number(view.canvasPanY) || 0);
+      setInnerZoom(Number(view.innerZoom) || 1);
+      setInnerPanX(Number(view.innerPanX) || 0);
+      setInnerPanY(Number(view.innerPanY) || 0);
+      if (view.headerPinned !== undefined) setHeaderPinned(view.headerPinned);
     }
 
     if (view?.currentLargeBoxId && getLargeBox(view.currentLargeBoxId)) {
