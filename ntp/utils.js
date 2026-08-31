@@ -122,4 +122,75 @@
     return snapFn(x, y);
   }
 
-export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, elasticSnap, querySpatialNearby, rectsOverlap, snapCanvas, snapInner };
+  function mergeById(localItems, remoteItems, tombstones) {
+    const local = (localItems || []).filter(item => item?.id && !tombstones.has(item.id));
+    const known = new Set(local.map(item => item.id));
+    for (const item of remoteItems || []) if (item?.id && !known.has(item.id) && !tombstones.has(item.id)) local.push(item);
+    return local;
+  }
+
+  function defaultLayout() {
+   return {
+      version: 3.5, schemaVersion: 1, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'newTab', connDeleteAction: 'alt+click', theme: 'beige' }
+    };
+  }
+
+  function migrateLayout(raw) {
+    if (!raw) return defaultLayout();
+    // BX-DEV-085: Data integrity — version >= 3 returns as-is; no data loss on downgrade.
+    // Unknown future versions (>= 4) are still accepted to prevent upgrade-then-downgrade data loss.
+    if (raw.version >= 3) {
+      const defaults = defaultLayout();
+      const result = {
+        ...defaults,
+        ...raw,
+        schemaVersion: raw.schemaVersion || 1, // ADR-0009: schema versioning for crash rescue
+        boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
+        connections: Array.isArray(raw.connections) ? raw.connections : [],
+        groups: [], // ADR-0007 Q1: groups no longer persisted
+        settings: { ...defaults.settings, ...(raw.settings || {}) }
+      };
+    // ADR-0007 Q1: one-time migration — restore box.isParent from old layout.groups, then discard
+    if (!raw._meta || !raw._meta.__groupsMigrated) {
+      if (Array.isArray(raw.groups) && raw.groups.length > 0) {
+        for (const g of raw.groups) {
+          if (!g || !g.parentId) continue;
+          if (g.parentId.startsWith("large:")) {
+            const lb = result.boxes.find(b => b.id === g.parentId.slice(6)); if (lb) lb.isParent = true;
+          } else if (g.parentId.startsWith("small:")) {
+            const sp = g.parentId.split(":");
+            if (sp.length >= 3) { const lb2 = result.boxes.find(b => b.id === sp[1]);
+              if (lb2) { const sc = lb2.children?.find(s => s.id === sp.slice(2).join(":")); if (sc) sc.isParent = true; } }
+          }
+        }
+      }
+      result._meta = result._meta || {}; result._meta.__groupsMigrated = true;
+    }
+    // ADR-0007 Q4c: backfill connection.props for older layouts
+    for (const c of result.connections) { if (c && c.props == null) c.props = {}; }
+    return result;
+    }
+    if (raw.version === 2) {
+      return {
+        version: 3.5,
+        boxes: (raw.boxes || []).map(b => ({
+          ...b, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H,
+          nextSmallIndex: (b.children?.length || 0) + 1,
+          children: (b.children || []).map(s => ({
+            ...s, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H,
+            pinned: s.pinned !== false, bookmarks: s.bookmarks || []
+          }))
+        })),
+       nextLargeIndex: (raw.boxes?.length || 0) + 1,
+       settings: Object.assign(raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }, { theme: raw.settings?.theme || 'beige' })
+      };
+    }
+    return defaultLayout();
+  }
+
+  function largeKey(id) { return 'large:' + id; }
+
+  function smallKey(largeId, smallId) { return 'small:' + largeId + ':' + smallId; }
+
+export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, defaultLayout, elasticSnap, largeKey, mergeById, migrateLayout, querySpatialNearby, rectsOverlap, smallKey, snapCanvas, snapInner };
