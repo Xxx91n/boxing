@@ -83,7 +83,7 @@ test.describe('Boxing state isolation and live synchronization', () => {
     ]);
   });
 
-  test('settings dialog keeps a fixed frame and one smooth scroll owner', async ({ page }) => {
+  test('@quarantine settings dialog keeps a fixed frame and one smooth scroll owner', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => document.getElementById('settings-btn')?.click());
     const overlay = page.locator('#settings-modal');

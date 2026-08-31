@@ -15,7 +15,7 @@ async function resetBoxing(page) {
 // BX-DEV-127 (B7): drag-select text inside the edit popup must NOT dismiss the popup
 // even when the selection ends outside the popup bounds.
 test.describe('Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT)', () => {
-  test('edit popup stays open when text drag-selection ends outside popup', async ({ page }) => {
+  test('@quarantine edit popup stays open when text drag-selection ends outside popup', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;

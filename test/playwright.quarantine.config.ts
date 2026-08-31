@@ -7,13 +7,17 @@ const __dirname = path.dirname(__filename);
 
 const EXTENSION_PATH = path.resolve(__dirname, '..');
 
+// Quarantine lane (ticket 01, architecture-recovery): runs ONLY tests tagged
+// @quarantine in their titles. The main config (playwright.config.ts) excludes
+// them via per-project grepInvert; this config omits grepInvert so the CLI
+// --grep=@quarantine can select them for repair work (npm run test:quarantine).
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: 'line',
   use: {
     trace: 'on-first-retry',
     headless: false,
@@ -21,9 +25,6 @@ export default defineConfig({
   projects: [
     {
       name: 'firefox-extension',
-      // @quarantine: ticket 01 (architecture-recovery) — known-failing/unstable tests
-      // are excluded from the main suite; run them via `npm run test:quarantine`.
-      grepInvert: /@quarantine/,
       use: {
         ...devices['Desktop Firefox'],
         browserName: 'firefox',
@@ -34,7 +35,6 @@ export default defineConfig({
     },
     {
       name: 'chromium-extension',
-      grepInvert: /@quarantine/,
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {

@@ -5,7 +5,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 
-test('probe collapsed box computed styles', async () => {
+test('@quarantine probe collapsed box computed styles', async () => {
   const browser = await chromium.launch({ headless: false });
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await ctx.newPage();

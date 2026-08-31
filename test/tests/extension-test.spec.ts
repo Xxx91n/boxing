@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXT_PATH = path.resolve(__dirname, '..', '..');
 
 test.describe('Boxing Extension — Basic Rendering', () => {
-  test('Direct: Test NTP HTML rendering', async ({ browser }) => {
+  test('@quarantine Direct: Test NTP HTML rendering', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
 

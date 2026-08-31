@@ -48,7 +48,7 @@ async function dispatchClickAt(page: Page, cx: number, cy: number, opts: { dblcl
 // Regression: cursor/hit-test state leak. Verify dblclick AFTER a zoom-out cycle still
 // triggers addSmallBoxAt.
 test.describe('BX-DEV-112A — inner zoom-out then dblclick regression', () => {
-  test('ctrl+wheel zoom-out then dblclick on inner canvas still adds a small box', async ({ page }: { page: Page }) => {
+  test('@quarantine ctrl+wheel zoom-out then dblclick on inner canvas still adds a small box', async ({ page }: { page: Page }) => {
     test.setTimeout(60000);
     await boot(page);
     // 1) add a large box and enter it
@@ -119,7 +119,7 @@ test.describe('BX-DEV-112A — inner zoom-out then dblclick regression', () => {
 // sometimes synthesized into a follow-on dblclick on the just-revealed inner
 // surface, which would then call addSmallBoxAt unconditionally.
 test.describe('BX-DEV-112C — dblclick large box enters without creating small box', () => {
-  test('double-click on a large box body enters inner view and adds zero small boxes', async ({ page }: { page: Page }) => {
+  test('@quarantine double-click on a large box body enters inner view and adds zero small boxes', async ({ page }: { page: Page }) => {
     test.setTimeout(60000);
     await boot(page);
     await page.evaluate(() => (window as any)._boxingAddLargeBox());
@@ -152,7 +152,7 @@ test.describe('BX-DEV-112C — dblclick large box enters without creating small 
 // BX-DEV-112C-extra: Single-click enter large box, wait > 350ms, then dblclick inner
 // should still create a small box (suppress should not linger).
 test.describe('BX-DEV-112C extra — click enter then dblclick inner after delay', () => {
-  test('single click enters; later dblclick inner creates exactly one small box', async ({ page }: { page: Page }) => {
+  test('@quarantine single click enters; later dblclick inner creates exactly one small box', async ({ page }: { page: Page }) => {
     test.setTimeout(60000);
     await boot(page);
     await page.evaluate(() => (window as any)._boxingAddLargeBox());

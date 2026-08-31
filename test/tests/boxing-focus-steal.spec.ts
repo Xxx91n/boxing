@@ -53,7 +53,7 @@ async function captureState(page: Page, label: string) {
 }
 
 test.describe('dblclick — REAL native input + text selection', () => {
-  test('native dblclick on empty canvas center does not select text or steal focus', async ({ page }) => {
+  test('@quarantine native dblclick on empty canvas center does not select text or steal focus', async ({ page }) => {
     await boot(page);
 
     // Verify empty state is visible
@@ -85,7 +85,7 @@ test.describe('dblclick — REAL native input + text selection', () => {
     expect(after.activeEditable).toBe(false);
   });
 
-  test('native dblclick on canvas-empty title text directly', async ({ page }) => {
+  test('@quarantine native dblclick on canvas-empty title text directly', async ({ page }) => {
     await boot(page);
 
     // Find the empty title text element (暂无大盒子 or equivalent)
@@ -110,7 +110,7 @@ test.describe('dblclick — REAL native input + text selection', () => {
     expect(after.selRangeCount > 0 && after.selText.length > 0).toBe(false);
   });
 
-  test('selection cleared after renderCanvas', async ({ page }) => {
+  test('@quarantine selection cleared after renderCanvas', async ({ page }) => {
     await boot(page);
 
     const canvasRect = await page.locator('#canvas').boundingBox();

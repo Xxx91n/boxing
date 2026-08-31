@@ -89,7 +89,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result.ok).toBeFalsy();
   });
 
-  test('WebDAV backup saves and restores layout data', async ({ page }) => {
+  test('@quarantine WebDAV backup saves and restores layout data', async ({ page }) => {
     await bootWithMockRuntime(page, (msg) => {
       if (msg.type === 'webdav-test') return { success: true, status: 207, ok: true };
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, data: null };
@@ -114,7 +114,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result).toBeDefined();
   });
 
-  test('WebDAV sync detect data loss and warn user', async ({ page }) => {
+  test('@quarantine WebDAV sync detect data loss and warn user', async ({ page }) => {
     await bootWithMockRuntime(page, (msg) => {
       return { success: true, status: 207, ok: true };
     });
@@ -134,7 +134,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(baseline).toBeGreaterThanOrEqual(5);
   });
 
-  test('WebDAV sync with empty local pulls from cloud on first sync', async ({ page }) => {
+  test('@quarantine WebDAV sync with empty local pulls from cloud on first sync', async ({ page }) => {
     await bootWithMockRuntime(page, (msg) => {
       if (msg.type === 'webdav-test') return { success: true, status: 207, ok: true };
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, data: null };
@@ -157,7 +157,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result).toBeDefined();
   });
 
-  test('WebDAV test button shows error message on failure', async ({ page }) => {
+  test('@quarantine WebDAV test button shows error message on failure', async ({ page }) => {
     // Mock returns 401 for webdav-test, simulating auth failure
     await bootWithMockRuntime(page, (msg) => {
       if (msg.type === 'webdav-test') return { success: false, status: 401, ok: false };

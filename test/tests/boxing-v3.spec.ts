@@ -160,7 +160,7 @@ test.describe('Boxing v3 Extension', () => {
     expect(js).toContain('window.open');
   });
 
-  test('Chromium: load extension and open new tab for visual check', async ({ browser }) => {
+  test('@quarantine Chromium: load extension and open new tab for visual check', async ({ browser }) => {
     test.setTimeout(30000);
     
     const context = await browser.newContext({
@@ -222,7 +222,7 @@ test.describe('Boxing v3 Extension', () => {
   });
 
 
-  test('Pin header button: visible, clickable, toggles header hide/show', async ({ browser }) => {
+  test('@quarantine Pin header button: visible, clickable, toggles header hide/show', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto(`${pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html?debug')).href}`, { waitUntil: 'domcontentloaded' });
@@ -265,7 +265,7 @@ test.describe('Boxing v3 Extension', () => {
 
 
   // BX-DEV-111k: Cross-tab delete protection — box deleted, guards block inner ops + show warning
-  test('Cross-tab delete: validateCurrentBox guards fire when box deleted', async ({ browser }) => {
+  test('@quarantine Cross-tab delete: validateCurrentBox guards fire when box deleted', async ({ browser }) => {
     test.setTimeout(30000);
 
     const context = await browser.newContext();

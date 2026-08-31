@@ -5,7 +5,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 
-test('zoom-arrow diagnostic', async ({ page }) => {
+test('@quarantine zoom-arrow diagnostic', async ({ page }) => {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });

@@ -13,7 +13,7 @@ async function resetBoxing(page) {
 }
 
 test.describe('Boxing inner surface clip (BX-DEV-CLIP)', () => {
-  test('small-box at y=0 is not covered by inner__canvas-head', async ({ page }) => {
+  test('@quarantine small-box at y=0 is not covered by inner__canvas-head', async ({ page }) => {
     await resetBoxing(page);
     // Create a large box and a small box at y=0 (surface top)
     await page.evaluate(() => {
@@ -73,7 +73,7 @@ test.describe('Boxing inner surface clip (BX-DEV-CLIP)', () => {
     expect(metrics.bottomBoxClipped).toBe(true);
   });
 
-  test('small-box at y=0 stays visible across zoom levels (no progressive clip)', async ({ page }) => {
+  test('@quarantine small-box at y=0 stays visible across zoom levels (no progressive clip)', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;

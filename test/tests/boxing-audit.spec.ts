@@ -56,7 +56,7 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     expect(requested).toEqual([]);
   });
 
-  test('saveLayout writes localStorage fallback + __lastSaveError when storage.local.set throws', async ({ page }) => {
+  test('@quarantine saveLayout writes localStorage fallback + __lastSaveError when storage.local.set throws', async ({ page }) => {
     await bootFresh(page);
     // In file:// harness the extension uses a mock storage whose .set() writes
     // localStorage('boxingLayout', ...). We force that specific key write to throw

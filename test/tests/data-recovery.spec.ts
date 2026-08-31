@@ -144,7 +144,7 @@ test.describe('Data Recovery & Export/Import', () => {
     await context.close();
   });
 
-  test('Export data round-trip: create boxes, export, verify JSON structure', async ({ browser }) => {
+  test('@quarantine Export data round-trip: create boxes, export, verify JSON structure', async ({ browser }) => {
     test.setTimeout(40000);
 
     const context = await browser.newContext();

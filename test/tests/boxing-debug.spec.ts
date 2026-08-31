@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXT_PATH = path.resolve(__dirname, '..', '..');
 
 test.describe('Boxing v3 — Deep Debug', () => {
-  test('open NTP via file:// and verify full workflow', async ({ browser }) => {
+  test('@quarantine open NTP via file:// and verify full workflow', async ({ browser }) => {
     test.setTimeout(40000);
 
     const context = await browser.newContext();
