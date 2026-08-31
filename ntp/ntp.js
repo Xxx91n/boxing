@@ -3813,7 +3813,33 @@ function ensureGroups() {
   }
 
   // ── create / delete ────────────────────────────────────
+  // ── BX-DEV-112D: physical-double-click idempotency for creation entries ──
+  // One physical double-click dispatches click(detail=1) → click(detail=2) → dblclick
+  // (W3C UI Events). When the two clicks land on different elements (canvas, then a
+  // just-revealed empty-state CTA), dblclick targets the nearest common ancestor, so
+  // BOTH the CTA click path and the dblclick create path fire for ONE physical
+  // double-click. Guards: e.detail>1 rejects the second click of a double-click
+  // (zero-delay); a 350ms/12px time+position cooldown (Excalidraw double-tap pattern)
+  // bridges the click path and the dblclick path. Programmatic calls (no event /
+  // non-finite coords) bypass the cooldown.
+  const CREATE_COOLDOWN_MS = 350;
+  const CREATE_COOLDOWN_DIST_PX = 12;
+  let lastCreateAt = { t: 0, x: NaN, y: NaN };
+  function isWithinCreateCooldown(clientX, clientY) {
+    if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return false;
+    if (Date.now() - lastCreateAt.t > CREATE_COOLDOWN_MS) return false;
+    return Math.hypot(clientX - lastCreateAt.x, clientY - lastCreateAt.y) <= CREATE_COOLDOWN_DIST_PX;
+  }
+  function markCreate(clientX, clientY) {
+    if (Number.isFinite(clientX) && Number.isFinite(clientY)) {
+      lastCreateAt = { t: Date.now(), x: clientX, y: clientY };
+    }
+  }
+
   async function addLargeBoxAt(clientX, clientY) {
+    // BX-DEV-112D: cooldown bridges the empty-state CTA click path and this dblclick path
+    if (isWithinCreateCooldown(clientX, clientY)) { debug('addLargeBoxAt suppressed: create cooldown'); return; }
+    markCreate(clientX, clientY);
     debug('addLargeBoxAt called', { clientX, clientY, boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex });
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
     const world = screenToWorld(clientX, clientY, canvasContainer, canvasPanX, canvasPanY, canvasZoom);
@@ -3848,6 +3874,10 @@ function ensureGroups() {
 
   async function addLargeBox(e) {
     if (e && e.preventDefault) e.preventDefault(); // BX-DEV-140c: prevent Chrome click focus-steal
+    // BX-DEV-112D: the second click of a physical double-click must not create
+    if (e && e.detail > 1) { debug('addLargeBox suppressed: click detail>1'); return; }
+    if (e && isWithinCreateCooldown(e.clientX, e.clientY)) { debug('addLargeBox suppressed: create cooldown'); return; }
+    markCreate(e ? e.clientX : NaN, e ? e.clientY : NaN);
 
     debug('addLargeBox (button) called', { boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex });
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
@@ -3930,6 +3960,10 @@ function ensureGroups() {
 
   function addSmallBox(e) {
     if (e && e.preventDefault) e.preventDefault(); // BX-DEV-140c: prevent Chrome click focus-steal
+    // BX-DEV-112D: the second click of a physical double-click must not create
+    if (e && e.detail > 1) { debug('addSmallBox suppressed: click detail>1'); return; }
+    if (e && isWithinCreateCooldown(e.clientX, e.clientY)) { debug('addSmallBox suppressed: create cooldown'); return; }
+    markCreate(e ? e.clientX : NaN, e ? e.clientY : NaN);
     const lb = validateCurrentBox();
     if (!lb) return;
     if ((lb.children?.length || 0) >= MAX_SMALL_BOXES) { debug('max small boxes'); return; }
@@ -3957,6 +3991,9 @@ function ensureGroups() {
   }
 
   function addSmallBoxAt(clientX, clientY) {
+    // BX-DEV-112D: cooldown bridges the empty-state CTA click path and this dblclick path
+    if (isWithinCreateCooldown(clientX, clientY)) { debug('addSmallBoxAt suppressed: create cooldown'); return; }
+    markCreate(clientX, clientY);
     const lb = validateCurrentBox();
     if (!lb || (lb.children?.length || 0) >= MAX_SMALL_BOXES) return;
     const world = screenToWorld(clientX, clientY, innerCanvas, innerPanX, innerPanY, innerZoom);
