@@ -49,7 +49,7 @@ async function setSyncState(page, state) {
 
 function makeCloudData(count, titlePrefix, updatedAt, writerId) {
   return {
-    version: '3.7.0',
+    version: 3.5,
     boxes: Array.from({ length: count }, (_, i) => ({ id: `cloud-${i}`, type: 'large', title: `${titlePrefix}${i}`, x: 100*i, y: 0, width: 320, height: 220, children: [] })),
     settings: {},
     _meta: { revision: count, updatedAt, writerId },
@@ -61,7 +61,7 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
     const cloud = makeCloudData(5, 'Cloud Box ', Date.now() - 10000, 'other-client');
     // heart reads cloud body from this evaluated object literal (no closure ref).
     const heart = (msg) => {
-      const cloudBody = '{"version":"3.7.0","boxes":[{"id":"cloud-0","type":"large","title":"Cloud Box 0","x":0,"y":0,"width":320,"height":220,"children":[]},{"id":"cloud-1","type":"large","title":"Cloud Box 1","x":100,"y":0,"width":320,"height":220,"children":[]},{"id":"cloud-2","type":"large","title":"Cloud Box 2","x":200,"y":0,"width":320,"height":220,"children":[]},{"id":"cloud-3","type":"large","title":"Cloud Box 3","x":300,"y":0,"width":320,"height":220,"children":[]},{"id":"cloud-4","type":"large","title":"Cloud Box 4","x":400,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":5,"updatedAt":' + (Date.now() - 10000) + ',"writerId":"other-client"}}';
+      const cloudBody = '{"version":3.5,"boxes":[{"id":"cloud-0","type":"large","title":"Cloud Box 0","x":0,"y":0,"width":320,"height":220,"children":[]},{"id":"cloud-1","type":"large","title":"Cloud Box 1","x":100,"y":0,"width":320,"height":220,"children":[]},{"id":"cloud-2","type":"large","title":"Cloud Box 2","x":200,"y":0,"width":320,"height":220,"children":[]},{"id":"cloud-3","type":"large","title":"Cloud Box 3","x":300,"y":0,"width":320,"height":220,"children":[]},{"id":"cloud-4","type":"large","title":"Cloud Box 4","x":400,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":5,"updatedAt":' + (Date.now() - 10000) + ',"writerId":"other-client"}}';
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body: cloudBody };
       if (msg.type === 'webdav-put') return { success: true, status: 201, ok: true };
       return { success: true, status: 200, ok: true };
@@ -80,9 +80,9 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
     expect(after).toBe(5);
   });
 
-  test('@quarantine cloud newer than local pulls cloud (overrides local)', async ({ page }) => {
+  test('@quarantine cloud newer than local merges cloud (ADR-0009 concurrent-change merge)', async ({ page }) => {
     const heart = (msg) => {
-      const body = '{"version":"3.7.0","boxes":[{"id":"cloud-new","type":"large","title":"Cloud wins","x":0,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":10,"updatedAt":' + (Date.now() + 100000) + ',"writerId":"other-client"}}';
+      const body = '{"version":3.5,"boxes":[{"id":"cloud-new","type":"large","title":"Cloud wins","x":0,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":10,"updatedAt":' + (Date.now() + 100000) + ',"writerId":"other-client"}}';
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body };
       return { success: true, status: 200, ok: true };
     };
@@ -91,14 +91,17 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
     await page.evaluate((cfg) => (window as any).__boxingDebug.setWebDAVConfig(cfg.url, cfg.user, cfg.pass), { url: WEBDAV_URL, user: WEBDAV_USER, pass: WEBDAV_PASS });
     await setSyncState(page, { lastSyncAt: Date.now() - 60000, updatedAt: Date.now() - 50000, revision: 1, writerId: 'this-tab' });
     const result = await page.evaluate(() => (window as any).__boxingDebug.syncWebDAV());
-    expect(result.direction).toBe('pull');
+    // ADR-0009: cloud newer AND local changed since lastSyncAt with different
+    // writerId -> concurrent change -> field-level merge (direction 'merge').
+    // Outcome invariant unchanged: cloud content lands in the layout.
+    expect(['merge', 'pull']).toContain(result.direction);
     const title = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0]?.title);
     expect(title).toBe('Cloud wins');
   });
 
   test('local newer than cloud pushes local to cloud', async ({ page }) => {
     const heart = (msg) => {
-      const body = '{"version":"3.7.0","boxes":[{"id":"cloud-old","type":"large","title":"Old","x":0,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":1,"updatedAt":' + (Date.now() - 100000) + ',"writerId":"other-client"}}';
+      const body = '{"version":3.5,"boxes":[{"id":"cloud-old","type":"large","title":"Old","x":0,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":1,"updatedAt":' + (Date.now() - 100000) + ',"writerId":"other-client"}}';
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body };
       if (msg.type === 'webdav-put') return { success: true, status: 201, ok: true };
       return { success: true, status: 200, ok: true };
@@ -133,7 +136,7 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
 
   test('@quarantine BX-FATAL-FIX: first-sync does NOT pull cloud over non-empty local (prevents refresh data loss)', async ({ page }) => {
     const heart = (msg) => {
-      const body = '{"version":"3.7.0","boxes":[{"id":"cloud-old","type":"large","title":"Stale Cloud","x":0,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":1,"updatedAt":' + (Date.now() - 100000) + ',"writerId":"other-client"}}';
+      const body = '{"version":3.5,"boxes":[{"id":"cloud-old","type":"large","title":"Stale Cloud","x":0,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":1,"updatedAt":' + (Date.now() - 100000) + ',"writerId":"other-client"}}';
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body };
       if (msg.type === 'webdav-put') return { success: true, status: 201, ok: true };
       return { success: true, status: 200, ok: true };
@@ -146,16 +149,22 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
     await setSyncState(page, { lastSyncAt: 0, updatedAt: Date.now(), revision: 2, writerId: 'this-tab' });
     const before = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes.length);
     expect(before).toBe(1);
+    const localTitleBefore = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0]?.title);
     const result = await page.evaluate(() => (window as any).__boxingDebug.syncWebDAV());
-    // Local is newer than stale cloud → must PUSH, not pull (fatal-fix prevents stale cloud overwrite).
-    expect(result.direction).toBe('push');
-    const afterTitle = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0]?.title);
-    expect(afterTitle).not.toBe('Stale Cloud');
+    // BX-FATAL-FIX invariant (ADR-0009 semantics): non-empty local must NEVER be
+    // blindly replaced by cloud. Cloud-old + local-new with different writers
+    // satisfies the concurrent-change condition -> field-level 'merge' unions
+    // both sides (legacy 'push' replaced cloud wholesale). Either way, the
+    // user's locally-created box MUST survive the sync.
+    expect(['merge', 'push']).toContain(result.direction);
+    const titles = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes.map((b: any) => b.title));
+    expect(titles.length).toBeGreaterThanOrEqual(1);
+    expect(titles).toContain(localTitleBefore);
   });
 
   test('BX-DATALOSS-V2 tier 2: does NOT trigger on 1-2 intentional deletes (noise filter)', async ({ page }) => {
     const heart = (msg) => {
-      if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body: '{"version":"3.7.0","boxes":[],"settings":{},"_meta":{"revision":1,"updatedAt":1,"writerId":"other"}}' };
+      if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body: '{"version":3.5,"boxes":[],"settings":{},"_meta":{"revision":1,"updatedAt":1,"writerId":"other"}}' };
       if (msg.type === 'webdav-put') return { success: true, status: 201, ok: true };
       return { success: true, status: 200, ok: true };
     };
@@ -171,7 +180,7 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
   test('BX-DATALOSS-V2 tier 2: triggers on medium drop (>=3 lost) and restores from cloud', async ({ page }) => {
     const heart = (msg) => {
       const boxes = Array.from({length:9},(_,i)=>'{"id":"c'+i+'","type":"large","title":"Restored '+i+'","x":'+(i*100)+',"y":0,"width":320,"height":220,"children":[]}').join(',');
-      const body = '{"version":"3.7.0","boxes":['+boxes+'],"settings":{},"_meta":{"revision":9,"updatedAt":'+(Date.now()+100000)+',"writerId":"other-client"}}';
+      const body = '{"version":3.5,"boxes":['+boxes+'],"settings":{},"_meta":{"revision":9,"updatedAt":'+(Date.now()+100000)+',"writerId":"other-client"}}';
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body };
       if (msg.type === 'webdav-put') return { success: true, status: 201, ok: true };
       return { success: true, status: 200, ok: true };
@@ -192,7 +201,7 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
   test('data-loss guard blocks upload and offers restore when local drops >50%', async ({ page }) => {
     const heart = (msg) => {
       const boxes = Array.from({ length: 6 }, (_, i) => '{"id":"c-' + i + '","type":"large","title":"Restored ' + i + '","x":' + (100*i) + ',"y":0,"width":320,"height":220,"children":[]}').join(',');
-      const body = '{"version":"3.7.0","boxes":[' + boxes + '],"settings":{},"_meta":{"revision":6,"updatedAt":' + (Date.now() + 100000) + ',"writerId":"other-client"}}';
+      const body = '{"version":3.5,"boxes":[' + boxes + '],"settings":{},"_meta":{"revision":6,"updatedAt":' + (Date.now() + 100000) + ',"writerId":"other-client"}}';
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body };
       if (msg.type === 'webdav-put') return { success: true, status: 201, ok: true };
       return { success: true, status: 200, ok: true };

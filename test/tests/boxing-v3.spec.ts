@@ -225,7 +225,7 @@ test.describe('Boxing v3 Extension', () => {
   test('@quarantine Pin header button: visible, clickable, toggles header hide/show', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    await page.goto(`${pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html?debug')).href}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html')).href + '?debug', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1500);
 
     // BX-ONBOARDING: dismiss first-run onboarding overlay so canvas interaction works.
