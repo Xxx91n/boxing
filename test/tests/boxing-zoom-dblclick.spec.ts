@@ -162,8 +162,12 @@ test.describe('BX-DEV-112C extra — click enter then dblclick inner after delay
     if (!bb) throw new Error('no large box');
     // 1. Single click to enter large box (suppress guard is set)
     await dispatchClickAt(page, bb.x + bb.width / 2, bb.y + bb.height / 2);
-    await page.waitForTimeout(150);
-    // 2. Wait > 350ms so the time-based guard no longer blocks.
+    // 2. Wait deterministically for the enter transition to finish, then past the
+    //    350ms BX-DEV-112D cooldown window (fixed 150+420ms sleeps flaked when the
+    //    enter transition ran long under full-suite load).
+    await expect.poll(() => page.evaluate(() =>
+      !((document.getElementById('inner') as HTMLElement)?.hidden)
+    )).toBe(true);
     await page.waitForTimeout(420);
     // 3. Now dblclick inside inner surface should create exactly one small box.
     const surface = await page.locator('#inner-surface');

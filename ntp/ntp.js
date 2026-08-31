@@ -2765,6 +2765,10 @@ function ensureGroups() {
      actionBtn.addEventListener('click', function (e) {
        e.stopPropagation();
        e.preventDefault();
+       // BX-DEV-112D: bridge the physical dblclick — click2 and the follow-on
+       // dblclick (→ onInnerDblClick → addSmallBoxAt) must not double-create.
+       if (isWithinCreateCooldown(e.clientX, e.clientY)) { debug('inner CTA suppressed: create cooldown'); return; }
+       markCreate(e.clientX, e.clientY);
        addSmallBox(e);
      });
      emptyWrap.appendChild(actionBtn);
@@ -3817,11 +3821,12 @@ function ensureGroups() {
   // One physical double-click dispatches click(detail=1) → click(detail=2) → dblclick
   // (W3C UI Events). When the two clicks land on different elements (canvas, then a
   // just-revealed empty-state CTA), dblclick targets the nearest common ancestor, so
-  // BOTH the CTA click path and the dblclick create path fire for ONE physical
-  // double-click. Guards: e.detail>1 rejects the second click of a double-click
-  // (zero-delay); a 350ms/12px time+position cooldown (Excalidraw double-tap pattern)
-  // bridges the click path and the dblclick path. Programmatic calls (no event /
-  // non-finite coords) bypass the cooldown.
+  // double-click. Guard: a 350ms/12px time+position cooldown (Excalidraw double-tap
+  // pattern) bridges the CTA click path and the dblclick path — the empty-state CTA
+  // handlers mark the cooldown before creating, and the dblclick entries (add*BoxAt)
+  // check it. Toolbar #add-box / #add-small stay UNGUARDED so rapid intentional
+  // multi-add keeps working. Programmatic calls (no event / non-finite coords)
+  // bypass the cooldown.
   const CREATE_COOLDOWN_MS = 350;
   const CREATE_COOLDOWN_DIST_PX = 12;
   let lastCreateAt = { t: 0, x: NaN, y: NaN };
@@ -3874,10 +3879,6 @@ function ensureGroups() {
 
   async function addLargeBox(e) {
     if (e && e.preventDefault) e.preventDefault(); // BX-DEV-140c: prevent Chrome click focus-steal
-    // BX-DEV-112D: the second click of a physical double-click must not create
-    if (e && e.detail > 1) { debug('addLargeBox suppressed: click detail>1'); return; }
-    if (e && isWithinCreateCooldown(e.clientX, e.clientY)) { debug('addLargeBox suppressed: create cooldown'); return; }
-    markCreate(e ? e.clientX : NaN, e ? e.clientY : NaN);
 
     debug('addLargeBox (button) called', { boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex });
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
@@ -3960,10 +3961,6 @@ function ensureGroups() {
 
   function addSmallBox(e) {
     if (e && e.preventDefault) e.preventDefault(); // BX-DEV-140c: prevent Chrome click focus-steal
-    // BX-DEV-112D: the second click of a physical double-click must not create
-    if (e && e.detail > 1) { debug('addSmallBox suppressed: click detail>1'); return; }
-    if (e && isWithinCreateCooldown(e.clientX, e.clientY)) { debug('addSmallBox suppressed: create cooldown'); return; }
-    markCreate(e ? e.clientX : NaN, e ? e.clientY : NaN);
     const lb = validateCurrentBox();
     if (!lb) return;
     if ((lb.children?.length || 0) >= MAX_SMALL_BOXES) { debug('max small boxes'); return; }
@@ -4643,6 +4640,11 @@ function ensureGroups() {
       canvasEmptyBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         e.preventDefault();
+        // BX-DEV-112D: bridge the physical dblclick — click2 and the follow-on
+        // dblclick (→ onCanvasDblClick → addLargeBoxAt) must not double-create.
+        // Toolbar #add-box stays unguarded so rapid multi-add keeps working.
+        if (isWithinCreateCooldown(e.clientX, e.clientY)) { debug('canvas CTA suppressed: create cooldown'); return; }
+        markCreate(e.clientX, e.clientY);
         if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes (empty-state btn)'); return; }
         // BX-DEV-140c: prevent Chrome click focus-steal (mirror onCanvasDblClick).
         addLargeBox(e);

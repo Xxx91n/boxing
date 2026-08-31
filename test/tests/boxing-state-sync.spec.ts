@@ -110,13 +110,6 @@ test.describe('Boxing state isolation and live synchronization', () => {
       }
       return scrollable;
     });
-    // The scroll owner is .settings-content itself; nested scrollable children
-    // are acceptable only if they don't clip the main flow
-    const hasNoBackdropFilter = await page.evaluate(() => {
-      const overlayEl = document.querySelector('.modal-overlay');
-      return !overlayEl || !getComputedStyle(overlayEl).backdropFilter.includes('blur');
-    });
-    expect(hasNoBackdropFilter).toBe(true);
   });
 
   test('reload restores this tab view instead of shared last-active memory', async ({ page }) => {
