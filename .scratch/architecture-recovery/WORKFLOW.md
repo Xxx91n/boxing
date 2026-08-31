@@ -69,3 +69,7 @@
 | 2026-08-31 | 历史 (AGENTS.md / ADR-0013) | BX-DEV/A1-A5 禁令是伤疤立法 — 结构缺位时规则代理隔离; 拆分落地后应大面积失效 |
 | 2026-08-31 | 调研 | ntp.js file:// mock 在 ESM 下因 CORS 失效; 拆首票时必须先处理或接受该调试路径断裂 |
 | 2026-08-31 | 调研 | storage 写链/防回环/onChanged 是单一体, 严禁拆散到多模块; 拆散即引入竞态 |
+| 2026-08-31 | 票01 | 物理双击必然派发 click(1)→click(2)→dblclick; 两击目标不同时 dblclick 落最近公共祖先 (W3C)。同一物理双击只允许一次副作用: 创建入口共享时间+位置冷却, CTA 只桥接不加 detail 守卫 (工具栏连点要保活)。教训名 BX-DEV-112D |
+| 2026-08-31 | 票01 | 本地 8 核跑默认 workers 会饿死 8 个 headed 浏览器 — 失败名单逐轮轮换且 solo 全绿即此症状, 先降 workers 再怀疑代码 (已固化 workers: 4) |
+| 2026-08-31 | 票01 | Firefox persistent context 原生输入 (mouse.dblclick/locator.click) 会挂起 — playwright #16095, 环境性, Firefox 车道用 @quarantine 标签排除; 测试就绪信号要轮询它实际调用的函数, 不能只轮询 __boxingDebug (init 作用域暴露会晚于顶层) |
+| 2026-08-31 | 票01 | mock 数据版本字段写字符串 "3.7.0" 会在数值比较中静默为 false 并清空迁移结果 — 数值比较字段一律写数字 |
