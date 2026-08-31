@@ -2,7 +2,7 @@
 'use strict';
 // Ticket 03 (architecture-recovery): favicon cache block extracted verbatim to ./favicon.js — first ES module of the zero-build pipeline (spec.md).
 import { loadFavicon } from './favicon.js';
-import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, defaultLayout, elasticSnap, largeKey, mergeById, migrateLayout, querySpatialNearby, rectsOverlap, smallKey, snapCanvas, snapInner } from './utils.js';
+import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, defaultLayout, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner } from './utils.js';
 
 (async () => {
   // ── cross-browser API ──────────────────────────────────
@@ -1008,13 +1008,6 @@ let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by ent
       },
     },
   };
-
-  function hexToRgbTriplet(hex) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return r + ', ' + g + ', ' + b;
-  }
 
   function applyTheme(themeKey) {
     const theme = THEME_PACKS[themeKey] || THEME_PACKS.beige;
@@ -2049,15 +2042,6 @@ function ensureGroups() {
 
   // Elastic snap: iterative while-loop to resolve all overlaps (BX-DEV-013)
   // ADR-0007 Q3b: GDevelop-style spatial hash for elasticSnap when N >= 32.
-
-  // world-coord <-> screen-coord conversion
-  function screenToWorld(clientX, clientY, container, panX, panY, zoom) {
-    const rect = container.getBoundingClientRect();
-    return {
-      x: (clientX - rect.left - panX) / zoom,
-      y: (clientY - rect.top - panY) / zoom
-    };
-  }
 
   // ── Obsidian-style zoom & pan ──────────────────────────
   function applyCanvasTransform() {
@@ -4348,22 +4332,6 @@ function ensureGroups() {
   }
 
   // ── window resize → refresh canvas transform ───────────
-
-  function normalizeBookmarkUrl(value) {
-    if (typeof value !== 'string') return null;
-    const trimmed = value.trim();
-    if (!trimmed || trimmed.length > 2048 || /^\d+(\.\d+){0,3}$/.test(trimmed)) return null;
-    // Reject all non-http(s) schemes; protocol-relative URLs (//host) also rejected
-    if (/^(javascript|data|vbscript|file|ftp|moz-extension|chrome-extension|chrome|edge|about|blob|view-source):/i.test(trimmed)) return null;
-    if (/^\/\//.test(trimmed)) return null; // protocol-relative URL
-    const privateHost = /^(10\.\d+\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.\d+\.\d+\.|localhost(?::\d+)?(?:\/|$))/i.test(trimmed);
-    const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `${privateHost ? 'http' : 'https'}://${trimmed}`;
-    try {
-      const parsed = new URL(candidate);
-      if (!/^https?:$/.test(parsed.protocol) || !parsed.hostname || parsed.username || parsed.password) return null;
-      return parsed.href;
-    } catch (_) { return null; }
-  }
 
   function onWindowResize() {
     debug(`window resize: ${window.innerWidth}x${window.innerHeight}`);
