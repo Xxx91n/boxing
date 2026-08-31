@@ -42,12 +42,20 @@ export default defineConfig({
       // ticket 01: the 30 quarantined tests were repaired and verified 30/30 on
       // chromium (see branch arch-recovery-01-quarantine); they run in the main
       // suite again. Firefox-only flakes stay excluded via the firefox project.
+      //
+      // ticket 03 (architecture-recovery): ntp/index.html now loads ntp.js as
+      // <script type="module">. Modules over file:// are CORS-blocked on
+      // chromium by default (origin 'null'); --allow-file-access-from-files
+      // keeps the file:// mock lane (spec.md first-ticket decision: keep the
+      // mock runnable, do not discard it). Firefox loads same-dir file://
+      // modules natively — no pref needed (probed 2026-08-31).
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
           args: [
             `--load-extension=${EXTENSION_PATH}`,
             `--disable-extensions-except=${EXTENSION_PATH}`,
+            '--allow-file-access-from-files',
             '--no-first-run',
             '--no-default-browser-check',
           ],

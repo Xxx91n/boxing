@@ -73,3 +73,5 @@
 | 2026-08-31 | 票01 | 本地 8 核跑默认 workers 会饿死 8 个 headed 浏览器 — 失败名单逐轮轮换且 solo 全绿即此症状, 先降 workers 再怀疑代码 (已固化 workers: 4) |
 | 2026-08-31 | 票01 | Firefox persistent context 原生输入 (mouse.dblclick/locator.click) 会挂起 — playwright #16095, 环境性, Firefox 车道用 @quarantine 标签排除; 测试就绪信号要轮询它实际调用的函数, 不能只轮询 __boxingDebug (init 作用域暴露会晚于顶层) |
 | 2026-08-31 | 票01 | mock 数据版本字段写字符串 "3.7.0" 会在数值比较中静默为 false 并清空迁移结果 — 数值比较字段一律写数字 |
+| 2026-08-31 | 票03 | ESM 化后 file:// mock 的 CORS 失效是 chromium 独有且可解: `<script type="module">` 在 chromium file:// 默认被 CORS 封锁 (origin 'null', probe 实证), `--allow-file-access-from-files` 启动参数解封; firefox 同目录 file:// module 原生放行无需 pref。file:// 调试/测试车道因此保活 (spec 方案 a), 两个 playwright 配置的 chromium 项目均已加 flag — 04-08 票沿用, 勿再当阻塞 |
+| 2026-08-31 | 票03 | 抽模块前先认 favicon 块的真实边界: 票02 报告 §5 记 favicon 桶仅 1 符号 (probe) 是漏报, 真块 = IIFE 结束 `})();` 之后的 L5949-6094 尾段 (FAVICON_SOURCES/fastestCDN/getFaviconUrl/raceCDN/isValidPublicUrl/faviconCache/TTL/loadFavicon), 自包含仅 export loadFavicon; 搬移用 node 脚本逐字节切 (marker 唯一性 + head 以 `})();` 结尾两条前置断言), 禁止手抄 |

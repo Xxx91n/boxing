@@ -35,12 +35,16 @@ export default defineConfig({
     },
     {
       name: 'chromium-extension',
+      // ticket 03 (architecture-recovery): keep in sync with playwright.config.ts —
+      // the @quarantine file:// specs need --allow-file-access-from-files now that
+      // ntp.js is <script type="module"> (chromium CORS-blocks modules over file://).
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
           args: [
             `--load-extension=${EXTENSION_PATH}`,
             `--disable-extensions-except=${EXTENSION_PATH}`,
+            '--allow-file-access-from-files',
             '--no-first-run',
             '--no-default-browser-check',
           ],

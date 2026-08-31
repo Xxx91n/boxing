@@ -386,7 +386,8 @@
       </div>
     </div>
   </div>
-  <script src="ntp.js" defer></script>
+  <!-- Ticket 03 (architecture-recovery): ESM switch — type="module" defers by default (V8/MDN), ntp.js now imports ./favicon.js (first module, spec.md strangler-fig). -->
+  <script type="module" src="ntp.js"></script>
 </body>
 
 </html>
