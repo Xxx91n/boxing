@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done (2026-08-31, closure fix by brain: header was stale ready-for-agent, boxes were full — see README 收口)
 
 - [x] 9 个 flaky test 全部定位并列出名单 (写入本文件附录或 commit message)
 - [x] quarantine 机制生效: 主套件运行不再包含它们, 且不会因它们间歇红

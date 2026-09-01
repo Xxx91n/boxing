@@ -4,7 +4,7 @@
 
 **Blocked by:** 08
 
-**Status:** ready-for-agent
+**Status:** done (2026-09-01, closure fix by brain: header was stale ready-for-agent, boxes were full — see README 收口)
 
 - [x] 每条被删规则在 commit message 中点名其替代承担者 (哪个模块/哪个测试/哪份 ADR)
 - [x] SEC 系列与"不可推断约定"保留原样

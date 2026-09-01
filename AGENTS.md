@@ -137,7 +137,7 @@ BX-I18N-001/002 (14-locale key completeness) are enforced at build time by the A
 
 ## NTP module map
 
-ntp/index.html loads native ES modules directly (zero build): `ntp.js` (entry orchestration) → `render.js` (canvas render / drag / connections) / `state.js` (shared state) / `storage.js` (storage write facade) / `persist.js` (layout persistence + theme packs) / `i18n.js` (dictionary + fallback + store) / `utils.js` (pure helpers) / `favicon.js` (favicon cache). UI behavior invariants are carried by these module boundaries, the E2E suite (`test/tests/boxing-*.spec.ts`), and the ADRs (`docs/adr/`); refactor decisions are consolidated in docs/adr/0007-architecture-refactor-decisions.md.
+ntp/index.html loads native ES modules directly (zero build): `ntp.js` (entry orchestration) → `render.js` (canvas render / drag / connections) / `state.js` (shared state) / `storage.js` (storage write facade) / `persist.js` (layout persistence + theme packs) / `i18n.js` (dictionary + fallback + store) / `utils.js` (pure helpers) / `favicon.js` (favicon cache). Settings/init domain (ticket 10, ADR-0016 four layers): `credentials.js` (PBKDF2/AES-GCM envelope) / `sync-engine.js` (WebDAV+Gist transport, outbox merge, alarms backup — persists only via storage.js) / `settings-ui.js` (settings modal + controls + import/export) / `onboarding.js` (bg onInstalled signal → NTP tour). UI behavior invariants are carried by these module boundaries, the E2E suite (`test/tests/boxing-*.spec.ts`), and the ADRs (`docs/adr/`); refactor decisions are consolidated in docs/adr/0007-architecture-refactor-decisions.md.
 
 ## Code Exploration
 
