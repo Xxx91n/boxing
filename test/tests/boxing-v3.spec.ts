@@ -42,12 +42,14 @@ test.describe('Boxing v3 Extension', () => {
     // Ticket 05 (architecture-recovery, asserted by 04 lane to unblock the shared gate):
     // pure utils moved to ./utils.js — clampToEdge / migrateLayout live there now.
     const utilsMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'utils.js'), 'utf8');
+    // Ticket 08 (architecture-recovery): render cohesive core (CRUD/transforms/resize) moved to ./render.js
+    const renderMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'render.js'), 'utf8');
     // Core modules must be present
-    expect(js).toContain('function addLargeBoxAt');
-    expect(js).toContain('function addSmallBoxAt');
-    expect(js).toContain('function onResizeStart');
-    expect(js).toContain('function applyCanvasTransform');
-    expect(js).toContain('function applyInnerTransform');
+    expect(renderMod).toContain('function addLargeBoxAt');
+    expect(renderMod).toContain('function addSmallBoxAt');
+    expect(renderMod).toContain('function onResizeStart');
+    expect(renderMod).toContain('function applyCanvasTransform');
+    expect(renderMod).toContain('function applyInnerTransform');
     expect(i18nMod).toContain('function loadI18nStore');
     expect(js).toContain('function openSettingsModal');
     expect(js).toContain('function closeSettingsModal');
@@ -138,7 +140,9 @@ test.describe('Boxing v3 Extension', () => {
   // v3.7.1: urlOpenMode removed — bookmarks always open in new tab (browser-compatible)
   test('open-bookmark handler uses browser tabs API', async () => {
     const js = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'ntp.js'), 'utf8');
-    expect(js).toContain('api.tabs.create');
+    // Ticket 08: bookmark-row tabs-API call lives in renderBookmarks (./render.js) now
+    const renderMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'render.js'), 'utf8');
+    expect(renderMod).toContain('api.tabs.create');
     expect(js).toContain('normalizeBookmarkUrl');  // v3.7.1: renamed
   });
 
@@ -160,7 +164,10 @@ test.describe('Boxing v3 Extension', () => {
   // v3.7.1: simplified to always use tabs.create (browser-compatible)
   test('NTP JS open-bookmark handler uses browser tabs API', async () => {
     const js = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'ntp.js'), 'utf8');
-    expect(js).toContain('api.tabs.create');
+    // Ticket 08: bookmark-row tabs-API call lives in renderBookmarks (./render.js) now;
+    // window.open fallback stays in openBookmarkUrl (ntp.js)
+    const renderMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'render.js'), 'utf8');
+    expect(renderMod).toContain('api.tabs.create');
     expect(js).toContain('normalizeBookmarkUrl');  // v3.7.1: renamed
     expect(js).toContain('window.open');
   });
