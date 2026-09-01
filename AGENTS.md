@@ -2,7 +2,7 @@
 <!-- Project-level hard contract: compresses + localizes host AGENTS.md Tool routing precedence. Do not remove. -->
 > **TOOL ROUTING — READ FIRST.** `ctx_*` (context-mode) PREFERRED over `shell`/inline `python -c`/inline `node -e` whenever both can do the job:
 >
-> - **Analyze/count/transform/read** source (ntp.js ~3.3k lines, background.js, _locales) → `ctx_execute`/`ctx_execute_file` in-sandbox. Print only the distilled answer (counts, offsets, hashes). Never `node -e "s.indexOf(...)"` + `print(s[i:i+N])` to dump source into the window.
+> - **Analyze/count/transform/read** source (ntp/*.js ES modules (entry ntp.js ~2.2k lines), background.js, _locales) → `ctx_execute`/`ctx_execute_file` in-sandbox. Print only the distilled answer (counts, offsets, hashes). Never `node -e "s.indexOf(...)"` + `print(s[i:i+N])` to dump source into the window.
 > - **Run shell + collect >20 lines or ≥3 commands** (git, ls, test runs) → `ctx_batch_execute(commands, queries)` so only matched windows return; cap before entering conversation.
 > - **Multi-file edits/patch scripts** → write the patch script as a file, invoke it via `ctx_execute_file` (shell/bash) OR `ctx_execute` (node/python) with `cwd`. Use `apply_patch` for small literal edits; do NOT chain PowerShell heredoc/`cat <<EOF` for content with `$`/Unicode/template literals (host swallows `$`, corrupts payload).
 > - **Web fetch / repo research** → `ctx_fetch_and_index` + `ctx_search`; `curl`/`wget` are FORBIDDEN by host policy.
@@ -65,7 +65,7 @@
 |---|---|---|
 | Existing unpacked extension validation | Load unpacked extension in Chrome/Firefox | Extension loads without manifest errors. |
 | UI verification | Use available browser runtime screenshot/DOM/console inspection | Visual result matches requested state. |
-| Syntax pre-check | `node --check ntp.js && node --check background.js` | Both exit 0. |
+| Syntax pre-check | `node --check ntp/ntp.js && node --check background.js` | Both exit 0. |
 | Full e2e | `cd D:/Aworker/crx/boxing && npx playwright test --config=test/playwright.config.ts --project=chromium --reporter=line` | ~3-4 min, all Boxing specs PASS (`extension-test.spec.ts` + `boxing-*` specs). |
 
 ## Playwright & Browser Testing
@@ -129,51 +129,15 @@ Both are referenced from here, never bulk-loaded into context.
 
 | Rule ID | Type | Rule |
 |---|---|---|
-| BX-I18N-001 | MUST | All 14 supported languages (en, zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi, zh_TW) must have complete translations for every i18n key used in the UI. |
-| BX-I18N-002 | MUST | New i18n keys must be added to _locales/<lang>/messages.json for all 14 languages before claiming completion. |
 | BX-I18N-003 | MUST | Keys with $1$ or $2$ must include a placeholders object: { "1": { "content": "$1" } }. |
-| BX-I18N-004 | MUST | Chrome i18n API (chrome.i18n.getMessage) is NOT used; the custom i18n store in ntp.js loads messages.json via fetch. |
-| BX-I18N-005 | MUST | English fallback (I18N_FALLBACK) in ntp.js must cover every i18n key in case fetch fails. |
+| BX-I18N-005 | MUST | English fallback (I18N_FALLBACK) in ntp/i18n.js must cover every i18n key in case fetch fails. |
 | BX-I18N-006 | MUST | data-i18n, data-i18n-title, data-i18n-placeholder attributes in HTML must match a real key. |
 
-## Development Rules
+BX-I18N-001/002 (14-locale key completeness) are enforced at build time by the A7 validator in `.github/scripts/build.mjs` (ADR-0005). The custom i18n store/fallback lives in `ntp/i18n.js` (was BX-I18N-004), guarded by `test/tests/boxing-i18n-module.spec.ts` (source contract + forced-fallback + three-language switch).
 
-| Rule ID | Type | Rule |
-|---|---|---|
-| BX-DEV-001 | MUST | Use Obsidian-style CSS transform (translate + scale) for infinite canvas pan/zoom. |
-| BX-DEV-002 | MUST | Drag uses mousedown/mousemove/mouseup (manual drag), NOT HTML5 drag-and-drop API. |
-| BX-DEV-003 | MUST | Title editing zones (.large-box__title, .small-box__title) must block mousedown propagation to prevent drag and click-through. |
-| BX-DEV-004 | MUST | Elastic snap on drag-end: collision detection -> find nearest non-overlapping edge -> snap. |
-| BX-DEV-005 | MUST | Canvas pan via left-click-drag on empty canvas area; Ctrl+scroll zooms at cursor point. |
-| BX-DEV-006 | MUST | Zoom controls in canvas bottom-right corner are fixed-position, unaffected by canvas transform. |
-| BX-DEV-007 | MUST | Settings modal is an in-page overlay (not a separate options page). |
-| BX-DEV-008 | MUST | Small boxes use list mode only; grid/list toggle removed. |
-| BX-DEV-009 | MUST | Bookmark rows are editable via three-dots edit button (inline popup for title+URL). |
-| BX-DEV-010 | MUST | Font size adjustable via CSS variable --font-size-base controlled by settings. |
-| BX-DEV-011 | MUST NOT | Do not add shadcn/ui, Tailwind, React, Vue, or npm dependencies. |
-| BX-DEV-012 | MUST NOT | Do not use brand__mark brown color block (removed). |
-| BX-DEV-013 | MUST | CSS rules that affect both large-box and small-box canvases MUST be written in paired selectors (`.large-box` + `.small-box`). See [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md) for the full convention. |
-| BX-DEV-014 | MUST | SVG connection lines live in a `.conn-layer` SVG overlay with `pointer-events:none;z-index:0` — lines render BELOW boxes (z-index:1). Inline `z-index:2` on the SVG overlay is FORBIDDEN (Bug2 regression: lines appear above boxes). |
-| BX-DEV-015 | SUPERSEDED | Superseded by **BX-EXPLORE-005** (2026-08, commit 17b305d). Do NOT use `translate3d` during box drag. Historical note only: older guidance preferred GPU transform; it caused double-offset flash when combined with `left`/`top`. |
-| BX-DEV-016 | SUPERSEDED | Superseded in part by **BX-EXPLORE-006**. Do NOT put `translateZ(0)` / `will-change: transform` on boxes, `--dragging`, `canvasSurface`, or `innerSurfaceContent` (Chrome fixed-bitmap blur at low zoom). Canvas pan/zoom may still use a plain CSS `transform: translate() scale()` without `will-change` or forced `translateZ(0)` on box nodes. |
-| BX-DEV-017 | MUST | SVG `shape-rendering` MUST be dynamic: `crispEdges` at zoom<0.5, `geometricPrecision` at zoom>=0.5. Fixed `geometricPrecision` at low zoom causes jagged lines in Chrome (Bug4). |
-| BX-DEV-018 | MUST | Connection line updates during drag MUST use `connById.get(id)` (O(1) Map lookup), NOT `layout.connections.find()` (O(n) scan). The latter causes frame drops with many connections (Bug1). |
-| BX-DEV-019 | MUST | DSU is the group system: `box.isParent` marks parent; membership from connections via DSU; `layout.groups` is runtime-only computed (ADR-0007). |
-| BX-DEV-020 | MUST | CSS selectors that carry a layout `display` value (flex/block/grid/inline-flex) MUST be paired with a `.selector[hidden] { display: none; }` fallback, OR fully own visibility via JS toggling a class whose rules NEVER set `display` directly. Without the pair, HTML `hidden` attribute is overridden by CSS `display:flex|block` and the container stays visible despite `hidden` (MDN: changing `display` on a hidden element overrides the `hidden` state). Bug: `<div class="inner" hidden>` rendered because `.inner { display:flex }` lacked `.inner[hidden] { display:none }` fallback; `#inner` stayed under `#canvas`, surfacing an inner-canvas under the large-canvas. Apply to `.inner` and `.canvas` (handled in base.css). |
+## NTP module map
 
-## i18n Development Requirements
-
-| Rule ID | Type | Rule |
-|---|---|---|
-| BX-I18N-DEV-001 | MUST | Every UI string visible to users must use the i18n(key) function, never hard-coded English/Chinese text. |
-| BX-I18N-DEV-002 | MUST | All 14 supported languages (en, zh_CN, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi, zh_TW) must have translations for every i18n key. |
-| BX-I18N-DEV-003 | MUST | When adding a new i18n key, add it to _locales/en/messages.json first, then copy to all 12 other locale files with proper translations. |
-| BX-I18N-DEV-004 | MUST | I18N_FALLBACK in ntp.js must contain every i18n key as a fallback for when fetch fails. |
-| BX-I18N-DEV-005 | MUST | All data-i18n, data-i18n-title, data-i18n-placeholder attributes in HTML must match an existing key in messages.json. |
-| BX-I18N-DEV-006 | MUST | Keys with placeholders ($1$, $2$) in messages.json must include a "placeholders" object per Chrome i18n spec. |
-| BX-I18N-DEV-007 | MUST | The custom i18n loader in ntp.js fetches _locales/<lang>/messages.json; chrome.i18n.getMessage API is NOT used. |
-| BX-I18N-DEV-008 | MUST NOT | Never add hardcoded language strings in JS or HTML that bypass the i18n(key) function. |
-| BX-I18N-DEV-009 | MUST | After changing language in settings, re-render all visible UI (canvas, inner surface, crumbs, caption) to reflect new language immediately. |
+ntp/index.html loads native ES modules directly (zero build): `ntp.js` (entry orchestration) → `render.js` (canvas render / drag / connections) / `state.js` (shared state) / `storage.js` (storage write facade) / `persist.js` (layout persistence + theme packs) / `i18n.js` (dictionary + fallback + store) / `utils.js` (pure helpers) / `favicon.js` (favicon cache). UI behavior invariants are carried by these module boundaries, the E2E suite (`test/tests/boxing-*.spec.ts`), and the ADRs (`docs/adr/`); refactor decisions are consolidated in docs/adr/0007-architecture-refactor-decisions.md.
 
 ## Code Exploration
 
@@ -183,61 +147,30 @@ Both are referenced from here, never bulk-loaded into context.
 | BX-EXPLORE-002 | MUST | Before answering any "where is X", "how many Y", "what does Z do" question about the codebase, query .codegraph first (via ctx_search or ctx_execute_file over the DB). Only fall back to direct file reads when .codegraph lacks the needed granularity. |
 | BX-EXPLORE-003 | MUST | After every project modification (edit, add, delete, rename a source file), run `codegraph sync` from the repo root so the index reflects the change. Do NOT wait until session end — index staleness makes all downstream exploration (BX-EXPLORE-001/002) return wrong results. CLI: `codegraph sync` (incremental) or `codegraph index` (full rebuild). |
 | BX-EXPLORE-004 | MUST | Before planning, bug-hunting, or grilling architectural questions, query .codegraph first (`codegraph explore <query>`, `codegraph callers <symbol>`, `codegraph impact <symbol>`, or `codegraph query <name>`). Use the symbol graph to trace call paths, find dependents, and measure blast radius before editing. Only fall back to ad-hoc grep/read when .codegraph genuinely lacks the needed symbol (e.g. new code added in the same turn but not yet synced). |
-| BX-EXPLORE-005 | MUST | Box dragging MUST use `left`/`top` only — NEVER `transform: translate3d()` during drag. Writing both `left/top` AND `transform: translate3d(sameX, sameY, 0)` causes double-offset: CSS layout positions at (X,Y) then transform shifts by another (X,Y), element flashes to (2X, 2Y). Regression introduced in commit 0a5483d, fixed in 17b305d. |
-| BX-EXPLORE-006 | MUST | NEVER add `will-change: transform` or `translateZ(0)` to `.large-box`, `.small-box`, `--dragging` variants, `canvasSurface`, or `innerSurfaceContent`. Chrome rasterizes `will-change: transform` elements into a fixed bitmap that does NOT re-raster on CSS `scale()` changes (per Chrome Re-rastering blog https://developer.chrome.com/blog/re-rastering-composite). At low zoom (< 50%) this produces blurry text; at high zoom it looks fine, masking the bug. Firefox uses a different raster model so it is unaffected. If FPS optimization is needed for Firefox drag, use CSS `transition: none` on `--dragging` state instead of GPU compositing hints. |
-| BX-EXPLORE-007 | MUST | Hot-path functions called on every `mousemove` (e.g. `refreshConnsForBoxSync`) MUST use O(1) lookups — never `layout.connections.find()` when `connById` Map already exists. Before adding any `.find()` in a drag handler, check codegraph for an existing O(1) index. Regression introduced in commit 0a5483d (titled "conn lookup O(1)" but missed this hot path), fixed in 17b305d. |
-| BX-EXPLORE-008 | MUST | Pan/zoom handlers (`onCanvasPanMove`, `onInnerPanMove`) MUST call `scheduleConnRefresh(all conn ids)` after `applyCanvasTransform`/`applyInnerTransform`. Without this, viewport-culled lines (`display:none` set by `updateSvgLine`) never get re-evaluated when the world window shifts via pan, causing lines to remain hidden after panning them back into view. The SVG coordinates update via CSS transform automatically, but the cull decision does NOT. Regression introduced in commit a715a44 (pan-aware `connSvgVisibleRect`), fixed immediately after. |
-| BX-EXPLORE-009 | MUST | When adding new event handlers that modify layout state (connections, groups, box properties), the persistence call MUST match an existing function name. Do NOT write `persistLayoutDebounced()` — the correct name is `saveLayoutDebounced()`. A typo'd function name silently fails (ReferenceError caught by try/catch in upper frames), leaving state un-persisted, causing data loss after cross-tab merge or reload. Regression: Alt+Click conn delete used `persistLayoutDebounced` (never defined) → star status lost on re-link. |
-| BX-DEV-139 | MUST | Connection line delete is user-configurable via `layout.settings.connDeleteAction` (string enum: `alt+click`/`ctrl+click`/`shift+click`/`double-click`/`select+delete`). Never hardcode a single delete trigger — use `getConnDeleteTrigger()` and the unified `onConnLinePointerDown(e)` detector. When mode changes, UI handler MUST `disposeAllConns()` + `renderConnections()` so mode-specific listeners (dblclick/mousedown) re-attach to fresh `<line>` elements; the renderConnections pending path is the only place that registers them. See ADR-0006 (`docs/adr/0006-conn-delete-action-system.md`). |
-| BX-DEV-140 | MUST | Color theme is user-selectable via `layout.settings.theme` (string: 'beige'/'graphite'/'coastal'/'forest'/'pure', default 'beige'). The `applyTheme(themeKey)` function in ntp.js injects all theme CSS variables (warm bg + accent ramps) via `setProperty`. Default 'beige' matches CSS hardcoded values (no override). See ADR-0012 (`docs/adr/0012-curated-theme-packs.md`). |
+
 ## CSS Dual-Write Convention (Global)
 
-> **Global convention document: [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md)**
-**Design system document: [docs/DESIGN.md](docs/DESIGN.md)** — token architecture (primitive→semantic→component), palette, typography, component state specs, dark mode strategy. See ADR-0008. — every CSS rule that affects both `.large-box` and `.small-box` MUST use paired selectors and a code comment marker. See BX-DEV-013 above for the MUST rule. When adding a new visual rule, check the convention doc first to confirm the required markers.
-
-## Debug Development
-
-| Rule ID | Type | Rule |
-|---|---|---|
-| BX-DEBUG-001 | INFO | Set DEBUG = true in ntp.js during development; all [Boxing] prefixed console logs help trace issues. |
-| BX-DEBUG-002 | MUST | Use Playwright (`test/playwright.config.ts`) for automated e2e testing during development. Run from repo root: `npm test` or `npx playwright test --config=test/playwright.config.ts`. |
-| BX-DEBUG-003 | MUST | After each major change, run "node --check ntp.js" to verify syntax before testing in browser. |
-## CSS Token Baseline (Boxing v3.7)
-
-| Token | Value | Purpose |
-|---|---|---|
-| --color-canvas | #F7F3ED | Main warm-neutral canvas. |
-| --color-surface | #F3EFE7 | Card surface. |
-| --color-elevated | #F0EBE2 | Hover/selected/elevated layer. |
-| --color-ink | #2A2520 | Primary near-black text. |
-| --color-accent | #A08060 | Muted warm earth accent (beige theme default; overridden by applyTheme for other themes). |
-| --font-size-base | 14px | Adjustable base font size. |
-
-## Architecture (v3.7)
-
-- Infinite canvas: CSS transform(translateX, translateY) scale(Z) on canvas__surface
-- Pan: drag empty canvas area (mousedown+mousemove)
-- Zoom: Ctrl+scroll at point, Ctrl+/- step zoom, zoom buttons
-- Nodes (boxes): absolute positioning in world coordinates
-- Dual-level: Canvas (large boxes) -> Inner canvas (small boxes inside one large box)
-- Bookmarks: list rows with favicon + three-dots edit button (inline popup for title+URL)
-- No grid/list toggle — small boxes are always list mode
+**Global convention document: [docs/css-dual-write-convention.md](docs/css-dual-write-convention.md)** — every CSS rule that affects both `.large-box` and `.small-box` MUST be written in paired selectors (`.large-box` + `.small-box`) with a `BX-CSS-DUAL-WRITE` marker comment (the A8 build validator in `.github/scripts/build.mjs`, ADR-0005, checks the marker). When adding a new visual rule, check the convention doc first for the required markers.
+**Design system document: [docs/DESIGN.md](docs/DESIGN.md)** — token architecture (primitive→semantic→component), palette, typography, component state specs, dark mode strategy (ADR-0008).
 
 ## Critical Lessons Learned
 
 See [docs/agents/critical-lessons.md](docs/agents/critical-lessons.md) — Past design traps and mutation-path footguns (TDZ, tombstone contract, derived-index liabilities, DSU/CSS invariants).
+
 ## Performance Anti-Patterns (DO NOT DO — ADR-0013)
 
 See [docs/agents/performance-anti-patterns.md](docs/agents/performance-anti-patterns.md) — Rejected optimizations permanently documented so a new model does not re-investigate them (BX-PERF-A1..A5).
+
 ## Boxing Version History
 
 Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) have been moved to `docs/history/boxing-changelog.md` to keep this operating contract lean. See that file for per-version feature lists, BX-DEV rule additions, and i18n key references by version.
 
-Current TOP-LEVEL operating dev rules are consolidated in the tables above (BX-DEV-001..020). All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/history/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
+Top-level behavior rules (BX-DEV / A1-A5 class) were thinned in ticket 09 (2026-09-01): their invariants are now carried by the ntp module structure, the E2E suite (test/tests/boxing-*.spec.ts), and the ADRs — full rule text preserved in git history. All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/history/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
 
 ## Manifest Source-of-Truth Contract (v3.7.0+)
 
 See [docs/agents/manifest-contract.md](docs/agents/manifest-contract.md) — HARD CONSTRAINT dual-declaration manifest rules (BX-MANIFEST-001..005) — source manifest Firefox-tailored, Chrome must load dist/.
+
 ## Security Rules (SEC series — v3.7.9f security audit)
 
 | Rule | Level | Description |
