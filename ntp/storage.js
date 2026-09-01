@@ -363,3 +363,16 @@ export function registerStorageOnChanged() {
     }
   }
 
+// Ticket 10 / ADR-0016: onInstalled install/update signal — read once and consume (remove).
+// The signal key is written by the background SW (bg onInstalled), NOT by the layout write
+// chain; keeping the read+remove here preserves the "storage touches live in the facade"
+// invariant (checkpoint 1 of issues/10).
+export async function consumeInstallSignal() {
+  try {
+    const sig = await layoutStorage.get('boxingInstallSignal');
+    const reason = (sig && sig.boxingInstallSignal && sig.boxingInstallSignal.reason) || null;
+    if (reason && typeof layoutStorage.remove === 'function') await layoutStorage.remove('boxingInstallSignal');
+    return reason;
+  } catch (e) { debugWarn('install signal read failed', e); return null; }
+}
+

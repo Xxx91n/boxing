@@ -51,8 +51,10 @@ test.describe('Boxing v3 Extension', () => {
     expect(renderMod).toContain('function applyCanvasTransform');
     expect(renderMod).toContain('function applyInnerTransform');
     expect(i18nMod).toContain('function loadI18nStore');
-    expect(js).toContain('function openSettingsModal');
-    expect(js).toContain('function closeSettingsModal');
+    // Ticket 10 (architecture-recovery): settings modal fns moved to ./settings-ui.js
+    const settingsMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'settings-ui.js'), 'utf8');
+    expect(settingsMod).toContain('function openSettingsModal');
+    expect(settingsMod).toContain('function closeSettingsModal');
     expect(js).toContain('function onCanvasDblClick');
     expect(js).toContain('function onInnerDblClick');
     expect(utilsMod).toContain('function clampToEdge');

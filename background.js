@@ -277,6 +277,11 @@ try {
   api.runtime?.onInstalled?.addListener(async (details) => {
     try {
       root.__boxing_last_install__ = { reason: details?.reason || "unknown", at: Date.now() };
+      // Ticket 10 / ADR-0016: persist the install signal so NTP onboarding triggers on install
+      // (and can distinguish update) instead of judging fresh-install on every init.
+      if ((details?.reason === "install" || details?.reason === "update") && api.storage?.local?.set) {
+        await api.storage.local.set({ boxingInstallSignal: { reason: details.reason, at: Date.now() } });
+      }
     } catch (e) { bgErr('onInstalled:', e); }
   });
 
