@@ -142,9 +142,9 @@ test.describe('Boxing v3 Extension', () => {
   // v3.7.1: urlOpenMode removed — bookmarks always open in new tab (browser-compatible)
   test('open-bookmark handler uses browser tabs API', async () => {
     const js = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'ntp.js'), 'utf8');
-    // Ticket 08: bookmark-row tabs-API call lives in renderBookmarks (./render.js) now
-    const renderMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'render.js'), 'utf8');
-    expect(renderMod).toContain('api.tabs.create');
+    // Ticket 13: bookmark-row tabs-API call lives in renderBookmarks (./popups.js) now
+    const popupsMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'popups.js'), 'utf8');
+    expect(popupsMod).toContain('api.tabs.create');
     expect(js).toContain('normalizeBookmarkUrl');  // v3.7.1: renamed
   });
 
@@ -166,10 +166,10 @@ test.describe('Boxing v3 Extension', () => {
   // v3.7.1: simplified to always use tabs.create (browser-compatible)
   test('NTP JS open-bookmark handler uses browser tabs API', async () => {
     const js = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'ntp.js'), 'utf8');
-    // Ticket 08: bookmark-row tabs-API call lives in renderBookmarks (./render.js) now;
+    // Ticket 13: bookmark-row tabs-API call lives in renderBookmarks (./popups.js) now;
     // window.open fallback stays in openBookmarkUrl (ntp.js)
-    const renderMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'render.js'), 'utf8');
-    expect(renderMod).toContain('api.tabs.create');
+    const popupsMod = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'popups.js'), 'utf8');
+    expect(popupsMod).toContain('api.tabs.create');
     expect(js).toContain('normalizeBookmarkUrl');  // v3.7.1: renamed
     expect(js).toContain('window.open');
   });

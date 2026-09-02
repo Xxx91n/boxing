@@ -32,8 +32,9 @@ import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, directSetB
 import { LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyTheme, initPersistFacade, loadFallbackTabView, loadSettings, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
 // Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool, ADR-0004),
 // DSU groups, pan/zoom transforms, drag handlers, canvas render + box CRUD + bookmark UI. Diffs = export prefixes only.
-import { _execDeleteLargeBox, _execDeleteSmallBox, addLargeBox, addLargeBoxAt, addSmallBox, addSmallBoxAt, applyCanvasTransform, applyInnerTransform, clampCanvasPan, clampInnerPan, commit, enterLargeBox, exitToCanvas, getLargeBox, getSmallBox, initRenderFacade, initSizeObserver, innerSurfaceContent, isWithinCreateCooldown, markCreate, onBoxDragEnd, onCanvasPanEnd, onCanvasPanStart, onCanvasWheel, onInnerPanEnd, onInnerPanStart, onInnerWheel, refreshContainerSizes, renderCanvas, renderCrumbs, renderInnerSurface, showBoxDeletedWarning, updateAutohideUI, zoomStep } from './render.js';
+import { _execDeleteLargeBox, _execDeleteSmallBox, addLargeBox, addLargeBoxAt, addPopupTracker, addSmallBox, addSmallBoxAt, applyCanvasTransform, applyInnerTransform, clampCanvasPan, clampInnerPan, commit, enterLargeBox, exitToCanvas, getLargeBox, getSmallBox, initRenderFacade, initSizeObserver, innerSurfaceContent, isWithinCreateCooldown, markCreate, onBoxDragEnd, onCanvasPanEnd, onCanvasPanStart, onCanvasWheel, onInnerPanEnd, onInnerPanStart, onInnerWheel, refreshContainerSizes, removePopupTracker, renderCanvas, renderCrumbs, renderInnerSurface, showBoxDeletedWarning, updateAutohideUI, zoomStep } from './render.js';
 import { addConnection, addMember, allValidKeys, applyConnDeleteKeydoc, deleteConnById, disposeAllConns, dsuRebuildFromConnections, ensureConnArrays, ensureGroups, enterConnectMode, exitConnectMode, getConnDeleteTrigger, getGroupByParent, initConnFacade, markDsuDirty, moveGroupTogether, pruneConnArrays, refreshAllConns, removeConnection, renderConnections, resolveBoxEl, setConnDeleteAction, toggleStarMark } from './conn-layer.js';
+import { initPopupsFacade } from './popups.js';
 
 import { initCredentialsFacade } from './credentials.js';
 import { initSyncEngineFacade, bindSyncBackupUi } from './sync-engine.js';
@@ -378,6 +379,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   // Ticket 08: inject ntp.js-scope deps into the render module (./render.js)
   initRenderFacade({ addLargeBtn, api, appEl, backBtn, canvasContainer, canvasEmpty, canvasSurface, canvasZoomCtrl, canvasZoomVal, debug, debugErr, debugSampled, debugWarn, enterAndLocateSmallBox, headerBar, headerPinBtn, innerCanvas, innerCrumbTitle, innerSurface, innerWrapper, innerZoomCtrl, innerZoomVal, makeId, openConfirmModal, rebuildBoxMaps, updateCaption, zoomSlider, zoomSliderVal });
   initConnFacade({ commit, getLargeBox, getSmallBox, getInnerSurfaceContent: () => innerSurfaceContent, rebuildBoxMaps, debug, debugSampled, canvasSurface, canvasContainer, innerCanvas, innerSurface });
+  initPopupsFacade({ getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker, makeId, api, debug, debugWarn });
   // Ticket 10 (architecture-recovery): inject ntp.js-scope deps into the four settings/init-domain
   // modules (ADR-0016). Must stay after every DOM const it reads (ticket-08 TDZ lesson).
   initCredentialsFacade({ debugErr });
