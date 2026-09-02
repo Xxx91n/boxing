@@ -69,7 +69,6 @@ export let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set
   export const boxById = new Map();       // largeBoxId -> box object
   export const smallBoxById = new Map();  // smallKey ("largeId:smallId") -> small box object
 
-  export const MAX_CONNECTIONS = 5000; // ponytail: bounded; upgrade to pagination past 5k
 
   export const connLines = new Map();          // connId -> SVG <line> element
   export const connById = new Map();            // connId -> connection object (O(1) lookup)
@@ -77,9 +76,6 @@ export let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set
   export const connIdx = new Map();              // O(1) conn lookup by key-pair
   export const boxConnIdx = new Map();            // O(1) reverse: boxKey -> Set<connId>
 
-  // ADR-0013 BX-PERF-002: SVG <line> element pool — recycle instead of createElementNS per render cycle.
-  export const LINE_POOL_CAP = 64; // ponytail: cap prevents unbounded growth; 64 is generous for typical layouts.
-  export const __linePool = [];
 
   // BX-DSU: Union-Find with path compression for O(α) group connectivity
   export const boxGroupId = new Map();      // boxKey -> groupId (DSU find root)
@@ -87,7 +83,6 @@ export let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set
   export const groupStar = new Set();       // boxKeys marked as parent (starred)
   export let clearedTombstones = new Set(); // BX-144: in-memory set of tombstone keys this tab has explicitly cleared (per-tab, never persisted)
   export const groupIdx = new Map();       // kept for compat: parentId -> group object
-  export let __dsuDirty = true;              // ADR-0007 Q4b: rebuild DSU only when dirty (replaces __dsuDirty)
   export let canvasConnSvg = null;     // SVG overlay inside canvasSurface
   export let innerConnSvg = null;     // SVG overlay inside innerSurfaceContent
   export let connectMode = null;               // { fromId, fromEl, fromSide } | null
@@ -97,7 +92,6 @@ export let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set
   // Single config field layout.settings.connDeleteAction drives which gesture deletes a line.
   export let selectedConnId = null;
 
-  export let __connRefreshRAF = 0;
 
   export let __nextGroupId = 1;
 
@@ -131,7 +125,6 @@ export function setStorageWriteChain(v) { storageWriteChain = v; }
 export function setApplyingExternalLayout(v) { applyingExternalLayout = v; }
 export function setSaveDebounceTimer(v) { saveDebounceTimer = v; }
 export function setClearedTombstones(v) { clearedTombstones = v; }
-export function setDsuDirty(v) { __dsuDirty = v; }
 export function setNextGroupId(v) { __nextGroupId = v; }
 export function setCanvasConnSvg(v) { canvasConnSvg = v; }
 export function setInnerConnSvg(v) { innerConnSvg = v; }
@@ -141,4 +134,3 @@ export function setProvisionalGhost(v) { provisionalGhost = v; }
 export function setSelectedConnId(v) { selectedConnId = v; }
 export function setConfirmCallback(v) { confirmCallback = v; }
 export function setSizeObserver(v) { __sizeObserver = v; }
-export function setConnRefreshRAF(v) { __connRefreshRAF = v; }

@@ -11,7 +11,8 @@ import { saveLayout, saveLayoutDebounced } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
-import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
+import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
+import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
 
 let debug, debugErr, debugWarn, updateCaption;
 let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;

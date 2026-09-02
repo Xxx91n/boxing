@@ -6,22 +6,22 @@ import { loadFavicon } from './favicon.js';
 // single explicit state module (ESM live-binding singleton). Reads bind live; every write
 // goes through a set*() setter (imported bindings are read-only in ESM).
 import {
-  MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS, writerId, MAX_CONNECTIONS,
-  LINE_POOL_CAP, __viewStatePersistTimers, __selfLastWriteTs, boxById, smallBoxById, connLines,
-  connById, dirtyConns, connIdx, boxConnIdx, __linePool, boxGroupId,
+  MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS, writerId,
+  __viewStatePersistTimers, __selfLastWriteTs, boxById, smallBoxById, connLines,
+  connById, dirtyConns, connIdx, boxConnIdx, boxGroupId,
   groupMembers, groupStar, groupIdx, __popupTrackers,
   layout, currentLargeBoxId, canvasZoom, innerZoom, canvasPanX, canvasPanY,
   innerPanX, innerPanY, dragState, resizeState, panState, lastClickTime,
   lastClickTarget, lastDragEndTime, lastEnterLargeBoxAt, suppressInnerDblClickOnce, lastDragEndId, headerPinned,
   scrollTimeout, idSequence, clearedTombstones,
-  __dsuDirty, __nextGroupId, canvasConnSvg, innerConnSvg, connectMode, provisionalLine,
-  provisionalGhost, selectedConnId, confirmCallback, __sizeObserver, __connRefreshRAF,
+  __nextGroupId, canvasConnSvg, innerConnSvg, connectMode, provisionalLine,
+  provisionalGhost, selectedConnId, confirmCallback, __sizeObserver,
   setLayout, setCurrentLargeBoxId, setCanvasZoom, setInnerZoom, setCanvasPanX, setCanvasPanY,
   setInnerPanX, setInnerPanY, setDragState, setResizeState, setPanState, setLastClickTime,
   setLastClickTarget, setLastDragEndTime, setLastEnterLargeBoxAt, setSuppressInnerDblClickOnce, setLastDragEndId, setHeaderPinned,
   setScrollTimeout, setIdSequence, setClearedTombstones,
-  setDsuDirty, setNextGroupId, setCanvasConnSvg, setInnerConnSvg, setConnectMode, setProvisionalLine,
-  setProvisionalGhost, setSelectedConnId, setConfirmCallback, setSizeObserver, setConnRefreshRAF,
+  setNextGroupId, setCanvasConnSvg, setInnerConnSvg, setConnectMode, setProvisionalLine,
+  setProvisionalGhost, setSelectedConnId, setConfirmCallback, setSizeObserver,
 } from './state.js';
 import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, screenToWorld, smallKey, snapCanvas, snapInner } from './utils.js';
 import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS } from './i18n.js';
@@ -32,7 +32,8 @@ import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, directSetB
 import { LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyTheme, initPersistFacade, loadFallbackTabView, loadSettings, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
 // Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool, ADR-0004),
 // DSU groups, pan/zoom transforms, drag handlers, canvas render + box CRUD + bookmark UI. Diffs = export prefixes only.
-import { _execDeleteLargeBox, _execDeleteSmallBox, addConnection, addLargeBox, addLargeBoxAt, addMember, addSmallBox, addSmallBoxAt, allValidKeys, applyCanvasTransform, applyConnDeleteKeydoc, applyInnerTransform, clampCanvasPan, clampInnerPan, commit, deleteConnById, disposeAllConns, dsuRebuildFromConnections, ensureConnArrays, ensureGroups, enterConnectMode, enterLargeBox, exitConnectMode, exitToCanvas, getConnDeleteTrigger, getGroupByParent, getLargeBox, getSmallBox, initRenderFacade, initSizeObserver, innerSurfaceContent, isWithinCreateCooldown, markCreate, markDsuDirty, moveGroupTogether, onBoxDragEnd, onCanvasPanEnd, onCanvasPanStart, onCanvasWheel, onInnerPanEnd, onInnerPanStart, onInnerWheel, pruneConnArrays, refreshAllConns, refreshContainerSizes, removeConnection, renderCanvas, renderConnections, renderCrumbs, renderInnerSurface, resolveBoxEl, setConnDeleteAction, showBoxDeletedWarning, toggleStarMark, updateAutohideUI, zoomStep } from './render.js';
+import { _execDeleteLargeBox, _execDeleteSmallBox, addLargeBox, addLargeBoxAt, addSmallBox, addSmallBoxAt, applyCanvasTransform, applyInnerTransform, clampCanvasPan, clampInnerPan, commit, enterLargeBox, exitToCanvas, getLargeBox, getSmallBox, initRenderFacade, initSizeObserver, innerSurfaceContent, isWithinCreateCooldown, markCreate, onBoxDragEnd, onCanvasPanEnd, onCanvasPanStart, onCanvasWheel, onInnerPanEnd, onInnerPanStart, onInnerWheel, refreshContainerSizes, renderCanvas, renderCrumbs, renderInnerSurface, showBoxDeletedWarning, updateAutohideUI, zoomStep } from './render.js';
+import { addConnection, addMember, allValidKeys, applyConnDeleteKeydoc, deleteConnById, disposeAllConns, dsuRebuildFromConnections, ensureConnArrays, ensureGroups, enterConnectMode, exitConnectMode, getConnDeleteTrigger, getGroupByParent, initConnFacade, markDsuDirty, moveGroupTogether, pruneConnArrays, refreshAllConns, removeConnection, renderConnections, resolveBoxEl, setConnDeleteAction, toggleStarMark } from './conn-layer.js';
 
 import { initCredentialsFacade } from './credentials.js';
 import { initSyncEngineFacade, bindSyncBackupUi } from './sync-engine.js';
@@ -376,6 +377,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const headerBar = $('.ntp__bar');
   // Ticket 08: inject ntp.js-scope deps into the render module (./render.js)
   initRenderFacade({ addLargeBtn, api, appEl, backBtn, canvasContainer, canvasEmpty, canvasSurface, canvasZoomCtrl, canvasZoomVal, debug, debugErr, debugSampled, debugWarn, enterAndLocateSmallBox, headerBar, headerPinBtn, innerCanvas, innerCrumbTitle, innerSurface, innerWrapper, innerZoomCtrl, innerZoomVal, makeId, openConfirmModal, rebuildBoxMaps, updateCaption, zoomSlider, zoomSliderVal });
+  initConnFacade({ commit, getLargeBox, getSmallBox, getInnerSurfaceContent: () => innerSurfaceContent, rebuildBoxMaps, debug, debugSampled, canvasSurface, canvasContainer, innerCanvas, innerSurface });
   // Ticket 10 (architecture-recovery): inject ntp.js-scope deps into the four settings/init-domain
   // modules (ADR-0016). Must stay after every DOM const it reads (ticket-08 TDZ lesson).
   initCredentialsFacade({ debugErr });
