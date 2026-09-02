@@ -102,6 +102,7 @@ Five canonical triage roles mapped verbatim: `needs-triage`, `needs-info`, `read
 ### Domain docs
 
 Multi-context layout: root `CONTEXT-MAP.md` points at root `CONTEXT.md` (build/dev-load) and `docs/CONTEXT.md` (domain glossary); all ADRs live in `docs/adr/`. See `docs/agents/domain.md`.
+New ADRs MUST follow the template in `docs/adr/0000-adr-template.md` - a `## Consequences` section and a review date of decision date + 30 days are mandatory; the existing 16 ADRs are grandfathered (no bulk rewrite).
 
 # Boxing Project Specialization
 
