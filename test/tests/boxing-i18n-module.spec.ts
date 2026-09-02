@@ -34,6 +34,12 @@ async function resetFreshKeepOnboarding(page: any) {
 }
 
 test.describe('i18n module extraction (ticket 04)', () => {
+  // Firefox headed launch on this host takes ~22s alone (DEBUG=pw:api: "browserType.launch succeeded +22s"),
+  // which exhausts the 30s default before the fetch-stub navigation + reload + poll even starts
+  // (page.goto times out at domcontentloaded with URL stuck at about:blank, zero console output —
+  // a launch/commit stall, not a page-content fault). Raise the budget so the checkpoint is
+  // deterministic on the Firefox lane. See WORKFLOW §6 票15/票13 notes for the false-failure signature.
+  test.setTimeout(120_000);
   test('source contract: dictionary lives in ntp/i18n.js, ntp.js imports instead of embedding', async () => {
     const ntp = fs.readFileSync(path.join(EXT_PATH, 'ntp', 'ntp.js'), 'utf8');
     const mod = fs.readFileSync(path.join(EXT_PATH, 'ntp', 'i18n.js'), 'utf8');
