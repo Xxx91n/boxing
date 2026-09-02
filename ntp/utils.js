@@ -2,7 +2,8 @@
  * Zero storage/DOM side effects: snapping, collision, layout data shaping, URL normalization, tiered key builders.
  * Blocks byte-verbatim from ntp.js (indentation preserved).
  * Purity exclusions (audited, see issues/05): makeId (session writerId + idSequence), mergeConcurrentLayout (reads layout/clearedTombstones identity),
- * clampCanvasPan/clampInnerPan (live DOM + size state), isSafeExtUrl/ensureHttpsUrl (window.__boxingIsSafeExtUrl entry contract). */
+ * clampCanvasPan/clampInnerPan (live DOM + size state), isSafeExtUrl/ensureHttpsUrl (window.__boxingIsSafeExtUrl entry contract).
+ * Ticket 11 (architecture-recovery): zoomAtPoint moved verbatim from render.js (pure math; container rect via parameter, same accepted pattern as screenToWorld). */
 
   const CANVAS_GRID = 24;
 
@@ -225,4 +226,15 @@
     } catch (_) { return null; }
   }
 
-export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, defaultLayout, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner };
+  function zoomAtPoint(container, zoom, panX, panY, clientX, clientY, factor) {
+    const rect = container.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const my = clientY - rect.top;
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
+    const ratio = newZoom / zoom;
+    const newPanX = mx - ratio * (mx - panX);
+    const newPanY = my - ratio * (my - panY);
+    return { zoom: newZoom, panX: newPanX, panY: newPanY };
+  }
+
+export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, defaultLayout, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };

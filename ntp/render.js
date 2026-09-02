@@ -18,7 +18,7 @@ import {
   setDragState, setResizeState, setPanState, setProvisionalGhost, setLastDragEndId, setLastDragEndTime, setLastEnterLargeBoxAt,
   setDsuDirty, setSizeObserver, setConnRefreshRAF, setSuppressInnerDblClickOnce,
 } from './state.js';
-import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, ZOOM_STEPS, buildSpatialGrid, elasticSnap, largeKey, normalizeBookmarkUrl, screenToWorld, smallKey, snapCanvas, snapInner } from './utils.js';
+import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, ZOOM_STEPS, buildSpatialGrid, elasticSnap, largeKey, normalizeBookmarkUrl, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint } from './utils.js';
 import { i18n } from './i18n.js';
 import { markDeleted, saveLayout, saveLayoutDebounced } from './storage.js';
 import { loadFavicon } from './favicon.js';
@@ -1018,17 +1018,6 @@ export function ensureGroups() {
     zoomSliderVal.textContent = Math.round(innerZoom * 100) + '%';
     // BX-DEV-145: inner surface transform carries conn-lines too.
     // No per-tick recalculation — CSS transform handles line position.
-  }
-
-  export function zoomAtPoint(container, zoom, panX, panY, clientX, clientY, factor) {
-    const rect = container.getBoundingClientRect();
-    const mx = clientX - rect.left;
-    const my = clientY - rect.top;
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
-    const ratio = newZoom / zoom;
-    const newPanX = mx - ratio * (mx - panX);
-    const newPanY = my - ratio * (my - panY);
-    return { zoom: newZoom, panX: newPanX, panY: newPanY };
   }
 
   export function zoomStep(current, dir) {
