@@ -95,3 +95,6 @@
 | 2026-09-01 | 票10 | GitButler: commit 报 "N changes could not be applied: ... depends on <branch> (<commit>)" = 新分支未 stack 进依赖链 (建分支默认独立); 恢复 = but move <branch> --above <栈顶分支名> 后原样重试, 错误信息自带完整依赖清单; 每票开工时若依赖前票文件, 先 stack 再提交 |
 | 2026-09-02 | 票14 | quarantine 车道治理: 主 config 只有 firefox 项目带 grepInvert — chromium 主车道实际已在跑全部 @quarantine tag (票01 修复后回归), 治理对象是 firefox 排除面 (基线 2026-09-02: 5 失败/19, chromium 全绿); "挂引用" 要 rg 全部命中含 2 个 config 注释块, 不能只扫 test() 标签 |
 | 2026-09-02 | 票14 | CI 每日定时单车道 job: schedule 触发的是整个 workflow 的所有 job, 往已有 test.yml 塞 schedule 会连带每日跑全量三 OS 矩阵 — 新建独立 quarantine.yml (continue-on-error: true + xvfb-run headed) 才是 "只巡逻 quarantine 车道" 的干净做法 |
+| 2026-09-02 | 票12 | conn 图层与 render.js 双向引用 (conn 调 commit/getLargeBox/getSmallBox, render/ntp/settings-ui 调 conn 函数) — 反向用 initConnFacade 注入 render.js 函数 + DOM/log 依赖, 正向走 ESM import, 禁 render↔conn 循环 import (live-binding 可跑但违反分层) |
+| 2026-09-02 | 票12 | 状态整迁边界先做符号 census 定谳: 三调度状态 (__linePool/__connRefreshRAF/__dsuDirty) 只被 conn 函数读写 → 干净模块私有整迁; 数据 Map (connLines/connById/groupStar) 仍被 render.js mutationHandlers + ntp.js 临时连线胶水直读 → 留 state.js (票06 singleton), 状态整迁约束只及三调度状态不及数据 Map |
+| 2026-09-02 | 票12 | 多非连续块 verbatim 搬移的 splice 索引陷阱: 替换 header/import 块行数必须与原行数严格一致, 否则后续固定索引 splice 全错位 (render.js 写成 double import 报 Unexpected reserved word); 修复 = 每个 splice 前断言边界行 + 行数平价 |
