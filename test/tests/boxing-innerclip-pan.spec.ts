@@ -18,6 +18,7 @@ async function resetBoxing(page) {
 // overflow:hidden must clip it at the surface top edge, NOT let it intrude into the
 // inner__canvas-head's solid background band. Verifies surface.top >= head.bottom.
 test.describe('Boxing inner surface clip under pan (BX-DEV-CLIP-PAN)', () => {
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine small-box panned to surface top is clipped by surface, not covered by head, across zoom', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {

@@ -93,3 +93,5 @@
 | 2026-09-02 | 票11 | 下沉候选纯度定谳先查目标模块既有惯例再裁: utils.js 头注释已登记纯度豁免清单 (票05), screenToWorld 以参数传 container+getBoundingClientRect 即视为可接受的 utils 纯度模式 — zoomAtPoint 整函数照此 verbatim 下沉, 免造数学部分拆半的畸形切面; 六候选五个非纯 (DSU 闭包 state Map / clampCanvasPan 缓存+DOM / boxMidPoint 全局索引), 机械名单必须逐一实测而非按名推断 |
 | 2026-09-02 | 票11 | 十层自验脚本的断言自身也要过审: 三轮假失败全来自断言写错 (splice 缝合断言方向反了 / 三连空行全局检查未做 pristine 增量对比 / census 漏数头注释字样与正则未转义锚), 每条断言先想清 "正确状态长什么样" 再落笔, PRE-WRITE 拦截层保证失败零副作用 |
 | 2026-09-01 | 票10 | GitButler: commit 报 "N changes could not be applied: ... depends on <branch> (<commit>)" = 新分支未 stack 进依赖链 (建分支默认独立); 恢复 = but move <branch> --above <栈顶分支名> 后原样重试, 错误信息自带完整依赖清单; 每票开工时若依赖前票文件, 先 stack 再提交 |
+| 2026-09-02 | 票14 | quarantine 车道治理: 主 config 只有 firefox 项目带 grepInvert — chromium 主车道实际已在跑全部 @quarantine tag (票01 修复后回归), 治理对象是 firefox 排除面 (基线 2026-09-02: 5 失败/19, chromium 全绿); "挂引用" 要 rg 全部命中含 2 个 config 注释块, 不能只扫 test() 标签 |
+| 2026-09-02 | 票14 | CI 每日定时单车道 job: schedule 触发的是整个 workflow 的所有 job, 往已有 test.yml 塞 schedule 会连带每日跑全量三 OS 矩阵 — 新建独立 quarantine.yml (continue-on-error: true + xvfb-run headed) 才是 "只巡逻 quarantine 车道" 的干净做法 |

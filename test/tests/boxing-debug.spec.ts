@@ -6,6 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXT_PATH = path.resolve(__dirname, '..', '..');
 
 test.describe('Boxing v3 — Deep Debug', () => {
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine open NTP via file:// and verify full workflow', async ({ browser }) => {
     test.setTimeout(40000);
 

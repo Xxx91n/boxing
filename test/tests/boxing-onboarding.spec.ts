@@ -36,6 +36,7 @@ test.describe('Onboarding (first-run guided tour)', () => {
     expect(visible).toBe(false);
   });
 
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine step navigation: Next advances through all 3 steps and dismiss sets onboardingCompleted', async ({ page }) => {
     await resetFreshInstall(page);
     // Step 1 visible

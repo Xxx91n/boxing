@@ -89,6 +89,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result.ok).toBeFalsy();
   });
 
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine WebDAV backup saves and restores layout data', async ({ page }) => {
     await bootWithMockRuntime(page, (msg) => {
       if (msg.type === 'webdav-test') return { success: true, status: 207, ok: true };
@@ -114,6 +115,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result).toBeDefined();
   });
 
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine WebDAV sync detect data loss and warn user', async ({ page }) => {
     await bootWithMockRuntime(page, (msg) => {
       return { success: true, status: 207, ok: true };
@@ -134,6 +136,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(baseline).toBeGreaterThanOrEqual(5);
   });
 
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine WebDAV sync with empty local pulls from cloud on first sync', async ({ page }) => {
     await bootWithMockRuntime(page, (msg) => {
       if (msg.type === 'webdav-test') return { success: true, status: 207, ok: true };
@@ -157,6 +160,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result).toBeDefined();
   });
 
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine WebDAV test button shows error message on failure', async ({ page }) => {
     // Mock returns 401 for webdav-test, simulating auth failure
     await bootWithMockRuntime(page, (msg) => {

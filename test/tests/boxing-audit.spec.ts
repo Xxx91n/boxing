@@ -56,6 +56,7 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     expect(requested).toEqual([]);
   });
 
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine saveLayout writes localStorage fallback + __lastSaveError when storage.local.set throws', async ({ page }) => {
     await bootFresh(page);
     // In file:// harness the extension uses a mock storage whose .set() writes

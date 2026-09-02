@@ -73,6 +73,7 @@ test.describe('Boxing inner surface clip (BX-DEV-CLIP)', () => {
     expect(metrics.bottomBoxClipped).toBe(true);
   });
 
+  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine small-box at y=0 stays visible across zoom levels (no progressive clip)', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {

@@ -28,6 +28,7 @@ export default defineConfig({
       // @quarantine-tagged tests: native-input dispatch on the Firefox persistent
       // context hangs (playwright#16095), so those specs are environmental there.
       // Chromium fixed all 30 during ticket 01 and rejoined the main suite.
+      // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
       grepInvert: /@quarantine/,
       use: {
         ...devices['Desktop Firefox'],

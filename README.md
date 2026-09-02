@@ -120,6 +120,48 @@ npm test          # Playwright tests (Chrome + Firefox)
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
 
+### Quarantined tests
+
+Tests tagged `@quarantine` are excluded from the Firefox lane: native-input dispatch on the
+Firefox persistent context hangs (the [playwright#16095](https://github.com/microsoft/playwright/issues/16095)
+class), as tagged in architecture-recovery ticket 01. They keep running in the Chromium lane and in
+the dedicated quarantine lane: `npm run test:quarantine`. Each tag carries a `quarantine-ref`
+comment pointing at the governance ticket
+(`.scratch/architecture-recovery/issues/14-quarantine-governance.md`).
+
+Status below is the quarantine-lane baseline captured 2026-09-02 (ticket 14):
+19/19 green on Chromium, 14/19 green on Firefox.
+
+| Test (spec › title) | Chromium | Firefox | Registered | Due (30d) |
+| --- | --- | --- | --- | --- |
+| boxing-adr-0007-acceptance › Q3b spatial index threshold 32 | pass | **fail** | 2026-09-02 | 2026-10-02 |
+| boxing-audit › saveLayout localStorage fallback on storage error | pass | **fail** | 2026-09-02 | 2026-10-02 |
+| boxing-debug › open NTP via file:// full workflow | pass | **fail** | 2026-09-02 | 2026-10-02 |
+| boxing-focus-steal › dblclick empty canvas: no selection/focus steal | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-focus-steal › dblclick canvas-empty title text | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-focus-steal › selection cleared after renderCanvas | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-innerclip › small-box at y=0 visible across zoom | pass | **fail** | 2026-09-02 | 2026-10-02 |
+| boxing-innerclip-pan › panned-to-top clip across zoom | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-onboarding › step navigation and dismiss | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-popup-dragselect › popup stays open after drag-select | pass | **fail** | 2026-09-02 | 2026-10-02 |
+| boxing-v3 › Chromium load extension + new tab visual check | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-v3 › Pin header button toggle | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-v3 › Cross-tab delete guards | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-webdav › backup saves and restores layout | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-webdav › sync detects data loss and warns | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-webdav › empty local pulls from cloud on first sync | pass | pass | 2026-09-02 | 2026-10-02 |
+| boxing-webdav › test button shows error on failure | pass | pass | 2026-09-02 | 2026-10-02 |
+| data-recovery › export round-trip JSON structure | pass | pass | 2026-09-02 | 2026-10-02 |
+| extension-test › NTP HTML rendering | pass | pass | 2026-09-02 | 2026-10-02 |
+
+**Expiry rule.** Every entry must be resolved by its due date — either **repaired** (remove the
+`@quarantine` tag + `quarantine-ref` comment, rejoin the Firefox lane, delete the row) or
+**retired** (delete the test and the row, recording the decision in the governance ticket).
+Entries do **not** auto-extend: at expiry the next governance pass forces the decision, defaulting
+to retirement. A newly tagged quarantine must be registered in this table the same day, with
+due = registered + 30 days. The quarantine lane is patrolled daily by CI
+(`.github/workflows/quarantine.yml`, `continue-on-error`).
+
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and code style.
