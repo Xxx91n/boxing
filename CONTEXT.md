@@ -17,7 +17,6 @@ Historical grill phase tables live in git history and `docs/archive/` / `docs/ad
 
 
 
-Boxing is a Chrome/Firefox browser extension built from a single source tree. The source manifest.json is intentionally Firefox-loadable / Chrome-rejectable (MV3 + browserSettings permission incompatibility). A cross-platform build script (.github/scripts/build.mjs) produces browser-tailored output trees.
 
 ## Language
 
@@ -98,11 +97,10 @@ _Avoid_: state-descriptive tooltip ("Header unpinned"), static HTML data-i18n-ti
 _Avoid_: corner-align pan formula (legacy openSearchHit), box-shadow pulse (clipped by contain)
 
 
-## Accent Theme Glossary (ADR-0010)
+## Accent Theme Glossary (ADR-0010 — superseded by ADR-0012 theme packs)
 
-- **AccentHue**: Integer 0-360 stored in layout.settings.accentHue. Drives HSL derivation of accent-300/500/600 (light + dark). Default 30 (warm earth). 
-ull means mono (grayscale) preset.
-- **AccentPreset**: String key stored in layout.settings.accentPreset (e.g. 'warm', 'mist', 'ink', 'plum', 'brick', 'pure'). Maps to a preset hue value for UI button highlight; the actual color source is ccentHue.
-- **themeManager**: theme pack presets + applyTheme. Post-split (ticket 08) implementation moved to `ntp/persist.js` (THEME_PACKS/applyTheme). It still contains preset list, HSL constants (ACCENT_LIGHT/ACCENT_DARK), derivation function, and pplyAccent(hue) entry point. Overrides Layer 1 accent primitives at runtime via document.documentElement.style.setProperty.
-- **HSL derivation**: Fixed S/L constants per accent tier. Light: {300:{29%,60%}, 500:{25%,50%}, 600:{27%,34%}}. Dark: {300:{30%,64%}, 500:{30%,58%}, 600:{33%,69%}}. Hue is the only variable. Low saturation preserves brand matte aesthetic.
-- **Mono preset (Pure White)**: Special preset where ccentHue = null. JS injects grayscale ramp (#888/#777/#555 light, #AAA/#AAA/#CCC dark) instead of HSL derivation. Inspired by Codex App's minimalist white aesthetic.
+- **AccentHue**: Integer 0-360 stored in layout.settings.accentHue. Drives HSL derivation of accent-300/500/600 (light + dark). Default 30 (warm earth). null means mono (grayscale) preset.
+- **AccentPreset**: String key stored in layout.settings.accentPreset (e.g. 'warm', 'mist', 'ink', 'plum', 'brick', 'pure'). Maps to a preset hue value for UI button highlight; the actual color source is accentHue.
+- **themeManager**: theme pack presets + applyTheme. Post-split (ticket 08) implementation moved to `ntp/persist.js` (THEME_PACKS/applyTheme). It now contains only the curated THEME_PACKS preset list and applyTheme(themeKey) entry point (delta-diff setProperty); the ADR-0010-era HSL machinery (ACCENT_LIGHT/ACCENT_DARK, hslToHex, applyAccent(hue)) was removed by the ADR-0012 rework. Overrides Layer 1 accent primitives at runtime via document.documentElement.style.setProperty.
+- **HSL derivation**: (ADR-0010-era) Fixed S/L constants per accent tier — historical parameter table lives in ADR-0010. Hue is the only variable; low saturation preserves the brand matte aesthetic. Superseded by ADR-0012: current accent tiers are complete THEME_PACKS ramps in `ntp/persist.js`.
+- **Mono preset (Pure White)**: Special preset where accentHue = null. JS injects grayscale ramp (#888/#777/#555 light, #AAA/#AAA/#CCC dark) instead of HSL derivation. Inspired by Codex App's minimalist white aesthetic.

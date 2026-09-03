@@ -5,7 +5,7 @@
 > Update this file when adding domain concepts, data structures, or architectural invariants.
 
 ## Project Summary
-Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookmarks hierarchically on an infinite canvas. Large boxes contain small boxes; small boxes contain bookmarks. Boxes can be connected with lines to form visual relationships. A DSU (disjoint-set union) groups boxes that share connection lines, enabling parent-star propagation and group movement.
+Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookmarks hierarchically on an infinite canvas. The NTP surface is split into native ES modules (no framework, no bundler): `ntp.js` (entry orchestration + composition root) composes `render.js` (canvas render / drag / commit(op)), `conn-layer.js` (connections + DSU), `popups.js` (bookmark popups), `state.js` (shared state), `storage.js` (storage write facade), `persist.js` (persistence + theme packs), `settings-ui.js` (settings modal), `sync-engine.js` (WebDAV+Gist sync/backup), `credentials.js` (PBKDF2/AES-GCM), `onboarding.js` (first-run tour), `i18n.js`, `utils.js`, `favicon.js`. Large boxes contain small boxes; small boxes contain bookmarks. Boxes can be connected with lines to form visual relationships. A DSU (disjoint-set union) groups boxes that share connection lines, enabling parent-star propagation and group movement.
 
 ## Core Domain Terms
 
@@ -46,7 +46,7 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **ADR-0008**: [docs/adr/0008-design-system-three-layer-tokens.md](adr/0008-design-system-three-layer-tokens.md) — three-layer token architecture + CSS source split + dark mode consolidation
 - **DESIGN.md**: [docs/DESIGN.md](DESIGN.md) — visual design system: token architecture, palette, typography, component state specs, dark mode strategy — grill-confirmed decisions for all 9 audit recommendations
 - **Roadmap**: [docs/archive/roadmap-architecture-refactor.md](archive/roadmap-architecture-refactor.md) — decision matrix (archived, implemented in ADR-0007)
-- **Implementation status (ADR-0007)**: Phase 1.1–1.3 + Phase 2.1–2.3 + Phase 3 landed in `ntp/ntp.js` (groups computed-only, `commit(op)`, `boxById` maps, `__dsuDirty`, spatial hash ≥32, tombstone 24h GC, conn `props`, delete viewState clear).
+- **Implementation status (ADR-0007)**: Phase 1.1–1.3 + Phase 2.1–2.3 + Phase 3 landed (originally in `ntp/ntp.js`, now distributed by the module split: `commit(op)` + `boxById` maps + tombstone GC + viewState clear in `ntp/render.js`; DSU + `__dsuDirty` + `ensureGroups` + `moveGroupTogether` + spatial snap in `ntp/conn-layer.js`).
 - **Verification evidence (2026-08-05)**: ADR acceptance gates (`boxing-adr-0007-acceptance`) 5/5; critical suite (`star-sync`+`conn-delete`+`conn-dsu`+`conn-persist`) 38/38 isolated; acceptance+critical combined 43/43 (workers=2). BX-144 Bug1b/1c + star-only `dsuMake` covered.
 - **Confirmed decisions (grill Q1-Q4)**:
   - Q1: layout.groups stops being persisted -> computed-only runtime value + one-time migration (ADR-0007)
@@ -74,9 +74,9 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - Fields: `selectedLanguage`, `rememberLastPos`, `zoomLevel`, `darkMode`, `fontSize`, `squareCorners`, `autoBackupInterval`, `headerPinned`, `syncProvider`, `urlOpenMode`, `connDeleteAction`, `theme`.
 
 ### Theme Pack System (ADR-0012)
-- **THEME_PACKS** — static object in ntp.js with 5 curated themes: `beige` (default), `graphite`, `coastal`, `forest`, `pure`. Each stores complete warm bg ramp (9 tiers) + accent ramp (3 tiers) for light + dark.
+- **THEME_PACKS** — static object in `ntp/persist.js` (moved out of ntp.js in the module split) with 5 curated themes: `beige` (default), `graphite`, `coastal`, `forest`, `pure`. Each stores complete warm bg ramp (9 tiers) + accent ramp (3 tiers) for light + dark.
 - **theme** — `layout.settings.theme: string` (default `'beige'`). Replaces old `accentHue` + `accentPreset` (migrated in migrateLayout).
-- **applyTheme(themeKey)** — injects all theme CSS variables via setProperty. Called on init if theme !== 'beige', and on theme button click.
+- **applyTheme(themeKey)** — injects all theme CSS variables via setProperty (defined in `ntp/persist.js`). Called on init if theme !== 'beige', and on theme button click.
 - **theme-preset** — CSS class for the 5 theme buttons in settings modal (`.theme-preset`, `.theme-preset--active`).
 - **theme i18n** — buttons carry `data-i18n-title="themeBeige"` etc; `applyI18n()` sets `.title` from `_locales/<lang>/messages.json`. All 14 locales have `themeBeige`/`themeGraphite`/`themeCoastal`/`themeForest`/`themePure` keys; `I18N_FALLBACK` holds English fallbacks. Any new theme must add the key to all 14 locale files AND to `I18N_FALLBACK`.
 - **ADR-0010** — superseded by ADR-0012 (free hue slider replaced by curated themes).
@@ -85,8 +85,8 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **addEventListener('change')** — settings modal writes DOM → layout.settings + `saveLayoutDebounced()`.
 
 ### Storage
-- **saveLayoutDebounced()** — debounced persist to `chrome.storage.sync` / `browser.storage.sync`. Correct function name (BX-EXPLORE-009: `persistLayoutDebounced` was a typo that was never defined).
-- **mergeConcurrentLayout** — cross-tab merge at L780: `settings: { ...remote.settings, ...local.settings }` — new fields covered automatically.
+- **saveLayoutDebounced()** — debounced persist to `chrome.storage.local` (layout storage area is storage.local since A6; see ADR-0002). Correct function name (BX-EXPLORE-009: `persistLayoutDebounced` was a typo that was never defined).
+- **mergeConcurrentLayout** — cross-tab merge in `ntp/storage.js` (L153): `settings: { ...remote.settings, ...local.settings }` — new fields covered automatically.
 - **diagnostics** — bounded log ring buffer under `.omx/logs/`; exportable via Diagnostics UI (BX-AUD-05).
 
 ## Architectural Invariants (BX-EXPLORE-005..009)
@@ -103,7 +103,7 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **BX-EXPLORE-015**: All `catch` blocks in ntp.js and background.js MUST be classified and annotated: A-class (critical paths: storage, sync, render state) use `catch (e) { debugErr("context", e); }`; B-class (soft failures: DOM removal, ResizeObserver, localStorage cleanup, popup reposition, favicon cache, alert guard) use `catch (e) { /* silent: <reason> */ }`. Empty `catch (_) {}` without annotation is FORBIDDEN — it makes debugging impossible. Zero empty catch blocks remain as of a7cc8aa.
 
 ## CSS Dual-Write Convention
-Both large-box and small-box canvases share the same CSS class for conn-line styles. Source files: `ntp/src/base.css` + `ntp/src/conn.css` + `ntp/src/settings.css` + `ntp/src/onboarding.css` (ADR-0011: `ntp/ntp.css` is a build artifact produced by `build.mjs`; edit source files, not the concatenated output). See `docs/css-dual-write-convention.md` for rules on properties that MUST stay in sync across large/small box selectors.
+Both large-box and small-box canvases share the same CSS class for conn-line styles. Source files: `ntp/base.css` + `ntp/conn.css` + `ntp/settings.css` + `ntp/onboarding.css` (ADR-0011: `ntp/ntp.css` is a build artifact produced by `build.mjs`; edit source files, not the concatenated output). See `docs/css-dual-write-convention.md` for rules on properties that MUST stay in sync across large/small box selectors.
 
 ## Disposal Invariant
 Any code that clears `canvasSurface.innerHTML` or `innerSurfaceContent.innerHTML` MUST call `disposeAllConns()` first — otherwise `connLines` Map holds stale SVG refs and `renderConnections()` skips rebuild (lines invisible forever).
@@ -116,7 +116,7 @@ Chrome native `dblclick` on selectable canvas text (empty-state title, footer hi
 
 ## Performance Optimization (ADR-0013)
 - **ADR-0013**: [docs/adr/0013-performance-optimization-grid-hash.md](adr/0013-performance-optimization-grid-hash.md) -- grid hash spatial index for moveGroupTogether
-- **moveGroupTogether** (ntp.js:1923) -- O(m x n) per drag frame: each group member calls elasticSnap against all non-member boxes. Main performance hotspot. ADR-0013 replaces linear scan with grid hash O(k) neighbor query.
+- **moveGroupTogether** (in `ntp/conn-layer.js`) -- O(m x n) per drag frame: each group member calls elasticSnap against all non-member boxes. Main performance hotspot. ADR-0013 replaces linear scan with grid hash O(k) neighbor query.
 - **Grid hash** -- cell size = 2x max box dimension (GDevelop pattern). Built at drag-start O(n), queried per member O(k) where k = 0-5 neighboring boxes. Reuses existing spatial hash >=32 threshold pattern from elasticSnap.
 - **__spatialGridDirty** / **markSpatialGridDirty()** -- lazy rebuild flag, same pattern as __dsuDirty / markDsuDirty(). Set on box create/delete/move/cross-tab sync. Grid rebuilt on next drag-start.
 - **Q3=B**: renderConnections SVG line pooling only -- renderCanvas full rebuild semantics preserved (multi-tab sync safety). renderCanvas DOM diff deferred (9 callers depend on clean DOM after rebuild).
@@ -126,7 +126,7 @@ Chrome native `dblclick` on selectable canvas text (empty-state title, footer hi
 ### Performance Grill Decisions (2026-08-15)
 - **Q1**: A -- all three layers (frame rate + memory + storage) planned together, executed in phases. Only frame rate (grid hash) confirmed as needed; memory and storage confirmed YAGNI.
 - **Q2**: Grid hash spatial index (confirmed) -- boxing uses <200 boxes, R-tree overkill. Grid hash matches existing elasticSnap >=32 threshold pattern.
-- **Q3**: B -- SVG line pooling only. Multi-tab sync analysis: applyExternalLayout (ntp.js:3960) calls renderCanvas() and depends on full rebuild semantics to handle cross-tab add/delete/move. DOM diff would require auditing all 9 renderCanvas callers for fresh-DOM assumptions -- risk too high for incremental gain.
+- **Q3**: B -- SVG line pooling only. Multi-tab sync analysis: applyExternalLayout (in `ntp/storage.js`) calls renderCanvas() and depends on full rebuild semantics to handle cross-tab add/delete/move. DOM diff would require auditing all 9 renderCanvas callers for fresh-DOM assumptions -- risk too high for incremental gain.
 - **Q4**: C -- no rAF batching, no WeakMap caches. onBoxDragMove hot path: style.left/top O(1), refreshConnsForBoxSync O(k), moveGroupTogether O(m x n) -> fixed by grid hash. All other operations O(1)/O(k). No additional optimization needed.
 - **Q5**: C -- no storage optimization. saveLayout cold-path only (drag end, create/delete/rename, settings change). 120ms debounced. Pan/zoom uses persistViewState(true), not saveLayout(). 100-box layout = 15-30KB, well under quota (5MB at decision time; since A6, storage.local + unlimitedStorage — see Q5=C quota note).
 

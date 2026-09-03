@@ -4,7 +4,7 @@
 2026-08-05
 
 ## Status
-Accepted + Implemented (2026-08-05) — all phases in ntp/ntp.js; acceptance gates + critical Playwright suite green
+Accepted + Implemented (2026-08-05) — acceptance gates + critical Playwright suite green. Originally landed in single-file ntp/ntp.js; the post-ADR-0016 module split relocated the mechanics: commit(op)/boxById/tombstone GC/viewState clear live in ntp/render.js, DSU/__dsuDirty/ensureGroups/moveGroupTogether/spatial snap live in ntp/conn-layer.js.
 
 ## Context
 

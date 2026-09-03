@@ -4,7 +4,7 @@
 2026-08-10
 
 ## Status
-Superseded by ADR-0012 (curated theme packs). The hue slider approach was replaced by curated theme packs for better design control.
+Superseded by ADR-0012 (curated theme packs). The hue slider approach was replaced by curated theme packs for better design control. Note on code locations: when this ADR landed, the theme manager was inline in single-file ntp.js (Q9); the post-ADR-0016 module split moved THEME_PACKS/applyTheme into ntp/persist.js, and ADR-0012 later replaced the hue-slider machinery with curated theme packs.
 
 ## Context
 ADR-0008 established a three-layer CSS token architecture (primitive → semantic → component) with

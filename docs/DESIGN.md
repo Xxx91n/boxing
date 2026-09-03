@@ -217,7 +217,7 @@ Based on PWM research (W3C DTCG spec 2025.10, Vercel Geist, Linear, Stripe, Appl
 - [ADR-0008](adr/0008-design-system-three-layer-tokens.md) — token architecture decision
 - [css-dual-write-convention.md](css-dual-write-convention.md) — large-box/small-box CSS parity rule
 - [CONTEXT.md](CONTEXT.md) — domain glossary (no CSS implementation details)
-- AGENTS.md BX-DEV-013/014/135 — CSS development rules
+- AGENTS.md CSS development rules (BX-DEV series, see docs/history/boxing-changelog.md)
 
 ## Accent Theme System (ADR-0012)
 
@@ -228,7 +228,7 @@ This supersedes ADR-0010 (hue slider + HSL derivation) which was replaced for si
 
 ### Theme Packs
 
-Five curated themes are defined as the static `THEME_PACKS` object in `ntp/ntp.js` (L949):
+Five curated themes are defined as the static `THEME_PACKS` object in `ntp/persist.js` (L142):
 
 | Key | i18n Label | Light Bg Character | Light Accent |
 |---|---|---|---|
@@ -246,7 +246,7 @@ Each theme stores a **complete** color ramp:
 
 ### Runtime Application (`applyTheme`)
 
-`applyTheme(themeKey)` at `ntp/ntp.js` L1014 uses delta-diff (enterprise pattern):
+`applyTheme(themeKey)` at `ntp/persist.js` L200 uses delta-diff (enterprise pattern):
 1. Look up theme: `THEME_PACKS[themeKey] || THEME_PACKS.beige` (safe fallback)
 2. For each warm tier, set `--color-warm-{tier}` and `--color-warm-dark-{tier}` only if changed
 3. For accent tiers 300/500/600, set `--color-accent-{tier}` and `--color-accent-dark-{tier}` only if changed
@@ -257,7 +257,7 @@ Each theme stores a **complete** color ramp:
 
 - `layout.settings.theme`: string key (`beige` | `graphite` | `coastal` | `forest` | `pure`), default `beige`
 - Persisted via existing `saveLayoutDebounced()` → `chrome.storage.local`
-- On init: `applyTheme(layout.settings.theme)` called if theme ≠ `beige` (L1116-1117)
+- On init: `applyTheme(layout.settings.theme)` called if theme ≠ `beige` (`ntp/persist.js` `loadSettings()`)
 
 ### CSS Class
 
