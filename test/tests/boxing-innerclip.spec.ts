@@ -73,8 +73,7 @@ test.describe('Boxing inner surface clip (BX-DEV-CLIP)', () => {
     expect(metrics.bottomBoxClipped).toBe(true);
   });
 
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine small-box at y=0 stays visible across zoom levels (no progressive clip)', async ({ page }) => {
+  test('small-box at y=0 stays visible across zoom levels (no progressive clip)', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -102,15 +101,13 @@ test.describe('Boxing inner surface clip (BX-DEV-CLIP)', () => {
       if (!box) break;
       const cx = box.x + box.width / 2;
       const cy = box.y + box.height / 2;
-      await page.mouse.move(cx, cy);
-      await page.mouse.wheel(0, -120, [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
-      // ctrl+wheel can't be done via mouse.wheel; use keyboard-mediated approach below
-      await page.keyboard.down('Control');
+      // synthetic ctrl+wheel only — native mouse.move/wheel stalls on firefox
+      // (playwright#16095 class, ticket-18 probe 2026-09-03) and the real cursor
+      // position is irrelevant: the WheelEvent below carries its own clientX/clientY.
       await page.evaluate((p2) => {
         const s = document.querySelector('.inner__surface') as HTMLElement;
         s.dispatchEvent(new WheelEvent('wheel', { deltaY: -120, ctrlKey: true, clientX: p2.cx, clientY: p2.cy, bubbles: true, cancelable: true }));
       }, { cx, cy });
-      await page.keyboard.up('Control');
       await page.waitForTimeout(150);
     }
 

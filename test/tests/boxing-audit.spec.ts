@@ -56,8 +56,7 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     expect(requested).toEqual([]);
   });
 
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine saveLayout writes localStorage fallback + __lastSaveError when storage.local.set throws', async ({ page }) => {
+  test('saveLayout writes localStorage fallback + __lastSaveError when storage.local.set throws', async ({ page }) => {
     await bootFresh(page);
     // In file:// harness the extension uses a mock storage whose .set() writes
     // localStorage('boxingLayout', ...). We force that specific key write to throw
@@ -66,22 +65,27 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
       const d = (window as any).__boxingDebug;
       d.clearLog();
       d.setLogLevel(4);
-      const ls = window.localStorage;
-      const origSetItem = ls.setItem.bind(ls);
-      (ls as any).setItem = (key: string, value: string) => {
+      // Firefox ignores instance-level shadowing of localStorage methods (probe 2026-09-03:
+      // own-property assignment AND defineProperty both fail there), so patch the Storage
+      // prototype — honored on both engines — and restore it right after the write trigger.
+      const protoSetItem = Storage.prototype.setItem;
+      const origSetItem = protoSetItem.bind(window.localStorage);
+      Storage.prototype.setItem = function (this: Storage, key: string, value: string) {
         if (key === 'boxingLayout') {
           const e = new Error('QUOTA_BYTES quota exceeded');
           (e as any).code = 'QUOTA_BYTES';
           throw e;
         }
         return origSetItem(key, value);
-      };
+      } as typeof Storage.prototype.setItem;
+      (window as any).__boxingRestoreSetItem = () => { Storage.prototype.setItem = protoSetItem; };
     });
     await page.evaluate(async () => {
       try {
         await (window as any).__boxingDebug.setWebDAVConfig('https://example.com/dav/', 'u', 'p');
       } catch (_) {}
     });
+    await page.evaluate(() => (window as any).__boxingRestoreSetItem?.());
     const fb = await page.evaluate(() => localStorage.getItem('boxingLayoutFallback.v1'));
     expect(fb && fb.length).toBeTruthy();
     const lastSaveErr = await page.evaluate(

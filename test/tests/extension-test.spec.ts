@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXT_PATH = path.resolve(__dirname, '..', '..');
 
 test.describe('Boxing Extension — Basic Rendering', () => {
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine Direct: Test NTP HTML rendering', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();

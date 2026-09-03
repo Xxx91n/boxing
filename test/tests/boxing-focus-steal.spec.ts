@@ -53,7 +53,7 @@ async function captureState(page: Page, label: string) {
 }
 
 test.describe('dblclick — REAL native input + text selection', () => {
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine native dblclick on empty canvas center does not select text or steal focus', async ({ page }) => {
     await boot(page);
 
@@ -86,7 +86,7 @@ test.describe('dblclick — REAL native input + text selection', () => {
     expect(after.activeEditable).toBe(false);
   });
 
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine native dblclick on canvas-empty title text directly', async ({ page }) => {
     await boot(page);
 
@@ -112,7 +112,7 @@ test.describe('dblclick — REAL native input + text selection', () => {
     expect(after.selRangeCount > 0 && after.selText.length > 0).toBe(false);
   });
 
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine selection cleared after renderCanvas', async ({ page }) => {
     await boot(page);
 

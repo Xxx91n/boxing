@@ -11,7 +11,7 @@ const EXTENSION_PATH = path.resolve(__dirname, '..');
 // @quarantine in their titles. The main config (playwright.config.ts) excludes
 // them via per-project grepInvert; this config omits grepInvert so the CLI
 // --grep=@quarantine can select them for repair work (npm run test:quarantine).
-// // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+// // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,

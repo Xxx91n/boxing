@@ -109,8 +109,7 @@ test.describe('ADR-0007 acceptance gates', () => {
     expect(r.keys).toEqual(['fresh']);
   });
 
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine Q3b spatial index: threshold 32, builds grid at N>=32 and null below', async ({ page }) => {
+  test('Q3b spatial index: threshold 32, builds grid at N>=32 and null below', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;

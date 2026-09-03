@@ -174,7 +174,7 @@ test.describe('Boxing v3 Extension', () => {
     expect(js).toContain('window.open');
   });
 
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine Chromium: load extension and open new tab for visual check', async ({ browser }) => {
     test.setTimeout(30000);
     
@@ -237,7 +237,7 @@ test.describe('Boxing v3 Extension', () => {
   });
 
 
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine Pin header button: visible, clickable, toggles header hide/show', async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -281,7 +281,7 @@ test.describe('Boxing v3 Extension', () => {
 
 
   // BX-DEV-111k: Cross-tab delete protection — box deleted, guards block inner ops + show warning
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine Cross-tab delete: validateCurrentBox guards fire when box deleted', async ({ browser }) => {
     test.setTimeout(30000);
 

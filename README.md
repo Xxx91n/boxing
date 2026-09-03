@@ -127,23 +127,21 @@ Firefox persistent context hangs (the [playwright#16095](https://github.com/micr
 class), as tagged in architecture-recovery ticket 01. They keep running in the Chromium lane and in
 the dedicated quarantine lane: `npm run test:quarantine`. Each tag carries a `quarantine-ref`
 comment pointing at the governance ticket
-(`.scratch/architecture-recovery/issues/14-quarantine-governance.md`).
+(`.scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md`).
 
-Status below is the quarantine-lane baseline captured 2026-09-02 (ticket 14):
-19/19 green on Chromium, 14/19 green on Firefox.
+Status below is the quarantine-lane baseline captured 2026-09-03 (ticket 18, expiry pass):
+14/14 green on Chromium, 14/14 green on Firefox. The five failures from the
+2026-09-02 baseline (ticket 14) were all repaired at their 2026-09-03 expiry pass and
+rejoined the Firefox lane — see
+[.scratch/architecture-recovery/18-quarantine-expiry-report.md](.scratch/architecture-recovery/18-quarantine-expiry-report.md).
 
 | Test (spec › title) | Chromium | Firefox | Registered | Due (30d) |
 | --- | --- | --- | --- | --- |
-| boxing-adr-0007-acceptance › Q3b spatial index threshold 32 | pass | **fail** | 2026-09-02 | 2026-10-02 |
-| boxing-audit › saveLayout localStorage fallback on storage error | pass | **fail** | 2026-09-02 | 2026-10-02 |
-| boxing-debug › open NTP via file:// full workflow | pass | **fail** | 2026-09-02 | 2026-10-02 |
 | boxing-focus-steal › dblclick empty canvas: no selection/focus steal | pass | pass | 2026-09-02 | 2026-10-02 |
 | boxing-focus-steal › dblclick canvas-empty title text | pass | pass | 2026-09-02 | 2026-10-02 |
 | boxing-focus-steal › selection cleared after renderCanvas | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-innerclip › small-box at y=0 visible across zoom | pass | **fail** | 2026-09-02 | 2026-10-02 |
 | boxing-innerclip-pan › panned-to-top clip across zoom | pass | pass | 2026-09-02 | 2026-10-02 |
 | boxing-onboarding › step navigation and dismiss | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-popup-dragselect › popup stays open after drag-select | pass | **fail** | 2026-09-02 | 2026-10-02 |
 | boxing-v3 › Chromium load extension + new tab visual check | pass | pass | 2026-09-02 | 2026-10-02 |
 | boxing-v3 › Pin header button toggle | pass | pass | 2026-09-02 | 2026-10-02 |
 | boxing-v3 › Cross-tab delete guards | pass | pass | 2026-09-02 | 2026-10-02 |

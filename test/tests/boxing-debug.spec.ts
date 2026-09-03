@@ -6,15 +6,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXT_PATH = path.resolve(__dirname, '..', '..');
 
 test.describe('Boxing v3 — Deep Debug', () => {
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine open NTP via file:// and verify full workflow', async ({ browser }) => {
-    test.setTimeout(40000);
+  test('open NTP via file:// and verify full workflow', async ({ page }) => {
+    // full 12-step workflow with fixed waits + fixture boot reload — a cold headed
+    // firefox run measured 44s (ticket-18), over the old 40s budget with all steps green
+    test.setTimeout(90000);
 
-    const context = await browser.newContext();
-    const page = await context.newPage();
+    // Suite-standard boot (fixture page): a manual browser.newContext() is fragile
+    // on headed firefox — probes this ticket caught stalls at launch, close, and an
+    // invisible zero-size window. Same file:// workflow, no manual context.
+    const NTP_URL = pathToFileURL(path.join(EXT_PATH, 'ntp/index.html')).href;
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 
-    const ntpUrl = pathToFileURL(path.join(EXT_PATH, 'ntp/index.html')).href;
-    await page.goto(ntpUrl, { waitUntil: 'networkidle', timeout: 15000 });
+    // All interaction goes through synthetic event dispatch: native input on the
+    // firefox lane stalls (playwright#16095 class, ticket-18 evidence) and this
+    // workflow's purpose is the app-level flow, not input realness.
+    const jsClick = (sel: string) =>
+      page.evaluate((s) => (document.querySelector(s) as HTMLElement | null)?.click(), sel);
+    const jsDblclick = (sel: string, x: number, y: number) =>
+      page.evaluate(({ s, x, y }) => {
+        (document.querySelector(s) as HTMLElement | null)?.dispatchEvent(
+          new MouseEvent('dblclick', { bubbles: true, cancelable: true, clientX: x, clientY: y }),
+        );
+      }, { s: sel, x, y });
 
     // Dismiss onboarding overlay so it doesn't intercept pointer events
     await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
@@ -33,7 +49,7 @@ test.describe('Boxing v3 — Deep Debug', () => {
 
     // === 2. Click + button ===
     console.log('Clicking add-box button...');
-    await page.locator('#add-box').click();
+    await jsClick('#add-box');
     await page.waitForTimeout(800);
 
     // === 3. After clicking +, should have 1 large box ===
@@ -57,7 +73,7 @@ test.describe('Boxing v3 — Deep Debug', () => {
     // === 6. Double-click to create another large box ===
     const canvasBox = await page.locator('#canvas-surface').boundingBox();
     if (canvasBox) {
-      await page.mouse.dblclick(canvasBox.x + 400, canvasBox.y + 100);
+      await jsDblclick('#canvas-surface', canvasBox.x + 400, canvasBox.y + 100);
       await page.waitForTimeout(800);
       const count2 = await largeBoxes.count();
       console.log('Large boxes after dblclick:', count2);
@@ -65,7 +81,7 @@ test.describe('Boxing v3 — Deep Debug', () => {
     }
 
     // === 7. Click body of first box to enter inner view ===
-    await page.locator('.large-box__body').first().click();
+    await jsClick('.large-box__body');
     await page.waitForTimeout(500);
     // Inner view should be visible
     await expect(page.locator('#inner')).toBeVisible();
@@ -76,17 +92,17 @@ test.describe('Boxing v3 — Deep Debug', () => {
     await expect(page.locator('#inner-crumb-title')).toBeVisible();
 
     // === 8. Verify back button works ===
-    await page.locator('#back-btn').click();
+    await jsClick('#back-btn');
     await page.waitForTimeout(500);
     await expect(page.locator('#canvas')).toBeVisible();
     await expect(page.locator('#inner')).toBeHidden();
 
     // === 9. Add small box via dblclick inside inner ===
-    await page.locator('.large-box__body').first().click();
+    await jsClick('.large-box__body');
     await page.waitForTimeout(500);
     const innerSurfaceBox = await page.locator('#inner-surface').boundingBox();
     if (innerSurfaceBox) {
-      await page.mouse.dblclick(innerSurfaceBox.x + 200, innerSurfaceBox.y + 100);
+      await jsDblclick('#inner-surface', innerSurfaceBox.x + 200, innerSurfaceBox.y + 100);
       await page.waitForTimeout(800);
       const smallBoxes = page.locator('.small-box');
       const sbCount = await smallBoxes.count();
@@ -95,9 +111,9 @@ test.describe('Boxing v3 — Deep Debug', () => {
     }
 
     // === 10. Test settings modal ===
-    await page.locator('#back-btn').click(); // return to canvas
+    await jsClick('#back-btn'); // return to canvas
     await page.waitForTimeout(500);
-    await page.locator('#settings-btn').click();
+    await jsClick('#settings-btn');
     await page.waitForTimeout(400);
     await expect(page.locator('#settings-modal')).toBeVisible();
     // Verify language selector has options
@@ -111,7 +127,7 @@ test.describe('Boxing v3 — Deep Debug', () => {
     const modalTitle = await page.locator('#settings-modal .modal__title').textContent();
     console.log('Modal title after lang switch:', modalTitle);
     // Close modal
-    await page.locator('#settings-modal .modal__close').click();
+    await jsClick('#settings-modal .modal__close');
     await page.waitForTimeout(300);
     await expect(page.locator('#settings-modal')).toBeHidden();
 
@@ -124,6 +140,5 @@ test.describe('Boxing v3 — Deep Debug', () => {
     const boxingLogs = logs.filter(l => l.includes('[Boxing]'));
     expect(boxingLogs.length).toBeGreaterThan(0); // debug should log
 
-    await context.close();
   });
 });

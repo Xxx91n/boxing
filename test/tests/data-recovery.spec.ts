@@ -144,7 +144,7 @@ test.describe('Data Recovery & Export/Import', () => {
     await context.close();
   });
 
-  // quarantine-ref: .scratch/architecture-recovery/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
+  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
   test('@quarantine Export data round-trip: create boxes, export, verify JSON structure', async ({ browser }) => {
     test.setTimeout(40000);
 
