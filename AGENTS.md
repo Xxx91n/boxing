@@ -67,6 +67,7 @@
 | UI verification | Use available browser runtime screenshot/DOM/console inspection | Visual result matches requested state. |
 | Syntax pre-check | `node --check ntp/ntp.js && node --check background.js` | Both exit 0. |
 | Full e2e | `cd D:/Aworker/crx/boxing && npx playwright test --config=test/playwright.config.ts --project=chromium --reporter=line` | ~3-4 min, all Boxing specs PASS (`extension-test.spec.ts` + `boxing-*` specs). |
+| Standard local verification | `npm run test:changed` (ticket 25: process-level mutex + changed-surface selection; ambiguous/config/test changes auto-fall back to the full suite) | Bounded subset green; second concurrent run rejected with exit 75. |
 
 ## Playwright & Browser Testing
 
@@ -74,7 +75,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 - Chromium project (headed, persistent context, `--load-extension`) is the primary lane.
 - Firefox project uses `-no-remote`; LibreWolf is manual-verify only (no remote debug).
 - Run a single spec: `npx playwright test --config=test/playwright.config.ts test/tests/boxing-viewstate-sync.spec.ts --project=chromium`.
-- Test files: 33 spec files in `test/tests/` (31 `boxing-*`, plus `extension-test.spec.ts` and `data-recovery.spec.ts`), including `boxing-audit`, `boxing-auto-expand`, and conn/DSU specs; they cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, connections, and export/import. Run from repo root via `npm test` (alias for `npx playwright test --config=test/playwright.config.ts`; `pretest` runs the import-graph guard `scripts/import-graph-guard.mjs`).
+- Test files: 33 spec files in `test/tests/` (31 `boxing-*`, plus `extension-test.spec.ts` and `data-recovery.spec.ts`), including `boxing-audit`, `boxing-auto-expand`, and conn/DSU specs; they cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, connections, and export/import. Run from repo root via `npm test` (full suite, mutex-guarded; `pretest` runs the import-graph guard `scripts/import-graph-guard.mjs`). Every local Playwright lane is wrapped by `scripts/test-mutex.mjs` (ticket 25): one test process at a time, second concurrent run rejected with exit 75, stale locks auto-recovered, mutex skipped on CI. Concurrency gate: `node scripts/test-mutex-verify.mjs`.
 
 ## Chrome Extension Workflow
 

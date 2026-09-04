@@ -12,14 +12,15 @@
     "dev:firefox:no-build": "web-ext run --source-dir=dist/boxing-firefox --no-reload",
     "guard:import-graph": "node scripts/import-graph-guard.mjs",
     "pretest": "node scripts/import-graph-guard.mjs",
-    "test": "playwright test --config=test/playwright.config.ts",
-    "test:chromium": "playwright test --config=test/playwright.config.ts --project=chromium-extension",
-    "test:firefox": "playwright test --config=test/playwright.config.ts --project=firefox-extension",
-    "test:failed": "playwright test --config=test/playwright.config.ts --last-failed",
-    "test:changed": "node scripts/test-surface.mjs",
-    "test:quarantine": "playwright test --config=test/playwright.quarantine.config.ts --grep=@quarantine",
-    "postinstall": "node -e \"console.warn('[boxing] Playwright browsers not installed. Run: npx playwright install firefox chromium')\"",
-    "test:debug": "playwright test --config=test/playwright.config.ts --project=chromium-extension --debug"
+    "test": "node scripts/test-mutex.mjs full",
+    "test:all": "node scripts/test-mutex.mjs full",
+    "test:changed": "node scripts/test-mutex.mjs changed",
+    "test:chromium": "node scripts/test-mutex.mjs full --project=chromium-extension",
+    "test:firefox": "node scripts/test-mutex.mjs full --project=firefox-extension",
+    "test:failed": "node scripts/test-mutex.mjs playwright test --config=test/playwright.config.ts --last-failed",
+    "test:quarantine": "node scripts/test-mutex.mjs playwright test --config=test/playwright.quarantine.config.ts --grep=@quarantine",
+    "test:debug": "node scripts/test-mutex.mjs full --project=chromium-extension --debug",
+    "postinstall": "node -e \"console.warn('[boxing] Playwright browsers not installed. Run: npx playwright install firefox chromium')\""
   },
   "devDependencies": {
     "web-ext": "^8.10.0",
