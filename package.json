@@ -13,6 +13,8 @@
     "test": "playwright test --config=test/playwright.config.ts",
     "test:chromium": "playwright test --config=test/playwright.config.ts --project=chromium-extension",
     "test:firefox": "playwright test --config=test/playwright.config.ts --project=firefox-extension",
+    "test:failed": "playwright test --config=test/playwright.config.ts --last-failed",
+    "test:changed": "node scripts/test-surface.mjs",
     "test:quarantine": "playwright test --config=test/playwright.quarantine.config.ts --grep=@quarantine",
     "postinstall": "node -e \"console.warn('[boxing] Playwright browsers not installed. Run: npx playwright install firefox chromium')\"",
     "test:debug": "playwright test --config=test/playwright.config.ts --project=chromium-extension --debug"
