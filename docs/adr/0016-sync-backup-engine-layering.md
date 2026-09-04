@@ -63,3 +63,25 @@ __boxingTestWebDAV / __boxingBackupWebDAV / __boxingSyncWebDAV / __bxSync.{build
 - 检查点 2 (凭据审计): 明文口令/令牌只存在于 DOM input 值; layout 序列化/导出/Gist payload 中仅出现
   `_encWebdavPass`/`_encGistToken` 加密信封 (现状即如此, 不改); 日志中口令一律 `(set)`/`(empty)` 脱敏。
 - updatedAt LWW 妥协被显式记录而非掩盖; 后续真 outbox 升级有本 ADR 作为基线。
+
+### 勘误-26 (2026-09-05): Feature-to-Feature 兄弟 Import 白名单
+
+票 26 (Round 5) 的取舍: 不重写 ADR-0016 的箭头图, 而是显式登记 9 条 feature-to-feature 兄弟 import 为合法边, 并落 `scripts/import-graph-guard.mjs` 规则 **B-9** (pretest 门禁) 机器检查。文字与守卫冲突时以守卫实测为准的裁定原则保持不变 (本 ADR §勘误-22)。
+
+**接受边 (9 条)**:
+
+| from | to | 用途 |
+|---|---|---|
+| onboarding.js | render.js | 安装/更新信号触发 tour, 需 renderCanvas/updateAutohideUI |
+| onboarding.js | settings-ui.js | 引导末段开放设置, 调用 openSettingsModal |
+| render.js | conn-layer.js | render 是画布热路径入口, 由它驱动连接层 |
+| render.js | persist.js | 视图状态持久化 (persistViewState/saveLargeBoxViewState/scheduleLargeBoxViewStatePersist) |
+| render.js | popups.js | 画布渲染同步弹出层 |
+| settings-ui.js | conn-layer.js | 删除快捷键 / 删除按钮等需要 disposeAllConns + applyConnDeleteKeydoc |
+| settings-ui.js | persist.js | 主题切换经 applyTheme |
+| settings-ui.js | render.js | 主题/画布变更的入口渲染回放 (含 transform/退出等) |
+| sync-engine.js | render.js | 远端 merge 完成后调 renderCanvas 重绘 |
+
+**被 B-9 拒绝的样例边**: 任何其他 feature→feature 兄弟 import (例如 `conn-layer.js → sync-engine.js` 或 `popups.js → render.js`) 都会让守卫报 `B-9: unaccepted feature-to-feature sibling import: <target> (whitelist ADR-0016 §errata-26)`, 退出码非零。
+
+**理由**: 与 §勘误-22 同款"以守卫为准"原则 — B-9 白名单是显式公约, 把"约定俗成"焊进 pretest 门禁; 后续增边必须 (a) 改守卫数组并 (b) 在本表登记, 不能靠评审记忆。

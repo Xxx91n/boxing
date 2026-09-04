@@ -80,6 +80,28 @@ for (const file of facades) {
   if (!linesByFile.get(file).some((line) => line.includes(`export function ${fn}(`))) add('B-7', `ntp/${file}`, 1, `missing ${fn}`);
   if (!entry.includes(`${fn}(`)) add('B-7', 'ntp/ntp.js', 1, `entry does not invoke ${fn}`);
 }
+
+const featureLeaves = new Set(['state.js', 'utils.js', 'credentials.js', 'favicon.js', 'i18n.js', 'storage.js']);
+const entryModule = 'ntp.js';
+const acceptedFeatureSiblingEdges = new Set([
+  'onboarding.js->render.js',
+  'onboarding.js->settings-ui.js',
+  'render.js->conn-layer.js',
+  'render.js->persist.js',
+  'render.js->popups.js',
+  'settings-ui.js->conn-layer.js',
+  'settings-ui.js->persist.js',
+  'settings-ui.js->render.js',
+  'sync-engine.js->render.js',
+]);
+for (const [file, targets] of edges) {
+  for (const target of targets) {
+    if (featureLeaves.has(file) || file === entryModule) continue;
+    if (featureLeaves.has(target) || target === entryModule) continue;
+    const key = `${file}->${target}`;
+    if (!acceptedFeatureSiblingEdges.has(key)) add('B-9', `ntp/${file}`, 0, `unaccepted feature-to-feature sibling import: ${target} (whitelist ADR-0016 §errata-26)`);
+  }
+}
 for (const [file, names] of Object.entries({ 'sync-engine.js': ['__boxingIsSafeExtUrl', '__boxingTestWebDAV', '__boxingBackupWebDAV', '__boxingSyncWebDAV', '__bxSync', '__boxingFlushCredentials'], 'credentials.js': ['__boxingEncryptCredential', '__boxingDecryptCredential'] })) {
   for (const name of names) if (!linesByFile.get(file).some((line) => line.includes(name))) add('B-8', `ntp/${file}`, 1, `missing window contract ${name}`);
 }
