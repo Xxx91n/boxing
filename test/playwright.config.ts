@@ -12,10 +12,14 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // Local cap: default (all cores) launches 8 headed browsers on this 8-thread
-  // host and starves them — random 30s setup/timeout failures with different
-  // victims each run (ticket 01 gate evidence). 4 keeps every run deterministic.
-  workers: process.env.CI ? 1 : 4,
+  // Worker policy (ticket 20, architecture-recovery; research-report-round4 §5):
+  // - Local cap 4: default (all cores) launches 8 headed browsers on this
+  //   8-thread host and starves them — random 30s setup/timeout failures with
+  //   different victims each run (ticket 01 gate evidence).
+  // - CI cap 2: GitHub standard runners have 4 cores; 2-4 workers is the
+  //   measured sweet spot there (currents.dev), and 2 keeps headroom for the
+  //   headed browsers themselves. Explicit policy, not an ad hoc flag.
+  workers: process.env.CI ? 2 : 4,
   reporter: 'html',
   use: {
     trace: 'on-first-retry',

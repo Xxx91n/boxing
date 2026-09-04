@@ -11,6 +11,13 @@ on:
     # Daily at 02:17 UTC (10:17 Beijing) — off-peak, not on the hour.
     - cron: '17 2 * * *'
 
+# Ticket 20: a manual dispatch overlapping the daily patrol cancels the older
+# run instead of running two headed-browser patrols on one runner. The lane
+# itself stays non-blocking (continue-on-error below is unchanged).
+concurrency:
+  group: quarantine-patrol
+  cancel-in-progress: true
+
 jobs:
   quarantine:
     continue-on-error: true
