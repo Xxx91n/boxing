@@ -1,6 +1,6 @@
 # Boxing Build & Dev-Load
 
-Boxing is a Chrome/Firefox browser extension built from a single source tree. The source manifest.json is intentionally Firefox-loadable / Chrome-rejectable (MV3 + browserSettings permission incompatibility). A cross-platform build script (.github/scripts/build.mjs) produces browser-tailored output trees.
+Boxing is a Chrome/Firefox browser extension built from a single source tree. The source manifest.json is intentionally Firefox-loadable / Chrome-rejectable (MV3 background dual-declaration + gecko block; `browserSettings` is NOT in the source permissions — the Firefox Tailor injects it into dist/ at build time). A cross-platform build script (.github/scripts/build.mjs) produces browser-tailored output trees.
 
 ## Cross-Platform Pipeline Invariants (BX-XPLAT)
 
@@ -22,7 +22,7 @@ Boxing is a Chrome/Firefox browser extension built from a single source tree. Th
 ## Language
 
 **Source tree**:
-The raw checked-out repository root (D:/Aworker/crx/boxing). Contains manifest.json (Firefox-tailored), ntp/, background.js, _locales/, icons/, popup/. Can be loaded directly in Firefox for dev, but Chrome rejects it due to MV3 service_worker + background.scripts dual-spec and browserSettings permission.
+The raw checked-out repository root (D:/Aworker/crx/boxing). Contains manifest.json (Firefox-tailored), ntp/, background.js, _locales/, icons/, popup/. Can be loaded directly in Firefox for dev, but Chrome rejects it due to the MV3 service_worker + background.scripts dual-spec (and, on older checkouts, the browserSettings permission).
 _Avoid_: repo root, project root (ambiguous in multi-workspace setups)
 
 **dist/boxing-chrome**:
