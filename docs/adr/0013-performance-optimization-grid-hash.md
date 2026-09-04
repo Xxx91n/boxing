@@ -1,10 +1,10 @@
-﻿# ADR-0013: Performance Optimization — Grid Hash Spatial Index
+# ADR-0013: Performance Optimization — Grid Hash Spatial Index
 
 ## Status
-Proposed (2026-08-15) — not yet implemented
+Accepted — implemented. (2026-09-04 sync: both phases landed; implementation shape and current locations recorded in Implementation Status below.)
 
 ## Context
-The grill performance optimization session identified moveGroupTogether (ntp.js:1923) as the single confirmed performance hotspot. It runs O(m x n) per drag frame: for each group member, it calls lasticSnap against all non-member boxes to handle collision avoidance. With groups of 5+ boxes and 50+ total boxes, this becomes 250+ collision checks per mousemove frame.
+The grill performance optimization session identified `moveGroupTogether` (originally `ntp/ntp.js:1923`; after the module split it lives in `ntp/conn-layer.js` at L642) as the single confirmed performance hotspot. It runs O(m x n) per drag frame: for each group member, it calls `elasticSnap` against all non-member boxes to handle collision avoidance. With groups of 5+ boxes and 50+ total boxes, this becomes 250+ collision checks per mousemove frame.
 
 All other areas investigated (saveLayout serialization, event listeners, renderCanvas DOM diff, rAF batching, WeakMap caches) were confirmed as NOT bottlenecks:
 - saveLayout: cold-path only (drag end, create/delete), 120ms debounced, 30KB << 5MB quota
@@ -22,11 +22,11 @@ Replace the linear scan in moveGroupTogether with a grid-based spatial index:
 - Rebuild grid only when box positions change outside drag (markDsuDirty pattern)
 - Invalidation: on drag end, if box moved, mark grid dirty; next drag-start rebuilds
 
-**Phase 2 (deferred): SVG line pooling for renderConnections.**
-Pool removed <line> SVG elements in a Map<poolKey, Element[]>. When renderConnections needs a new line, check pool first. Only applies to renderConnections -- renderCanvas full rebuild semantics unchanged (preserves multi-tab sync safety).
+**Phase 2 (originally deferred; since implemented): SVG line pooling for renderConnections.**
+Pool removed <line> SVG elements in a bounded pool. When renderConnections needs a new line, check the pool first. Only applies to renderConnections -- renderCanvas full rebuild semantics unchanged (preserves multi-tab sync safety).
 
 **Not doing (YAGNI confirmed by code analysis):**
-- renderCanvas DOM diff (Q3=A chose B instead -- multi-tab sync risk)
+- renderCanvas DOM diff (Q3 chose B instead -- multi-tab sync risk)
 - rAF batching for mousemove (Q4=C -- adds latency, not needed)
 - WeakMap geometry caches (Q4=C -- boxMidPoint is O(1))
 - saveLayout incremental storage (Q5=C -- cold path, within quota)
@@ -57,11 +57,17 @@ Pool removed <line> SVG elements in a Map<poolKey, Element[]>. When renderConnec
 - Multi-tab sync: grid invalidated on applyExternalLayout (markGridDirty alongside markDsuDirty)
 - No risk to renderCanvas semantics or multi-tab sync safety
 
-## Implementation Plan
+## Implementation Status (2026-09-04 sync, ticket 22)
+- **Phase 1 (grid hash)**: landed in `ntp/utils.js` — `buildSpatialGrid` (L43) and `querySpatialNearby` (exported L240); `elasticSnap` accepts an optional prebuilt grid as its 7th argument and falls back to building one (L89-95). Consumed by `moveGroupTogether` in `ntp/conn-layer.js` (L642), which builds the grid once per call (L668 for large members, L702 for small members) — marked in-source by the "ADR-0013 BX-PERF-001" comments at conn-layer.js L640/L667/L701.
+- **Implementation shape deviation**: the persistent `__spatialGrid` Map + `__spatialGridDirty` flag pair drafted below was NOT landed. The shipped code rebuilds the grid once per `moveGroupTogether` call instead; staleness is therefore bounded by the call and no `markSpatialGridDirty()` exists. The multi-tab invalidation consequence above is satisfied inherently by the per-call rebuild.
+- **Phase 2 (SVG line pooling)**: landed in `ntp/conn-layer.js` — `__linePool` (L23, "ADR-0013 BX-PERF-002" comment) with pool-first acquisition and `LINE_POOL_CAP` bound (L50/L55/L60).
+- Review date: not set at decision time; this ADR is grandfathered (0000-template review-date rule applies to new ADRs only).
+
+## Implementation Plan (historical draft, superseded by Implementation Status)
 1. Add __spatialGrid Map + __spatialGridDirty flag alongside existing __dsuDirty pattern
-2. uildSpatialGrid() -- rebuilds grid from layout.boxes positions, called when dirty
+2. buildSpatialGrid() -- rebuilds grid from layout.boxes positions, called when dirty
 3. querySpatialGrid(x, y, w, h, margin) -- returns Set of box IDs in overlapping cells
-4. Modify lasticSnap to accept grid-based candidates instead of others array
+4. Modify elasticSnap to accept grid-based candidates instead of others array
 5. Modify moveGroupTogether to build grid once at drag-start, query per member
 6. Add markSpatialGridDirty() calls alongside existing markDsuDirty() call sites
 7. Playwright test: verify drag performance with 50+ boxes and group of 10 (both chromium + firefox)

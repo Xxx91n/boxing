@@ -9,7 +9,8 @@ Accepted (草案落地, 作为票 10 settings/init 域拆分的裁决依据; 编
 ## Context
 callgraph-report.md §7.2 第 6 条: ntp.js 原始 6055 行中的 settings/init 区 (旧 L4102-5909, ~1800 行) 含
 WebDAV 同步 + 加密凭据 + 诊断 + onboarding, spec 原本漏立票。票 08 完成后该区仍全部嵌在 ntp.js 的巨型
-`init()` 函数体内 (现 L958-2118) 与 IIFE 级函数 (L395-461, L2120-2201)。
+`init()` 函数体内 (拆分前 L958-2118) 与 IIFE 级函数 (拆分前 L395-461, L2120-2201); 行号为决策时快照,
+本票拆分后 settings/init 域已整体迁出 ntp.js (现 994 行), 四层职责分落 credentials/sync-engine/settings-ui/onboarding。
 
 工业 sync/backup 心智模型 (atomcode 调研, ctx source: atomcode, 搜 'SyncEngine' / '四层' / 'outbox')
 把这类系统分层为: 存储 = port (门面), 传输 = adapter (WebDAV/Gist), 同步引擎 = 门面消费者, UI = 表示层。
@@ -30,8 +31,9 @@ WebDAV 同步 + 加密凭据 + 诊断 + onboarding, spec 原本漏立票。票 0
 | engine | `ntp/sync-engine.js` (本票) | WebDAV/Gist 传输 + 双向同步 + outbox 字段级合并 + chrome.alarms 自动备份 + isSafeExtUrl 守卫 + 同步配置 UI 绑定 | 持久化只经 storage 门面导出 (saveLayout / directSetBoxingLayout / saveSnapshot / stripGroupsForPersist); 内存态经 state.js 单例 (layout/setLayout/writerId live binding); 不直接调 `layoutStorage.*` |
 | presentation | `ntp/settings-ui.js` + `ntp/onboarding.js` (本票) | 设置 modal + DOM 绑定 + export/import + 诊断; onboarding 引导 | settings-ui 只依赖 i18n + saveLayout 门面, 不直接触 storage; 凭据输入的加密落盘经 credentials.js 完成 |
 
-### 模块间依赖方向 (无环)
-`ntp.js (entry/orchestration)` → `settings-ui` / `onboarding` / `sync-engine` → `credentials`, `storage`, `state`, `utils`, `i18n`, `render`, `persist`。
+### 模块间依赖方向 (无环; 由机检守卫强制)
+`ntp.js (entry/orchestration)` → 全部 13 个模块; feature 模块 (`settings-ui` / `onboarding` / `sync-engine`) → `credentials` / `storage` / `state` / `utils` / `i18n` / `persist`, 并允许向表示层兄弟 (`render` / `conn-layer` / `popups`) 及彼此 (如 `onboarding` → `settings-ui`) 做 **向下** import; 叶子模块 (`state` / `utils` / `credentials` / `favicon` / `i18n` / `storage`) 不 import 上层兄弟。
+> 2026-09-04 勘误 (票 22): 本节最初的箭头图把依赖面写窄了 — 实测存在 feature 级兄弟 import (settings-ui/onboarding/sync-engine → render 等), round4 报告据此判为矛盾。票 21 已把真实边界固化为机检守卫 `scripts/import-graph-guard.mjs` (规则 B-1..B-8, `npm run pretest` 门禁; 当前 14 模块 48 边、0 循环、0 barrel、0 background import)。**本节文字与守卫冲突时, 以守卫实测为准**; 完整边表见 `.scratch/architecture-recovery/21-import-graph-guard-report.md` §B 与 `test/cluster-map.json`。
 跨作用域依赖沿用票 07/08 的 facade 注入模式: `initCredentialsFacade({debugErr})` / `initSyncEngineFacade(...)` / `initSettingsUiFacade(...)` / `initOnboardingFacade(...)`; render.js 的 initRenderFacade 注入表不变 (openConfirmModal/updateCaption 改由 entry 从 settings-ui import 后原样传入)。
 
 ### Outbox 协议 (现状记录, 非本票变更)
@@ -55,7 +57,7 @@ __boxingTestWebDAV / __boxingBackupWebDAV / __boxingSyncWebDAV / __bxSync.{build
 随所属块 verbatim 保留 (现由对应模块在求值期赋值), Playwright/诊断脚本兼容性不变。
 
 ## Consequences
-- ntp.js 从 2207 行降至 ~1.1k 行, init() 只剩编排: load → facade 注入 → bind → 视图恢复 → onboarding。
+- ntp.js 从拆分前 2207 行降至 994 行 (2026-09-04 实测), init() 只剩编排: load → facade 注入 → bind → 视图恢复 → onboarding。
 - 检查点 1 (storage 直写 grep): ntp/*.js 中 `chrome.storage.*`/`layoutStorage.*` 直写除 storage.js 门面外为 0;
   background.js 保留 bgErrLog 与新增 boxingInstallSignal 两个非 layout 小键 (SW 上下文, 见上)。
 - 检查点 2 (凭据审计): 明文口令/令牌只存在于 DOM input 值; layout 序列化/导出/Gist payload 中仅出现

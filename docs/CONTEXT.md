@@ -121,14 +121,14 @@ Chrome native `dblclick` on selectable canvas text (empty-state title, footer hi
 - **__spatialGridDirty** / **markSpatialGridDirty()** -- lazy rebuild flag, same pattern as __dsuDirty / markDsuDirty(). Set on box create/delete/move/cross-tab sync. Grid rebuilt on next drag-start.
 - **Q3=B**: renderConnections SVG line pooling only -- renderCanvas full rebuild semantics preserved (multi-tab sync safety). renderCanvas DOM diff deferred (9 callers depend on clean DOM after rebuild).
 - **Q4=C**: No rAF batching (adds 1-frame latency, violates follow-hand UX). No WeakMap geometry caches (boxMidPoint is O(1)).
-- **Q5=C**: No saveLayout incremental storage (cold-path, 120ms debounced, 30KB << 5MB quota).
+- **Q5=C**: No saveLayout incremental storage (cold-path, 120ms debounced, 30KB << 5MB quota). Quota note (2026-09-04 sync): the 5MB figure predates the A6 migration — layout storage is now `storage.local` with the `unlimitedStorage` permission (see SEC-08), so the quota is no longer binding; the Q5=C decision itself stands.
 
 ### Performance Grill Decisions (2026-08-15)
 - **Q1**: A -- all three layers (frame rate + memory + storage) planned together, executed in phases. Only frame rate (grid hash) confirmed as needed; memory and storage confirmed YAGNI.
 - **Q2**: Grid hash spatial index (confirmed) -- boxing uses <200 boxes, R-tree overkill. Grid hash matches existing elasticSnap >=32 threshold pattern.
 - **Q3**: B -- SVG line pooling only. Multi-tab sync analysis: applyExternalLayout (ntp.js:3960) calls renderCanvas() and depends on full rebuild semantics to handle cross-tab add/delete/move. DOM diff would require auditing all 9 renderCanvas callers for fresh-DOM assumptions -- risk too high for incremental gain.
 - **Q4**: C -- no rAF batching, no WeakMap caches. onBoxDragMove hot path: style.left/top O(1), refreshConnsForBoxSync O(k), moveGroupTogether O(m x n) -> fixed by grid hash. All other operations O(1)/O(k). No additional optimization needed.
-- **Q5**: C -- no storage optimization. saveLayout cold-path only (drag end, create/delete/rename, settings change). 120ms debounced. Pan/zoom uses persistViewState(true), not saveLayout(). 100-box layout = 15-30KB, chrome.storage.local limit 5MB.
+- **Q5**: C -- no storage optimization. saveLayout cold-path only (drag end, create/delete/rename, settings change). 120ms debounced. Pan/zoom uses persistViewState(true), not saveLayout(). 100-box layout = 15-30KB, well under quota (5MB at decision time; since A6, storage.local + unlimitedStorage — see Q5=C quota note).
 
 ### Performance Invariants (BX-PERF-001..003)
 - **BX-PERF-001 (MUST)**: moveGroupTogether MUST use spatial grid query for collision candidates, not linear others array scan. Grid built at drag-start, queried per member. Mark grid dirty on box position change outside drag (same pattern as __dsuDirty).

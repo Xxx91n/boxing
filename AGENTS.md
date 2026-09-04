@@ -74,7 +74,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 - Chromium project (headed, persistent context, `--load-extension`) is the primary lane.
 - Firefox project uses `-no-remote`; LibreWolf is manual-verify only (no remote debug).
 - Run a single spec: `npx playwright test --config=test/playwright.config.ts test/tests/boxing-viewstate-sync.spec.ts --project=chromium`.
-- Test files: `boxing-*.spec.ts` (29 specs total, including `boxing-audit, boxing-auto-expand`, `data-recovery`, `extension-test`, and conn/DSU specs) cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, connections, and export/import. Run from repo root via `npm test` (alias for `npx playwright test --config=test/playwright.config.ts`).
+- Test files: 33 spec files in `test/tests/` (31 `boxing-*`, plus `extension-test.spec.ts` and `data-recovery.spec.ts`), including `boxing-audit`, `boxing-auto-expand`, and conn/DSU specs; they cover NTP rendering, DOM, WebDAV sync, onboarding, memory, zoom, connections, and export/import. Run from repo root via `npm test` (alias for `npx playwright test --config=test/playwright.config.ts`; `pretest` runs the import-graph guard `scripts/import-graph-guard.mjs`).
 
 ## Chrome Extension Workflow
 
@@ -84,7 +84,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 - **Fast reload** (skip build): `npm run dev:chrome:no-build` or `npm run dev:firefox:no-build` — web-ext loads existing `dist/` without rebuilding. Only safe after at least one `npm run build` in the current session.
 - Load unpacked (Chrome): `chrome://extensions` -> Developer mode -> Load unpacked -> select `dist/boxing-chrome/` (auto-discover from project root — do NOT load repo root in Chrome).
 - Load unpacked (Firefox): `about:debugging` -> This Firefox -> Load Temporary Add-on -> select `dist/boxing-firefox/manifest.json` (or raw repo root for Firefox dev).
-- Tip: If you accidentally load the repo root (`D:/Aworker/crx/boxing`) in Chrome, Chrome will show `background.scripts requires MV2` or `Permission 'browserSettings' unknown` — this is expected. Rebuild with `node .github/scripts/build.mjs` and load `dist/boxing-chrome/` instead.
+- Tip: If you accidentally load the repo root (`D:/Aworker/crx/boxing`) in Chrome, Chrome will show `background.scripts requires MV2` (older checkouts that still declared `browserSettings` may also warn `Permission 'browserSettings' unknown`) — this is expected. Rebuild with `node .github/scripts/build.mjs` and load `dist/boxing-chrome/` instead.
 - Inspect: service worker (`chrome://extensions` -> Details -> service worker), popup (right-click toolbar icon -> Inspect popup), errors (Errors button on extension card).
 - MV3 requirements: valid `manifest.json`, service worker active, only declared permissions requested.
 - New tab override should load `ntp/index.html` with beige theme and zero console errors.
@@ -121,7 +121,7 @@ Both are referenced from here, never bulk-loaded into context.
 | Field | Value |
 |---|---|
 | Project path | D:\Aworker\crx\boxing |
-| Current extension | Boxing v3.7.0 |
+| Current extension | Boxing (manifest version 2026.8.21, calver) |
 | Current manifest | Manifest V3 |
 | Target browsers | Chrome + Firefox |
 | Main UI surface | New tab override: ntp/index.html, ntp/ntp.js (CSS via build artifact ntp/ntp.css — see ADR-0011) |
@@ -168,9 +168,9 @@ Historical version notes (v3.3 → v3.6.6 features and incremental dev rules) ha
 
 Top-level behavior rules (BX-DEV / A1-A5 class) were thinned in ticket 09 (2026-09-01): their invariants are now carried by the ntp module structure, the E2E suite (test/tests/boxing-*.spec.ts), and the ADRs — full rule text preserved in git history. All incremental rules from v3.3..v3.6.6 (BX-DEV-014..112) live in `docs/history/boxing-changelog.md` alongside their release context. The Security Rules section below is the authoritative SEC-series list.
 
-## Manifest Source-of-Truth Contract (v3.7.0+)
+## Manifest Source-of-Truth Contract (2026 calver manifests)
 
-See [docs/agents/manifest-contract.md](docs/agents/manifest-contract.md) — HARD CONSTRAINT dual-declaration manifest rules (BX-MANIFEST-001..005) — source manifest Firefox-tailored, Chrome must load dist/.
+See [docs/agents/manifest-contract.md](docs/agents/manifest-contract.md) — HARD CONSTRAINT dual-declaration manifest rules (BX-MANIFEST-001..007) — source manifest keeps the Firefox-compat dual background declaration + gecko block (browserSettings is build-time injected by the Firefox Tailor), Chrome must load dist/.
 
 ## Security Rules (SEC series — v3.7.9f security audit)
 
