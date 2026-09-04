@@ -10,6 +10,8 @@
     "dev:firefox": "npm run build && web-ext run --source-dir=dist/boxing-firefox",
     "dev:chrome:no-build": "web-ext run -t chromium --source-dir=dist/boxing-chrome --no-reload",
     "dev:firefox:no-build": "web-ext run --source-dir=dist/boxing-firefox --no-reload",
+    "guard:import-graph": "node scripts/import-graph-guard.mjs",
+    "pretest": "node scripts/import-graph-guard.mjs",
     "test": "playwright test --config=test/playwright.config.ts",
     "test:chromium": "playwright test --config=test/playwright.config.ts --project=chromium-extension",
     "test:firefox": "playwright test --config=test/playwright.config.ts --project=firefox-extension",

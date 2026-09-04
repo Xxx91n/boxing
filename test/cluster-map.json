@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "description": "Conservative module-to-Playwright-spec clusters for changed-surface selection.",
+  "specDirectory": "test/tests",
+  "fallback": {
+    "entryModule": "ntp/ntp.js",
+    "minimumFullSuiteSpecs": 18,
+    "reason": "unknown or ambiguous closure runs the full suite"
+  },
+  "clusters": {
+    "ntp/ntp.js": [
+      "boxing-accent-theme.spec.ts",
+      "boxing-adr-0007-acceptance.spec.ts",
+      "boxing-audit.spec.ts",
+      "boxing-auto-expand.spec.ts",
+      "boxing-build-pipeline.spec.ts",
+      "boxing-canvas-hidden.spec.ts",
+      "boxing-conn-delete-action.spec.ts",
+      "boxing-conn-dsu.spec.ts",
+      "boxing-conn-persist.spec.ts",
+      "boxing-connections.spec.ts",
+      "boxing-cred-encrypt.spec.ts",
+      "boxing-debug.spec.ts",
+      "boxing-empty-state-buttons.spec.ts",
+      "boxing-focus-steal.spec.ts",
+      "boxing-i18n-module.spec.ts",
+      "boxing-innerclip-pan.spec.ts",
+      "boxing-innerclip.spec.ts",
+      "boxing-memory.spec.ts",
+      "boxing-onboarding.spec.ts",
+      "boxing-popup-dragselect.spec.ts",
+      "boxing-search.spec.ts",
+      "boxing-settings-persist.spec.ts",
+      "boxing-star-sync-audit.spec.ts",
+      "boxing-state-sync.spec.ts",
+      "boxing-sync-level.spec.ts",
+      "boxing-sync.spec.ts",
+      "boxing-v3.spec.ts",
+      "boxing-viewstate-sync.spec.ts",
+      "boxing-webdav.spec.ts",
+      "boxing-zoom-arrow.spec.ts",
+      "boxing-zoom-dblclick.spec.ts",
+      "data-recovery.spec.ts",
+      "extension-test.spec.ts"
+    ],
+    "ntp/render.js": [
+      "boxing-auto-expand.spec.ts",
+      "boxing-canvas-hidden.spec.ts",
+      "boxing-conn-delete-action.spec.ts",
+      "boxing-conn-dsu.spec.ts",
+      "boxing-conn-persist.spec.ts",
+      "boxing-connections.spec.ts",
+      "boxing-debug.spec.ts",
+      "boxing-empty-state-buttons.spec.ts",
+      "boxing-focus-steal.spec.ts",
+      "boxing-innerclip-pan.spec.ts",
+      "boxing-innerclip.spec.ts",
+      "boxing-popup-dragselect.spec.ts",
+      "boxing-search.spec.ts",
+      "boxing-v3.spec.ts",
+      "boxing-zoom-arrow.spec.ts",
+      "boxing-zoom-dblclick.spec.ts"
+    ],
+    "ntp/conn-layer.js": [
+      "boxing-conn-delete-action.spec.ts",
+      "boxing-conn-dsu.spec.ts",
+      "boxing-conn-persist.spec.ts",
+      "boxing-connections.spec.ts",
+      "boxing-star-sync-audit.spec.ts",
+      "boxing-state-sync.spec.ts"
+    ],
+    "ntp/popups.js": [
+      "boxing-memory.spec.ts",
+      "boxing-popup-dragselect.spec.ts",
+      "boxing-search.spec.ts",
+      "boxing-v3.spec.ts"
+    ],
+    "ntp/storage.js": [
+      "boxing-adr-0007-acceptance.spec.ts",
+      "boxing-audit.spec.ts",
+      "boxing-memory.spec.ts",
+      "boxing-settings-persist.spec.ts",
+      "boxing-state-sync.spec.ts",
+      "boxing-sync-level.spec.ts",
+      "boxing-sync.spec.ts",
+      "boxing-viewstate-sync.spec.ts",
+      "boxing-webdav.spec.ts",
+      "data-recovery.spec.ts"
+    ],
+    "ntp/persist.js": [
+      "boxing-accent-theme.spec.ts",
+      "boxing-memory.spec.ts",
+      "boxing-state-sync.spec.ts",
+      "boxing-viewstate-sync.spec.ts"
+    ],
+    "ntp/sync-engine.js": [
+      "boxing-cred-encrypt.spec.ts",
+      "boxing-sync-level.spec.ts",
+      "boxing-sync.spec.ts",
+      "boxing-webdav.spec.ts",
+      "data-recovery.spec.ts"
+    ],
+    "ntp/credentials.js": [
+      "boxing-cred-encrypt.spec.ts",
+      "boxing-sync.spec.ts",
+      "boxing-webdav.spec.ts"
+    ],
+    "ntp/settings-ui.js": [
+      "boxing-accent-theme.spec.ts",
+      "boxing-build-pipeline.spec.ts",
+      "boxing-debug.spec.ts",
+      "boxing-i18n-module.spec.ts",
+      "boxing-settings-persist.spec.ts",
+      "boxing-v3.spec.ts",
+      "data-recovery.spec.ts"
+    ],
+    "ntp/onboarding.js": [
+      "boxing-debug.spec.ts",
+      "boxing-onboarding.spec.ts",
+      "boxing-v3.spec.ts"
+    ],
+    "ntp/i18n.js": [
+      "boxing-accent-theme.spec.ts",
+      "boxing-debug.spec.ts",
+      "boxing-empty-state-buttons.spec.ts",
+      "boxing-i18n-module.spec.ts",
+      "boxing-onboarding.spec.ts",
+      "boxing-v3.spec.ts"
+    ],
+    "ntp/state.js": [
+      "boxing-adr-0007-acceptance.spec.ts",
+      "boxing-debug.spec.ts",
+      "boxing-memory.spec.ts",
+      "boxing-state-sync.spec.ts",
+      "boxing-v3.spec.ts",
+      "boxing-viewstate-sync.spec.ts"
+    ],
+    "ntp/utils.js": [
+      "boxing-adr-0007-acceptance.spec.ts",
+      "boxing-audit.spec.ts",
+      "boxing-conn-dsu.spec.ts",
+      "boxing-connections.spec.ts",
+      "boxing-memory.spec.ts",
+      "boxing-search.spec.ts",
+      "boxing-state-sync.spec.ts",
+      "boxing-v3.spec.ts"
+    ],
+    "ntp/favicon.js": [
+      "boxing-memory.spec.ts",
+      "boxing-popup-dragselect.spec.ts",
+      "boxing-search.spec.ts"
+    ]
+  }
+}
