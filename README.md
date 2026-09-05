@@ -151,6 +151,24 @@ to retirement. A newly tagged quarantine must be registered in this table the sa
 due = registered + 30 days. The quarantine lane is patrolled daily by CI
 (`.github/workflows/quarantine.yml`, `continue-on-error`).
 
+### Host-environment incident register
+
+Tests that failed from host-load browser instability — not app defects — are registered here
+with a CI re-verification due date instead of a `@quarantine` tag: they pass and stay in every
+lane, and the repair-or-retire default of tagged quarantine does not fit a host incident.
+Classification protocol and evidence: ticket 31
+([.scratch/architecture-recovery/31-state-sync-flaky-diagnosis-report.md](.scratch/architecture-recovery/31-state-sync-flaky-diagnosis-report.md)).
+
+| Test (spec › title) | Incident | Classification | Registered | Due (30d) |
+| --- | --- | --- | --- | --- |
+| boxing-state-sync.spec.ts › two tabs synchronize creation and protect a view whose large box is deleted | 2026-09-05 host-load; chromium CDP session closed mid-test; same-day green in ticket 27 full run; runtime identical by git diff | environment-only | 2026-09-06 | 2026-10-06 |
+| boxing-state-sync.spec.ts › concurrent creation in two tabs converges without losing either box | same incident | environment-only | 2026-09-06 | 2026-10-06 |
+| boxing-state-sync.spec.ts › concurrent small-box creation converges and persists the merged children | same incident | environment-only | 2026-09-06 | 2026-10-06 |
+
+Incident-row rule: a row is resolved (deleted) once a CI run after the lockfile repair (ticket 29)
+shows its test green in the chromium lane. Rows do not auto-extend: past due without CI-green
+evidence, the next governance pass must reclassify — defect repair or tagged quarantine.
+
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and code style.
