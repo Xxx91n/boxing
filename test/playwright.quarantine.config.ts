@@ -14,7 +14,6 @@ const EXTENSION_PATH = path.resolve(__dirname, '..');
 // Ticket 27 (2026-09-05): the last 14 tags were repaired and the firefox lane
 // rejoined — no test titles carry @quarantine anymore, so `npm run
 // test:quarantine` now selects 0 tests (lane kept for future registrations).
-// // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,

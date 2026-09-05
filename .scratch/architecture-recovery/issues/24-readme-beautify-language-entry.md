@@ -4,11 +4,11 @@
 
 **Blocked by:** 23 — Mental model deep research
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Keep one language selector at the top and remove the footer duplicate.
-- [ ] Use the existing five PNG screenshots in the README without inventing new claims.
-- [ ] Preserve the real install, usage, privacy, and development commands.
-- [ ] Keep the localized README generation contract compatible.
-- [ ] Verify local links, image paths, line endings, and `git diff --check`.
-- [ ] Write the closure report named in the handoff.
+- [x] Keep one language selector at the top and remove the footer duplicate.
+- [x] Use the existing five PNG screenshots in the README without inventing new claims.
+- [x] Preserve the real install, usage, privacy, and development commands.
+- [x] Keep the localized README generation contract compatible.
+- [x] Verify local links, image paths, line endings, and `git diff --check`.
+- [x] Write the closure report named in the handoff.

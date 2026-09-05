@@ -4,7 +4,7 @@
 
 **Blocked by:** 23 — Mental model deep research; 24 — README beautify and language entry reposition
 
-**Status:** done (2026-09-05, closure report at `.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md`)
+**Status:** done
 
 - [x] Run the dedicated quarantine lane and identify each remaining failure. (Baseline 2026-09-05: chromium 14/14 green; firefox workers=2 14 fail / solo 12 pass + 2 deterministic — all playwright#16095 native-input class, signatures in the closure report.)
 - [x] Repair the failure by removing the tag and rejoining the Firefox lane, or retire it with a recorded decision. (14/14 repaired, 0 retired; synthetic-input conversion per the ticket-18 pattern, focus-steal native block chromium-scoped via `test.skip`. No entry auto-extended; due date 2026-10-02 decision forced at ticket 27.)

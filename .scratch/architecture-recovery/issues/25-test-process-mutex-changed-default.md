@@ -4,11 +4,11 @@
 
 **Blocked by:** 23 — Mental model deep research
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Add a small Node wrapper that permits only one local Playwright process at a time.
-- [ ] Update package scripts so the normal local verification path uses the wrapper and changed-surface selection.
-- [ ] Keep the full-suite fallback for ambiguous changes and configuration/test changes.
-- [ ] Verify that a second concurrent process is rejected or waits while the first holds the lock.
-- [ ] Verify a bounded source-only change runs a bounded subset.
-- [ ] Write the closure report named in the handoff.
+- [x] Add a small Node wrapper that permits only one local Playwright process at a time.
+- [x] Update package scripts so the normal local verification path uses the wrapper and changed-surface selection.
+- [x] Keep the full-suite fallback for ambiguous changes and configuration/test changes.
+- [x] Verify that a second concurrent process is rejected or waits while the first holds the lock.
+- [x] Verify a bounded source-only change runs a bounded subset.
+- [x] Write the closure report named in the handoff.

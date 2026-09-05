@@ -41,6 +41,7 @@ playwright/.cache/
 .omx/
 .codex/
 .codegraph/
+.zcode/
 
 # Logs
 *.log

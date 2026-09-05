@@ -11,14 +11,14 @@
 | 文件 | 改动 |
 |---|---|
 | `README.md` (根) | ① 顶部语言条末尾并入 `— see [TRANSLATIONS.md](TRANSLATIONS.md)`; ② 快速导航新增 Development / Governance 两个锚点 (`#development` / `#quarantined-tests`); ③ `### Quarantined tests` 升为独立 `## Quarantined tests` 小节 (治理表获得 TOC 锚点, 票 27 收口时在该表上继续); ④ 删除页脚 `README-I18N:START:FOOTER` 重复语言块 |
-| `docs/i18n/README.<13 locales>.md` | 每个文件: ① 删除页脚 `README-I18N:START:FOOTER` 重复语言块; ② TRANSLATIONS.md 链接 (沿用各文件原 href, 均为 `../../TRANSLATIONS.md`) 并入顶部语言条末尾; ③ zh_CN 与 hi 额外清除各 2 处过时截图占位 NOTE (`> [!NOTE]` + 占位文案; 其上方 `<picture>` 均已指向真实 PNG, 属于陈旧提示残留) |
+| `docs/i18n/README.<13 locales>.md` | 每个文件: ① 删除页脚 `README-I18N:START:FOOTER` 重复语言块; ② TRANSLATIONS.md 链接 (沿用各文件原 href, 均为 `../../TRANSLATIONS.md`) 并入顶部语言条末尾; ③ 全部 13 个 locale 的过时截图占位 NOTE 已清除 (票 24 初版漏掉 11 个 locale 的占位 NOTE，由 24R 修复闭环; zh_CN 与 hi 初版已各清 2 处) (`> [!NOTE]` + 占位文案; 其上方 `<picture>` 均已指向真实 PNG, 属于陈旧提示残留) |
 
 ## 2. 完成定义逐项验证 (handoff)
 
 | # | Acceptance criterion | 证据 | 结论 |
 |---|---|---|---|
 | 1 | Exactly one language selector at the top | 14 文件机械扫描: 每文件 `**Languages:**` 行恰 1 条且均含 TRANSLATIONS.md 链接; `README-I18N:START:FOOTER` / `END:FOOTER` 全仓 0 命中; `^> Translations:` 0 命中 | PASS |
-| 2 | Existing screenshots replace placeholder notes; all local image links resolve | 占位文案 (占位图/Replace this placeholder/此处为) 14 文件 0 命中; 5 张 PNG (screenshot-1-canvas/2-boxes/3-connections/4-settings/5-bookmarks) 在根 README 全部被引用; 14 文件共 61+27×13 个本地引用 (href/src/srcset/markdown) 逐一 fs.existsSync 解析, 0 断链 | PASS |
+| 2 | Existing screenshots replace placeholder notes; all local image links resolve | 票 24 初版漏掉 11 个 locale 的占位 NOTE，由 24R 修复闭环; 修复后占位文案 (占位图/Replace this placeholder/此处为) 14 文件 0 命中; 5 张 PNG (screenshot-1-canvas/2-boxes/3-connections/4-settings/5-bookmarks) 在根 README 全部被引用; 14 文件共 61+27×13 个本地引用 (href/src/srcset/markdown) 逐一 fs.existsSync 解析, 0 断链 | PASS |
 | 3 | Install/usage/privacy/development commands remain true to package.json | README 引用的命令 {install, build, dev:chrome, dev:firefox, dev:chrome:no-build, dev:firefox:no-build, test, test:quarantine} 与 package.json scripts 逐一对照, 0 缺失; 命令文本本次未改动 | PASS |
 | 4 | Localized README generation remains compatible / explicitly verified | `scripts/gen-i18n-readme.js` 本票未改动; 以脚本同款提取逻辑对改后 README.md 做沙箱模拟: 首个 `## `=L50 `## What Makes It Different` (锚点未漂移), EN_BODY 147 行, 不含 README-I18N 标记, 含 `## Quarantined tests` — 契约兼容且页脚重复不再进入共享正文。预存漂移如实记录: 脚本输出路径为仓库根 (`path.join(ROOT, 'README.xx.md')`) 而实际人工翻译文件在 docs/i18n/ (TRANSLATIONS.md 所载契约), 该漂移先于本票存在, 属脚本与文档布局的历史失配; 本票按 delta 不动脚本, 未运行生成器以免在根目录凭空造出 13 个文件。建议后续票处理脚本与 docs/i18n 布局对齐 | PASS (explicitly verified) |
 | 5 | git diff --check clean + closure report exists | `git diff --check` 无输出 (改动前后各验一次均干净); 本报告落盘于指定路径 | PASS |
@@ -50,7 +50,7 @@
 
 ## 6. 移交事项 (供大脑窗口收口审查)
 
-1. docs/i18n 下其余 11 个 locale 未含占位块 (扫描确认), 其截图引用与页脚已与本票统一。
+1. 票 24 初版漏掉 11 个 locale 的占位 NOTE，由 24R 修复闭环; 修复后 docs/i18n 全部 13 个 locale 的截图引用与页脚已与本票统一。
 2. `boxing-v3.spec.ts` 的 README 内容断言 (Boxing/Language/Canvas/Zoom/Bookmark) 全部保留, 不受本次改动影响。
 3. 票 27 收口时请继续维护 `## Quarantined tests` 独立小节 (锚点 `#quarantined-tests`) 与快速导航。
 4. gen-i18n-readme.js 与 docs/i18n 布局的预存失配 (§2.4) 建议单列后续处理, 本票未越权修复。
