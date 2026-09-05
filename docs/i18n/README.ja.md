@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · **日本語** · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · **日本語** · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -12,9 +12,6 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
   <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing キャンバス概要" width="1280">
 </picture>
-
-> [!NOTE]
-> これはプレースホルダーです。メインキャンバスのボックスと接続を示す実際のスクリーンショットに置き換えてください。
 
 ## 目次
 
@@ -44,9 +41,6 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="ボックス階層とブックマーク" width="1280">
 </picture>
-
-> [!NOTE]
-> これはプレースホルダーです。ボックス階層とブックマーク管理を示す実際のスクリーンショットに置き換えてください。
 
 ## インストール
 
@@ -123,7 +117,3 @@ npm test          # Playwright テスト（Chrome + Firefox）
 ## ライセンス
 
 Apache-2.0 — [LICENSE](../../LICENSE) を参照
-
-<!-- README-I18N:START:FOOTER -->
-> Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
-<!-- README-I18N:END:FOOTER -->

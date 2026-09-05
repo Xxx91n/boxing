@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Français** · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **Français** · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -12,9 +12,6 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
   <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Apercu du canevas Boxing" width="1280">
 </picture>
-
-> [!NOTE]
-> Ceci est un emplacement reserve. Remplacez-le par une capture d ecran reelle montrant le canevas principal avec les boites et les connexions.
 
 ## Sommaire
 
@@ -44,9 +41,6 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Hierarchie des boites et signets" width="1280">
 </picture>
-
-> [!NOTE]
-> Ceci est un emplacement reserve. Remplacez-le par une capture d ecran reelle montrant la hierarchie des boites et la gestion des signets.
 
 ## Installation
 
@@ -123,7 +117,3 @@ Les contributions sont les bienvenues! Voir [CONTRIBUTING.md](../../CONTRIBUTING
 ## Licence
 
 Apache-2.0 — voir [LICENSE](../../LICENSE)
-
-<!-- README-I18N:START:FOOTER -->
-> Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
-<!-- README-I18N:END:FOOTER -->

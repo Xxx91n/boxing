@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · **Português (Brasil)** · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · **Português (Brasil)** · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -12,9 +12,6 @@ Boxing transforma sua pagina de nova aba em um espaco de trabalho visual para ma
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
   <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Visao geral da tela do Boxing" width="1280">
 </picture>
-
-> [!NOTE]
-> Este e um espaco reservado. Substitua por uma captura de tela real mostrando a tela principal com caixas e conexoes.
 
 ## Sumario
 
@@ -44,9 +41,6 @@ Boxing transforma sua pagina de nova aba em um espaco de trabalho visual para ma
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Hierarquia de caixas e marcadores" width="1280">
 </picture>
-
-> [!NOTE]
-> Este e um espaco reservado. Substitua por uma captura de tela real mostrando a hierarquia de caixas e o gerenciamento de marcadores.
 
 ## Instalacao
 
@@ -123,7 +117,3 @@ Contribuicoes sao bem-vindas! Veja [CONTRIBUTING.md](../../CONTRIBUTING.md) para
 ## Licenca
 
 Apache-2.0 — veja [LICENSE](../../LICENSE)
-
-<!-- README-I18N:START:FOOTER -->
-> Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
-<!-- README-I18N:END:FOOTER -->

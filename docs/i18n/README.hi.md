@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · **हिन्दी** · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · **हिन्दी** · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
 > [!WARNING]
@@ -16,9 +16,6 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
   <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
 </picture>
-
-> [!NOTE]
-> Replace this placeholder with a real screenshot showing the main canvas with boxes and connections.
 
 ## Table of Contents
 
@@ -48,9 +45,6 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
 </picture>
-
-> [!NOTE]
-> Replace this placeholder with a real screenshot showing box hierarchy and bookmark management.
 
 ## Install
 
@@ -127,7 +121,3 @@ Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setu
 ## License
 
 Apache-2.0 — see [LICENSE](../../LICENSE)
-
-<!-- README-I18N:START:FOOTER -->
-> Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
-<!-- README-I18N:END:FOOTER -->

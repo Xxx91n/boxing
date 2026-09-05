@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · **繁體中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · **繁體中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -12,9 +12,6 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
   <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing 畫布總覽" width="1280">
 </picture>
-
-> [!NOTE]
-> 此處為佔位圖，請替換為真實截圖：展示主畫布、盒子和連線。
 
 ## 目錄
 
@@ -44,9 +41,6 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="盒子層級與書籤" width="1280">
 </picture>
-
-> [!NOTE]
-> 此處為佔位圖，請替換為真實截圖：展示盒子層級和書籤管理。
 
 ## 安裝
 
@@ -123,7 +117,3 @@ npm test          # Playwright 測試（Chrome + Firefox）
 ## 授權
 
 Apache-2.0 — 見 [LICENSE](../../LICENSE)
-
-<!-- README-I18N:START:FOOTER -->
-> Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
-<!-- README-I18N:END:FOOTER -->

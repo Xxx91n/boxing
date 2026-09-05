@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · **Deutsch** · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md)
+**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · **Deutsch** · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -12,9 +12,6 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
   <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing Canvas-Uebersicht" width="1280">
 </picture>
-
-> [!NOTE]
-> Dies ist ein Platzhalter. Ersetzen Sie ihn durch einen echten Screenshot, der die Haupt-Leinwand mit Boxen und Verbindungen zeigt.
 
 ## Inhaltsverzeichnis
 
@@ -44,9 +41,6 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box-Hierarchie und Lesezeichen" width="1280">
 </picture>
-
-> [!NOTE]
-> Dies ist ein Platzhalter. Ersetzen Sie ihn durch einen echten Screenshot, der die Box-Hierarchie und Lesezeichenverwaltung zeigt.
 
 ## Installation
 
@@ -123,7 +117,3 @@ Beitraege sind willkommen! Siehe [CONTRIBUTING.md](../../CONTRIBUTING.md) fuer E
 ## Lizenz
 
 Apache-2.0 — siehe [LICENSE](../../LICENSE)
-
-<!-- README-I18N:START:FOOTER -->
-> Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
-<!-- README-I18N:END:FOOTER -->

@@ -1,5 +1,5 @@
 <!-- README-I18N:START -->
-**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · **ไทย** · [Tiếng Việt](README.vi.md)
+**Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · **ไทย** · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
 # Boxing
@@ -12,9 +12,6 @@ Boxing เปลี่ยนหน้าแท็บใหม่ของคุ�
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
   <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="ภาพรวมผืนผ้าใบ Boxing" width="1280">
 </picture>
-
-> [!NOTE]
-> นี่คือตัวยึดตำแหน่ง แทนที่ด้วยภาพหน้าจอจริงที่แสดงผืนผ้าใบหลักพร้อมกล่องและการเชื่อมต่อ
 
 ## สารบัญ
 
@@ -44,9 +41,6 @@ Boxing เปลี่ยนหน้าแท็บใหม่ของคุ�
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="ลำดับชั้นกล่องและบุ๊คมาร์ก" width="1280">
 </picture>
-
-> [!NOTE]
-> นี่คือตัวยึดตำแหน่ง แทนที่ด้วยภาพหน้าจอจริงที่แสดงลำดับชั้นกล่องและการจัดการบุ๊คมาร์ก
 
 ## การติดตั้ง
 
@@ -121,7 +115,3 @@ npm test          # ทดสอบ Playwright (Chrome + Firefox)
 ## ลิขสิทธิ์
 
 Apache-2.0 — ดู [LICENSE](../../LICENSE)
-
-<!-- README-I18N:START:FOOTER -->
-> Translations: [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
-<!-- README-I18N:END:FOOTER -->
