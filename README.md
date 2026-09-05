@@ -122,35 +122,26 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
 
 ### Quarantined tests
 
-Tests tagged `@quarantine` are excluded from the Firefox lane: native-input dispatch on the
-Firefox persistent context hangs (the [playwright#16095](https://github.com/microsoft/playwright/issues/16095)
-class), as tagged in architecture-recovery ticket 01. They keep running in the Chromium lane and in
-the dedicated quarantine lane: `npm run test:quarantine`. Each tag carries a `quarantine-ref`
-comment pointing at the governance ticket
-(`.scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md`).
-
-Status below is the quarantine-lane baseline captured 2026-09-03 (ticket 18, expiry pass):
-14/14 green on Chromium, 14/14 green on Firefox. The five failures from the
-2026-09-02 baseline (ticket 14) were all repaired at their 2026-09-03 expiry pass and
-rejoined the Firefox lane — see
-[.scratch/architecture-recovery/18-quarantine-expiry-report.md](.scratch/architecture-recovery/18-quarantine-expiry-report.md).
+The quarantine program is **converged as of 2026-09-05** (ticket 27): no test titles carry the
+`@quarantine` tag anymore. The final 14 entries were repaired by converting their native-input
+dispatch to synthetic events (the established repair pattern — the guarded behavior is
+app-level, not input realness) and rejoined the Firefox main lane; the only native-input block
+kept (double-click selection realness in `boxing-focus-steal.spec.ts`) is chromium-scoped
+because native input on the Firefox persistent context stalls (the
+[playwright#16095](https://github.com/microsoft/playwright/issues/16095) class). The history:
+tags were introduced in architecture-recovery ticket 01, governed since ticket 14, first five
+entries repaired at the ticket 18 expiry pass
+([.scratch/architecture-recovery/18-quarantine-expiry-report.md](.scratch/architecture-recovery/18-quarantine-expiry-report.md)),
+final 14 at ticket 27
+([.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md](.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md)).
 
 | Test (spec › title) | Chromium | Firefox | Registered | Due (30d) |
 | --- | --- | --- | --- | --- |
-| boxing-focus-steal › dblclick empty canvas: no selection/focus steal | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-focus-steal › dblclick canvas-empty title text | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-focus-steal › selection cleared after renderCanvas | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-innerclip-pan › panned-to-top clip across zoom | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-onboarding › step navigation and dismiss | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-v3 › Chromium load extension + new tab visual check | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-v3 › Pin header button toggle | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-v3 › Cross-tab delete guards | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-webdav › backup saves and restores layout | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-webdav › sync detects data loss and warns | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-webdav › empty local pulls from cloud on first sync | pass | pass | 2026-09-02 | 2026-10-02 |
-| boxing-webdav › test button shows error on failure | pass | pass | 2026-09-02 | 2026-10-02 |
-| data-recovery › export round-trip JSON structure | pass | pass | 2026-09-02 | 2026-10-02 |
-| extension-test › NTP HTML rendering | pass | pass | 2026-09-02 | 2026-10-02 |
+| *(none — quarantine table empty since ticket 27, 2026-09-05)* | — | — | — | — |
+
+Baseline at convergence: chromium 14/14 and firefox 14/14 pass in the quarantine lane
+(2026-09-05, ticket 27); after the tag removal the firefox main lane absorbed all 14 tests and
+`npm run test:quarantine` selects 0 tests (exit 0 via `--pass-with-no-tests`).
 
 **Expiry rule.** Every entry must be resolved by its due date — either **repaired** (remove the
 `@quarantine` tag + `quarantine-ref` comment, rejoin the Firefox lane, delete the row) or

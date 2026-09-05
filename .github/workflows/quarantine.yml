@@ -46,5 +46,8 @@ jobs:
       - name: Install Xvfb (headed browsers)
         run: sudo apt-get update && sudo apt-get install -y xvfb
 
+      # Ticket 27 (architecture-recovery): the lane converged — zero @quarantine
+      # titles remain, so --pass-with-no-tests keeps the step at exit 0 (same as
+      # the npm test:quarantine lane) instead of a daily "No tests found" failure.
       - name: Run quarantine lane
-        run: xvfb-run --auto-servernum npx playwright test --config=test/playwright.quarantine.config.ts --grep=@quarantine
+        run: xvfb-run --auto-servernum npx playwright test --config=test/playwright.quarantine.config.ts --grep=@quarantine --pass-with-no-tests

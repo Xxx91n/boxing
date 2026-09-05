@@ -19,10 +19,11 @@ test.describe('Boxing Extension — Basic Rendering', () => {
     const ntpPath = path.join(EXT_PATH, 'ntp', 'index.html');
     const fileUrl = pathToFileURL(ntpPath).href;
 
-    // Suite-standard boot: waitUntil 'load' stalls on the firefox headed lane —
+    // Suite-standard boot core: waitUntil 'load' stalls on the firefox headed lane —
     // the NTP page's favicon/i18n network attempts from file:// keep the load
     // event pending (ticket-27 solo evidence: goto: Test ended). domcontentloaded
-    // + __boxingDebug poll is the boot every main-lane spec uses.
+    // + __boxingDebug poll is the boot every main-lane spec uses; the clear+reload
+    // half is omitted here because browser.newContext() starts with empty storage.
     await page.goto(fileUrl, { waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 

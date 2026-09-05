@@ -90,10 +90,11 @@ test.describe('Boxing WebDAV backup', () => {
   });
 
   // Ticket 27 (quarantine convergence): @quarantine retired across this describe.
-  // The guarded behavior is the WebDAV backup/sync flow, not input realness — native
-  // button dispatch stalled on the firefox lane under load (playwright#16095 class),
-  // so button activation is synthetic; fill/selectOption are protocol-level and stay
-  // (the two main-lane siblings above already use them on firefox).
+  // The guarded behavior is the WebDAV backup/sync flow, not input realness — the
+  // stalling main-page buttons (#add-box, #webdav-test-btn) dispatch synthetically
+  // (playwright#16095 class); settings-nav clicks and fill/selectOption stay
+  // native/protocol-level (the two main-lane siblings above already use them on
+  // firefox without stall).
   test('WebDAV backup saves and restores layout data', async ({ page }) => {
     const jsClick = (sel: string) =>
       page.evaluate((s) => (document.querySelector(s) as HTMLElement | null)?.click(), sel);

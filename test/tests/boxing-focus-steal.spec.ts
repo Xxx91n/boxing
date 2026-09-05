@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -161,7 +161,7 @@ test.describe('dblclick — REAL native input + text selection', () => {
 });
 
 // Ticket 27 (quarantine convergence): the synthetic twin of the native block —
-//BX-SEL-01's app-level contract (renderCanvas clears residual selection; focus is
+// BX-SEL-01's app-level contract (renderCanvas clears residual selection; focus is
 // not stolen by canvas dblclick; .canvas keeps user-select:none) — exercised on the
 // firefox main lane where native input is unavailable (playwright#16095 class).
 // Seeding a real Selection makes the clear-guard assertion behavioral, not vacuous.

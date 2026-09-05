@@ -29,10 +29,11 @@ export default defineConfig({
     {
       name: 'firefox-extension',
       // @quarantine: retired in ticket 27 (architecture-recovery convergence pass,
-      // 2026-09-05). All 14 tagged tests were repaired (synthetic-input conversion
-      // per the ticket-18 pattern) and rejoined the firefox lane, so grepInvert is
-      // REMOVED — the firefox lane now runs the full suite. History: the tag
-      // excluded firefox from specs whose native-input dispatch stalled on the
+      // 2026-09-05). All 14 tagged tests were repaired — 11 by synthetic-input
+      // conversion, 3 (the boxing-focus-steal native block) by chromium-scoping the
+      // native tests with a synthetic twin covering firefox — and rejoined the
+      // firefox lane, so the firefox lane now runs the full suite. History: the
+      // tag excluded firefox from specs whose native-input dispatch stalled on the
       // firefox persistent context (playwright#16095 class, ticket 01).
       use: {
         ...devices['Desktop Firefox'],
