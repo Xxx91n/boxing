@@ -144,12 +144,21 @@ test.describe('Data Recovery & Export/Import', () => {
     await context.close();
   });
 
-  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine Export data round-trip: create boxes, export, verify JSON structure', async ({ browser }) => {
+  // Ticket 27 (quarantine convergence): @quarantine retired. Export round-trip is an
+  // app-level flow (layout → export JSON structure) — native dblclick stalled on the
+  // firefox lane (playwright#16095 class, deterministic in the ticket-27 solo
+  // baseline), so the three box-creating dblclicks are synthetic.
+  test('Export data round-trip: create boxes, export, verify JSON structure', async ({ browser }) => {
     test.setTimeout(40000);
 
     const context = await browser.newContext();
     const page = await context.newPage();
+    const jsDblclick = (sel: string, x: number, y: number) =>
+      page.evaluate(({ s, x, y }) => {
+        (document.querySelector(s) as HTMLElement | null)?.dispatchEvent(
+          new MouseEvent('dblclick', { bubbles: true, cancelable: true, clientX: x, clientY: y }),
+        );
+      }, { s: sel, x, y });
 
     page.on('console', msg => console.log(`[${msg.type()}] ${msg.text()}`));
     page.on('pageerror', err => console.log('[ERROR]', err.message));
@@ -163,11 +172,11 @@ test.describe('Data Recovery & Export/Import', () => {
       console.log('Canvas not found — skipping box creation');
     } else {
       // Create 3 boxes at different positions
-      await page.mouse.dblclick(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 3);
+      await jsDblclick('#canvas-surface', canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 3);
       await page.waitForTimeout(600);
-      await page.mouse.dblclick(canvasBox.x + canvasBox.width / 2 + 250, canvasBox.y + canvasBox.height / 3 + 120);
+      await jsDblclick('#canvas-surface', canvasBox.x + canvasBox.width / 2 + 250, canvasBox.y + canvasBox.height / 3 + 120);
       await page.waitForTimeout(600);
-      await page.mouse.dblclick(canvasBox.x + canvasBox.width / 2 - 200, canvasBox.y + canvasBox.height / 3 + 200);
+      await jsDblclick('#canvas-surface', canvasBox.x + canvasBox.width / 2 - 200, canvasBox.y + canvasBox.height / 3 + 200);
       await page.waitForTimeout(600);
 
       const lbCount = await page.locator('.large-box').count();

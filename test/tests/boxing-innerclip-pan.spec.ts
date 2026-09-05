@@ -18,8 +18,13 @@ async function resetBoxing(page) {
 // overflow:hidden must clip it at the surface top edge, NOT let it intrude into the
 // inner__canvas-head's solid background band. Verifies surface.top >= head.bottom.
 test.describe('Boxing inner surface clip under pan (BX-DEV-CLIP-PAN)', () => {
-  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine small-box panned to surface top is clipped by surface, not covered by head, across zoom', async ({ page }) => {
+  // Ticket 27 (quarantine convergence): @quarantine retired. The pan that reproduces
+  // the bug is app-level state (mousedown → mousemove deltas), not input realness —
+  // native mouse.move/down/up stalled on the firefox lane (playwright#16095 class,
+  // ticket-18 evidence), so the sequence is dispatched synthetically: mousedown on
+  // innerCanvas (the bound target) then mousemove/mouseup on document (where the
+  // handlers are bound). The wheel-zoom step was already synthetic.
+  test('small-box panned to surface top is clipped by surface, not covered by head, across zoom', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -41,21 +46,26 @@ test.describe('Boxing inner surface clip under pan (BX-DEV-CLIP-PAN)', () => {
     await page.waitForTimeout(400);
 
     // Simulate a real pan that pushes the small box up toward the surface top:
-    // drive a few mouse moves on the inner surface with the left button held.
-    const surface = page.locator('.inner__surface');
-    await surface.waitFor({ state: 'visible' });
-    const box = await surface.boundingBox();
-    if (!box) throw new Error('no surface');
-    const sx = box.x + box.width / 2;
-    const sy = box.y + box.height / 2;
-    await page.mouse.move(sx, sy);
-    await page.mouse.down();
-    // Move upward so innerPanY goes negative (content moves up; a box at world y=0 ends
-    // up at the surface top and beyond).
-    for (let i = 0; i < 6; i++) {
-      await page.mouse.move(sx, sy - 40 - i*30, { steps: 4 });
-    }
-    await page.mouse.up();
+    // dispatch a synthetic left-button press on the inner canvas, then drag
+    // upward via document-level mousemove (where onInnerPanMove is bound) so
+    // innerPanY goes negative (content moves up; a box at world y=0 ends up at
+    // the surface top and beyond).
+    await page.evaluate(() => {
+      const canvas = document.getElementById('inner-canvas') as HTMLElement | null;
+      if (!canvas) throw new Error('no inner-canvas');
+      const rect = canvas.getBoundingClientRect();
+      canvas.dispatchEvent(new MouseEvent('mousedown', {
+        bubbles: true, cancelable: true, button: 0,
+        clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2,
+      }));
+      for (let i = 0; i < 6; i++) {
+        document.dispatchEvent(new MouseEvent('mousemove', {
+          bubbles: true, cancelable: true,
+          clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 - 40 - i * 30,
+        }));
+      }
+      document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+    });
     await page.waitForTimeout(150);
 
     // Also try at a smaller zoom to mirror the "缩放得越小覆盖越严重" repro.

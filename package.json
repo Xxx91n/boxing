@@ -18,7 +18,7 @@
     "test:chromium": "node scripts/test-mutex.mjs full --project=chromium-extension",
     "test:firefox": "node scripts/test-mutex.mjs full --project=firefox-extension",
     "test:failed": "node scripts/test-mutex.mjs playwright test --config=test/playwright.config.ts --last-failed",
-    "test:quarantine": "node scripts/test-mutex.mjs playwright test --config=test/playwright.quarantine.config.ts --grep=@quarantine",
+    "test:quarantine": "node scripts/test-mutex.mjs playwright test --config=test/playwright.quarantine.config.ts --grep=@quarantine --pass-with-no-tests",
     "test:debug": "node scripts/test-mutex.mjs full --project=chromium-extension --debug",
     "postinstall": "node -e \"console.warn('[boxing] Playwright browsers not installed. Run: npx playwright install firefox chromium')\""
   },

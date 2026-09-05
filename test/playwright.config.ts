@@ -28,12 +28,12 @@ export default defineConfig({
   projects: [
     {
       name: 'firefox-extension',
-      // @quarantine: ticket 01 (architecture-recovery) — Firefox keeps excluding
-      // @quarantine-tagged tests: native-input dispatch on the Firefox persistent
-      // context hangs (playwright#16095), so those specs are environmental there.
-      // Chromium fixed all 30 during ticket 01 and rejoined the main suite.
-      // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-      grepInvert: /@quarantine/,
+      // @quarantine: retired in ticket 27 (architecture-recovery convergence pass,
+      // 2026-09-05). All 14 tagged tests were repaired (synthetic-input conversion
+      // per the ticket-18 pattern) and rejoined the firefox lane, so grepInvert is
+      // REMOVED — the firefox lane now runs the full suite. History: the tag
+      // excluded firefox from specs whose native-input dispatch stalled on the
+      // firefox persistent context (playwright#16095 class, ticket 01).
       use: {
         ...devices['Desktop Firefox'],
         browserName: 'firefox',

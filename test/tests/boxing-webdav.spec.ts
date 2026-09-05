@@ -89,8 +89,14 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result.ok).toBeFalsy();
   });
 
-  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine WebDAV backup saves and restores layout data', async ({ page }) => {
+  // Ticket 27 (quarantine convergence): @quarantine retired across this describe.
+  // The guarded behavior is the WebDAV backup/sync flow, not input realness — native
+  // button dispatch stalled on the firefox lane under load (playwright#16095 class),
+  // so button activation is synthetic; fill/selectOption are protocol-level and stay
+  // (the two main-lane siblings above already use them on firefox).
+  test('WebDAV backup saves and restores layout data', async ({ page }) => {
+    const jsClick = (sel: string) =>
+      page.evaluate((s) => (document.querySelector(s) as HTMLElement | null)?.click(), sel);
     await bootWithMockRuntime(page, (msg) => {
       if (msg.type === 'webdav-test') return { success: true, status: 207, ok: true };
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, data: null };
@@ -98,7 +104,7 @@ test.describe('Boxing WebDAV backup', () => {
       return { success: true };
     });
     await resetBoxing(page);
-    await page.locator('#add-box').click();
+    await jsClick('#add-box');
     await page.waitForTimeout(500);
     const boxCount = await page.locator('.large-box').count();
     expect(boxCount).toBeGreaterThanOrEqual(1);
@@ -115,14 +121,15 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result).toBeDefined();
   });
 
-  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine WebDAV sync detect data loss and warn user', async ({ page }) => {
+  test('WebDAV sync detect data loss and warn user', async ({ page }) => {
+    const jsClick = (sel: string) =>
+      page.evaluate((s) => (document.querySelector(s) as HTMLElement | null)?.click(), sel);
     await bootWithMockRuntime(page, (msg) => {
       return { success: true, status: 207, ok: true };
     });
     await resetBoxing(page);
     for (let i = 0; i < 5; i++) {
-      await page.locator('#add-box').click();
+      await jsClick('#add-box');
       await page.waitForTimeout(200);
     }
     const boxCount = await page.locator('.large-box').count();
@@ -136,8 +143,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(baseline).toBeGreaterThanOrEqual(5);
   });
 
-  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine WebDAV sync with empty local pulls from cloud on first sync', async ({ page }) => {
+  test('WebDAV sync with empty local pulls from cloud on first sync', async ({ page }) => {
     await bootWithMockRuntime(page, (msg) => {
       if (msg.type === 'webdav-test') return { success: true, status: 207, ok: true };
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, data: null };
@@ -160,8 +166,9 @@ test.describe('Boxing WebDAV backup', () => {
     expect(result).toBeDefined();
   });
 
-  // quarantine-ref: .scratch/archive/2026-09-architecture-recovery-round2/issues/14-quarantine-governance.md (registered 2026-09-02, due 2026-10-02)
-  test('@quarantine WebDAV test button shows error message on failure', async ({ page }) => {
+  test('WebDAV test button shows error message on failure', async ({ page }) => {
+    const jsClick = (sel: string) =>
+      page.evaluate((s) => (document.querySelector(s) as HTMLElement | null)?.click(), sel);
     // Mock returns 401 for webdav-test, simulating auth failure
     await bootWithMockRuntime(page, (msg) => {
       if (msg.type === 'webdav-test') return { success: false, status: 401, ok: false };
@@ -175,7 +182,7 @@ test.describe('Boxing WebDAV backup', () => {
     await page.locator('#webdav-url').fill(WEBDAV_URL);
     await page.locator('#webdav-user').fill('wrong@user.com');
     await page.locator('#webdav-pass').fill('wrongpass');
-    await page.locator('#webdav-test-btn').click();
+    await jsClick('#webdav-test-btn');
     test.setTimeout(30000);
     // Wait for button text to change from "Testing..." to the error message
     await page.waitForFunction(
