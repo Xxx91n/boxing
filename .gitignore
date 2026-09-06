@@ -71,6 +71,10 @@ temp_*.py
 **/debug_*.jpg
 **/screenshot*.png
 **/screenshot*.jpg
+# Store screenshots ARE real README assets (ticket 33) — re-include them;
+# the blanket rule above stays for test/debug captures
+!docs/store-assets/screenshots/screenshot-*.png
+!docs/store-assets/screenshots/screenshot-*.jpg
 # Python cache
 tools/
 __pycache__/
