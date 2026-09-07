@@ -23,14 +23,14 @@ Lockfile 修复主题: 单次调研的问题原文 (按 delta 不得改写) 未�
 
 | 对象 | 现状 |
 |---|---|
-| 分支归并 | `origin/main` 停在 Round 4 收口 commit `26a5182`; Round 5 栈顶 `bc-branch-5` 领先 10 commits, 只以分支形式推送 (origin/gitlab/codeberg 三镜像); 本地 `main` `ahead 6, behind 55` (发散陈旧分支, 非汇入目标, 票 33 处置); `bc-branch-1`/本地 main/`ticket-16`/`ticket-17` 有本地 commit 无对应远端分支; Round 4 历史已是 per-ticket merge commit 汇流形态 |
+| 分支归并 | `origin/main` 停在 Round 4 收口 commit `26a5182`; Round 5 栈顶 `bc-branch-5` 领先 10 commits, 只以分支形式推送 (origin/gitlab/codeberg 三镜像); 本地 `main` `ahead 6, behind 55` (发散陈旧分支, 非汇入目标, 票 33 处置); `bc-branch-1` 无匹配远端, 本地 main/`ticket-16`/`ticket-17` 与远端同名分支存在但本地头已发散; Round 4 历史已是 per-ticket merge commit 汇流形态 |
 | Lockfile | `npm ci --dry-run --ignore-scripts` 报 `EUSAGE`: lockfile 缺 `crx3@1.1.3` 与六个传递依赖; lockfile 根版本 `3.7.0` 而 `package.json` 为 `2026.8.21` — CI 无法干净安装; 零运行时依赖不变 (devDeps: web-ext / @playwright/test / crx3) |
 | Flaky 测试 | 3 个 `boxing-state-sync` 多标签失败未分类 (应用缺陷 vs 宿主环境); quarantine 车道既有治理: firefox 项目 grepInvert `@quarantine`、chromium 全绿基线 (票 14/27); 票 25 已落地 test-mutex (exit 75 拒绝第二并发) + `test:changed` 默认路径 + 保守全量回退 |
 
 ### 1.2 三个既有心智模型 (本票对账对象, issue 勾选第 3 项)
 
 - **facade 模块模型**: 14 个原生 ESM 模块; `ntp.js` (994L) 唯一入口/组合根, 静态 import 全部模块, 0 dynamic import; 守卫 B-1..B-9 (入口禁被引/禁环/禁 barrel/禁 storage·browser API 直连/B-7 强制 `initXxxFacade` 注入/B-9 特征层兄弟边白名单 = ADR-0016 errata-26); ADR-0016 四层 (port/envelope/engine/presentation)。
-- **changed-surface 测试模型**: `test-surface.mjs` 文件级 spec-cluster 映射 (15 簇, `minimumFullSuiteSpecs=18`), 保守回退全量 (test//.github//package*.json 变更、映射缺失、未映射叶子、闭包超阈一律全量), 拒绝 `--last-failed` 做选择; 进程级 test-mutex 包裹。
+- **changed-surface 测试模型**: `test-surface.mjs` 文件级 spec-cluster 映射 (14 簇, `minimumFullSuiteSpecs=18`), 保守回退全量 (test//.github//package*.json 变更、映射缺失、未映射叶子、闭包超阈一律全量), 拒绝 `--last-failed` 做选择; 进程级 test-mutex 包裹。
 - **GitButler 工作流**: WORKFLOW §4.2 = 唯一版本控制权威 (but CLI 提交、每票独立分支、不 push 不开 PR 除非用户明确要求); 宿主 AGENTS.md gitbutler 节 + CRX-R-013/014/015 (禁止 reset --hard / checkout -- 丢弃用户改动)。
 
 ## 2. 对比矩阵 (atomcode 调研原文浓缩; 来源见 §6)

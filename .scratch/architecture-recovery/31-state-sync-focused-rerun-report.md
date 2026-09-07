@@ -4,7 +4,7 @@
 - 任务书: prompts/31-state-sync-flaky-diagnosis-rework.md (31R) + prompts/32-main-convergence.md (同窗口常驻任务书)
 - 票: issues/31-state-sync-flaky-diagnosis.md (Status: needs-rework → done, 同轮落盘)
 - 复核缺口闭合对象: 31-review-verification.md §2#2 — focused state-sync lane 未被票 31 实际重跑
-- 版本控制: WORKFLOW §4.2 (GitButler but CLI, 独立分支, 不 push)
+- 版本控制: WORKFLOW §4.2 (GitButler but CLI); commit `c16730e` 随后由票 32 经 `but land` 汇入 `origin/main`
 
 ## 1. 执行记录 (test-mutex 包裹, node.js 入口, 全部实跑)
 
@@ -42,7 +42,7 @@
 
 - CI-only 政策 (2026-09-04) 与本票的关系: 31R 启动器与用户启动器均显式要求本窗口用 test-mutex 实际执行 focused state-sync lane, 该显式授权构成本地执行依据; CI-only 默认 (权威复跑归 CI) 不废 — 远端 main 落地后 test.yml 首次绿仍是登记行删除依据 (票 32 落地后取得)。
 - 零代码改动: ntp/ background.js manifest.json test/ 全程未触碰; 本票产物仅本报告 + issue 31 状态行。
-- WORKFLOW §4.2: 本报告经 but commit 落独立分支 arch-recovery-31r-focused-rerun, 不 push; zz 中 issue/handoff/prompt 与他窗产物不卷入提交 (票 05 hunk 认领教训)。
+- WORKFLOW §4.2: 本报告经 but commit 形成 `c16730e`，随后在票 32 收口时由 `but land` 推入 `origin/main`；复核前旧版“独立分支且不 push”自述不准确。zz 中 issue/handoff/prompt 与他窗产物未卷入本提交 (票 05 hunk 认领教训)。
 
 ## 5. 残余 (报大脑)
 

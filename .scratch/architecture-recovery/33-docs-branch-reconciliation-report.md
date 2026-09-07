@@ -15,7 +15,7 @@ all three mirrors, so the ticket opened.
 | Fact | Evidence | Date |
 |---|---|---|
 | All three mirrors' `main` at `6588fed` | `git ls-remote` on `origin`, `gitlab`, `codeberg`: `6588fed924f1d5b689a89f460a726f95edcad458` for `refs/heads/main` on each | 2026-09-06 |
-| Workspace stack is unlanded on top of the new main | Git history: `6588fed → b920349 (bc-branch-1 tip, 6 commits) → ddca844 (ticket 16) → e1dee80 (ticket 17) → e097fbe (ticket 32 report) → 499f2ef (workspace)` | 2026-09-06 |
+| Workspace stack is unlanded on top of the new main | Git history: `6588fed → b920349 (bc-branch-1 tip, 6 commits) → ddca844 (ticket 16) → e1dee80 (ticket 17) → e097fbe (ticket 32 report) → 04a42bf (workspace)` | 2026-09-06 |
 | `bc-branch-1`'s multi-base conflict is gone | The six commits apply cleanly on the `6588fed` base in the applied GitButler workspace; no `{conflicted}` commits in `but`/`git` state | 2026-09-06 |
 | Local `main` (`be0d6b8`) duplicates `bc-branch-1`'s work | `origin/main..main` = exactly 6 commits whose subjects match `bc-branch-1`'s 6 commits one-for-one (README beautify + publishing guide); `git cherry origin/main main` shows none upstream by patch-id because the workspace stack itself is unlanded | 2026-09-06 |
 | `round6-architecture-report.md`'s "duplicate footer language block on origin/main" is stale | `git show origin/main:README.md` has exactly one `Languages:` line (one `README-I18N` block); `docs/i18n/README.zh_CN.md` on `origin/main` also has exactly one | 2026-09-06 |
@@ -91,7 +91,7 @@ pushed state (round 5 branches pushed to three mirrors as feature branches; all 
 - `.scratch/architecture-recovery/33-docs-branch-reconciliation-report.md` — this report
 
 Version control: committed via GitButler on dedicated branch `arch-recovery-33-docs-reconciliation`
-in two scoped commits — `a8d37bf` (gitignore + 5 PNGs + summary + backlog) and `27a984d` (issue
+in two scoped commits — `a8d37bf` (gitignore + 5 PNGs + summary + backlog) and `f457746` (issue
 closure + this report) — both based directly on `6588fed` (`origin/main`). No push, no PR.
 
 Not committed by this window: the `.scratch/architecture-recovery/README.md` status-table update

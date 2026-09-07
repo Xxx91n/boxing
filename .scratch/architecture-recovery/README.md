@@ -1,6 +1,6 @@
-# Architecture Recovery Round 5 Status
+# Architecture Recovery Round 6 Status
 
-Source report: `round5-architecture-report.md`
+Source report: `round6-architecture-report.md`
 
 Artifacts: `spec.md`, `WORKFLOW.md`, `issues/`, `handoffs/`, `prompts/`
 
@@ -8,22 +8,28 @@ Artifacts: `spec.md`, `WORKFLOW.md`, `issues/`, `handoffs/`, `prompts/`
 
 | Wave | Tickets | Parallelism | Blocked by |
 |---|---|---|---|
-| 1 | 23 | single | None |
-| 2 | 24, 25, 26 | parallel | 23 — Mental model deep research |
-| R | 24R | single | 24 review FAIL |
-| 3 | 27 | after 24R | 24R — README placeholder repair |
+| 1 | 28 | single | None |
+| 2 | 29, 30, 31 | parallel | 28 — Release merge and governance deep research |
+| 3 | 32 | single | 29 — Lockfile and CI sync; 30 — Agent version-control rule reconciliation; 31 — Multi-tab state-sync failure diagnosis |
+| 4 | 33 | single | 32 — Main convergence and Round 5 merge |
 
 ## Status
 
 | Ticket | Status | Evidence |
 |---|---|---|
-| 23 | done | commit `82d1cee`; `research-report-round5.md`; review PASS |
-| 24 | done | 24R repair PASS; original 24 report retains a stale zero-hit claim |
-| 24R | done | review PASS with residual; 11 locale placeholder NOTE blocks removed |
-| 25 | done | review PASS with residual; mutex gates 5/5; 3 pre-existing state-sync failures tracked separately |
-| 26 | done | review PASS; B-9 whitelist + ADR-0016 errata; guard 0 violations |
-| 27 | done | review PASS with residual; 14/14 repair, 0 retire; quarantine-ref comment remains in quarantine.config.ts |
+| 28 | done | `research-report-round6.md`; review PASS with residuals; two report facts corrected after review |
+| 29 | done | review PASS; `npm ci --dry-run --ignore-scripts` exit 0; `npm run build` DONE_BUILD |
+| 30 | done | review PASS; no raw version-control commands; loss-avoidance intent preserved |
+| 31 | done | 31R focused lane R3 9/9 verified; issue status done; host-incident due date unchanged |
+| 32 | done with residual | origin/main=6588fed across three mirrors; local build DONE_BUILD; CI build workflow failure remains |
+| 33 | done with residual | `33-docs-branch-reconciliation-report.md`; mirrors=6588fed verified; "Nothing was pushed" removed; stale-branch disposition recorded (retain); README screenshots un-ignored + tracked; landing the workspace stack awaits user push request |
 
 ## Frontier
 
-Round 5 tickets are closed with residuals. No next wave is open. Residual backlog: three pre-existing state-sync failures, CI `npm ci` failure, stale original 24 report claim, and one quarantine-ref comment in the quarantine config.
+Round 6 is closed. All tickets 28-33 are complete with recorded residuals. Residuals carried
+forward: ticket 32's CI build-workflow failure; ticket 33's pending user decision on landing
+the unlanded workspace stack (`bc-branch-1` + ticket 16 + ticket 17 + ticket 32 report) and on
+retiring stale local branches (`main` duplicate, superseded ticket-16/17 heads) — no branch
+was deleted or rewritten without that decision.
+
+Ticket 28 residuals recorded: atomcode was executed directly instead of through the ctx-wrapped carrier required by WORKFLOW section 4.3. This review does not retroactively approve that routing deviation.
