@@ -91,7 +91,7 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 - Node.js >= 18
 - npm
 
-### 安装
+### 设置
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git

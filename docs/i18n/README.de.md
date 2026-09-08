@@ -15,13 +15,13 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
 
 ## Inhaltsverzeichnis
 
-- [Funktionen](#features)
-- [Installation](#install)
-- [**Doppelklick** auf leere Leinwand → neue Box erstellen,**Ziehen** an Box-Titelleiste → Box bewegen,**Strg+Scrollen** → Leinwand zoomen (30% bis 200%),**Ziehen** der leeren Leinwand → Schwenken,**Rechtsklick** → zurueck zur uebergeordneten Canvas-Ebene,**Klick** auf eine Box → Unter-Canvas betreten,**Ziehen** von Box-Kantenmitte → mit anderer Box verbinden,**Alt+Klick** auf Verbindungslinie → loeschen,**Stern** auf einer Box → als Eltern-Box markieren (Kinder bewegen sich mit),**Pin** → Box-Position sperren,**Kreis-Schaltflaeche** oben rechts auf Leinwand → Kopfzeile loesen fuer Vollbildmodus](#usage)
-- [Alle Daten werden lokal in `chrome.storage.local` gespeichert — nichts verlaesst Ihr Geraet, es sei denn, Sie konfigurieren optionales Cloud-Backup,Optionales WebDAV / GitHub Gist Backup ist die einzige ausgehende Netzwerkverwendung,Keine Analytik, kein Tracking, keine Drittanbieter-Dienste,100% Open Source (Apache-2.0) — jede Zeile pruefbar,Vollstaendige Datenschutzrichtlinie: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
-- [Entwicklung](#development)
-- [Mitwirken](#contributing)
-- [Lizenz](#license)
+- [Funktionen](#funktionen)
+- [Installation](#installation)
+- [Verwendung](#verwendung)
+- [Datenschutz](#datenschutz)
+- [Entwicklung](#entwicklung)
+- [Mitwirken](#mitwirken)
+- [Lizenz](#lizenz)
 
 ## Funktionen
 
@@ -62,7 +62,7 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
 > [!TIP]
 > Endbenutzer benoetigen kein Node.js oder npm. Diese sind nur fuer die Entwicklung.
 
-## **Doppelklick** auf leere Leinwand → neue Box erstellen,**Ziehen** an Box-Titelleiste → Box bewegen,**Strg+Scrollen** → Leinwand zoomen (30% bis 200%),**Ziehen** der leeren Leinwand → Schwenken,**Rechtsklick** → zurueck zur uebergeordneten Canvas-Ebene,**Klick** auf eine Box → Unter-Canvas betreten,**Ziehen** von Box-Kantenmitte → mit anderer Box verbinden,**Alt+Klick** auf Verbindungslinie → loeschen,**Stern** auf einer Box → als Eltern-Box markieren (Kinder bewegen sich mit),**Pin** → Box-Position sperren,**Kreis-Schaltflaeche** oben rechts auf Leinwand → Kopfzeile loesen fuer Vollbildmodus
+## Verwendung
 
 - **Doppelklick** auf leere Leinwand → neue Box erstellen
 - **Ziehen** an Box-Titelleiste → Box bewegen
@@ -76,7 +76,7 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
 - **Pin** → Box-Position sperren
 - **Kreis-Schaltflaeche** oben rechts auf Leinwand → Kopfzeile loesen fuer Vollbildmodus
 
-## Alle Daten werden lokal in `chrome.storage.local` gespeichert — nichts verlaesst Ihr Geraet, es sei denn, Sie konfigurieren optionales Cloud-Backup,Optionales WebDAV / GitHub Gist Backup ist die einzige ausgehende Netzwerkverwendung,Keine Analytik, kein Tracking, keine Drittanbieter-Dienste,100% Open Source (Apache-2.0) — jede Zeile pruefbar,Vollstaendige Datenschutzrichtlinie: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+## Datenschutz
 
 - Alle Daten werden lokal in `chrome.storage.local` gespeichert — nichts verlaesst Ihr Geraet, es sei denn, Sie konfigurieren optionales Cloud-Backup
 - Optionales WebDAV / GitHub Gist Backup ist die einzige ausgehende Netzwerkverwendung

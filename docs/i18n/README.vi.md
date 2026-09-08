@@ -15,13 +15,13 @@ Boxing biến trang tab mới của bạn thành không gian làm việc trực 
 
 ## Mục lục
 
-- [Tính năng](#features)
-- [Cài đặt](#install)
-- [Sử dụng](#usage)
-- [Quyền riêng tư](#privacy)
-- [Phát triển](#development)
-- [Đóng góp](#contributing)
-- [Giấy phép](#license)
+- [Tính năng](#tính-năng)
+- [Cài đặt](#cài-đặt)
+- [Sử dụng](#sử-dụng)
+- [Quyền riêng tư](#quyền-riêng-tư)
+- [Phát triển](#phát-triển)
+- [Đóng góp](#đóng-góp)
+- [Giấy phép](#giấy-phép)
 
 ## Tính năng
 

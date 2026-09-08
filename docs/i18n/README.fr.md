@@ -15,13 +15,13 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
 
 ## Sommaire
 
-- [Fonctionnalites](#features)
-- [Installation](#install)
-- [**Double-clic** sur canevas vide → creer une nouvelle boite,**Glisser** la barre de titre de la boite → deplacer la boite,**Ctrl+molette** → zoomer le canevas (30% a 200%),**Glisser** le canevas vide → pan,**Clic droit** → revenir au niveau de canevas parent,**Clic** sur une boite → entrer dans son sous-canevas,**Glisser** depuis le milieu d un bord de boite → connecter a une autre boite,**Alt+Clic** sur une ligne de connexion → la supprimer,**Etoile** sur une boite → marquer comme parent (les enfants bougent ensemble),**Epingle** → verrouiller la position de la boite,**Bouton cercle** en haut a droite du canevas → detacher l en-tete pour le mode plein ecran](#usage)
-- [Toutes les donnees stockees localement dans `chrome.storage.local` — rien ne quitte votre appareil sauf si vous configurez la sauvegarde cloud optionnelle,La sauvegarde WebDAV / GitHub Gist optionnelle est la seule utilisation reseau sortante,Pas d analytics, pas de tracking, pas de services tiers,100% open source (Apache-2.0) — auditez chaque ligne,Politique de confidentialite complete: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
-- [Developpement](#development)
-- [Contribuer](#contributing)
-- [Licence](#license)
+- [Fonctionnalites](#fonctionnalites)
+- [Installation](#installation)
+- [Utilisation](#utilisation)
+- [Confidentialite](#confidentialite)
+- [Developpement](#developpement)
+- [Contribuer](#contribuer)
+- [Licence](#licence)
 
 ## Fonctionnalites
 
@@ -62,7 +62,7 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
 > [!TIP]
 > Les utilisateurs finaux n ont pas besoin de Node.js ou npm. Ils ne sont necessaires que pour le developpement.
 
-## **Double-clic** sur canevas vide → creer une nouvelle boite,**Glisser** la barre de titre de la boite → deplacer la boite,**Ctrl+molette** → zoomer le canevas (30% a 200%),**Glisser** le canevas vide → pan,**Clic droit** → revenir au niveau de canevas parent,**Clic** sur une boite → entrer dans son sous-canevas,**Glisser** depuis le milieu d un bord de boite → connecter a une autre boite,**Alt+Clic** sur une ligne de connexion → la supprimer,**Etoile** sur une boite → marquer comme parent (les enfants bougent ensemble),**Epingle** → verrouiller la position de la boite,**Bouton cercle** en haut a droite du canevas → detacher l en-tete pour le mode plein ecran
+## Utilisation
 
 - **Double-clic** sur canevas vide → creer une nouvelle boite
 - **Glisser** la barre de titre de la boite → deplacer la boite
@@ -76,7 +76,7 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
 - **Epingle** → verrouiller la position de la boite
 - **Bouton cercle** en haut a droite du canevas → detacher l en-tete pour le mode plein ecran
 
-## Toutes les donnees stockees localement dans `chrome.storage.local` — rien ne quitte votre appareil sauf si vous configurez la sauvegarde cloud optionnelle,La sauvegarde WebDAV / GitHub Gist optionnelle est la seule utilisation reseau sortante,Pas d analytics, pas de tracking, pas de services tiers,100% open source (Apache-2.0) — auditez chaque ligne,Politique de confidentialite complete: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+## Confidentialite
 
 - Toutes les donnees stockees localement dans `chrome.storage.local` — rien ne quitte votre appareil sauf si vous configurez la sauvegarde cloud optionnelle
 - La sauvegarde WebDAV / GitHub Gist optionnelle est la seule utilisation reseau sortante

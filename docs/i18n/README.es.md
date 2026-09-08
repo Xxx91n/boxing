@@ -15,13 +15,13 @@ Boxing transforma tu pagina de nueva pestana en un espacio de trabajo visual par
 
 ## Indice
 
-- [Funciones](#features)
-- [Instalacion](#install)
-- [**Doble clic** en lienzo vacio → crear nueva caja,**Arrastrar** barra de titulo de caja → mover caja,**Ctrl+rueda** → zoom del lienzo (30% a 200%),**Arrastrar** lienzo vacio → pan,**Clic derecho** → volver al nivel de lienzo padre,**Clic** en una caja → entrar en su sub-lienzo,**Arrastrar** desde el punto medio del borde de una caja → conectar a otra caja,**Alt+Clic** en linea de conexion → eliminarla,**Estrella** en una caja → marcar como padre (los hijos se mueven juntos),**Alfiler** → bloquear posicion de caja,**Boton circular** arriba a la derecha del lienzo → desbloquear encabezado para modo pantalla completa](#usage)
-- [Todos los datos almacenados localmente en `chrome.storage.local` — nada sale de tu dispositivo a menos que configures la copia de seguridad en la nube opcional,La copia de seguridad WebDAV / GitHub Gist opcional es el unico uso de red saliente,Sin analiticas, sin seguimiento, sin servicios de terceros,100% codigo abierto (Apache-2.0) — audita cada linea,Politica de privacidad completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
-- [Desarrollo](#development)
-- [Contribuir](#contributing)
-- [Licencia](#license)
+- [Funciones](#funciones)
+- [Instalacion](#instalacion)
+- [Uso](#uso)
+- [Privacidad](#privacidad)
+- [Desarrollo](#desarrollo)
+- [Contribuir](#contribuir)
+- [Licencia](#licencia)
 
 ## Funciones
 
@@ -62,7 +62,7 @@ Boxing transforma tu pagina de nueva pestana en un espacio de trabajo visual par
 > [!TIP]
 > Los usuarios finales no necesitan Node.js ni npm. Son solo para desarrollo.
 
-## **Doble clic** en lienzo vacio → crear nueva caja,**Arrastrar** barra de titulo de caja → mover caja,**Ctrl+rueda** → zoom del lienzo (30% a 200%),**Arrastrar** lienzo vacio → pan,**Clic derecho** → volver al nivel de lienzo padre,**Clic** en una caja → entrar en su sub-lienzo,**Arrastrar** desde el punto medio del borde de una caja → conectar a otra caja,**Alt+Clic** en linea de conexion → eliminarla,**Estrella** en una caja → marcar como padre (los hijos se mueven juntos),**Alfiler** → bloquear posicion de caja,**Boton circular** arriba a la derecha del lienzo → desbloquear encabezado para modo pantalla completa
+## Uso
 
 - **Doble clic** en lienzo vacio → crear nueva caja
 - **Arrastrar** barra de titulo de caja → mover caja
@@ -76,7 +76,7 @@ Boxing transforma tu pagina de nueva pestana en un espacio de trabajo visual par
 - **Alfiler** → bloquear posicion de caja
 - **Boton circular** arriba a la derecha del lienzo → desbloquear encabezado para modo pantalla completa
 
-## Todos los datos almacenados localmente en `chrome.storage.local` — nada sale de tu dispositivo a menos que configures la copia de seguridad en la nube opcional,La copia de seguridad WebDAV / GitHub Gist opcional es el unico uso de red saliente,Sin analiticas, sin seguimiento, sin servicios de terceros,100% codigo abierto (Apache-2.0) — audita cada linea,Politica de privacidad completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+## Privacidad
 
 - Todos los datos almacenados localmente en `chrome.storage.local` — nada sale de tu dispositivo a menos que configures la copia de seguridad en la nube opcional
 - La copia de seguridad WebDAV / GitHub Gist opcional es el unico uso de red saliente

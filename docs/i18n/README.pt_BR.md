@@ -15,13 +15,13 @@ Boxing transforma sua pagina de nova aba em um espaco de trabalho visual para ma
 
 ## Sumario
 
-- [Recursos](#features)
-- [Instalacao](#install)
-- [**Duplo clique** na tela vazia → criar nova caixa,**Arrastar** barra de titulo da caixa → mover caixa,**Ctrl+rolagem** → zoom da tela (30% a 200%),**Arrastar** tela vazia → pan,**Clique direito** → voltar ao nivel de tela pai,**Clique** em uma caixa → entrar em sua sub-tela,**Arrastar** do ponto medio da borda da caixa → conectar a outra caixa,**Alt+Clique** na linha de conexao → exclui-la,**Estrela** em uma caixa → marcar como pai (filhos se movem juntos),**Alfinete** → bloquear posicao da caixa,**Botao circular** no canto superior direito da tela → soltar cabecalho para modo tela cheia](#usage)
-- [Todos os dados armazenados localmente em `chrome.storage.local` — nada sai do seu dispositivo a menos que voce configure o backup em nuvem opcional,O backup opcional WebDAV / GitHub Gist e o unico uso de rede de saida,Sem analises, sem rastreamento, sem servicos de terceiros,100% codigo aberto (Apache-2.0) — audite cada linha,Politica de privacidade completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)](#privacy)
-- [Desenvolvimento](#development)
-- [Contribuir](#contributing)
-- [Licenca](#license)
+- [Recursos](#recursos)
+- [Instalacao](#instalacao)
+- [Uso](#uso)
+- [Privacidade](#privacidade)
+- [Desenvolvimento](#desenvolvimento)
+- [Contribuir](#contribuir)
+- [Licenca](#licenca)
 
 ## Recursos
 
@@ -62,7 +62,7 @@ Boxing transforma sua pagina de nova aba em um espaco de trabalho visual para ma
 > [!TIP]
 > Usuarios finais nao precisam de Node.js ou npm. Eles sao apenas para desenvolvimento.
 
-## **Duplo clique** na tela vazia → criar nova caixa,**Arrastar** barra de titulo da caixa → mover caixa,**Ctrl+rolagem** → zoom da tela (30% a 200%),**Arrastar** tela vazia → pan,**Clique direito** → voltar ao nivel de tela pai,**Clique** em uma caixa → entrar em sua sub-tela,**Arrastar** do ponto medio da borda da caixa → conectar a outra caixa,**Alt+Clique** na linha de conexao → exclui-la,**Estrela** em uma caixa → marcar como pai (filhos se movem juntos),**Alfinete** → bloquear posicao da caixa,**Botao circular** no canto superior direito da tela → soltar cabecalho para modo tela cheia
+## Uso
 
 - **Duplo clique** na tela vazia → criar nova caixa
 - **Arrastar** barra de titulo da caixa → mover caixa
@@ -76,7 +76,7 @@ Boxing transforma sua pagina de nova aba em um espaco de trabalho visual para ma
 - **Alfinete** → bloquear posicao da caixa
 - **Botao circular** no canto superior direito da tela → soltar cabecalho para modo tela cheia
 
-## Todos os dados armazenados localmente em `chrome.storage.local` — nada sai do seu dispositivo a menos que voce configure o backup em nuvem opcional,O backup opcional WebDAV / GitHub Gist e o unico uso de rede de saida,Sem analises, sem rastreamento, sem servicos de terceiros,100% codigo aberto (Apache-2.0) — audite cada linha,Politica de privacidade completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+## Privacidade
 
 - Todos os dados armazenados localmente em `chrome.storage.local` — nada sai do seu dispositivo a menos que voce configure o backup em nuvem opcional
 - O backup opcional WebDAV / GitHub Gist e o unico uso de rede de saida
