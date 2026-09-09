@@ -23,6 +23,11 @@ on:
         description: "Custom release tag name (e.g. v3.7.0-beta). Empty defaults to v<version>."
         required: false
         default: ""
+      amo_sign:
+        description: "Skip AMO signing (set true when the version is reserved for the LISTED-channel upload on AMO — signing here would burn it on unlisted)."
+        required: false
+        default: "false"
+        type: boolean
 
 permissions:
   contents: write
@@ -101,7 +106,7 @@ jobs:
         # legs signed 2026.8.21 at once), and a version burned on AMO cannot
         # be re-uploaded. Sign exactly once, on ubuntu, and keep the run green
         # if AMO itself rejects (a signed XPI then comes from a later run).
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' && github.event.inputs.amo_sign != 'true'
         env:
           AMO_KEY: ${{ secrets.AMO_API_KEY }}
           AMO_SECRET: ${{ secrets.AMO_API_SECRET }}
