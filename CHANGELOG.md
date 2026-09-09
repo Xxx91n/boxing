@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) starting v2026.8.21.
 
+## [2026.9.9] - 2026-09-09
+
+### Changed
+- First public release packaging: version bump 2026.8.21 -> 2026.9.9 (calver) because version
+  2026.8.21 was consumed on AMO by the unlisted signing submission (CI run 34010200764) and
+  AMO version numbers cannot be reused.
+- No application-content changes versus 2026.8.21; this line exists so GitHub Release artifacts,
+  store submissions, and the manifest all share one version string.
+
+### Fixed
+- Packaging: zip local-file-header byte layout (one extra u16) that made strict zip parsers
+  reject the release zips; build.mjs now self-validates the produced zip against the spec.
+- CI packaging workflow: windows leg shell, single-leg AMO/CRX signing, per-leg artifact names,
+  deterministic CRX signing key path.
+
 ## [2026.8.21] - 2026-08-21
 
 ### Changed

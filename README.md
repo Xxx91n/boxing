@@ -29,7 +29,7 @@
 </p>
 
 <p>
-  <a href="docs/publishing-guide.md"><img alt="Extension version 2026.8.21 — no GitHub release published yet" src="https://img.shields.io/badge/extension_version-2026.8.21-orange?style=flat-square" /></a>
+  <a href="docs/publishing-guide.md"><img alt="Extension version 2026.9.9" src="https://img.shields.io/badge/extension_version-2026.9.9-orange?style=flat-square" /></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Xxx91n/boxing?style=flat-square" /></a>
   <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange?style=flat-square" />
   <img alt="Languages" src="https://img.shields.io/badge/i18n-14%20languages-brightgreen?style=flat-square" />
