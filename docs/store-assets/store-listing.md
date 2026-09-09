@@ -2,7 +2,7 @@
 
 ## Short Description (132 chars max)
 
-> A hierarchical, infinite-canvas bookmark organizer with beige minimalist design. Organize bookmarks into labeled boxes with list and grid views.
+> Hierarchical infinite-canvas bookmark organizer with a calm beige design. Organize bookmarks into labeled boxes; list & grid views.
 
 ## Detailed Description
 

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Boxing",
   "short_name": "Boxing",
-  "description": "A hierarchical, infinite-canvas bookmark organizer with beige minimalist design. Organize bookmarks into labeled boxes with list and grid views.",
+  "description": "Hierarchical infinite-canvas bookmark organizer with a calm beige design. Organize bookmarks into labeled boxes; list & grid views.",
   "version": "2026.9.9",
   "author": "Boxing Contributors",
   "default_locale": "en",
