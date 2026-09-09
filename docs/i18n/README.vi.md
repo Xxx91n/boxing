@@ -46,22 +46,21 @@ Boxing biến trang tab mới của bạn thành không gian làm việc trực 
 
 ### Chrome / Edge (Chromium)
 
-1. Tải xuống [bản phát hành ZIP mới nhất](https://github.com/Xxx91n/boxing/releases)
-2. Giải nén vào một thư mục
-3. Đi đến `chrome://extensions` (hoặc `edge://extensions`)
-4. Bật **Chế độ nhà phát triển** (trên cùng bên phải)
-5. Nhấp **Tải tiện ích đã giải nén** và chọn thư mục đã giải nén
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. Tải xuống [bản phát hành XPI mới nhất](https://github.com/Xxx91n/boxing/releases)
-2. Đi đến `about:addons`
-3. Nhấp vào biểu tượng bánh răng → **Cài đặt tiện ích từ tệp**
-4. Chọn tệp XPI đã tải xuống
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> Người dùng cuối không cần Node.js hay npm. Chúng chỉ dành cho phát triển.
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## Sử dụng
 
 - **Nhấp đúp** khung vẽ trống → tạo hộp mới

@@ -46,22 +46,21 @@ Boxing은 브라우저 새 탭 페이지를 시각적 북마크 워크스페이�
 
 ### Chrome / Edge (Chromium)
 
-1. 최신 [릴리스 ZIP](https://github.com/Xxx91n/boxing/releases) 다운로드
-2. 폴더에 압축 해제
-3. `chrome://extensions` (또는 `edge://extensions`)로 이동
-4. 우측 상단 **개발자 모드** 활성화
-5. **압축 해제된 확장 프로그램 로드** 클릭 후 압축 해제된 폴더 선택
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. 최신 [릴리스 XPI](https://github.com/Xxx91n/boxing/releases) 다운로드
-2. `about:addons`로 이동
-3. 톱니바퀴 아이콘 → **파일에서 부가 기능 설치**
-4. 다운로드한 XPI 파일 선택
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> 일반 사용자는 Node.js나 npm이 필요하지 않습니다. 개발용으로만 사용됩니다.
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## 사용법
 
 - **더블 클릭** 빈 캔버스 → 새 박스 생성

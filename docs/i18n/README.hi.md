@@ -50,22 +50,21 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
 
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
 3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## Usage
 
 - **Double-click** empty canvas → create a new box

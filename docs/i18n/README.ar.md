@@ -46,22 +46,21 @@ Boxing يحول صفحة التبويب الجديدة إلى مساحة عمل 
 
 ### Chrome / Edge (Chromium)
 
-1. حمّل أحدث [إصدار ZIP](https://github.com/Xxx91n/boxing/releases)
-2. فك الضغط إلى مجلد
-3. اذهب إلى `chrome://extensions` (أو `edge://extensions`)
-4. فعّل **وضع المطور** (أعلى اليمين)
-5. انقر **تحميل غير معبأ** واختر المجلد غير المعبأ
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. حمّل أحدث [إصدار XPI](https://github.com/Xxx91n/boxing/releases)
-2. اذهب إلى `about:addons`
-3. انقر على أيقونة الترس → **تثبيت إضافة من ملف**
-4. اختر ملف XPI المحمّل
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> المستخدمون النهائيون لا يحتاجون Node.js أو npm. هي فقط للتطوير.
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## الاستخدام
 
 - **نقر مزدوج** على لوحة فارغة → إنشاء صندوق جديد

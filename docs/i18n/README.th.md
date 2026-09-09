@@ -46,22 +46,21 @@ Boxing เปลี่ยนหน้าแท็บใหม่ของคุ�
 
 ### Chrome / Edge (Chromium)
 
-1. ดาวน์โหลด [ZIP รีลีสล่าสุด](https://github.com/Xxx91n/boxing/releases)
-2. แตกไฟล์ไปยังโฟลเดอร์
-3. ไปที่ `chrome://extensions` (หรือ `edge://extensions`)
-4. เปิด **โหมดนักพัฒนา** (ขวาบน)
-5. คลิก **โหลดแบบไม่บรรจุ** และเลือกโฟลเดอร์ที่แตกไฟล์แล้ว
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. ดาวน์โหลด [XPI รีลีสล่าสุด](https://github.com/Xxx91n/boxing/releases)
-2. ไปที่ `about:addons`
-3. คลิกไอคอนเฟือง → **ติดตั้งส่วนเสริมจากไฟล์**
-4. เลือกไฟล์ XPI ที่ดาวน์โหลด
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> ผู้ใช้ทั่วไปไม่ต้องใช้ Node.js หรือ npm ใช้สำหรับการพัฒนาเท่านั้น
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## การใช้งาน
 
 - **ดับเบิลคลิก** ผืนผ้าใบว่าง → สร้างกล่องใหม่

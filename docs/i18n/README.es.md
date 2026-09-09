@@ -46,22 +46,21 @@ Boxing transforma tu pagina de nueva pestana en un espacio de trabajo visual par
 
 ### Chrome / Edge (Chromium)
 
-1. Descarga el ultimo [ZIP de release](https://github.com/Xxx91n/boxing/releases)
-2. Descomprime en una carpeta
-3. Ve a `chrome://extensions` (o `edge://extensions`)
-4. Activa el **Modo desarrollador** (arriba a la derecha)
-5. Haz clic en **Cargar descomprimida** y selecciona la carpeta descomprimida
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. Descarga el ultimo [XPI de release](https://github.com/Xxx91n/boxing/releases)
-2. Ve a `about:addons`
-3. Haz clic en el icono de engranaje → **Instalar complemento desde archivo**
-4. Selecciona el archivo XPI descargado
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> Los usuarios finales no necesitan Node.js ni npm. Son solo para desarrollo.
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## Uso
 
 - **Doble clic** en lienzo vacio → crear nueva caja

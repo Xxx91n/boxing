@@ -46,22 +46,21 @@ Boxing превращает новую вкладку в визуальное р
 
 ### Chrome / Edge (Chromium)
 
-1. Скачайте последний [ZIP-релиз](https://github.com/Xxx91n/boxing/releases)
-2. Распакуйте в папку
-3. Перейдите на `chrome://extensions` (или `edge://extensions`)
-4. Включите **Режим разработчика** (вверху справа)
-5. Нажмите **Загрузить распакованное расширение** и выберите распакованную папку
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. Скачайте последний [XPI-релиз](https://github.com/Xxx91n/boxing/releases)
-2. Перейдите на `about:addons`
-3. Нажмите на значок шестерёнки → **Установить дополнение из файла**
-4. Выберите скачанный XPI-файл
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> Конечным пользователям не нужен Node.js или npm. Они нужны только для разработки.
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## Использование
 
 - **Двойной клик** по пустому холсту → создать новый блок

@@ -46,22 +46,21 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
 
 ### Chrome / Edge (Chromium)
 
-1. 下載最新 [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. 解壓縮到資料夾
-3. 前往 `chrome://extensions`（或 `edge://extensions`）
-4. 啟用右上角 **開發者模式**
-5. 點擊 **載入未封裝擴充功能**，選擇解壓縮後的資料夾
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. 下載最新 [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. 前往 `about:addons`
-3. 點擊齒輪圖示 → **從檔案安裝附加元件**
-4. 選擇下載的 XPI 檔案
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> 一般使用者不需要 Node.js 或 npm，那些僅供開發使用。
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## 使用
 
 - **雙擊**空白畫布 → 建立新盒子

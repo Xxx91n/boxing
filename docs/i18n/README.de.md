@@ -46,22 +46,21 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
 
 ### Chrome / Edge (Chromium)
 
-1. Neueste [Release-ZIP](https://github.com/Xxx91n/boxing/releases) herunterladen
-2. In einen Ordner entpacken
-3. Zu `chrome://extensions` (oder `edge://extensions`) gehen
-4. Entwicklermodus aktivieren (oben rechts)
-5. Auf **Entpackte Erweiterung laden** klicken und den entpackten Ordner auswaehlen
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. Neueste [Release-XPI](https://github.com/Xxx91n/boxing/releases) herunterladen
-2. Zu `about:addons` gehen
-3. Auf das Zahnrad-Symbol klicken → **Add-on aus Datei installieren**
-4. Die heruntergeladene XPI-Datei auswaehlen
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> Endbenutzer benoetigen kein Node.js oder npm. Diese sind nur fuer die Entwicklung.
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## Verwendung
 
 - **Doppelklick** auf leere Leinwand → neue Box erstellen

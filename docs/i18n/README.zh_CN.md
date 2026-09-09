@@ -46,22 +46,21 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 
 ### Chrome / Edge (Chromium)
 
-1. 下载最新 [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. 解压到文件夹
-3. 打开 `chrome://extensions`(或 `edge://extensions`)
-4. 开启右上角 **开发者模式**
-5. 点击 **加载已解压的扩展程序**,选择解压后的文件夹
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. 下载最新 [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. 打开 `about:addons`
-3. 点击齿轮图标 → **从文件安装附加组件**
-4. 选择下载的 XPI 文件
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> 普通用户不需要 Node.js 或 npm,那些仅供开发使用。
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## 使用
 
 - **双击**空白画布 → 创建新盒子

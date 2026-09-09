@@ -46,22 +46,21 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
 
 ### Chrome / Edge (Chromium)
 
-1. 最新の [リリース ZIP](https://github.com/Xxx91n/boxing/releases) をダウンロード
-2. フォルダに解凍
-3. `chrome://extensions`（または `edge://extensions`）を開く
-4. 右上の **デベロッパーモード** を有効化
-5. **パッケージ化されていない拡張機能を読み込む** をクリックし、解凍したフォルダを選択
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `chrome://extensions` (or `edge://extensions`)
+4. Enable Developer mode
+5. Click Load unpacked and select `dist/boxing-chrome/`
 
 ### Firefox
 
-1. 最新の [リリース XPI](https://github.com/Xxx91n/boxing/releases) をダウンロード
-2. `about:addons` を開く
-3. 歯車アイコン → **ファイルからアドオンをインストール**
-4. ダウンロードした XPI ファイルを選択
+1. Clone or download the repository: https://github.com/Xxx91n/boxing
+2. Run `npm install` then `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
 > [!TIP]
-> エンドユーザーに Node.js や npm は不要です。それらは開発用のみです。
-
+> Until the first release is published, Node.js and npm are required once to build from source.
 ## 使い方
 
 - **ダブルクリック** 空白キャンバス → 新規ボックス作成
