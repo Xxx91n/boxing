@@ -24,12 +24,12 @@
 </p>
 
 <p>
-  <a href="https://github.com/Xxx91n/boxing/releases"><img alt="Install from GitHub Releases" src="https://img.shields.io/badge/GitHub_Releases-Install-orange?style=for-the-badge&logo=github" /></a>
+  <a href="#install"><img alt="Install — build from source; no release assets published yet" src="https://img.shields.io/badge/Install-Build_from_source-orange?style=for-the-badge&logo=github" /></a>
   <a href="docs/publishing-guide.md"><img alt="Edge Add-ons — rollout in progress" src="https://img.shields.io/badge/Edge_Add--ons-Coming_Soon-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
 </p>
 
 <p>
-  <a href="https://github.com/Xxx91n/boxing/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Xxx91n/boxing?style=flat-square" /></a>
+  <a href="docs/publishing-guide.md"><img alt="Extension version 2026.8.21 — no GitHub release published yet" src="https://img.shields.io/badge/extension_version-2026.8.21-orange?style=flat-square" /></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Xxx91n/boxing?style=flat-square" /></a>
   <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange?style=flat-square" />
   <img alt="Languages" src="https://img.shields.io/badge/i18n-14%20languages-brightgreen?style=flat-square" />
@@ -75,23 +75,42 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 
 ## Install
 
+> [!IMPORTANT]
+> **No installable packages are published yet.** GitHub Releases currently has zero releases,
+> and no store listing is live: Edge Add-ons rollout is in progress, Chrome Web Store is
+> deferred until Edge is live, and AMO has no public listing. Until the first release or
+> listing ships, install from source below. Evidence: the
+> [publication-surface verification report](.scratch/architecture-recovery/35-authoritative-publication-surface-verification-report.md);
+> rollout and signing workflow: the [publishing guide](docs/publishing-guide.md).
+
 ### Chrome / Edge (Chromium)
 
-1. Download the latest [release ZIP](https://github.com/Xxx91n/boxing/releases)
-2. Unzip to a folder
+1. Clone or download this repository
+2. Install [Node.js](https://nodejs.org) >= 18, then run `npm install` followed by `npm run build` inside the repo folder
 3. Go to `chrome://extensions` (or `edge://extensions`)
 4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the unzipped folder
+5. Click **Load unpacked** and select the `dist/boxing-chrome/` folder
 
 ### Firefox
 
-1. Download the latest [release XPI](https://github.com/Xxx91n/boxing/releases)
-2. Go to `about:addons`
-3. Click the gear icon → **Install Add-on From File**
-4. Select the downloaded XPI
+1. Clone or download this repository
+2. Run `npm install` followed by `npm run build`
+3. Go to `about:debugging#/runtime/this-firefox`
+4. Click **Load Temporary Add-on...** and select `dist/boxing-firefox/manifest.json` (temporary add-ons are removed when Firefox restarts — expected for unsigned development installs)
+
+> [!NOTE]
+> **Signing status of build artifacts.** The build produces a `.zip` per browser for store
+> upload; it is not signed by this repository. The `.crx` is self-signed only when a CRX3
+> private key is configured in CI (`CRX_PRIVATE_KEY_PEM`); otherwise it is an unsigned local
+> placeholder. The `.xpi` is an unsigned development build unless AMO API credentials are
+> configured, in which case AMO signs it on the unlisted channel. Production signing is
+> provided by the stores (Edge Add-ons) or AMO/web-ext at publish time — none of these
+> artifacts are currently published for download.
 
 > [!TIP]
-> End users don't need Node.js or npm. Those are only for development.
+> Until the first release or store listing is live, installing does need Node.js and npm once
+> to run the build. End-user installs after that won't need them — see the
+> [publishing guide](docs/publishing-guide.md).
 
 ## Usage
 
