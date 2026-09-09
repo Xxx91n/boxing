@@ -93,9 +93,14 @@ function zipWrite(files) {
   for (const f of files) {
     const nameBuf = Buffer.from(f.rel.split(path.sep).join("/"), "utf8");
     const crc = crc32(f.data);
+    // Local file header, 30-byte fixed part per APPNOTE.TXT: sig, version,
+    // flags, method, time, date, crc, csize, ucsize, namelen, extralen. One
+    // u16 per field — the previous extra u16(0) shifted every later field and
+    // made strict parsers (Python zipfile, store upload validators) reject
+    // the zip with CRC errors while the central directory stayed correct.
     const local = Buffer.concat([
       Buffer.from([0x50,0x4b,0x03,0x04]), u16(20), u16(0), u16(0), u16(0),
-      u16(0), u16(0), u32(crc), u32(f.data.length), u32(f.data.length),
+      u16(0), u32(crc), u32(f.data.length), u32(f.data.length),
       u16(nameBuf.length), u16(0), nameBuf, f.data,
     ]);
     chunks.push(local);
@@ -113,6 +118,40 @@ function zipWrite(files) {
     u32(cenBuf.length), u32(cenStart), u16(0),
   ]);
   return Buffer.concat([...chunks, cenBuf, end]);
+}
+
+// Spec-conformant re-read of the produced zip: walks local file headers at
+// standard offsets (30-byte fixed part) and verifies name/size/CRC per entry.
+// The writer and this reader agree on the spec, not on each other's bugs —
+// a shifted header fails the signature/name checks here exactly the way it
+// fails Python zipfile and store upload validators.
+function validateZip(buf, files) {
+  let offset = 0;
+  for (const f of files) {
+    const rel = f.rel.split(path.sep).join("/");
+    if (buf.readUInt32LE(offset) !== 0x04034b50) {
+      throw new Error("zip self-check: bad local signature at offset " + offset + " (entry " + rel + ")");
+    }
+    const crc = buf.readUInt32LE(offset + 14);
+    const csize = buf.readUInt32LE(offset + 18);
+    const ucsize = buf.readUInt32LE(offset + 22);
+    const nlen = buf.readUInt16LE(offset + 26);
+    const elen = buf.readUInt16LE(offset + 28);
+    const name = buf.slice(offset + 30, offset + 30 + nlen).toString("utf8");
+    if (name !== rel) {
+      throw new Error("zip self-check: local name '" + name + "' != '" + rel + "' at offset " + offset);
+    }
+    if (csize !== f.data.length || ucsize !== f.data.length) {
+      throw new Error("zip self-check: size mismatch for " + rel + " (" + csize + "/" + ucsize + " vs " + f.data.length + ")");
+    }
+    if (crc !== crc32(f.data)) {
+      throw new Error("zip self-check: CRC mismatch for " + rel);
+    }
+    offset += 30 + nlen + elen + csize;
+  }
+  if (buf.readUInt32LE(offset) !== 0x02014b50) {
+    throw new Error("zip self-check: central directory not found at offset " + offset);
+  }
 }
 
 function collectFiles(dir) {
@@ -154,6 +193,7 @@ function buildBrowser(browser, baseManifest, sourceDir) {
     return { rel, data };
   });
   const zipBuf = zipWrite(zipFiles);
+  validateZip(zipBuf, zipFiles);
   fs.writeFileSync(path.join(releaseDir, "boxing-" + version + ".zip"), zipBuf);
 
   if (browser === "chrome") {

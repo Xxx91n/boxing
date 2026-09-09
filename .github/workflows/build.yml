@@ -4,7 +4,8 @@
 #   boxing-chrome-<ver>.zip   -> Chrome build (load unpacked)
 #   boxing-chrome-<ver>.crx   -> CRX3 pack (signed when CRX_PRIVATE_KEY_PEM present, else placeholder)
 #   boxing-firefox-<ver>.zip  -> Firefox build (zipped folder)
-#   boxing-firefox-<ver>.xpi  -> Unsigned dev XPI (AMO signing requires separate AMO_* secrets)
+#   boxing-firefox-<ver>.xpi  -> AMO-signed when secrets present and the version
+#                                is not already burned on AMO; else unsigned dev XPI
 name: Build & Package
 
 on:
@@ -33,6 +34,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # Every step below is POSIX bash. The windows-latest default shell is
+    # pwsh, which hard-failed on bash syntax (run 34010200764, "Get version").
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,13 +71,19 @@ jobs:
           cp boxing-firefox/release/firefox/boxing-${{ steps.ver.outputs.version }}.xpi boxing-firefox-${{ steps.ver.outputs.version }}.xpi
 
       - name: Pack CRX3 (signed when CRX_PRIVATE_KEY_PEM secret present)
+        # CRX3 packing is deterministic per private key: sign once on ubuntu so
+        # the three matrix legs cannot race the same output file name, and so
+        # an unsigned re-pack on another leg never overwrites the signed CRX.
+        if: matrix.os == 'ubuntu-latest'
         env:
           CRX_KEY: ${{ secrets.CRX_PRIVATE_KEY_PEM }}
         run: |
           if [ -z "$CRX_KEY" ]; then
-            echo "CRX_PRIVATE_KEY_PEM secret not set -> boxing-chrome.crx is a placeholder (zip-copy)."
+            echo "CRX_PRIVATE_KEY_PEM secret not set -> boxing-chrome.crx stays a placeholder (zip-copy)."
           else
-            node -e "require('fs').writeFileSync(require('os').tmpdir()+'/crx.pem', Buffer.from(process.env.CRX_KEY,'base64'))" && npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing -o dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx -p "${{ runner.os == 'Windows' && '' || '' }}${{ runner.temp }}/crx.pem"
+            node -e "require('fs').writeFileSync(process.env.RUNNER_TEMP + '/crx.pem', Buffer.from(process.env.CRX_KEY, 'base64'))"
+            npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing -o dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx -p "${RUNNER_TEMP}/crx.pem"
+            rm -f "${RUNNER_TEMP}/crx.pem"
             echo "CRX3 signed OK"
           fi
 
@@ -84,6 +96,12 @@ jobs:
       # from AMO afterwards. See docs/publishing-guide.md § Local Testing
       # ────────────────────────────────────────────────────────────────
       - name: Sign Firefox XPI (when AMO secrets present)
+        # AMO rejects concurrent uploads of the same version (run 34010200764
+        # died with "Submission failed (2): Conflict" when all three matrix
+        # legs signed 2026.8.21 at once), and a version burned on AMO cannot
+        # be re-uploaded. Sign exactly once, on ubuntu, and keep the run green
+        # if AMO itself rejects (a signed XPI then comes from a later run).
+        if: matrix.os == 'ubuntu-latest'
         env:
           AMO_KEY: ${{ secrets.AMO_API_KEY }}
           AMO_SECRET: ${{ secrets.AMO_API_SECRET }}
@@ -91,14 +109,17 @@ jobs:
           if [ -z "$AMO_KEY" ] || [ -z "$AMO_SECRET" ]; then
             echo "AMO_API_KEY/AMO_API_SECRET secrets not set -> boxing-firefox.xpi stays unsigned (dev XPI)."
           else
-            npx --yes web-ext sign --api-key "$AMO_KEY" --api-secret "$AMO_SECRET" --source-dir dist/boxing-firefox/release/firefox/boxing --channel unlisted --artifacts-dir dist
-            # web-ext sign outputs <id>-<ver>.xpi in dist/, copy to our naming
-            SIGNED=$(ls dist/*.xpi 2>/dev/null | head -1)
-            if [ -n "$SIGNED" ]; then
-              cp "$SIGNED" dist/boxing-firefox-${{ steps.ver.outputs.version }}.xpi
-              echo "AMO signed XPI OK"
+            rm -f dist/*.xpi
+            if npx --yes web-ext sign --api-key "$AMO_KEY" --api-secret "$AMO_SECRET" --source-dir dist/boxing-firefox/release/firefox/boxing --channel unlisted --artifacts-dir dist; then
+              SIGNED=$(ls dist/*.xpi 2>/dev/null | head -1)
+              if [ -n "$SIGNED" ]; then
+                cp "$SIGNED" dist/boxing-firefox-${{ steps.ver.outputs.version }}.xpi
+                echo "AMO signed XPI OK"
+              else
+                echo "WARN: web-ext sign reported success but produced no XPI"
+              fi
             else
-              echo "WARN: web-ext sign did not produce a signed XPI"
+              echo "WARN: AMO signing failed (version conflict or AMO outage) -> keeping unsigned dev XPI; run continues."
             fi
           fi
 
@@ -109,7 +130,9 @@ jobs:
       - name: Upload all 4 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: boxing-release
+          # v4 artifact names are global per run: three matrix legs sharing one
+          # name collide, so each leg uploads under its own name.
+          name: boxing-release-${{ matrix.os }}
           path: |
             dist/boxing-chrome-${{ steps.ver.outputs.version }}.zip
             dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx
