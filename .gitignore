@@ -88,8 +88,8 @@ __pycache__/
 release/
 
 # Dev load junctions (build artifacts)
-dev-chrome/
-dev-firefox/
+dev-chrome
+dev-firefox
 
 # Test (Playwright)
 test/node_modules/
