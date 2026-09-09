@@ -53,6 +53,27 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      - name: Regenerate brand icons (icons/ from docs/brand/boxing-prod.png)
+        # icons/ in git is a stale purple placeholder. Regenerate the full set
+        # from the brand logo on every build so releases always carry the real
+        # logo (LANCZOS downscale, PNG-verified).
+        run: |
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          import struct
+          from PIL import Image
+          src = Image.open("docs/brand/boxing-prod.png").convert("RGBA")
+          assert src.size == (1024, 1024), f"unexpected brand logo size {src.size}"
+          for size in (16, 32, 48, 128, 256):
+              p = f"icons/icon_{size}.png"
+              src.resize((size, size), Image.LANCZOS).save(p, optimize=True)
+              d = open(p, "rb").read()
+              assert d[:8] == b"\x89PNG\r\n\x1a\n", f"{p}: not a PNG"
+              w, h = struct.unpack(">II", d[16:24])
+              assert (w, h) == (size, size), f"{p}: got {w}x{h}"
+              print(f"icons/icon_{size}.png {w}x{h} {len(d)}B OK")
+          PY
+
       - name: Build browser-specific trees + release subdirs
         env:
           BOXING_BUILD_VERSION: ${{ github.event.inputs.version }}
