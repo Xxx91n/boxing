@@ -1,6 +1,6 @@
-# Architecture Recovery Round 6 Status
+# Architecture Recovery Round 7 Status
 
-Source report: `round6-architecture-report.md`
+Source report: `round7-architecture-report.md`
 
 Artifacts: `spec.md`, `WORKFLOW.md`, `issues/`, `handoffs/`, `prompts/`
 
@@ -8,28 +8,21 @@ Artifacts: `spec.md`, `WORKFLOW.md`, `issues/`, `handoffs/`, `prompts/`
 
 | Wave | Tickets | Parallelism | Blocked by |
 |---|---|---|---|
-| 1 | 28 | single | None |
-| 2 | 29, 30, 31 | parallel | 28 — Release merge and governance deep research |
-| 3 | 32 | single | 29 — Lockfile and CI sync; 30 — Agent version-control rule reconciliation; 31 — Multi-tab state-sync failure diagnosis |
-| 4 | 33 | single | 32 — Main convergence and Round 5 merge |
+| 1 | 34, 35 | parallel | None |
+| 2 | 36 | single | 34 — Multilingual README structure repair |
+| 3 | 37 | single | 35 — Authoritative publication-surface verification; 36 — English store screenshot capture |
 
 ## Status
 
 | Ticket | Status | Evidence |
 |---|---|---|
-| 28 | done | `research-report-round6.md`; review PASS with residuals; two report facts corrected after review |
-| 29 | done | review PASS; `npm ci --dry-run --ignore-scripts` exit 0; `npm run build` DONE_BUILD |
-| 30 | done | review PASS; no raw version-control commands; loss-avoidance intent preserved |
-| 31 | done | 31R focused lane R3 9/9 verified; issue status done; host-incident due date unchanged |
-| 32 | done with residual | origin/main=6588fed across three mirrors; local build DONE_BUILD; CI build workflow failure remains |
-| 33 | done with residual | `33-docs-branch-reconciliation-report.md`; mirrors=6588fed verified; "Nothing was pushed" removed; stale-branch disposition recorded (retain); README screenshots un-ignored + tracked; landing the workspace stack awaits user push request |
+| 34 | done — review PASS | `round7-wave1-review.md`; validator 14/14; branch scope verified |
+| 35 | done — review PASS with 2 unverified | `round7-wave1-review.md`; local/external facts verified; Edge render details and atomcode session unverifiable |
+| 36 | done — human-accepted screenshot correctness | `round7-wave1-review.md`; branch scope verified; five PNGs valid 1280x800 |
+| 37 | done — review PASS with documentation residual | `round7-ticket37-review.md`; README claims reconciled; 13 locales still carry stale release links |
 
 ## Frontier
 
-Round 6 is closed. All tickets 28-33 are complete with recorded residuals. Residuals carried
-forward: ticket 32's CI build-workflow failure; ticket 33's pending user decision on landing
-the unlanded workspace stack (`bc-branch-1` + ticket 16 + ticket 17 + ticket 32 report) and on
-retiring stale local branches (`main` duplicate, superseded ticket-16/17 heads) — no branch
-was deleted or rewritten without that decision.
-
-Ticket 28 residuals recorded: atomcode was executed directly instead of through the ctx-wrapped carrier required by WORKFLOW section 4.3. This review does not retroactively approve that routing deviation.
+Tickets 34 through 37 are complete and reviewed. No existing Round 7 ticket remains open.
+Two residuals require the brain's approval: locale stale-release links and the
+dev-chrome/dev-firefox tracking anomaly.

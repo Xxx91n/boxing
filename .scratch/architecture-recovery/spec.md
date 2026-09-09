@@ -1,81 +1,67 @@
-# Spec — Round 6: Release Merge, CI Lockfile, and Governance Closure
+# Spec — Round 7: Public-Facing Release Integrity
 
 ## Problem Statement
 
-Boxing has a working modular core, but the repository is not converging. Round 5
-work is pushed only as remote branches and has not reached the main branch. The
-local main branch has diverged. CI cannot run a clean install because the lockfile
-is out of sync. Project agent rules still require raw Git operations that conflict
-with the GitButler-only workflow. Several multi-tab state-sync tests remain
-unclassified, and the summary documents contradict the actual pushed state.
+The repository has a coherent modular core, but its public-facing and release surfaces do not
+match the code. The English README is much more complete than the localized copies, one
+locale is structurally corrupted, the store/release links suggest products that do not yet
+exist, the root Pages URL 404s while its privacy subpage works, and the generated CRX/XPI
+packages are unsigned placeholders for local distribution.
 
 ## Solution
 
-First use one serialized deep-research pass to confirm the release-merge,
-lockfile-repair, and flaky-test governance model. Then execute three independent
-governance slices: synchronize the lockfile and CI, reconcile the agent
-version-control rules, and classify the remaining multi-tab failures. Once those
-gates pass, merge the verified Round 5 integration stack into main and update the
-mirrors. Finally reconcile the documentation and stale-branch state against the
-merged repository.
+Repair the documentation surface first, independently of screenshot capture. Separately,
+establish authoritative store and release facts from the maintainer or public search.
+Capture all five English store screenshots with Playwright only after the documentation
+surface is repaired and the authoritative facts are known. Finally, reconcile the public
+README installation and packaging claims with the resulting release policy.
 
 ## User Stories
 
-1. As a maintainer, I want the verified Round 5 stack merged into main, so that the
-   shipped default branch contains the recovered architecture.
-2. As a maintainer, I want a clean install to succeed in CI, so that every matrix
-   runner starts from the same deterministic dependency set.
-3. As a future agent, I want the version-control rules to match the GitButler
-   workflow, so that no agent is told to run raw Git commands.
-4. As a maintainer, I want the remaining multi-tab state-sync failures to be either
-   repaired or explicitly quarantined with an expiry, so that the suite is trustworthy.
-5. As a dispatcher, I want blocking edges to define the wave table, so that parallel
-   windows are assigned safely.
-6. As a visitor, I want the default README to keep one language selector and real
-   screenshots, so that the repository landing page is coherent.
-7. As a maintainer, I want the summaries, backlog, and status table to agree with
-   the actual branch and merge state, so that the next round starts from one truth.
+1. As a non-English visitor, I want a complete localized README with the same product
+   structure as English, so that I can understand and install Boxing accurately.
+2. As a maintainer, I want generated locale documentation checked against the English
+   structure, so that drift is caught before it reaches users.
+3. As a maintainer, I want authoritative Firefox and Edge store URLs or IDs recorded with
+   their public state, so that the README and handoff do not claim unpublished listings live.
+4. As a maintainer, I want the GitHub Pages root to resolve, so that opening the documented
+   project URL is not a 404.
+5. As a store reviewer, I want five English 1280x800 screenshots that match each captured
+   label, so that the listing represents the actual product.
+6. As an end user, I want installation links to point to assets that exist and are correctly
+   signed or clearly marked unsigned, so that following the README works without silent fake
+   success.
+7. As a future agent, I want the release status table to distinguish zip exclusivity,
+   store-side signing, and self-signed local packages, so that the same mistake is not replayed.
 
 ## Implementation Decisions
 
-- The research ticket is read-only and uses one serialized atomcode call.
-- The verified Round 5 integration stack is the top branch already containing the
-  10 commits that lead the current remote main.
-- The divergent local main branch is not force-pushed or used as an integration
-  target; its disposition is handled by the reconciliation ticket.
-- The lockfile is regenerated from the current package metadata and verified with a
-  clean-install dry run before merge.
-- Agent version-control rules are translated into GitButler operations; the local
-  workflow control section remains the single authority.
-- Multi-tab state-sync failures are classified from logs, reproduced in isolation,
-  and either repaired or quarantined with a registered expiry.
-- Integration into main is a merge or reviewed pull-request operation, followed by
-  mirror synchronization, not another branch-only push.
-- The wave table is derived only from issue blocking edges.
+- Locale parity is documentation-only. Treat English as the structure baseline; preserve all
+  language-specific links and explanatory text, repair only structure and missing parity.
+- Publication truth must be based on authoritative owner-provided URLs or a store's lookup
+  result, not on guessed store affinity text.
+- Screenshot capture is a later bounded ticket and is not performed while this plan is created.
+- Local packaging remains zip for submission and unpacked loading. Store signing is provided
+  by each store or AMO/web-ext; the local crx and xpi placeholders must not be presented as
+  production-signed installation artifacts without clear qualification.
+- Ticket 37 derives its final text from tickets 35 and 36 and is blocked by both.
 
 ## Testing Decisions
 
-- A good test observes externally visible behavior. Internal assertions are
-  reserved for the existing import-graph and process-mutex gates.
-- Lockfile repair is verified with `npm ci --dry-run --ignore-scripts`.
-- Agent-rule reconciliation is verified by scanning for prohibited raw Git
-  commands and by checking that referenced authority files still resolve.
-- Multi-tab failures are verified by a focused repeat of the state-sync lane and a
-  documented classification report.
-- Merge completion is verified by confirming the remote main contains the
-  integration top and by rerunning the build and static guards.
-- Documentation reconciliation is verified by cross-checking the summary, backlog,
-  status table, and remote branch state.
+- Locale repair uses a structural comparison of headings, image links, install links, privacy
+  links, and contribution links against English.
+- Publication verification uses status codes and authoritative lookup output, never a guessed
+  ID or a self-authored assertion.
+- Screenshot capture uses a persisted Playwright script and validates each PNG exists at
+  approximately 1280x800 with nonblank pixel content.
+- Release reconciliation checks GitHub Release count/assets and local artifact presence using
+  only evidence gathered by ticket 35.
 
 ## Out of Scope
 
-Framework migration, new dependencies beyond repairing the existing lockfile,
-another line-count-driven module split, coverage-based test selection, distributed
-sharding, and rewriting historical ADRs beyond the rule conflicts identified by the
-governance tickets.
+Store submission, browser tooling migration, codebase module restructuring, public repo
+redesign, and any release upload not explicitly authorized by the maintainer.
 
 ## Further Notes
 
-The source evidence and proposed ticket decomposition are recorded in
-`round6-architecture-report.md`. Issue blocking edges are the single source for
-the wave table.
+Source report: `.scratch/architecture-recovery/round7-architecture-report.md`.
