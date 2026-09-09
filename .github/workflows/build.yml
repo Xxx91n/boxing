@@ -58,16 +58,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Regenerate brand icons (icons/ from docs/brand/boxing-prod.png)
+      - name: Regenerate brand icons (icons/ from docs/brand/logo-light-theme.png)
         # icons/ in git is a stale purple placeholder. Regenerate the full set
-        # from the brand logo on every build so releases always carry the real
-        # logo (LANCZOS downscale, PNG-verified).
+        # from the white-body brand logo on every build so releases always
+        # carry the real logo (LANCZOS downscale, PNG-verified).
         run: |
           python -m pip install --quiet pillow
           python - <<'PY'
           import struct
           from PIL import Image
-          src = Image.open("docs/brand/boxing-prod.png").convert("RGBA")
+          src = Image.open("docs/brand/logo-light-theme.png").convert("RGBA")
           assert src.size == (1024, 1024), f"unexpected brand logo size {src.size}"
           for size in (16, 32, 48, 128, 256):
               p = f"icons/icon_{size}.png"
