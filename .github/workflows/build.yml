@@ -53,13 +53,18 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      - name: Setup Python (icon generation)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Regenerate brand icons (icons/ from docs/brand/boxing-prod.png)
         # icons/ in git is a stale purple placeholder. Regenerate the full set
         # from the brand logo on every build so releases always carry the real
         # logo (LANCZOS downscale, PNG-verified).
         run: |
-          python3 -m pip install --quiet pillow
-          python3 - <<'PY'
+          python -m pip install --quiet pillow
+          python - <<'PY'
           import struct
           from PIL import Image
           src = Image.open("docs/brand/boxing-prod.png").convert("RGBA")
