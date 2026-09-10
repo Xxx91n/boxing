@@ -32,6 +32,13 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - Note: `layout.groups` is **runtime-only** after ADR-0007 Phase 1.1 — never persisted (`stripGroupsForPersist`); `ensureGroups()` computes on demand and mirrors into in-memory `layout.groups` for debug/tests; star truth is `box.isParent`; starred parents with zero connections still get `dsuMake` so `getGroupByParent` works
 - **MUST be documented** when adding new data structures that reference box identities
 
+
+### UX / Cache invariants (Wave4 2026-09-12)
+- **selectAllTitleText(el)** — box/crumb title mousedown contract: focus + Range.selectNodeContents so rename starts fully selected.
+- **Create render-before-persist** — create entry points mutate then render then `void saveLayout()`; never await storage before paint (ticket 09).
+- **urlOpenMode** — settings default `sameTab`; explicit stored `newTab` preserved; missing key migrates via defaultLayout spread (ticket 11).
+- **favicon single-flight + SWR** — `inflight` Map host→Promise dedupes concurrent probes; hydrate keeps stale URLs paintable until SWR ceiling then background-refreshes once (ticket 12).
+
 ### Mutation API (ADR-0007)
 - **commit(op, payload, opts)** — single mutation entry (tldraw Store pattern). Ops: `addConn`, `removeConn`, `toggleStar`, `deleteLargeBox`, `deleteSmallBox`, `applyExternal`. Owns tombstones, DSU dirty, viewState clear, optional save/render.
 - **boxById / smallBoxById** — O(1) box lookups; rebuilt on load/external apply.

@@ -171,3 +171,11 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 
 - **V-W4-1 P0**: 窗 13 提交 2ce2c41 卷走窗 10 的 render.js/title-select spec/报告；13 报告与 git 实物矛盾。树内 PASS；历史归属待授权。
 - **V-W4-2 NOTE**: 全员 CI-only，Playwright 待 CI。
+
+## 收口归档（2026-09-10）
+
+- 全部 01–13 已 land 到 origin/main @ d11672f（origin/codeberg/gitlab 一致）
+- 构建: npm run build DONE_BUILD 2026.9.12
+- 摘要: docs/history/2026-09-12-wave4-closeout.md
+- Backlog: docs/history/2026-09-12-backlog.md
+- 本目录保留为历史工作区档案，不再作为 frontier
