@@ -1,0 +1,64 @@
+# Boxing — deploy the NTP web demo to GitHub Pages (ticket 07 pages-demo).
+# Official artifact flow (upload-pages-artifact + deploy-pages). A gh-pages
+# branch source is NOT used: GITHUB_TOKEN pushes do not trigger Pages builds.
+# Requires the human one-time switch Settings -> Pages -> Source = GitHub
+# Actions (documented in the ticket report; not automated here).
+name: Deploy NTP demo (Pages)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "version.json value for a manual run. Empty = release tag, then manifest version."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release tag
+        if: github.event_name == 'release'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Checkout main
+        if: github.event_name != 'release'
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Assemble demo artifact
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          VERSION_INPUT: ${{ github.event.inputs.version }}
+        run: node .github/scripts/build-demo.mjs --out pages-artifact
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages-artifact
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

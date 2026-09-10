@@ -6,6 +6,8 @@ node_modules/
 *.pem
 dist/
 build/
+# GitHub Pages demo deploy artifact (ticket 07; CI-only, never commit)
+pages-artifact/
 .zip
 package/*.crx
 package/*.zip
