@@ -1447,13 +1447,15 @@ export function initRenderFacade(deps) {
     layout.boxes.push(newBox);
     boxById.set(newBox.id, newBox);
     debug('addLargeBoxAt pushed, count=' + layout.boxes.length);
-    await saveLayout();
-    debug('addLargeBoxAt saved, calling renderCanvas');
+    // Ticket 09 (optimistic create): render synchronously after mutate, then
+    // fire-and-forget the write chain. Awaiting saveLayout here serialized dblclick
+    // feedback behind storageWriteChain — wave4 P1 "double-click lost, boxes batch-appear".
     renderCanvas();
     // BX-DEV-140d: after DOM rebuild, Chrome redirects focus to the first
     // focusable element in DOM order (contenteditable title / toolbar button).
     // Explicitly park focus on our tabindex=-1 sink to prevent the steal.
     canvasContainer.focus({ preventScroll: true });
+    void saveLayout();
     debug('addLargeBoxAt done, surface children=' + canvasSurface.children.length);
   }
 
@@ -1482,10 +1484,10 @@ export function initRenderFacade(deps) {
     };
     layout.boxes.push(newBox);
     debug('addLargeBox pushed, count=' + layout.boxes.length);
-    await saveLayout();
-    debug('addLargeBox saved, calling renderCanvas');
+    // Ticket 09: render first, persist async (see addLargeBoxAt note).
     renderCanvas();
     canvasContainer.focus({ preventScroll: true }); // BX-DEV-140d: prevent Chrome focus-steal
+    void saveLayout();
     debug('addLargeBox done, surface children=' + canvasSurface.children.length);
   }
   export function updateInnerCaption(lb) {
@@ -1589,8 +1591,9 @@ export function initRenderFacade(deps) {
     const last = lb.children[lb.children.length - 1];
     const unsnapped = elasticSnap({ x: snapped.x, y: snapped.y }, SMALL_DEF_W, SMALL_DEF_H, others, INNER_GRID, snapInner);
     last.x = Math.max(0, unsnapped.x); last.y = Math.max(0, unsnapped.y);
-    saveLayout();
+    // Ticket 09: render first, persist async.
     renderInnerSurface(lb);
+    void saveLayout();
   }
 
   export function deleteSmallBox(largeId, smallId) {
