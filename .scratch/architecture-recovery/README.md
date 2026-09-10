@@ -144,27 +144,39 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 - V3 NOTE: AMO 2026.9.12 占用未联网核实 → 提交前人工核对
 
 
-## Wave 4 调查状态（2026-09-10 首脑 · 体验四痛点）
+## Wave 4 拆票与并行波次（2026-09-10 · to-spec/to-tickets/handoff）
 
-> 证据: reports 不强制；调查: `43-2026-09-12-wave4-investigation.md`
-> 日志 `boxing-log-2026-09-10T13-58-24.log` 盘上不存在 — P1 按源码时序立案
+> 调查: `43-2026-09-12-wave4-investigation.md` · Spec: `spec.md` Wave4 addendum
+> 波次由 issue **Blocked by** 字段推导，未另造顺序
+> 日志 `boxing-log-2026-09-10T13-58-24.log` 盘上不存在
 
-| 票 | 主题 | 状态 | 分支建议 |
+| 票 | 主题 | Blocked by | 状态 |
 |---|---|---|---|
-| 09 create-render-decouple | 双击新建先 render 后 save | ready-for-agent | `09-create-render-decouple` |
-| 10 title-select-all | 点击标题全选 | ready-for-agent | `10-title-select-all` |
-| 11 url-open-mode-default | 默认当前标签页 + migrate | ready-for-agent | `11-url-open-mode-default` |
-| 12 favicon-cache-hardening | single-flight + SWR | ready-for-agent | `12-favicon-cache-hardening` |
+| 09 create-render-decouple | 双击新建先 render 后 save | None | ready-for-agent |
+| 10 title-select-all | 点击标题全选 | **09** | ready-for-agent |
+| 11 url-open-mode-default | 默认当前标签页 + migrate | None | ready-for-agent |
+| 12 favicon-cache-hardening | single-flight + SWR | None | ready-for-agent |
 
-### Wave 4 Frontier
+### 并行波次
 
-```
-可开工: 09 / 10 / 11 / 12（并行；09 与 10 同文件 render.js — hunk 认领或 09 先）
-并入 2026.9.12 发行内容（与 01-08 同里程碑）
-CI 门: 全员 CI-only → 合并前补绿
-```
+| 波次 | 可同时开工 | 说明 |
+|---|---|---|
+| W4-1 | **09 / 11 / 12** | 文件面不重叠，可三窗并行 |
+| W4-2 | **10** | Blocked by 09；同改 render 模块，禁止与 09 并行 |
 
-### Wave 4 备注
+### 产出物路径
 
-- favicon 权限/`_favicon` API 刻意不做（扩权 + Firefox 无）；单独立项再议
-- 01–08 收口门（CI/合并/人工）不变，见 Wave3
+| 类 | 路径 |
+|---|---|
+| 调查 | `43-2026-09-12-wave4-investigation.md` |
+| Spec | `spec.md`（Wave4 addendum） |
+| Issue | `issues/09-create-render-decouple.md` … `12-favicon-cache-hardening.md` |
+| Handoff | `handoffs/09` … `12`（含完整 atomcode -p） |
+| 启动器 | `prompts/09` … `12`（≤60 行） |
+| 报告（待实施） | `reports/09` … `12-*-report.md` |
+
+### Wave 4 约束
+
+- 01–08 收口门（CI / Pages Source / AMO）不变
+- 全员 CI-only；12 禁止扩权
+- 10 必须等 09 完成后再派窗

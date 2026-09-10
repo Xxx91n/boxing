@@ -1,18 +1,36 @@
-# 票 11 — 书签默认当前标签页
+# 窗口启动器 — 11 书签默认当前标签页
 
-你是 Boxing 实施窗口。只做本票。版本控制遵循 WORKFLOW §4.2（`but`）。
+身份: Boxing 子窗口实施代理，只做本票，不跨票。
 
-## 入口
-- 票: `.scratch/architecture-recovery/issues/11-url-open-mode-default.md`
-- 代码: `ntp/utils.js` defaultLayout+migrate；`ntp/ntp.js` openBookmarkUrl；`ntp/settings-ui.js`；`ntp/popups.js`
+## 必读（动手前全部读完）
+- .scratch/architecture-recovery/handoffs/11-url-open-mode-default.md
+- .scratch/architecture-recovery/issues/11-url-open-mode-default.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md（§4.2）
+- AGENTS.md
+- docs/CONTEXT.md
+- ntp/utils.js
+- ntp/ntp.js（openBookmarkUrl）
+- ntp/settings-ui.js
+- ntp/popups.js
 
-## 做
-1. 读票 + BX-DEV-120。
-2. 默认 `sameTab`；migrate **保留**已写 newTab；缺键填 sameTab。
-3. 同步所有 `\|\| 'newTab'` fallback。
-4. 测试: 新 profile 当前标签打开；存量 newTab 不回归。
-5. `but commit -b 11-url-open-mode-default -m "feat(settings): default bookmarks open in current tab"`
-6. `reports/11-url-open-mode-default-report.md`。
+## 阻塞
+None — can start immediately
 
-## 完成定义
-票 Acceptance 全勾；不回退用户显式 newTab。
+## 本票 delta
+默认与缺键 migrate → sameTab；保留显式 newTab；同步全部 fallback 与设置 UI。
+
+## 硬约束
+- 版本控制表述只写「遵循 WORKFLOW §4.2」，禁止出现任何版本控制命令原词。
+- 完成定义只写「遵循 handoff 内的完成定义」。
+- 不改写他人提交；不动其他票文件。
+
+## 开工第一句（必须先输出）
+1. 复述阻塞状态：None — can start immediately
+2. 复述必读清单（逐条路径）
+3. 然后才开始读文件/改代码
+
+## 完成时
+- 遵循 handoff 内的完成定义
+- 写报告: .scratch/architecture-recovery/reports/11-url-open-mode-default-report.md
+- 给主 Agent 的报告文件路径必须写进本窗口最终回复

@@ -77,3 +77,75 @@
 - atomcode Pages research is ctx-indexed under label `atomcode` (15 sources); sub-windows may re-query via `ctx_search`.
 - GitHub issues #1–#8 already mirror these tickets under milestone 2026.9.12; local `issues/` files are the multi-window source of blocking edges.
 - All version-control statements defer to WORKFLOW §4.2.
+
+
+---
+
+# Spec addendum — Wave4 UX 四痛点（2026.9.12）
+
+> 来源: `43-2026-09-12-wave4-investigation.md`
+> 范围: 票 09–12；与 01–08 同属 2026.9.12 发行内容
+> 徽章: ready-for-agent
+
+## Problem Statement
+
+用户在 2026.9.12 体验验收中报告四个并行痛点：
+
+1. 大盒子画布双击新建**间歇无反馈**，进入小盒子再返回后**冒出多枚**新建大盒子。
+2. 点击盒子名称重命名时光标落在名称前，**不能默认全选**。
+3. 书签默认在**新标签页**打开；产品要求默认**当前标签页**。
+4. 书签 favicon 缓存/加载需对齐工业成熟心智模型，**同时省 IO 与流量**。
+
+日志 `boxing-log-2026-09-10T13-58-24.log` 盘上不存在；P1 以源码时序根因立案。
+
+## Solution
+
+- **09**: 创建路径 **mutate → render → save**，视觉反馈不再被 storage 写链阻塞。
+- **10**: 点击大/小盒子标题与 crumb 标题时 **focus + 全选** 原文。
+- **11**: `urlOpenMode` 默认与缺键迁移为 **sameTab**；用户已显式选择的 newTab **保留**。
+- **12**: favicon 增加 **single-flight** 与 **SWR hydrate**；不引入 IDB/Cache API/新权限。
+
+## User Stories
+
+1. As a canvas user, I want every successful double-click create to show a box immediately, so that I trust the gesture.
+2. As a canvas user, I want rapid consecutive creates to match what I see, so that no "ghost pile" appears after navigation.
+3. As a canvas user, I want toolbar / empty-state CTA creates to use the same visual timing, so that all create entry points feel consistent.
+4. As a renamer, I want clicking a box title to select the entire name, so that I can type a replacement without manual select-all.
+5. As a renamer, I want the same select-all on small-box titles and the inner crumb title, so that rename is consistent across surfaces.
+6. As a renamer, I want Escape to restore the previous name after select-all edit, so that accidental clicks are safe.
+7. As a bookmark opener, I want new installs to open bookmarks in the current tab by default, so that I do not spawn tab clutter.
+8. As an existing user who chose New Tab, I want that choice preserved after upgrade, so that my preference is not overwritten.
+9. As a settings user, I want the Open-bookmarks-in control to reflect the live default, so that the modal matches actual behaviour.
+10. As a performance-minded user, I want concurrent favicon loads for the same host to share one network probe, so that traffic stays minimal.
+11. As a returning user, I want stale cached favicon URLs to paint first and refresh in background, so that cold start stays fast.
+12. As a privacy-conscious user, I want no new extension permissions in this wave, so that install surface does not grow.
+
+## Implementation Decisions
+
+- **Create pipeline (09)**: All create entry points that currently `await saveLayout()` before render must render first; persistence uses the existing debounced save path (or fire-and-forget direct save). Cooldown / markCreate / focus-sink semantics unchanged. Storage write chain and cross-tab merge are **not** rewritten.
+- **Title selection (10)**: One shared select-all helper; applied to large title, small title, inner crumb title. Paste remains plain-text (SEC-03).
+- **Bookmark open default (11)**: Default and missing-key migrate to `sameTab`. Explicit stored `newTab` is preserved. Unset legacy Firefox browserSettings branch collapses to sameTab.
+- **Favicon (12)**: Keep URL-string metadata cache (no blobs). Add host-keyed in-flight Promise map. Hydration keeps expired hits as stale for immediate paint + one background refresh. Explicitly **out**: `favicon` permission, Chrome `_favicon` API, IndexedDB, Cache API (atomcode research).
+- Seams: existing Playwright extension context; no new unit harness.
+
+## Testing Decisions
+
+- Good tests assert external behaviour (DOM box count, selection string, navigation target, single network probe), not internal maps.
+- Modules: create paths in render pipeline; title mousedown handlers; settings default/migrate; favicon loader.
+- Prior art: `boxing-empty-state-buttons.spec.ts`, `boxing-focus-steal.spec.ts` (Selection), `boxing-settings-persist.spec.ts`, `boxing-debug.spec.ts`.
+- CI-only policy: local `node --check` + report; full Playwright green required before merge.
+
+## Out of Scope
+
+- Storage write-chain / mergeConcurrentLayout algorithm changes
+- Chrome `_favicon` permission expansion
+- Favicon privacy kill-switch for external CDNs
+- Title typography / rename history
+- 01–08 closeout gates (unchanged)
+
+## Further Notes
+
+- Investigation: `43-2026-09-12-wave4-investigation.md`.
+- Favicon brain research ctx-indexed as `atomcode-favicon`.
+- File affinity: 09 and 10 both edit the render module — ticket 10 is **Blocked by 09**.
+- All version-control statements defer to WORKFLOW §4.2.
