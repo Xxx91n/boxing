@@ -30,7 +30,7 @@ Real screenshots from the extension (1280×800):
 
 ## Preview
 
-An interactive, playable preview of the Boxing new tab page will be deployed to this site automatically with every release (planned for the [2026.9.12 milestone](https://github.com/Xxx91n/boxing/milestone/1)). Until it lands:
+An interactive, playable preview of the Boxing new tab page is deployed automatically with every release by the [Deploy NTP demo (Pages) workflow](https://github.com/Xxx91n/boxing/actions/workflows/demo-deploy.yml). Once the first 2026.9.12-milestone release ships (and the one-time Pages source switch is done), open it at [**xxx91n.github.io/boxing/demo/**](https://xxx91n.github.io/boxing/demo/). The demo runs the real new-tab UI as a static mirror with a `chrome.*` web stub — your layout is stored only in your own browser. Until it goes live:
 
 - Browse the [screenshots above](#screenshots) to see the out-of-the-box state
 - [Install from the stores above](#install) to try Boxing right now
