@@ -144,40 +144,30 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 - V3 NOTE: AMO 2026.9.12 占用未联网核实 → 提交前人工核对
 
 
-## Wave 4 拆票与并行波次（2026-09-10 · to-spec/to-tickets/handoff）
+## Wave 4 复核状态（2026-09-10 首脑实物复核 · 45 报告）
 
-> 调查: `43-2026-09-12-wave4-investigation.md` · Spec: `spec.md` Wave4 addendum
-> 波次由 issue **Blocked by** 字段推导，未另造顺序
-> 日志 `boxing-log-2026-09-10T13-58-24.log` 盘上不存在
+> 证据: reports/45-wave4-brain-review.md · 方法: Node 源码断言 + git 实物，不信自述
 
-| 票 | 主题 | Blocked by | 状态 |
-|---|---|---|---|
-| 09 create-render-decouple | 双击新建先 render 后 save | None | ready-for-agent |
-| 10 title-select-all | 点击标题全选 | **09** | ready-for-agent |
-| 11 url-open-mode-default | 默认当前标签页 + migrate | None | ready-for-agent |
-| 12 favicon-cache-hardening | single-flight + SWR | None | ready-for-agent |
-| 13 dark-bm-add-btn | 黑暗模式加书签按钮亮色 | None | ready-for-agent |
-
-### 并行波次
-
-| 波次 | 可同时开工 | 说明 |
+| 票 | 状态 | 分支 |
 |---|---|---|
-| W4-1 | **09 / 11 / 12 / 13** | 文件面不重叠，可四窗并行 |
-| W4-2 | **10** | Blocked by 09；同改 render 模块，禁止与 09 并行 |
+| 09 create-render-decouple | DONE-CI-OPEN | ticket-09-create-render @ mno,ptw |
+| 10 title-select-all | DONE-CI-OPEN **+VIOLATION** | 10-title-select-all @ out；改动在 13 的 2ce2c41 |
+| 11 url-open-mode-default | DONE-CI-OPEN | ticket-11-url-open-mode @ qwo,kqx |
+| 12 favicon-cache-hardening | DONE-CI-OPEN | ticket-12-favicon-swr @ kow,ylu |
+| 13 dark-bm-add-btn | DONE-CI-OPEN **+VIOLATION** | ticket-13-dark-bm-add-btn @ wzp,wnl |
 
-### 产出物路径
+### Frontier（收口门）
 
-| 类 | 路径 |
-|---|---|
-| 调查 | `43-2026-09-12-wave4-investigation.md` |
-| Spec | `spec.md`（Wave4 addendum） |
-| Issue | `issues/09-create-render-decouple.md` … `13-dark-bm-add-btn.md` |
-| Handoff | `handoffs/09` … `13`（含完整 atomcode -p） |
-| 启动器 | `prompts/09` … `13`（≤60 行） |
-| 报告（待实施） | `reports/09` … `13-*-report.md` |
+```
+票包内: 无剩余 — 09-13 全部 code-done
+收口门:
+  CI 绿: 01/03/04/05/07/08 + 09/10/11/12/13
+  人工: Pages Source → GitHub Actions；AMO 版本占用
+  合并建议: 09 → 10(文件在 13 提交) → 11 → 12 → 13 → docs
+  待用户授权: 10 的文件是否从 2ce2c41 拆回独立分支
+```
 
-### Wave 4 约束
+### Wave 4 违规 (不追认)
 
-- 01–08 收口门（CI / Pages Source / AMO）不变
-- 全员 CI-only；12 禁止扩权
-- 10 必须等 09 完成后再派窗
+- **V-W4-1 P0**: 窗 13 提交 2ce2c41 卷走窗 10 的 render.js/title-select spec/报告；13 报告与 git 实物矛盾。树内 PASS；历史归属待授权。
+- **V-W4-2 NOTE**: 全员 CI-only，Playwright 待 CI。
