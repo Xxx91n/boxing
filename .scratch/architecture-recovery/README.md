@@ -108,3 +108,37 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 - V1 NOTE: 03/07 CI-only, 本机未跑 build/Playwright → 合并前补 CI 绿
 - V2 NOTE: 07 Pages Source 人工步骤未代操作 → 正确边界
 - V3 正面: 03 先自检主 Agent 结论再实施, 符合启动器质检要求
+
+## Wave 3 复核状态（2026-09-10 首脑实物复核 · 票包收口）
+
+> 证据: reports/42-wave3-brain-review.md · 方法: JSON/grep/node --check/but, 不信自述
+> 版本控制: 全程 GitButler (`but`) 并行分支, 互不影响 (WORKFLOW §4.2)
+
+| 票 | 状态 | 分支 |
+|---|---|---|
+| 01 icons | DONE-CI-OPEN | `01-icons` @ zvs |
+| 02 readme-sync | DONE | `ticket-02-readme-sync` @ xul,nqs |
+| 03 store-i18n | DONE-CI-OPEN | `03-store-i18n` @ kky,qtr |
+| 04 sync-ui | DONE-CI-OPEN | `04-sync-ui` @ zqr |
+| 05 firefox-scroll | DONE-CI-OPEN | `ticket-05-firefox-scroll` @ pvy |
+| 06 pages-index | DONE | `ticket-06-pages-index` @ sup,lnv |
+| 07 pages-demo | DONE-CI-OPEN | `ticket-07-pages-demo` @ swt,utn |
+| 08 version-unify | **DONE-CI-OPEN** | `ticket-08-version-unify` @ ovo |
+
+### Frontier（收口门）
+
+```
+票包内: 无剩余 — 01-08 全部 code-done
+商店阻塞集 01+03+08: 全绿 (code 层)
+
+收口门:
+  CI 绿: 01 / 03 / 04 / 05 / 07 / 08
+  人工: 07 Pages Source → GitHub Actions
+  人工: AMO 2026.9.12 版本号占用核对
+```
+
+### Wave 3 违规 (不追认)
+
+- V1 NOTE: 08 CI-only, 本机未跑 build → 合并前补 CI 绿 (build.mjs 改动必须被 CI 覆盖)
+- V2 NOTE: store-listings 仍写 2026.9.9 zip 名 → 等 CI artifacts 产出后再改
+- V3 NOTE: AMO 2026.9.12 占用未联网核实 → 提交前人工核对
