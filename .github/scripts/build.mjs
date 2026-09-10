@@ -61,7 +61,12 @@ function tailorManifest(base, browser) {
       m.host_permissions = [];
     }
   }
-  if (process.env.BOXING_BUILD_VERSION) m.version = process.env.BOXING_BUILD_VERSION;
+  if (process.env.BOXING_BUILD_VERSION) {
+    m.version = process.env.BOXING_BUILD_VERSION;
+    // Ticket 08: calver injection must cover version_name too, otherwise dist ships a
+    // stale display version (AMO/Edge surface version_name; source manifest declares it).
+    if ("version_name" in m) m.version_name = process.env.BOXING_BUILD_VERSION;
+  }
   return m;
 }
 

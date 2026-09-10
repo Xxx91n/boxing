@@ -122,7 +122,7 @@ Both are referenced from here, never bulk-loaded into context.
 | Field | Value |
 |---|---|
 | Project path | D:\Aworker\crx\boxing |
-| Current extension | Boxing (manifest version 2026.9.9, calver) |
+| Current extension | Boxing (manifest version 2026.9.12, calver) |
 | Current manifest | Manifest V3 |
 | Target browsers | Chrome + Firefox |
 | Main UI surface | New tab override: ntp/index.html, ntp/ntp.js (CSS via build artifact ntp/ntp.css — see ADR-0011) |

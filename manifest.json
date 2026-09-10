@@ -3,7 +3,7 @@
   "name": "__MSG_extensionName__",
   "short_name": "Boxing",
   "description": "__MSG_extensionDescription__",
-  "version": "2026.9.9",
+  "version": "2026.9.12",
   "author": "Boxing Contributors",
   "default_locale": "en",
   "icons": {
@@ -48,5 +48,5 @@
       }
     }
   },
-  "version_name": "2026.9.9"
+  "version_name": "2026.9.12"
 }

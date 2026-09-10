@@ -92,6 +92,15 @@ export function initSettingsUiFacade(deps) {
 
 // Init-time wiring, called from ntp.js init() at the position of the original statement blocks.
 export function bindSettingsUi() {
+    // Ticket 08 (2026.9.12): footer version reflects the manifest version_name at runtime so it
+    // can never drift again; static markup stays the fallback for the file:// mock lane
+    // (no extension chrome API there — SEC-01: read-only, never defines globals).
+    try {
+      const versionEl = document.querySelector('.modal__version');
+      const manifest = globalThis.chrome?.runtime?.getManifest?.();
+      const ver = manifest?.version_name || manifest?.version;
+      if (versionEl && ver) versionEl.textContent = 'Boxing v' + ver;
+    } catch { /* keep static fallback */ }
     if (modalClose) modalClose.addEventListener('click', closeSettingsModal);
     settingsModal.addEventListener('click', e => { if (e.target === settingsModal) closeSettingsModal(); });
     // ── Settings tab switching ────────────────────

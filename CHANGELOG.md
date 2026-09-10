@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) starting v2026.8.21.
 
+## [2026.9.12] - 2026-09-12
+
+Store-readiness release (architecture-recovery milestone 2026.9.12).
+
+### Changed
+- Toolbar icons realigned with the curated docs/brand assets (ticket 01).
+- README install steps, screenshots and locale claims synced to live releases (ticket 02).
+- manifest `name`/`description` switched to `__MSG_extensionName__`/`__MSG_extensionDescription__`
+  placeholders so AMO/Edge auto-detect the 14 shipped locales (ticket 03).
+- Settings backup page regrouped into distinct WebDAV and GitHub Gist sections (ticket 04).
+- Version strings unified to 2026.9.12 across manifest (version + version_name), package.json,
+  README badge and AGENTS.md (ticket 08); the settings footer now reads `version_name` from the
+  manifest at runtime instead of a hardcoded legacy `v3.6.6` string.
+
+### Fixed
+- Firefox settings-page scroll regression: removed the visually-inert `backdrop-filter`
+  and a dead assert (ticket 05).
+- GitHub Pages root 404: `docs/` now serves a landing index (ticket 06).
+- Release flow: published releases auto-redeploy the interactive NTP preview demo (ticket 07).
+- `.github/scripts/build.mjs`: `BOXING_BUILD_VERSION` now overrides `version_name` alongside
+  `version`, closing the stale-calver gap in dist injection (ticket 08).
+
 ## [2026.9.9] - 2026-09-09
 
 ### Changed

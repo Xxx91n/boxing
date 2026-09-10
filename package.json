@@ -1,6 +1,6 @@
 {
   "name": "boxing",
-  "version": "2026.9.9",
+  "version": "2026.9.12",
   "description": "A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.",
   "private": true,
   "type": "module",
