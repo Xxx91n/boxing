@@ -189,6 +189,8 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     applyExternalLayout(raw) { return applyExternalLayout(raw); },
     saveLayout,
     normalizeBookmarkUrl(value) { return normalizeBookmarkUrl(value); },
+    // Ticket 11: expose openBookmarkUrl for Playwright open-path assertions (precedent: loadFavicon, BX-DEV-126).
+    openBookmarkUrl,
     triggerGC() { if (typeof gc === 'function') gc(); else console.log('[Boxing] gc not available (not in --js-flags=--expose-gc mode)'); },
     // BX-DEV-114: WebDAV config for Playwright tests
     setWebDAVConfig(url, user, pass) {
@@ -304,7 +306,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const modalClose = $('#settings-modal .modal__close');
   const langSelect = $('#lang-select');
   const rememberCheck = $('#remember-last-pos');
-  // BX-DEV-120: urlOpenMode select — bookmarks open in newTab (default) or sameTab.
+  // BX-DEV-120 + ticket 11: urlOpenMode select — bookmarks open in sameTab (default) or newTab.
   const urlOpenModeSelect = $('#url-open-mode-select');
   // ADR-0006: conn-delete-action select — configurable gesture for deleting connection lines.
   const connDeleteActionSelect = $('#conn-delete-action-select');
@@ -616,11 +618,11 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     });
   }
 
-  // openBookmarkUrl respects settings.urlOpenMode: 'newTab' (default) or 'sameTab'.
+  // openBookmarkUrl respects settings.urlOpenMode: 'sameTab' (default, ticket 11) or 'newTab'.
   // works for both Chrome (tabs API not available from newtab without permission
   // elsewhere) and Firefox; falls back to window.open.
   function openBookmarkUrl(url) {
-    const mode = layout.settings.urlOpenMode || 'newTab';
+    const mode = layout.settings.urlOpenMode || 'sameTab';
     try {
       if (mode === 'sameTab') {
         // stay in this Boxing tab — navigation will leave the page; boxing state

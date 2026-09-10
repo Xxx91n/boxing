@@ -48,20 +48,84 @@ test.describe('Bug3 settings persistence repro', () => {
       return { applied, settingsVal: dbg.layout.settings.urlOpenMode, domVal: select ? select.value : null };
     }, ids);
     console.log('Bug3-b:', JSON.stringify(r));
-    // The actual settings should be updated; but DOM (set initially to default 'newTab') may not be re-synced.
+    // The actual settings should be updated; the DOM is re-synced by applyExternalLayout (BX-DEV-122 Bug3).
     expect(r.settingsVal).toBe('sameTab');
   });
 
-  test('Bug3-c: default urlOpenMode is newTab when undefined', async ({ page }) => {
+  test('Bug3-c (ticket 11): default urlOpenMode is sameTab when undefined', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       delete dbg.layout.settings.urlOpenMode;
+      // Exercise the real cross-tab sync path (BX-DEV-122 Bug3): remote with the key
+      // missing on both sides must leave the select on the sameTab fallback, not newTab.
+      const remote = JSON.parse(JSON.stringify(dbg.layout));
+      remote._meta = { ...(remote._meta || {}), revision: (remote._meta?.revision || 0) + 1, updatedAt: Date.now() + 1, writerId: 'other-tab' };
+      dbg.applyExternalLayout(remote);
       const select = document.getElementById('url-open-mode-select');
-      return { openBookmarkMode: dbg.layout.settings.urlOpenMode || 'newTab', selectVal: select ? select.value : null };
+      return { openBookmarkMode: dbg.layout.settings.urlOpenMode || 'sameTab', selectVal: select ? select.value : null };
     });
     console.log('Bug3-c:', JSON.stringify(r));
-    expect(r.openBookmarkMode).toBe('newTab');
+    expect(r.openBookmarkMode).toBe('sameTab');
+    // AC ticket 11: settings UI shows Current Tab; no regression to newTab after cross-tab onChanged
+    expect(r.selectVal).toBe('sameTab');
+  });
+});
+
+test.describe('Ticket 11 — urlOpenMode defaults to sameTab (bookmarks open in current tab)', () => {
+  test('T11-a: fresh install defaults layout.settings.urlOpenMode to sameTab', async ({ page }) => {
+    await resetBoxing(page);
+    await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
+    const r = await page.evaluate(() => (window as any).__boxingDebug.layout.settings.urlOpenMode);
+    expect(r).toBe('sameTab');
+  });
+
+  test('T11-b: migrateLayout — missing key migrates to sameTab, explicit stored newTab is preserved', async ({ page }) => {
+    await resetBoxing(page);
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      return {
+        empty: dbg.migrateLayout(null).settings.urlOpenMode,
+        missingKey: dbg.migrateLayout({ version: 3.5, settings: {} }).settings.urlOpenMode,
+        storedNewTab: dbg.migrateLayout({ version: 3.5, settings: { urlOpenMode: 'newTab' } }).settings.urlOpenMode,
+      };
+    });
+    console.log('T11-b:', JSON.stringify(r));
+    expect(r.empty).toBe('sameTab');
+    expect(r.missingKey).toBe('sameTab');
+    // user's explicit stored New Tab choice must survive the upgrade
+    expect(r.storedNewTab).toBe('newTab');
+  });
+
+  test('T11-c: open path with missing key navigates the CURRENT tab, no new tab spawned', async ({ page }) => {
+    await resetBoxing(page);
+    await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
+    await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      delete dbg.layout.settings.urlOpenMode;
+      (window as any).__t11opened = [];
+      window.open = (u?: any) => { (window as any).__t11opened.push(String(u)); return null; };
+      dbg.openBookmarkUrl(location.href + '#t11-same-tab');
+    });
+    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('#t11-same-tab');
+    const opened = await page.evaluate(() => (window as any).__t11opened || []);
+    expect(opened).toEqual([]);
+  });
+
+  test('T11-d: open path with stored newTab still opens a NEW tab, current tab untouched', async ({ page }) => {
+    await resetBoxing(page);
+    await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.urlOpenMode = 'newTab';
+      (window as any).__t11opened = [];
+      window.open = (u?: any) => { (window as any).__t11opened.push(String(u)); return null; };
+      const before = location.href;
+      dbg.openBookmarkUrl('https://example.test/bookmark');
+      return { opened: (window as any).__t11opened, before, stillHere: location.href };
+    });
+    expect(r.opened).toContain('https://example.test/bookmark');
+    expect(r.stillHere).toBe(r.before);
   });
 });

@@ -32,7 +32,7 @@ export function initSettingsUiFacade(deps) {
   export function syncSettingsDOM() {
     if (typeof langSelect !== 'undefined' && langSelect) langSelect.value = layout.settings.selectedLanguage || 'en';
     if (typeof rememberCheck !== 'undefined' && rememberCheck) rememberCheck.checked = layout.settings.rememberLastPos !== false;
-    if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'newTab';
+    if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'sameTab';
     if (typeof connDeleteActionSelect !== 'undefined' && connDeleteActionSelect) connDeleteActionSelect.value = layout.settings.connDeleteAction || 'alt+click';
     if (typeof darkModeCB !== 'undefined' && darkModeCB) darkModeCB.checked = layout.settings.darkMode === true;
     if (typeof zoomSlider !== 'undefined' && zoomSlider) zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
@@ -136,7 +136,7 @@ export function bindSettingsUi() {
       layout.settings.rememberLastPos = rememberCheck.checked;
       saveLayout();
     });
-    // BX-DEV-120: urlOpenMode — default 'newTab' so bookmarks open in a new tab unless user picks Current Tab.
+    // BX-DEV-120 + ticket 11: urlOpenMode — default 'sameTab' so bookmarks open in the current tab unless the user explicitly picks New Tab.
     urlOpenModeSelect?.addEventListener('change', () => {
       layout.settings.urlOpenMode = urlOpenModeSelect.value === 'sameTab' ? 'sameTab' : 'newTab';
       saveLayout();

@@ -37,16 +37,13 @@ export function initPopupsFacade(deps) {
         if (e.target.closest('.bm-row__edit-btn') || e.target.closest('.bm-row__grip')) return;
         const safeUrl = normalizeBookmarkUrl(bm.url);
         if (!safeUrl) { debugWarn('blocked invalid bookmark URL', bm.url); return; }
-        (async function (url) {
-          // BX-DEV-120: respect explicit settings.urlOpenMode first (default 'newTab').
-          // Fall back to legacy per-browser default only when the setting is unset AND
-          // Firefox exposes browserSettings.openBookmarksInNewTabs (Chrome has no equivalent).
+        (function (url) {
+          // BX-DEV-120 + ticket 11: respect explicit settings.urlOpenMode.
+          // Missing/unknown mode is treated as the sameTab default — the legacy
+          // Firefox browserSettings.openBookmarksInNewTabs unset-branch is removed.
+          // Only an explicit 'newTab' (preserved from storage or picked in settings)
+          // opens a new tab.
           const mode = layout.settings && layout.settings.urlOpenMode;
-          if (mode === 'sameTab') {
-            if (api.tabs?.update) { api.tabs.update({ url }); }
-            else { window.location.href = url; }
-            return;
-          }
           if (mode === 'newTab') {
             try {
               if (api.tabs?.create) { api.tabs.create({ url, active: true }); return; }
@@ -54,20 +51,8 @@ export function initPopupsFacade(deps) {
             window.open(url, '_blank', 'noopener');
             return;
           }
-          // Unset — legacy browser default. Firefox respects openBookmarksInNewTabs; Chrome opens current tab.
-          let openInNewTab = false;
-          try {
-            if (typeof browser !== 'undefined' && browser.browserSettings?.openBookmarksInNewTabs) {
-              const s = await browser.browserSettings.openBookmarksInNewTabs.get({});
-              openInNewTab = s.value;
-            }
-          } catch (e) { /* silent: inner render variant, non-critical */ }
-          if (openInNewTab) {
-            api.tabs?.create ? api.tabs.create({ url, active: true }) : window.open(url, '_blank');
-          } else {
-            if (api.tabs?.update) { api.tabs.update({ url }); }
-            else { window.location.href = url; }
-          }
+          if (api.tabs?.update) { api.tabs.update({ url }); }
+          else { window.location.href = url; }
         })(safeUrl);
       });
 
