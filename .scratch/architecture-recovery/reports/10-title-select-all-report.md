@@ -5,6 +5,14 @@
 - 阻塞: 09 — create-render-decouple 已完成（reports/09-create-render-decouple-report.md），本票只动 render.js 的 title 块，创建管线零触碰。
 - 版本控制: 遵循 WORKFLOW §4.2（本票改动已落独立票分支提交；不推送、不开 PR）。
 
+> **落点说明（并行窗口竞争，2026-09-10）**: 本票三个文件（ntp/render.js title 块、
+> test/tests/boxing-title-select-all.spec.ts、本报告）在按 §4.2 落独立票分支提交时，
+> 与并行 ticket-13 窗口的提交发生竞争——其提交先行把本窗口未提交改动一并收走，
+> 内容已完整入库，且与本窗口验证版本逐字节一致（提交后 diff 为空，node --check / 行尾 /
+> 计数守卫均在该内容上通过）。按本票硬约束「不改写他人提交」，本窗口未做任何历史手术，
+> 独立票分支归位留给主 Agent 决定（GitButler 支持按文件从既有提交拆分挪移）。
+> 本票分支 10-title-select-all 上另含本落点说明自身的一条报告更新提交。
+
 ## 改动
 
 1. ntp/render.js · 新增共享 helper `selectAllTitleText(el)`（helpers 区，紧邻 getLargeBox）:
