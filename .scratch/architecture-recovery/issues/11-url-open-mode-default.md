@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** code-done, CI-open (见 reports/11-url-open-mode-default-report.md)
 
 ## Acceptance criteria
 
-- [ ] 空 storage / 新 profile：`urlOpenMode` 视作 `sameTab`，书签点击 → 当前标签导航
-- [ ] 存量 `urlOpenMode:'newTab'`：仍为新标签
-- [ ] 设置 UI 默认显示 Current Tab
-- [ ] 跨 tab onChanged 后不回退成 newTab
-- [ ] Playwright 默认值 + 打开路径断言；涉及文件 `node --check` 绿
+- [x] 空 storage / 新 profile：`urlOpenMode` 视作 `sameTab`，书签点击 → 当前标签导航 (T11-a/T11-c)
+- [x] 存量 `urlOpenMode:'newTab'`：仍为新标签 (T11-b/T11-d)
+- [x] 设置 UI 默认显示 Current Tab (Bug3-c selectVal)
+- [x] 跨 tab onChanged 后不回退成 newTab (Bug3-c 双侧缺键 apply)
+- [x] Playwright 默认值 + 打开路径断言；涉及文件 `node --check` 绿 (spec 已写, node --check 4/4; Playwright 绿待 CI)
