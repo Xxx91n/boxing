@@ -1,67 +1,79 @@
-# Spec — Round 7: Public-Facing Release Integrity
+# Spec — Boxing 2026.9.12 发行就绪包
+
+> 来源: 38-2026-09-12-release-architecture-investigation.md  
+> GitHub Milestone: [2026.9.12](https://github.com/Xxx91n/boxing/milestone/1) (issues #1–#8)  
+> 徽章: ready-for-agent
 
 ## Problem Statement
 
-The repository has a coherent modular core, but its public-facing and release surfaces do not
-match the code. The English README is much more complete than the localized copies, one
-locale is structurally corrupted, the store/release links suggest products that do not yet
-exist, the root Pages URL 404s while its privacy subpage works, and the generated CRX/XPI
-packages are unsigned placeholders for local distribution.
+用户面对七个并行痛点，阻塞 2026.9.12 商店发行与体验验收：
+
+1. 扩展图标是过期紫占位，与商店 logo 不一致；
+2. README 多语言版本不完整、截图未同步、版本徽章过期、Install 文案与线上 release 矛盾；
+3. Edge/Firefox 商店无法自动检测多语言 listing（manifest 硬编码 name/description）；
+4. 备份页 WebDAV 与 GitHub Gist 配置在同一纵向页扁平混排，用户感知「混杂」；
+5. Firefox 备份页滚动卡顿反复回归（Chrome 流畅）；
+6. `https://xxx91n.github.io/boxing/` 根路径 404（docs/ 无 index）；
+7. 无 release 自动重部署的扩展预览演示站；
+8. 版本字符串分散（manifest/package/README/CHANGELOG/设置页脚 v3.6.6/AGENTS.md），且 build 不覆盖 version_name。
 
 ## Solution
 
-Repair the documentation surface first, independently of screenshot capture. Separately,
-establish authoritative store and release facts from the maintainer or public search.
-Capture all five English store screenshots with Playwright only after the documentation
-surface is repaired and the authoritative facts are known. Finally, reconcile the public
-README installation and packaging claims with the resulting release policy.
+以「商店可上架 + 文档可信 + 体验不回归 + Pages 可达」为验收线，交付八张 tracer-bullet 票：图标与 brand 一致、README/locale 真相同步、`__MSG_` 多语言商店检测、Sync 页视觉分组、Firefox backdrop-filter 残留审计、docs/index landing、release 自动 Pages 预览、版本字符串统一与 version_name 注入修复。
 
 ## User Stories
 
-1. As a non-English visitor, I want a complete localized README with the same product
-   structure as English, so that I can understand and install Boxing accurately.
-2. As a maintainer, I want generated locale documentation checked against the English
-   structure, so that drift is caught before it reaches users.
-3. As a maintainer, I want authoritative Firefox and Edge store URLs or IDs recorded with
-   their public state, so that the README and handoff do not claim unpublished listings live.
-4. As a maintainer, I want the GitHub Pages root to resolve, so that opening the documented
-   project URL is not a 404.
-5. As a store reviewer, I want five English 1280x800 screenshots that match each captured
-   label, so that the listing represents the actual product.
-6. As an end user, I want installation links to point to assets that exist and are correctly
-   signed or clearly marked unsigned, so that following the README works without silent fake
-   success.
-7. As a future agent, I want the release status table to distinguish zip exclusivity,
-   store-side signing, and self-signed local packages, so that the same mistake is not replayed.
+1. As a store reviewer, I want toolbar icons to match the store logo, so that the listing does not look fraudulent.
+2. As a Firefox user installing from AMO, I want the listed version 2026.9.12 with correct icons, so that the package passes automated checks.
+3. As an Edge reviewer, I want manifest name/description as `__MSG_` placeholders backed by 14 locales, so that Partner Center detects all supported languages.
+4. As a zh-CN user browsing GitHub, I want a Simplified Chinese README with the same screenshots and accurate install steps as English, so that I can install without guessing.
+5. As a Japanese/Korean/… user, I want my locale README to carry the full screenshot table and brand assets note, so that docs parity holds.
+6. As a repo visitor, I want the README Install section to link the live v2026.9.11+ release, so that I am not told “no packages published”.
+7. As a maintainer, I want TRANSLATIONS.md to list all 13 locales as Available, so that status matches the tree.
+8. As a future agent, I want `gen-i18n-readme.js` removed or rewritten so it cannot clobber hand translations, so that docs stay safe.
+9. As a backup user, I want shared sync settings visually separated from WebDAV and GitHub Gist credential blocks, so that I never confuse which fields belong to which provider.
+10. As a backup user, I want switching provider to never show both WebDAV and Gist forms, so that the UI reflects the mutual exclusion the engine already implements.
+11. As a Firefox user with general.smoothScroll enabled, I want settings/backup scrolling to feel as smooth as Chrome, so that the recurring jank regression ends.
+12. As a Playwright maintainer, I want the existing scrollOwners computation to actually assert, so that scroll-owner regressions fail CI.
+13. As a visitor of the GitHub Pages site, I want the root URL to render a product landing with screenshots and store links, so that the privacy-policy-only site is not a 404.
+14. As a prospective installer, I want an interactive NTP preview on Pages that redeploys on every release, so that I can try Boxing before installing.
+15. As a release engineer, I want every version string (manifest, package, badge, changelog, settings footer, AGENTS.md) to read 2026.9.12, so that artifacts cannot ship mixed versions.
+16. As a CI consumer, I want BOXING_BUILD_VERSION to override both version and version_name in dist, so that calver injection is complete.
+17. As a domain reader, I want ticket/handoff/prompts to use CONTEXT.md and ADR vocabulary (settings modal, sync provider, brand assets), so that multi-window work shares one language.
 
 ## Implementation Decisions
 
-- Locale parity is documentation-only. Treat English as the structure baseline; preserve all
-  language-specific links and explanatory text, repair only structure and missing parity.
-- Publication truth must be based on authoritative owner-provided URLs or a store's lookup
-  result, not on guessed store affinity text.
-- Screenshot capture is a later bounded ticket and is not performed while this plan is created.
-- Local packaging remains zip for submission and unpacked loading. Store signing is provided
-  by each store or AMO/web-ext; the local crx and xpi placeholders must not be presented as
-  production-signed installation artifacts without clear qualification.
-- Ticket 37 derives its final text from tickets 35 and 36 and is blocked by both.
+- **Icons**: overwrite committed `icons/` from curated `docs/brand` icons (copy-over-regenerate). Do not delete the directory — manifest and Firefox temp-load require the files. CI icon step becomes copy-from-brand with PNG signature assert retained.
+- **README source-of-truth**: English README remains canonical. Locale files under `docs/i18n/` stay hand-maintained; generator script is deprecated (delete or rewrite to never clobber).
+- **Store i18n**: add `extensionName` + `extensionDescription` to all 14 locales (description ≤132 chars for Edge). Manifest switches to `__MSG_extensionName__` / `__MSG_extensionDescription__`. A7 build validator already enforces 14-locale parity.
+- **Sync UI**: keep engine mutual exclusion (`sync-engine.js` provider switch). Change only presentation: labeled groups or sub-sections for Shared vs WebDAV vs Gist. No new provider logic.
+- **Firefox scroll**: audit `backdrop-filter` on `.modal-overlay` as the residual cost (never previously treated as a scroll factor). A/B against FF `general.smoothScroll`. Do not re-break ADR-0014 decisions (`will-change: scroll-position`, `overflow-anchor: none`, no nested scroll, no `contain`). Prefer `prefers-reduced-motion` static overlay fallback over deleting the blur outright if visual design must stay.
+- **Pages landing**: add `docs/index.md` under existing `jekyll-theme-minimal` `_config.yml`. No new site generator.
+- **Pages demo**: Mode A from atomcode research — static-open NTP mirror with `chrome.*` stub (storage/local mock). CI uses official artifact deploy (`upload-pages-artifact` + `deploy-pages`), triggered by `release: types: [published]` + `workflow_dispatch`. Do not use gh-pages branch (GITHUB_TOKEN pushes do not trigger Pages builds). Inject `version.json` = release tag.
+- **Version unify**: single closer ticket bumps all known locations to 2026.9.12 and fixes `build.mjs` to override `version_name` alongside `version`. Settings footer stops reading a stale hardcoded `v3.6.6`.
+- **Seams (testing)**: prefer existing Playwright seams — settings modal open/tab switch, provider select, extension load unpacked, manifest parse. Highest seam = Playwright e2e in `test/tests/`; no new unit-test harness. One new assertion seam only where missing: provider mutual exclusion + scrollOwners assert.
 
 ## Testing Decisions
 
-- Locale repair uses a structural comparison of headings, image links, install links, privacy
-  links, and contribution links against English.
-- Publication verification uses status codes and authoritative lookup output, never a guessed
-  ID or a self-authored assertion.
-- Screenshot capture uses a persisted Playwright script and validates each PNG exists at
-  approximately 1280x800 with nonblank pixel content.
-- Release reconciliation checks GitHub Release count/assets and local artifact presence using
-  only evidence gathered by ticket 35.
+- Good tests assert external behaviour (DOM visibility, manifest fields, built artifact bytes), not implementation details.
+- Modules under test: manifest/build packaging; settings/sync presentation; docs tree completeness; Pages demo artifact.
+- Prior art: `test/tests/boxing-webdav.spec.ts` (provider fields appear), `boxing-state-sync.spec.ts` (scroll owner scan — currently dead assert), `boxing-empty-state-buttons.spec.ts` (overflow-anchor/body overflow guards), `boxing-i18n-module.spec.ts` (14-locale contract).
+- Icon ticket: assert dist icon bytes match `docs/brand` curated files.
+- Store i18n: build-time A7 validator + a manifest parse assertion that name/description are `__MSG_` placeholders.
+- Firefox scroll: keep Chrome visual parity; FF improvement is A/B measured, not a flaky timing assert in CI if environment noise dominates — record manual FF evidence in the ticket report.
 
 ## Out of Scope
 
-Store submission, browser tooling migration, codebase module restructuring, public repo
-redesign, and any release upload not explicitly authorized by the maintainer.
+- Chrome Web Store submission (still deferred per publishing guide).
+- Merging `fix-release-pipeline` into main.
+- AMO/Edge interactive store dashboard steps (human-gated).
+- Rewriting ADR-0014 decision set (only append an update if backdrop-filter changes the decision).
+- Full NTP feature refactors, new sync providers, new locales beyond the existing 14.
+- Storybook / component library extraction for the demo (overkill vs Mode A).
 
 ## Further Notes
 
-Source report: `.scratch/architecture-recovery/round7-architecture-report.md`.
+- Investigation evidence: `38-2026-09-12-release-architecture-investigation.md`.
+- atomcode Pages research is ctx-indexed under label `atomcode` (15 sources); sub-windows may re-query via `ctx_search`.
+- GitHub issues #1–#8 already mirror these tickets under milestone 2026.9.12; local `issues/` files are the multi-window source of blocking edges.
+- All version-control statements defer to WORKFLOW §4.2.
