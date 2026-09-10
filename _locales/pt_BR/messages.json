@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "Adicionar caixas pequenas"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "Organizador hierárquico de favoritos em tela infinita. Guarde favoritos em caixas etiquetadas; visualizações em lista e grade.",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

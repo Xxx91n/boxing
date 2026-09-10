@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "작은 상자 추가"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "차분한 베이지 톤의 계층형 무한 캔버스 북마크 정리 도구입니다. 라벨이 지정된 박스로 북마크를 정리하며 목록 보기와 그리드 보기를 지원합니다.",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

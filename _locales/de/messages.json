@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "Kleine Boxen hinzufügen"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "Hierarchischer Lesezeichen-Organizer mit unendlicher Leinwand. Lesezeichen in beschriftete Boxen sortieren; Listen- & Rasteransicht.",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

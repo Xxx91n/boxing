@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "छोटे बॉक्स जोड़ें"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "शांत बेज डिज़ाइन वाला अनंत कैनवस पर पदानुक्रमिक बुकमार्क प्रबंधक। बुकमार्क लेबल वाले बॉक्स में व्यवस्थित करें; सूची और ग्रिड दृश्य।",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

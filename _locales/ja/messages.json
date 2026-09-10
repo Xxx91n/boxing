@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "小さなボックスを追加"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "落ち着いたベージュ調の階層型無限キャンバスブックマーク整理ツール。ラベル付きボックスに整理し、リスト表示とグリッド表示を提供します。",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

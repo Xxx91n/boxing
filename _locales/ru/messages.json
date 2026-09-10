@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "Добавить маленькие коробки"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "Иерархический органайзер закладок на бесконечном холсте. Раскладывайте закладки по блокам с ярлыками; списки и сетка.",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

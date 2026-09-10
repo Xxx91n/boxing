@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "เพิ่มกล่องเล็ก"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "เครื่องมือจัดระเบียบบุ๊กมาร์กแบบลำดับชั้นบนผืนผ้าใบไม่จำกัด สไตล์เบจสงบ จัดบุ๊กมาร์กเป็นกล่องมีป้ายกำกับ พร้อมมุมมองรายการและตาราง",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

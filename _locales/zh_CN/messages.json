@@ -798,5 +798,13 @@
   },
   "emptyLargeAction": {
     "message": "添加小盒子"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "层级化无限画布书签整理工具，米色简约设计。将书签收纳进带标签的盒子，支持嵌套子画布、连接关联、列表与网格视图，数据本地存储。",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

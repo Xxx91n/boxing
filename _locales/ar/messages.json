@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "إضافة صندوقات صغيرة"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "منظّم إشارات مرجعية هرمي على لوحة لا نهائية بتصميم بيج هادئ. نظّم الإشارات المرجعية في صناديق معنونة؛ مع عرضَي القائمة والشبكة.",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

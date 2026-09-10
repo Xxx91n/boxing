@@ -13,7 +13,11 @@ test.describe('Boxing v3 Extension', () => {
       fs.readFileSync(path.join(EXTENSION_PATH, 'manifest.json'), 'utf8')
     );
     expect(manifest.manifest_version).toBe(3);
-    expect(manifest.name).toBe('Boxing');
+    // Ticket 03 (store i18n): name/description are __MSG_ placeholders resolved from
+    // _locales/<lang>/messages.json (extensionName/extensionDescription, default_locale en).
+    expect(manifest.name).toBe('__MSG_extensionName__');
+    expect(manifest.description).toBe('__MSG_extensionDescription__');
+    expect(manifest.default_locale).toBe('en');
     expect(manifest.permissions).toContain('storage');
     expect(manifest.permissions).toContain('tabs');
     expect(manifest.chrome_url_overrides?.newtab).toBe('ntp/index.html');

@@ -798,5 +798,13 @@
   },
   "emptyLargeAction": {
     "message": "新增小盒子"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "階層式無限畫布書籤整理工具，米色簡約設計。將書籤收納進帶標籤的盒子，支援巢狀子畫布、連結關聯、列表與網格檢視，資料本地儲存。",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

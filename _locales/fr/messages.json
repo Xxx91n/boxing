@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "Ajouter des petites boîtes"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "Organisateur de favoris hiérarchique sur canevas infini. Rangez les favoris dans des boîtes étiquetées ; vues liste et grille.",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

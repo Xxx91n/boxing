@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "Añadir cajas pequeñas"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "Organizador jerárquico de marcadores en lienzo infinito. Guarda marcadores en cajas etiquetadas; vistas de lista y cuadrícula.",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }

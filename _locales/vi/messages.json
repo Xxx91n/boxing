@@ -795,5 +795,13 @@
   },
   "emptyLargeAction": {
     "message": "Thêm hộp nhỏ"
+  },
+  "extensionName": {
+    "message": "Boxing",
+    "description": "Extension display name (store listing, resolved via __MSG_extensionName__)"
+  },
+  "extensionDescription": {
+    "message": "Trình tổ chức dấu trang phân cấp trên canvas vô hạn với thiết kế be dịu. Sắp dấu trang vào hộp có nhãn; xem danh sách và lưới.",
+    "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
   }
 }
