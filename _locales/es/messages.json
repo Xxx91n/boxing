@@ -464,6 +464,9 @@
   "syncWebDAV": {
     "message": "WebDAV"
   },
+  "syncGroupShared": {
+    "message": "Ajustes compartidos"
+  },
   "syncGitHubGist": {
     "message": "GitHub Gist"
   },

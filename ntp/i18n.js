@@ -152,6 +152,7 @@ I18N_FALLBACK.backupWeekly = 'Weekly';
 I18N_FALLBACK.backupHourly = 'Hourly';
 I18N_FALLBACK.syncWebDAV = 'WebDAV';
 I18N_FALLBACK.syncGitHubGist = 'GitHub Gist';
+I18N_FALLBACK.syncGroupShared = 'Shared settings';
 I18N_FALLBACK.webdavUrl = 'WebDAV URL';
 I18N_FALLBACK.webdavUser = 'Username';
 I18N_FALLBACK.webdavPass = 'Password';
