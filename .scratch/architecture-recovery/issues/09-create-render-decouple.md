@@ -8,12 +8,12 @@
 
 ## Acceptance criteria
 
-- [ ] 创建入口 mutate 后立即 render，**无** `await saveLayout()` 挡在 render 前
-- [ ] `saveLayoutDebounced()` 或 fire-and-forget `saveLayout` 落盘；写链本体未改
-- [ ] 连续双击不同位置：可见反馈与 layout.boxes 一致
-- [ ] cooldown / markCreate / focus sink 行为不回归
-- [ ] Playwright 扩展上下文：双击空白 → `.large-box` +1；再双击 +1
-- [ ] `node --check ntp/render.js` 绿；不回归 focus-steal 与工具栏连点
+- [x] 创建入口 mutate 后立即 render，**无** `await saveLayout()` 挡在 render 前
+- [x] `saveLayoutDebounced()` 或 fire-and-forget `saveLayout` 落盘；写链本体未改
+- [x] 连续双击不同位置：可见反馈与 layout.boxes 一致
+- [x] cooldown / markCreate / focus sink 行为不回归
+- [x] Playwright 扩展上下文：双击空白 → `.large-box` +1；再双击 +1
+- [x] `node --check ntp/render.js` 绿；不回归 focus-steal 与工具栏连点
 
 ## Notes
 
