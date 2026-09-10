@@ -16,6 +16,8 @@ Boxing biến trang tab mới của bạn thành không gian làm việc trực 
 ## Mục lục
 
 - [Tính năng](#tính-năng)
+- [Ảnh chụp màn hình](#ảnh-chụp-màn-hình)
+- [Tài nguyên thương hiệu](#tài-nguyên-thương-hiệu)
 - [Cài đặt](#cài-đặt)
 - [Sử dụng](#sử-dụng)
 - [Quyền riêng tư](#quyền-riêng-tư)
@@ -42,9 +44,35 @@ Boxing biến trang tab mới của bạn thành không gian làm việc trực 
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Phân cấp hộp và dấu trang" width="1280">
 </picture>
 
+## Ảnh chụp màn hình
+
+| Canvas | Hộp và dấu trang | Kết nối |
+|---|---|---|
+| ![Canvas](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Hộp và dấu trang](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Kết nối](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| Cài đặt | Sửa dấu trang |
+|---|---|
+| ![Cài đặt](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Sửa dấu trang](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## Tài nguyên thương hiệu
+
+Logo sáng/tối, biểu tượng phần mở rộng, favicon, ô ảnh cửa hàng và trang giới thiệu biến thể đều có trong [`docs/brand/`](../../docs/brand/) (24 tệp, từ bộ tài nguyên `box_png`). Dùng lại cho danh sách cửa hàng, tài liệu và ảnh xem trước xã hội của GitHub.
+
 ## Cài đặt
 
+> [!TIP]
+> Các gói cài đặt dựng sẵn đã được phát hành trên GitHub Releases: [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest) gồm `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` và `SHA256SUMS.txt`. Việc lên cửa hàng vẫn đang triển khai (Edge đang tiến hành, Chrome Web Store hoãn cho tới khi Edge lên sóng, AMO chưa có danh sách công khai) — tệp `.xpi` của bản phát hành là đường cài Firefox tự quản.
+
 ### Chrome / Edge (Chromium)
+
+**Từ gói phát hành (không cần công cụ build)**
+
+1. Tải `boxing-chrome-<version>.zip` từ [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest) và giải nén
+2. Mở `chrome://extensions` (hoặc `edge://extensions`)
+3. Bật **chế độ nhà phát triển** (công tắc góc trên bên phải)
+4. Nhấn **Tải tiện ích chưa đóng gói** và chọn thư mục `boxing-chrome/` đã giải nén
+
+**Từ mã nguồn**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -54,13 +82,21 @@ Boxing biến trang tab mới của bạn thành không gian làm việc trực 
 
 ### Firefox
 
+**Từ gói phát hành**
+
+1. Tải `boxing-firefox-<version>.xpi` từ [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest) và mở trong Firefox — bản ký AMO cài trực tiếp; bản chưa ký chỉ chạy trên Firefox Developer Edition/Nightly
+2. Hoặc giải nén `boxing-firefox-<version>.zip`, mở `about:debugging#/runtime/this-firefox` và chọn **Tải tiện ích tạm thời** trỏ tới `manifest.json` đã giải nén
+
+**Từ mã nguồn**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> Node.js và npm chỉ cần khi build từ mã nguồn; cài từ gói GitHub Releases không cần chúng. Khi các cửa hàng lên sóng, việc cài đặt còn một cú nhấp.
+
 ## Sử dụng
 
 - **Nhấp đúp** khung vẽ trống → tạo hộp mới

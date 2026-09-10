@@ -16,6 +16,8 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
 ## 目次
 
 - [機能](#機能)
+- [スクリーンショット](#スクリーンショット)
+- [ブランドアセット](#ブランドアセット)
 - [インストール](#インストール)
 - [使い方](#使い方)
 - [プライバシー](#プライバシー)
@@ -42,9 +44,35 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="ボックス階層とブックマーク" width="1280">
 </picture>
 
+## スクリーンショット
+
+| キャンバス | ボックスとブックマーク | 接続ライン |
+|---|---|---|
+| ![キャンバス](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![ボックスとブックマーク](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![接続ライン](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| 設定 | ブックマーク編集 |
+|---|---|
+| ![設定](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![ブックマーク編集](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## ブランドアセット
+
+ライト/ダークのロゴ、拡張機能アイコン、ファビコン、ストアタイル、バリエーション紹介は [`docs/brand/`](../../docs/brand/) に同梱されています（`box_png` アセットキット由来の 24 ファイル）。ストア掲載物、ドキュメント、GitHub ソーシャルプレビューにそのまま再利用できます。
+
 ## インストール
 
+> [!TIP]
+> プリビルドのインストールパッケージは GitHub Releases で公開中です。[最新版リリース](https://github.com/Xxx91n/boxing/releases/latest) には `boxing-chrome-<version>.zip` / `.crx`、`boxing-firefox-<version>.zip` / `.xpi`、`SHA256SUMS.txt` が含まれます。ストア掲載は準備中（Edge は進行中、Chrome Web Store は Edge 公開後、AMO に公開掲載なし）のため、Firefox はリリースの `.xpi` を直接ご利用いただけます。
+
 ### Chrome / Edge (Chromium)
+
+**リリースパッケージからインストール（ビルド工具不要）**
+
+1. [最新版リリース](https://github.com/Xxx91n/boxing/releases/latest) から `boxing-chrome-<version>.zip` をダウンロードして解凍する
+2. `chrome://extensions`（または `edge://extensions`）を開く
+3. **開発者モード**（右上のトグル）を有効にする
+4. **ファイルをロード** をクリックし、解凍した `boxing-chrome/` フォルダを選択する
+
+**ソースからビルド**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -54,13 +82,21 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
 
 ### Firefox
 
+**リリースパッケージからインストール**
+
+1. [最新版リリース](https://github.com/Xxx91n/boxing/releases/latest) から `boxing-firefox-<version>.xpi` をダウンロードし、Firefox で開く — AMO 署名済みビルドは直接インストールできます。無署名ビルドは Firefox Developer Edition/Nightly でのみ読み込めます
+2. または `boxing-firefox-<version>.zip` を解凍し、`about:debugging#/runtime/this-firefox` で **一時アドオンとして読み込む** を選んで解凍先の `manifest.json` を指定する
+
+**ソースからビルド**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> Node.js と npm が必要になるのはソースからのビルドのみで、GitHub Release のパッケージからのインストールには不要です。ストア掲載後はワンクリックでインストールできます。
+
 ## 使い方
 
 - **ダブルクリック** 空白キャンバス → 新規ボックス作成

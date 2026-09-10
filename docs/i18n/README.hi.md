@@ -20,6 +20,8 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
 ## Table of Contents
 
 - [Features](#features)
+- [Screenshots](#screenshots)
+- [Brand Assets](#brand-assets)
 - [Install](#install)
 - [Usage](#usage)
 - [Privacy](#privacy)
@@ -46,9 +48,35 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
 </picture>
 
+## Screenshots
+
+| Canvas | Boxes & Bookmarks | Connections |
+|---|---|---|
+| ![Canvas](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Boxes & Bookmarks](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Connections](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| Settings | Bookmark Editing |
+|---|---|
+| ![Settings](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Bookmark Editing](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## Brand Assets
+
+Light/dark logos, extension icons, favicons, store tiles, and the variants showcase are vendored in [`docs/brand/`](../../docs/brand/) (24 files, from the `box_png` asset kit). Reuse these for store listings, docs, and the GitHub social preview.
+
 ## Install
 
+> [!TIP]
+> Ready-to-use packages are published on GitHub Releases: the [latest release](https://github.com/Xxx91n/boxing/releases/latest) ships `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi`, and `SHA256SUMS.txt`. Store listings are still rolling out (Edge in progress, Chrome Web Store deferred, no public AMO listing) — the release `.xpi` is the self-hosted Firefox install path.
+
 ### Chrome / Edge (Chromium)
+
+**From the release package (no build tools needed)**
+
+1. Download `boxing-chrome-<version>.zip` from the [latest release](https://github.com/Xxx91n/boxing/releases/latest) and unzip it
+2. Go to `chrome://extensions` (or `edge://extensions`)
+3. Enable **Developer mode** (top-right toggle)
+4. Click **Load unpacked** and select the unzipped `boxing-chrome/` folder
+
+**From source**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -58,13 +86,21 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
 
 ### Firefox
 
+**From the release package**
+
+1. Download `boxing-firefox-<version>.xpi` from the [latest release](https://github.com/Xxx91n/boxing/releases/latest) and open it in Firefox — AMO-signed builds install directly; unsigned builds load only in Firefox Developer Edition/Nightly
+2. Or download `boxing-firefox-<version>.zip`, unzip it, go to `about:debugging#/runtime/this-firefox`, and click **Load Temporary Add-on...** pointing at the unzipped `manifest.json`
+
+**From source**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> Node.js and npm are only required for the from-source build; installing from the GitHub release package needs neither. Once the store listings are live, end-user installs are one click.
+
 ## Usage
 
 - **Double-click** empty canvas → create a new box

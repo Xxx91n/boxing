@@ -24,7 +24,7 @@
 </p>
 
 <p>
-  <a href="#install"><img alt="Install — build from source; no release assets published yet" src="https://img.shields.io/badge/Install-Build_from_source-orange?style=for-the-badge&logo=github" /></a>
+  <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="Install — ready-to-use packages on GitHub Releases" src="https://img.shields.io/badge/Install-GitHub_Releases-brightgreen?style=for-the-badge&logo=github" /></a>
   <a href="docs/publishing-guide.md"><img alt="Edge Add-ons — rollout in progress" src="https://img.shields.io/badge/Edge_Add--ons-Coming_Soon-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
 </p>
 
@@ -76,14 +76,24 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 ## Install
 
 > [!IMPORTANT]
-> **No installable packages are published yet.** GitHub Releases currently has zero releases,
-> and no store listing is live: Edge Add-ons rollout is in progress, Chrome Web Store is
-> deferred until Edge is live, and AMO has no public listing. Until the first release or
-> listing ships, install from source below. Evidence: the
-> [publication-surface verification report](.scratch/architecture-recovery/35-authoritative-publication-surface-verification-report.md);
-> rollout and signing workflow: the [publishing guide](docs/publishing-guide.md).
+> **Ready-to-use packages are published on GitHub Releases.** The
+> [latest release](https://github.com/Xxx91n/boxing/releases/latest) ships `boxing-chrome-<version>.zip` / `.crx`,
+> `boxing-firefox-<version>.zip` / `.xpi`, and `SHA256SUMS.txt`. Store listings are still
+> rolling out: Edge Add-ons is in progress, Chrome Web Store is deferred until Edge is
+> live, and AMO has no public listing yet (the release `.xpi` is the self-hosted Firefox
+> install path). Rollout and signing workflow: the [publishing guide](docs/publishing-guide.md);
+> store-status evidence: the [publication-surface verification report](.scratch/architecture-recovery/35-authoritative-publication-surface-verification-report.md).
 
 ### Chrome / Edge (Chromium)
+
+**From the release package (no build tools needed):**
+
+1. Download `boxing-chrome-<version>.zip` from the [latest release](https://github.com/Xxx91n/boxing/releases/latest) and unzip it
+2. Go to `chrome://extensions` (or `edge://extensions`)
+3. Enable **Developer mode** (top-right toggle)
+4. Click **Load unpacked** and select the unzipped `boxing-chrome/` folder
+
+**From source:**
 
 1. Clone or download this repository
 2. Install [Node.js](https://nodejs.org) >= 18, then run `npm install` followed by `npm run build` inside the repo folder
@@ -92,6 +102,13 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 5. Click **Load unpacked** and select the `dist/boxing-chrome/` folder
 
 ### Firefox
+
+**From the release package:**
+
+1. Download `boxing-firefox-<version>.xpi` from the [latest release](https://github.com/Xxx91n/boxing/releases/latest) and open it in Firefox — AMO-signed builds install directly; unsigned builds load only in Firefox Developer Edition/Nightly
+2. Or download `boxing-firefox-<version>.zip`, unzip it, go to `about:debugging#/runtime/this-firefox`, and click **Load Temporary Add-on...** pointing at the unzipped `manifest.json`
+
+**From source:**
 
 1. Clone or download this repository
 2. Run `npm install` followed by `npm run build`
@@ -104,13 +121,13 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 > private key is configured in CI (`CRX_PRIVATE_KEY_PEM`); otherwise it is an unsigned local
 > placeholder. The `.xpi` is an unsigned development build unless AMO API credentials are
 > configured, in which case AMO signs it on the unlisted channel. Production signing is
-> provided by the stores (Edge Add-ons) or AMO/web-ext at publish time — none of these
-> artifacts are currently published for download.
+> provided by the stores (Edge Add-ons) or AMO/web-ext at publish time. The GitHub release
+> packages are the current official download surface; the store listings are still pending.
 
 > [!TIP]
-> Until the first release or store listing is live, installing does need Node.js and npm once
-> to run the build. End-user installs after that won't need them — see the
-> [publishing guide](docs/publishing-guide.md).
+> End-user installs do not need Node.js or npm — load the unzipped release package (or the
+> signed `.xpi` on Firefox). Build tools are only required for the from-source route or when
+> contributing; see the [publishing guide](docs/publishing-guide.md).
 
 ## Usage
 

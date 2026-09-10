@@ -16,6 +16,8 @@ Boxing превращает новую вкладку в визуальное р
 ## Содержание
 
 - [Возможности](#возможности)
+- [Снимки экрана](#снимки-экрана)
+- [Фирменные материалы](#фирменные-материалы)
 - [Установка](#установка)
 - [Использование](#использование)
 - [Конфиденциальность](#конфиденциальность)
@@ -42,9 +44,35 @@ Boxing превращает новую вкладку в визуальное р
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Иерархия блоков и закладки" width="1280">
 </picture>
 
+## Снимки экрана
+
+| Холст | Блоки и закладки | Связи |
+|---|---|---|
+| ![Холст](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Блоки и закладки](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Связи](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| Настройки | Редактирование закладок |
+|---|---|
+| ![Настройки](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Редактирование закладок](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## Фирменные материалы
+
+Светлые и тёмные логотипы, значки расширения, фавиконы, плитки для магазина и галерея вариантов лежат в [`docs/brand/`](../../docs/brand/) (24 файла из набора `box_png`). Используйте их для листингов магазинов, документации и social preview GitHub.
+
 ## Установка
 
+> [!TIP]
+> Готовые установочные пакеты опубликованы в GitHub Releases: [последний релиз](https://github.com/Xxx91n/boxing/releases/latest) содержит `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` и `SHA256SUMS.txt`. Размещение в магазинах ещё в процессе (Edge — идёт, Chrome Web Store отложен, публичного листинга в AMO нет) — self-hosted-путь для Firefox — `.xpi` из релиза.
+
 ### Chrome / Edge (Chromium)
+
+**Из пакета релиза (инструменты сборки не нужны)**
+
+1. Скачайте `boxing-chrome-<version>.zip` из [последнего релиза](https://github.com/Xxx91n/boxing/releases/latest) и распакуйте
+2. Откройте `chrome://extensions` (или `edge://extensions`)
+3. Включите **режим разработчика** (переключатель в правом верхнем углу)
+4. Нажмите **Загрузить распакованное расширение** и выберите распакованную папку `boxing-chrome/`
+
+**Из исходного кода**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -54,13 +82,21 @@ Boxing превращает новую вкладку в визуальное р
 
 ### Firefox
 
+**Из пакета релиза**
+
+1. Скачайте `boxing-firefox-<version>.xpi` из [последнего релиза](https://github.com/Xxx91n/boxing/releases/latest) и откройте в Firefox — сборки с подписью AMO устанавливаются напрямую; неподписанные загружаются только в Firefox Developer Edition/Nightly
+2. Или распакуйте `boxing-firefox-<version>.zip` и на странице `about:debugging#/runtime/this-firefox` выберите **Временно запустить дополнение**, указав на распакованный `manifest.json`
+
+**Из исходного кода**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> Node.js и npm нужны только для сборки из исходников; установка из пакета GitHub Releases обходится без них. После публикации в магазинах не понадобится ничего.
+
 ## Использование
 
 - **Двойной клик** по пустому холсту → создать новый блок

@@ -16,6 +16,8 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
 ## 目錄
 
 - [功能](#功能)
+- [截圖](#截圖)
+- [品牌資產](#品牌資產)
 - [安裝](#安裝)
 - [使用](#使用)
 - [隱私](#隱私)
@@ -42,9 +44,35 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="盒子層級與書籤" width="1280">
 </picture>
 
+## 截圖
+
+| 畫布 | 盒子與書籤 | 連線 |
+|---|---|---|
+| ![畫布](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![盒子與書籤](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![連線](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| 設定 | 書籤編輯 |
+|---|---|
+| ![設定](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![書籤編輯](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## 品牌資產
+
+淺色/深色 logo、擴充功能圖示、favicon、商店圖塊與變體展示均收錄於 [`docs/brand/`](../../docs/brand/)（24 個檔案，來自 `box_png` 資產套件），可直接複用於商店 listing、文件與 GitHub 社群預覽圖。
+
 ## 安裝
 
+> [!TIP]
+> 預建置安裝套件已發布於 GitHub Releases：[最新版本](https://github.com/Xxx91n/boxing/releases/latest) 提供 `boxing-chrome-<version>.zip` / `.crx`、`boxing-firefox-<version>.zip` / `.xpi` 與 `SHA256SUMS.txt`。商店上架仍在推進中（Edge 進行中，Chrome Web Store 延後至 Edge 上線，AMO 暫無公開列表），發布版 `.xpi` 即 Firefox 自架安裝途徑。
+
 ### Chrome / Edge (Chromium)
+
+**從 Release 安裝套件安裝（無需建置工具）**
+
+1. 從[最新版本](https://github.com/Xxx91n/boxing/releases/latest)下載 `boxing-chrome-<version>.zip` 並解壓縮
+2. 開啟 `chrome://extensions`（或 `edge://extensions`）
+3. 啟用**開發者模式**（右上角開關）
+4. 點擊**載入未封裝的擴充功能**，選擇解壓縮後的 `boxing-chrome/` 目錄
+
+**從原始碼建置**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -54,13 +82,21 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
 
 ### Firefox
 
+**從 Release 安裝套件安裝**
+
+1. 從[最新版本](https://github.com/Xxx91n/boxing/releases/latest)下載 `boxing-firefox-<version>.xpi` 並在 Firefox 中開啟——經 AMO 簽章的組建可直接安裝；未簽章組建僅能在 Firefox Developer Edition/Nightly 載入
+2. 或下載 `boxing-firefox-<version>.zip` 解壓縮後，在 `about:debugging#/runtime/this-firefox` 點擊**載入暫時的附加元件**並選擇解壓縮後的 `manifest.json`
+
+**從原始碼建置**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> 僅從原始碼建置需要 Node.js 與 npm；自 GitHub Release 安裝套件安裝則不需要。商店上架完成後即可一鍵安裝。
+
 ## 使用
 
 - **雙擊**空白畫布 → 建立新盒子

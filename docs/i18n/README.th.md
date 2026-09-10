@@ -16,6 +16,8 @@ Boxing เปลี่ยนหน้าแท็บใหม่ของคุ�
 ## สารบัญ
 
 - [คุณสมบัติ](#คุณสมบัติ)
+- [ภาพหน้าจอ](#ภาพหน้าจอ)
+- [ทรัพยากรแบรนด์](#ทรัพยากรแบรนด์)
 - [การติดตั้ง](#การติดตั้ง)
 - [การใช้งาน](#การใช้งาน)
 - [ความเป็นส่วนตัว](#ความเป็นส่วนตัว)
@@ -42,9 +44,35 @@ Boxing เปลี่ยนหน้าแท็บใหม่ของคุ�
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="ลำดับชั้นกล่องและบุ๊คมาร์ก" width="1280">
 </picture>
 
+## ภาพหน้าจอ
+
+| ผืนผ้าใบ | กล่องและที่คั่นหน้า | เส้นเชื่อมต่อ |
+|---|---|---|
+| ![ผืนผ้าใบ](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![กล่องและที่คั่นหน้า](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![เส้นเชื่อมต่อ](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| การตั้งค่า | แก้ไขที่คั่นหน้า |
+|---|---|
+| ![การตั้งค่า](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![แก้ไขที่คั่นหน้า](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## ทรัพยากรแบรนด์
+
+โลโก้แบบสว่าง/มืด ไอคอนส่วนขยาย ฟาวิคอน ภาพ tile ร้านค้า และแกลเลอรีแบบหลากหลาย รวมอยู่ใน [`docs/brand/`](../../docs/brand/) (24 ไฟล์ จากชุดทรัพยากร `box_png`) นำไปใช้ซ้ำได้ทั้งรายการร้านค้า เอกสาร และภาพตัวอย่างโซเชียลของ GitHub
+
 ## การติดตั้ง
 
+> [!TIP]
+> แพ็กเกจติดตั้งพร้อมใช้งานเผยแพร่บน GitHub Releases แล้ว: [รุ่นล่าสุด](https://github.com/Xxx91n/boxing/releases/latest) มี `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` และ `SHA256SUMS.txt` รายการร้านค้ายังทยอยเปิด (Edge กำลังดำเนินการ, Chrome Web Store รอหลัง Edge เปิด, AMO ยังไม่มีรายการสาธารณะ) — ไฟล์ `.xpi` จากรุ่นนี้คือเส้นทางติดตั้ง Firefox แบบโฮสต์เอง
+
 ### Chrome / Edge (Chromium)
+
+**ติดตั้งจากแพ็กเกจรุ่นเผยแพร่ (ไม่ต้องมีเครื่องมือ build)**
+
+1. ดาวน์โหลด `boxing-chrome-<version>.zip` จาก[รุ่นล่าสุด](https://github.com/Xxx91n/boxing/releases/latest) แล้วแตกไฟล์
+2. เปิด `chrome://extensions` (หรือ `edge://extensions`)
+3. เปิด **โหมดนักพัฒนา** (สวิตช์มุมขวาบน)
+4. คลิก **โหลดส่วนขยายแบบแยกไฟล์** แล้วเลือกโฟลเดอร์ `boxing-chrome/` ที่แตกไฟล์
+
+**Build จากซอร์สโค้ด**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -54,13 +82,21 @@ Boxing เปลี่ยนหน้าแท็บใหม่ของคุ�
 
 ### Firefox
 
+**ติดตั้งจากแพ็กเกจรุ่นเผยแพร่**
+
+1. ดาวน์โหลด `boxing-firefox-<version>.xpi` จาก[รุ่นล่าสุด](https://github.com/Xxx91n/boxing/releases/latest) แล้วเปิดใน Firefox — รุ่นที่เซ็นโดย AMO ติดตั้งได้โดยตรง รุ่นไม่เซ็นโหลดได้เฉพาะ Firefox Developer Edition/Nightly
+2. หรือแตกไฟล์ `boxing-firefox-<version>.zip` แล้วไปที่ `about:debugging#/runtime/this-firefox` เลือก **โหลดส่วนเสริมชั่วคราว** ไปที่ `manifest.json` ที่แตกไฟล์
+
+**Build จากซอร์สโค้ด**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> ต้องใช้ Node.js และ npm เฉพาะเมื่อ build จากซอร์สโค้ด การติดตั้งจากแพ็กเกจ GitHub Releases ไม่จำเป็นต้องมี และเมื่อรายการร้านค้าเปิดแล้วจะติดตั้งได้ในคลิกเดียว
+
 ## การใช้งาน
 
 - **ดับเบิลคลิก** ผืนผ้าใบว่าง → สร้างกล่องใหม่

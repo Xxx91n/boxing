@@ -16,6 +16,8 @@ Boxing يحول صفحة التبويب الجديدة إلى مساحة عمل 
 ## الفهرس
 
 - [الميزات](#الميزات)
+- [لقطات الشاشة](#لقطات-الشاشة)
+- [أصول العلامة التجارية](#أصول-العلامة-التجارية)
 - [التثبيت](#التثبيت)
 - [الاستخدام](#الاستخدام)
 - [الخصوصية](#الخصوصية)
@@ -42,9 +44,35 @@ Boxing يحول صفحة التبويب الجديدة إلى مساحة عمل 
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="هرمية الصناديق والإشارات المرجعية" width="1280">
 </picture>
 
+## لقطات الشاشة
+
+| اللوحة | الصناديق والإشارات | خطوط الاتصال |
+|---|---|---|
+| ![اللوحة](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![الصناديق والإشارات](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![خطوط الاتصال](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| الإعدادات | تحرير الإشارات |
+|---|---|
+| ![الإعدادات](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![تحرير الإشارات](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## أصول العلامة التجارية
+
+شعارات الوضع الفاتح والداكن وأيقونات الإضافة وأيقونات المواقع وبلاطات المتجر ومعرض التنويعات مضمّنة في [`docs/brand/`](../../docs/brand/) (24 ملفًا من حزمة أصول `box_png`)؛ أعِد استخدامها في إدراجات المتجر والوثائق ومعاينة GitHub الاجتماعية.
+
 ## التثبيت
 
+> [!TIP]
+> حزم التثبيت الجاهزة منشورة على GitHub Releases: يوفّر [أحدث إصدار](https://github.com/Xxx91n/boxing/releases/latest) `boxing-chrome-<version>.zip` / `.crx` و`boxing-firefox-<version>.zip` / `.xpi` و`SHA256SUMS.txt`. الإدراجات في المتاجر ما زالت قيد التدرّج (Edge جارٍ، وChrome Web Store مؤجّل، ولا إدراج عام على AMO) — ملف `.xpi` من الإصدار هو مسار التثبيت المستضاف ذاتيًا لـ Firefox.
+
 ### Chrome / Edge (Chromium)
+
+**من حزمة الإصدار (لا أدوات بناء مطلوبة)**
+
+1. نزّل `boxing-chrome-<version>.zip` من [أحدث إصدار](https://github.com/Xxx91n/boxing/releases/latest) وفك ضغطه
+2. افتح `chrome://extensions` (أو `edge://extensions`)
+3. فعّل **وضع المطور** (المفتاح أعلى اليمين)
+4. اضغط **تحميل إضافة غير مغلّفة** واختر مجلد `boxing-chrome/` المفكوك
+
+**من المصدر**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -54,13 +82,21 @@ Boxing يحول صفحة التبويب الجديدة إلى مساحة عمل 
 
 ### Firefox
 
+**من حزمة الإصدار**
+
+1. نزّل `boxing-firefox-<version>.xpi` من [أحدث إصدار](https://github.com/Xxx91n/boxing/releases/latest) وافتحه في Firefox — الحزم الموقعة من AMO تُثبَّت مباشرة؛ وغير الموقعة تُحمَّل فقط في Firefox Developer Edition/Nightly
+2. أو فك ضغط `boxing-firefox-<version>.zip` ثم من `about:debugging#/runtime/this-firefox` اختر **تحميل إضافة مؤقتة** وحدّد `manifest.json` المفكوك
+
+**من المصدر**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> ‏Node.js وnpm مطلوبان فقط للبناء من المصدر؛ التثبيت من حزمة GitHub Releases لا يحتاجهما، وبعد إدراج المتاجر لن تكون هناك حاجة لأيٍّ منهما.
+
 ## الاستخدام
 
 - **نقر مزدوج** على لوحة فارغة → إنشاء صندوق جديد

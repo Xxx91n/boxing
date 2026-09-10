@@ -16,6 +16,8 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
 ## Sommaire
 
 - [Fonctionnalites](#fonctionnalites)
+- [Captures d'écran](#captures-décran)
+- [Ressources de marque](#ressources-de-marque)
 - [Installation](#installation)
 - [Utilisation](#utilisation)
 - [Confidentialite](#confidentialite)
@@ -42,9 +44,35 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Hierarchie des boites et signets" width="1280">
 </picture>
 
+## Captures d'écran
+
+| Toile | Boîtes et favoris | Connexions |
+|---|---|---|
+| ![Toile](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Boîtes et favoris](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Connexions](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| Paramètres | Édition des favoris |
+|---|---|
+| ![Paramètres](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Édition des favoris](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## Ressources de marque
+
+Les logos clair/sombre, icônes d'extension, favicons, vignettes de boutique et la galerie de variantes sont fournis dans [`docs/brand/`](../../docs/brand/) (24 fichiers, issus du kit d'assets `box_png`). Réutilisables pour les fiches de boutique, la documentation et l'aperçu social GitHub.
+
 ## Installation
 
+> [!TIP]
+> Des paquets d'installation pré-construits sont publiés sur GitHub Releases : la [dernière version](https://github.com/Xxx91n/boxing/releases/latest) fournit `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` et `SHA256SUMS.txt`. Le déploiement sur les boutiques est en cours (Edge en bonne voie, Chrome Web Store reporté, aucun listing public AMO) — le `.xpi` de la release sert d'installation auto-hébergée pour Firefox.
+
 ### Chrome / Edge (Chromium)
+
+**Depuis le paquet de la release (aucun outil de build requis)**
+
+1. Télécharger `boxing-chrome-<version>.zip` depuis la [dernière release](https://github.com/Xxx91n/boxing/releases/latest) et le décompresser
+2. Ouvrir `chrome://extensions` (ou `edge://extensions`)
+3. Activer le **mode développeur** (interrupteur en haut à droite)
+4. Cliquer sur **Charger une extension non empaquetée** et sélectionner le dossier décompressé `boxing-chrome/`
+
+**Depuis les sources**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -54,13 +82,21 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
 
 ### Firefox
 
+**Depuis le paquet de la release**
+
+1. Télécharger `boxing-firefox-<version>.xpi` depuis la [dernière release](https://github.com/Xxx91n/boxing/releases/latest) et l'ouvrir dans Firefox — les versions signées AMO s'installent directement ; les versions non signées ne se chargent que dans Firefox Developer Edition/Nightly
+2. Ou décompresser `boxing-firefox-<version>.zip`, aller sur `about:debugging#/runtime/this-firefox` et choisir **Charger un module temporaire** en pointant le `manifest.json` décompressé
+
+**Depuis les sources**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> Node.js et npm ne sont nécessaires que pour la compilation depuis les sources ; l'installation depuis le paquet GitHub Release s'en passe. Une fois les boutiques ouvertes, rien de tout cela ne sera nécessaire.
+
 ## Utilisation
 
 - **Double-clic** sur canevas vide → creer une nouvelle boite

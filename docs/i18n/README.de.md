@@ -16,6 +16,8 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
 ## Inhaltsverzeichnis
 
 - [Funktionen](#funktionen)
+- [Screenshots](#screenshots)
+- [Marken-Assets](#marken-assets)
 - [Installation](#installation)
 - [Verwendung](#verwendung)
 - [Datenschutz](#datenschutz)
@@ -42,9 +44,35 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
   <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box-Hierarchie und Lesezeichen" width="1280">
 </picture>
 
+## Screenshots
+
+| Leinwand | Boxen & Lesezeichen | Verbindungen |
+|---|---|---|
+| ![Leinwand](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Boxen & Lesezeichen](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Verbindungen](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+
+| Einstellungen | Lesezeichen-Bearbeitung |
+|---|---|
+| ![Einstellungen](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Lesezeichen-Bearbeitung](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+
+## Marken-Assets
+
+Helle und dunkle Logos, Erweiterungs-Icons, Favicons, Store-Kacheln und die Varianten-Übersicht liegen im Repository unter [`docs/brand/`](../../docs/brand/) (24 Dateien aus dem `box_png`-Asset-Kit). Wiederverwendbar für Store-Listings, Dokumentation und GitHub-Social-Preview.
+
 ## Installation
 
+> [!TIP]
+> Fertige Installationspakete sind auf GitHub Releases veröffentlicht: Der [neueste Release](https://github.com/Xxx91n/boxing/releases/latest) enthält `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` und `SHA256SUMS.txt`. Die Store-Listings rollen noch aus (Edge läuft, Chrome Web Store zurückgestellt, AMO ohne öffentliches Listing) — das Release-`.xpi` ist der selbst gehostete Firefox-Weg.
+
 ### Chrome / Edge (Chromium)
+
+**Aus dem Release-Paket (keine Build-Tools nötig)**
+
+1. `boxing-chrome-<version>.zip` vom [neuesten Release](https://github.com/Xxx91n/boxing/releases/latest) herunterladen und entpacken
+2. `chrome://extensions` (oder `edge://extensions`) öffnen
+3. **Entwicklermodus** (Schalter oben rechts) aktivieren
+4. **Entpackte Erweiterung laden** klicken und den entpackten Ordner `boxing-chrome/` auswählen
+
+**Aus dem Quellcode bauen**
 
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
@@ -54,13 +82,21 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
 
 ### Firefox
 
+**Aus dem Release-Paket**
+
+1. `boxing-firefox-<version>.xpi` vom [neuesten Release](https://github.com/Xxx91n/boxing/releases/latest) herunterladen und in Firefox öffnen — AMO-signierte Builds installieren direkt; unsignierte Builds laden nur in Firefox Developer Edition/Nightly
+2. Alternativ `boxing-firefox-<version>.zip` entpacken und auf `about:debugging#/runtime/this-firefox` per **Add-on vorübergehend laden** die entpackte `manifest.json` auswählen
+
+**Aus dem Quellcode bauen**
+
 1. Clone or download the repository: https://github.com/Xxx91n/boxing
 2. Run `npm install` then `npm run build`
 3. Go to `about:debugging#/runtime/this-firefox`
 4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
 
-> [!TIP]
-> Until the first release is published, Node.js and npm are required once to build from source.
+> [!NOTE]
+> Node.js und npm werden nur für den Build aus dem Quellcode benötigt; die Installation aus dem GitHub-Release-Paket kommt ohne sie aus. Nach den Store-Listings entfällt beides.
+
 ## Verwendung
 
 - **Doppelklick** auf leere Leinwand → neue Box erstellen
