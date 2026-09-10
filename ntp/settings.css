@@ -728,12 +728,10 @@ body.box-resizing {
 
 
 
-.ntp--dark .bm-add-row button {
-  background: var(--color-accent);
-  color: var(--color-ink);
-}
-
 .ntp--dark .bm-add-row .bm-add-btn {
+  /* ticket 13: legacy element-selector override removed — bm-add-btn is the only
+     button in .bm-add-row (popups.js); explicit transparent reset beats base (0-3-0 > 0-2-0) */
+  background: transparent;
   border-color: var(--color-hairline);
   color: var(--color-muted);
 }

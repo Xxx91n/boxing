@@ -58,6 +58,17 @@ export function initRenderFacade(deps) {
   }
   // ── helpers ────────────────────────────────────────────
   export function getLargeBox(id) { return boxById.get(id) || null; }
+  // Ticket 10 (BX-TITLE-SEL): clicking a contentEditable box title enters rename with the
+  // whole name pre-selected so typing replaces it directly. Shared by the large-box title,
+  // small-box title and inner crumb title mousedown handlers. selectNodeContents + addRange
+  // is the platform-standard select-all for contentEditable (Chrome + Firefox parity).
+  function selectAllTitleText(el) {
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    if (sel) { sel.removeAllRanges(); sel.addRange(range); }
+  }
 
 
   // ── ADR-0007 Phase 1.2: unified commit(op) (tldraw Store put/remove pattern) ──
@@ -424,7 +435,7 @@ export function initRenderFacade(deps) {
     title.spellcheck = false;
     title.textContent = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]);
     // Title: NO drag, NO click-through — only text editing
-    title.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); title.focus(); });
+    title.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); selectAllTitleText(title); });
     title.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
       if (e.key === 'Escape') { title.textContent = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]); title.blur(); }
@@ -668,7 +679,14 @@ export function initRenderFacade(deps) {
     innerCrumbTitle.contentEditable = 'true';
     innerCrumbTitle.spellcheck = false;
     // Inner title: no drag allowed
-    innerCrumbTitle.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); });
+    innerCrumbTitle.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); selectAllTitleText(innerCrumbTitle); });
+    // Ticket 10 AC3: crumb rename parity with the box-title contract — Enter blurs (onblur
+    // saves), Escape restores the previous name. Assigned (not addEventListener) because
+    // innerCrumbTitle is a persistent element re-entered via _enterLargeBox each time.
+    innerCrumbTitle.onkeydown = (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); innerCrumbTitle.blur(); }
+      if (e.key === 'Escape') { innerCrumbTitle.textContent = lb.title || i18n('untitledBox'); innerCrumbTitle.blur(); }
+    };
     // SEC-03: Force plain-text paste
     innerCrumbTitle.addEventListener('paste', e => { e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
     innerCrumbTitle.onblur = () => {
@@ -810,7 +828,7 @@ export function initRenderFacade(deps) {
     title.contentEditable = 'true';
     title.spellcheck = false;
     title.textContent = sb.title || i18n('newSmallBox');
-    title.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); title.focus(); });
+    title.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); selectAllTitleText(title); });
     title.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
       if (e.key === 'Escape') { title.textContent = sb.title || i18n('newSmallBox'); title.blur(); }

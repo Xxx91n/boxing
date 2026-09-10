@@ -257,6 +257,40 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(info!.borderStyle).toBe('dashed');
   });
 
+  // Ticket 13: in dark mode .bm-add-btn must keep the transparent ghost style.
+  // Regression guard: .ntp--dark .bm-add-row button (0-2-1) used to beat
+  // .bm-add-row .bm-add-btn (0-2-0) and painted the accent background.
+  test('Bug5-dark: bm-add-btn stays transparent in dark mode', async ({ page }) => {
+    await resetBoxing(page);
+    const lbId = await addLargeBox(page);
+    await enterLargebox(page, lbId);
+    await createSmallBox(page);
+    // apply the same dark markers the app uses (#app + body, see persist.js)
+    await page.evaluate(() => {
+      document.getElementById('app')?.classList.add('ntp--dark');
+      document.body.classList.add('ntp--dark');
+    });
+    const bg = await page.evaluate(() => {
+      const btn = document.querySelector('.bm-add-btn');
+      if (!btn) return null;
+      return getComputedStyle(btn).backgroundColor;
+    });
+    expect(bg).toBe('rgba(0, 0, 0, 0)');
+    // hover semantics unchanged: dark :hover still paints accent-soft
+    const probeBg = await page.evaluate(() => {
+      const el = document.createElement('div');
+      el.style.background = 'var(--color-accent-soft)';
+      document.body.appendChild(el);
+      const bg = getComputedStyle(el).backgroundColor;
+      el.remove();
+      return bg;
+    });
+    await page.hover('.bm-add-btn');
+    const hoverBg = await page.evaluate(() =>
+      getComputedStyle(document.querySelector('.bm-add-btn')!).backgroundColor);
+    expect(hoverBg).toBe(probeBg);
+  });
+
   // Bug 6: will-change:transform + contain:layout on boxes
   test('Bug6: will-change:transform on large-box', async ({ page }) => {
     await resetBoxing(page);
