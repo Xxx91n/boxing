@@ -41,3 +41,39 @@ Wave1: [01][02][03][04][05][06]   ← 全部可同时开工
 ## 商店阻塞集
 
 `01 icons` + `03 store-i18n` + `08 version-unify` — 上架前必须绿。
+
+## Wave 1 复核状态（2026-09-10 首脑实物复核）
+
+> 证据: reports/40-wave1-brain-review.md · 方法: hash/but show/HTTP/grep, 不信自述
+> 版本控制: 全程 GitButler (`but`) 并行分支, 互不影响 (WORKFLOW §4.2)
+
+| 票 | 状态 | 分支 | 报告 |
+|---|---|---|---|
+| 01 icons | DONE-CI-OPEN | `01-icons` @ zvs | 有 |
+| 02 readme-sync | DONE | `ticket-02-readme-sync` @ xul,nqs | 有 |
+| 03 store-i18n | **NOT-STARTED** | 无 | **无** |
+| 04 sync-ui | DONE-CI-OPEN | `04-sync-ui` @ zqr | 有 |
+| 05 firefox-scroll | DONE-CI-OPEN | `ticket-05-firefox-scroll` @ pvy | 有 |
+| 06 pages-index | DONE | `ticket-06-pages-index` @ sup,lnv | 有 |
+| 07 pages-demo | **FRONTIER** | — | — |
+| 08 version-unify | BLOCKED by 03 | — | — |
+
+### Frontier（下一波）
+
+```
+立即并行开工:
+  03 store-i18n     从未实施; 无阻塞; 阻塞 08
+  07 pages-demo     06 已 DONE, 阻塞边解除
+
+仍阻塞:
+  08 version-unify  等 03 完成 (01/02 已 DONE)
+
+CI 门 (合并前必须绿): 01 / 04 / 05
+```
+
+### 过程违规 (不追认)
+
+- **V1 BLOCKER**: 03 被宣称完成, 仓库零实物 (无分支/无报告/键 0/14) → 重发启动器
+- **V2 NOTE**: 全员 CI-only, 本机零 build/test → 合并前补 CI 绿
+- **V3 NOTE**: 04 改 14 locale 仅 syncGroupShared → 正当范围, 非污染
+- **V4 NOTE**: AMO 链接 404 — 用户裁定不改, 06 保留
