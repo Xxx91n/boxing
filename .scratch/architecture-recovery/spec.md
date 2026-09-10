@@ -149,3 +149,8 @@
 - Favicon brain research ctx-indexed as `atomcode-favicon`.
 - File affinity: 09 and 10 both edit the render module — ticket 10 is **Blocked by 09**.
 - All version-control statements defer to WORKFLOW §4.2.
+
+### Wave4 addendum — ticket 13
+
+- **Dark bm-add-btn (13)**: dark-mode CSS override must not paint the small-box add-bookmark control with accent solid background; reset to transparent and keep token hover language. Edit CSS sources only (ADR-0011).
+- Story: As a dark-mode user, I want the small-box add-bookmark button to match the dark dashed-token look, so that it does not glare as a light block.

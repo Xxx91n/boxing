@@ -156,12 +156,13 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 | 10 title-select-all | 点击标题全选 | **09** | ready-for-agent |
 | 11 url-open-mode-default | 默认当前标签页 + migrate | None | ready-for-agent |
 | 12 favicon-cache-hardening | single-flight + SWR | None | ready-for-agent |
+| 13 dark-bm-add-btn | 黑暗模式加书签按钮亮色 | None | ready-for-agent |
 
 ### 并行波次
 
 | 波次 | 可同时开工 | 说明 |
 |---|---|---|
-| W4-1 | **09 / 11 / 12** | 文件面不重叠，可三窗并行 |
+| W4-1 | **09 / 11 / 12 / 13** | 文件面不重叠，可四窗并行 |
 | W4-2 | **10** | Blocked by 09；同改 render 模块，禁止与 09 并行 |
 
 ### 产出物路径
@@ -170,10 +171,10 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 |---|---|
 | 调查 | `43-2026-09-12-wave4-investigation.md` |
 | Spec | `spec.md`（Wave4 addendum） |
-| Issue | `issues/09-create-render-decouple.md` … `12-favicon-cache-hardening.md` |
-| Handoff | `handoffs/09` … `12`（含完整 atomcode -p） |
-| 启动器 | `prompts/09` … `12`（≤60 行） |
-| 报告（待实施） | `reports/09` … `12-*-report.md` |
+| Issue | `issues/09-create-render-decouple.md` … `13-dark-bm-add-btn.md` |
+| Handoff | `handoffs/09` … `13`（含完整 atomcode -p） |
+| 启动器 | `prompts/09` … `13`（≤60 行） |
+| 报告（待实施） | `reports/09` … `13-*-report.md` |
 
 ### Wave 4 约束
 
