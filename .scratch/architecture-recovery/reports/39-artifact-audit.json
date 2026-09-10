@@ -1,0 +1,14 @@
+{
+  "pass": true,
+  "issues": [],
+  "summary": [
+    "01-icons: boxes=3 lines=35 wave=1",
+    "02-readme-sync: boxes=4 lines=35 wave=1",
+    "03-store-i18n: boxes=3 lines=35 wave=1",
+    "04-sync-ui: boxes=3 lines=35 wave=1",
+    "05-firefox-scroll: boxes=3 lines=35 wave=1",
+    "06-pages-index: boxes=2 lines=35 wave=1",
+    "07-pages-demo: boxes=3 lines=35 wave=2",
+    "08-version-unify: boxes=3 lines=35 wave=2"
+  ]
+}

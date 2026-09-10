@@ -22,6 +22,7 @@
 7. 38-2026-09-12-release-architecture-investigation.md（对应小节）
 
 ## 本票 delta
+路径锚点: README.md (EN source of truth), docs/i18n/README.*.md, TRANSLATIONS.md, scripts/gen-i18n-readme.js。
 英文 README Install/徽章/截图为 source of truth；补齐 13 个 docs/i18n/README.*.md 的 Screenshots 表、Brand Assets、准确 Install；TRANSLATIONS.md 全 Available；废弃或重写 scripts/gen-i18n-readme.js 禁止覆盖人工翻译。版本徽章统一留给 08，本票不硬改版本号（避免与 08 冲突时以 08 为准）。
 
 ## 调研依赖（atomcode-research）

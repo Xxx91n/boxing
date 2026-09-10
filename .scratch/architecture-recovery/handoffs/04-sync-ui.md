@@ -22,6 +22,7 @@
 7. 38-2026-09-12-release-architecture-investigation.md（对应小节）
 
 ## 本票 delta
+视觉分组: Shared 设置 vs WebDAV 配置 vs GitHub Gist 配置；local 隐藏 remote-backup-zone。
 仅改 ntp/index.html tab-sync 与 ntp/settings.css（必要时 settings-ui.js 绑定）；共享字段 vs webdav-config vs gist-config 做分组标题/卡片；保持 sync-engine.js 互斥逻辑；新增 Playwright 互斥断言。CSS 改动遵循 docs/css-dual-write-convention.md。
 
 ## 调研依赖（atomcode-research）

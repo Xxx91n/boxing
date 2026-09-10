@@ -22,6 +22,7 @@
 7. 38-2026-09-12-release-architecture-investigation.md（对应小节）
 
 ## 本票 delta
+路径锚点: manifest.json, package.json, README.md 徽章, CHANGELOG.md, AGENTS.md, ntp/index.html 页脚, .github/scripts/build.mjs。
 manifest/package/README 徽章/CHANGELOG/AGENTS.md/ntp/index.html 页脚 → 2026.9.12；修复 build.mjs 使 BOXING_BUILD_VERSION 同时覆盖 version 与 version_name；settings 页脚不再显示 v3.6.6。
 
 ## 调研依赖（atomcode-research）

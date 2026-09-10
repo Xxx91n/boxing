@@ -22,6 +22,7 @@
 7. 38-2026-09-12-release-architecture-investigation.md（对应小节）
 
 ## 本票 delta
+路径锚点: icons/, docs/brand/, manifest.json (icons/action.default_icon), .github/workflows/build.yml。
 复制 docs/brand/icon_48.png 与 icon_128.png 覆盖 icons/；CI build.yml 图标步骤改为 copy-from-brand（保留 PNG 签名断言）。不要删除 icons/ 目录。ADR: 无新增；参考 docs/brand/README 若存在。
 
 ## 调研依赖（atomcode-research）

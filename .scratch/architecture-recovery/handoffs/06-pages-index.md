@@ -22,6 +22,8 @@
 7. 38-2026-09-12-release-architecture-investigation.md（对应小节）
 
 ## 本票 delta
+路径锚点: docs/index.md, docs/_config.yml, docs/privacy-policy.md, docs/store-assets/screenshots/。
+验收含根路径 HTTP 200（非 404）。
 新增 docs/index.md；沿用 docs/_config.yml jekyll-theme-minimal；内容：简介、截图、商店/release 链接、隐私链接、预览入口。不引入新站点生成器。
 
 ## 调研依赖（atomcode-research）
