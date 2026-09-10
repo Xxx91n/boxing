@@ -6,7 +6,7 @@
 - .scratch/architecture-recovery/handoffs/10-title-select-all.md
 - .scratch/architecture-recovery/issues/10-title-select-all.md
 - .scratch/architecture-recovery/spec.md
-- .scratch/architecture-recovery/WORKFLOW.md（§4.2）
+- .scratch/architecture-recovery/WORKFLOW.md （§4.2）
 - AGENTS.md（SEC-03）
 - docs/CONTEXT.md
 - ntp/render.js（title mousedown 三处）

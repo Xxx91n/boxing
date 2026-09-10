@@ -51,3 +51,24 @@
 ## 6. 结论
 
 **PASS** — 可进入人工多窗口派发。W4-1 三窗并行；W4-2 等 09。
+
+## 7. 程序化逐字段比对（复审）
+
+方法: Node 读盘。范围: prompts ↔ handoffs ↔ issues ↔ spec / 43 / README。
+
+### 不一致清单（已修复）
+
+| # | 严重度 | 位置 | 问题 | 修复 |
+|---|---|---|---|---|
+| A1 | P0 | 43 波次拆票 | 10 依赖写「无」，与 issue/handoff/README 的 Blocked by 09 矛盾 | 表改为 Blocked by；W4-1=09/11/12；W4-2=10 |
+| A2 | P0 | issues/11 What to build | 仅中文「当前标签页」，缺领域词 sameTab | What to build 与验收显式写 urlOpenMode / sameTab / newTab |
+| A3 | NOTE | prompts WORKFLOW 必读行 | 路径与中文节号粘连 | 改为 WORKFLOW.md + 空格 + （§ |
+
+### 修复后复审
+
+- Blocked by 五处一致（issue/handoff/prompt/README/43）
+- 违禁词 worktree / 裸 git 写命令：零命中
+- prompt 不复述 WORKFLOW 全文条款、不含验收 checkbox
+- prompt 行数均 ≤60
+
+**结论: PASS（修复后）**

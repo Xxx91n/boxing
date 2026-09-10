@@ -56,14 +56,15 @@
 
 ## 波次拆票
 
-| 票 | 主题 | 优先级 | 依赖 |
+| 票 | 主题 | 优先级 | Blocked by |
 |---|---|---|---|
-| 09 | 创建先 render 后 save（P1） | P0 | 无 |
-| 10 | 标题点击全选（P2） | P1 | 无 |
-| 11 | urlOpenMode 默认 sameTab + 迁移（P3） | P1 | 无 |
-| 12 | favicon single-flight + SWR hydrate（P4） | P2 | 无 |
+| 09 | 创建先 render 后 save（P1） | P0 | None — can start immediately |
+| 10 | 标题点击全选（P2） | P1 | **09 — create-render-decouple**（同改 render 模块） |
+| 11 | urlOpenMode 默认 sameTab + 迁移（P3） | P1 | None — can start immediately |
+| 12 | favicon single-flight + SWR hydrate（P4） | P2 | None — can start immediately |
 
-四票文件面几乎不重叠（09=render/storage 调用序；10=render title 监听；11=utils/settings/popups/ntp 默认；12=favicon.js）。可并行，但 09 与 10 同改 render.js — **建议 09 先合或 hunk 认领**。
+四票文件面：09=render 创建管线；10=render title 监听；11=utils/settings/popups/ntp 默认；12=favicon.js。
+**并行波次（与 issues/README 一致）**: W4-1 = 09/11/12；W4-2 = 10（Blocked by 09，禁止与 09 并行改 render）。
 
 ## 版本控制
 

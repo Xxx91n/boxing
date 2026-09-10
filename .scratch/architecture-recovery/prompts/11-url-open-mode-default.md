@@ -6,7 +6,7 @@
 - .scratch/architecture-recovery/handoffs/11-url-open-mode-default.md
 - .scratch/architecture-recovery/issues/11-url-open-mode-default.md
 - .scratch/architecture-recovery/spec.md
-- .scratch/architecture-recovery/WORKFLOW.md（§4.2）
+- .scratch/architecture-recovery/WORKFLOW.md （§4.2）
 - AGENTS.md
 - docs/CONTEXT.md
 - ntp/utils.js

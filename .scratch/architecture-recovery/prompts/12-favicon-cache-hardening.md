@@ -7,7 +7,7 @@
 - .scratch/architecture-recovery/issues/12-favicon-cache-hardening.md
 - .scratch/architecture-recovery/spec.md
 - .scratch/architecture-recovery/43-2026-09-12-wave4-investigation.md
-- .scratch/architecture-recovery/WORKFLOW.md（§4.3）
+- .scratch/architecture-recovery/WORKFLOW.md （§4.3）
 - AGENTS.md
 - docs/CONTEXT.md
 - ntp/favicon.js（全文）
