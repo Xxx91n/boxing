@@ -10,9 +10,21 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
-  -webkit-backdrop-filter: blur(8px) saturate(180%);
-  backdrop-filter: blur(8px) saturate(180%);
-}
+  /* Ticket 05 (ADR-0014 v3): backdrop-filter removed — see block comment. */
+  /*
+   * Root cause: BX-DEV-140 changed background from rgba (semi-transparent) to
+   * var(--color-surface) (opaque #EEE9E1 light / #2A2724 dark). With an opaque
+   * background the blur is visually invisible (background fully covers the
+   * filtered backdrop) yet Firefox still rasterizes it every frame — a pure
+   * performance tax. Removing it eliminates the residual Firefox smoothScroll
+   * jank with zero visual regression.
+   * Evidence: Bug 1995379 (3x memory / 98% CPU / scroll stutter, New Tab);
+   *   Bug 1809738 (picture-caching slice collapse); Bug 1418923 (per-frame
+   *   recompute). atomcode-research indexed under atomcode-backdrop-filter-research.
+   * If a semi-transparent overlay background is ever restored, re-add
+   * backdrop-filter here AND gate it under prefers-reduced-motion (see
+   * design-system.css reduced-motion block).
+   */
 
 .modal-overlay[hidden] {
   display: none;

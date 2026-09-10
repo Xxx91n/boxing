@@ -110,6 +110,9 @@ test.describe('Boxing state isolation and live synchronization', () => {
       }
       return scrollable;
     });
+    // ADR-0014: zero nested scrollables inside .settings-content (single scroll owner).
+    // Previously computed but never asserted — the "dead assert" this test fixes.
+    expect(scrollOwners).toEqual([]);
   });
 
   test('reload restores this tab view instead of shared last-active memory', async ({ page }) => {

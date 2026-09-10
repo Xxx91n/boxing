@@ -189,4 +189,13 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+  /* Ticket 05 (ADR-0014 v3): reduced-motion users get a static overlay.
+     backdrop-filter:blur is a decorative effect (Chrome Developers / web.dev);
+     under reduce it is disabled per the additive graceful-degradation model.
+     Defensive: if backdrop-filter is reintroduced on .modal-overlay, this
+     forces it off under reduced-motion. */
+  .modal-overlay {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
 }
