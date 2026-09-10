@@ -77,3 +77,34 @@ CI 门 (合并前必须绿): 01 / 04 / 05
 - **V2 NOTE**: 全员 CI-only, 本机零 build/test → 合并前补 CI 绿
 - **V3 NOTE**: 04 改 14 locale 仅 syncGroupShared → 正当范围, 非污染
 - **V4 NOTE**: AMO 链接 404 — 用户裁定不改, 06 保留
+
+## Wave 2 复核状态（2026-09-10 首脑实物复核）
+
+> 证据: reports/41-wave2-brain-review.md · 方法: JSON/manifest/spec/workflow/stub node --check/but, 不信自述
+> 版本控制: 全程 GitButler (`but`) 并行分支, 互不影响 (WORKFLOW §4.2)
+
+| 票 | 状态 | 分支 |
+|---|---|---|
+| 01 icons | DONE-CI-OPEN | `01-icons` @ zvs |
+| 02 readme-sync | DONE | `ticket-02-readme-sync` @ xul,nqs |
+| 03 store-i18n | **DONE-CI-OPEN** | `03-store-i18n` @ kky,qtr |
+| 04 sync-ui | DONE-CI-OPEN | `04-sync-ui` @ zqr |
+| 05 firefox-scroll | DONE-CI-OPEN | `ticket-05-firefox-scroll` @ pvy |
+| 06 pages-index | DONE | `ticket-06-pages-index` @ sup,lnv |
+| 07 pages-demo | **DONE-CI-OPEN** | `ticket-07-pages-demo` @ swt,utn |
+| 08 version-unify | **FRONTIER** | — |
+
+### Frontier（下一波）
+
+```
+立即开工: 08 version-unify (唯一剩余; 01+02+03 全 DONE)
+
+CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
+人工门: 07 Pages Source → GitHub Actions (账户操作)
+```
+
+### Wave 2 违规 (不追认)
+
+- V1 NOTE: 03/07 CI-only, 本机未跑 build/Playwright → 合并前补 CI 绿
+- V2 NOTE: 07 Pages Source 人工步骤未代操作 → 正确边界
+- V3 正面: 03 先自检主 Agent 结论再实施, 符合启动器质检要求
