@@ -142,3 +142,29 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 - V1 NOTE: 08 CI-only, 本机未跑 build → 合并前补 CI 绿 (build.mjs 改动必须被 CI 覆盖)
 - V2 NOTE: store-listings 仍写 2026.9.9 zip 名 → 等 CI artifacts 产出后再改
 - V3 NOTE: AMO 2026.9.12 占用未联网核实 → 提交前人工核对
+
+
+## Wave 4 调查状态（2026-09-10 首脑 · 体验四痛点）
+
+> 证据: reports 不强制；调查: `43-2026-09-12-wave4-investigation.md`
+> 日志 `boxing-log-2026-09-10T13-58-24.log` 盘上不存在 — P1 按源码时序立案
+
+| 票 | 主题 | 状态 | 分支建议 |
+|---|---|---|---|
+| 09 create-render-decouple | 双击新建先 render 后 save | ready-for-agent | `09-create-render-decouple` |
+| 10 title-select-all | 点击标题全选 | ready-for-agent | `10-title-select-all` |
+| 11 url-open-mode-default | 默认当前标签页 + migrate | ready-for-agent | `11-url-open-mode-default` |
+| 12 favicon-cache-hardening | single-flight + SWR | ready-for-agent | `12-favicon-cache-hardening` |
+
+### Wave 4 Frontier
+
+```
+可开工: 09 / 10 / 11 / 12（并行；09 与 10 同文件 render.js — hunk 认领或 09 先）
+并入 2026.9.12 发行内容（与 01-08 同里程碑）
+CI 门: 全员 CI-only → 合并前补绿
+```
+
+### Wave 4 备注
+
+- favicon 权限/`_favicon` API 刻意不做（扩权 + Firefox 无）；单独立项再议
+- 01–08 收口门（CI/合并/人工）不变，见 Wave3
