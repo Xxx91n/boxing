@@ -824,5 +824,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing 按时间分层保留布局快照。若主存储损坏，会先归档（绝不静默覆盖）再从最近健康快照重建。"
+  },
+  "importMergeTitle": {
+    "message": "从备份恢复",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "合并导入：新增 $added$ 个盒子，$conflicts$ 个同 id 冲突已归档为冲突副本，跳过 $skipped$ 个相同盒子。画布上没有任何内容被覆盖。",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "覆盖恢复",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "覆盖将用备份整体替换当前画布。系统会先为现有数据创建快照，之后仍可恢复。确认继续覆盖？",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "合并并导入",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "覆盖恢复",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "冲突副本已归档",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

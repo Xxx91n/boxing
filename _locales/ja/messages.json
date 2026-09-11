@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing はレイアウトのスナップショットを時間階層で保持します。メインストレージが破損した場合、静かに上書きせずアーカイブしてから、最新の正常なスナップショットから再構築します。"
+  },
+  "importMergeTitle": {
+    "message": "バックアップから復元",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "統合インポート：新規 $added$ 個、同一 ID の競合 $conflicts$ 件は競合コピーとしてアーカイブ、同一 $skipped$ 個はスキップ。キャンバス上の内容は上書きされません。",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "上書き復元",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "上書きするとバックアップでキャンバス全体を置き換えます。現在のデータは先にスナップショットされるため、後から復元できます。続行しますか？",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "統合してインポート",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "上書き復元",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "競合コピーがアーカイブされました",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

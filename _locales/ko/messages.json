@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing은 레이아웃 스냅샷을 시간 계층으로 유지합니다. 기본 저장소가 손상되면 조용히 덮어쓰지 않고 보관한 뒤 최근 정상 스냅샷에서 재구축합니다."
+  },
+  "importMergeTitle": {
+    "message": "백업에서 복원",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "병합 가져오기: 새 상자 $added$개, 같은 ID 충돌 $conflicts$개는 충돌 사본으로 보관됨, 동일 $skipped$개는 건너뜀. 캔버스 내용은 덮어쓰지 않습니다.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "덮어쓰기 복원",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "덮어쓰면 백업으로 캔버스 전체가 대체됩니다. 현재 데이터는 먼저 스냅샷되므로 나중에 복원할 수 있습니다. 계속하시겠습니까?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "병합하여 가져오기",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "덮어쓰기 복원",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "충돌 사본 보관됨",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

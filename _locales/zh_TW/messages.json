@@ -824,5 +824,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing 會按時間分層保留版面快照。若主儲存損壞，會先封存（絕不靜默覆寫）再從最近健康快照重建。"
+  },
+  "importMergeTitle": {
+    "message": "從備份恢復",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "合併匯入：新增 $added$ 個盒子，$conflicts$ 個同 id 衝突已封存為衝突副本，略過 $skipped$ 個相同盒子。畫面上沒有任何內容被覆寫。",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "覆寫復原",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "覆寫將以備份整體取代目前畫面。系統會先為現有資料建立快照，之後仍可還原。確認繼續覆寫？",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "合併並匯入",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "覆寫復原",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "衝突副本已封存",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

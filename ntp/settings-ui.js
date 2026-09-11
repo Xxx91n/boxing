@@ -7,8 +7,8 @@
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
-import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives } from './storage.js';
-import { migrateLayout, normalizeBookmarkUrl } from './utils.js';
+import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, archiveConflictLayouts, listConflictArchives } from './storage.js';
+import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
@@ -79,6 +79,21 @@ export function initSettingsUiFacade(deps) {
           corruptRow.hidden = true;
         }
       }
+      // Ticket 44: conflict-copy row — import/sync conflicts archived (never silently dropped)
+      const conflictRow = document.getElementById('data-conflict-row');
+      const conflictCountEl = document.getElementById('data-conflict-count');
+      const conflictTimeEl = document.getElementById('data-conflict-time');
+      const conflicts = await listConflictArchives();
+      if (conflictRow) {
+        if (conflicts.length > 0) {
+          const latestConflict = conflicts[conflicts.length - 1];
+          if (conflictCountEl) conflictCountEl.textContent = String(conflicts.length);
+          if (conflictTimeEl && latestConflict && latestConflict.ts) conflictTimeEl.textContent = new Date(latestConflict.ts).toLocaleString();
+          conflictRow.hidden = false;
+        } else {
+          conflictRow.hidden = true;
+        }
+      }
     } catch (e) { if (typeof debugWarn === 'function') debugWarn('refreshDataHealth', e); }
   }
 
@@ -111,6 +126,7 @@ export function initSettingsUiFacade(deps) {
   export function openConfirmModal(type, id, largeId) {
     confirmModal.hidden = false;
     confirmTitle.textContent = i18n('confirmDeleteTitle');
+    confirmDelete.textContent = i18n('confirmYes'); // ticket 44: reset action label (import flow relabels it per stage)
     const bodyText = type === 'large' ? i18n('confirmDeleteLargeBody') : i18n('confirmDeleteSmallBody');
     confirmBody.textContent = bodyText;
     setConfirmCallback(() => {
@@ -122,6 +138,35 @@ export function initSettingsUiFacade(deps) {
     confirmModal.hidden = true;
     setConfirmCallback(null);
   }
+
+  // Ticket 44: promise wrapper over the shared confirm modal (in-page, same surface as
+  // openConfirmModal). Resolves 'action' on the accent button, 'dismiss' on cancel or
+  // backdrop click. One-shot listeners are removed on settle; the delete flow's
+  // confirmCallback stays null here so the static callback path never double-fires.
+  function askConfirmModal(title, body, actionLabel) {
+    return new Promise(resolve => {
+      let settled = false;
+      const settle = (v) => {
+        if (settled) return; settled = true;
+        confirmDelete.removeEventListener('click', onAction);
+        confirmCancel.removeEventListener('click', onDismiss);
+        confirmModal.removeEventListener('click', onBackdrop);
+        closeConfirmModal();
+        resolve(v);
+      };
+      const onAction = () => settle('action');
+      const onDismiss = () => settle('dismiss');
+      const onBackdrop = (e) => { if (e.target === confirmModal) settle('dismiss'); };
+      confirmTitle.textContent = title;
+      confirmBody.textContent = body;
+      confirmDelete.textContent = actionLabel;
+      confirmDelete.addEventListener('click', onAction);
+      confirmCancel.addEventListener('click', onDismiss);
+      confirmModal.addEventListener('click', onBackdrop);
+      confirmModal.hidden = false;
+    });
+  }
+
 
 // Init-time wiring, called from ntp.js init() at the position of the original statement blocks.
 export function bindSettingsUi() {
@@ -307,13 +352,50 @@ export function bindSettingsUi() {
           if (s.zoomLevel && !isFinite(s.zoomLevel)) s.zoomLevel = 1.0;
           if (s.fontSize && (!isFinite(s.fontSize) || s.fontSize < 8 || s.fontSize > 72)) s.fontSize = 14;
         }
+        // Ticket 44 (spec D4): JSON import defaults to Raindrop-style append-merge — local
+        // bookmarks are never silently dropped; same-id divergence is archived as a
+        // conflict copy instead of overwriting. The classic full replace survives ONLY as
+        // an explicit two-stage overwrite-restore with a pre-snapshot, and stays the
+        // behavior for an empty canvas (nothing can be overwritten there).
+        const incoming = migrateLayout(data);
+        let importMode = 'merge';
+        let importStats = null;
+        const localBoxCount = Array.isArray(layout.boxes) ? layout.boxes.length : 0;
         const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
-        // A5: savedGroups guard removed (groups derived from box.isParent)
-        setLayout(migrateLayout(data));
-        // AUD-SEC: preserve local connections/groups if import file lacks them
-        // (older backups predate the connections system; full replace would lose user lines).
-        if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
-        // A5: savedGroups restore removed
+        if (localBoxCount === 0) {
+          // A5: savedGroups guard removed (groups derived from box.isParent)
+          setLayout(incoming);
+          // AUD-SEC: preserve local connections if the import file lacks them
+          // (older backups predate the connections system; full replace would lose user lines).
+          if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
+          importMode = 'replace-empty';
+        } else {
+          const mergePlan = mergeImportedLayout(layout, incoming);
+          importStats = mergePlan.stats;
+          closeSettingsModal(); // don't stack the decision modal behind the settings overlay
+          const mergeDecision = await askConfirmModal(
+            i18n('importMergeTitle'),
+            i18n('importMergeBody', [importStats.added, importStats.conflicted, importStats.skipped]),
+            i18n('importBtnMerge')
+          );
+          if (mergeDecision === 'action') {
+            if (mergePlan.conflicts.length) {
+              await archiveConflictLayouts({ boxes: mergePlan.conflicts }, { reason: 'import-merge', side: 'incoming' });
+            }
+            setLayout(mergePlan.merged);
+          } else {
+            const overwriteDecision = await askConfirmModal(
+              i18n('importOverwriteTitle'),
+              i18n('importOverwriteBody'),
+              i18n('importBtnOverwrite')
+            );
+            if (overwriteDecision !== 'action') { debug('Import aborted by user — silent replace is no longer a default'); importFile.value = ''; return; }
+            importMode = 'overwrite-confirmed';
+            await saveSnapshot(); // COW before destructive replace (ADR-0009 / atomcode 4.1-1)
+            setLayout(incoming);
+            if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
+          }
+        }
         await saveLayout();
         if (currentLargeBoxId) exitToCanvas();
         exitToCanvas();  // force exit any drill-in state
@@ -322,7 +404,7 @@ export function bindSettingsUi() {
         applyInnerTransform();
         updateCaption();
         try { /* silent success — no alert needed */ } catch (e) { /* silent: no-op */ }
-        debug('Import succeeded, layout replaced');
+        debug('Import succeeded — mode=' + importMode + (importStats ? ' stats=' + JSON.stringify(importStats) : ''));
       } catch (e) { try { alert(i18n('importFailed')); } catch (e2) { /* silent: alert may be blocked */ } }
       importFile.value = '';
     });

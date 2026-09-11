@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing เก็บสแนปชอตของเลย์เอาต์แบบแบ่งตามช่วงเวลา หากพื้นที่จัดเก็บหลักเสียหาย จะถูกจัดเก็บไว้ (ไม่เขียนทับเงียบ ๆ) แล้วสร้างใหม่จากสแนปชอตล่าสุดที่สมบูรณ์"
+  },
+  "importMergeTitle": {
+    "message": "คืนค่าจากข้อมูลสำรอง",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "นำเข้าแบบผสาน: กล่องใหม่ $added$ รายการ, ขัดแย้ง id เดียวกัน $conflicts$ รายการถูกเก็บเป็นสำเนาขัดแย้ง, ข้ามกล่องที่เหมือนกัน $skipped$ รายการ ไม่มีเนื้อหาบนผืนผ้าใบถูกเขียนทับ",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "คืนค่าแบบเขียนทับ",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "การเขียนทับจะแทนที่ผืนผ้าใบทั้งหมดด้วยข้อมูลสำรอง ระบบจะ snapshots ข้อมูลปัจจุบันไว้ก่อนเพื่อเรียกคืนภายหลัง ดำเนินการเขียนทับต่อ?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "ผสานและนำเข้า",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "เขียนทับ",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "เก็บสำเนาขัดแย้งแล้ว",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

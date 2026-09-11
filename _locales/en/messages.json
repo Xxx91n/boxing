@@ -833,5 +833,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot."
+  },
+  "importMergeTitle": {
+    "message": "Restore from backup",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "Merge import: $added$ new box(es), $conflicts$ same-id conflict(s) archived as conflict copies, $skipped$ identical box(es) skipped. Nothing on your canvas is overwritten.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "Overwrite restore",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "Overwrite replaces your entire canvas with the backup. Your current data is snapshotted first, so it can be recovered afterwards. Continue with overwrite?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "Merge & import",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "Overwrite restore",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "Conflict copies archived",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

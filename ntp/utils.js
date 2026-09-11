@@ -200,6 +200,65 @@
     return true;
   }
 
+  // Ticket 44 (spec D4): deep-equality with key-order tolerance — object key insertion
+  // order drifts between export rounds (JSON.stringify keeps insertion order), so
+  // identical boxes must never be reported as conflicts.
+  function deepJsonEquals(a, b) {
+    if (a === b) return true;
+    if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    if (Array.isArray(a)) {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) if (!deepJsonEquals(a[i], b[i])) return false;
+      return true;
+    }
+    const ka = Object.keys(a).sort();
+    const kb = Object.keys(b).sort();
+    if (ka.length !== kb.length) return false;
+    for (let i = 0; i < ka.length; i++) if (ka[i] !== kb[i] || !deepJsonEquals(a[ka[i]], b[ka[i]])) return false;
+    return true;
+  }
+
+  // Ticket 44 (spec D4): import = Raindrop-style append-merge (never overwrite, never
+  // silently drop). Same-id boxes deep-equal -> skipped; same-id boxes divergent -> the
+  // incoming whole subtree is returned as a conflict copy (caller archives it under
+  // boxingLayout.conflict.<ts>), the local box stays verbatim on the canvas.
+  // New ids append; connections union-dedup by from:to; settings stay local-authoritative
+  // (user prefs are not data - replacing prefs is the explicit overwrite-restore mode).
+  function mergeImportedLayout(local, incoming) {
+    const boxes = (Array.isArray(local.boxes) ? local.boxes.slice() : []);
+    const byId = new Map();
+    for (const b of boxes) if (b && b.id) byId.set(b.id, b);
+    const conflicts = [];
+    let added = 0, skipped = 0;
+    for (const ib of (incoming.boxes || [])) {
+      if (!ib || typeof ib.id !== 'string') continue;
+      const lb = byId.get(ib.id);
+      if (!lb) { boxes.push(ib); byId.set(ib.id, ib); added++; continue; }
+      if (deepJsonEquals(lb, ib)) { skipped++; continue; }
+      conflicts.push(ib);
+    }
+    const connSet = new Set();
+    const connections = [];
+    for (const c of (local.connections || []).concat(incoming.connections || [])) {
+      if (!c) continue;
+      const key = (c.from || c.source || '') + ':' + (c.to || c.target || '');
+      if (connSet.has(key)) continue;
+      connSet.add(key);
+      connections.push(c);
+    }
+    const merged = {
+      ...local,
+      boxes,
+      connections,
+      groups: [],
+      schemaVersion: Math.max(local.schemaVersion || 1, incoming.schemaVersion || 1),
+      nextLargeIndex: Math.max(local.nextLargeIndex || 1, incoming.nextLargeIndex || 1),
+      settings: { ...local.settings },
+    };
+    return { merged, conflicts, stats: { added, conflicted: conflicts.length, skipped } };
+  }
+
   function largeKey(id) { return 'large:' + id; }
 
   function smallKey(largeId, smallId) { return 'small:' + largeId + ':' + smallId; }
@@ -247,4 +306,4 @@
     return { zoom: newZoom, panX: newPanX, panY: newPanY };
   }
 
-export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
+export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };

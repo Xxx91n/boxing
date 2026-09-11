@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing bewahrt zeitlich gestaffelte Snapshots Ihres Layouts auf. Wird der Hauptspeicher beschädigt, wird er archiviert (niemals still überschrieben) und aus dem letzten gesunden Snapshot wiederhergestellt."
+  },
+  "importMergeTitle": {
+    "message": "Aus Sicherung wiederherstellen",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "Merge-Import: $added$ neue Box(en), $conflicts$ Konflikt(e) gleicher ID als Konfliktkopien archiviert, $skipped$ identische Box(en) übersprungen. Nichts auf Ihrer Fläche wird überschrieben.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "Überschreiben-Wiederherstellung",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "Überschreiben ersetzt Ihre gesamte Fläche durch die Sicherung. Ihre aktuellen Daten werden zuerst als Snapshot gesichert und können danach wiederhergestellt werden. Fortfahren?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "Zusammenführen & importieren",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "Überschreiben",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "Konfliktkopien archiviert",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

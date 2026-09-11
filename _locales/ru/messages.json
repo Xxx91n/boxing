@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing хранит снимки макета с послойной временной ротацией. Если основное хранилище повреждено, оно архивируется (никогда не перезаписывается молча) и восстанавливается из последнего исправного снимка."
+  },
+  "importMergeTitle": {
+    "message": "Восстановить из резервной копии",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "Импорт слиянием: новых ящиков — $added$, конфликтов с тем же id — $conflicts$ (сохранены как конфликтные копии), идентичных пропущено — $skipped$. Ничто на холсте не перезаписывается.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "Перезапись при восстановлении",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "Перезапись заменит весь холст резервной копией. Текущие данные сначала сохраняются в снимок, их можно восстановить позже. Продолжить перезапись?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "Объединить и импортировать",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "Перезаписать",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "Конфликтные копии сохранены",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

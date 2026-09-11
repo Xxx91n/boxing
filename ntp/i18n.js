@@ -227,6 +227,14 @@ I18N_FALLBACK.onboardingStep2Desc = 'Open a large box, then click + to add small
 I18N_FALLBACK.onboardingStep3Label = 'Step 3 of 3';
 I18N_FALLBACK.onboardingStep3Title = 'Sync across devices';
 I18N_FALLBACK.onboardingStep3Desc = 'Open Settings → Sync to connect a WebDAV server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way sync.';
+// Ticket 44 (spec D4): import/restore merge + conflict-copy UI strings (BX-I18N-005 fallback).
+I18N_FALLBACK.importMergeTitle = 'Restore from backup';
+I18N_FALLBACK.importMergeBody = 'Merge import: $1$ new box(es), $2$ same-id conflict(s) archived as conflict copies, $3$ identical box(es) skipped. Nothing on your canvas is overwritten.';
+I18N_FALLBACK.importOverwriteTitle = 'Overwrite restore';
+I18N_FALLBACK.importOverwriteBody = 'Overwrite replaces your entire canvas with the backup. Your current data is snapshotted first, so it can be recovered afterwards. Continue with overwrite?';
+I18N_FALLBACK.importBtnMerge = 'Merge & import';
+I18N_FALLBACK.importBtnOverwrite = 'Overwrite restore';
+I18N_FALLBACK.dataConflictArchived = 'Conflict copies archived';
 export let currentLang = 'en';
 // BX-i18n-LOC: To add a new language, append the code here + update ONB_LANG_LABELS below + create _locales/<code>/messages.json.
 export const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi', 'zh_TW'];

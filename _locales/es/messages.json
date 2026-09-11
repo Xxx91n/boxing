@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing conserva instantáneas de tu diseño por capas temporales. Si el almacenamiento principal se daña, se archiva (nunca se sobrescribe en silencio) y se reconstruye desde la última instantánea correcta."
+  },
+  "importMergeTitle": {
+    "message": "Restaurar desde copia de seguridad",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "Importación combinada: $added$ caja(s) nueva(s), $conflicts$ conflicto(s) de mismo id archivados como copias en conflicto, $skipped$ caja(s) idéntica(s) omitida(s). No se sobrescribe nada en tu lienzo.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "Restauración por sobrescritura",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "Sobrescribir reemplaza todo tu lienzo con la copia de seguridad. Tus datos actuales se guardan primero en una instantánea, recuperables después. ¿Continuar con la sobrescritura?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "Combinar e importar",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "Sobrescribir",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "Copias en conflicto archivadas",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

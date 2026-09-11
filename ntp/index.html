@@ -226,6 +226,11 @@
                 <span data-i18n="dataCorruptArchived">Corrupted layout archived</span>: <span id="data-corrupt-count">0</span>
                 · <span id="data-corrupt-time">–</span>
               </p>
+              <!-- Ticket 44 (spec D4): conflict-copy row — archived losing sides from import/sync merge conflicts. -->
+              <p class="modal__hint" id="data-conflict-row" style="margin:2px 0 0;font-size:11px;color:#8a6d1a;" hidden>
+                <span data-i18n="dataConflictArchived">Conflict copies archived</span>: <span id="data-conflict-count">0</span>
+                · <span id="data-conflict-time">–</span>
+              </p>
               <p class="modal__hint" data-i18n="dataHealthHint" style="margin:2px 0 0;font-size:11px;">Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot.</p>
             </section>
             <!-- BX-AUD-05: diagnostics — leveled log ring buffer export/clear. Industry-shape

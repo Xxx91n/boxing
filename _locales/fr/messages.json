@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing conserve des captures de votre mise en page par paliers temporels. Si le stockage principal est endommagé, il est archivé (jamais écrasé silencieusement) puis reconstruit à partir de la dernière capture saine."
+  },
+  "importMergeTitle": {
+    "message": "Restaurer depuis une sauvegarde",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "Import fusionné : $added$ nouvelle(s) boîte(s), $conflicts$ conflit(s) de même ID archivés en copies de conflit, $skipped$ boîte(s) identique(s) ignorée(s). Rien sur votre canevas n’est écrasé.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "Restauration par écrasement",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "Écraser remplace tout votre canevas par la sauvegarde. Vos données actuelles sont d’abord instantanées, donc récupérables ensuite. Continuer ?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "Fusionner et importer",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "Écraser",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "Copies de conflit archivées",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

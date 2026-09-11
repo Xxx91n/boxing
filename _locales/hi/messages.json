@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing आपके लेआउट के समय-स्तरित स्नैपशॉट रखता है। यदि मुख्य स्टोरेज क्षतिग्रस्त हो जाता है, तो इसे संग्रहित किया जाता है (कभी भी मौन रूप से अधिलेखित नहीं) और नवीनतम स्वस्थ स्नैपशॉट से पुनर्निर्मित किया जाता है।"
+  },
+  "importMergeTitle": {
+    "message": "बैकअप से पुनर्स्थापित करें",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "मर्ज आयात: $added$ नए बॉक्स, $conflicts$ समान आईडी टकराव टकराव प्रतियों के रूप में संग्रहीत, $skipped$ समान बॉक्स छोड़े गए। आपके कैनवस पर कुछ भी अधिलेखित नहीं होता।",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "अधिलेखन पुनर्स्थापना",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "अधिलेखन आपके पूरे कैनवस को बैकअप से बदल देगा। आपका वर्तमान डेटा पहले स्नैशॉट किया जाएगा, जिसे बाद में पुनर्प्राप्त किया जा सकता है। जारी रखें?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "मर्ज करके आयात करें",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "अधिलेखित करें",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "टकराव प्रतियाँ संग्रहीत",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

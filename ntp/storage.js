@@ -395,6 +395,63 @@ export function registerStorageOnChanged() {
   }
 
 
+  // ── Ticket 44 (spec D4): conflict-copy fork ─────────────────────────────────
+  // Import/sync conflicts must never silently drop a side (Dropbox conflicted copy /
+  // Syncthing .sync-conflict lifecycle, atomcode 2026-09-11). The losing payload is
+  // archived verbatim under boxingLayout.conflict.<ts>; boxingLayout.conflict.index
+  // holds lightweight metadata for the settings data-health row. Cap and single-entry
+  // byte limit mirror the corrupt archives (isolation keys count against quota).
+  const CONFLICT_PREFIX = 'boxingLayout.conflict.';
+  const CONFLICT_INDEX_KEY = 'boxingLayout.conflict.index';
+  const MAX_CONFLICT_ARCHIVES = 20;
+  let _lastConflictTs = 0; // monotonic ts guard: two archives in one ms must not share a key
+
+  async function _readConflictIndex() {
+    try {
+      const stored = await layoutStorage.get(CONFLICT_INDEX_KEY);
+      const v = stored && stored[CONFLICT_INDEX_KEY];
+      return Array.isArray(v) ? v : [];
+    } catch (_) { return []; }
+  }
+
+  export async function archiveConflictLayouts(payload, meta) {
+    try {
+      let ts = Date.now();
+      if (ts <= _lastConflictTs) ts = _lastConflictTs + 1;
+      _lastConflictTs = ts;
+      const reason = String((meta && meta.reason) || 'conflict');
+      const side = String((meta && meta.side) || 'unknown');
+      const entry = { ts, reason, side };
+      let payloadJson = '';
+      try { payloadJson = JSON.stringify(payload === undefined ? null : payload); } catch (_) { payloadJson = ''; }
+      if (payloadJson && payloadJson.length <= MAX_SNAPSHOT_BYTES) {
+        entry.raw = payload; // verbatim — recoverable by re-importing raw.boxes through the merge path
+        entry.size = payloadJson.length;
+      } else {
+        entry.truncated = true; // over-cap: metadata only (SEC-06 OOM hygiene, same as corrupt archives)
+        entry.size = payloadJson ? payloadJson.length : 0;
+      }
+      if (Array.isArray(payload && payload.boxes)) entry.boxes = payload.boxes.length;
+      await layoutStorage.set({ [CONFLICT_PREFIX + ts]: entry });
+      const index = await _readConflictIndex();
+      index.push({ ts, reason, side, size: entry.size, boxes: entry.boxes || 0, truncated: !!entry.truncated });
+      index.sort((a, b) => a.ts - b.ts);
+      while (index.length > MAX_CONFLICT_ARCHIVES) {
+        const oldest = index.shift();
+        try { await layoutStorage.remove(CONFLICT_PREFIX + oldest.ts); } catch (_) { /* non-fatal */ }
+      }
+      await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index });
+      debug('Conflict copy archived @' + new Date(ts).toISOString() + ' reason=' + reason + ' side=' + side + ' (archives=' + index.length + ')');
+    } catch (e) { debugErr('archiveConflictLayouts', e); }
+  }
+
+  export async function listConflictArchives() {
+    try { return await _readConflictIndex(); }
+    catch (e) { debugErr('listConflictArchives', e); return []; }
+  }
+
+
+
   function mergeConcurrentLayout(localValue, remoteValue) {
     debug('mergeConcurrentLayout: local='+(localValue?.boxes?.length||0)+' remote='+(remoteValue?.boxes?.length||0));
     if (!remoteValue) return localValue;

@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "يحتفظ Boxing بلقطات تخطيطك بطبقات زمنية. إذا تلف وحدة التخزين الرئيسية، تتم أرشفتها (لا تُستبدل بصمت أبداً) وإعادة بنائها من أحدث لقطة سليمة."
+  },
+  "importMergeTitle": {
+    "message": "الاستعادة من نسخة احتياطية",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "استيراد بالدمج: $added$ صندوق(صناديق) جديد، و$conflicts$ تعارض(تعارضات) بنفس المعرّف حُفظت كنسخ متعارضة، و$skipped$ صندوق(صناديق) مطابق تم تخطيه. لا شيء على لوحتك تمت استبداله.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "الاستعادة بالاستبدال",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "الاستبدال سيستبدل كل لوحتك بالنسخة الاحتياطية. يتم أولًا حفظ لقطة لبياناتك الحالية ويمكن استعادتها لاحقًا. هل تريد المتابعة؟",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "دمج واستيراد",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "استبدال",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "نسخ التعارض محفوظة",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

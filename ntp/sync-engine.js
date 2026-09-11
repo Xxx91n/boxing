@@ -8,7 +8,7 @@
 // `export` prefixes, facade glue, and the bindSyncBackupUi() wrapper around the init-time wiring).
 
 import { layout, setLayout, writerId } from './state.js';
-import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist } from './storage.js';
+import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts } from './storage.js';
 import { migrateLayout } from './utils.js';
 import { i18n } from './i18n.js';
 import { renderCanvas } from './render.js';
@@ -363,6 +363,10 @@ export function initSyncEngineFacade(deps) {
       try {
         const cloud = migrateLayout(cloudData);
         const local = migrateLayout(localData);
+        // Ticket 44 (spec D4): same-field divergence collects the cloud side verbatim as
+        // a conflict copy — the merged main layout keeps the existing local-wins heuristic,
+        // but neither side is silently dropped any more.
+        const conflictCopies = [];
         // Merge boxes by id — non-overlapping field changes merge automatically
         const boxMap = new Map();
         // Start with cloud boxes
@@ -378,6 +382,7 @@ export function initSyncEngineFacade(deps) {
               divergedFields.push(key);
             }
           }
+          if (divergedFields.length > 0) conflictCopies.push({ ...existing });
           // ponytail: if >3 fields diverge, consider it a full edit and keep local (newer)
           if (divergedFields.length > 3) {
             boxMap.set(lb.id, { ...lb });
@@ -405,10 +410,10 @@ export function initSyncEngineFacade(deps) {
           settings: { ...cloud.settings, ...local.settings },
           _meta: { ...local._meta, updatedAt: Date.now() }
         };
-        return merged;
+        return { merged, conflicts: conflictCopies };
       } catch (e) {
         debugErr('mergeLayoutFields', e);
-        return null; // signal merge failure → fall back to newer-wins
+        return null; // signal merge failure → conflict-copy guard at the call site (ticket 44)
       }
     }
 
@@ -433,6 +438,9 @@ export function initSyncEngineFacade(deps) {
           const cloud = await webdavGetCloud(fileUrl, user, pass);
           if (cloud && typeof cloud === 'object' && Array.isArray(cloud.boxes)) {
             // Replace local layout with cloud (keep sync meta).
+            // Ticket 44: explicit user-confirmed overwrite — newer-wins is allowed HERE,
+            // but the discarded local side is archived as a conflict copy first (never silent).
+            await archiveConflictLayouts(stripGroupsForPersist(layout), { reason: 'webdav-data-loss-restore', side: 'local' });
             const savedMeta = layout._meta;
             const savedSettings = layout.settings;
             setLayout(cloud);
@@ -505,9 +513,12 @@ export function initSyncEngineFacade(deps) {
         if (cloudChangedAfterSync && localChangedAfterSync && cloud?._meta?.writerId !== writerId) {
           // Both sides diverged — try field-level auto-merge
           debug('WebDAV sync: concurrent change detected, attempting field-level merge');
-          const merged = mergeLayoutFields(cloud, layout);
-          if (merged) {
-            setLayout(merged);
+          const mergeResult = mergeLayoutFields(cloud, layout);
+          if (mergeResult && mergeResult.merged) {
+            if (mergeResult.conflicts.length) {
+              await archiveConflictLayouts({ boxes: mergeResult.conflicts }, { reason: 'webdav-field-conflict', side: 'cloud' });
+            }
+            setLayout(mergeResult.merged);
             layout._meta = layout._meta || {};
             layout._meta.updatedAt = Date.now();
             layout._meta.writerId = writerId;
@@ -517,10 +528,17 @@ export function initSyncEngineFacade(deps) {
             renderCanvas();
             setBaselineBoxCount(computeBoxCount(layout).total);
             debug('WebDAV sync: field-level merge complete', { boxes: layout.boxes.length });
-            return { direction: 'merge', cloudBoxes: cloud.boxes.length, localBoxes: layout.boxes.length, merged: true };
+            return { direction: 'merge', cloudBoxes: cloud.boxes.length, localBoxes: layout.boxes.length, merged: true, conflicts: mergeResult.conflicts.length };
           }
-          // Merge failed (same-field divergence) — fall through to newer-wins + warn
-          debugWarn('WebDAV sync: field-level merge failed, falling back to newer-wins');
+          // Ticket 44 (spec D4): merge threw — a silent newer-wins here would drop one
+          // side. Archive the side the LWW write is about to discard, THEN land the newer
+          // main copy (both sides survive: winner on boxingLayout, loser on the conflict key).
+          debugWarn('WebDAV sync: field-level merge failed — archiving the losing side as a conflict copy before newer-wins');
+          if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {
+            await archiveConflictLayouts(stripGroupsForPersist(layout), { reason: 'webdav-merge-failed', side: 'local' });
+          } else {
+            await archiveConflictLayouts({ boxes: (cloud.boxes || []) }, { reason: 'webdav-merge-failed', side: 'cloud' });
+          }
         }
         // ADR-0009: original newer-wins logic
         if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {

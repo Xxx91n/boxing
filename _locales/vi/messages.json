@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "Boxing giữ các ảnh chụp nhanh bố cục theo tầng thời gian. Nếu bộ lưu trữ chính bị hỏng, nó sẽ được lưu trữ (không bao giờ ghi đè im lặng) và dựng lại từ ảnh chụp nhanh lành lặn mới nhất."
+  },
+  "importMergeTitle": {
+    "message": "Khôi phục từ bản sao lưu",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "Nhập kiểu hợp nhất: thêm $added$ hộp mới, $conflicts$ xung đột cùng id được lưu thành bản sao xung đột, bỏ qua $skipped$ hộp trùng khớp. Không có gì trên canvas của bạn bị ghi đè.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "Khôi phục kiểu ghi đè",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "Ghi đè sẽ thay toàn bộ canvas của bạn bằng bản sao lưu. Dữ liệu hiện tại được chụp ảnh nhanh trước nên vẫn khôi phục được sau đó. Tiếp tục ghi đè?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "Hợp nhất và nhập",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "Ghi đè",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "Bản sao xung đột đã lưu",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }

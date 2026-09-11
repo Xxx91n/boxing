@@ -821,5 +821,47 @@
   },
   "dataHealthHint": {
     "message": "O Boxing mantém instantâneos do seu layout em camadas de tempo. Se o armazenamento principal for danificado, ele é arquivado (nunca substituído silenciosamente) e reconstruído a partir do instantâneo íntegro mais recente."
+  },
+  "importMergeTitle": {
+    "message": "Restaurar do backup",
+    "description": "Import merge confirmation dialog title"
+  },
+  "importMergeBody": {
+    "message": "Importação mesclada: $added$ caixa(s) nova(s), $conflicts$ conflito(s) de mesmo id arquivados como cópias em conflito, $skipped$ caixa(s) idêntica(s) ignorada(s). Nada no seu quadro é sobrescrito.",
+    "description": "Import merge confirmation body",
+    "placeholders": {
+      "added": {
+        "content": "$1",
+        "example": "3"
+      },
+      "conflicts": {
+        "content": "$2",
+        "example": "1"
+      },
+      "skipped": {
+        "content": "$3",
+        "example": "2"
+      }
+    }
+  },
+  "importOverwriteTitle": {
+    "message": "Restauração por sobrescrita",
+    "description": "Explicit overwrite-restore confirmation dialog title"
+  },
+  "importOverwriteBody": {
+    "message": "Sobrescrever substitui todo o seu quadro pelo backup. Seus dados atuais são primeiro registrados em um snapshot, recuperáveis depois. Continuar com a sobrescrita?",
+    "description": "Explicit overwrite-restore confirmation body"
+  },
+  "importBtnMerge": {
+    "message": "Mesclar e importar",
+    "description": "Confirm button label: merge import"
+  },
+  "importBtnOverwrite": {
+    "message": "Sobrescrever",
+    "description": "Confirm button label: overwrite restore"
+  },
+  "dataConflictArchived": {
+    "message": "Cópias em conflito arquivadas",
+    "description": "Settings data row: count of archived conflict copies"
   }
 }
