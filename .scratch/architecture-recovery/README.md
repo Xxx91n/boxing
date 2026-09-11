@@ -205,7 +205,34 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 - 快照禁止单键数组膨胀。
 
 ### 启动器
-`prompts/40-…` … `prompts/47-…` + **`prompts/41R-snapshot-tests-debug-api.md`**（每份 ≤60 行，锚定权威路径）。
+`prompts/40-…` … `prompts/47-…` + `prompts/41R-…` + **W2 返工 `prompts/42R|43R|45R-…`**（每份 ≤60 行）。
+
+### Wave 5 W2 复核状态（2026-09-11 首脑对抗性复核）
+
+> 证据: reports/W2-wave5-brain-review.md · 方法: Playwright 实跑 + guard + 子代理，不信自述
+
+| 票 | 裁决 | 分支 | 关键实证 |
+|---|---|---|---|
+| 42 COW | **FAIL** | ticket-42 @ ylp | T42-1 snapCount=0；产品序正确，unload flush 击穿测试 |
+| 43 fork | **FAIL** | ticket-43 @ qun | fork 用例 archiveKeys=0；issue 状态矛盾 |
+| 45 golden | **PASS-with-caveats** | ci/data-golden-gates | guard 28/28；migration 4/4；gate2×t42 碰撞 |
+
+#### W2 Frontier
+
+```
+立即并行返工:
+  42R · 43R · 45R
+W3 解锁: 43R 真 PASS → 44
+W4 解锁: 42R + 45(R) → 46
+红线: 全量 CI 绿前禁止 tag / 禁止宣称可发行
+```
+
+#### W2 过程违规（不追认）
+
+- V5-42-1 P0 无绿跑勾 AC done
+- V5-43-1 P0 报告 Implemented vs issue ready-for-agent
+- V5-45-1 NOTE SHA ba1e7e9 dangling
+- V5-45-2 NOTE gate2 与 t42 碰撞未预警
 
 ### Wave 5 W1 复核状态（2026-09-11 首脑对抗性复核）
 
