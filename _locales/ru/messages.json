@@ -871,5 +871,43 @@
   "dataConflictArchived": {
     "message": "Конфликтные копии сохранены",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "Машина времени",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "Откатить",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "Откатить к этому снимку?",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "Холст будет заменён снимком от $point$. Текущие данные сначала сохраняются как защитный снимок, поэтому откат можно обратить.",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "Откатить сейчас",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "Не удалось сохранить защитный снимок текущих данных; откат отменён. Ничего не изменено.",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "Этот снимок больше недоступен. Ничего не изменено.",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "Откат не выполнен — текущие данные сохранены без изменений.",
+    "description": "Shown when the restore write itself fails"
   }
 }

@@ -235,6 +235,15 @@ I18N_FALLBACK.importOverwriteBody = 'Overwrite replaces your entire canvas with 
 I18N_FALLBACK.importBtnMerge = 'Merge & import';
 I18N_FALLBACK.importBtnOverwrite = 'Overwrite restore';
 I18N_FALLBACK.dataConflictArchived = 'Conflict copies archived';
+// Ticket 50 (spec W6-D1): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
+I18N_FALLBACK.dataTimeMachine = 'Time Machine';
+I18N_FALLBACK.dataRollbackBtn = 'Roll back';
+I18N_FALLBACK.rollbackConfirmTitle = 'Roll back to this snapshot?';
+I18N_FALLBACK.rollbackConfirmBody = 'The canvas will be replaced with the snapshot from $1$. Your current data is saved as a safety snapshot first, so this rollback can itself be undone.';
+I18N_FALLBACK.rollbackConfirmAction = 'Roll back now';
+I18N_FALLBACK.rollbackNoSafety = 'A safety snapshot of your current data could not be saved, so the rollback was cancelled. Nothing was changed.';
+I18N_FALLBACK.rollbackSnapshotMissing = 'That snapshot is no longer available. Nothing was changed.';
+I18N_FALLBACK.rollbackFailed = 'Rollback failed - your current data was kept unchanged.';
 // Ticket 51 (spec W6-D2): export envelope + optional full DR package UI strings (BX-I18N-005 fallback).
 I18N_FALLBACK.exportFullPackage = 'Full DR package';
 I18N_FALLBACK.exportFullOverflow = 'The full DR package still exceeds the 5MB restore limit after trimming snapshot bodies. A standard envelope export was downloaded instead.';

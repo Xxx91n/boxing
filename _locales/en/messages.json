@@ -883,5 +883,43 @@
   "dataConflictArchived": {
     "message": "Conflict copies archived",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "Time Machine",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "Roll back",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "Roll back to this snapshot?",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "The canvas will be replaced with the snapshot from $point$. Your current data is saved as a safety snapshot first, so this rollback can itself be undone.",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "Roll back now",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "A safety snapshot of your current data could not be saved, so the rollback was cancelled. Nothing was changed.",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "That snapshot is no longer available. Nothing was changed.",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "Rollback failed - your current data was kept unchanged.",
+    "description": "Shown when the restore write itself fails"
   }
 }

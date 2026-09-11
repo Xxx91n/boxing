@@ -871,5 +871,43 @@
   "dataConflictArchived": {
     "message": "競合コピーがアーカイブされました",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "タイムマシン",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "ロールバック",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "このスナップショットに戻しますか？",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "キャンバスは $point$ のスナップショットに置き換えられます。現在のデータは先に安全スナップショットとして保存されるため、この操作も取り消せます。",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "今すぐ戻す",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "現在のデータの安全スナップショットを保存できなかったため、ロールバックを中止しました。変更は加えられていません。",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "このスナップショットは利用できません。変更は加えられていません。",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "ロールバックに失敗しました。現在のデータは保持されています。",
+    "description": "Shown when the restore write itself fails"
   }
 }

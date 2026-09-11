@@ -7,7 +7,7 @@
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
-import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, archiveConflictLayouts, listConflictArchives, readDrBodies } from './storage.js';
+import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, readDrBodies } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
@@ -48,6 +48,14 @@ export function initSettingsUiFacade(deps) {
     });
 
  }
+
+  // ── Ticket 50 (spec W6-D1): Time Machine helpers ───────
+  const SNAPSHOT_LIST_MAX = 20; // newest-first cap; rotation retains far more, the UI stays scannable
+  function formatSnapshotSize(bytes) {
+    const n = Number(bytes) || 0;
+    if (n < 1024) return n + ' B';
+    return (Math.round(n / 102.4) / 10) + ' KB';
+  }
 
   // ── settings modal ─────────────────────────────────────
   // Ticket 43 (spec D3): data-health surface — snapshot count / latest snapshot time /
@@ -93,6 +101,35 @@ export function initSettingsUiFacade(deps) {
         } else {
           conflictRow.hidden = true;
         }
+      }
+      // Ticket 50 (spec W6-D1): Time Machine list — one row per stored snapshot (ts /
+      // schemaVersion / size, newest first, last SNAPSHOT_LIST_MAX) with a per-row rollback
+      // button. Rows are rebuilt on every modal open (refreshDataHealth is the single seam).
+      const tmEl = document.getElementById('data-snapshot-timemachine');
+      const listEl = document.getElementById('data-snapshot-list');
+      if (tmEl && listEl) {
+        const rows = snaps.slice(-SNAPSHOT_LIST_MAX).reverse();
+        listEl.textContent = '';
+        for (const e of rows) {
+          const row = document.createElement('div');
+          row.className = 'data-snapshot-row';
+          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:11px;';
+          const when = document.createElement('span');
+          when.textContent = (e && e.ts) ? new Date(e.ts).toLocaleString() : '-';
+          const ver = document.createElement('span');
+          ver.textContent = 'v' + ((e && e.schemaVersion != null) ? e.schemaVersion : '?');
+          const size = document.createElement('span');
+          size.textContent = formatSnapshotSize(e && e.size);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn data-snapshot-rollback-btn';
+          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:11px;';
+          btn.dataset.ts = String((e && e.ts) || '');
+          btn.textContent = i18n('dataRollbackBtn');
+          row.append(when, ver, size, btn);
+          listEl.appendChild(row);
+        }
+        tmEl.hidden = rows.length === 0;
       }
     } catch (e) { if (typeof debugWarn === 'function') debugWarn('refreshDataHealth', e); }
   }
@@ -167,6 +204,52 @@ export function initSettingsUiFacade(deps) {
     });
   }
 
+
+  // ── Ticket 50 (spec W6-D1): Time Machine one-click rollback ──────────────────
+  // Row button -> secondary confirm (askConfirmModal, same in-page surface as ticket 44) ->
+  // saveSnapshot('pre-restore') safety copy -> full-replacement apply through the storage
+  // facade. The safety snapshot is FAIL-CLOSED: rollback aborts when the copy cannot be
+  // captured (W6-D1 forbids an un-snapshotted full replace; atomcode negative cases: Gemini
+  // "confirm said undo, did delete" + story-spark #5529 silent discard — the confirm copy
+  // names both the target point and the safety copy so wording matches the executed action).
+  async function performSnapshotRollback(ts) {
+    const when = new Date(ts).toLocaleString();
+    closeSettingsModal(); // don't stack the decision modal behind the settings overlay (t44 precedent)
+    const decision = await askConfirmModal(
+      i18n('rollbackConfirmTitle'),
+      i18n('rollbackConfirmBody', [when]),
+      i18n('rollbackConfirmAction')
+    );
+    if (decision !== 'action') { openSettingsModal(); return; }
+    const safetyTs = await saveSnapshot('pre-restore');
+    if (!safetyTs) {
+      try { alert(i18n('rollbackNoSafety')); } catch (e) { /* silent: alert may be blocked */ }
+      openSettingsModal();
+      return;
+    }
+    const recovered = await restoreFromSnapshot(ts);
+    if (!recovered) {
+      try { alert(i18n('rollbackSnapshotMissing')); } catch (e) { /* silent: alert may be blocked */ }
+      openSettingsModal();
+      return;
+    }
+    try {
+      await replaceLayoutFromRestored(recovered);
+    } catch (e) {
+      debugErr('performSnapshotRollback: replace write failed', e);
+      try { alert(i18n('rollbackFailed')); } catch (e2) { /* silent: alert may be blocked */ }
+      openSettingsModal();
+      return;
+    }
+    if (currentLargeBoxId) exitToCanvas();
+    exitToCanvas(); // force exit any drill-in state — the restored canvas may not contain it
+    renderCanvas();
+    applyCanvasTransform();
+    applyInnerTransform();
+    updateCaption();
+    debug('Time Machine rollback applied: snapshot ts=' + ts + ', pre-restore safety copy ts=' + safetyTs);
+    openSettingsModal(); // back on the data tab; refreshDataHealth now shows the safety copy
+  }
 
 // Init-time wiring, called from ntp.js init() at the position of the original statement blocks.
 export function bindSettingsUi() {
@@ -434,6 +517,7 @@ export function bindSettingsUi() {
         const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
         if (localBoxCount === 0) {
           // A5: savedGroups guard removed (groups derived from box.isParent)
+          await saveSnapshot('pre-restore'); // Ticket 50 (W6-D1): an empty-canvas replace is a full replace too — safety copy first
           setLayout(incoming);
           // AUD-SEC: preserve local connections if the import file lacks them
           // (older backups predate the connections system; full replace would lose user lines).
@@ -449,6 +533,7 @@ export function bindSettingsUi() {
             i18n('importBtnMerge')
           );
           if (mergeDecision === 'action') {
+            await saveSnapshot('pre-restore'); // Ticket 50 (W6-D1): every restore entry snapshots before applying
             if (mergePlan.conflicts.length) {
               await archiveConflictLayouts({ boxes: mergePlan.conflicts }, { reason: 'import-merge', side: 'incoming' });
             }
@@ -461,7 +546,7 @@ export function bindSettingsUi() {
             );
             if (overwriteDecision !== 'action') { debug('Import aborted by user — silent replace is no longer a default'); importFile.value = ''; return; }
             importMode = 'overwrite-confirmed';
-            await saveSnapshot(); // COW before destructive replace (ADR-0009 / atomcode 4.1-1)
+            await saveSnapshot('pre-restore'); // Ticket 50 (W6-D1): COW before destructive replace (ADR-0009 / atomcode 4.1-1)
             setLayout(incoming);
             if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
           }
@@ -514,6 +599,15 @@ export function bindSettingsUi() {
     if (diagLogLevelSelect && layout.settings.__diagLogLevel) {
       diagLogLevelSelect.value = String(layout.settings.__diagLogLevel);
     }
+
+    // Ticket 50: delegated rollback click for the rebuilt Time Machine rows
+    const snapshotListEl = document.getElementById('data-snapshot-list');
+    snapshotListEl?.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('.data-snapshot-rollback-btn') : null;
+      if (!btn) return;
+      const ts = Number(btn.dataset.ts);
+      if (Number.isFinite(ts) && ts > 0) performSnapshotRollback(ts);
+    });
 
     // Confirm modal events
     confirmDelete?.addEventListener('click', () => {

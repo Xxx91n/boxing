@@ -871,5 +871,43 @@
   "dataConflictArchived": {
     "message": "Bản sao xung đột đã lưu",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "Máy thời gian",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "Hoàn tác",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "Hoàn tác về ảnh chụp này?",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "Canvas sẽ được thay bằng ảnh chụp lúc $point$. Dữ liệu hiện tại của bạn được lưu trước thành ảnh chụp an toàn, nên thao tác này có thể hoàn tác ngược.",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "Hoàn tác ngay",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "Không lưu được ảnh chụp an toàn cho dữ liệu hiện tại; đã hủy hoàn tác. Không có gì thay đổi.",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "Ảnh chụp này không còn khả dụng. Không có gì thay đổi.",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "Hoàn tác thất bại — dữ liệu hiện tại của bạn được giữ nguyên.",
+    "description": "Shown when the restore write itself fails"
   }
 }

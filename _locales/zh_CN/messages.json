@@ -874,5 +874,43 @@
   "dataConflictArchived": {
     "message": "冲突副本已归档",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "时间机器",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "回滚",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "回滚到此快照？",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "画布将被替换为 $point$ 的快照。系统会先把当前数据保存为安全快照，因此本次回滚本身也可以撤销。",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "立即回滚",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "无法保存当前数据的安全快照，回滚已取消，未做任何更改。",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "该快照已不可用，未做任何更改。",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "回滚失败——当前数据保持不变。",
+    "description": "Shown when the restore write itself fails"
   }
 }

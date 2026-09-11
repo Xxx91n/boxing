@@ -871,5 +871,43 @@
   "dataConflictArchived": {
     "message": "เก็บสำเนาขัดแย้งแล้ว",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "ไทม์แมชชีน",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "ย้อนกลับ",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "ย้อนกลับไปที่สแนปช็อตนี้?",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "ผืนผ้าใบจะถูกแทนที่ด้วยสแนปช็อตจาก $point$ ข้อมูลปัจจุบันของคุณจะถูกบันทึกเป็นสแนปช็อตรักษาความปลอดภัยก่อน ดังนั้นการย้อนกลับนี้สามารถยกเลิกได้",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "ย้อนกลับตอนนี้",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "ไม่สามารถบันทึกสแนปช็อตรักษาความปลอดภัยของข้อมูลปัจจุบันได้ จึงยกเลิกการย้อนกลับ ไม่มีสิ่งใดเปลี่ยนแปลง",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "สแนปช็อตนี้ไม่พร้อมใช้งานอีกต่อไป ไม่มีสิ่งใดเปลี่ยนแปลง",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "ย้อนกลับล้มเหลว — ข้อมูลปัจจุบันของคุณยังคงเดิม",
+    "description": "Shown when the restore write itself fails"
   }
 }

@@ -871,5 +871,43 @@
   "dataConflictArchived": {
     "message": "충돌 사본 보관됨",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "타임 머신",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "롤백",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "이 스냅샷으로 롤백하시겠습니까?",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "캔버스가 $point$ 스냅샷으로 대체됩니다. 현재 데이터가 먼저 안전 스냅샷으로 저장되므로 이 롤백도 되돌릴 수 있습니다.",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "지금 롤백",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "현재 데이터의 안전 스냅샷을 저장할 수 없어 롤백을 취소했습니다. 변경된 사항 없습니다.",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "해당 스냅샷을 더 이상 사용할 수 없습니다. 변경된 사항 없습니다.",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "롤백 실패 — 현재 데이터는 변경되지 않았습니다.",
+    "description": "Shown when the restore write itself fails"
   }
 }

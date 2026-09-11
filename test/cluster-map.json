@@ -48,7 +48,9 @@
       "boxing-zoom-arrow.spec.ts",
       "boxing-zoom-dblclick.spec.ts",
       "data-recovery.spec.ts",
-      "extension-test.spec.ts"
+      "extension-test.spec.ts",
+      "boxing-time-machine-rollback.spec.ts",
+      "boxing-dr-export-envelope.spec.ts"
     ],
     "ntp/render.js": [
       "boxing-auto-expand.spec.ts",
@@ -100,7 +102,9 @@
       "boxing-update-cow-before-migrate.spec.ts",
       "boxing-viewstate-sync.spec.ts",
       "boxing-webdav.spec.ts",
-      "data-recovery.spec.ts"
+      "data-recovery.spec.ts",
+      "boxing-time-machine-rollback.spec.ts",
+      "boxing-dr-export-envelope.spec.ts"
     ],
     "ntp/persist.js": [
       "boxing-accent-theme.spec.ts",
@@ -114,7 +118,8 @@
       "boxing-sync-level.spec.ts",
       "boxing-sync.spec.ts",
       "boxing-webdav.spec.ts",
-      "data-recovery.spec.ts"
+      "data-recovery.spec.ts",
+      "boxing-dr-export-envelope.spec.ts"
     ],
     "ntp/credentials.js": [
       "boxing-cred-encrypt.spec.ts",
@@ -131,7 +136,9 @@
       "boxing-settings-persist.spec.ts",
       "boxing-sync-ui-grouping.spec.ts",
       "boxing-v3.spec.ts",
-      "data-recovery.spec.ts"
+      "data-recovery.spec.ts",
+      "boxing-time-machine-rollback.spec.ts",
+      "boxing-dr-export-envelope.spec.ts"
     ],
     "ntp/onboarding.js": [
       "boxing-debug.spec.ts",
@@ -144,7 +151,8 @@
       "boxing-empty-state-buttons.spec.ts",
       "boxing-i18n-module.spec.ts",
       "boxing-onboarding.spec.ts",
-      "boxing-v3.spec.ts"
+      "boxing-v3.spec.ts",
+      "boxing-time-machine-rollback.spec.ts"
     ],
     "ntp/state.js": [
       "boxing-adr-0007-acceptance.spec.ts",
@@ -164,7 +172,8 @@
       "boxing-migration-golden.spec.ts",
       "boxing-search.spec.ts",
       "boxing-state-sync.spec.ts",
-      "boxing-v3.spec.ts"
+      "boxing-v3.spec.ts",
+      "boxing-dr-export-envelope.spec.ts"
     ],
     "ntp/favicon.js": [
       "boxing-memory.spec.ts",

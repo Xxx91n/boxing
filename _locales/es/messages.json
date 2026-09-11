@@ -871,5 +871,43 @@
   "dataConflictArchived": {
     "message": "Copias en conflicto archivadas",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "Máquina del tiempo",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "Revertir",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "¿Revertir a esta captura?",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "El lienzo se reemplazará con la captura del $point$. Tus datos actuales se guardan primero como copia de seguridad, por lo que esta reversión puede deshacerse.",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "Revertir ahora",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "No se pudo guardar la copia de seguridad de tus datos actuales; reversión cancelada. No se cambió nada.",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "Esa captura ya no está disponible. No se cambió nada.",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "Error al revertir: tus datos actuales se conservaron sin cambios.",
+    "description": "Shown when the restore write itself fails"
   }
 }

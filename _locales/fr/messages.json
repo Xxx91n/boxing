@@ -871,5 +871,43 @@
   "dataConflictArchived": {
     "message": "Copies de conflit archivées",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "Machine à remonter le temps",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "Revenir",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "Revenir à cet instantané ?",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "Le canvas sera remplacé par l'instantané du $point$. Vos données actuelles sont d'abord enregistrées comme instantané de sécurité, ce retour peut donc être annulé.",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "Revenir maintenant",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "Impossible d'enregistrer un instantané de sécurité de vos données actuelles ; retour annulé. Aucune modification effectuée.",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "Cet instantané n'est plus disponible. Aucune modification effectuée.",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "Échec du retour — vos données actuelles sont restées inchangées.",
+    "description": "Shown when the restore write itself fails"
   }
 }

@@ -871,5 +871,43 @@
   "dataConflictArchived": {
     "message": "Konfliktkopien archiviert",
     "description": "Settings data row: count of archived conflict copies"
+  },
+  "dataTimeMachine": {
+    "message": "Zeitmaschine",
+    "description": "Time Machine section title"
+  },
+  "dataRollbackBtn": {
+    "message": "Rollback",
+    "description": "Per-snapshot rollback button label"
+  },
+  "rollbackConfirmTitle": {
+    "message": "Auf diesen Snapshot zurückrollen?",
+    "description": "Time Machine rollback confirmation title"
+  },
+  "rollbackConfirmBody": {
+    "message": "Die Fläche wird durch den Snapshot vom $point$ ersetzt. Ihre aktuellen Daten werden zuerst als Sicherheits-Snapshot gespeichert, sodass dieser Rollback selbst rückgängig gemacht werden kann.",
+    "description": "Time Machine rollback confirmation body",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "rollbackConfirmAction": {
+    "message": "Jetzt zurückrollen",
+    "description": "Time Machine rollback confirmation action button"
+  },
+  "rollbackNoSafety": {
+    "message": "Der Sicherheits-Snapshot Ihrer aktuellen Daten konnte nicht gespeichert werden; der Rollback wurde abgebrochen. Es wurden keine Änderungen vorgenommen.",
+    "description": "Shown when the pre-restore safety snapshot fails; rollback aborted (fail closed)"
+  },
+  "rollbackSnapshotMissing": {
+    "message": "Dieser Snapshot ist nicht mehr verfügbar. Es wurden keine Änderungen vorgenommen.",
+    "description": "Shown when the chosen snapshot body no longer exists"
+  },
+  "rollbackFailed": {
+    "message": "Rollback fehlgeschlagen – Ihre aktuellen Daten blieben unverändert.",
+    "description": "Shown when the restore write itself fails"
   }
 }

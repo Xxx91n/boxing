@@ -233,6 +233,14 @@
                 · <span id="data-conflict-time">–</span>
               </p>
               <p class="modal__hint" data-i18n="dataHealthHint" style="margin:2px 0 0;font-size:11px;">Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot.</p>
+              <!-- Ticket 50 (spec W6-D1): Time Machine — every retained snapshot (ts /
+                   schemaVersion / size) with a per-row rollback behind a secondary confirm.
+                   Rollback is itself undoable: a pre-restore safety snapshot is captured
+                   first, so this row is never a one-way door. -->
+              <div id="data-snapshot-timemachine" hidden>
+                <label class="modal__label" data-i18n="dataTimeMachine" style="margin-top:6px;">Time Machine</label>
+                <div id="data-snapshot-list"></div>
+              </div>
             </section>
             <!-- BX-AUD-05: diagnostics — leveled log ring buffer export/clear. Industry-shape
                  (pino/loglevel): producers stay in script; UI surfaces an export button so users

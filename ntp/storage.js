@@ -263,27 +263,39 @@ export function registerStorageOnChanged() {
     return kept;
   }
 
-  export async function saveSnapshot() {
+  // Ticket 50 (spec W6-D1): saveSnapshot(reason) — the optional label (e.g. 'pre-restore') is
+  // written on the snapshot BODY only; snap.v1.index stays metadata-only {ts,schemaVersion,size}
+  // (41R pin). Returns snap.ts on success, null when skipped (over-cap) or on storage error —
+  // callers fail closed: W6-D1 forbids a full-replacement restore without a safety snapshot
+  // (atomcode: claudette #47 fail-closed semantics). Monotonic ts guard (precedent: t44
+  // _lastConflictTs): two snapshots in one millisecond must not share a body key.
+  let _lastSnapTs = 0;
+  export async function saveSnapshot(reason) {
     try {
       await _migrateSnapshots();
+      let ts = Date.now();
+      if (ts <= _lastSnapTs) ts = _lastSnapTs + 1;
+      _lastSnapTs = ts;
       const snap = {
-        ts: Date.now(),
+        ts,
         schemaVersion: layout.schemaVersion || 1,
         data: stripGroupsForPersist(layout)
       };
+      if (reason) snap.reason = String(reason);
       const snapJson = JSON.stringify(snap);
       if (snapJson.length > MAX_SNAPSHOT_BYTES) {
         debug('Snapshot skipped: single snapshot ' + snapJson.length + 'B exceeds cap ' + MAX_SNAPSHOT_BYTES);
-        return;
+        return null;
       }
-      const key = SNAP_KEY_PREFIX + snap.ts;
+      const key = SNAP_KEY_PREFIX + ts;
       await layoutStorage.set({ [key]: snap });
       const index = await _readIndex();
-      index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion, size: snapJson.length });
+      index.push({ ts, schemaVersion: snap.schemaVersion, size: snapJson.length });
       const kept = await _rotateAndWriteIndex(index);
-      debug('Snapshot saved, total=' + kept.length + ' entries, bytes~' +
+      debug('Snapshot saved' + (reason ? ' (' + reason + ')' : '') + ', total=' + kept.length + ' entries, bytes~' +
         kept.reduce((s, e) => s + (e.size || 0), 0));
-    } catch (e) { debugErr('saveSnapshot', e); }
+      return ts;
+    } catch (e) { debugErr('saveSnapshot', e); return null; }
   }
 
   async function getLatestSnapshot() {
@@ -329,6 +341,35 @@ export function registerStorageOnChanged() {
       debugErr('restoreFromSnapshot', e);
       return null;
     }
+  }
+
+  // Ticket 50 (spec W6-D1): the full-replacement write leg of a restore (Time Machine rollback).
+  // Deliberately bypasses mergeConcurrentLayout — a cross-tab merge would resurrect the
+  // replaced-away boxes from storage and break rollback ("restore to point" must be exact).
+  // Keeps the two write-path invariants that still matter:
+  //   - t43R fork: a corrupt-but-readable stored payload is archived before the overwrite;
+  //   - revision continues above the stored value, so other tabs' applyExternalLayout gate
+  //     still orders correctly.
+  // In-memory layout is replaced only after the write resolves (fail closed on quota errors).
+  export async function replaceLayoutFromRestored(recovered) {
+    const stored = await layoutStorage.get({ boxingLayout: null });
+    if (stored.boxingLayout && !isPlausibleLayout(stored.boxingLayout)) {
+      await archiveCorruptMain(stored.boxingLayout, new Error('replaceLayoutFromRestored: stored boxingLayout failed integrity check'));
+    }
+    const storedRevision = Number(stored.boxingLayout && stored.boxingLayout._meta && stored.boxingLayout._meta.revision) || 0;
+    const persisted = stripGroupsForPersist(recovered);
+    persisted._meta = {
+      ...(persisted._meta || {}),
+      revision: Math.max(storedRevision, Number(persisted._meta && persisted._meta.revision) || 0) + 1,
+      updatedAt: Date.now(),
+      writerId
+    };
+    await layoutStorage.set({ boxingLayout: persisted });
+    setLayout(persisted);
+    rebuildBoxMaps();
+    markDsuDirty(); // ADR-0007 Q4b: layout replaced — DSU must rebuild on first use
+    try { ensureGroups(); } catch (e) { debugErr('ensureGroups after restore', e); }
+    return persisted;
   }
 
   async function crashRescue() {
