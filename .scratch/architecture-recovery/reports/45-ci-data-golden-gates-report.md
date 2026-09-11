@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-11
 **Status:** Implemented — CI evidence below
-**Branch:** ci/data-golden-gates @ origin (5fbcb1a tests + docs close-out commit; 6887714/e992693 were superseded by amend/uncommit surgery — final state is 5fbcb1a + ba1e7e9)
+**Branch:** ci/data-golden-gates @ origin — ledger corrected per 45R (W2 review: ba1e7e9 was dangling). Post-restack (branch stacked above w2-brain-review-fix-launchers per GitButler dependency for the 45R docs): nnk = eab4151, vmm = 334c973, ovx (45R gate2 rework) = e261b38; this close-out docs commit itself is vrp (tip at push time = the commit whose tree contains this line). Pre-restack shas 5fbcb1a/e614852/efaeac7 are superseded; tree content is identical and the 34603576542 evidence applies.
 **Files changed:** test/fixtures/schema/{v1,legacy-groups,legacy-v2}.json (new) · scripts/migration-golden-guard.mjs (new) · test/tests/boxing-migration-golden.spec.ts (new) · test/tests/boxing-data-golden.spec.ts (new) · test/cluster-map.json · test/playwright.config.ts · package.json · .github/workflows/test.yml · AGENTS.md
 
 ## Summary
@@ -98,3 +98,41 @@ lost objects were fetch-reachable; workspace commit is regenerable).
 - [x] rollback safety covers expand/contract assumption (frozen legacy reader gate; v1->current data)
 - [x] cluster-map registers new specs (CM-1 clean: uncovered=[] ghost=[])
 - [x] launcher 5 gates with assertions or explicit skip(reason); burn-in CI wiring landed
+
+
+## 返工轮次 45R — gate2 写路径扫描（2026-09-11，W2 wave5 复核触发）
+
+**触发:** W2-wave5-brain-review 票 45 P1 碰撞: gate2 的 `expect(bg).not.toContain('boxingLayout')`
+子串禁令与 ticket-42 合法**读** (takePreUpdateSnapshot 的
+`api.storage.local.get({ boxingLayout: null })`) 在合并后必然红; 同时旧 bgWrites 白名单
+(/bgErrLog|boxingInstallSignal/) 漏了 t42 的 snap.v1 split-key 写。首脑禁止把 t42 的读
+改成迁就旧断言 — 修的是断言。
+
+**新 gate2 语义 (写调用扫描):**
+- `scanBackgroundWrites(src)`: 剥注释 → 引号归一 → 压平空白, 只抓四类**写**:
+  object-literal set/remove/clear 携带 boxingLayout key (含跨行)、quoted-key 写、
+  key-array remove、`directSetBoxingLayout(` 旁路调用。合法读 (get / destructure /
+  `.schemaVersion` 字段访问) 与 `boxingLayoutFallback.v1` 这类非精确 key 一律放行。
+  残留限制与 ntp 侧一致: 中间变量转发的写 (`const p = { boxingLayout }; set(p)`) 不做数据流分析。
+- gate2 主体改为 `expect(scanBackgroundWrites(bgSrc)).toEqual([])`;
+  bgWrites 白名单扩展接受 SW_SNAP_KEY_PREFIX/SW_SNAP_INDEX_KEY/'snap.v1. (t42 快照写)。
+- 新增 **gate 2b** 表驱动自测 (9 例): t42 单读与完整读+snap.v1 写 = 0 violations;
+  直写字面量/quoted remove/跨行 set/key-array remove/directSet 旁路 = 恰 1;
+  destructure-only 与 fallback-key 子串 = 0。旧 not.toContain 禁令的 P1 红基线由
+  Node 复演确认 (merged-future 树 violations 非空), 未用禁用断言迁就。
+- ntp 侧不变: 写站点扫描、storage.js 头契约、41R 调试三通道 pin 全保留。
+
+**CI 证据 (run 34603576542, ref efaeac7):**
+- data-golden job: Running 7 tests → 6 passed, 1 skipped (gate 3 显式 skip(reason);
+  gate 2 与 gate 2b 均在 6 passed 内) — job conclusion success。
+- ubuntu 主 lane pretest 双 guard: import-graph "ok": true;
+  migration-guard {"ok":true,"passed":28,"total":28,"failures":[]}。
+- 主 lane (含 BOXING_EXCLUDE_GREP=@data-golden 生效) 480 passed / 11 failed / 3 skipped —
+  11 失败全为既有 baseline (title-select-all×6、empty-state-buttons×2、auto-expand×2、
+  state-sync×1, 两项目镜像), 0 条落在 migration-golden / data-golden 上;
+  migration-golden 4 tests x 2 projects 通过 (passed 总数较 W1 基线 +8)。
+- gate2 对合并后 t42 background.js 的绿灯由「merged-future violations: []」Node 复演预检,
+  待 42R+45R 合入 main 后由 CI 主 lane 终证。
+
+**账本:** 票 45 裁决 PASS-with-caveats → caveats 中 gate2 碰撞与 SHA 账本失真两项已在
+45R (commit efaeac7) 关闭; flip 前置条件满足。

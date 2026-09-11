@@ -4,7 +4,7 @@
 
 **Blocked by:** 41
 
-**Status:** done (branch ci/data-golden-gates @ 5fbcb1a; report 45-ci-data-golden-gates-report.md)
+**Status:** done (branch ci/data-golden-gates @ efaeac7; report 45-ci-data-golden-gates-report.md) — gate2 final semantics per 45R: background 禁写 boxingLayout(写调用/key 扫描), 合法读 (t42 COW) 与 snap.v1 等其它 key 的写均放行; 子串 not.toContain 禁用
 
 - [x] 每个历史 schemaVersion 至少一份 golden fixture 入库
 - [x] 迁移测试在 npm test / CI 中执行且失败使 job 红
