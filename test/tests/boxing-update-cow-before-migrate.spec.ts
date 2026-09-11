@@ -61,6 +61,15 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
     await page.evaluate(async (layout) => {
       const dbg = (window as any).__boxingDebug;
       await dbg.storageSet({ boxingLayout: layout, boxingInstallSignal: { reason: 'update', at: Date.now() } });
+      // 42R: neutralize the OLD page's unload write-back. pagehide/beforeunload call
+      // __boxingFlushCredentials, whose flushUnsavedCredentials() saveLayouts unconditionally
+      // (it stamps _enc* = null even with empty inputs); the saveLayout chain body then lands
+      // during the unload window and overwrites the seeded legacy with the boot layout's
+      // migrated default shape → the new page's ensurePreUpdateSnapshot would (correctly)
+      // see needsMigration=false and take no snapshot. Real update flows never seed a booted
+      // page like this (SW COW happens at onInstalled before any NTP boot), so this is a
+      // harness artifact, not a product-order bug.
+      window.__boxingFlushCredentials = null;
     }, legacyLayout());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.listSnapshots)), { timeout: 10000 }).toBe(true);
@@ -102,6 +111,7 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
     await page.evaluate(async (layout) => {
       const dbg = (window as any).__boxingDebug;
       await dbg.storageSet({ boxingLayout: layout, boxingInstallSignal: { reason: 'update', at: Date.now() } });
+      window.__boxingFlushCredentials = null; // 42R: see T42-1 comment — unload write-back neutralization
     }, modernLayout());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.listSnapshots)), { timeout: 10000 }).toBe(true);
@@ -129,6 +139,7 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
     await page.evaluate(async (layout) => {
       const dbg = (window as any).__boxingDebug;
       await dbg.storageSet({ boxingLayout: layout }); // NOTE: no boxingInstallSignal seeded
+      window.__boxingFlushCredentials = null; // 42R: see T42-1 comment — unload write-back neutralization
     }, legacyLayout());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.layout?.boxes?.length)), { timeout: 10000 }).toBe(true);

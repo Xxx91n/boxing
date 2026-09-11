@@ -53,3 +53,31 @@
 
 - CI 验证（full suite + 新 spec）待触发；合并/收口门按 spec D7（CI 全绿 + 人工黄金路径 + Pages 200）。
 - alarms 定时备份路径未动（spec 要求保持）。
+
+---
+
+## 7. 返工轮次（42R — 验收测试 harness 修复，2026-09-11）
+
+**触发**：首脑复核 reports/W2-wave5-brain-review.md 判票 42 **FAIL**（V5-42-1 P0 虚假关闭：「本地未跑」仍勾 AC；T42-1 实跑 1 failed，snapCount=0）。本窗只修验收 harness，产品 COW 代码序未动。
+
+**基线（返工前实跑）**：
+```
+1 failed
+  [chromium-extension] › test\tests\boxing-update-cow-before-migrate.spec.ts:58:3 › ... snapshots pre-update layout, then migrates the main key
+2 passed (15.4s)
+T42-1: {"snapCount":0,"snapKeepsLegacyShape":false,...}
+```
+
+**根因实证（探针三轮 + setItem 全栈插桩，非推断）**：旧 NTP 页在 seed 后的 reload teardown 窗口里，pagehide/beforeunload/visibilitychange 调 `window.__boxingFlushCredentials`（= sync-engine.js `flushUnsavedCredentials`）；该函数即使凭据输入全空也**无条件**经 `layout.settings._enc* = null` 触发 `saveLayout()`，其 write-chain 体在 unload 微任务尾声恢复执行，把 `merge(旧页 boot 内存 default[已带 __groupsMigrated], seed legacy)` 写回 `boxingLayout` → 新页 `ensurePreUpdateSnapshot` 见 `needsMigration=false` → 不拍快照。首脑结论指向的 `flushPendingViewStatePersist` 路线被实验 A 证伪（中和该组 hooks 仍复现；真凶是 credentials flush，v4 漏 null 它）。v6 对照实验：新页 boot 全程 `boxingLayout` 写入数=0，排除新页。
+
+**修复（harness-only，任务书方案 a 等价 unload 写回中和）**：三个 seed 步骤在 `storageSet` 后加 `window.__boxingFlushCredentials = null;`（pagehide 处理器 `typeof fn === 'function'` 守卫下变 no-op），注释说明其为 harness 时序伪影。**产品论证**：真实更新流程中该写回是幂等 merge（内存=用户数据），且 SW 侧 COW 于 onInstalled 已完成（早于任何 NTP boot），NTP 侧兜底读到的是迁移前形态 → 本缺陷不构成产品数据风险；「boot 后注种」的测试时序在真实世界不存在。sync-engine 空输入也 saveLayout 的冗余写留作后续票（非 COW 序，超出本票）。
+
+**绿跑（修复后实跑，playwright 原始输出行）**：
+```
+T42-1: {"snapCount":1,"snapKeepsLegacyShape":true,"snapSchemaVersion":1,"hasMigratedSettings":true,"groupsMigrated":true,"connPropsBackfilled":true,"starBackfilled":true,"signalConsumed":true}
+3 passed (12.4s)
+```
+邻道复跑（ticket 41 snapshot spec + 本 spec 合并跑）：`7 passed (19.3s)`（41R 车道 4/4 无干扰）。
+
+**门禁**：`node --check` ×3 绿；`import-graph-guard` 绿（14/48/0）；`git diff --check` 干净；probe 临时文件已删除。issues/42 验收框在绿跑证据下保持 done。
+**版本控制**：遵循 WORKFLOW §4.2，本返工在 `ticket-42R-cow-test-harness-fix` 分支落 commit。
