@@ -93,6 +93,9 @@ export function registerStorageOnChanged() {
         }
       }
     } catch (e) { debugErr('loadLayout', e); setLayout(await crashRescue() || defaultLayout()); }
+    // 41R AC7: run the one-time snapshot-key migration on the boot path itself, so an
+    // upgraded profile splits its boxingSnapshots[] even if no snapshot API is ever called.
+    try { await _migrateSnapshots(); } catch (e) { debugErr('loadLayout snapshot migrate', e); }
     rebuildBoxMaps();
     markDsuDirty(); // ADR-0007 Q4b: layout replaced — DSU must rebuild on first use
     try { ensureGroups(); } catch (e) { debugErr("ensureGroups after load", e); } // runtime groups mirror after load
@@ -112,43 +115,58 @@ export function registerStorageOnChanged() {
   const DAY_MS = 86400000;
   const HOURLY_WINDOW_MS = 24 * HOUR_MS;
   const DAILY_WINDOW_MS = 30 * DAY_MS;
+  // ADR-0009 compatibility contract (41R): the newest N snapshots are always kept verbatim —
+  // tier dedup applies beyond the floor, so saveSnapshot + restoreFromSnapshot within one
+  // hour still finds every entry (strict same-hour dedup silently pruned pre-update copies).
+  const RAW_KEEP_FLOOR = 10;
 
   const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);
   const dailyBucket = (ts) => Math.floor(ts / DAY_MS);
   const weeklyBucket = (ts) => Math.floor(ts / (7 * DAY_MS));
 
+  // 41R: _snapMigrated is set ONLY after a fully successful pass (a failed quota/storage
+  // error retries on the next call); _snapMigrating dedupes concurrent callers.
   let _snapMigrated = false;
+  let _snapMigrating = null;
 
   // One-time migration: boxingSnapshots[] → split keys
   async function _migrateSnapshots() {
     if (_snapMigrated) return;
-    _snapMigrated = true;
-    try {
+    if (_snapMigrating) return _snapMigrating;
+    _snapMigrating = (async () => {
       const stored = await layoutStorage.get({ boxingSnapshots: null });
       const oldSnaps = Array.isArray(stored.boxingSnapshots) ? stored.boxingSnapshots : [];
-      if (oldSnaps.length === 0) return;
-      debug('Migrating ' + oldSnaps.length + ' boxingSnapshots[] to split keys');
-      const index = await _readIndex();
-      const keysToSet = {};
-      for (const snap of oldSnaps) {
-        if (!snap || typeof snap.ts !== 'number') continue;
-        const snapJson = JSON.stringify(snap);
-        if (snapJson.length > MAX_SNAPSHOT_BYTES) continue;
-        const key = SNAP_KEY_PREFIX + snap.ts;
-        keysToSet[key] = snap;
-        if (!index.some(e => e.ts === snap.ts)) {
-          index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion || 1, size: snapJson.length });
+      if (oldSnaps.length > 0) {
+        debug('Migrating ' + oldSnaps.length + ' boxingSnapshots[] to split keys');
+        const index = await _readIndex();
+        const keysToSet = {};
+        for (const snap of oldSnaps) {
+          if (!snap || typeof snap.ts !== 'number') continue;
+          const snapJson = JSON.stringify(snap);
+          if (snapJson.length > MAX_SNAPSHOT_BYTES) continue;
+          const key = SNAP_KEY_PREFIX + snap.ts;
+          keysToSet[key] = snap;
+          if (!index.some(e => e.ts === snap.ts)) {
+            index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion || 1, size: snapJson.length });
+          }
         }
+        if (Object.keys(keysToSet).length > 0) {
+          await layoutStorage.set(keysToSet);
+        }
+        // Remove old monolithic key
+        try { await layoutStorage.remove('boxingSnapshots'); } catch (_) { /* silent: monolith removal, retry happens next boot */ }
+        index.sort((a, b) => a.ts - b.ts);
+        await _rotateAndWriteIndex(index);
+        debug('Snapshot migration complete: ' + index.length + ' entries');
       }
-      if (Object.keys(keysToSet).length > 0) {
-        await layoutStorage.set(keysToSet);
-      }
-      // Remove old monolithic key
-      try { await layoutStorage.remove('boxingSnapshots'); } catch (_) { /* non-fatal */ }
-      index.sort((a, b) => a.ts - b.ts);
-      await _rotateAndWriteIndex(index);
-      debug('Snapshot migration complete: ' + index.length + ' entries');
-    } catch (e) { debugErr('_migrateSnapshots', e); }
+      _snapMigrated = true;
+    })();
+    try {
+      await _snapMigrating;
+    } catch (e) {
+      _snapMigrating = null; // allow retry — flag stays unset until success (41R AC8)
+      debugErr('_migrateSnapshots', e);
+    }
   }
 
   async function _readIndex() {
@@ -163,11 +181,15 @@ export function registerStorageOnChanged() {
     await layoutStorage.set({ [SNAP_INDEX_KEY]: index });
   }
 
-  // Rotation: classify each entry into tier, keep densest per tier, then total-byte LRU.
+  // Rotation: newest RAW_KEEP_FLOOR entries pass through verbatim (ADR-0009); older
+  // entries are tier-deduped (hourly / daily / weekly), then total-byte LRU.
   async function _rotateAndWriteIndex(index) {
     const now = Date.now();
+    const sorted = index.slice().sort((a, b) => a.ts - b.ts);
+    const floor = sorted.slice(Math.max(0, sorted.length - RAW_KEEP_FLOOR));
+    const older = sorted.slice(0, Math.max(0, sorted.length - RAW_KEEP_FLOOR));
     const tiers = { hourly: [], daily: [], weekly: [] };
-    for (const e of index) {
+    for (const e of older) {
       const age = now - e.ts;
       if (age <= HOURLY_WINDOW_MS) tiers.hourly.push(e);
       else if (age <= DAILY_WINDOW_MS) tiers.daily.push(e);
@@ -187,6 +209,7 @@ export function registerStorageOnChanged() {
       ...dedup(tiers.hourly, hourlyBucket),
       ...dedup(tiers.daily, dailyBucket),
       ...dedup(tiers.weekly, weeklyBucket),
+      ...floor,
     ];
     kept.sort((a, b) => a.ts - b.ts);
     // Total byte cap: drop oldest until under budget (keep at least 1)

@@ -27,7 +27,7 @@ import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_M
 import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS } from './i18n.js';
 // Ticket 07 (architecture-recovery): storage write facade — write chain + loop guard +
 // onChanged listener moved verbatim to ./storage.js; all chrome.storage writes go through it.
-import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, directSetBoxingLayout, gcTombstones, initStorageFacade, loadLayout, markDeleted, registerStorageOnChanged, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
+import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, directSetBoxingLayout, gcTombstones, initStorageFacade, listSnapshots, loadLayout, markDeleted, registerStorageOnChanged, restoreFromSnapshot, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
 // Ticket 08 (architecture-recovery): layout/view-state persistence + theme packs + loadSettings moved verbatim to ./persist.js on top of the storage facade.
 import { LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyTheme, initPersistFacade, loadFallbackTabView, loadSettings, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
 // Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool, ADR-0004),
@@ -69,8 +69,52 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
           set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (e) { if (typeof debugErr === 'function') debugErr('mock storage.set failed', e); throw e; } }
         },
         local: {
-          get: async (_keys) => { try { const v = localStorage.getItem('boxingLayout'); return v ? { boxingLayout: JSON.parse(v) } : { boxingLayout: null }; } catch (_) { return { boxingLayout: null }; } },
-          set: async (obj) => { try { localStorage.setItem('boxingLayout', JSON.stringify(obj.boxingLayout)); } catch (e) { if (typeof debugErr === 'function') debugErr('mock storage.set failed', e); throw e; } }
+          // 41R: generic multi-key persistence for the file:// lane. boxingLayout keeps the
+          // BARE localStorage key (cross-tab 'storage' event + specs seed it directly); every
+          // other key lives under 'bxstore:' so the snapshot split keys (snap.v1.<ts>),
+          // snap.v1.index and the legacy boxingSnapshots[] round-trip through get/set/remove.
+          // Before 41R a set() of any non-layout key wrote JSON.stringify(undefined) OVER the
+          // boxingLayout value — saveSnapshot on file:// silently destroyed the mock layout.
+          get: async (keys) => {
+            const out = {};
+            const readOne = (k, fallback) => {
+              const storeKey = k === 'boxingLayout' ? k : 'bxstore:' + k;
+              try {
+                const v = localStorage.getItem(storeKey);
+                out[k] = v !== null ? JSON.parse(v) : fallback;
+              } catch (_) { /* silent: unparseable mock entry — fallback value returned */ out[k] = fallback; }
+            };
+            try {
+              if (keys === null || keys === undefined) {
+                for (let i = 0; i < localStorage.length; i++) {
+                  const k = localStorage.key(i);
+                  if (k === 'boxingLayout') readOne('boxingLayout', null);
+                  else if (k && k.startsWith('bxstore:')) readOne(k.slice('bxstore:'.length), null);
+                }
+              } else if (typeof keys === 'string') {
+                readOne(keys, undefined);
+                if (out[keys] === undefined) delete out[keys];
+              } else if (Array.isArray(keys)) {
+                for (const k of keys) { readOne(k, undefined); if (out[k] === undefined) delete out[k]; }
+              } else if (typeof keys === 'object') {
+                for (const [k, def] of Object.entries(keys)) readOne(k, def);
+              }
+            } catch (e) { if (typeof debugErr === 'function') debugErr('mock storage.get failed', e); }
+            return out;
+          },
+          set: async (obj) => {
+            try {
+              for (const [k, v] of Object.entries(obj)) {
+                localStorage.setItem(k === 'boxingLayout' ? k : 'bxstore:' + k, JSON.stringify(v));
+              }
+            } catch (e) { if (typeof debugErr === 'function') debugErr('mock storage.set failed', e); throw e; }
+          },
+          remove: async (keys) => {
+            try {
+              const list = Array.isArray(keys) ? keys : [keys];
+              for (const k of list) localStorage.removeItem(k === 'boxingLayout' ? k : 'bxstore:' + k);
+            } catch (e) { if (typeof debugErr === 'function') debugErr('mock storage.remove failed', e); }
+          }
         },
         onChanged: {
           addListener: listener => mockChangeListeners.add(listener),
@@ -188,6 +232,15 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     persistView() { persistViewState(true); },
     applyExternalLayout(raw) { return applyExternalLayout(raw); },
     saveLayout,
+    // Ticket 41R: snapshot subsystem + storage seams for Playwright assertions (spec.md D1).
+    // Real chrome.storage in the extension lane; generic localStorage mock in file:// (SEC-01
+    // keeps the mock local — specs must NOT poke window.chrome.storage as the file:// seam).
+    saveSnapshot,
+    listSnapshots,
+    restoreFromSnapshot,
+    storageGet: (keys) => layoutStorage.get(keys),
+    storageSet: (obj) => layoutStorage.set(obj),
+    storageRemove: (keys) => layoutStorage.remove ? layoutStorage.remove(keys) : Promise.resolve(),
     normalizeBookmarkUrl(value) { return normalizeBookmarkUrl(value); },
     // Ticket 11: expose openBookmarkUrl for Playwright open-path assertions (precedent: loadFavicon, BX-DEV-126).
     openBookmarkUrl,
