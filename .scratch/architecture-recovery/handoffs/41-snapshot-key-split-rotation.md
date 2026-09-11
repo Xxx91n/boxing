@@ -26,7 +26,7 @@
 主战场 ntp/persist.js 或 ntp/storage.js 的快照子系统；兼容 ADR-0009 字段；不改 sync 传输。
 
 ## 文件面
-ntp/persist.js · ntp/storage.js · ntp/state.js · docs/adr/0009 · docs/CONTEXT.md（术语）
+ntp/persist.js · ntp/storage.js · ntp/state.js · docs/adr/0009-3-2-1-data-resilience.md · docs/CONTEXT.md
 
 ## 调研依赖（atomcode-research）
 高。工业心智模型必须以 atomcode 结论为准，禁止幻觉推理；可回顾 docs/adr 与 docs/CONTEXT.md。

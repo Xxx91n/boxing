@@ -26,7 +26,7 @@
 只动 settings.css（补一个 }）+ 必要时 onboarding.css 拼接边界；不改 JS 行为；build 后跑 onboarding+extension-test。
 
 ## 文件面
-ntp/settings.css · ntp/ntp.css(artifact) · test/tests/boxing-onboarding.spec.ts · test/tests/extension-test.spec.ts
+ntp/settings.css · ntp/ntp.css（build 产物） · test/tests/boxing-onboarding.spec.ts · test/tests/extension-test.spec.ts
 
 ## 调研依赖（atomcode-research）
 高。工业心智模型必须以 atomcode 结论为准，禁止幻觉推理；可回顾 docs/adr 与 docs/CONTEXT.md。
