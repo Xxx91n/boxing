@@ -33,15 +33,21 @@ test.describe('Auto-expand box survives enter+exit (BX-EXP-REGR)', () => {
     const selector = '.large-box[data-id="' + boxId + '"]';
 
     // 2. Hover BEFORE entering — should expand
+    // 48 (wave4 residual auto-expand, ubuntu-only 60-vs-80 jitter per ticket-15):
+    // the expanded height arrives asynchronously (setBodyExpandHeight + CSS
+    // transition); a fixed 450ms sleep raced it under full-suite load. Poll until
+    // the height settles, then read once more for the diagnostic log.
     await page.hover(selector, { force: true });
-    await page.waitForTimeout(450);
+    await expect.poll(() => page.evaluate((sel) => {
+      const el = document.querySelector(sel) as HTMLElement;
+      return el?.getBoundingClientRect().height || 0;
+    }, selector), { timeout: 10000, intervals: [100, 250, 500] }).toBeGreaterThan(80);
     const hoverH1 = await page.evaluate((sel) => {
       const el = document.querySelector(sel) as HTMLElement;
       const expandVar = el?.style.getPropertyValue('--expand-height') || '';
       return { h: el?.getBoundingClientRect().height || 0, expandVar };
     }, selector);
     console.log('BEFORE ENTER hover:', JSON.stringify(hoverH1));
-    expect(hoverH1.h).toBeGreaterThan(80);
 
     // 3. Move away to collapse
     await page.hover('body', { force: true });
@@ -73,15 +79,17 @@ test.describe('Auto-expand box survives enter+exit (BX-EXP-REGR)', () => {
     expect(stateAfter.classes).toContain('box--hover-expand');
     expect(stateAfter.classes).toContain('box--collapsed');
 
-    // 7. Hover AFTER exiting — should still expand
+    // 7. Hover AFTER exiting — should still expand (48: poll, same hardening as step 2)
     await page.hover(selector, { force: true });
-    await page.waitForTimeout(450);
+    await expect.poll(() => page.evaluate((sel) => {
+      const el = document.querySelector(sel) as HTMLElement;
+      return el?.getBoundingClientRect().height || 0;
+    }, selector), { timeout: 10000, intervals: [100, 250, 500] }).toBeGreaterThan(80);
     const finalH = await page.evaluate((sel) => {
       const el = document.querySelector(sel) as HTMLElement;
       return el?.getBoundingClientRect().height || 0;
     }, selector);
     console.log('AFTER EXIT hover height=' + finalH + ' (collapsed was ' + stateAfter.h + ')');
-    expect(finalH).toBeGreaterThan(80);
     await ctx.close();
   });
 });

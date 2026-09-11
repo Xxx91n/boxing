@@ -689,6 +689,12 @@ export function registerStorageOnChanged() {
         && String(incoming._meta?.writerId || '') > String(layout._meta?.writerId || ''));
 
     setApplyingExternalLayout(true);
+    // 48 hardening (BX-EXPLORE-014 class): the guard used to be released only by the
+    // render-block finally at the bottom, so any throw in merge/DSU/rebuild ABOVE that
+    // try would stick applyingExternalLayout at true for the page's lifetime — a
+    // permanently deaf tab that rejects every future cross-tab sync. The whole
+    // post-guard body is now inside the try/finally.
+    try {
     const staleLargeBoxId = currentLargeBoxId;
     const incomingSerialized = JSON.stringify(incoming);
     setLayout(incomingWins
@@ -701,7 +707,6 @@ export function registerStorageOnChanged() {
     rebuildBoxMaps();
     connIdx.clear();
     boxConnIdx.clear();
-    try {
       if (staleLargeBoxId && !getLargeBox(staleLargeBoxId)) {
         setCurrentLargeBoxId(null);
         setInnerPanX(0);

@@ -178,12 +178,16 @@ test.describe('Boxing state isolation and live synchronization', () => {
       second.evaluate(() => (window as any)._boxingAddLargeBox()),
     ]);
 
-    await syncBoth(page, second);
+    // 48 (wave4 residual, deterministic red in the firefox lane on all 3 CI OSes):
+    // syncBoth ends on the B->A nudge, and the old shape watched only A in the poll
+    // then asserted B with a plain toHaveCount — so after A converged, B never got
+    // another nudge while its own debounced save still raced the merge (the failure
+    // snapshot shows B DID reach 2 boxes shortly after the 10s window closed).
+    // Poll BOTH tabs inside the nudge loop so every round re-syncs until both converge.
     await expect.poll(async () => {
       await syncBoth(page, second);
-      return page.locator('.large-box').count();
-    }, { timeout: 10000 }).toBe(2);
-    await expect(second.locator('.large-box')).toHaveCount(2, { timeout: 10000 });
+      return Math.min(await page.locator('.large-box').count(), await second.locator('.large-box').count());
+    }, { timeout: 20000 }).toBe(2);
     const pageIds = await page.locator('.large-box').evaluateAll(boxes => boxes.map(box => (box as HTMLElement).dataset.id).sort());
     const secondIds = await second.locator('.large-box').evaluateAll(boxes => boxes.map(box => (box as HTMLElement).dataset.id).sort());
     expect(pageIds).toEqual(secondIds);

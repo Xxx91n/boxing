@@ -10,6 +10,12 @@ async function resetBoxing(page) {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+  // 48 (wave4 residual Bug5-dark): the file:// lane shows the first-run onboarding
+  // overlay on fresh storage (legacy empty-canvas judgment). Every other test here
+  // is evaluate-only; Bug5-dark's page.hover is the sole real pointer action and
+  // the aria-modal overlay deterministically intercepts it. Same convention as
+  // state-sync/zoom specs: dismiss the tour before real input.
+  await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
 }
 
 // Helper: create a large box via debug API and return its id

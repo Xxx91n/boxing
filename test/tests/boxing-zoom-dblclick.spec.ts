@@ -165,9 +165,12 @@ test.describe('BX-DEV-112C extra — click enter then dblclick inner after delay
     // 2. Wait deterministically for the enter transition to finish, then past the
     //    350ms BX-DEV-112D cooldown window (fixed 150+420ms sleeps flaked when the
     //    enter transition ran long under full-suite load).
+    // 48 (wave4 residual zoom-dblclick, windows-firefox-only): the poll kept its
+    // default 5s budget while the enter transition ran longer on the slowest CI
+    // lane; the test budget is 60s, so give the gate 15s + backoff.
     await expect.poll(() => page.evaluate(() =>
       !((document.getElementById('inner') as HTMLElement)?.hidden)
-    )).toBe(true);
+    ), { timeout: 15000, intervals: [100, 250, 500] }).toBe(true);
     await page.waitForTimeout(420);
     // 3. Now dblclick inside inner surface should create exactly one small box.
     const surface = await page.locator('#inner-surface');

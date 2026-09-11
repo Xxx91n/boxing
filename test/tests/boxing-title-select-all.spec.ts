@@ -22,7 +22,12 @@ async function boot(page: Page) {
 async function seedTitles(page: Page) {
   const applied = await page.evaluate(() => {
     const dbg = (window as any).__boxingDebug;
+    // 48 (wave4 residual title-select-all x3): a raw without version>=3 is degraded
+    // to defaultLayout by migrateLayout (its _meta — including revision 5 — dropped),
+    // so the stale-revision guard rejects the apply and seedTitles sees applied=false.
+    // Real cross-tab payloads always carry the persisted version field; match that.
     return dbg.applyExternalLayout({
+      version: 3.5,
       boxes: [{
         id: 'L1', type: 'large', title: 'Alpha', x: 80, y: 80, width: 340, height: 220,
         children: [{ id: 'S1', type: 'small', title: 'Beta', x: 20, y: 20, width: 260, height: 200, pinned: false, bookmarks: [] }],

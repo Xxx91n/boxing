@@ -53,7 +53,7 @@
 
 「可发行」= 下列三条件**合取**。任一未满足: 禁止打 tag (发行标记)、禁止对外宣称可发行, 唯一合法表述为「不可发行」。
 
-- **G-A CI**: main 全量 CI 主 lane 残红清零, 或每条残红均有书面定谳豁免 (条目含: 失败用例名、基线 run URL、失败签名、归属票号、到期条件; 每次发行前复查, 不得永久豁免)。
+- **G-A CI**: main 全量 CI 主 lane 残红清零, 或每条残红均有书面定谳豁免 (条目含: 失败用例名、基线 run URL、失败签名、归属票号、到期条件; 每次发行前复查, 不得永久豁免)。台账本体与规则见下「G-A 残红书面豁免台账」节; 机器校验 `node scripts/waiver-ledger-check.mjs` (票48)。
 - **G-B 人工 zip 黄金路径**: 对发行 zip 解包产物, 在真 Chrome + Firefox 走完检查单黄金路径 (含升级安装的 pre-update 快照与回滚演练)。
 - **G-C Pages 200**: /boxing/demo/、/boxing/demo/ntp.css、/boxing/privacy-policy.html 三 URL live HTTP 200 (privacy-policy 为商店提交硬依赖)。
 
@@ -68,6 +68,7 @@ G-A CI
 - [ ] 残红豁免逐行 (用例名 | 基线 run | 失败签名 | 归属票 | 到期条件):
       - [ ] ________________________________
 - [ ] @data-golden burn-in 已按期摘除 continue-on-error 且绿 (2026-09-18 前生效项)
+- [ ] node scripts/waiver-ledger-check.mjs exit 0, 且逐行将台账失败签名与最新基线 run 日志复核一致 (票48 机制)
 G-B 人工 zip 黄金路径 (Chrome 与 Firefox 各一遍, 用解包产物)
 - [ ] 全新安装 → 引导可走完 (Skip/Next), 关闭后主界面可点击, 零 console 错误
 - [ ] 建盒/改名/拖拽/缩放 → 重开后数据完整
@@ -88,6 +89,24 @@ G-C Pages
 ```
 
 事故复盘 (发行类 P0/P1): 恢复后 48h 内成稿, blameless; 必含时间线 (UTC+证据源)、影响量化、触发-检测-修复三段分离 (商店审核通过 ≠ 推送生效)、回滚目标状态、纠偏措施表 (Prevent/Detect/Mitigate/Respond + Owner + Done-when)。要点细则见 ADR-0017。
+
+### G-A 残红书面豁免台账 (Waiver Ledger — 票48 建立)
+
+规则 (来源: 票48 / spec W6-D3 / ADR-0017; 工业对标: atomcode 2026-09-12, 12 篇原文核验, ctx source=atomcode-48):
+
+- **修绿优先**: 豁免是过渡态不是终点 (GitLab: "a queue, not a graveyard"); 台账只允许 flaky/环境性失败进入。
+- **broken/flaky 分界 (豁免合法性闸门)**: 同一代码不同结果 (至少一条 lane/OS 绿, 或单跑绿且签名匹配) = flaky; 全签名一致失败 = broken。broken 不得豁免, 只能修或附书面理由退役 (Datadog 7 天 100% 失败即 broken; ICSE 2020: 自动分类把 76.2% 真回归误判为 flaky — 必须先复现分界再豁免)。
+- **never-quarantine**: 数据完整性 / 迁移往返 / 回滚演练类用例 (`data-golden`, `migration-golden`, `update-cow-before-migrate`, `snapshot-rotation`, `state-sync`, `data-recovery`, `import-merge`, `sync`/`webdav` 冲突面) 永不入台账 — 红灯只允许修绿 (dbt severity:error 默认 + GitLab state-leak 必修口径)。
+- **字段完整性**: 每条 5 字段 (用例名 | 基线 run URL | 失败签名 | 归属票 | 到期) 缺任一即无效; `到期` 最迟为该用例所在面的下一条 main 全绿验证 run。
+- **硬到期**: 到期未修 → 二选一: 主 lane 禁用该用例 (grep 排除并注明) 或删除, 并回填处置记录; 禁止无动作续期, 禁止静默 Skip 失明 (A-008)。
+- **发行前复查**: 每次发行 G-A 步骤先跑 `node scripts/waiver-ledger-check.mjs` (exit≠0 = 字段缺失/已过期/签名空/never-quarantine 名单命中 → 阻断发行), 再逐行人工比对失败签名与最新基线。
+
+| 状态 | 用例名 | 基线 run | 失败签名 | 归属票 | 到期 | 处置记录 |
+|---|---|---|---|---|---|---|
+| active | boxing-auto-expand › 'large box with collapseHover=true still expands after visiting and returning' (chromium) | https://github.com/Xxx91n/boxing/actions/runs/34626507101 | expand height 60 (collapsed max-height clamp) vs >80, BEFORE ENTER hover; ubuntu-latest only, macos+windows 同码绿; 票15/票31 已备案 60vs80 hover 抖动 (solo 单跑绿) | 48 | 2026-09-19 (下一条 main 全绿验证 run; 票48 已改轮询硬化, CI 复测绿即撤账) | — |
+| active | boxing-zoom-dblclick › 'single click enters; later dblclick inner creates exactly one small box' (firefox) | https://github.com/Xxx91n/boxing/actions/runs/34626507101 | expect.poll inner-visible 5000ms 超时; windows-latest firefox only, 其余 2 OS + chromium 绿; playwright#16095 firefox 有头输入延迟家族 (票01/13 备案) | 48 | 2026-09-19 (同上; 票48 已放宽轮询预算至 15s) | — |
+
+基线 2026-09-12 (票48): main run 34626507101 残红 = 6 用例面。其中 4 项为 broken 直接修绿 (title-select-all×3: spec 种子载荷缺 version 字段被 migrateLayout 降级拒绝 / Bug5-dark: spec 未关首运引导 overlay 拦截 hover / state-sync concurrent: spec 只盯 A tab 收敛后 B tab 再未被 nudge, 改双 tab 轮询; 另 storage.js 防回环标志 try/finally 硬化 / snapshot-rotation: 同毫秒 ts 撞键已由 t50 `_lastSnapTs` 修复, 属 never-quarantine 不得入账)。2 项 flaky/环境性入上表。台账保持至票48 CI 验证 run 出结果: 对应面绿 → 状态改 closed + 处置记录引用 run URL。
 
 ## §5 偏离点清单 (本地适配, 待用户确认后生效)
 
