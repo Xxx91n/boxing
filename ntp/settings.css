@@ -25,6 +25,7 @@
    * backdrop-filter here AND gate it under prefers-reduced-motion (see
    * design-system.css reduced-motion block).
    */
+}
 
 .modal-overlay[hidden] {
   display: none;
