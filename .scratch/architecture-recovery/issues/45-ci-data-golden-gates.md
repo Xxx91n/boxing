@@ -4,9 +4,9 @@
 
 **Blocked by:** 41
 
-**Status:** ready-for-agent
+**Status:** done (branch ci/data-golden-gates @ 5fbcb1a; report 45-ci-data-golden-gates-report.md)
 
-- [ ] 每个历史 schemaVersion 至少一份 golden fixture 入库
-- [ ] 迁移测试在 npm test / CI 中执行且失败使 job 红
-- [ ] 回滚安全测试覆盖 expand/contract 假设
-- [ ] cluster-map 登记新 spec
+- [x] 每个历史 schemaVersion 至少一份 golden fixture 入库
+- [x] 迁移测试在 npm test / CI 中执行且失败使 job 红
+- [x] 回滚安全测试覆盖 expand/contract 假设
+- [x] cluster-map 登记新 spec
