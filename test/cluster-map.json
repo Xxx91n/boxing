@@ -21,6 +21,7 @@
       "boxing-connections.spec.ts",
       "boxing-create-render-decouple.spec.ts",
       "boxing-cred-encrypt.spec.ts",
+      "boxing-data-golden.spec.ts",
       "boxing-debug.spec.ts",
       "boxing-empty-state-buttons.spec.ts",
       "boxing-focus-steal.spec.ts",
@@ -28,6 +29,7 @@
       "boxing-innerclip-pan.spec.ts",
       "boxing-innerclip.spec.ts",
       "boxing-memory.spec.ts",
+      "boxing-migration-golden.spec.ts",
       "boxing-onboarding.spec.ts",
       "boxing-popup-dragselect.spec.ts",
       "boxing-search.spec.ts",
@@ -85,7 +87,9 @@
     "ntp/storage.js": [
       "boxing-adr-0007-acceptance.spec.ts",
       "boxing-audit.spec.ts",
+      "boxing-data-golden.spec.ts",
       "boxing-memory.spec.ts",
+      "boxing-migration-golden.spec.ts",
       "boxing-settings-persist.spec.ts",
       "boxing-snapshot-rotation.spec.ts",
       "boxing-update-cow-before-migrate.spec.ts",
@@ -117,6 +121,7 @@
     "ntp/settings-ui.js": [
       "boxing-accent-theme.spec.ts",
       "boxing-build-pipeline.spec.ts",
+      "boxing-data-golden.spec.ts",
       "boxing-debug.spec.ts",
       "boxing-i18n-module.spec.ts",
       "boxing-settings-persist.spec.ts",
@@ -151,6 +156,7 @@
       "boxing-conn-dsu.spec.ts",
       "boxing-connections.spec.ts",
       "boxing-memory.spec.ts",
+      "boxing-migration-golden.spec.ts",
       "boxing-search.spec.ts",
       "boxing-state-sync.spec.ts",
       "boxing-v3.spec.ts"

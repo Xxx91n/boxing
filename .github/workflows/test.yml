@@ -66,10 +66,18 @@ jobs:
       - name: Run tests
         run: xvfb-run --auto-servernum npm test
         if: runner.os == 'Linux'
+        # Ticket 45: @data-golden gates run in the dedicated burn-in job
+        # (continue-on-error) below; the env keeps them out of this blocking lane.
+        env:
+          BOXING_EXCLUDE_GREP: '@data-golden'
 
       - name: Run tests
         run: npm test
         if: runner.os != 'Linux'
+        # Ticket 45: @data-golden gates run in the dedicated burn-in job
+        # (continue-on-error) below; the env keeps them out of this blocking lane.
+        env:
+          BOXING_EXCLUDE_GREP: '@data-golden'
 
       - name: Failure rerun guidance
         if: failure()
@@ -83,6 +91,45 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ matrix.os }}
+          path: |
+            playwright-report/
+            test-results/.last-run.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  data-golden:
+    # Ticket 45 (architecture-recovery): CI data-layer golden gates burn-in lane.
+    # Runs only the @data-golden spec (test/tests/boxing-data-golden.spec.ts) in a
+    # headless-capable Chromium lane with xvfb, non-blocking for the first week
+    # (until 2026-09-18). After one week green: delete continue-on-error here AND
+    # remove BOXING_EXCLUDE_GREP from the two main-lane Run-tests steps above,
+    # folding the gates into the blocking full suite.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - run: npm ci
+
+      - name: Install Playwright chromium
+        run: npx playwright install chromium
+
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Run data golden gates (burn-in)
+        run: xvfb-run --auto-servernum npx playwright test --config=test/playwright.config.ts --project=chromium-extension --grep=@data-golden
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-golden-report
           path: |
             playwright-report/
             test-results/.last-run.json

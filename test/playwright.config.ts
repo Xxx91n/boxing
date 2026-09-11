@@ -9,6 +9,11 @@ const EXTENSION_PATH = path.resolve(__dirname, '..');
 
 export default defineConfig({
   testDir: './tests',
+  // Ticket 45 (architecture-recovery): burn-in exclusion for the @data-golden gates.
+  // .github/workflows/test.yml sets BOXING_EXCLUDE_GREP=@data-golden on the main lane and
+  // runs the spec in its own continue-on-error data-golden job; after the burn-in week,
+  // drop that env and the gates fold back into the blocking lane (undefined = no-op).
+  grepInvert: process.env.BOXING_EXCLUDE_GREP ? new RegExp(process.env.BOXING_EXCLUDE_GREP, 'i') : undefined,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

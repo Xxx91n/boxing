@@ -1,0 +1,88 @@
+{
+  "version": 3.5,
+  "boxes": [
+    {
+      "id": "lb1",
+      "x": 80,
+      "y": 60,
+      "title": "Research",
+      "width": 420,
+      "height": 320,
+      "nextSmallIndex": 2,
+      "children": [
+        {
+          "id": "s1",
+          "x": 0,
+          "y": 0,
+          "title": "Reading list",
+          "pinned": true,
+          "width": 240,
+          "height": 180,
+          "bookmarks": [
+            {
+              "id": "b1",
+              "title": "MDN",
+              "url": "https://developer.mozilla.org/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lb2",
+      "x": 80,
+      "y": 420,
+      "title": "Tools",
+      "width": 420,
+      "height": 320,
+      "nextSmallIndex": 2,
+      "children": [
+        {
+          "id": "s3",
+          "x": 0,
+          "y": 0,
+          "title": "Utilities",
+          "pinned": true,
+          "width": 240,
+          "height": 180,
+          "bookmarks": [
+            {
+              "id": "b4",
+              "title": "Excalidraw",
+              "url": "https://excalidraw.com/"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nextLargeIndex": 3,
+  "connections": [
+    {
+      "id": "c1",
+      "from": "small:lb1:s1",
+      "to": "small:lb2:s3"
+    }
+  ],
+  "groups": [
+    {
+      "id": "g1",
+      "parentId": "large:lb1",
+      "members": [
+        "lb1"
+      ]
+    },
+    {
+      "id": "g2",
+      "parentId": "small:lb2:s3",
+      "members": [
+        "s3"
+      ]
+    }
+  ],
+  "settings": {
+    "selectedLanguage": "en",
+    "zoomLevel": 1,
+    "theme": "beige"
+  }
+}

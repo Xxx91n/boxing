@@ -1,0 +1,111 @@
+{
+  "version": 3.5,
+  "schemaVersion": 1,
+  "boxes": [
+    {
+      "id": "lb1",
+      "x": 80,
+      "y": 60,
+      "title": "Research",
+      "isParent": true,
+      "width": 420,
+      "height": 320,
+      "nextSmallIndex": 3,
+      "children": [
+        {
+          "id": "s1",
+          "x": 0,
+          "y": 0,
+          "title": "Reading list",
+          "pinned": true,
+          "width": 240,
+          "height": 180,
+          "bookmarks": [
+            {
+              "id": "b1",
+              "title": "MDN",
+              "url": "https://developer.mozilla.org/"
+            },
+            {
+              "id": "b2",
+              "title": "ADR template",
+              "url": "https://example.com/adr-template"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "x": 260,
+          "y": 0,
+          "title": "Watches",
+          "pinned": false,
+          "width": 240,
+          "height": 180,
+          "bookmarks": [
+            {
+              "id": "b3",
+              "title": "GitHub",
+              "url": "https://github.com/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lb2",
+      "x": 80,
+      "y": 420,
+      "title": "Tools",
+      "isParent": false,
+      "width": 420,
+      "height": 320,
+      "nextSmallIndex": 2,
+      "children": [
+        {
+          "id": "s3",
+          "x": 0,
+          "y": 0,
+          "title": "Utilities",
+          "pinned": true,
+          "width": 240,
+          "height": 180,
+          "bookmarks": [
+            {
+              "id": "b4",
+              "title": "Excalidraw",
+              "url": "https://excalidraw.com/"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nextLargeIndex": 3,
+  "connections": [
+    {
+      "id": "c1",
+      "from": "small:lb1:s1",
+      "to": "small:lb2:s3",
+      "props": {}
+    }
+  ],
+  "groups": [],
+  "settings": {
+    "selectedLanguage": "en",
+    "rememberLastPos": true,
+    "zoomLevel": 1,
+    "darkMode": false,
+    "fontSize": 14,
+    "squareCorners": false,
+    "autoBackupInterval": 86400,
+    "headerPinned": true,
+    "syncProvider": "local",
+    "urlOpenMode": "sameTab",
+    "connDeleteAction": "alt+click",
+    "theme": "beige"
+  },
+  "_meta": {
+    "__groupsMigrated": true,
+    "revision": 7
+  }
+}

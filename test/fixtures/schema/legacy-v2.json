@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "boxes": [
+    {
+      "id": "lb1",
+      "x": 40,
+      "y": 40,
+      "title": "Legacy",
+      "children": [
+        {
+          "id": "s1",
+          "x": 0,
+          "y": 0,
+          "title": "Old list",
+          "bookmarks": [
+            {
+              "id": "b1",
+              "title": "MDN",
+              "url": "https://developer.mozilla.org/"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "selectedLanguage": "en",
+    "zoomLevel": 1
+  }
+}
