@@ -4,7 +4,7 @@
 2026-08-07
 
 ## Status
-Accepted
+Accepted（**2026-09-12 修订**：快照存储形态由单键 `boxingSnapshots[]` 改为分键 `snap.v1.<ts>` + `snap.v1.index` 与 Time Machine 分层轮转，见 ADR-0017 / CONTEXT「Data Resilience」/ 票 41–41R。本 ADR 的 3-2-1 策略与 transports 不变；「last 10 LRU」由 RAW_KEEP_FLOOR + 分层轮转取代。）
 
 ## Context
 Boxing stores all user data (boxes, connections, bookmarks) in chrome.storage.local

@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（代码已 land origin/main；人工黄金路径 AC 转 ready-for-human，见 ADR-0017 G-B）
 
-- [ ] settings.css 括号最终 depth=0
-- [ ] npm run build 成功且 ntp.css 中 .modal-overlay[hidden]{display:none} 为顶层规则
-- [ ] Playwright: boxing-onboarding step navigation PASS
-- [ ] extension-test settings modal close 后 isHidden PASS
-- [ ] 人工：新装扩展出现引导后可点 Skip/Next，关闭后主界面可点击
+- [x] settings.css 括号最终 depth=0
+- [x] npm run build 成功且 ntp.css 中 .modal-overlay[hidden]{display:none} 为顶层规则
+- [x] Playwright: boxing-onboarding step navigation PASS
+- [x] extension-test settings modal close 后 isHidden PASS
+- [ ] 人工：新装扩展出现引导后可点 Skip/Next，关闭后主界面可点击（G-B 发行检查单）

@@ -256,6 +256,22 @@ Wave 5 功能票全部 code-done
 |---|---|---|---|
 | 46 发行门禁 ADR | **PASS** | Consequences+Review 2026-10-12；检查单 17 框；无 BOM | ticket-46 @ mvu |
 
+### Wave 5 整轮收口（2026-09-12）
+
+> 报告: reports/W5-wave5-closeout.md · 账本: decision-ledger-wave5.md · backlog: docs/history/2026-09-12-wave5-closeout-backlog.md
+> 归档 handoff: Temp/handoff-boxing-2026-09-12-wave5-closeout.md
+
+| 项 | 状态 |
+|---|---|
+| 功能票 40–47 | 全部 code-done + 首脑 PASS |
+| 已 land main | 40 · 41/41R · 47 |
+| 待 land（栈序 A–F） | 42R · 43R · 45R · 44 · 46 · 复核 docs |
+| 构建闭环 | build / demo / 双 guard / node --check 全绿 |
+| 文档三层 | CONTEXT + ADR-0017 对齐；**ADR-0009 已补修订** |
+| Decision ledger | 8 implemented · 4 deferred · 0 stale |
+| **push** | **未执行 — 等用户明令** |
+| 发行 | G-A/G-B 未满足 → **不可发行** |
+
 ### Wave 5 W1 复核状态（2026-09-11 首脑对抗性复核）
 
 > 证据: reports/45R-wave5-w1-brain-review.md · 方法: Node/git/Playwright 实跑/live curl/子代理，不信自述
