@@ -9,7 +9,8 @@ import { fileURLToPath, pathToFileURL } from 'url';
 //   1. roundtrip: 50 writes -> storage dump -> reload -> storage/DOM still match;
 //      a stale snapshot must never overwrite the newest revision.
 //   2. single write path: static scan — no direct chrome.storage writes outside the
-//      ntp/storage.js facade (SW small-key exceptions documented in WORKFLOW section 6 / ticket 10).
+//      ntp/storage.js facade; SW side scanned for WRITE calls of the
+//      boxingLayout key (45R) — legal reads like the t42 pre-update COW pass.
 //   3. undici keep-alive reuse across two syncs.
 //   4. cross-page: window A layout update syncs into window B — same real browser
 //      profile (newContext = fresh non-incognito profile), never a shared ephemeral
@@ -40,6 +41,37 @@ async function readStoredLayout(page: import('@playwright/test').Page) {
     const stored = await (window as any).__boxingDebug.storageGet('boxingLayout');
     return stored.boxingLayout || null;
   });
+}
+
+// 45R write-path scanner for the SW (background.js). The invariant is
+// "background must never WRITE the boxingLayout key" — NOT "must never mention
+// it": ticket-42's pre-update COW legally READS boxingLayout (storage.local.get)
+// and writes only snap.v1.* split-key snapshots (ADR-0009 shape). Substring bans
+// (expect(bg).not.toContain('boxingLayout')) are BANNED as write-path gating —
+// they collide with that legal read (W2 brain review, ticket 45 P1 finding).
+// Strips comments, normalizes quotes and flattens whitespace so multi-line
+// literal writes are still caught. Residual limit (same as the ntp-side line
+// scan): a write composed through an intermediate variable
+// (const p = { boxingLayout }; storage.set(p)) is not data-flow analysed.
+function scanBackgroundWrites(src: string): string[] {
+  const noComments = src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .split(/\r?\n/)
+    .filter((line) => { const t = line.trim(); return !(t.startsWith('//') || t.startsWith('*')); })
+    .join('\n');
+  const flat = noComments.replace(/['"`]/g, "'").replace(/\s+/g, ' ');
+  const out: string[] = [];
+  const patterns: Array<[RegExp, string]> = [
+    [/\.(?:local|sync|session)\.(?:set|remove|clear)\s*\(\s*\{[^)]{0,200}?\bboxingLayout\s*[:,}]/g, 'object-literal boxingLayout write'],
+    [/\.(?:set|remove|clear)\s*\(\s*'boxingLayout'/g, "quoted boxingLayout key write"],
+    [/\.(?:local|sync|session)\.(?:set|remove|clear)\s*\(\s*\[[^\]]{0,200}?'boxingLayout'/g, 'key-array boxingLayout write'],
+    [/\bdirectSetBoxingLayout\s*\(/g, 'facade bypass call directSetBoxingLayout()'],
+  ];
+  for (const [re, label] of patterns) {
+    const hits = flat.match(re);
+    if (hits) { for (const h of hits) out.push(label + ' :: ' + h.slice(0, 70)); }
+  }
+  return out;
 }
 
 test.describe('Data-layer golden gates (ticket 45) @data-golden', () => {
@@ -121,14 +153,39 @@ test.describe('Data-layer golden gates (ticket 45) @data-golden', () => {
       'storageSet: (obj) => layoutStorage.set(obj),',
     ]);
 
-    // SW exceptions: background.js may only write the documented non-layout small
-    // keys (bgErrLog, boxingInstallSignal) and must never touch boxingLayout.
-    const bg = fs.readFileSync(path.join(ROOT_DIR, 'background.js'), 'utf8');
-    expect(bg).not.toContain('boxingLayout');
-    const bgWrites = bg.split(/\r?\n/).filter((l) => /\.storage\.local\.set\(/.test(l));
+    // SW contract, 45R semantics: never WRITE boxingLayout (the facade
+    // invariant); reads and other-key writes (t42 COW snap.v1.*) are legal.
+    const bgSrc = fs.readFileSync(path.join(ROOT_DIR, 'background.js'), 'utf8');
+    expect(scanBackgroundWrites(bgSrc), '45R: background must never write boxingLayout').toEqual([]);
+
+    // Shape tripwire on the SW write sites: every storage.local.set must target a
+    // documented key class — the two non-layout small keys (bgErrLog,
+    // boxingInstallSignal) or the t42 snapshot keys resolving to snap.v1.*.
+    const bgWrites = bgSrc.split(/\r?\n/).filter((l) => /\.storage\.local\.set\(/.test(l));
     expect(bgWrites.length, 'background must keep its storage writes').toBeGreaterThan(0);
     for (const line of bgWrites) {
-      expect(line, 'un-whitelisted background storage write key').toMatch(/bgErrLog|boxingInstallSignal/);
+      expect(line, 'un-recognized background storage write key').toMatch(
+        /bgErrLog|boxingInstallSignal|SW_SNAP_KEY_PREFIX|SW_SNAP_INDEX_KEY|'snap\.v1\./,
+      );
+    }
+  });
+
+  test('gate 2b: write-path scanner (45R) — legal reads pass, any boxingLayout write is caught', () => {
+    // Table pinned to the exact merged-future shapes: t42 COW read + snap.v1
+    // writes stay green; every way of writing the boxingLayout key turns red.
+    const table: Array<[string, number, string]> = [
+      ['const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });', 0, 't42 COW legal read'],
+      ['const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });\nawait api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });', 0, 't42 COW full shape (read + snap.v1 write)'],
+      ['await api.storage.local.set({ boxingLayout: snap });', 1, 'direct object-literal write'],
+      ["chrome.storage.sync.remove('boxingLayout');", 1, 'quoted key remove'],
+      ['await api.storage.local.set({\n  boxingLayout: p,\n});', 1, 'multi-line set (flattened pass)'],
+      ["await api.storage.local.remove(['boxingLayout', 'x']);", 1, 'key-array remove'],
+      ["localStorage.setItem('boxingLayoutFallback.v1', s);", 0, 'fallback key is not the exact boxingLayout key'],
+      ['directSetBoxingLayout(persisted);', 1, 'facade bypass call'],
+      ['const { boxingLayout, other } = payload;', 0, 'plain destructure, no storage call'],
+    ];
+    for (const [src, want, label] of table) {
+      expect(scanBackgroundWrites(src), 'case: ' + label).toHaveLength(want);
     }
   });
 
