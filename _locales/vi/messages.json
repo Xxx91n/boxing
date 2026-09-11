@@ -860,6 +860,14 @@
     "message": "Ghi đè",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "Gói DR đầy đủ",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "Ngay sau khi cắt bỏ nội dung snapshot, gói DR vẫn vượt giới hạn khôi phục 5MB; đã tải bản xuất chuẩn thay thế.",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "Bản sao xung đột đã lưu",
     "description": "Settings data row: count of archived conflict copies"

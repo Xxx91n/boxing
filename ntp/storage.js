@@ -450,6 +450,44 @@ export function registerStorageOnChanged() {
     catch (e) { debugErr('listConflictArchives', e); return []; }
   }
 
+  // ── Ticket 51 (spec W6-D2): full DR package bodies ───────────────────────────
+  // The optional "full disaster-recovery package" export needs the VERBATIM bodies
+  // behind the three index keys (snap.v1.*, boxingLayout.corrupt.*, boxingLayout.
+  // conflict.*). The default envelope export never calls this — snapshot payloads
+  // stay out of everyday backups (D-006 negative constraint). Read-only facade
+  // method: returns { snapshots, corrupt, conflicts }, each oldest→newest, skipping
+  // bodies already pruned from storage (index entry stays, body may be gone).
+  export async function readDrBodies() {
+    const out = { snapshots: [], corrupt: [], conflicts: [] };
+    try {
+      await _migrateSnapshots();
+      const snapIndex = await _readIndex();
+      for (const e of snapIndex) {
+        const body = await _getSnapshotBody(e.ts);
+        if (body) out.snapshots.push(body);
+      }
+      const corruptIndex = await _readCorruptIndex();
+      for (const e of corruptIndex) {
+        const key = CORRUPT_PREFIX + e.ts;
+        try {
+          const stored = await layoutStorage.get(key);
+          const v = stored && stored[key];
+          if (v) out.corrupt.push(v);
+        } catch (_) { /* non-fatal: body pruned or unreadable */ }
+      }
+      const conflictIndex = await _readConflictIndex();
+      for (const e of conflictIndex) {
+        const key = CONFLICT_PREFIX + e.ts;
+        try {
+          const stored = await layoutStorage.get(key);
+          const v = stored && stored[key];
+          if (v) out.conflicts.push(v);
+        } catch (_) { /* non-fatal */ }
+      }
+    } catch (e) { debugErr('readDrBodies', e); }
+    return out;
+  }
+
 
 
   function mergeConcurrentLayout(localValue, remoteValue) {

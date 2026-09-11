@@ -7,15 +7,15 @@
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
-import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, archiveConflictLayouts, listConflictArchives } from './storage.js';
-import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout } from './utils.js';
+import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, archiveConflictLayouts, listConflictArchives, readDrBodies } from './storage.js';
+import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
 
 let debug, debugErr, debugWarn, updateCaption;
-let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
+let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
 
 // Ticket 10: inject ntp.js-scope deps (loggers + caption updater + shared DOM refs declared once in ntp.js).
 export function initSettingsUiFacade(deps) {
@@ -25,7 +25,7 @@ export function initSettingsUiFacade(deps) {
   fontSlider = deps.fontSlider; fontSliderVal = deps.fontSliderVal; zoomSlider = deps.zoomSlider; zoomSliderVal = deps.zoomSliderVal;
   darkModeCB = deps.darkModeCB; darkModeBtn = deps.darkModeBtn; confirmModal = deps.confirmModal;
   confirmTitle = deps.confirmTitle; confirmBody = deps.confirmBody; confirmCancel = deps.confirmCancel; confirmDelete = deps.confirmDelete;
-  appEl = deps.appEl; exportBtn = deps.exportBtn; importBtn = deps.importBtn; importFile = deps.importFile;
+  appEl = deps.appEl; exportBtn = deps.exportBtn; exportFullBtn = deps.exportFullBtn; importBtn = deps.importBtn; importFile = deps.importFile;
   diagExportLogBtn = deps.diagExportLogBtn; diagClearLogBtn = deps.diagClearLogBtn; diagLogLevelSelect = deps.diagLogLevelSelect;
 }
 
@@ -294,16 +294,77 @@ export function bindSettingsUi() {
       });
     }
     // Export / Import
-    exportBtn?.addEventListener('click', () => {
-      // BX-DEV-111f: Export includes integrity metadata
-      const exportData = Object.assign({}, layout, { _exportedAt: new Date().toISOString() });
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json; charset=utf-8' });
+    // Ticket 51 (spec W6-D2 / D-006 hybrid strategy): the DEFAULT export is a clean
+    // envelope — current main layout + lightweight meta index (snap.v1 / corrupt /
+    // conflict entries, NO bodies; pg_dump-vs-WAL separation per the 2026-09-12
+    // atomcode export research). The optional second button exports the FULL DR
+    // package: the same envelope plus verbatim _bodies, size-estimated before
+    // download and trimmed to stay inside the 5MB import cap (oldest snapshot
+    // bodies drop first; indices always survive). Filename per spec:
+    // boxing-backup-YYYYMMDD.json. Import accepts both this envelope and the
+    // legacy bare-layout dumps (see the unwrap in the import handler).
+    function _ymd() {
+      const d = new Date();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return String(d.getFullYear()) + m + day;
+    }
+    async function buildExportEnvelope() {
+      const snaps = await listSnapshots();
+      const corrupt = await listCorruptArchives();
+      const conflicts = await listConflictArchives();
+      return {
+        _exportedAt: new Date().toISOString(),
+        meta: {
+          schemaVersion: layout.schemaVersion || 1,
+          fullPackage: false,
+          snapshots: snaps,
+          corrupt: corrupt,
+          conflicts: conflicts
+        },
+        layout: Object.assign({}, layout)
+      };
+    }
+    function downloadJson(text, name) {
+      const blob = new Blob([text], { type: 'application/json; charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'boxing-backup.json';
+      a.href = url; a.download = name;
       document.body.appendChild(a); a.click();
       document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 4000);
-    });
+    }
+    async function doExportEnvelope(fullPackage) {
+      try {
+        const env = await buildExportEnvelope();
+        let text = JSON.stringify(env, null, 2);
+        if (fullPackage) {
+          env.meta.fullPackage = true;
+          env._bodies = await readDrBodies();
+          // Size estimate + 5MB handling (SEC-06 parity: the importer rejects
+          // payloads it cannot land; a full package must stay restorable, not
+          // maximal).
+          const CAP = 5 * 1024 * 1024;
+          text = JSON.stringify(env, null, 2);
+          while (text.length > CAP && env._bodies.snapshots.length > 0) {
+            env._bodies.snapshots.shift(); // oldest body drops first
+            env.meta.bodyTrimmed = (env.meta.bodyTrimmed || 0) + 1;
+            text = JSON.stringify(env, null, 2);
+          }
+          if (text.length > CAP) {
+            // even metadata-only is too big (huge live layout) — fall back to the
+            // standard envelope so the user still gets a clean, importable export.
+            debug('Full DR package exceeds 5MB after trim — falling back to standard envelope');
+            try { alert(i18n('exportFullOverflow')); } catch (_) { /* alert may be blocked */ }
+            const plain = await buildExportEnvelope();
+            text = JSON.stringify(plain, null, 2);
+          }
+        }
+        downloadJson(text, 'boxing-backup-' + _ymd() + '.json');
+        debug('Export done — fullPackage=' + Boolean(fullPackage) + ' bytes=' + text.length);
+      } catch (e) { debugErr('export failed', e); }
+    }
+    exportBtn?.addEventListener('click', () => { void doExportEnvelope(false); });
+    exportFullBtn?.addEventListener('click', () => { void doExportEnvelope(true); });
 
     let importPending = false;
     importBtn?.addEventListener('click', () => { importPending = true; importFile?.click(); });
@@ -317,7 +378,16 @@ export function bindSettingsUi() {
         const text = await file.text();
         // BX-DEV-111f: Strip UTF-8 BOM if present
         const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
-        const data = JSON.parse(cleanText);
+        let data = JSON.parse(cleanText);
+        // Ticket 51 (spec W6-D2): unwrap the export envelope — { _exportedAt, meta,
+        // layout[, _bodies] } lands as the bare layout, so a default-envelope or
+        // full-DR-package export round-trips back through the unchanged merge /
+        // overwrite pipeline below (AC: envelope import restores the current
+        // layout). Legacy bare dumps (boxes at top level) skip the unwrap entirely.
+        // The package's _bodies and meta are ignored on import; the SEC-06 depth
+        // cap applies to the LAYOUT payload (what reaches storage), not the index.
+        const unwrapped = unwrapExportEnvelope(data);
+        if (unwrapped) data = unwrapped;
         // BX-DEV-111f: Validate structure — must have boxes array, version field
         // SEC-06: Reject excessively large JSON payloads to prevent OOM/stack overflow
         if (JSON.stringify(data).length > 2_000_000) throw new Error('too large');

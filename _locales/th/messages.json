@@ -860,6 +860,14 @@
     "message": "เขียนทับ",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "แพ็กเกจ DR เต็มรูปแบบ",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "แม้ลดเนื้อหา snapshot แล้วยังเกินขีดจำกัดกู้คืน 5MB จึงดาวน์โหลดการส่งออกแบบมาตรฐานแทน",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "เก็บสำเนาขัดแย้งแล้ว",
     "description": "Settings data row: count of archived conflict copies"

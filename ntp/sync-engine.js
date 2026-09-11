@@ -441,6 +441,10 @@ export function initSyncEngineFacade(deps) {
             // Ticket 44: explicit user-confirmed overwrite — newer-wins is allowed HERE,
             // but the discarded local side is archived as a conflict copy first (never silent).
             await archiveConflictLayouts(stripGroupsForPersist(layout), { reason: 'webdav-data-loss-restore', side: 'local' });
+            // Ticket 51 (spec W6-D2): copy-before-overwrite unified — the conflict
+            // archive keeps the payload verbatim, but the snapshot makes it a
+            // one-click Time Machine point like every other overwrite entry.
+            if (computeBoxCount(layout).total > 0) await saveSnapshot();
             const savedMeta = layout._meta;
             const savedSettings = layout.settings;
             setLayout(cloud);
@@ -543,6 +547,12 @@ export function initSyncEngineFacade(deps) {
         // ADR-0009: original newer-wins logic
         if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {
           // Cloud is newer or equal-but-different-writer → pull.
+          // Ticket 51 (spec W6-D2 / D-006): 覆盖必先本地副本 — this pull fully
+          // replaces the main key, so snapshot the discarded local side FIRST
+          // (ADR-0009 COW discipline; the import-side twin lives in settings-ui's
+          // overwrite-confirmed branch, and the data-loss / merge-failure paths
+          // already keep a verbatim conflict copy).
+          if (computeBoxCount(layout).total > 0) await saveSnapshot();
           // BX-DEV-138: preserve local connections/groups when cloud payload lacks them
           // (settingsOnly sync mode strips connections/groups from the uploaded payload).
           const savedSettings = layout.settings;

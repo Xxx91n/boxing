@@ -860,6 +860,14 @@
     "message": "Écraser",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "Package DR complet",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "Même après réduction des instantanés, le paquet DR dépasse la limite de restauration de 5 Mo ; un export standard a été téléchargé à la place.",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "Copies de conflit archivées",
     "description": "Settings data row: count of archived conflict copies"

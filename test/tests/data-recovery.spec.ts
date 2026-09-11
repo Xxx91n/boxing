@@ -58,14 +58,20 @@ test.describe('Data Recovery & Export/Import', () => {
 
     if (exported) {
       const parsed = JSON.parse(exported);
-      expect(parsed.version).toBeGreaterThanOrEqual(3);
-      expect(Array.isArray(parsed.boxes)).toBe(true);
-      expect(parsed.nextLargeIndex).toBeGreaterThanOrEqual(1);
-      expect(parsed.settings).toBeDefined();
-      expect(parsed.settings.selectedLanguage).toBeDefined();
-      expect(parsed.settings.rememberLastPos).toBeDefined();
-      expect(parsed.settings.fontSize).toBeDefined();
-      console.log('Export valid — version:', parsed.version, 'boxes:', parsed.boxes.length);
+      // Ticket 51 (W6-D2): default export is now an envelope — layout + meta index,
+      // bodies stay out; the bare layout fields live under parsed.layout.
+      expect(parsed.meta).toBeTruthy();
+      expect(parsed.meta.snapshots).toBeInstanceOf(Array);
+      expect(parsed._bodies).toBeUndefined();
+      expect(parsed.version).toBeUndefined();
+      expect(parsed.layout.version).toBeGreaterThanOrEqual(3);
+      expect(Array.isArray(parsed.layout.boxes)).toBe(true);
+      expect(parsed.layout.nextLargeIndex).toBeGreaterThanOrEqual(1);
+      expect(parsed.layout.settings).toBeDefined();
+      expect(parsed.layout.settings.selectedLanguage).toBeDefined();
+      expect(parsed.layout.settings.rememberLastPos).toBeDefined();
+      expect(parsed.layout.settings.fontSize).toBeDefined();
+      console.log('Export valid — version:', parsed.layout.version, 'boxes:', parsed.layout.boxes.length);
     }
 
     await context.close();
@@ -202,14 +208,19 @@ test.describe('Data Recovery & Export/Import', () => {
 
     if (exported) {
       const parsed = JSON.parse(exported);
+      // Ticket 51 (W6-D2): envelope export — the round-trip payload now rides in
+      // parsed.layout, with the meta index beside it and no bodies.
+      const layoutDoc = parsed.layout || parsed;
+      expect(parsed.meta).toBeTruthy();
+      expect(parsed._bodies).toBeUndefined();
       console.log('Export analysis:');
-      console.log('  version:', parsed.version);
-      console.log('  boxes count:', parsed.boxes.length);
-      console.log('  nextLargeIndex:', parsed.nextLargeIndex);
+      console.log('  version:', layoutDoc.version);
+      console.log('  boxes count:', layoutDoc.boxes.length);
+      console.log('  nextLargeIndex:', layoutDoc.nextLargeIndex);
 
       // Verify box structure
-      for (let i = 0; i < parsed.boxes.length; i++) {
-        const box = parsed.boxes[i];
+      for (let i = 0; i < layoutDoc.boxes.length; i++) {
+        const box = layoutDoc.boxes[i];
         expect(box.id).toBeDefined();
         expect(typeof box.id).toBe('string');
         expect(box.title).toBeDefined();
@@ -223,9 +234,9 @@ test.describe('Data Recovery & Export/Import', () => {
       }
 
       // Verify settings
-      expect(parsed.settings).toBeDefined();
-      expect(parsed.settings.selectedLanguage).toBeDefined();
-      expect(parsed.settings.rememberLastPos).toBeDefined();
+      expect(layoutDoc.settings).toBeDefined();
+      expect(layoutDoc.settings.selectedLanguage).toBeDefined();
+      expect(layoutDoc.settings.rememberLastPos).toBeDefined();
 
       // Save export for manual inspection
       const outPath = path.join(EXTENSION_PATH, '..', 'test-results', 'roundtrip-export.json');

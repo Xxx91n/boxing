@@ -143,8 +143,8 @@
             <section class="modal__section">
               <label class="modal__label" for="url-open-mode-select" data-i18n="urlOpenModeLabel">Open bookmarks in</label>
               <select id="url-open-mode-select" class="modal__select">
+                <option value="sameTab" selected data-i18n="urlOpenModeCurrentTab">Current Tab</option>
                 <option value="newTab" data-i18n="urlOpenModeNewTab">New Tab</option>
-                <option value="sameTab" data-i18n="urlOpenModeCurrentTab">Current Tab</option>
               </select>
               <p class="modal__hint" data-i18n="urlOpenModeHint">Choose where bookmarks open when clicked</p>
             </section>
@@ -208,6 +208,7 @@
             <section class="modal__section">
               <div style="display:flex;gap:8px;">
                 <button id="export-data-btn" tabindex="-1" class="btn" data-i18n="exportData">Export Data</button>
+                <button id="export-full-dr-btn" tabindex="-1" class="btn" data-i18n="exportFullPackage">Full DR package</button>
                 <button id="import-data-btn" tabindex="-1" class="btn" data-i18n="importData">Import Data</button>
                 <input type="file" id="import-file-input" accept=".json" hidden>
               </div>

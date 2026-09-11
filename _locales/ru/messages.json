@@ -860,6 +860,14 @@
     "message": "Перезаписать",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "Полный DR-пакет",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "Даже после удаления содержимого снимков полный DR-пакет превышает лимит восстановления 5 МБ; вместо него загружена стандартная копия.",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "Конфликтные копии сохранены",
     "description": "Settings data row: count of archived conflict copies"

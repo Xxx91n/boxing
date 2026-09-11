@@ -860,6 +860,14 @@
     "message": "Sobrescrever",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "Pacote de DR completo",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "Mesmo após reduzir os corpos dos snapshots, o pacote de DR excede o limite de restauração de 5 MB; um export padrão foi baixado.",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "Cópias em conflito arquivadas",
     "description": "Settings data row: count of archived conflict copies"

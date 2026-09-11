@@ -863,6 +863,14 @@
     "message": "覆寫復原",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "完整容災包",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "修剪快照正文後，完整容災包仍超過 5MB 復原上限；已改為下載標準信封匯出。",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "衝突副本已封存",
     "description": "Settings data row: count of archived conflict copies"

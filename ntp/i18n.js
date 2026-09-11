@@ -235,6 +235,9 @@ I18N_FALLBACK.importOverwriteBody = 'Overwrite replaces your entire canvas with 
 I18N_FALLBACK.importBtnMerge = 'Merge & import';
 I18N_FALLBACK.importBtnOverwrite = 'Overwrite restore';
 I18N_FALLBACK.dataConflictArchived = 'Conflict copies archived';
+// Ticket 51 (spec W6-D2): export envelope + optional full DR package UI strings (BX-I18N-005 fallback).
+I18N_FALLBACK.exportFullPackage = 'Full DR package';
+I18N_FALLBACK.exportFullOverflow = 'The full DR package still exceeds the 5MB restore limit after trimming snapshot bodies. A standard envelope export was downloaded instead.';
 export let currentLang = 'en';
 // BX-i18n-LOC: To add a new language, append the code here + update ONB_LANG_LABELS below + create _locales/<code>/messages.json.
 export const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi', 'zh_TW'];

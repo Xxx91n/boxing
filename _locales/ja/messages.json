@@ -860,6 +860,14 @@
     "message": "上書き復元",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "完全DRパッケージ",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "スナップショット本文を削減しても完全DRパッケージは5MBの復元上限を超えるため、標準エンベロープ出力をダウンロードしました。",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "競合コピーがアーカイブされました",
     "description": "Settings data row: count of archived conflict copies"

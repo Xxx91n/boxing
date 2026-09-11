@@ -860,6 +860,14 @@
     "message": "استبدال",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "حزمة التعافي الكاملة",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "حتى بعد تقليص محتوى اللقطات، تتجاوز حزمة التعافي حد الاستعادة 5 ميغابايت؛ تم تنزيل تصدير قياسي بدلاً منه.",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "نسخ التعارض محفوظة",
     "description": "Settings data row: count of archived conflict copies"

@@ -382,6 +382,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
 
   // import/export
   const exportBtn = $('#export-data-btn');
+  const exportFullBtn = $('#export-full-dr-btn'); // ticket 51: optional full DR package export
   const importBtn = $('#import-data-btn');
   const importFile = $('#import-file-input');
   // BX-AUD-05 UI surfaces — diagnostics export/clear/level.
@@ -439,7 +440,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   // modules (ADR-0016). Must stay after every DOM const it reads (ticket-08 TDZ lesson).
   initCredentialsFacade({ debugErr });
   initSyncEngineFacade({ debug, debugErr, debugWarn, syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn });
-  initSettingsUiFacade({ debug, debugErr, debugWarn, updateCaption, settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect });
+  initSettingsUiFacade({ debug, debugErr, debugWarn, updateCaption, settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect });
   initOnboardingFacade({ debug, debugErr, updateCaption, langSelect });
 
   // ── Header Pin: two-position strategy (v3.7.2) ──────────────────────────
@@ -675,7 +676,10 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   // works for both Chrome (tabs API not available from newtab without permission
   // elsewhere) and Firefox; falls back to window.open.
   function openBookmarkUrl(url) {
-    const mode = layout.settings.urlOpenMode || 'sameTab';
+    // Ticket 52: only an explicit stored 'newTab' opens a new tab — missing or
+    // unknown (legacy-package) values resolve to the sameTab default, mirroring
+    // the popups.js bookmark-row contract.
+    const mode = layout.settings.urlOpenMode === 'newTab' ? 'newTab' : 'sameTab';
     try {
       if (mode === 'sameTab') {
         // stay in this Boxing tab — navigation will leave the page; boxing state

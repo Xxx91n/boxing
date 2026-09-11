@@ -860,6 +860,14 @@
     "message": "덮어쓰기 복원",
     "description": "Confirm button label: overwrite restore"
   },
+  "exportFullPackage": {
+    "message": "전체 DR 패키지",
+    "description": "Settings data tab button: export full DR package with snapshot bodies"
+  },
+  "exportFullOverflow": {
+    "message": "스냅샷 본문을 정리한 후에도 전체 DR 패키지가 5MB 복원 한도를 초과하여 표준 내보내기를 다운로드했습니다.",
+    "description": "Toast when the full DR package exceeds the 5MB import cap even after trimming"
+  },
   "dataConflictArchived": {
     "message": "충돌 사본 보관됨",
     "description": "Settings data row: count of archived conflict copies"

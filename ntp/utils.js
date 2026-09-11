@@ -184,7 +184,10 @@
           }))
         })),
        nextLargeIndex: (raw.boxes?.length || 0) + 1,
-       settings: Object.assign(raw.settings || { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, syncProvider: 'local' }, { theme: raw.settings?.theme || 'beige' })
+       // Ticket 52: spread defaultLayout().settings so the v2 migration write path can
+       // never persist a settings blob missing urlOpenMode (fresh default = sameTab);
+       // an explicitly stored newTab still wins (user choice preserved).
+       settings: { ...defaultLayout().settings, ...(raw.settings || {}), theme: raw.settings?.theme || 'beige' }
       };
     }
     return defaultLayout();
@@ -306,4 +309,20 @@
     return { zoom: newZoom, panX: newPanX, panY: newPanY };
   }
 
-export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
+// Ticket 51 (spec W6-D2): export envelope unwrap. The default export is
+// { _exportedAt, meta:{ schemaVersion, fullPackage, snapshots[], corrupt[], conflicts[] }, layout }
+// (W6-D2 envelope); the full DR package additionally carries _bodies. Pure function: given a
+// parsed export document, return the BARE layout payload the import pipeline understands —
+// envelopes are unwrapped, legacy bare dumps pass through untouched, anything else returns null.
+// Shared by the settings-ui import handler (live) and by pinned unit tests.
+function unwrapExportEnvelope(data) {
+  if (!data || typeof data !== "object") return null;
+  if (Array.isArray(data.boxes)) return data; // legacy bare dump
+  if (data.meta && data.layout && typeof data.layout === "object" && !Array.isArray(data.layout)) {
+    const inner = data.layout;
+    if (Array.isArray(inner.boxes)) return inner; // envelope -> bare layout
+  }
+  return null;
+}
+
+export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
