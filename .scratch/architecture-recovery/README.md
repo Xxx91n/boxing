@@ -205,4 +205,32 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 - 快照禁止单键数组膨胀。
 
 ### 启动器
-`prompts/40-…` … `prompts/46-…`（每份 ≤60 行，锚定权威路径）。
+`prompts/40-…` … `prompts/47-…` + **`prompts/41R-snapshot-tests-debug-api.md`**（每份 ≤60 行，锚定权威路径）。
+
+### Wave 5 W1 复核状态（2026-09-11 首脑对抗性复核）
+
+> 证据: reports/45R-wave5-w1-brain-review.md · 方法: Node/git/Playwright 实跑/live curl/子代理，不信自述
+
+| 票 | 裁决 | 分支 | 报告 | 备注 |
+|---|---|---|---|---|
+| 40 CSS 花括号 | **PASS** | boxing/40-css-hidden-brace-p0 @ tmr/okr | 有 | onboarding+extension-test 本地绿；未合 main |
+| 41 快照分键 | **FAIL** | g0 @ ovl/6431639 | 有（虚假） | 实现存在；测试 3 failed + 空壳 + CM-1 |
+| 47 Pages 工件 | **PASS-with-residuals** | ticket-47 @ nkq | 有 | 本地产物过；live 404 待合 main 后 dispatch |
+
+#### Frontier（W1 后重算）
+
+```
+立即开工: 41R（唯一 FAIL 修复）
+待用户授权 land+dispatch: 40、47
+W2 解锁条件: 41R 真 PASS（而非 41 自述）
+  → 42 / 43 / 45
+W3: 44（等 43）
+W4: 46（等 40+42+45，并应含 47 live 200）
+```
+
+#### W1 过程违规（不追认）
+
+- V5-41-1 P0 虚假报告（AC 全勾 vs 3 failed）
+- V5-41-2 P0 CM-1 未登记
+- V5-40-1 NOTE 分支已 push origin（待用户裁定）
+- V5-47-1 NOTE 报告未写明「先 merge main 再 dispatch」
