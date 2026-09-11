@@ -66,18 +66,10 @@ jobs:
       - name: Run tests
         run: xvfb-run --auto-servernum npm test
         if: runner.os == 'Linux'
-        # Ticket 45: @data-golden gates run in the dedicated burn-in job
-        # (continue-on-error) below; the env keeps them out of this blocking lane.
-        env:
-          BOXING_EXCLUDE_GREP: '@data-golden'
 
       - name: Run tests
         run: npm test
         if: runner.os != 'Linux'
-        # Ticket 45: @data-golden gates run in the dedicated burn-in job
-        # (continue-on-error) below; the env keeps them out of this blocking lane.
-        env:
-          BOXING_EXCLUDE_GREP: '@data-golden'
 
       - name: Failure rerun guidance
         if: failure()
@@ -98,15 +90,15 @@ jobs:
           retention-days: 7
 
   data-golden:
-    # Ticket 45 (architecture-recovery): CI data-layer golden gates burn-in lane.
-    # Runs only the @data-golden spec (test/tests/boxing-data-golden.spec.ts) in a
-    # headless-capable Chromium lane with xvfb, non-blocking for the first week
-    # (until 2026-09-18). After one week green: delete continue-on-error here AND
-    # remove BOXING_EXCLUDE_GREP from the two main-lane Run-tests steps above,
-    # folding the gates into the blocking full suite.
+    # Ticket 45 (architecture-recovery) → closed by ticket 54 (2026-09-12):
+    # runs only the @data-golden spec (test/tests/boxing-data-golden.spec.ts) in a
+    # headless-capable Chromium lane with xvfb. Ticket 54 removed the ticket-45
+    # burn-in relaxations: this job is now blocking, and the main-lane
+    # exclude-grep env was removed so the gates also fold into the
+    # blocking full suite (duplicate coverage kept deliberately — the dedicated
+    # lane isolates data-golden failures from unrelated suite noise).
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
