@@ -54,8 +54,55 @@
 
 - **默认布局兜底的语义**：无健康快照时主键重建为 defaultLayout，用户原数据仅在 corrupt 归档键中（符合 spec D3"归档不丢"，但用户需从设置数据区感知）；"从 corrupt 归档导出/一键恢复"UI 不在本票验收范围，留待后续票（数据区已具备入口挂点 #data-corrupt-row）。
 - **mock 车道局限**：不可 parse 的 JSON 在 mock get 被吞为 null fallback，fork 自动化测试只能覆盖"可读损坏"形态；API 层损坏（ABP 情形）无法在 file:// 车道注入，建议人工验收或扩展车道补一轮真实 storage.local 损坏注入。
-- **误报面**：isPlausibleLayout 允许 version 缺失但 boxes 为数组的载荷通过（交由 migrateLayout 兜底），避免对未知历史格式误归档；仅 version 非数字或 boxes 非数组判定为损坏。
+- **误报面**：~~isPlausibleLayout 允许 version 缺失但 boxes 为数组的载荷通过（交由 migrateLayout 兜底），避免对未知历史格式误归档；仅 version 非数字或 boxes 非数组判定为损坏。~~ **[43R 勘误 — 上句与代码矛盾]** `isPlausibleLayout` 要求 `typeof raw.version === 'number'`，version 缺失即 `typeof undefined !== 'number'` → **一律判损**，不放行、不兜底。首脑 general-5 判定正确：version 缺失/非数字、boxes 非数组、非对象三种形态全部拦截进 fork 归档。
 
 ## 6. 教训（写回候选，WORKFLOW §6）
 
 无新增反模式。既有教训复用确认：migrateLayout 静默降级陷阱与 42 票"migrateLayout 原地改写对象"同源（迁移函数对非法输入的不对称行为是 crash-rescue 语义的隐形前提，票面评审时应作为必查项）。
+
+## 返工轮次 43R — 写路径防覆盖 + 测试 harness 竞态修复（2026-09-11）
+
+**触发**：reports/W2-wave5-brain-review.md 票 43 **FAIL**（V5-43-1 状态矛盾 / V5-43-2 未绿跑 + 产品 P0：saveLayout 可无归档覆盖损坏主键）。任务书：prompts/43R-fork-test-harness-fix.md。
+
+### 基线重跑（验收项 1，1 failed 原始输出）
+
+```
+1) [chromium-extension] › test\tests\data-recovery.spec.ts:250:3 › Data Recovery & Export/Import › Corrupt main key is archived (fork) and app still boots
+    Error: expect(received).toBeGreaterThan(expected)
+    Expected: > 0
+    Received:   0
+      > 280 |     expect(archiveKeys.length).toBeGreaterThan(0);
+  1 failed
+  4 passed (17.7s)
+```
+（与首脑 FAIL archiveKeys=0 一致；日志可见旧页 unload flush 的 `saveLayout called, boxCount=3` 正在覆盖 seed。）
+
+### 产品修复（P0，禁止只改测试）
+
+- **saveLayout 写路径防覆盖**（ntp/storage.js）：读链内 `stored.boxingLayout` 非 plausible 时**先 `archiveCorruptMain`**（error 标注 `saveLayout: stored boxingLayout failed integrity check`），remote 视为 null 不参与 merge，随后写回的是本地内存态——归档先行，无归档覆盖被禁止；合法载荷行为不变（migrateLayout → mergeConcurrentLayout）。与 loadLayout 读路径同一 fork 语义。
+- **legacy 路径顺序修复**（loadLayout legacy sync 分支）：损坏 legacy 载荷此前会在归档前被 `layoutStorage.set` 写回主键（吞掉待归档载荷的顺序违规）。修复：写回 + A6 sync cleanup 移入**合法分支**；损坏载荷交给 fork 统一路径（archiveCorruptMain → crashRescue 重建 → 持久化写回），sync 侧原始副本保留（归档轮转 20 条兜底）。
+
+### harness 竞态修复
+
+1. **unload flush 竞态**（archiveKeys=0 的直接根因）：原 boot→setItem(corrupt)→reload 模式下，旧页 pagehide flush（flushPendingViewStatePersist → saveLayout）用内存合法 layout 覆盖刚注入的损坏 seed，新页 never sees corrupt。修复：**addInitScript 预导航注入**（首次 goto 前就位，单 goto 无 reload，无 unload flush 窗口），首次 boot 即从损坏主键启动、直接走 fork 路径。
+2. **前缀过滤误含索引键**：`archiveKeys` 过滤 `startsWith('bxstore:boxingLayout.corrupt.')` 把轻量索引键 `boxingLayout.corrupt.index` 也匹配进来，取 last 时拿到索引数组（`.raw` undefined → 第二次红）。修复：排除 `.index` 结尾键。
+
+### 绿跑证据（验收项 5，全文件原始输出）
+
+```
+Running 5 tests using 2 workers
+  5 passed (20.6s)
+```
+单用例（fork）：`[chromium-extension] › test\tests\data-recovery.spec.ts:256:3 › ... Corrupt main key is archived (fork) and app still boots — 1 passed (9.9s)`。断言覆盖：归档键存在且 raw 可读（verbatim 损坏载荷）、corrupt.index 更新、主键重建（boxes 为数组）、pageErrors==[]、#canvas/#canvas-surface attached。
+
+### 门禁
+
+- node --check storage.js/utils.js：绿；git diff --check：干净。
+- import-graph-guard：本票 **0 新违规**（14 modules / 48 edges 不变）；当前 CM-1 报 `boxing-probe-42r.spec.ts` 未登记 cluster——红源为并行票 42R 的 untracked probe 文件，非本票改动面，本票不代改（WORKFLOW：不动其他票文件）。
+- 本轮绿跑为本地实跑（43R 任务书明确要求"先重跑基线/贴 passed 行"，覆盖 43 票的 CI-only 待跑状态）；issue 勾选以本轮实跑为证据。
+
+### 状态同步
+
+- issues/43：Status ready-for-agent → **done**，4 验收项勾选（V5-43-1 矛盾消除）。
+- issues/43R：8 验收项全部勾选，Status → **done**。
+

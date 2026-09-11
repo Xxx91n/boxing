@@ -247,6 +247,12 @@ test.describe('Data Recovery & Export/Import', () => {
   // Note: the file:// mock lane cannot inject unparseable JSON (mock get swallows the
   // parse error into a null fallback), so the corrupt shape is "parseable but not a
   // layout" — boxes is not an array. Archive keys live under the mock's bxstore: prefix.
+  // 43R harness fix: the original boot→setItem→reload pattern raced with the old page's
+  // pagehide flush (flushPendingViewStatePersist → saveLayout wrote the in-memory legal
+  // layout back OVER the injected corrupt seed), so the new page never saw a corrupt key
+  // and archived nothing (baseline: archiveKeys=0, 1 failed). Seeding via addInitScript
+  // BEFORE the first navigation leaves no window for an unload flush — the very first
+  // boot already starts from the corrupt key and exercises the fork path directly.
   test('Corrupt main key is archived (fork) and app still boots', async ({ browser }) => {
     test.setTimeout(20000);
 
@@ -256,24 +262,24 @@ test.describe('Data Recovery & Export/Import', () => {
     const pageErrors: string[] = [];
     page.on('pageerror', err => pageErrors.push(`[ERROR] ${err.message}`));
 
-    // First boot settles the origin (localStorage seeded), then inject the corrupt main key.
-    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
-    await page.waitForTimeout(1500);
-    await page.evaluate(() => {
+    // Seed the corrupt main key before any navigation (runs before page scripts on every
+    // navigation; single goto — no reload, no unload flush window).
+    await page.addInitScript(() => {
       localStorage.setItem('boxingLayout', JSON.stringify({ version: 99, boxes: { bad: true }, settings: {} }));
     });
-    await page.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
-    await page.waitForTimeout(1500);
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    await page.waitForTimeout(2000);
 
     // AC: no uncaught exceptions on the corrupted-boot path
     expect(pageErrors).toEqual([]);
 
     // AC: corrupt payload archived (fork) and still readable from storage
+    // (exclude the lightweight boxingLayout.corrupt.index metadata key — it shares the prefix).
     const archiveKeys = await page.evaluate(() => {
       const out: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('bxstore:boxingLayout.corrupt.')) out.push(k);
+        if (k && k.startsWith('bxstore:boxingLayout.corrupt.') && !k.endsWith('.index')) out.push(k);
       }
       return out;
     });

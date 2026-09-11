@@ -94,15 +94,18 @@ export function registerStorageOnChanged() {
         const legacy = layoutStorage === api.storage.sync ? data : await api.storage.sync.get({ boxingLayout: null });
         if (legacy.boxingLayout) {
           if (!isPlausibleLayout(legacy.boxingLayout)) {
+            // 43R: 损坏 legacy 载荷不得在归档前写回主键 —— 交给下方 fork 统一路径
+            // （archiveCorruptMain → crashRescue 重建 → 持久化写回）；A6 sync cleanup
+            // 同样不做（保留 sync 侧原始副本，归档轮转 20 条兜底）。
             corruptRaw = legacy.boxingLayout;
             corruptErr = new Error('legacy boxingLayout failed integrity check (readable but not a layout)');
           } else {
             setLayout(migrateLayout(legacy.boxingLayout));
-          }
-          if (legacy.boxingLayout && layoutStorage !== api.storage.sync) {
-            await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
-            // A6: one-time cleanup — remove stale sync data after successful local migration
-            try { await api.storage.sync.remove("boxingLayout"); } catch (e) { debugErr("storage.sync.remove stale data", e); }
+            if (layoutStorage !== api.storage.sync) {
+              await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
+              // A6: one-time cleanup — remove stale sync data after successful local migration
+              try { await api.storage.sync.remove("boxingLayout"); } catch (e) { debugErr("storage.sync.remove stale data", e); }
+            }
           }
         } else {
           setLayout(defaultLayout());
@@ -489,7 +492,18 @@ export function registerStorageOnChanged() {
       layout.settings.headerPinned = headerPinned;
       try { pruneConnArrays(); } catch (e) { debugErr("pruneConnArrays", e); }
       const stored = await layoutStorage.get({ boxingLayout: null });
-      const remote = stored.boxingLayout ? migrateLayout(stored.boxingLayout) : null;
+      // 43R (spec D3): 写路径同 fork 语义 —— stored 载荷可读但非 plausible 时先归档
+      // 再继续，禁止无归档覆盖。migrateLayout 对非法载荷会静默降级为 defaultLayout，
+      // merge 后写回即覆盖损坏键；先 archiveCorruptMain 后，remote 视为 null（不参与
+      // merge），写回的是本地内存态 —— 与 loadLayout 读路径同一语义。
+      let remote = null;
+      if (stored.boxingLayout) {
+        if (!isPlausibleLayout(stored.boxingLayout)) {
+          await archiveCorruptMain(stored.boxingLayout, new Error('saveLayout: stored boxingLayout failed integrity check'));
+        } else {
+          remote = migrateLayout(stored.boxingLayout);
+        }
+      }
       setLayout(mergeConcurrentLayout(layout, remote));
       const revision = Math.max(Number(layout._meta?.revision) || 0, Number(remote?._meta?.revision) || 0) + 1;
       layout._meta = { ...(layout._meta || {}), revision, updatedAt: Date.now(), writerId };

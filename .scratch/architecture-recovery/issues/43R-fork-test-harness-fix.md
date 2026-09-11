@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-11 绿跑关闭）
 
 ## 首脑结论（必须先读）
 
@@ -15,14 +15,14 @@ reports/W2-wave5-brain-review.md 票 43 节 + 子代理 general-5：
 
 ## 验收
 
-- [ ] 先重跑 data-recovery「Corrupt main key」用例，贴 1 failed 基线
-- [ ] **产品修复**：saveLayout 读到非 plausible boxingLayout 时先 archiveCorruptMain，禁止无归档覆盖（与 loadLayout 同一语义）
-- [ ] legacy 路径 loadLayout 写主键前同样不得吞掉待归档载荷
-- [ ] 修复 harness 竞态（unload flush / 写链）后用例绿：归档键存在、raw 可读、主键重建、pageErrors=[]
-- [ ] data-recovery.spec.ts 全文件 passed（贴原始输出）
-- [ ] node --check + import-graph-guard 绿
-- [ ] issues/43 Status/checkbox 与实物一致（绿跑后才 done）
-- [ ] 报告追加「返工轮次 43R」，不覆盖原记录；纠正 §5 与 isPlausibleLayout 矛盾表述
+- [x] 先重跑 data-recovery「Corrupt main key」用例，贴 1 failed 基线（archiveKeys.length 0 → FAILED，与首脑一致）
+- [x] **产品修复**：saveLayout 读到非 plausible boxingLayout 时先 archiveCorruptMain，禁止无归档覆盖（与 loadLayout 同一语义）
+- [x] legacy 路径 loadLayout 写主键前同样不得吞掉待归档载荷（写回 + A6 sync cleanup 移入合法分支）
+- [x] 修复 harness 竞态（unload flush / 写链）后用例绿：归档键存在、raw 可读、主键重建、pageErrors=[]（addInitScript 预导航注入，单 goto 无 reload；另修 archiveKeys 前缀过滤误含 .index）
+- [x] data-recovery.spec.ts 全文件 passed（chromium-extension：**5 passed (20.6s)**，原始输出见报告 §返工轮次 43R）
+- [x] node --check 绿（storage.js/utils.js）；import-graph-guard 本票 0 新违规（14 modules/48 edges 不变；CM-1 报 boxing-probe-42r.spec.ts 未登记 cluster，红源为并行票 42R 的 untracked probe，非本票改动面）
+- [x] issues/43 Status/checkbox 与实物一致（绿跑后才 done）
+- [x] 报告追加「返工轮次 43R」，不覆盖原记录；纠正 §5 与 isPlausibleLayout 矛盾表述
 
 ## 禁止
 
