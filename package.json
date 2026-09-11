@@ -11,7 +11,7 @@
     "dev:chrome:no-build": "web-ext run -t chromium --source-dir=dist/boxing-chrome --no-reload",
     "dev:firefox:no-build": "web-ext run --source-dir=dist/boxing-firefox --no-reload",
     "guard:import-graph": "node scripts/import-graph-guard.mjs",
-    "pretest": "node scripts/import-graph-guard.mjs && node scripts/migration-golden-guard.mjs",
+    "pretest": "node scripts/import-graph-guard.mjs && node scripts/migration-golden-guard.mjs && node scripts/css-balance-guard.mjs",
     "test": "node scripts/test-mutex.mjs full",
     "test:all": "node scripts/test-mutex.mjs full",
     "test:changed": "node scripts/test-mutex.mjs changed",

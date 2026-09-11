@@ -10,6 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 import { buildNtpCss } from "./ntp-css.mjs";
+import { checkCssFiles, SOURCE_CSS } from "./css-balance.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..", "..");
@@ -307,8 +308,22 @@ function build() {
     }
   }
 
+  // -- A10: CSS brace-balance + nested-[hidden] gate (ticket 53, spec D6) --
+  // Fail-closed over every shipped source CSS BEFORE packaging: the
+  // 2026-09-12 freeze shipped because a missing '}' in settings.css went
+  // unnoticed until user upgrade. ntp-css.mjs covers the concat entry; this
+  // additionally gates design-system.css and popup.css which ship as-is.
+  function validateCssBalance() {
+    const gate = checkCssFiles(ROOT, SOURCE_CSS);
+    if (!gate.ok) {
+      throw new Error("[A10 CSS balance] build failed closed - source CSS violations:\n" + gate.violations.map((v) => "  - " + v).join("\n"));
+    }
+    console.log("A10: CSS brace-balance + nested-[hidden] gate OK (" + SOURCE_CSS.length + " sources)");
+  }
+
   validateI18nKeys();
   validateCssDualWriteMarkers();
+  validateCssBalance();
 
   // ── Stale dist detection ──
   // Warn if existing dist/BUILD_INFO.json commit != current HEAD.
