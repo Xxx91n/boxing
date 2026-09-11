@@ -1,0 +1,48 @@
+# 发行 zip 内容清单（审计辅助，G-B 验收对象=本清单所述解包产物）
+# 源: boxing-chrome-2026.9.13.zip (run 34641377036) · 44 entries · sha256 见 chrome|firefox/00-artifacts.txt
+# 观察(登记非本票面): .scratch/ 前缀混入发行包 → build.mjs 排除清单缺口，建议上报大脑另票
+# 已核: ntp/ntp.css 在包内（构建产物随包正常，G1 目视样式即可）；.scratch 泄漏实为 2 项
+.scratch/architecture-recovery/reports/39-artifact-audit.json
+.scratch/archive/2026-09-architecture-recovery-round7/34-locale-structure-check.mjs
+LICENSE
+_locales/ar/messages.json
+_locales/de/messages.json
+_locales/en/messages.json
+_locales/es/messages.json
+_locales/fr/messages.json
+_locales/hi/messages.json
+_locales/ja/messages.json
+_locales/ko/messages.json
+_locales/pt_BR/messages.json
+_locales/ru/messages.json
+_locales/th/messages.json
+_locales/vi/messages.json
+_locales/zh_CN/messages.json
+_locales/zh_TW/messages.json
+background.js
+demo/chrome-stub.js
+icons/icon_128.png
+icons/icon_16.png
+icons/icon_32.png
+icons/icon_48.png
+manifest.json
+ntp/conn-layer.js
+ntp/credentials.js
+ntp/design-system.css
+ntp/favicon.js
+ntp/i18n.js
+ntp/index.html
+ntp/ntp.css
+ntp/ntp.js
+ntp/onboarding.js
+ntp/persist.js
+ntp/popups.js
+ntp/render.js
+ntp/settings-ui.js
+ntp/state.js
+ntp/storage.js
+ntp/sync-engine.js
+ntp/utils.js
+popup/popup.css
+popup/popup.html
+popup/popup.js

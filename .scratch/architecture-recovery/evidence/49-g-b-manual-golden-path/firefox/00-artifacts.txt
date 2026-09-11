@@ -1,0 +1,5 @@
+candidate: 2026.9.13 (build.yml run 34641377036, branch main, three-OS green, amo_sign=true)
+sha256:
+4e3425bce41b74c1d45cfa11af14f179b44d3f55b3b024bafbd40fde31636d4d  boxing-chrome-2026.9.13.zip
+31d412bd288deca34d8663f0a6c1fde475077671e6ca88542d8a3401ede9eeb5  boxing-firefox-2026.9.13.zip
+pre-staged by agent 2026-09-12: downloaded+unpacked to D:/gb-2026.9.13 (zip root = extension dir itself, manifest.json at root)
