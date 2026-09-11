@@ -98,42 +98,181 @@ export function registerStorageOnChanged() {
     try { ensureGroups(); } catch (e) { debugErr("ensureGroups after load", e); } // runtime groups mirror after load
   }
 
-  // ── ADR-0009: Versioned snapshots + crash rescue ───────────
-  const MAX_SNAPSHOTS = 10;
-  const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;  // ponytail: single-snapshot cap, total ~10MB ceiling under unlimitedStorage
+  // ── Ticket 41: Split-key snapshots + Time Machine layered rotation ───────────
+  // Replaces boxingSnapshots[] single-key (Sidebery #1057 anti-pattern) with:
+  //   snap.v1.<ts>  — per-snapshot body key (max 2MB each)
+  //   snap.v1.index  — lightweight index: [{ts, schemaVersion, size}]
+  // Rotation (spec D1): last 24h hourly, 24h–30d daily, >30d weekly; total byte cap LRU fallback.
+  // Compatible with ADR-0009 schemaVersion field; sync transport unchanged.
+  const SNAP_KEY_PREFIX = 'snap.v1.';
+  const SNAP_INDEX_KEY = 'snap.v1.index';
+  const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;
   const MAX_SNAPSHOTS_TOTAL_BYTES = 8 * 1024 * 1024;
+  const HOUR_MS = 3600000;
+  const DAY_MS = 86400000;
+  const HOURLY_WINDOW_MS = 24 * HOUR_MS;
+  const DAILY_WINDOW_MS = 30 * DAY_MS;
+
+  const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);
+  const dailyBucket = (ts) => Math.floor(ts / DAY_MS);
+  const weeklyBucket = (ts) => Math.floor(ts / (7 * DAY_MS));
+
+  let _snapMigrated = false;
+
+  // One-time migration: boxingSnapshots[] → split keys
+  async function _migrateSnapshots() {
+    if (_snapMigrated) return;
+    _snapMigrated = true;
+    try {
+      const stored = await layoutStorage.get({ boxingSnapshots: null });
+      const oldSnaps = Array.isArray(stored.boxingSnapshots) ? stored.boxingSnapshots : [];
+      if (oldSnaps.length === 0) return;
+      debug('Migrating ' + oldSnaps.length + ' boxingSnapshots[] to split keys');
+      const index = await _readIndex();
+      const keysToSet = {};
+      for (const snap of oldSnaps) {
+        if (!snap || typeof snap.ts !== 'number') continue;
+        const snapJson = JSON.stringify(snap);
+        if (snapJson.length > MAX_SNAPSHOT_BYTES) continue;
+        const key = SNAP_KEY_PREFIX + snap.ts;
+        keysToSet[key] = snap;
+        if (!index.some(e => e.ts === snap.ts)) {
+          index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion || 1, size: snapJson.length });
+        }
+      }
+      if (Object.keys(keysToSet).length > 0) {
+        await layoutStorage.set(keysToSet);
+      }
+      // Remove old monolithic key
+      try { await layoutStorage.remove('boxingSnapshots'); } catch (_) { /* non-fatal */ }
+      index.sort((a, b) => a.ts - b.ts);
+      await _rotateAndWriteIndex(index);
+      debug('Snapshot migration complete: ' + index.length + ' entries');
+    } catch (e) { debugErr('_migrateSnapshots', e); }
+  }
+
+  async function _readIndex() {
+    try {
+      const stored = await layoutStorage.get(SNAP_INDEX_KEY);
+      const v = stored && stored[SNAP_INDEX_KEY];
+      return Array.isArray(v) ? v : [];
+    } catch (_) { return []; }
+  }
+
+  async function _writeIndex(index) {
+    await layoutStorage.set({ [SNAP_INDEX_KEY]: index });
+  }
+
+  // Rotation: classify each entry into tier, keep densest per tier, then total-byte LRU.
+  async function _rotateAndWriteIndex(index) {
+    const now = Date.now();
+    const tiers = { hourly: [], daily: [], weekly: [] };
+    for (const e of index) {
+      const age = now - e.ts;
+      if (age <= HOURLY_WINDOW_MS) tiers.hourly.push(e);
+      else if (age <= DAILY_WINDOW_MS) tiers.daily.push(e);
+      else tiers.weekly.push(e);
+    }
+    // Per-tier dedup: keep newest entry per bucket
+    const dedup = (entries, bucketFn) => {
+      const map = new Map();
+      for (const e of entries) {
+        const b = bucketFn(e.ts);
+        const existing = map.get(b);
+        if (!existing || e.ts > existing.ts) map.set(b, e);
+      }
+      return Array.from(map.values()).sort((a, b) => a.ts - b.ts);
+    };
+    const kept = [
+      ...dedup(tiers.hourly, hourlyBucket),
+      ...dedup(tiers.daily, dailyBucket),
+      ...dedup(tiers.weekly, weeklyBucket),
+    ];
+    kept.sort((a, b) => a.ts - b.ts);
+    // Total byte cap: drop oldest until under budget (keep at least 1)
+    let totalBytes = kept.reduce((s, e) => s + (e.size || 0), 0);
+    while (kept.length > 1 && totalBytes > MAX_SNAPSHOTS_TOTAL_BYTES) {
+      const removed = kept.shift();
+      totalBytes -= (removed.size || 0);
+      try { await layoutStorage.remove(SNAP_KEY_PREFIX + removed.ts); } catch (_) { /* non-fatal */ }
+    }
+    // Remove pruned entries' keys that are no longer in the kept set
+    const keptTs = new Set(kept.map(e => e.ts));
+    for (const e of index) {
+      if (!keptTs.has(e.ts)) {
+        try { await layoutStorage.remove(SNAP_KEY_PREFIX + e.ts); } catch (_) { /* non-fatal */ }
+      }
+    }
+    await _writeIndex(kept);
+    return kept;
+  }
 
   export async function saveSnapshot() {
     try {
+      await _migrateSnapshots();
       const snap = {
         ts: Date.now(),
         schemaVersion: layout.schemaVersion || 1,
         data: stripGroupsForPersist(layout)
       };
-      // ponytail: skip if single snapshot too large (storage.local has real quota even with unlimitedStorage)
       const snapJson = JSON.stringify(snap);
       if (snapJson.length > MAX_SNAPSHOT_BYTES) {
         debug('Snapshot skipped: single snapshot ' + snapJson.length + 'B exceeds cap ' + MAX_SNAPSHOT_BYTES);
         return;
       }
-      const stored = await layoutStorage.get({ boxingSnapshots: [] });
-      const snaps = Array.isArray(stored.boxingSnapshots) ? stored.boxingSnapshots : [];
-      snaps.push(snap);
-      // LRU prune: keep last MAX_SNAPSHOTS
-      while (snaps.length > MAX_SNAPSHOTS) snaps.shift();
-      // ponytail: also prune by total bytes — prevents runaway snapshot growth on large layouts
-      while (snaps.length > 1 && JSON.stringify(snaps).length > MAX_SNAPSHOTS_TOTAL_BYTES) snaps.shift();
-      await layoutStorage.set({ boxingSnapshots: snaps });
-      debug('Snapshot saved, total=' + snaps.length);
+      const key = SNAP_KEY_PREFIX + snap.ts;
+      await layoutStorage.set({ [key]: snap });
+      const index = await _readIndex();
+      index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion, size: snapJson.length });
+      const kept = await _rotateAndWriteIndex(index);
+      debug('Snapshot saved, total=' + kept.length + ' entries, bytes~' +
+        kept.reduce((s, e) => s + (e.size || 0), 0));
     } catch (e) { debugErr('saveSnapshot', e); }
   }
 
   async function getLatestSnapshot() {
     try {
-      const stored = await layoutStorage.get({ boxingSnapshots: [] });
-      const snaps = Array.isArray(stored.boxingSnapshots) ? stored.boxingSnapshots : [];
-      return snaps.length > 0 ? snaps[snaps.length - 1] : null;
+      await _migrateSnapshots();
+      const index = await _readIndex();
+      if (index.length === 0) return null;
+      const latest = index[index.length - 1];
+      const key = SNAP_KEY_PREFIX + latest.ts;
+      const stored = await layoutStorage.get(key);
+      return (stored && stored[key]) || null;
     } catch (e) { debugErr('getLatestSnapshot', e); return null; }
+  }
+
+  export async function listSnapshots() {
+    try {
+      await _migrateSnapshots();
+      return await _readIndex();
+    } catch (e) { debugErr('listSnapshots', e); return []; }
+  }
+
+  async function _getSnapshotBody(ts) {
+    try {
+      const key = SNAP_KEY_PREFIX + ts;
+      const stored = await layoutStorage.get(key);
+      return (stored && stored[key]) || null;
+    } catch (_) { return null; }
+  }
+
+  export async function restoreFromSnapshot(ts) {
+    try {
+      await _migrateSnapshots();
+      const snap = await _getSnapshotBody(ts);
+      if (!snap || !snap.data) {
+        debug('restoreFromSnapshot: no snapshot at ts=' + ts);
+        return null;
+      }
+      const recovered = migrateLayout(snap.data);
+      debug('restoreFromSnapshot: recovered from ts=' + ts +
+        ' @' + new Date(snap.ts).toISOString());
+      return recovered;
+    } catch (e) {
+      debugErr('restoreFromSnapshot', e);
+      return null;
+    }
   }
 
   async function crashRescue() {
