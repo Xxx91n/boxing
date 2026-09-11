@@ -129,3 +129,94 @@ test.describe('Ticket 11 — urlOpenMode defaults to sameTab (bookmarks open in 
     expect(r.stillHere).toBe(r.before);
   });
 });
+
+// ═════════════════════════ Ticket 52 — 新装/重置默认 sameTab（以实机为准） ═════════════════════════
+test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT tab (A-004/A-005)', () => {
+  test('T52-a: empty-storage fresh install — model default sameTab, no persisted newTab', async ({ page }) => {
+    await resetBoxing(page);
+    await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
+    const r = await page.evaluate(() => ({
+      stored: localStorage.getItem('boxingLayout'),
+      mode: (window as any).__boxingDebug.layout.settings.urlOpenMode,
+    }));
+    // 空 storage 新装：模型默认必须是 sameTab；若 boot 路径已回写主键，回写的也只会是 sameTab（不得夹带 newTab）。
+    expect(r.mode).toBe('sameTab');
+    if (r.stored) expect(r.stored).not.toContain('newTab');
+  });
+
+  test('T52-b: bookmark-ROW click after fresh install navigates the CURRENT tab, spawns no new tab', async ({ page }) => {
+    await resetBoxing(page);
+    await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
+    // seed one box with one bookmark (in-memory layout, default settings — same state a fresh install has)
+    await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes = [{
+        id: 't52-lg', type: 'large', title: 'T52', x: 0, y: 0, width: 320, height: 220,
+        children: [
+          { id: 't52-sm', type: 'small', title: 'SB', x: 0, y: 0, width: 300, height: 200,
+            bookmarks: [{ id: 'bm52', title: 'T52 target', url: 'https://t52.example.test/bookmark' }],
+          },
+        ],
+      }];
+      dbg.layout._meta = { updatedAt: Date.now() };
+    });
+    await page.evaluate(() => (window as any).__boxingDebug.persistView());
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 10000 }).toBe(true);
+    // enter the large box via synthetic dblclick (native input stalls on firefox — playwright#16095 precedent)
+    await page.evaluate(() => {
+      const el = document.querySelector('.large-box[data-id="t52-lg"]') as HTMLElement | null;
+      el?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    });
+    await page.waitForTimeout(300);
+    await page.route('https://t52.example.test/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>t52</body></html>' }));
+    const ctx = page.context();
+    // sameTab contract: current tab navigates to the bookmark URL …
+    await page.evaluate(() => {
+      const row = document.querySelector('.small-box[data-id="t52-sm"] .bm-row') as HTMLElement | null;
+      row?.click();
+    });
+    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('t52.example.test/bookmark');
+    // … and NO new tab is spawned (newTab branch would window.open / tabs.create → page event)
+    expect(ctx.pages().length).toBe(1);
+  });
+
+  test('T52-c: first-frame settings DOM defaults to sameTab before any modal sync (首帧 DOM)', async ({ page }) => {
+    await resetBoxing(page);
+    // syncSettingsDOM only runs on modal-open / applyExternalLayout — this pins the static HTML default.
+    const v = await page.evaluate(() => (document.getElementById('url-open-mode-select') as HTMLSelectElement | null)?.value);
+    expect(v).toBe('sameTab');
+  });
+
+  test('T52-d: v2 migration write path fills urlOpenMode=sameTab (旧包迁移残留面)', async ({ page }) => {
+    await resetBoxing(page);
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const v2 = (settings: any) => dbg.migrateLayout({ version: 2, boxes: [{ id: 'l1', children: [] }], settings });
+      return {
+        noSettings: v2(undefined).settings.urlOpenMode,
+        emptySettings: v2({}).settings.urlOpenMode,
+        storedNewTab: v2({ urlOpenMode: 'newTab' }).settings.urlOpenMode,
+      };
+    });
+    expect(r.noSettings).toBe('sameTab');
+    expect(r.emptySettings).toBe('sameTab');
+    // explicit stored choice survives migration
+    expect(r.storedNewTab).toBe('newTab');
+  });
+
+  test('T52-e: unknown/legacy mode value is treated as sameTab, never spawns a tab (残留写路径硬化)', async ({ page }) => {
+    await resetBoxing(page);
+    await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
+    await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.urlOpenMode = 'legacy-garbage';
+      (window as any).__t52opened = [];
+      window.open = ((u: any) => { (window as any).__t52opened.push(String(u)); return null; }) as any;
+      dbg.openBookmarkUrl(location.href + '#t52-unknown');
+    });
+    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('#t52-unknown');
+    const opened = await page.evaluate(() => (window as any).__t52opened || []);
+    expect(opened).toEqual([]);
+  });
+});
