@@ -274,9 +274,52 @@ try {
     return promise;
   });
 
+  // ── Ticket 42 (spec D2): COW before onInstalled(update) migration ──────────
+  // The MV3 background is a classic script (dual manifest service_worker + scripts for
+  // Firefox) so it cannot import the NTP ESM storage facade. This is the SW-side
+  // self-contained copy-on-write: it snapshots the current boxingLayout into the same
+  // split-key shape the NTP facade reads (snap.v1.<ts> body + snap.v1.index directory,
+  // ADR-0009 / ticket 41), BEFORE any update-time migration can touch the data.
+  // Migration itself runs later in the NTP facade on first open; this copy preserves
+  // the exact pre-update bytes as a rollback point.
+  const SW_SNAP_KEY_PREFIX = 'snap.v1.';
+  const SW_SNAP_INDEX_KEY = 'snap.v1.index';
+  const SW_SNAP_MAX_BYTES = 2 * 1024 * 1024; // ADR-0009 single-snapshot cap
+  const SW_SNAP_INDEX_CAP = 40;              // SW-side bounded directory; NTP owns full rotation
+
+  async function takePreUpdateSnapshot() {
+    try {
+      const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });
+      if (!boxingLayout) return; // no data yet (fresh install) — nothing to protect
+      const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: JSON.parse(JSON.stringify(boxingLayout)) };
+      if (snap.data && typeof snap.data === 'object' && Object.prototype.hasOwnProperty.call(snap.data, 'groups')) {
+        delete snap.data.groups; // ADR-0007 Q1: groups is runtime-only, never persisted
+      }
+      const json = JSON.stringify(snap);
+      if (json.length > SW_SNAP_MAX_BYTES) { bgErr('pre-update snapshot skipped: ' + json.length + 'B exceeds 2MB single cap'); return; }
+      await api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });
+      const stored = await api.storage.local.get(SW_SNAP_INDEX_KEY);
+      const index = Array.isArray(stored && stored[SW_SNAP_INDEX_KEY]) ? stored[SW_SNAP_INDEX_KEY] : [];
+      index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion, size: json.length });
+      index.sort((a, b) => a.ts - b.ts);
+      if (index.length > SW_SNAP_INDEX_CAP) {
+        const evicted = index.splice(0, index.length - SW_SNAP_INDEX_CAP);
+        for (const e of evicted) { try { await api.storage.local.remove(SW_SNAP_KEY_PREFIX + e.ts); } catch (_) { /* non-fatal */ } }
+      }
+      await api.storage.local.set({ [SW_SNAP_INDEX_KEY]: index });
+      bgLog('pre-update snapshot saved ts=' + snap.ts + ' bytes=' + json.length);
+    } catch (e) { bgErr('pre-update snapshot failed', e); } // never block onInstalled
+  }
+
   api.runtime?.onInstalled?.addListener(async (details) => {
     try {
       root.__boxing_last_install__ = { reason: details?.reason || "unknown", at: Date.now() };
+      if (details?.reason === "update") {
+        // Ticket 42 / spec D2: COW FIRST — snapshot the pre-update layout before any
+        // migration runs. Migration happens later in the NTP facade (first open), so the
+        // order here — costly snapshot before even writing the signal — is deliberate.
+        await takePreUpdateSnapshot();
+      }
       // Ticket 10 / ADR-0016: persist the install signal so NTP onboarding triggers on install
       // (and can distinguish update) instead of judging fresh-install on every init.
       if ((details?.reason === "install" || details?.reason === "update") && api.storage?.local?.set) {

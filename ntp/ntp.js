@@ -27,7 +27,7 @@ import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_M
 import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS } from './i18n.js';
 // Ticket 07 (architecture-recovery): storage write facade — write chain + loop guard +
 // onChanged listener moved verbatim to ./storage.js; all chrome.storage writes go through it.
-import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, directSetBoxingLayout, gcTombstones, initStorageFacade, listSnapshots, loadLayout, markDeleted, registerStorageOnChanged, restoreFromSnapshot, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
+import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, directSetBoxingLayout, ensurePreUpdateSnapshot, gcTombstones, initStorageFacade, listSnapshots, loadLayout, markDeleted, registerStorageOnChanged, restoreFromSnapshot, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
 // Ticket 08 (architecture-recovery): layout/view-state persistence + theme packs + loadSettings moved verbatim to ./persist.js on top of the storage facade.
 import { LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyTheme, initPersistFacade, loadFallbackTabView, loadSettings, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
 // Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool, ADR-0004),
@@ -819,6 +819,16 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
 
   // ── init ───────────────────────────────────────────────
   async function init() {
+    // Ticket 42 (spec D2): NTP-side COW — consume the install signal BEFORE loadLayout so
+    // an update with a pending migration snapshots the stored layout first (the background
+    // SW already snapshotted at onInstalled; this is the belt-and-suspenders copy). The
+    // reason value is reused by initOnboarding further down. The file:// mock lane has no
+    // signal → installReason stays null → legacy behavior untouched.
+    let installReason = null;
+    try { installReason = await consumeInstallSignal(); } catch (e) { debugWarn('install signal read failed', e); }
+    if (installReason === 'update') {
+      try { await ensurePreUpdateSnapshot(); } catch (e) { debugErr('pre-update snapshot', e); }
+    }
     await loadLayout();
     await loadSettings();
     initSizeObserver();
@@ -1032,10 +1042,9 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       applyCanvasTransform();
     }
     // BX-ONBOARDING: first-run guided tour — trigger from the onInstalled install/update signal
-    // (ADR-0016). The signal is consumed here; the file:// mock lane has no signal and falls back
-    // to the legacy empty-canvas judgment inside initOnboarding (ticket-03 lesson).
-    let installReason = null;
-    try { installReason = await consumeInstallSignal(); } catch (e) { debugWarn('install signal read failed', e); }
+    // (ADR-0016). installReason was consumed before loadLayout (ticket 42) so the update path
+    // could snapshot first; the file:// mock lane has no signal and falls back to the legacy
+    // empty-canvas judgment inside initOnboarding (ticket-03 lesson).
     try { initOnboarding({ reason: installReason }); } catch (e) { debugErr('onboarding init', e); }
     persistViewState(true);
     debug('init complete v3.7.8', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, headerPinned, darkMode: layout.settings.darkMode });

@@ -538,3 +538,35 @@ export async function consumeInstallSignal() {
   } catch (e) { debugWarn('install signal read failed', e); return null; }
 }
 
+// Ticket 42 (spec D2): NTP-side COW belt-and-suspenders. The background SW already
+// snapshots at onInstalled(update); this covers the case where that snapshot failed or
+// the signal is consumed by a tab that opened after the update. When the update signal
+// is present and the stored layout still needs migration, snapshot the RAW stored
+// layout BEFORE loadLayout() migrates it — the copy preserves the pre-update schema.
+export async function ensurePreUpdateSnapshot() {
+  try {
+    const stored = await layoutStorage.get({ boxingLayout: null });
+    const raw = stored.boxingLayout;
+    if (!raw || !needsMigration(raw)) return false;
+    setLayout(raw); // raw, pre-migration — the next loadLayout() re-reads and migrates over it
+    await saveSnapshot();
+    return true;
+  } catch (e) { debugErr('ensurePreUpdateSnapshot', e); return false; }
+}
+
+// ADR-0007/0009 heuristics: true when migrateLayout would rewrite the stored layout
+// (migrateLayout is version-ungated and mutates box objects in place, so a JSON diff
+// against the same object reference cannot detect "pending" — white-list the shapes).
+function needsMigration(raw) {
+  if (typeof raw !== 'object' || raw === null) return true;
+  if (!(Number(raw.version) >= 3)) return true;                     // pre-3 legacy shapes
+  if (!Array.isArray(raw.boxes)) return true;
+  if (!raw.settings || typeof raw.settings !== 'object') return true;
+  if (Array.isArray(raw.groups) && raw.groups.length > 0) return true; // ADR-0007 Q1 pending
+  if (!raw._meta || !raw._meta.__groupsMigrated) return true;          // ADR-0007 Q1 flag not yet stamped
+  if (Array.isArray(raw.connections)) {
+    for (const c of raw.connections) if (c && typeof c === 'object' && c.props == null) return true; // ADR-0007 Q4c
+  }
+  return false;
+}
+
