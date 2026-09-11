@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "Organizador jerárquico de marcadores en lienzo infinito. Guarda marcadores en cajas etiquetadas; vistas de lista y cuadrícula.",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "Estado de los datos"
+  },
+  "dataSnapshotCount": {
+    "message": "Número de instantáneas"
+  },
+  "dataLastSnapshotTime": {
+    "message": "Última instantánea"
+  },
+  "dataCorruptArchived": {
+    "message": "Diseño dañado archivado"
+  },
+  "dataHealthHint": {
+    "message": "Boxing conserva instantáneas de tu diseño por capas temporales. Si el almacenamiento principal se daña, se archiva (nunca se sobrescribe en silencio) y se reconstruye desde la última instantánea correcta."
   }
 }

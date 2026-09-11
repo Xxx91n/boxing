@@ -809,5 +809,20 @@
   "extensionDescription": {
     "message": "层级化无限画布书签整理工具，米色简约设计。将书签收纳进带标签的盒子，支持嵌套子画布、连接关联、列表与网格视图，数据本地存储。",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "数据健康"
+  },
+  "dataSnapshotCount": {
+    "message": "快照数量"
+  },
+  "dataLastSnapshotTime": {
+    "message": "最近快照"
+  },
+  "dataCorruptArchived": {
+    "message": "已归档损坏布局"
+  },
+  "dataHealthHint": {
+    "message": "Boxing 按时间分层保留布局快照。若主存储损坏，会先归档（绝不静默覆盖）再从最近健康快照重建。"
   }
 }

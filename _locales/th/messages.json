@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "เครื่องมือจัดระเบียบบุ๊กมาร์กแบบลำดับชั้นบนผืนผ้าใบไม่จำกัด สไตล์เบจสงบ จัดบุ๊กมาร์กเป็นกล่องมีป้ายกำกับ พร้อมมุมมองรายการและตาราง",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "สถานะข้อมูล"
+  },
+  "dataSnapshotCount": {
+    "message": "จำนวนสแนปชอต"
+  },
+  "dataLastSnapshotTime": {
+    "message": "สแนปชอตล่าสุด"
+  },
+  "dataCorruptArchived": {
+    "message": "จัดเก็บเลย์เอาต์ที่เสียหายแล้ว"
+  },
+  "dataHealthHint": {
+    "message": "Boxing เก็บสแนปชอตของเลย์เอาต์แบบแบ่งตามช่วงเวลา หากพื้นที่จัดเก็บหลักเสียหาย จะถูกจัดเก็บไว้ (ไม่เขียนทับเงียบ ๆ) แล้วสร้างใหม่จากสแนปชอตล่าสุดที่สมบูรณ์"
   }
 }

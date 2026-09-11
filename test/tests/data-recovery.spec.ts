@@ -240,4 +240,72 @@ test.describe('Data Recovery & Export/Import', () => {
     await context.close();
   });
 
+  // Ticket 43 (spec D3 crash-rescue fork): a readable-but-corrupt main key must be
+  // archived verbatim under boxingLayout.corrupt.<ts> (never silently overwritten),
+  // the main key rebuilt (from the latest healthy snapshot, or the default layout when
+  // none exists), and the app must boot with zero uncaught exceptions.
+  // Note: the file:// mock lane cannot inject unparseable JSON (mock get swallows the
+  // parse error into a null fallback), so the corrupt shape is "parseable but not a
+  // layout" — boxes is not an array. Archive keys live under the mock's bxstore: prefix.
+  test('Corrupt main key is archived (fork) and app still boots', async ({ browser }) => {
+    test.setTimeout(20000);
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    const pageErrors: string[] = [];
+    page.on('pageerror', err => pageErrors.push(`[ERROR] ${err.message}`));
+
+    // First boot settles the origin (localStorage seeded), then inject the corrupt main key.
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    await page.waitForTimeout(1500);
+    await page.evaluate(() => {
+      localStorage.setItem('boxingLayout', JSON.stringify({ version: 99, boxes: { bad: true }, settings: {} }));
+    });
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
+    await page.waitForTimeout(1500);
+
+    // AC: no uncaught exceptions on the corrupted-boot path
+    expect(pageErrors).toEqual([]);
+
+    // AC: corrupt payload archived (fork) and still readable from storage
+    const archiveKeys = await page.evaluate(() => {
+      const out: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('bxstore:boxingLayout.corrupt.')) out.push(k);
+      }
+      return out;
+    });
+    expect(archiveKeys.length).toBeGreaterThan(0);
+    const archived = await page.evaluate(key => {
+      try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+    }, archiveKeys[archiveKeys.length - 1]);
+    expect(archived).not.toBeNull();
+    expect(archived.raw).toBeDefined(); // verbatim corrupt payload preserved
+    expect(JSON.stringify(archived.raw)).toContain('bad');
+    expect(typeof archived.ts).toBe('number');
+    expect(archived.error).toBeTruthy();
+
+    // AC: corrupt index updated (lightweight metadata for the settings data-health row)
+    const corruptIndex = await page.evaluate(() => {
+      try { return JSON.parse(localStorage.getItem('bxstore:boxingLayout.corrupt.index') || 'null'); } catch { return null; }
+    });
+    expect(Array.isArray(corruptIndex)).toBe(true);
+    expect((corruptIndex || []).length).toBeGreaterThan(0);
+
+    // AC: main key rebuilt and bootable — boxes is an array again
+    const rebuilt = await page.evaluate(() => {
+      try { return JSON.parse(localStorage.getItem('boxingLayout') || 'null'); } catch { return null; }
+    });
+    expect(rebuilt).not.toBeNull();
+    expect(Array.isArray(rebuilt.boxes)).toBe(true);
+
+    // Canvas still renders (app started)
+    await expect(page.locator('#canvas')).toBeAttached({ timeout: 2000 });
+    await expect(page.locator('#canvas-surface')).toBeAttached({ timeout: 2000 });
+
+    await context.close();
+  });
+
 });

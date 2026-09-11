@@ -190,6 +190,16 @@
     return defaultLayout();
   }
 
+  // Ticket 43 (spec D3): 判定"可读但结构损坏"的主键载荷。migrateLayout 对非法载荷会
+  // 静默降级为 defaultLayout（无归档覆盖），故必须在迁移前用此判定拦截并走 fork 归档。
+  // 合法载荷 = 对象 + 数字 version + boxes 数组；其余视为损坏。
+  function isPlausibleLayout(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false;
+    if (typeof raw.version !== 'number') return false;
+    if (!Array.isArray(raw.boxes)) return false;
+    return true;
+  }
+
   function largeKey(id) { return 'large:' + id; }
 
   function smallKey(largeId, smallId) { return 'small:' + largeId + ':' + smallId; }
@@ -237,4 +247,4 @@
     return { zoom: newZoom, panX: newPanX, panY: newPanY };
   }
 
-export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, defaultLayout, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
+export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };

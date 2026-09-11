@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "منظّم إشارات مرجعية هرمي على لوحة لا نهائية بتصميم بيج هادئ. نظّم الإشارات المرجعية في صناديق معنونة؛ مع عرضَي القائمة والشبكة.",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "حالة البيانات"
+  },
+  "dataSnapshotCount": {
+    "message": "عدد اللقطات"
+  },
+  "dataLastSnapshotTime": {
+    "message": "أحدث لقطة"
+  },
+  "dataCorruptArchived": {
+    "message": "تمت أرشفة تخطيط تالف"
+  },
+  "dataHealthHint": {
+    "message": "يحتفظ Boxing بلقطات تخطيطك بطبقات زمنية. إذا تلف وحدة التخزين الرئيسية، تتم أرشفتها (لا تُستبدل بصمت أبداً) وإعادة بنائها من أحدث لقطة سليمة."
   }
 }

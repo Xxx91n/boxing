@@ -809,5 +809,20 @@
   "extensionDescription": {
     "message": "階層式無限畫布書籤整理工具，米色簡約設計。將書籤收納進帶標籤的盒子，支援巢狀子畫布、連結關聯、列表與網格檢視，資料本地儲存。",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "資料健康"
+  },
+  "dataSnapshotCount": {
+    "message": "快照數量"
+  },
+  "dataLastSnapshotTime": {
+    "message": "最近快照"
+  },
+  "dataCorruptArchived": {
+    "message": "已封存損壞版面"
+  },
+  "dataHealthHint": {
+    "message": "Boxing 會按時間分層保留版面快照。若主儲存損壞，會先封存（絕不靜默覆寫）再從最近健康快照重建。"
   }
 }

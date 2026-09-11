@@ -818,5 +818,20 @@
   "extensionDescription": {
     "message": "Hierarchical infinite-canvas bookmark organizer with a calm beige design. Organize bookmarks into labeled boxes; list & grid views.",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "Data health"
+  },
+  "dataSnapshotCount": {
+    "message": "Snapshot count"
+  },
+  "dataLastSnapshotTime": {
+    "message": "Latest snapshot"
+  },
+  "dataCorruptArchived": {
+    "message": "Corrupted layout archived"
+  },
+  "dataHealthHint": {
+    "message": "Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot."
   }
 }

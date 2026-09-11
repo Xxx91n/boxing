@@ -212,6 +212,22 @@
                 <input type="file" id="import-file-input" accept=".json" hidden>
               </div>
             </section>
+            <!-- Ticket 43 (spec D3 / ADR-0009 3-2-1): data-health surface — snapshot count +
+                 latest snapshot time so users can tell resilience is working; corrupt-archive
+                 entry row appears only when crash-rescue forked a damaged main key (ABP-style
+                 persistent entry point, never a startup popup). -->
+            <section class="modal__section">
+              <label class="modal__label" data-i18n="dataHealthTitle">Data health</label>
+              <p class="modal__hint" style="margin:2px 0 0;font-size:11px;">
+                <span data-i18n="dataSnapshotCount">Snapshot count</span>: <span id="data-snapshot-count">–</span>
+                · <span data-i18n="dataLastSnapshotTime">Latest snapshot</span>: <span id="data-last-snapshot-time">–</span>
+              </p>
+              <p class="modal__hint" id="data-corrupt-row" style="margin:2px 0 0;font-size:11px;color:#b3261e;" hidden>
+                <span data-i18n="dataCorruptArchived">Corrupted layout archived</span>: <span id="data-corrupt-count">0</span>
+                · <span id="data-corrupt-time">–</span>
+              </p>
+              <p class="modal__hint" data-i18n="dataHealthHint" style="margin:2px 0 0;font-size:11px;">Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot.</p>
+            </section>
             <!-- BX-AUD-05: diagnostics — leveled log ring buffer export/clear. Industry-shape
                  (pino/loglevel): producers stay in script; UI surfaces an export button so users
                  can file bug reports without a developer console. No log grows unbounded — the

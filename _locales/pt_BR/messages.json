@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "Organizador hierárquico de favoritos em tela infinita. Guarde favoritos em caixas etiquetadas; visualizações em lista e grade.",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "Saúde dos dados"
+  },
+  "dataSnapshotCount": {
+    "message": "Número de instantâneos"
+  },
+  "dataLastSnapshotTime": {
+    "message": "Instantâneo mais recente"
+  },
+  "dataCorruptArchived": {
+    "message": "Layout corrompido arquivado"
+  },
+  "dataHealthHint": {
+    "message": "O Boxing mantém instantâneos do seu layout em camadas de tempo. Se o armazenamento principal for danificado, ele é arquivado (nunca substituído silenciosamente) e reconstruído a partir do instantâneo íntegro mais recente."
   }
 }

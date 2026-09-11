@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "शांत बेज डिज़ाइन वाला अनंत कैनवस पर पदानुक्रमिक बुकमार्क प्रबंधक। बुकमार्क लेबल वाले बॉक्स में व्यवस्थित करें; सूची और ग्रिड दृश्य।",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "डेटा स्वास्थ्य"
+  },
+  "dataSnapshotCount": {
+    "message": "स्नैपशॉट संख्या"
+  },
+  "dataLastSnapshotTime": {
+    "message": "नवीनतम स्नैपशॉट"
+  },
+  "dataCorruptArchived": {
+    "message": "दूषित लेआउट संग्रहित"
+  },
+  "dataHealthHint": {
+    "message": "Boxing आपके लेआउट के समय-स्तरित स्नैपशॉट रखता है। यदि मुख्य स्टोरेज क्षतिग्रस्त हो जाता है, तो इसे संग्रहित किया जाता है (कभी भी मौन रूप से अधिलेखित नहीं) और नवीनतम स्वस्थ स्नैपशॉट से पुनर्निर्मित किया जाता है।"
   }
 }

@@ -141,6 +141,13 @@ onboardingLangDesc: 'Pick a language for the interface',
   webdavErrBlockedHost: 'WebDAV hosts on private or local network addresses are not allowed',
   webdavErrUrlTooLong: 'WebDAV URL is too long',
   zoomShortcut: 'Ctrl+scroll wheel',
+  // Ticket 43 (spec D3): settings data-health surface — snapshot count / latest snapshot
+  // time / corrupt-archive entry (kept in sync with all 14 _locales messages.json).
+  dataHealthTitle: 'Data health',
+  dataSnapshotCount: 'Snapshot count',
+  dataLastSnapshotTime: 'Latest snapshot',
+  dataCorruptArchived: 'Corrupted layout archived',
+  dataHealthHint: 'Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot.',
 };
 // Add new v3.6 keys to I18N_FALLBACK
 I18N_FALLBACK.syncLocalOnly = 'Local Only';

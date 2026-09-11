@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "落ち着いたベージュ調の階層型無限キャンバスブックマーク整理ツール。ラベル付きボックスに整理し、リスト表示とグリッド表示を提供します。",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "データの健康状態"
+  },
+  "dataSnapshotCount": {
+    "message": "スナップショット数"
+  },
+  "dataLastSnapshotTime": {
+    "message": "最新のスナップショット"
+  },
+  "dataCorruptArchived": {
+    "message": "破損したレイアウトをアーカイブしました"
+  },
+  "dataHealthHint": {
+    "message": "Boxing はレイアウトのスナップショットを時間階層で保持します。メインストレージが破損した場合、静かに上書きせずアーカイブしてから、最新の正常なスナップショットから再構築します。"
   }
 }

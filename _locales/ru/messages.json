@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "Иерархический органайзер закладок на бесконечном холсте. Раскладывайте закладки по блокам с ярлыками; списки и сетка.",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "Состояние данных"
+  },
+  "dataSnapshotCount": {
+    "message": "Количество снимков"
+  },
+  "dataLastSnapshotTime": {
+    "message": "Последний снимок"
+  },
+  "dataCorruptArchived": {
+    "message": "Повреждённый макет заархивирован"
+  },
+  "dataHealthHint": {
+    "message": "Boxing хранит снимки макета с послойной временной ротацией. Если основное хранилище повреждено, оно архивируется (никогда не перезаписывается молча) и восстанавливается из последнего исправного снимка."
   }
 }

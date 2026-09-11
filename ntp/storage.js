@@ -22,7 +22,7 @@ import {
   saveDebounceTimer, setApplyingExternalLayout, setCurrentLargeBoxId, setInnerPanX, setInnerPanY,
   setInnerZoom, setLayout, setSaveDebounceTimer, setStorageWriteChain, storageWriteChain, writerId,
 } from './state.js';
-import { defaultLayout, mergeById, migrateLayout } from './utils.js';
+import { defaultLayout, isPlausibleLayout, mergeById, migrateLayout } from './utils.js';
 
 // ── injected ntp.js-scope bindings (assigned once by initStorageFacade, before any call) ──
 let api = null;
@@ -79,20 +79,50 @@ export function registerStorageOnChanged() {
 
   // ── storage ────────────────────────────────────────────
   export async function loadLayout() {
+    let corruptRaw = null;    // 43 fork: 捕获可读但损坏的主键载荷（catch 作用域拿不到 try 内的 data）
+    let corruptErr = null;
     try {
       const data = await layoutStorage.get({ boxingLayout: null });
       if (data.boxingLayout) {
-        setLayout(migrateLayout(data.boxingLayout));
+        if (!isPlausibleLayout(data.boxingLayout)) {
+          corruptRaw = data.boxingLayout;
+          corruptErr = new Error('boxingLayout failed integrity check (readable but not a layout)');
+        } else {
+          setLayout(migrateLayout(data.boxingLayout));
+        }
       } else {
         const legacy = layoutStorage === api.storage.sync ? data : await api.storage.sync.get({ boxingLayout: null });
-        setLayout(legacy.boxingLayout ? migrateLayout(legacy.boxingLayout) : defaultLayout());
-        if (legacy.boxingLayout && layoutStorage !== api.storage.sync) {
-          await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
-          // A6: one-time cleanup — remove stale sync data after successful local migration
-          try { await api.storage.sync.remove("boxingLayout"); } catch (e) { debugErr("storage.sync.remove stale data", e); }
+        if (legacy.boxingLayout) {
+          if (!isPlausibleLayout(legacy.boxingLayout)) {
+            corruptRaw = legacy.boxingLayout;
+            corruptErr = new Error('legacy boxingLayout failed integrity check (readable but not a layout)');
+          } else {
+            setLayout(migrateLayout(legacy.boxingLayout));
+          }
+          if (legacy.boxingLayout && layoutStorage !== api.storage.sync) {
+            await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
+            // A6: one-time cleanup — remove stale sync data after successful local migration
+            try { await api.storage.sync.remove("boxingLayout"); } catch (e) { debugErr("storage.sync.remove stale data", e); }
+          }
+        } else {
+          setLayout(defaultLayout());
         }
       }
-    } catch (e) { debugErr('loadLayout', e); setLayout(await crashRescue() || defaultLayout()); }
+    } catch (e) {
+      // get() 本身失败（API 层损坏/瞬态）: 载荷不可读 → 无法归档（atomcode ABP #6599 边界），仅恢复。
+      debugErr('loadLayout', e);
+      corruptErr = e;
+    }
+    if (corruptErr) {
+      // 43 fork (spec D3): 先归档损坏载荷（写 boxingLayout.corrupt.<ts>，禁止无归档覆盖），
+      // 再以最近健康快照重建主键并持久化写回 —— 无快照时落 defaultLayout，避免每次启动重复归档。
+      if (corruptRaw !== null) await archiveCorruptMain(corruptRaw, corruptErr);
+      const rescued = await crashRescue();
+      setLayout(rescued || defaultLayout());
+      try { await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) }); }
+      catch (e2) { debugErr('loadLayout: rebuild write-back failed', e2); }
+      debugErr('loadLayout: corrupted main key forked' + (corruptRaw !== null ? ' (archived)' : ' (unreadable, not archivable)'), corruptErr);
+    }
     // 41R AC7: run the one-time snapshot-key migration on the boot path itself, so an
     // upgraded profile splits its boxingSnapshots[] even if no snapshot API is ever called.
     try { await _migrateSnapshots(); } catch (e) { debugErr('loadLayout snapshot migrate', e); }
@@ -309,6 +339,56 @@ export function registerStorageOnChanged() {
       debugErr('crashRescue: snapshot also corrupt', e);
       return null;
     }
+  }
+
+  // ── Ticket 43 (spec D3): corrupt-main-key fork ──────────────────────────────
+  // 损坏主键禁止无归档覆盖: 原载荷 verbatim 归档到 boxingLayout.corrupt.<ts>（含崩溃
+  // 上下文元数据），主键再从最近健康快照重建（Dropbox conflicted copy / 1Password
+  // item-history 的 fork 语义, atomcode 2026-09-11）。索引键 boxingLayout.corrupt.index
+  // 只存轻量元数据（设置页数据区展示入口用, 不拉快照体）。隔离区上限 20 条, 超限淘汰
+  // 最旧（atomcode: 隔离键也计入配额, 必须有容量上限）; 单条归档沿用 MAX_SNAPSHOT_BYTES
+  // 2MB 上限, 超限降级为仅元数据（truncated）, 与 SEC-06 防 OOM 精神一致。
+  const CORRUPT_PREFIX = 'boxingLayout.corrupt.';
+  const CORRUPT_INDEX_KEY = 'boxingLayout.corrupt.index';
+  const MAX_CORRUPT_ARCHIVES = 20;
+
+  async function _readCorruptIndex() {
+    try {
+      const stored = await layoutStorage.get(CORRUPT_INDEX_KEY);
+      const v = stored && stored[CORRUPT_INDEX_KEY];
+      return Array.isArray(v) ? v : [];
+    } catch (_) { return []; }
+  }
+
+  async function archiveCorruptMain(raw, error) {
+    try {
+      const ts = Date.now();
+      const entry = { ts, error: String((error && error.message) || error || 'corrupt main key') };
+      let payloadJson = '';
+      try { payloadJson = JSON.stringify(raw === undefined ? null : raw); } catch (_) { payloadJson = ''; }
+      if (payloadJson && payloadJson.length <= MAX_SNAPSHOT_BYTES) {
+        entry.raw = raw; // verbatim — 验收项: 归档后仍可从 storage 读出
+        entry.size = payloadJson.length;
+      } else {
+        entry.truncated = true; // 超限只留元数据, 不写大载荷
+        entry.size = payloadJson ? payloadJson.length : 0;
+      }
+      await layoutStorage.set({ [CORRUPT_PREFIX + ts]: entry });
+      const index = await _readCorruptIndex();
+      index.push({ ts, error: entry.error, size: entry.size, truncated: !!entry.truncated });
+      index.sort((a, b) => a.ts - b.ts);
+      while (index.length > MAX_CORRUPT_ARCHIVES) {
+        const oldest = index.shift();
+        try { await layoutStorage.remove(CORRUPT_PREFIX + oldest.ts); } catch (_) { /* non-fatal */ }
+      }
+      await layoutStorage.set({ [CORRUPT_INDEX_KEY]: index });
+      debug('Corrupt main key archived @' + new Date(ts).toISOString() + ' (archives=' + index.length + ')');
+    } catch (e) { debugErr('archiveCorruptMain', e); }
+  }
+
+  export async function listCorruptArchives() {
+    try { return await _readCorruptIndex(); }
+    catch (e) { debugErr('listCorruptArchives', e); return []; }
   }
 
 

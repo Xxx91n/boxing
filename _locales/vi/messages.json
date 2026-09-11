@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "Trình tổ chức dấu trang phân cấp trên canvas vô hạn với thiết kế be dịu. Sắp dấu trang vào hộp có nhãn; xem danh sách và lưới.",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "Tình trạng dữ liệu"
+  },
+  "dataSnapshotCount": {
+    "message": "Số ảnh chụp nhanh"
+  },
+  "dataLastSnapshotTime": {
+    "message": "Ảnh chụp nhanh mới nhất"
+  },
+  "dataCorruptArchived": {
+    "message": "Bố cục hỏng đã được lưu trữ"
+  },
+  "dataHealthHint": {
+    "message": "Boxing giữ các ảnh chụp nhanh bố cục theo tầng thời gian. Nếu bộ lưu trữ chính bị hỏng, nó sẽ được lưu trữ (không bao giờ ghi đè im lặng) và dựng lại từ ảnh chụp nhanh lành lặn mới nhất."
   }
 }

@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "Hierarchischer Lesezeichen-Organizer mit unendlicher Leinwand. Lesezeichen in beschriftete Boxen sortieren; Listen- & Rasteransicht.",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "Datenzustand"
+  },
+  "dataSnapshotCount": {
+    "message": "Snapshot-Anzahl"
+  },
+  "dataLastSnapshotTime": {
+    "message": "Neuester Snapshot"
+  },
+  "dataCorruptArchived": {
+    "message": "Beschädigtes Layout archiviert"
+  },
+  "dataHealthHint": {
+    "message": "Boxing bewahrt zeitlich gestaffelte Snapshots Ihres Layouts auf. Wird der Hauptspeicher beschädigt, wird er archiviert (niemals still überschrieben) und aus dem letzten gesunden Snapshot wiederhergestellt."
   }
 }

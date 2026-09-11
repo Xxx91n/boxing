@@ -806,5 +806,20 @@
   "extensionDescription": {
     "message": "Organisateur de favoris hiérarchique sur canevas infini. Rangez les favoris dans des boîtes étiquetées ; vues liste et grille.",
     "description": "Extension description for store detection (manifest __MSG_extensionDescription__, max 132 chars)"
+  },
+  "dataHealthTitle": {
+    "message": "Santé des données"
+  },
+  "dataSnapshotCount": {
+    "message": "Nombre de captures"
+  },
+  "dataLastSnapshotTime": {
+    "message": "Dernière capture"
+  },
+  "dataCorruptArchived": {
+    "message": "Mise en page corrompue archivée"
+  },
+  "dataHealthHint": {
+    "message": "Boxing conserve des captures de votre mise en page par paliers temporels. Si le stockage principal est endommagé, il est archivé (jamais écrasé silencieusement) puis reconstruit à partir de la dernière capture saine."
   }
 }

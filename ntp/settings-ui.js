@@ -7,7 +7,7 @@
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
-import { saveLayout, saveLayoutDebounced } from './storage.js';
+import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
@@ -50,11 +50,44 @@ export function initSettingsUiFacade(deps) {
  }
 
   // ── settings modal ─────────────────────────────────────
+  // Ticket 43 (spec D3): data-health surface — snapshot count / latest snapshot time /
+  // corrupt-archive entry row. Reads via the storage facade (listSnapshots /
+  // listCorruptArchives); refreshed on every modal open, fire-and-forget (never blocks
+  // the modal). Corrupt row stays hidden unless crash-rescue actually forked a damaged
+  // main key — persistent entry point instead of a startup popup (ABP one-notice lesson).
+  export async function refreshDataHealth() {
+    try {
+      const snapCountEl = document.getElementById('data-snapshot-count');
+      const lastSnapEl = document.getElementById('data-last-snapshot-time');
+      const corruptRow = document.getElementById('data-corrupt-row');
+      const corruptCountEl = document.getElementById('data-corrupt-count');
+      const corruptTimeEl = document.getElementById('data-corrupt-time');
+      const snaps = await listSnapshots();
+      if (snapCountEl) snapCountEl.textContent = String(snaps.length);
+      if (lastSnapEl) {
+        const latest = snaps.length ? snaps[snaps.length - 1] : null;
+        lastSnapEl.textContent = (latest && latest.ts) ? new Date(latest.ts).toLocaleString() : i18n('neverText');
+      }
+      const corrupt = await listCorruptArchives();
+      if (corruptRow) {
+        if (corrupt.length > 0) {
+          const latestCorrupt = corrupt[corrupt.length - 1];
+          if (corruptCountEl) corruptCountEl.textContent = String(corrupt.length);
+          if (corruptTimeEl && latestCorrupt && latestCorrupt.ts) corruptTimeEl.textContent = new Date(latestCorrupt.ts).toLocaleString();
+          corruptRow.hidden = false;
+        } else {
+          corruptRow.hidden = true;
+        }
+      }
+    } catch (e) { if (typeof debugWarn === 'function') debugWarn('refreshDataHealth', e); }
+  }
+
   export function openSettingsModal() {
     debug('openSettingsModal called, current hidden=' + settingsModal.hidden);
     settingsModal.hidden = false;
     debug('openSettingsModal set hidden=false, now=' + settingsModal.hidden + ' display=' + getComputedStyle(settingsModal).display);
     syncSettingsDOM();
+    refreshDataHealth();
     const firstTab = document.querySelector('.settings-nav__item');
     const lastTabId = layout.settings.lastSettingsTab || 'general';
     const targetTabBtn = document.querySelector('.settings-nav__item[data-tab="' + lastTabId + '"]');
