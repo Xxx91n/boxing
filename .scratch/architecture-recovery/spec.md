@@ -93,6 +93,10 @@
 - 既有 prior art：`boxing-sync-*.spec.ts`、`data-recovery.spec.ts`、import-graph-guard。
 - 禁止断言内部 Map/Set 实现细节。
 
+## Related Ticket (Wave 1 parallel)
+
+- **47**: Pages demo 缺 gitignored 构建产物 ntp.css → 整页无样式（已 live curl 定谳：ntp.css 404）。属发行可观测面，与 DR 数据路径并行。
+
 ## Out of Scope
 
 - 云端自动书签同步产品化（仍限 WebDAV/Gist）。
