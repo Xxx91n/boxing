@@ -241,10 +241,20 @@ W4: 46（等 42R+45 land）
 #### W3 后 Frontier
 
 ```
-DONE-CODE 待 land: 42R · 43R · 45R · 44
-W4 立即可开工: 46 发行门禁 ADR-0017 + 检查单
-红线: 全量 CI 主 lane 残红清零或定谳 + 人工 zip 黄金路径前禁止 tag
+DONE-CODE 待 land: 42R · 43R · 45R · 44 · 46
+W4 已完成: 46 PASS
+Wave 5 功能票全部 code-done
+下一步（门禁驱动，非新票）: land → G-A 残红定谳 → G-B 人工黄金路径 → G-C 维持 200
+红线: 齐备前禁止 tag / 禁止宣称可发行
 ```
+
+### Wave 5 W4 复核状态（2026-09-12 首脑实测）
+
+> 证据: reports/W4-wave5-brain-review.md · ADR-0017 + WORKFLOW §4.4 + CONTEXT 8 词条 + backlog B13
+
+| 票 | 裁决 | 实测 | 分支 |
+|---|---|---|---|
+| 46 发行门禁 ADR | **PASS** | Consequences+Review 2026-10-12；检查单 17 框；无 BOM | ticket-46 @ mvu |
 
 ### Wave 5 W1 复核状态（2026-09-11 首脑对抗性复核）
 
