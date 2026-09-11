@@ -230,6 +230,22 @@ W4: 46（等 42R+45 land）
 
 - V5-42-1 / V5-43-1 / V5-43-2 / V5-45-1 / V5-45-2
 
+### Wave 5 W3 复核状态（2026-09-11 首脑实跑）
+
+> 证据: reports/W3-wave5-brain-review.md · import-merge 4 passed；邻接 9 passed；guard ok
+
+| 票 | 裁决 | 实跑 | 分支 |
+|---|---|---|---|
+| 44 恢复合并+冲突副本 | **PASS** | boxing-import-merge **4 passed**；14 locale；CM-1 绿 | ticket-44 @ nmw/oqv |
+
+#### W3 后 Frontier
+
+```
+DONE-CODE 待 land: 42R · 43R · 45R · 44
+W4 立即可开工: 46 发行门禁 ADR-0017 + 检查单
+红线: 全量 CI 主 lane 残红清零或定谳 + 人工 zip 黄金路径前禁止 tag
+```
+
 ### Wave 5 W1 复核状态（2026-09-11 首脑对抗性复核）
 
 > 证据: reports/45R-wave5-w1-brain-review.md · 方法: Node/git/Playwright 实跑/live curl/子代理，不信自述
