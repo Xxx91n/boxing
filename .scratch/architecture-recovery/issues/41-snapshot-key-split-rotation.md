@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done — 验收经 41R 补齐（reports/41R-snapshot-tests-debug-api-report.md）
 
-- [ ] storage 中不存在巨型 boxingSnapshots 数组主键（或仅作只读兼容迁移源）
-- [ ] saveSnapshot 写入独立键并在 index 登记
-- [ ] 轮转后满足分层保留策略且总量不超预算
-- [ ] 旧 boxingSnapshots[] 一次性迁移逻辑 + 单测
-- [ ] Playwright 或单测覆盖：连续多次快照后 list 数量与键隔离
+- [x] storage 中不存在巨型 boxingSnapshots 数组主键（或仅作只读兼容迁移源）
+- [x] saveSnapshot 写入独立键并在 index 登记
+- [x] 轮转后满足分层保留策略且总量不超预算
+- [x] 旧 boxingSnapshots[] 一次性迁移逻辑 + 单测
+- [x] Playwright 或单测覆盖：连续多次快照后 list 数量与键隔离
