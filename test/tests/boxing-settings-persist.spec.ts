@@ -160,9 +160,13 @@ test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT 
       }];
       dbg.layout._meta = { updatedAt: Date.now() };
     });
-    await page.evaluate(() => (window as any).__boxingDebug.persistView());
+    // Brain fix 2026-09-12: persistView() only writes view-state keys — the seeded
+    // boxes must go through saveLayout() or reload loses them (T52-b was a broken test).
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 10000 }).toBe(true);
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.boxes.length), { timeout: 10000 }).toBeGreaterThan(0);
+    await page.evaluate(() => (window as any).__boxingDebug.renderCanvas());
     // enter the large box via synthetic dblclick (native input stalls on firefox — playwright#16095 precedent)
     await page.evaluate(() => {
       const el = document.querySelector('.large-box[data-id="t52-lg"]') as HTMLElement | null;
