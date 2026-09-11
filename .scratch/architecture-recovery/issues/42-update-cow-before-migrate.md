@@ -4,9 +4,9 @@
 
 **Blocked by:** 41
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] background onInstalled reason=update 路径先快照后迁移（代码顺序可审查）
-- [ ] NTP 看到 update 信号且待迁移时先快照
-- [ ] 单测/集成：模拟 update 后存在 pre-update 快照且 schema 已升
-- [ ] file:// 无信号路径行为不回归
+- [x] background onInstalled reason=update 路径先快照后迁移（代码顺序可审查）
+- [x] NTP 看到 update 信号且待迁移时先快照
+- [x] 单测/集成：模拟 update 后存在 pre-update 快照且 schema 已升
+- [x] file:// 无信号路径行为不回归
