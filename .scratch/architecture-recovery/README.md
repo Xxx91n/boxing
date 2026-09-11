@@ -192,7 +192,7 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 |---|---|---|---|---|
 | W1 | 40 | P0 CSS hidden 花括号修复 | None | 是（与 41） |
 | W1 | 41 | 快照分键 + 分层轮转 | None | 是（与 40/47） |
-| W1 | 47 | Demo Pages 缺 ntp.css 修复 | None | 是（与 40/41） |
+| W1 | 47 | Pages 工件完整性（ntp.css + privacy-policy） | None | 是（与 40/41） |
 | W2 | 42 | onInstalled(update) 先 COW 再迁移 | 41 | 与 43/45 并行 |
 | W2 | 43 | crash rescue fork 语义 | 41 | 与 42/45 并行 |
 | W2 | 45 | CI golden fixture 数据门控 | 41 | 与 42/43 并行 |

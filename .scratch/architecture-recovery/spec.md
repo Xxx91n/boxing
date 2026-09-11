@@ -95,7 +95,7 @@
 
 ## Related Ticket (Wave 1 parallel)
 
-- **47**: Pages demo 缺 gitignored 构建产物 ntp.css → 整页无样式（已 live curl 定谳：ntp.css 404）。属发行可观测面，与 DR 数据路径并行。
+- **47**: Pages Actions 工件不完整：demo/ntp.css 404（裸 HTML）+ /privacy-policy.html 404（商店硬依赖，票 07 曾预警）。属发行可观测面，与 DR 数据路径并行。
 
 ## Out of Scope
 
