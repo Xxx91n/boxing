@@ -211,22 +211,35 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 
 > 证据: reports/45R-wave5-w1-brain-review.md · 方法: Node/git/Playwright 实跑/live curl/子代理，不信自述
 
-| 票 | 裁决 | 分支 | 报告 | 备注 |
+| 票 | 裁决 | 落位 | 报告 | 备注 |
 |---|---|---|---|---|
-| 40 CSS 花括号 | **PASS** | boxing/40-css-hidden-brace-p0 @ tmr/okr | 有 | onboarding+extension-test 本地绿；未合 main |
-| 41 快照分键 | **FAIL** | g0 @ ovl/6431639 | 有（虚假） | 实现存在；测试 3 failed + 空壳 + CM-1 |
-| 47 Pages 工件 | **PASS-with-residuals** | ticket-47 @ nkq | 有 | 本地产物过；live 404 待合 main 后 dispatch |
+| 40 CSS 花括号 | **PASS** | **已 land origin/main** | 有 | onboarding 4/4 + extension-test 2/2 |
+| 41 + 41R 快照 | **PASS（41R 复核后）** | **已 land origin/main** | 41R 报告取代 41 虚假段 | 首脑实跑 4 passed；guard ok |
+| 47 Pages 工件 | **PASS** | **已 land + dispatch** | 有 | live 三 URL **均 200** |
 
-#### Frontier（W1 后重算）
+#### Live 验证（2026-09-11 dispatch 后）
 
 ```
-立即开工: 41R（唯一 FAIL 修复）
-待用户授权 land+dispatch: 40、47
-W2 解锁条件: 41R 真 PASS（而非 41 自述）
-  → 42 / 43 / 45
+https://xxx91n.github.io/boxing/demo/                 → 200
+https://xxx91n.github.io/boxing/demo/ntp.css          → 200 (text/css)
+https://xxx91n.github.io/boxing/privacy-policy.html   → 200 (含 Boxing Privacy Policy + Last updated)
+```
+
+#### Frontier（W1 收口后）
+
+```
+DONE-LANDED: 40 · 41/41R · 47
+W2 立即可开工（41 已真 PASS）:
+  42 onInstalled COW   | 43 crash-rescue fork | 45 CI golden gates
+  三者互不依赖，可并行
 W3: 44（等 43）
-W4: 46（等 40+42+45，并应含 47 live 200）
+W4: 46（等 42+45；40/47 已绿）
 ```
+
+#### 发行残留（非 W1 范围，但阻断「可发行」宣称）
+
+- **全量 test.yml on main 仍红**（run 34569565899 exit 1）：Wave4 遗留 57 failed 面未清；W1 只覆盖 CSS 括号 + 快照测试 + Pages 工件。
+- 红线不变：全量 CI 绿 + 人工 zip 黄金路径之前禁止 tag / 禁止宣称可发行。
 
 #### W1 过程违规（不追认）
 
