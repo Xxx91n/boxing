@@ -45,7 +45,12 @@
 
 **根因假设（与 42 同类）**：spec 模式 boot→setItem(corrupt)→reload；旧页 beforeunload `saveLayout` 用内存**合法** layout 覆盖刚注入的损坏主键 → 新页 never sees corrupt → 不归档。需 43R 用中和 flush / 非 NTP seed 验证。
 
-**裁决: FAIL** → 重发 **43R**
+**根因（子代理 general-5 深挖，升级为产品 P0）**：
+1. E2E：boot→setItem(corrupt)→reload 时旧页 `saveLayout` 用内存合法 layout 覆盖损坏 seed。
+2. **产品**：`saveLayout`（storage.js ~L491–501）读 stored 后 `migrateLayout` **无 isPlausibleLayout**，非法载荷静默降级 default 写回，**不写归档键** —— 违反「禁止无归档覆盖」（fork 只守 boot 读路径）。
+3. 报告 §5「缺 version 可通过」与 `isPlausibleLayout` 代码矛盾。
+
+**裁决: FAIL（含产品写路径 P0）** → 重发 **43R**（必须改 saveLayout，不得只改测试）
 
 ---
 
@@ -83,7 +88,7 @@
 ```
 FAIL → 必须返工后才解锁后续:
   42R  测试 harness 中和 unload flush + T42-1 绿 + 勾 AC 有证据
-  43R  同上类修复 + fork 用例绿 + issue 状态同步
+  43R  saveLayout 防无归档覆盖 + fork 用例绿 + issue 同步
 
 PASS-with-caveats（可并行推进，flip 前修）:
   45R  gate2 改为写调用扫描（禁子串）；账本 SHA 纠正
