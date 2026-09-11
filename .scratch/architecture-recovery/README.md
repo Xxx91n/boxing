@@ -179,3 +179,29 @@ CI 门 (合并前必须绿): 01 / 03 / 04 / 05 / 07
 - 摘要: docs/history/2026-09-12-wave4-closeout.md
 - Backlog: docs/history/2026-09-12-backlog.md
 - 本目录保留为历史工作区档案，不再作为 frontier
+
+
+---
+
+## Wave 5 — 企业级数据容灾与发布门控（2026-09-12 事故驱动）
+
+> Spec: `spec.md` · 调研: atomcode 2026-09-11 · 父事故: GitHub #9  
+> 波次由 issues 的 Blocked by 字段推导，不另造顺序。
+
+| Wave | 票 | 标题 | Blocked by | 可并行 |
+|---|---|---|---|---|
+| W1 | 40 | P0 CSS hidden 花括号修复 | None | 是（与 41） |
+| W1 | 41 | 快照分键 + 分层轮转 | None | 是（与 40） |
+| W2 | 42 | onInstalled(update) 先 COW 再迁移 | 41 | 与 43/45 并行 |
+| W2 | 43 | crash rescue fork 语义 | 41 | 与 42/45 并行 |
+| W2 | 45 | CI golden fixture 数据门控 | 41 | 与 42/43 并行 |
+| W3 | 44 | 导入/WebDAV 合并+冲突副本 | 43 | — |
+| W4 | 46 | 发行门禁 ADR-0017 + 检查单 | 40,42,45 | — |
+
+### 红线
+- CI 绿 + 人工 zip 黄金路径 + HTTP 200 齐备前，禁止宣称可发行、禁止 tag。
+- 恢复 = 合并/fork，禁止静默覆盖。
+- 快照禁止单键数组膨胀。
+
+### 启动器
+`prompts/40-…` … `prompts/46-…`（每份 ≤60 行，锚定权威路径）。

@@ -1,156 +1,107 @@
-# Spec — Boxing 2026.9.12 发行就绪包
+# Spec — 企业级数据容灾与发布门控（2026-09-12 事故驱动）
 
-> 来源: 38-2026-09-12-release-architecture-investigation.md  
-> GitHub Milestone: [2026.9.12](https://github.com/Xxx91n/boxing/milestone/1) (issues #1–#8)  
-> 徽章: ready-for-agent
-
-## Problem Statement
-
-用户面对七个并行痛点，阻塞 2026.9.12 商店发行与体验验收：
-
-1. 扩展图标是过期紫占位，与商店 logo 不一致；
-2. README 多语言版本不完整、截图未同步、版本徽章过期、Install 文案与线上 release 矛盾；
-3. Edge/Firefox 商店无法自动检测多语言 listing（manifest 硬编码 name/description）；
-4. 备份页 WebDAV 与 GitHub Gist 配置在同一纵向页扁平混排，用户感知「混杂」；
-5. Firefox 备份页滚动卡顿反复回归（Chrome 流畅）；
-6. `https://xxx91n.github.io/boxing/` 根路径 404（docs/ 无 index）；
-7. 无 release 自动重部署的扩展预览演示站；
-8. 版本字符串分散（manifest/package/README/CHANGELOG/设置页脚 v3.6.6/AGENTS.md），且 build 不覆盖 version_name。
-
-## Solution
-
-以「商店可上架 + 文档可信 + 体验不回归 + Pages 可达」为验收线，交付八张 tracer-bullet 票：图标与 brand 一致、README/locale 真相同步、`__MSG_` 多语言商店检测、Sync 页视觉分组、Firefox backdrop-filter 残留审计、docs/index landing、release 自动 Pages 预览、版本字符串统一与 version_name 注入修复。
-
-## User Stories
-
-1. As a store reviewer, I want toolbar icons to match the store logo, so that the listing does not look fraudulent.
-2. As a Firefox user installing from AMO, I want the listed version 2026.9.12 with correct icons, so that the package passes automated checks.
-3. As an Edge reviewer, I want manifest name/description as `__MSG_` placeholders backed by 14 locales, so that Partner Center detects all supported languages.
-4. As a zh-CN user browsing GitHub, I want a Simplified Chinese README with the same screenshots and accurate install steps as English, so that I can install without guessing.
-5. As a Japanese/Korean/… user, I want my locale README to carry the full screenshot table and brand assets note, so that docs parity holds.
-6. As a repo visitor, I want the README Install section to link the live v2026.9.11+ release, so that I am not told “no packages published”.
-7. As a maintainer, I want TRANSLATIONS.md to list all 13 locales as Available, so that status matches the tree.
-8. As a future agent, I want `gen-i18n-readme.js` removed or rewritten so it cannot clobber hand translations, so that docs stay safe.
-9. As a backup user, I want shared sync settings visually separated from WebDAV and GitHub Gist credential blocks, so that I never confuse which fields belong to which provider.
-10. As a backup user, I want switching provider to never show both WebDAV and Gist forms, so that the UI reflects the mutual exclusion the engine already implements.
-11. As a Firefox user with general.smoothScroll enabled, I want settings/backup scrolling to feel as smooth as Chrome, so that the recurring jank regression ends.
-12. As a Playwright maintainer, I want the existing scrollOwners computation to actually assert, so that scroll-owner regressions fail CI.
-13. As a visitor of the GitHub Pages site, I want the root URL to render a product landing with screenshots and store links, so that the privacy-policy-only site is not a 404.
-14. As a prospective installer, I want an interactive NTP preview on Pages that redeploys on every release, so that I can try Boxing before installing.
-15. As a release engineer, I want every version string (manifest, package, badge, changelog, settings footer, AGENTS.md) to read 2026.9.12, so that artifacts cannot ship mixed versions.
-16. As a CI consumer, I want BOXING_BUILD_VERSION to override both version and version_name in dist, so that calver injection is complete.
-17. As a domain reader, I want ticket/handoff/prompts to use CONTEXT.md and ADR vocabulary (settings modal, sync provider, brand assets), so that multi-window work shares one language.
-
-## Implementation Decisions
-
-- **Icons**: overwrite committed `icons/` from curated `docs/brand` icons (copy-over-regenerate). Do not delete the directory — manifest and Firefox temp-load require the files. CI icon step becomes copy-from-brand with PNG signature assert retained.
-- **README source-of-truth**: English README remains canonical. Locale files under `docs/i18n/` stay hand-maintained; generator script is deprecated (delete or rewrite to never clobber).
-- **Store i18n**: add `extensionName` + `extensionDescription` to all 14 locales (description ≤132 chars for Edge). Manifest switches to `__MSG_extensionName__` / `__MSG_extensionDescription__`. A7 build validator already enforces 14-locale parity.
-- **Sync UI**: keep engine mutual exclusion (`sync-engine.js` provider switch). Change only presentation: labeled groups or sub-sections for Shared vs WebDAV vs Gist. No new provider logic.
-- **Firefox scroll**: audit `backdrop-filter` on `.modal-overlay` as the residual cost (never previously treated as a scroll factor). A/B against FF `general.smoothScroll`. Do not re-break ADR-0014 decisions (`will-change: scroll-position`, `overflow-anchor: none`, no nested scroll, no `contain`). Prefer `prefers-reduced-motion` static overlay fallback over deleting the blur outright if visual design must stay.
-- **Pages landing**: add `docs/index.md` under existing `jekyll-theme-minimal` `_config.yml`. No new site generator.
-- **Pages demo**: Mode A from atomcode research — static-open NTP mirror with `chrome.*` stub (storage/local mock). CI uses official artifact deploy (`upload-pages-artifact` + `deploy-pages`), triggered by `release: types: [published]` + `workflow_dispatch`. Do not use gh-pages branch (GITHUB_TOKEN pushes do not trigger Pages builds). Inject `version.json` = release tag.
-- **Version unify**: single closer ticket bumps all known locations to 2026.9.12 and fixes `build.mjs` to override `version_name` alongside `version`. Settings footer stops reading a stale hardcoded `v3.6.6`.
-- **Seams (testing)**: prefer existing Playwright seams — settings modal open/tab switch, provider select, extension load unpacked, manifest parse. Highest seam = Playwright e2e in `test/tests/`; no new unit-test harness. One new assertion seam only where missing: provider mutual exclusion + scrollOwners assert.
-
-## Testing Decisions
-
-- Good tests assert external behaviour (DOM visibility, manifest fields, built artifact bytes), not implementation details.
-- Modules under test: manifest/build packaging; settings/sync presentation; docs tree completeness; Pages demo artifact.
-- Prior art: `test/tests/boxing-webdav.spec.ts` (provider fields appear), `boxing-state-sync.spec.ts` (scroll owner scan — currently dead assert), `boxing-empty-state-buttons.spec.ts` (overflow-anchor/body overflow guards), `boxing-i18n-module.spec.ts` (14-locale contract).
-- Icon ticket: assert dist icon bytes match `docs/brand` curated files.
-- Store i18n: build-time A7 validator + a manifest parse assertion that name/description are `__MSG_` placeholders.
-- Firefox scroll: keep Chrome visual parity; FF improvement is A/B measured, not a flaky timing assert in CI if environment noise dominates — record manual FF evidence in the ticket report.
-
-## Out of Scope
-
-- Chrome Web Store submission (still deferred per publishing guide).
-- Merging `fix-release-pipeline` into main.
-- AMO/Edge interactive store dashboard steps (human-gated).
-- Rewriting ADR-0014 decision set (only append an update if backdrop-filter changes the decision).
-- Full NTP feature refactors, new sync providers, new locales beyond the existing 14.
-- Storybook / component library extraction for the demo (overkill vs Mode A).
-
-## Further Notes
-
-- Investigation evidence: `38-2026-09-12-release-architecture-investigation.md`.
-- atomcode Pages research is ctx-indexed under label `atomcode` (15 sources); sub-windows may re-query via `ctx_search`.
-- GitHub issues #1–#8 already mirror these tickets under milestone 2026.9.12; local `issues/` files are the multi-window source of blocking edges.
-- All version-control statements defer to WORKFLOW §4.2.
-
-
----
-
-# Spec addendum — Wave4 UX 四痛点（2026.9.12）
-
-> 来源: `43-2026-09-12-wave4-investigation.md`
-> 范围: 票 09–12；与 01–08 同属 2026.9.12 发行内容
-> 徽章: ready-for-agent
+> 状态: ready-for-agent  
+> 调研: atomcode 2026-09-11（22 源核验，索引 source=atomcode）  
+> 父事故: GitHub Issue #9 · P0 书签丢失 + 冻结  
+> 关联 ADR: 0009（3-2-1）、0016（sync 分层）、0002（storage.local）  
+> Wave4 spec 已归档：本文件取代其为当前工作区权威 spec。
 
 ## Problem Statement
 
-用户在 2026.9.12 体验验收中报告四个并行痛点：
+2026-09-12 事故：用户升级到 2026.9.12 zip 后 Chrome+Firefox 界面冻结；回退 v3.7.8 后书签被掏空仅剩盒子。根因层面：
 
-1. 大盒子画布双击新建**间歇无反馈**，进入小盒子再返回后**冒出多枚**新建大盒子。
-2. 点击盒子名称重命名时光标落在名称前，**不能默认全选**。
-3. 书签默认在**新标签页**打开；产品要求默认**当前标签页**。
-4. 书签 favicon 缓存/加载需对齐工业成熟心智模型，**同时省 IO 与流量**。
+1. **冻结**：`ntp/settings.css` 中 `.modal-overlay` 缺闭合 `}`，CSS Nesting 使 `.modal-overlay[hidden]` 等规则永不匹配，全屏遮罩在 hidden 后仍拦截指针事件。
+2. **数据**：无升级前强制 COW；`boxingSnapshots[]` 单键存储（Sidebery 140MB 教训）；crash rescue 用快照**覆盖**主键而非 fork 归档；导入/WebDAV 存在 newer-wins 静默丢一侧；发布无数据兼容性 CI 门控。
 
-日志 `boxing-log-2026-09-10T13-58-24.log` 盘上不存在；P1 以源码时序根因立案。
+用户要求：每次发布编译包必须过 CI/CD 或 test 门控，门控旨在保护用户数据不被更新包破坏/覆盖；本地容灾需定时备份 + 版本更新后首开强制备份。
 
 ## Solution
 
-- **09**: 创建路径 **mutate → render → save**，视觉反馈不再被 storage 写链阻塞。
-- **10**: 点击大/小盒子标题与 crumb 标题时 **focus + 全选** 原文。
-- **11**: `urlOpenMode` 默认与缺键迁移为 **sameTab**；用户已显式选择的 newTab **保留**。
-- **12**: favicon 增加 **single-flight** 与 **SWR hydrate**；不引入 IDB/Cache API/新权限。
+四层防线（工业成熟心智模型，来源见 atomcode 调研）：
+
+| 层 | 模型 | 工业先例 |
+|---|---|---|
+| L0 冻结修复 | CSS hidden pair 必须成对且非嵌套 | BX-DEV-020 既有约定 |
+| L1 写前 COW | onInstalled(update) 先 saveSnapshot 再迁移；分键轮转 | Chrome Enterprise 3 份更新后快照；Time Machine 轮转 |
+| L2 损坏/恢复 | crash rescue = 归档损坏主键再重建（fork）；导入/同步 = 合并/冲突副本 | Dropbox conflicted copy；Raindrop 永不覆盖；1Password 版本链 |
+| L3 发布门控 | golden schema fixture + 迁移单测进 pretest；红灯禁 tag；回滚演练 | Android Room MigrationTestHelper；CWS rollback 前向兼容强制；gh-ost test-on-replica |
 
 ## User Stories
 
-1. As a canvas user, I want every successful double-click create to show a box immediately, so that I trust the gesture.
-2. As a canvas user, I want rapid consecutive creates to match what I see, so that no "ghost pile" appears after navigation.
-3. As a canvas user, I want toolbar / empty-state CTA creates to use the same visual timing, so that all create entry points feel consistent.
-4. As a renamer, I want clicking a box title to select the entire name, so that I can type a replacement without manual select-all.
-5. As a renamer, I want the same select-all on small-box titles and the inner crumb title, so that rename is consistent across surfaces.
-6. As a renamer, I want Escape to restore the previous name after select-all edit, so that accidental clicks are safe.
-7. As a bookmark opener, I want new installs to open bookmarks in the current tab by default, so that I do not spawn tab clutter.
-8. As an existing user who chose New Tab, I want that choice preserved after upgrade, so that my preference is not overwritten.
-9. As a settings user, I want the Open-bookmarks-in control to reflect the live default, so that the modal matches actual behaviour.
-10. As a performance-minded user, I want concurrent favicon loads for the same host to share one network probe, so that traffic stays minimal.
-11. As a returning user, I want stale cached favicon URLs to paint first and refresh in background, so that cold start stays fast.
-12. As a privacy-conscious user, I want no new extension permissions in this wave, so that install surface does not grow.
+1. 作为扩展用户，我希望升级前系统自动留下可回滚的数据副本，这样即使新版本有 bug 我的书签也不会消失。
+2. 作为扩展用户，我希望扩展更新后第一次打开时立刻备份当前数据，这样迁移若出错仍可恢复。
+3. 作为扩展用户，我希望后台定时备份在 NTP 关闭后仍继续，这样长时间不打开新标签页也有副本。
+4. 作为扩展用户，我希望快照按时间分层保留（小时/日/周），这样既覆盖最近误操作也能找回更早状态。
+5. 作为扩展用户，我希望存储损坏时旧数据被归档而不是直接删掉，这样我或支持人员仍能手工提取。
+6. 作为扩展用户，我希望从备份导入时永不静默覆盖已有书签，冲突时生成副本供我选择。
+7. 作为扩展用户，我希望 WebDAV 多设备冲突时双方数据都保留（冲突副本），而不是 newer-wins 丢一侧。
+8. 作为扩展用户，我希望设置页能看到最近备份时间与快照数量，这样我知道容灾是否在工作。
+9. 作为扩展用户，我希望一键从最近健康快照恢复，且恢复前自动再存一份当前状态（fork）。
+10. 作为发布者，我希望 CI 在 schema 迁移破坏旧数据格式时直接红灯，而不是用户升级后才发现。
+11. 作为发布者，我希望每个 schemaVersion 都有仓库内 golden fixture，迁移测试可复现。
+12. 作为发布者，我希望测试套件包含「旧版数据 → 新版代码」的升级路径测试。
+13. 作为发布者，我希望测试套件包含「新版数据 → 旧版代码」的回滚安全测试（expand/contract）。
+14. 作为发布者，我希望 zip/crx/xpi 产物在 CI 绿灯前无法被标记为可发行。
+15. 作为发布者，我希望发行检查单明确：CI 绿 + 人工黄金路径 + curl 200 三者齐备才可 tag。
+16. 作为维护者，我希望快照存储为分键而非单键数组，避免 Sidebery 式单键膨胀后 get/set 全挂。
+17. 作为维护者，我希望 storage 写失败（lastError/配额）被显式捕获并提示，而不是静默吞掉。
+18. 作为维护者，我希望 CSS `[hidden]` fallback pair 有构建期校验，缺失括号或嵌套错误在 build 失败。
+19. 作为维护者，我希望 ADR 记录本次容灾模型升级及事故教训，供后续代理遵循。
+20. 作为维护者，我希望恢复语义文档化为「合并/fork，永不覆盖」，废除静默 newer-wins 作为默认。
 
 ## Implementation Decisions
 
-- **Create pipeline (09)**: All create entry points that currently `await saveLayout()` before render must render first; persistence uses the existing debounced save path (or fire-and-forget direct save). Cooldown / markCreate / focus-sink semantics unchanged. Storage write chain and cross-tab merge are **not** rewritten.
-- **Title selection (10)**: One shared select-all helper; applied to large title, small title, inner crumb title. Paste remains plain-text (SEC-03).
-- **Bookmark open default (11)**: Default and missing-key migrate to `sameTab`. Explicit stored `newTab` is preserved. Unset legacy Firefox browserSettings branch collapses to sameTab.
-- **Favicon (12)**: Keep URL-string metadata cache (no blobs). Add host-keyed in-flight Promise map. Hydration keeps expired hits as stale for immediate paint + one background refresh. Explicitly **out**: `favicon` permission, Chrome `_favicon` API, IndexedDB, Cache API (atomcode research).
-- Seams: existing Playwright extension context; no new unit harness.
+### D1 快照分键 + 分层轮转（取代 boxingSnapshots[] 单键）
+- 键形态：`snap.v1.<ts>`（或分桶 `snap.v1.<bucket>.<ts>`），索引键 `snap.v1.index` 仅存 ts 列表。
+- 轮转（Time Machine）：近 24h 每小时 1 份、近 30 天每日 1 份、更早每周 1 份；总量与单份上限沿用 ADR-0009（单份 2MB / 总 8MB 或提高后的预算），LRU 兜底。
+- 禁止把全部快照塞进单个 storage 键（Sidebery #1057）。
+
+### D2 更新即 COW
+- `onInstalled` reason=update：**先** `saveSnapshot('pre-update')` **再** 跑 `migrateLayout`。
+- 消费现有 `boxingInstallSignal`（ADR-0016）；NTP 侧 init 看到 update 信号时若检测到 schema 迁移待执行，同样先快照。
+- 无信号路径（file:// 测试）保持现有行为。
+
+### D3 crash rescue = fork
+- 读主键失败/校验失败：将损坏 JSON 写入 `boxingLayout.corrupt.<ts>`，再以最近健康快照重建 `boxingLayout`。
+- 不直接覆盖损坏主键；用户可见提示（ABP 模式）。
+
+### D4 恢复 = 合并
+- 导入 JSON、WebDAV/Gist 拉取：默认追加合并；同 id 字段分歧 → 冲突副本键，禁止静默 newer-wins 丢一侧。
+- ADR-0016 的 newer-wins 降级路径仅在用户显式选择「覆盖恢复」时使用。
+
+### D5 CI 数据门控
+- 仓库维护 `test/fixtures/schema/vN.json` golden 文件（每个已发布 schemaVersion 一份）。
+- Playwright/单测：旧 fixture → 当前 migrateLayout → 断言书签数/盒子数不减、关键字段存在。
+- 回滚测试：当前数据写入后，用上一版本号的读取约束验证前向兼容（expand/contract）。
+- `pretest` / CI test job 失败 = 禁止 land/tag。
+
+### D6 构建期 CSS hidden 校验
+- build.mjs 增加括号平衡扫描：任一源 CSS 文件 final depth ≠ 0 → build fail。
+- 检测嵌套 `[hidden]` 选择器（depth≥1）→ build fail。
+
+### D7 发行门禁（流程）
+- 同时满足才可宣称可发行：CI 全绿 + 人工 zip 黄金路径验收 + Pages/HTTP 200。
+- 写入 ADR-0017 + WORKFLOW。
 
 ## Testing Decisions
 
-- Good tests assert external behaviour (DOM box count, selection string, navigation target, single network probe), not internal maps.
-- Modules: create paths in render pipeline; title mousedown handlers; settings default/migrate; favicon loader.
-- Prior art: `boxing-empty-state-buttons.spec.ts`, `boxing-focus-steal.spec.ts` (Selection), `boxing-settings-persist.spec.ts`, `boxing-debug.spec.ts`.
-- CI-only policy: local `node --check` + report; full Playwright green required before merge.
+- 只测外部行为：storage 键布局、备份条数、恢复后书签计数、升级路径数据完整性、CI 退出码。
+- 新 seams：
+  1. `saveSnapshot` / `listSnapshots` / `restoreFromSnapshot`（storage 层 API）
+  2. `migrateLayout` + golden fixtures
+  3. build.mjs CSS validator
+- 既有 prior art：`boxing-sync-*.spec.ts`、`data-recovery.spec.ts`、import-graph-guard。
+- 禁止断言内部 Map/Set 实现细节。
 
 ## Out of Scope
 
-- Storage write-chain / mergeConcurrentLayout algorithm changes
-- Chrome `_favicon` permission expansion
-- Favicon privacy kill-switch for external CDNs
-- Title typography / rename history
-- 01–08 closeout gates (unchanged)
+- 云端自动书签同步产品化（仍限 WebDAV/Gist）。
+- 跨浏览器账号系统。
+- CWS/AMO 实际上架操作（流程写入文档，人工执行）。
+- 已丢失书签的找回（用户确认救不回）。
+- Wave4 功能票回归（已另轨）。
 
 ## Further Notes
 
-- Investigation: `43-2026-09-12-wave4-investigation.md`.
-- Favicon brain research ctx-indexed as `atomcode-favicon`.
-- File affinity: 09 and 10 both edit the render module — ticket 10 is **Blocked by 09**.
-- All version-control statements defer to WORKFLOW §4.2.
-
-### Wave4 addendum — ticket 13
-
-- **Dark bm-add-btn (13)**: dark-mode CSS override must not paint the small-box add-bookmark control with accent solid background; reset to transparent and keep token hover language. Edit CSS sources only (ADR-0011).
-- Story: As a dark-mode user, I want the small-box add-bookmark button to match the dark dashed-token look, so that it does not glare as a light block.
+- atomcode 明确信息缺口：AMO 阶段发布一手文档未核验；单键拆小是否降低损坏率属工程共识非实证——落地时以 Sidebery/MetaMask 事故为风险驱动，不以实证为前置。
+- CSS 修复（票 40）与数据容灾可并行，但发行门禁（票 46）两者都要绿。
