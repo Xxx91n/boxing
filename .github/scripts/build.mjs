@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import { buildNtpCss } from "./ntp-css.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..", "..");
@@ -259,19 +260,10 @@ function build() {
 
 
   // ── A8.0: CSS source concatenation (ntp.cat → ntp.css artifact) ──
-  // Per ADR-0008 Phase 2: ntp.css is a build artifact produced by
-  // concatenating source files: base.css + settings.css + onboarding.css + conn.css.
-  // Source files are build inputs; HTML loads the produced ntp.css (no change).
-  function buildNtpCss() {
-    const srcDir = path.join(ROOT, "ntp");
-    const srcFiles = ["base.css", "settings.css", "onboarding.css", "conn.css"];
-    const parts = srcFiles.map(f => fs.readFileSync(path.join(srcDir, f), "utf8"));
-    const css = parts.join("");
-    fs.writeFileSync(path.join(srcDir, "ntp.css"), css, "utf8");
-    console.log("A8.0: ntp.css built from " + srcFiles.length + " sources (" + css.length + " chars)");
-  }
-
-  buildNtpCss();
+  // Per ADR-0008 Phase 2 + ADR-0011: ntp.css is a gitignored build artifact.
+  // The concatenation lives in ./ntp-css.mjs (single logic, BX-XPLAT-001) and
+  // is shared with build-demo.mjs so the Pages demo ships the same artifact.
+  buildNtpCss(ROOT);
 
 
   // ── A8: CSS dual-write marker validator ──
@@ -409,4 +401,10 @@ function build() {
   console.log("  " + ff.pack);
 }
 
-build();
+if (process.argv.includes("--css-only")) {
+  // Ticket 47: CI demo lane generates just the ntp.css artifact via the
+  // existing build entry — no dist packaging needed for the Pages demo.
+  buildNtpCss(ROOT);
+} else {
+  build();
+}
