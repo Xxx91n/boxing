@@ -49,6 +49,46 @@
 - 联网调研只允许经 ctx 包裹的 atomcode, 串行 (同会话同时在途最多 1 次)。
 - 优先复用工业成熟心智模型/轮子, 不重复开发。
 
+### §4.4 发行门禁 (Release Gate — 裁决见 ADR-0017)
+
+「可发行」= 下列三条件**合取**。任一未满足: 禁止打 tag (发行标记)、禁止对外宣称可发行, 唯一合法表述为「不可发行」。
+
+- **G-A CI**: main 全量 CI 主 lane 残红清零, 或每条残红均有书面定谳豁免 (条目含: 失败用例名、基线 run URL、失败签名、归属票号、到期条件; 每次发行前复查, 不得永久豁免)。
+- **G-B 人工 zip 黄金路径**: 对发行 zip 解包产物, 在真 Chrome + Firefox 走完检查单黄金路径 (含升级安装的 pre-update 快照与回滚演练)。
+- **G-C Pages 200**: /boxing/demo/、/boxing/demo/ntp.css、/boxing/privacy-policy.html 三 URL live HTTP 200 (privacy-policy 为商店提交硬依赖)。
+
+渠道条款 (atomcode 2026-09-11 官方文档核验): CWS 百分比发布需 >10k 七日活跃且只增不减, 未达标走可信测试者/自托管 zip canary; CWS 回滚 = 新版本号重发上一版 (~1 分钟免审, 两版循环陷阱, 丢弃进行中百分比); AMO 无百分比发布, 高风险版本用 unlisted canary, 回滚需 ≥2 批准版本且限退一版, 生效按 24h 窗口; 首次上架必须人工, CI 只承接增量。发行检查单必须记录可回滚目标版本。
+
+发行检查单模板 (每次发行复制一份到该发行票的报告, 子窗口逐项勾选; 版本控制操作遵循 §4.2):
+
+```
+发行检查单 — <版本号>
+G-A CI
+- [ ] main 全量 test.yml run URL: __________ → 全绿
+- [ ] 残红豁免逐行 (用例名 | 基线 run | 失败签名 | 归属票 | 到期条件):
+      - [ ] ________________________________
+- [ ] @data-golden burn-in 已按期摘除 continue-on-error 且绿 (2026-09-18 前生效项)
+G-B 人工 zip 黄金路径 (Chrome 与 Firefox 各一遍, 用解包产物)
+- [ ] 全新安装 → 引导可走完 (Skip/Next), 关闭后主界面可点击, 零 console 错误
+- [ ] 建盒/改名/拖拽/缩放 → 重开后数据完整
+- [ ] 旧备份导入 → 合并或冲突副本可查, 无静默覆盖
+- [ ] 升级安装 (上一发行版 → 新 zip): 首开前 pre-update 快照存在; 迁移后数据完整、无冻结
+- [ ] 回滚演练: 新版代码写入后的数据, 用上一版代码读回无损失 (含 v2 单程路径样例 — ADR-0017 具名项)
+- [ ] 至少 1 名具发布权限者确认已知风险与回滚预案 (禁止无人复核发布)
+G-C Pages
+- [ ] https://xxx91n.github.io/boxing/demo/ → 200 且有主题渲染
+- [ ] https://xxx91n.github.io/boxing/demo/ntp.css → 200 text/css
+- [ ] https://xxx91n.github.io/boxing/privacy-policy.html → 200 含政策正文与 Last updated
+渠道与商店
+- [ ] 可回滚目标版本已记录 (CWS: 上一发布版 / AMO: 上一批准版且无已知问题)
+- [ ] 商店文案/截图/权限声明/隐私政策与本次产物一致; 版本号与 manifest 一致
+结论
+- [ ] 三条件齐备 → 允许 tag 与可发行宣称
+- [ ] 未齐备 → 记录缺项, 状态保持「不可发行」
+```
+
+事故复盘 (发行类 P0/P1): 恢复后 48h 内成稿, blameless; 必含时间线 (UTC+证据源)、影响量化、触发-检测-修复三段分离 (商店审核通过 ≠ 推送生效)、回滚目标状态、纠偏措施表 (Prevent/Detect/Mitigate/Respond + Owner + Done-when)。要点细则见 ADR-0017。
+
 ## §5 偏离点清单 (本地适配, 待用户确认后生效)
 
 | # | 原 skill 流程 | 本地适配 | 理由 |
@@ -108,3 +148,4 @@
 | 2026-09-10 | 票06 | GitHub blob 视图 (CommonMark 系) 解析 raw HTML 块内 markdown, Pages kramdown 默认 parse_block_html:false 不解析 —— 同一 md 双端渲染分裂。docs landing/官网类页面保持纯 markdown, hero 用行内图片, 不用 <div>/<picture> 包 markdown (index.md 票实证) |
 | 2026-09-11 | 票45 | 硬重启丢写 (delayed-write loss): .git/objects 松对象与 .git/gitbutler/operations-log.toml 变成全零文件, git log/status 与 but 全挂。修复配方 = 把全零文件挪走备份 → 删除损坏的 refs/remotes/origin/* → `git fetch --refetch` (跳过会读到缺失对象的 have 协商) 从远端找回已发布对象 → operations-log 置空自愈。GitButler workspace commit 可再生, 历史以远端为准 | 
 | 2026-09-11 | 票45 | Playwright 顶层 `grepInvert` 必须是 RegExp (传字符串会让所有 lane 在 config 加载期 exit 1, 伪装成全套失败)。CI-only 政策下新 config 字段第一趟 dispatch 就要单独验证, 别攒到全量绿 | 
+| 2026-09-12 | 事故 (票46) | 问题 zip 零门禁发布 → CSS 缺 } 冻结 + 无 pre-update COW 致回退掏空数据: 「CI 绿」是必要不充分, 可发行必须三条件合取 (残红清零/书面豁免 + 人工 zip 黄金路径 + Pages 200), 齐备前禁 tag — 裁决见 ADR-0017 与 §4.4 |
