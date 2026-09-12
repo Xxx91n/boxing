@@ -909,5 +909,13 @@
   "rollbackFailed": {
     "message": "ロールバックに失敗しました。現在のデータは保持されています。",
     "description": "Shown when the restore write itself fails"
+  },
+  "dataConflictList": {
+    "message": "コンフリクトコピー",
+    "description": "Settings data tab: conflict-copy readout list label (ticket 79)"
+  },
+  "dataConflictExportBtn": {
+    "message": "エクスポート",
+    "description": "Settings data tab: per-row conflict-copy export button (ticket 79)"
   }
 }

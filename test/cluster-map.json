@@ -104,7 +104,8 @@
       "boxing-webdav.spec.ts",
       "data-recovery.spec.ts",
       "boxing-time-machine-rollback.spec.ts",
-      "boxing-dr-export-envelope.spec.ts"
+      "boxing-dr-export-envelope.spec.ts",
+      "boxing-conflict-copy-readout.spec.ts"
     ],
     "ntp/persist.js": [
       "boxing-accent-theme.spec.ts",

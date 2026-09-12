@@ -234,6 +234,13 @@
                 <span data-i18n="dataConflictArchived">Conflict copies archived</span>: <span id="data-conflict-count">0</span>
                 · <span id="data-conflict-time">–</span>
               </p>
+              <!-- Ticket 79 (spec Wave8 A-029): conflict-copy readout list — one row per
+                   archived conflict copy (ts / reason / side / size) with a per-row
+                   verbatim JSON export. Read-only: rows never mutate archive semantics. -->
+              <div id="data-conflict-list-wrap" hidden>
+                <label class="modal__label" data-i18n="dataConflictList" style="margin-top:6px;">Conflict copies</label>
+                <div id="data-conflict-list"></div>
+              </div>
               <p class="modal__hint" data-i18n="dataHealthHint" style="margin:2px 0 0;font-size:11px;">Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot.</p>
               <!-- Ticket 50 (spec W6-D1): Time Machine — every retained snapshot (ts /
                    schemaVersion / size) with a per-row rollback behind a secondary confirm.

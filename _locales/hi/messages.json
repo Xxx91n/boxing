@@ -909,5 +909,13 @@
   "rollbackFailed": {
     "message": "रोलबैक विफल — आपका वर्तमान डेटा अपरिवर्तित रहा।",
     "description": "Shown when the restore write itself fails"
+  },
+  "dataConflictList": {
+    "message": "कॉन्फ्लिक्ट प्रतियां",
+    "description": "Settings data tab: conflict-copy readout list label (ticket 79)"
+  },
+  "dataConflictExportBtn": {
+    "message": "निर्यात",
+    "description": "Settings data tab: per-row conflict-copy export button (ticket 79)"
   }
 }

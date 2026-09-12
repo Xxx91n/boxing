@@ -909,5 +909,13 @@
   "rollbackFailed": {
     "message": "ย้อนกลับล้มเหลว — ข้อมูลปัจจุบันของคุณยังคงเดิม",
     "description": "Shown when the restore write itself fails"
+  },
+  "dataConflictList": {
+    "message": "สำเนาที่ขัดแย้ง",
+    "description": "Settings data tab: conflict-copy readout list label (ticket 79)"
+  },
+  "dataConflictExportBtn": {
+    "message": "ส่งออก",
+    "description": "Settings data tab: per-row conflict-copy export button (ticket 79)"
   }
 }

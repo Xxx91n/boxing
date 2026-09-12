@@ -235,6 +235,9 @@ I18N_FALLBACK.importOverwriteBody = 'Overwrite replaces your entire canvas with 
 I18N_FALLBACK.importBtnMerge = 'Merge & import';
 I18N_FALLBACK.importBtnOverwrite = 'Overwrite restore';
 I18N_FALLBACK.dataConflictArchived = 'Conflict copies archived';
+// Ticket 79 (spec Wave8 A-029): conflict-copy readout list + single export (BX-I18N-005)
+I18N_FALLBACK.dataConflictList = 'Conflict copies';
+I18N_FALLBACK.dataConflictExportBtn = 'Export';
 // Ticket 50 (spec W6-D1): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
 I18N_FALLBACK.dataTimeMachine = 'Time Machine';
 I18N_FALLBACK.dataRollbackBtn = 'Roll back';

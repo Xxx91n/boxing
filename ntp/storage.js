@@ -493,6 +493,20 @@ export function registerStorageOnChanged() {
     catch (e) { debugErr('listConflictArchives', e); return []; }
   }
 
+  // ── Ticket 79 (spec Wave8 A-029): conflict-copy readout ─────────────────────
+  // Read-only single-entry getter for the settings conflict list export button.
+  // Returns the verbatim archived entry (raw payload + meta) or null when the
+  // body was pruned by rotation or the ts is unknown. Never writes: archive
+  // semantics (archiveConflictLayouts) are untouched (issue 79 AC3).
+  export async function getConflictArchive(ts) {
+    try {
+      const key = CONFLICT_PREFIX + Number(ts);
+      const stored = await layoutStorage.get(key);
+      const v = stored && stored[key];
+      return v || null;
+    } catch (e) { debugErr('getConflictArchive', e); return null; }
+  }
+
   // ── Ticket 51 (spec W6-D2): full DR package bodies ───────────────────────────
   // The optional "full disaster-recovery package" export needs the VERBATIM bodies
   // behind the three index keys (snap.v1.*, boxingLayout.corrupt.*, boxingLayout.

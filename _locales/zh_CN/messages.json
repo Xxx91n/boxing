@@ -912,5 +912,13 @@
   "rollbackFailed": {
     "message": "回滚失败——当前数据保持不变。",
     "description": "Shown when the restore write itself fails"
+  },
+  "dataConflictList": {
+    "message": "冲突副本",
+    "description": "Settings data tab: conflict-copy readout list label (ticket 79)"
+  },
+  "dataConflictExportBtn": {
+    "message": "导出",
+    "description": "Settings data tab: per-row conflict-copy export button (ticket 79)"
   }
 }

@@ -7,7 +7,7 @@
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
-import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, readDrBodies } from './storage.js';
+import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, readDrBodies } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
@@ -101,6 +101,39 @@ export function initSettingsUiFacade(deps) {
         } else {
           conflictRow.hidden = true;
         }
+      }
+      // Ticket 79 (spec Wave8 A-029): conflict-copy readout list — one row per archived
+      // conflict copy (ts / reason / side / size, newest first, same SNAPSHOT_LIST_MAX cap)
+      // with a per-row verbatim JSON export. Rows are rebuilt on every modal open alongside
+      // the Time Machine list (refreshDataHealth is the single seam); read-only, no
+      // archive mutation (issue 79 AC3).
+      const cWrapEl = document.getElementById('data-conflict-list-wrap');
+      const cListEl = document.getElementById('data-conflict-list');
+      if (cWrapEl && cListEl) {
+        const cRows = conflicts.slice(-SNAPSHOT_LIST_MAX).reverse();
+        cListEl.textContent = '';
+        for (const e of cRows) {
+          const row = document.createElement('div');
+          row.className = 'data-conflict-row-item';
+          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:11px;';
+          const when = document.createElement('span');
+          when.textContent = (e && e.ts) ? new Date(e.ts).toLocaleString() : '-';
+          const reason = document.createElement('span');
+          reason.textContent = String((e && e.reason) || '?');
+          const side = document.createElement('span');
+          side.textContent = String((e && e.side) || '?');
+          const size = document.createElement('span');
+          size.textContent = formatSnapshotSize(e && e.size);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn data-conflict-export-btn';
+          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:11px;';
+          btn.dataset.ts = String((e && e.ts) || '');
+          btn.textContent = i18n('dataConflictExportBtn');
+          row.append(when, reason, side, size, btn);
+          cListEl.appendChild(row);
+        }
+        cWrapEl.hidden = cRows.length === 0;
       }
       // Ticket 50 (spec W6-D1): Time Machine list — one row per stored snapshot (ts /
       // schemaVersion / size, newest first, last SNAPSHOT_LIST_MAX) with a per-row rollback
@@ -249,6 +282,29 @@ export function initSettingsUiFacade(deps) {
     updateCaption();
     debug('Time Machine rollback applied: snapshot ts=' + ts + ', pre-restore safety copy ts=' + safetyTs);
     openSettingsModal(); // back on the data tab; refreshDataHealth now shows the safety copy
+  }
+
+  // Ticket 79 (spec Wave8 A-029): single conflict-copy verbatim export. Fetches the
+  // archived entry via the read-only storage facade (getConflictArchive) and downloads
+  // it as boxing-conflict-<ts>.json. Read-only — the archive entry is never mutated
+  // and archiveConflictLayouts write semantics stay untouched (issue 79 AC3).
+  async function exportConflictCopy(ts) {
+    try {
+      const entry = await getConflictArchive(ts);
+      if (!entry) {
+        // body pruned by rotation or unknown ts — fail-soft, no partial download
+        debugWarn('exportConflictCopy: conflict archive body unavailable (pruned or unknown ts=' + ts + ')');
+        return;
+      }
+      const text = JSON.stringify(entry, null, 2);
+      const blob = new Blob([text], { type: 'application/json; charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'boxing-conflict-' + String(ts) + '.json';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 4000);
+      debug('Conflict copy exported: ts=' + ts + ' size=' + (entry.size || text.length));
+    } catch (e) { debugErr('exportConflictCopy', e); }
   }
 
 // Init-time wiring, called from ntp.js init() at the position of the original statement blocks.
@@ -607,6 +663,15 @@ export function bindSettingsUi() {
       if (!btn) return;
       const ts = Number(btn.dataset.ts);
       if (Number.isFinite(ts) && ts > 0) performSnapshotRollback(ts);
+    });
+
+    // Ticket 79 (A-029): delegated export click for the rebuilt conflict-copy rows
+    const conflictListEl = document.getElementById('data-conflict-list');
+    conflictListEl?.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('.data-conflict-export-btn') : null;
+      if (!btn) return;
+      const ts = Number(btn.dataset.ts);
+      if (Number.isFinite(ts) && ts > 0) exportConflictCopy(ts);
     });
 
     // Confirm modal events
