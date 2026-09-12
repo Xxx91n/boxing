@@ -60,6 +60,7 @@ TEST_MUTEX_WAIT=1 node scripts/test-mutex.mjs full --project=chromium-extension 
 - migration-golden-guard → **28/28 通过**
 - boxing-cred-encrypt.spec.ts（chromium-extension）→ **5 passed (9.4s)**（v2 无 bundled key / 往返 / 旧 v1 兼容 / plain-string / 导出不含明文）
 - boxing-cred-encrypt.spec.ts（firefox-extension）→ **5 passed (36.3s)** —— CRX-R-008 跨浏览器面同绿
+- 相邻 `_enc` 面（chromium-extension，16 例）：`boxing-webdav` + `boxing-memory` + `boxing-update-cow-before-migrate` → **16 passed (14.9s)**。其中 `boxing-memory.spec.ts:120` 直接断言 `settings._encWebdavPass` 落库 —— 若本票按「改 _obf」思路重命名该字段，此用例必红；反向实证「保留 legacy 字段名」的判断
 - 隐私政策**渲染产物**核验：`node .github/scripts/build-demo.mjs --out <系统临时目录>` → `privacy-policy.html` 6551 bytes；含 obfuscation / not user-keyed encryption / no passphrase 表述；`user-provided password` 残留 **0**；裸 `**` 标记 **0**（粗体/行内代码已正确渲染为 `<strong>` / `<code>`）；脚本内置断言（含 `Boxing Privacy Policy` 与 `Last updated`，日期已为 2026-09-12）通过；临时目录已清理，未在工作区留痕
 
 字节级复核：bytes=5968 lines=95 CRLF=false BOM=false；CRED_APP_SECRET 残留 **0**；CRED_OBFUSCATION_SECRET **2**；密钥字面量 **intact=true**。
@@ -94,7 +95,7 @@ TEST_MUTEX_WAIT=1 node scripts/test-mutex.mjs full --project=chromium-extension 
 3. **CWS Privacy Practices 表单一致性**：上架时 dashboard 勾选项须与本政策措辞一致（三处不一致 = 违规）。属发行窗口事项。
 4. **注意术语边界**：CWS Code Readability 禁止的是**代码**混淆，本票的混淆指**静态数据**；对外文案只说 data obfuscation，避免出现 code obfuscation 字样。
 5. **per-install key 若重启**：须按 ADR-0017 expand/contract 跨两个发行周期推进（先双读、后切换写），并先解决旧版读回与跨设备导出导入两条兼容路径；不得在卫生票内一次性切换。
-6. **dist/ 为构建产物**：dist/boxing-chrome|firefox/ntp/credentials.js 由 npm run build 生成，本票不手改（避免把其他窗口未提交改动一起烘进产物）。
+6. **dist/ 为构建产物**：dist/boxing-chrome|firefox/ntp/credentials.js 由 npm run build 生成，本票不手改（避免把其他窗口未提交改动一起烘进产物）。已复核：dist 两份副本仍含旧标识符 `CRED_APP_SECRET`（各 2 处）—— 纯注释/标识符差异，行为与密钥派生完全不变，下次 `npm run build` 自动同步。
 7. **未触碰的共享文件**：docs/CONTEXT.md、decision-ledger.md 当前工作区已有其他窗口未提交改动，本窗口不改；A-017 状态翻转由大脑窗口统一处理。
 8. **Pages 生效时点**：隐私政策改动需下次 demo-deploy 重新渲染 privacy-policy.html 后才在 G-C URL 生效；Last updated 已同步为 2026-09-12。渲染链路已在本票本地实测通过（见 §6），故部署后不会因渲染失败而打断 G-C。
 
