@@ -1,16 +1,25 @@
-# Wave7 收口 backlog（呈报，是否立票由用户裁定）
+# Wave7 收口 backlog（由审计呈报，是否立票由用户裁定）
+
+> 2026-09-12 · 源: W1/W2 复核 PV + 收口审计
 
 | ID | 事项 | 优先级 | 建议 |
 |---|---|---|---|
-| B40 | 补勾 issues 61/63/64/66 AC + Status=done（票务卫生，无源码） | P1 | 一轮补账即可 |
-| B41 | 60 慢放人工证据（Chrome+Firefox）落 evidence/60-flash | P1 | ready-for-human |
-| B42 | G-B 执行卡实机（与 W7 并行，发行门禁） | P0 | ready-for-human |
-| B43 | #9 close（等 G-B） | P0 | 绑 B42 |
-| B44 | land 7 支 Wave7 分支 + 收口包；push 需明令 | P0 | 等用户 |
-| B45 | 66 报告 41 条 test:changed 残红治理/豁免台账核对 | P1 | 参照 G-A 台账 |
-| B46 | i18n README 副本 Privacy/WebDAV 同步（61/64 策略后置） | P2 | 同步票 |
-| B47 | A-021 性能债 / A-023 docs 重构 | P2 | deferred |
+| B40 | 补勾 61/63/64/66 issue AC + Status done（票务卫生） | P1 | 轻量补账，非源码 |
+| B41 | 60 慢放人工证据（Chrome+Firefox） | P1 | ready-for-human，进 evidence/60-flash |
+| B42 | G-B 人工黄金路径实机（既有） | P0 | 仍阻塞发行 |
+| B43 | #9 close（绑 G-B） | P0 | 既有 |
+| B44 | 54/59 等历史 AC 关账（B33 延续） | P2 | 票务卫生 |
+| B45 | data-golden gate4 flaky 治理 | P1 | 既有 B34 |
+| B46 | Wave7 分支 land+push | P0 | **等用户明令** |
+| B47 | i18n README 副本同步 Privacy/WebDAV 限制 | P2 | 61/64 报告已建议 |
+| B48 | A-021 性能债 / A-023 docs 里程碑 | P2 | deferred |
 
-## 不立票（账本 deferred）
+## 过程违规台账（不追认）
 
-A-022 popup/ · A-024 V6 升门禁（禁止）
+| ID | 描述 |
+|---|---|
+| PV-W7-61-1 | 报告完成 vs issue AC 0/5 |
+| PV-W7-63-1 | 同上 |
+| PV-W7-64-1 | 同上 0/3 |
+| PV-W7-66-1 | 同上 0/5 |
+| PV-W7-60-1 | 慢放证据弱 |

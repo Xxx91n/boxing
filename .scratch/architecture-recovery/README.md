@@ -49,3 +49,13 @@
 
 **Wave7 实施票 60–66 源码面齐。Frontier 空（无更多可开工实施票）。**
 详见 reports/W2-brain-review.md
+
+## Wave7 收口审计（2026-09-12）
+
+| 项 | 结果 |
+|---|---|
+| 硬验收 | build DONE_BUILD · 四守卫绿 · syntax OK |
+| 账本 | A-012..020 implemented · A-021..024 deferred · 0 stale |
+| 合并 | 栈就绪 · **未 land/push** |
+| 报告 | reports/W7-closeout-audit.md |
+| backlog | docs/history/2026-09-12-wave7-closeout-backlog.md |
