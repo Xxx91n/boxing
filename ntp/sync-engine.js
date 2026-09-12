@@ -764,8 +764,13 @@ export function bindSyncBackupUi() {
 
     // Persist + encrypt on blur
     [webdavUrlInput, webdavUserInput].forEach(inp => inp?.addEventListener('blur', () => {
-      if (webdavUrlInput) layout.settings.webdavUrl = webdavUrlInput.value.trim();
-      if (webdavUserInput) layout.settings.webdavUser = webdavUserInput.value.trim();
+      // Ticket 59 (42R leftover): empty-credential no-change guard — blur used to
+      // saveLayout() unconditionally even when neither field diverged from settings.
+      const urlChanged = !!webdavUrlInput && webdavUrlInput.value.trim() !== (layout.settings.webdavUrl || '');
+      const userChanged = !!webdavUserInput && webdavUserInput.value.trim() !== (layout.settings.webdavUser || '');
+      if (!urlChanged && !userChanged) return;
+      if (urlChanged) layout.settings.webdavUrl = webdavUrlInput.value.trim();
+      if (userChanged) layout.settings.webdavUser = webdavUserInput.value.trim();
       saveLayout();
     }));
     // BX-DEV-111M: debounced input listeners — survive close without blur (browser close, tab close).
@@ -797,8 +802,20 @@ export function bindSyncBackupUi() {
         const webdavUserCur = webdavUserInput ? webdavUserInput.value.trim() : layout.settings.webdavUser;
         const passCur = webdavPassInput ? webdavPassInput.value : '';
         const gistCur = gistTokenInput ? gistTokenInput.value.trim() : '';
-        if (webdavUrlInput && webdavUrlCur !== (layout.settings.webdavUrl || '')) layout.settings.webdavUrl = webdavUrlCur;
-        if (webdavUserInput && webdavUserCur !== (layout.settings.webdavUser || '')) layout.settings.webdavUser = webdavUserCur;
+        // Ticket 59 (42R leftover): empty-credential no-change guard. flushUnsavedCredentials
+        // runs on pagehide/beforeunload/visibilitychange/closeSettingsModal; with no
+        // credentials it used to write layout.settings._enc* = null unconditionally and
+        // saveLayout() — a redundant boxingLayout write on every page teardown (the 42R
+        // unload write-back root cause). Skip when nothing diverged AND no credential
+        // text is present (an existing stored credential with empty inputs is NOT cleared —
+        // blank inputs no longer wipe _enc*).
+        const urlChanged = webdavUrlInput && webdavUrlCur !== (layout.settings.webdavUrl || '');
+        const userChanged = webdavUserInput && webdavUserCur !== (layout.settings.webdavUser || '');
+        const passChanged = webdavPassInput && passCur && passCur !== (layout.settings.webdavPass || '');
+        const gistChanged = gistTokenInput && gistCur && gistCur !== (layout.settings.gistToken || '');
+        if (!urlChanged && !userChanged && !passChanged && !gistChanged) return;
+        if (urlChanged) layout.settings.webdavUrl = webdavUrlCur;
+        if (userChanged) layout.settings.webdavUser = webdavUserCur;
         const encPass = passCur ? await encryptCredential(passCur) : null;
         const encGist = gistCur ? await encryptCredential(gistCur) : null;
         layout.settings._encWebdavPass = encPass;
