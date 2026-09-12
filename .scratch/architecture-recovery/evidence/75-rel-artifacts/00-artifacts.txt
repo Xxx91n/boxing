@@ -1,0 +1,20 @@
+candidate: 2026.9.12 (Build & Package run 34689649760, branch main, workflow_dispatch 2026-09-12, 3 build jobs green, amo_sign=true, make_release=false)
+run URL: https://github.com/Xxx91n/boxing/actions/runs/34689649760
+artifact: boxing-release-ubuntu-latest (id 10296757122, 995058 bytes, expired=false)
+  archive: https://api.github.com/repos/Xxx91n/boxing/actions/artifacts/10296757122/zip
+sibling artifacts (not downloaded; T6 lane = ubuntu, contains all 4 release files):
+  boxing-release-windows-latest (id 10296442304, 957034 bytes)
+  boxing-release-macos-latest (id 10296252746, 957404 bytes)
+sha256:
+5189233b90e408e6265fead46059a67524ac665c697c328df6824220a66ecbda  boxing-chrome-2026.9.12.zip
+344525bfba0f53e1604804d322246932170c2289e71dc4cc6e4dae3b8ca0006b  boxing-chrome-2026.9.12.crx
+78f3328a321b0b54856fa0557d702bd816aa54d3c06857432c20abf72dc58de7  boxing-firefox-2026.9.12.zip
+78f3328a321b0b54856fa0557d702bd816aa54d3c06857432c20abf72dc58de7  boxing-firefox-2026.9.12.xpi
+note: firefox zip and xpi byte-identical (same sha256)
+pre-staged by agent 2026-09-12: downloaded to D:/rel-2026.9.12 (NEW path; does NOT contain gb-2026.9.13), unpacked to
+  D:/rel-2026.9.12/chrome  (zip root = extension dir itself, manifest.json at root, 8 top-level entries)
+  D:/rel-2026.9.12/firefox (zip root = extension dir itself, manifest.json at root, 8 top-level entries)
+manifest version: chrome=2026.9.12, firefox=2026.9.12
+zero-flash in this build (D-002): ntp/boot-theme.js present in BOTH unpacked trees (ticket 60 / commit 898119eb)
+checkpoint make_release=false: no v2026.9.12 GitHub release exists (gh release list -> only v2026.9.11 Latest, v2026.9.9);
+  .github/workflows/build.yml:182 release step gated on github.event.inputs.make_release == 'true'
