@@ -65,6 +65,18 @@ TEST_MUTEX_WAIT=1 node scripts/test-mutex.mjs full --project=chromium-extension 
 
 字节级复核：bytes=5968 lines=95 CRLF=false BOM=false；CRED_APP_SECRET 残留 **0**；CRED_OBFUSCATION_SECRET **2**；密钥字面量 **intact=true**。
 
+### 6.1 全仓用户可见文案「过度宣称」扫描（AC 3 的真正闭环）
+
+扫描范围：`README.md`、`docs/privacy-policy.md`、`docs/store-assets/*.md`（商店 listing）、`docs/publishing-guide.md`、`docs/store-publishing-plan.md`、`manifest.json`、`popup/`、`ntp/index.html`、`demo/README.md`、`_locales/**`。
+
+| 检查项 | 结果 |
+|---|---|
+| 禁用词：E2EE / 端到端 / zero-knowledge / military-grade / 用你的口令加密 / user-provided password | **0 处** |
+| 商店 listing（store-listing.md、store-listings-2026-09.md） | 无加密宣称；隐私表述为「本地存储 / 自建服务器 / 无统计无追踪 / 开源可审计」，与实现一致 |
+| i18n（14 语种） | 仅「安全备份」「安全快照」，指同步与快照机制，**非加密宣称**；i18n 属 A-020 范围，本票不动 |
+
+结论：AC 3「不伪称强加密」在**全仓用户可见文本**上成立，不限于本票修改的 3 个文件。
+
 ## 7. 调研来源与结论
 
 ### 7.1 本次 atomcode 调研（串行 1 次，ctx source=atomcode，2026-09-12）
@@ -98,6 +110,8 @@ TEST_MUTEX_WAIT=1 node scripts/test-mutex.mjs full --project=chromium-extension 
 6. **dist/ 为构建产物**：dist/boxing-chrome|firefox/ntp/credentials.js 由 npm run build 生成，本票不手改（避免把其他窗口未提交改动一起烘进产物）。已复核：dist 两份副本仍含旧标识符 `CRED_APP_SECRET`（各 2 处）—— 纯注释/标识符差异，行为与密钥派生完全不变，下次 `npm run build` 自动同步。
 7. **未触碰的共享文件**：docs/CONTEXT.md、decision-ledger.md 当前工作区已有其他窗口未提交改动，本窗口不改；A-017 状态翻转由大脑窗口统一处理。
 8. **Pages 生效时点**：隐私政策改动需下次 demo-deploy 重新渲染 privacy-policy.html 后才在 G-C URL 生效；Last updated 已同步为 2026-09-12。渲染链路已在本票本地实测通过（见 §6），故部署后不会因渲染失败而打断 G-C。
+
+9. **i18n 效果性措辞**：「安全备份」「安全快照」属效果词而非加密宣称；按 atomcode 建议，效果词宜紧跟限定语。归 A-020 / 发行窗口处理，本票不跨票改动 i18n。
 
 ## 9. 版本控制
 
