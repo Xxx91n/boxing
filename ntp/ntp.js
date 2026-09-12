@@ -248,6 +248,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     getLargeBox, renderCanvas,
     pruneConnArrays, renderConnections, disposeAllConns, enterLargeBox,
     connCount: () => connLines.size,
+    searchRunCount: () => searchRunCount, // A-033 (ticket 83): query-execution counter for debounce assertions
     get layout() { return layout; }, // BX-DEV-111k: live ref to layout for Playwright testing
     state() { return { boxes: layout.boxes.length, currentLargeBoxId, canvasZoom, innerZoom, headerPinned, darkMode: layout.settings.darkMode, lang: currentLang, fontSize: layout.settings.fontSize }; },
     dumpLayout() { console.table(layout.boxes.map(b => ({ id: b.id, title: b.title, x: b.x, y: b.y, w: b.width, h: b.height, children: b.children?.length || 0 }))); },
@@ -524,6 +525,44 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     }
   }
 
+  // A-033 (ticket 83): search debounce — trailing edge, cancelable + flushable.
+  // Shape mirrors the lodash “_.debounce” contract (trailing default + cancel/flush):
+  // a keystroke only re-arms the timer, the query runs once typing pauses.
+  // 120ms sits inside the usual 100–300ms typeahead band and under the ~200ms
+  // “feels immediate” threshold, so a pause is imperceptible while a burst of
+  // keystrokes collapses into a single runSearch + results rebuild.
+  const SEARCH_DEBOUNCE_MS = 120;
+  let searchDebounceTimer = null;
+  let pendingSearchQuery = null;
+  let searchRunCount = 0;
+
+  function cancelPendingSearch() {
+    if (searchDebounceTimer) { clearTimeout(searchDebounceTimer); searchDebounceTimer = null; }
+    pendingSearchQuery = null;
+  }
+
+  // Runs an armed query right now (Enter / explicit flush paths) so no keystroke is lost.
+  function flushPendingSearch() {
+    if (!searchDebounceTimer) return;
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = null;
+    const q = pendingSearchQuery;
+    pendingSearchQuery = null;
+    executeSearch(q);
+  }
+
+  // Single execution path: byte-identical body to the pre-debounce input handler,
+  // so a settled search yields exactly the same hits/highlight/caption as before (AC: 结果一致).
+  function executeSearch(q) {
+    if (!q) { hideSearchResults(); updateCaption(); return; }
+    searchRunCount++;
+    const hits = runSearch(q);
+    renderSearchResults(hits, q);
+    applySearchHighlight(hits);
+    if (hits.length) captionEl.textContent = i18n('searchResults', [hits.length]);
+    else captionEl.textContent = i18n('searchPlaceholder');
+  }
+
   // BX-DEV-121 (Bug9 search): live search across large boxes, small boxes, bookmarks.
   // returns up to 50 hits sorted by container depth (large>small>bookmark).
   function runSearch(q) {
@@ -601,6 +640,10 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   }
 
   function hideSearchResults() {
+    // A-033 (ticket 83): every clear path (open hit / Escape / emptying the box /
+    // deferred blur hide) must also drop an armed query, or it would fire after
+    // the clear and resurrect stale results.
+    cancelPendingSearch();
     if (searchResultsEl) { searchResultsEl.hidden = true; searchResultsEl.innerHTML = ''; }
     clearSearchHighlight();
   }
@@ -758,7 +801,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     }
     if (e.key === 'Escape') {
       if (!settingsModal.hidden) { closeSettingsModal(); return; }
-      if (searchInput.value) { searchInput.value = ''; }
+      if (searchInput.value) { searchInput.value = ''; cancelPendingSearch(); } /* A-033 (ticket 83): no stale re-query after the value is cleared outside the input */
       else if (currentLargeBoxId) { exitToCanvas(); }
     }
     // Ctrl+ / Ctrl- zoom
@@ -884,17 +927,23 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // events
     searchInput.addEventListener('input', e => {
       // BX-DEV-121 (Bug9 search): full live search across large boxes, small boxes, bookmarks.
+      // A-033 (ticket 83): re-query only after typing pauses. Emptying the box stays
+      // immediate (no debounce) so the canvas un-dims without any perceived lag.
       const q = e.target.value.trim().toLowerCase();
       if (!q) { hideSearchResults(); updateCaption(); return; } /* hideSearchResults now calls clearSearchHighlight */
-      const hits = runSearch(q);
-      renderSearchResults(hits, q);
-      applySearchHighlight(hits);
-      if (hits.length) captionEl.textContent = i18n('searchResults', [hits.length]);
-      else captionEl.textContent = i18n('searchPlaceholder');
+      pendingSearchQuery = q;
+      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        searchDebounceTimer = null;
+        const pq = pendingSearchQuery;
+        pendingSearchQuery = null;
+        executeSearch(pq);
+      }, SEARCH_DEBOUNCE_MS);
     });
     searchInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        flushPendingSearch(); // A-033 (ticket 83): Enter must act on the latest query, never a stale list.
         const list = searchResultsEl.querySelectorAll('.search-results__item');
         if (list.length) list[0].click();
       } else if (e.key === 'Escape') {
@@ -905,6 +954,9 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       }
     });
     searchInput.addEventListener('blur', e => {
+      // A-033 (ticket 83): drop an armed query on blur, otherwise it fires after the
+      // deferred hide and the results panel pops back up on an unfocused box.
+      cancelPendingSearch();
       // Defer hide so item click (mousedown happens AFTER blur in some browsers) can fire.
       setTimeout(hideSearchResults, 180);
     });

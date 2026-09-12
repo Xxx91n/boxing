@@ -98,4 +98,60 @@ test.describe('Boxing bookmark search (BX-DEV-SEARCH)', () => {
     });
     expect(usesPromiseAny).toBe(true);
   });
+
+  // A-033 (ticket 83): the two specs above seed via push -> persistView -> reload, and the seeded
+  // boxes do not survive that reload in the file:// lane -- that is the pre-existing B3 breakage
+  // (ticket 72 surface; root-cause evidence in reports/83-report.md §5). The debounce specs below
+  // therefore seed and renderCanvas() in-page: no reload, no persistence dependency.
+  async function seedLargeBox(page, id, title) {
+    await page.evaluate(({ boxId, boxTitle }) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes.push({ id: boxId, type: 'large', title: boxTitle, x: 0, y: 0, width: 320, height: 220, children: [] });
+      dbg.renderCanvas();
+    }, { boxId: id, boxTitle: title });
+    await expect.poll(() => page.evaluate((boxId) => Boolean(document.querySelector(`.large-box[data-id="${boxId}"]`)), id)).toBe(true);
+  }
+
+  test('debounce: a keystroke burst runs the query once, after typing pauses', async ({ page }) => {
+    await resetBoxing(page);
+    await seedLargeBox(page, 'burst-test-1', 'GitHub');
+
+    // Six input events dispatched in one synchronous turn -- no timer can interleave, so the
+    // assertion is deterministic instead of timing-dependent.
+    const runs = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const input = document.getElementById('q') as HTMLInputElement;
+      const before = dbg.searchRunCount();
+      for (const v of ['G', 'Gi', 'Git', 'GitH', 'GitHu', 'GitHub']) {
+        input.value = v;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      const immediately = dbg.searchRunCount();
+      await new Promise((r) => setTimeout(r, 400));
+      return { before, immediately, after: dbg.searchRunCount() };
+    });
+
+    expect(runs.immediately).toBe(runs.before); // nothing runs per keystroke
+    expect(runs.after).toBe(runs.before + 1);   // exactly one query once typing pauses
+    // Same hits/highlight as the un-debounced path (AC: 结果一致).
+    await expect.poll(() => page.evaluate(() => document.querySelectorAll('.search-results__item').length)).toBe(1);
+    await expect.poll(() => page.evaluate(() => Boolean(
+      document.querySelector('.large-box[data-id="burst-test-1"]')?.classList.contains('large-box--search-match'),
+    ))).toBe(true);
+  });
+
+  test('debounce: Enter flushes the pending query without waiting for the pause', async ({ page }) => {
+    await resetBoxing(page);
+    await seedLargeBox(page, 'enter-test-1', 'GitHub');
+
+    // Type and press Enter in the same synchronous turn: the debounce must not swallow it.
+    const items = await page.evaluate(() => {
+      const input = document.getElementById('q') as HTMLInputElement;
+      input.value = 'GitHub';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+      return document.querySelectorAll('.search-results__item').length;
+    });
+    expect(items).toBe(1);
+  });
 });
