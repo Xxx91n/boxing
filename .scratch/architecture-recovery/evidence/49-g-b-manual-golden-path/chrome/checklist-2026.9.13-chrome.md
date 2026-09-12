@@ -1,5 +1,8 @@
 # G-B 勾选单（chrome）— 2026.9.13
 
+> **（票 76 / 2026-09-12 标注）本份已作废 — 不得在其上勾选。** D-002 红线：G-B 验收对象改为 2026.9.12 新包（run 34689649760，解包 `D:/rel-2026.9.12`），本份对应旧候选 2026.9.13（run 34641377036，`D:/gb-2026.9.13`，不含零闪现）。请使用 `checklist-2026.9.12-chrome.md`。保留本文件仅供审计追溯。
+
+
 > 车道: **chrome** · 候选: build.yml run 34641377036（main, 三 OS 全绿, amo_sign=true 未燃烧版本号）
 > 工件下载: `gh run download 34641377036 -n boxing-release-ubuntu-latest -D D:/gb-2026.9.13` → 解包用其中 `boxing-chrome-2026.9.13.zip`
 > 操作细则与存储验证命令: ../gb-execution-card.md · 证据命名: ../README.md

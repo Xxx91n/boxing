@@ -1,28 +1,33 @@
-# G-B 执行卡 — 人工 zip 黄金路径（票 49）
+# G-B 执行卡 — 人工 zip 黄金路径（票 49 / 票 76 重跑 · 2026.9.12）
 
 > 受众: 执行人（用户）。双浏览器各完整走一遍 G1–G6。
+> 勾选单: `chrome/checklist-2026.9.12-chrome.md`、`firefox/checklist-2026.9.12-firefox.md`（2026.9.13 两份已作废）。
 > 铁律: G-B 验收对象是**发行 zip 的解包产物**，不是仓库根目录、不是本地 dist 开发树。
+> **票 76 重跑说明（2026-09-12）**：本卡原为票 49（候选 **2026.9.13** / run **34641377036** / `D:/gb-2026.9.13`）编写，该候选不含零闪现修复，已被 D-002 排除。
+> 按 D-002，G-B 验收对象改为 **2026.9.12 新包**：run **34689649760**（main, 3 build jobs 全绿, amo_sign=true, make_release=false），
+> 由票 75 下载解包至 **`D:/rel-2026.9.12/{chrome,firefox}`**。以下全部路径/版本/run 号已同步替换；
+> G4/G5 基线按 D-003 固定为上一发行版 **v2026.9.11**。
 > 每个 G 项完成后立即落证据文件（命名规则见 README）；无证据的勾选在复核时视同未勾。
 
 ## 0. 准备（一次性）
 
 - [ ] 触发 `build.yml`（workflow_dispatch，需要时 `version=<VER>`），下载 run `boxing-release-<os>` 工件中的 `boxing-chrome-<VER>.zip` 与 `boxing-firefox-<VER>.zip`。run URL: ________
-  - 一行式入口（版本号由发布权限方决定；勿复用 2026.9.12；本票默认建议不建 draft release、不打 tag）:
+  - 一行式入口（版本号由发布权限方决定；本轮已定为 2026.9.12 且 run 34689649760 已产出，D-002 禁止复用 `D:/rel-2026.9.12` 之外的任何旧树（尤其 `D:/gb-2026.9.13`）；本票默认建议不建 draft release、不打 tag）:
     `gh workflow run build.yml -f version=<VER> -f make_release=false -f amo_sign=true`
-    版本号注意（build.yml 源码核验）: build.mjs 无版本号格式校验，但本包为 calver 惯例（如 2026.9.13），建议顺延新日期号；`amo_sign` 默认 false 会把该版本号在 AMO unlisted 签名中**燃烧**（AMO 同版本拒重复上传），若此号将来要走 AMO listed 提交或本轮只是 G-B 演练号，须 `-f amo_sign=true` 跳过签名保留版本号。
+    版本号注意（build.yml 源码核验）: build.mjs 无版本号格式校验，但本包为 calver 惯例（如 2026.9.12），建议顺延新日期号；`amo_sign` 默认 false 会把该版本号在 AMO unlisted 签名中**燃烧**（AMO 同版本拒重复上传），若此号将来要走 AMO listed 提交或本轮只是 G-B 演练号，须 `-f amo_sign=true` 跳过签名保留版本号。
     跟踪: `gh run list --workflow build.yml --limit 1` → `gh run watch <run-id>`；工件: `gh run download <run-id> -n boxing-release-ubuntu-latest`
-  - ✅ 本轮候选已备好（2026-09-12，代理按任务文本授权命令触发）：版本 2026.9.13 · run 34641377036（main，三 OS 全绿，amo_sign=true）→ 本项上列「触发 build.yml」与「下载工件」两步合并为一条：
-    `gh run download 34641377036 -n boxing-release-ubuntu-latest -D D:/gb-2026.9.13`（✅ 已完成）
-- [ ] 确定并获取**上一发行版**产物（事故档为 v3.7.8；以商店/Release 页最新已发行版为准）。版本: ________
+  - ✅ 本轮候选已备好（2026-09-12，代理按任务文本授权命令触发）：版本 2026.9.12 · run 34689649760（main，三 OS 全绿，amo_sign=true）→ 本项上列「触发 build.yml」与「下载工件」两步合并为一条：
+    `gh run download 34689649760 -n boxing-release-ubuntu-latest -D D:/rel-2026.9.12`（✅ 已完成）
+- [ ] 确定并获取**上一发行版**产物（事故档为 v3.7.8；以商店/Release 页最新已发行版为准）。版本: **v2026.9.11**（D-003 固定基线；以 GitHub Release Latest 为准，当前为 v2026.9.11）
 - [ ] 校验 zip 完整性: `sha256sum boxing-*-<VER>.zip` → 记入 `00-artifacts.txt`（放各浏览器证据目录）
 - [x] 解包到固定目录（**G4/G5 演练期间不得移动路径**，unpacked 扩展 ID 与路径绑定，移目录会换 storage）：
-  - ✅ 代理已备好（2026-09-12）: `D:/gb-2026.9.13/chrome` 与 `D:/gb-2026.9.13/firefox`（zip 根即扩展目录本体，manifest.json 在根，无 boxing/ 子目录）；sha256 见各车道 `00-artifacts.txt`
+  - ✅ 代理已备好（2026-09-12）: `D:/rel-2026.9.12/chrome` 与 `D:/rel-2026.9.12/firefox`（zip 根即扩展目录本体，manifest.json 在根，无 boxing/ 子目录）；sha256 见各车道 `00-artifacts.txt`
 - [ ] 准备 G3 用「旧备份」: 在上一发行版里 设置→导出 一份 `boxing-backup-*.json`（含与新版可产生同 id 分歧的场景更佳）
 
 ### 加载方式
 
-- Chrome: `chrome://extensions` → 开发者模式 → 加载已解压的扩展程序 → 选 `D:/gb-2026.9.13/chrome`（manifest.json 直接在该目录根；误选仓库根会显示 MV2 错误，那是根 manifest 双声明，非产物）
-- Firefox（发布版）: `about:debugging#/runtime/this-firefox` → 加载临时附加组件 → 选 `D:/gb-2026.9.13/firefox/manifest.json`。注意: 临时附加组件在浏览器重启后卸载，**storage 可能随之失效**——G2「重开」用关闭/重开全部新标签页 + 扩展停用/启用循环完成；涉及升级/回滚的 G4/G5 车道建议改用 Dev Edition 或 Nightly（`xpinstall.signatures.required=false`，可直接安装 zip/xpi，扩展 ID 稳定、storage 跨重装保留），勾选单备注车道差异即可
+- Chrome: `chrome://extensions` → 开发者模式 → 加载已解压的扩展程序 → 选 `D:/rel-2026.9.12/chrome`（manifest.json 直接在该目录根；误选仓库根会显示 MV2 错误，那是根 manifest 双声明，非产物）
+- Firefox（发布版）: `about:debugging#/runtime/this-firefox` → 加载临时附加组件 → 选 `D:/rel-2026.9.12/firefox/manifest.json`。注意: 临时附加组件在浏览器重启后卸载，**storage 可能随之失效**——G2「重开」用关闭/重开全部新标签页 + 扩展停用/启用循环完成；涉及升级/回滚的 G4/G5 车道建议改用 Dev Edition 或 Nightly（`xpinstall.signatures.required=false`，可直接安装 zip/xpi，扩展 ID 稳定、storage 跨重装保留），勾选单备注车道差异即可
 - 升级触发的判定标志: 装载后 SW console 出现 `onInstalled reason=update` 相关日志，或 `snap.v1.index` 新增条目（见 G4）
 
 ### 存储查看入口

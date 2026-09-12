@@ -3,3 +3,17 @@ sha256:
 4e3425bce41b74c1d45cfa11af14f179b44d3f55b3b024bafbd40fde31636d4d  boxing-chrome-2026.9.13.zip
 31d412bd288deca34d8663f0a6c1fde475077671e6ca88542d8a3401ede9eeb5  boxing-firefox-2026.9.13.zip
 pre-staged by agent 2026-09-12: downloaded+unpacked to D:/gb-2026.9.13 (zip root = extension dir itself, manifest.json at root)
+
+# --- 2026-09-12 票 76 追加：本轮 G-B 验收对象（2026.9.12）---
+# 上一行 2026.9.13 记录已 superseded（D-002：禁复用 D:/gb-2026.9.13），保留仅供审计追溯
+candidate: 2026.9.12 (Build & Package run 34689649760, branch main, workflow_dispatch 2026-09-12, 3 build jobs green, amo_sign=true, make_release=false)
+run URL: https://github.com/Xxx91n/boxing/actions/runs/34689649760
+artifact: boxing-release-ubuntu-latest (id 10296757122, 995058 bytes, expired=false)
+sha256:
+5189233b90e408e6265fead46059a67524ac665c697c328df6824220a66ecbda  boxing-chrome-2026.9.12.zip
+344525bfba0f53e1604804d322246932170c2289e71dc4cc6e4dae3b8ca0006b  boxing-chrome-2026.9.12.crx
+unpacked: D:/rel-2026.9.12/chrome (zip root = extension dir itself, manifest.json at root)
+manifest version: 2026.9.12 (verified by ticket 76 window)
+zero-flash: ntp/boot-theme.js present (ticket 60 / commit 898119eb)
+baseline for G4/G5: previous release v2026.9.11 (D-003)
+observation: unpacked tree still contains .scratch/ prefixed entries (build.mjs exclusion gap, unrepaired since 2026.9.13) — reported, not a G1-G6 blocker
