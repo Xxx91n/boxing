@@ -108,6 +108,33 @@
 
 **结论**: 全量 4 红中 0 条由本票引入；本票 13 面在全量跑中仍全绿。
 
+### 4.2 gate 2 归因钉死（提交级证据）
+
+| 项 | 证据 |
+|---|---|
+| 违规行 | ntp/credentials.js L74–L83：api.storage.local.get(obj) / api.storage.local.set(obj) |
+| 引入提交 | **f76d9e13**「feat(cred): per-install random key v3 envelope (ticket 81, A-031)」 |
+| 所属分支 | **t81-cred-per-install-key**（并行窗口，非本票） |
+| 写入键 | boxingCredKey.v1（**不是** boxingLayout） |
+
+**关键补充（更正我上一轮的措辞）**: 上一轮我建议「补 data-golden gate 2 白名单」——查证后该建议不成立：boxing-data-golden.spec.ts 全文 grep 无任何 EXEMPT/allowlist 钩子（唯一的 test.skip 在 L198，属 gate 3 的 WebDAV transport，与写路径无关）。即 **gate 2 不存在可补的白名单**，需要大脑二选一裁决：
+
+1. **收回 facade**：把 PIK 的读写入口经 storage.js facade 暴露（须与 81R 已确立的「credentials.js 零 import、import-graph 叶子不变量」一并权衡，可能冲突）；
+2. **新增具名豁免**：为「非 boxingLayout 的独立凭据键」开一条具名豁免并写明理由。注意 gate 2 是**写路径门禁**而非 quarantine，豁免语义与 never-quarantine 家族不同，不可直接套用 A-008 的表述。
+
+本票不越界裁决、不越界修改；以上为呈报项。
+
+### 4.3 并发窗口推进后的复验（收口前最后一次）
+
+票 71 期间仍在改 ntp/storage.js，故在本票收口前对**当前树**再跑一次 B 桶：
+
+| 车道 | 结果 |
+|---|---|
+| chromium-extension | **52 passed** |
+| firefox-extension | **52 passed** |
+
+本票 13 面在当前树上仍双浏览器全绿。
+
 ---
 
 ## 5. 与 current 决策的关系
