@@ -22,16 +22,55 @@ async function resetFresh(page) {
 }
 
 test.describe('BX-CRED-V2: encrypted credential backup/restore', () => {
-  test('encryptCredential produces v2 format (no bundled key k field)', async ({ page }) => {
+  test('encryptCredential produces v3 per-install-key format (no bundled key k field)', async ({ page }) => {
     await resetFresh(page);
     const enc = await page.evaluate(() => (window as any).__boxingEncryptCredential?.('hello-secret'));
     expect(enc).toBeTruthy();
-    expect(enc.v).toBe(2);
+    expect(enc.v).toBe(3);
     // Security invariant: key is NOT bundled with ciphertext.
     expect(enc.k).toBeUndefined();
     expect(enc.s).toBeTruthy();
     expect(enc.iv).toBeTruthy();
     expect(enc.d).toBeTruthy();
+  });
+
+  test('new install persists a per-install key under boxingCredKey.v1, outside the layout', async ({ page }) => {
+    await resetFresh(page);
+    const info = await page.evaluate(async () => {
+      const enc = (window as any).__boxingEncryptCredential;
+      await enc('probe');
+      // Read chrome.storage.local directly — the PIK lives OUTSIDE boxingLayout.
+      const api = (typeof chrome !== 'undefined' && chrome.storage) ? chrome : (typeof browser !== 'undefined' && browser.storage) ? browser : null;
+      if (!api || !api.storage || !api.storage.local) return { lane: 'file', layoutHasPIK: null, storeHasKey: null };
+      const got = await api.storage.local.get({ 'boxingCredKey.v1': null, boxingLayout: null });
+      return {
+        lane: 'extension',
+        storeHasKey: typeof got['boxingCredKey.v1'] === 'string' && got['boxingCredKey.v1'].length >= 40,
+        layoutHasPIK: JSON.stringify(got.boxingLayout || {}).includes('boxingCredKey'),
+      };
+    });
+    if (info.lane === 'file') return; // file:// lane: session fallback, no storage assertions
+    expect(info.storeHasKey).toBe(true);
+    expect(info.layoutHasPIK).toBe(false);
+  });
+
+  test('exported JSON and sync payload never contain the per-install key or PIK name', async ({ page }) => {
+    await resetFresh(page);
+    await page.evaluate(async () => {
+      const enc = (window as any).__boxingEncryptCredential;
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings._encWebdavPass = await enc('super-secret-pass-123');
+    });
+    const leaks = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const json = JSON.stringify(dbg.layout);
+      return {
+        inLayout: json.includes('boxingCredKey'),
+        plaintextLeak: json.includes('super-secret-pass-123'),
+      };
+    });
+    expect(leaks.inLayout).toBe(false);
+    expect(leaks.plaintextLeak).toBe(false);
   });
 
   test('roundtrip: encrypt → decrypt returns the original plaintext', async ({ page }) => {
@@ -90,7 +129,7 @@ test.describe('BX-CRED-V2: encrypted credential backup/restore', () => {
     });
     // Encrypted credential object is present
     expect(exportPayload.settings._encWebdavPass).toBeTruthy();
-    expect(exportPayload.settings._encWebdavPass.v).toBe(2);
+    expect(exportPayload.settings._encWebdavPass.v).toBe(3);
     // The plaintext must never appear anywhere in the settings object
     const json = JSON.stringify(exportPayload.settings);
     expect(json).not.toContain('super-secret-pass-123');

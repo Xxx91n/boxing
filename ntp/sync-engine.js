@@ -747,8 +747,24 @@ export function bindSyncBackupUi() {
     if (webdavTestBtn) webdavTestBtn.disabled = true; // BX-DEV-114: disable until password is ready
     (async () => {
       try {
-        if (layout.settings._encWebdavPass && webdavPassInput) webdavPassInput.value = await decryptCredential(layout.settings._encWebdavPass);
-        if (layout.settings._encGistToken && gistTokenInput) gistTokenInput.value = await decryptCredential(layout.settings._encGistToken);
+        let migrated = false;
+        if (layout.settings._encWebdavPass && webdavPassInput) {
+          webdavPassInput.value = await decryptCredential(layout.settings._encWebdavPass);
+          // Ticket 81 (A-031) lazy migration: rewrite legacy v1/v2/string envelopes as v3
+          // (per-install key) so stored records converge without a one-shot pass.
+          if (webdavPassInput.value) {
+            const upgraded = await encryptCredential(webdavPassInput.value);
+            if (upgraded && layout.settings._encWebdavPass !== upgraded) { layout.settings._encWebdavPass = upgraded; migrated = true; }
+          }
+        }
+        if (layout.settings._encGistToken && gistTokenInput) {
+          gistTokenInput.value = await decryptCredential(layout.settings._encGistToken);
+          if (gistTokenInput.value) {
+            const upgraded = await encryptCredential(gistTokenInput.value);
+            if (upgraded && layout.settings._encGistToken !== upgraded) { layout.settings._encGistToken = upgraded; migrated = true; }
+          }
+        }
+        if (migrated) saveLayout();
         debug('WebDAV: credentials decrypted successfully');
       } catch (e) {
         debugErr('WebDAV: credential decrypt failed', e);

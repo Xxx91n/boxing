@@ -120,8 +120,8 @@ test.describe('Permanent memory + per-box viewState (BX-DEV-111M/N/L)', () => {
     const enc = await page.evaluate(() => (window as any).__boxingDebug.layout.settings._encWebdavPass);
     expect(enc).toBeTruthy();
     expect(typeof enc).toBe('object');
-    // BX-CRED-V2 format { v:2, s, iv, d }.
-    expect(enc.v).toBe(2);
+    // BX-CRED-V3 per-install key format { v:3, s, iv, d } (ticket 81).
+    expect(enc.v).toBe(3);
     expect(enc.s).toBeTruthy();
     expect(enc.iv).toBeTruthy();
     expect(enc.d).toBeTruthy();
