@@ -1,0 +1,663 @@
+{
+ "perJob": {
+  "base-macos.log": {
+   "failed": [
+    "[firefox-extension] › test/tests/boxing-empty-state-buttons.spec.ts:263:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test/tests/boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test/tests/boxing-title-select-all.spec.ts:71:3 › Ticket 10 - title click selects all (large / small / crumb) › large title: click selects whole name, typing replaces, Enter saves, Escape restores",
+    "[firefox-extension] › test/tests/boxing-title-select-all.spec.ts:105:3 › Ticket 10 - title click selects all (large / small / crumb) › small title: click selects whole name, typing replaces, Enter saves",
+    "[firefox-extension] › test/tests/boxing-title-select-all.spec.ts:134:3 › Ticket 10 - title click selects all (large / small / crumb) › crumb title: click selects all AND gains focus; Enter saves, Escape restores",
+    "[chromium-extension] › test/tests/boxing-empty-state-buttons.spec.ts:263:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test/tests/boxing-title-select-all.spec.ts:71:3 › Ticket 10 - title click selects all (large / small / crumb) › large title: click selects whole name, typing replaces, Enter saves, Escape restores",
+    "[chromium-extension] › test/tests/boxing-title-select-all.spec.ts:105:3 › Ticket 10 - title click selects all (large / small / crumb) › small title: click selects whole name, typing replaces, Enter saves",
+    "[chromium-extension] › test/tests/boxing-title-select-all.spec.ts:134:3 › Ticket 10 - title click selects all (large / small / crumb) › crumb title: click selects all AND gains focus; Enter saves, Escape restores"
+   ],
+   "flaky": [
+    "[firefox-extension] › test/tests/boxing-snapshot-rotation.spec.ts:30:3 › Snapshot split-key storage + rotation (Ticket 41R) › saveSnapshot writes one key per snapshot; listSnapshots returns metadata-only index",
+    "[chromium-extension] › test/tests/boxing-snapshot-rotation.spec.ts:30:3 › Snapshot split-key storage + rotation (Ticket 41R) › saveSnapshot writes one key per snapshot; listSnapshots returns metadata-only index"
+   ],
+   "totals": {
+    "failed": 9,
+    "flaky": 2,
+    "skipped": 3,
+    "passed": 496
+   }
+  },
+  "base-ubuntu.log": {
+   "failed": [
+    "[firefox-extension] › test/tests/boxing-empty-state-buttons.spec.ts:263:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test/tests/boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test/tests/boxing-title-select-all.spec.ts:71:3 › Ticket 10 - title click selects all (large / small / crumb) › large title: click selects whole name, typing replaces, Enter saves, Escape restores",
+    "[firefox-extension] › test/tests/boxing-title-select-all.spec.ts:105:3 › Ticket 10 - title click selects all (large / small / crumb) › small title: click selects whole name, typing replaces, Enter saves",
+    "[firefox-extension] › test/tests/boxing-title-select-all.spec.ts:134:3 › Ticket 10 - title click selects all (large / small / crumb) › crumb title: click selects all AND gains focus; Enter saves, Escape restores",
+    "[chromium-extension] › test/tests/boxing-auto-expand.spec.ts:9:3 › Auto-expand box survives enter+exit (BX-EXP-REGR) › large box with collapseHover=true still expands after visiting and returning",
+    "[chromium-extension] › test/tests/boxing-empty-state-buttons.spec.ts:263:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test/tests/boxing-title-select-all.spec.ts:71:3 › Ticket 10 - title click selects all (large / small / crumb) › large title: click selects whole name, typing replaces, Enter saves, Escape restores",
+    "[chromium-extension] › test/tests/boxing-title-select-all.spec.ts:105:3 › Ticket 10 - title click selects all (large / small / crumb) › small title: click selects whole name, typing replaces, Enter saves",
+    "[chromium-extension] › test/tests/boxing-title-select-all.spec.ts:134:3 › Ticket 10 - title click selects all (large / small / crumb) › crumb title: click selects all AND gains focus; Enter saves, Escape restores"
+   ],
+   "flaky": [],
+   "totals": {
+    "failed": 10,
+    "skipped": 3,
+    "passed": 497
+   }
+  },
+  "base-windows.log": {
+   "failed": [
+    "[firefox-extension] › test\\tests\\boxing-empty-state-buttons.spec.ts:263:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test\\tests\\boxing-title-select-all.spec.ts:71:3 › Ticket 10 - title click selects all (large / small / crumb) › large title: click selects whole name, typing replaces, Enter saves, Escape restores",
+    "[firefox-extension] › test\\tests\\boxing-title-select-all.spec.ts:105:3 › Ticket 10 - title click selects all (large / small / crumb) › small title: click selects whole name, typing replaces, Enter saves",
+    "[firefox-extension] › test\\tests\\boxing-title-select-all.spec.ts:134:3 › Ticket 10 - title click selects all (large / small / crumb) › crumb title: click selects all AND gains focus; Enter saves, Escape restores",
+    "[chromium-extension] › test\\tests\\boxing-empty-state-buttons.spec.ts:263:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test\\tests\\boxing-title-select-all.spec.ts:71:3 › Ticket 10 - title click selects all (large / small / crumb) › large title: click selects whole name, typing replaces, Enter saves, Escape restores",
+    "[chromium-extension] › test\\tests\\boxing-title-select-all.spec.ts:105:3 › Ticket 10 - title click selects all (large / small / crumb) › small title: click selects whole name, typing replaces, Enter saves",
+    "[chromium-extension] › test\\tests\\boxing-title-select-all.spec.ts:134:3 › Ticket 10 - title click selects all (large / small / crumb) › crumb title: click selects all AND gains focus; Enter saves, Escape restores"
+   ],
+   "flaky": [
+    "[firefox-extension] › test\\tests\\boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test\\tests\\boxing-zoom-dblclick.spec.ts:155:3 › BX-DEV-112C extra — click enter then dblclick inner after delay › single click enters; later dblclick inner creates exactly one small box"
+   ],
+   "totals": {
+    "failed": 8,
+    "flaky": 2,
+    "skipped": 3,
+    "passed": 497
+   }
+  },
+  "mid-data-golden.log": {
+   "failed": [
+    "[chromium-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)"
+   ],
+   "flaky": [],
+   "totals": {
+    "failed": 1,
+    "skipped": 1,
+    "passed": 5
+   }
+  },
+  "mid-macos.log": {
+   "failed": [
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[firefox-extension] › test/tests/boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test/tests/boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[firefox-extension] › test/tests/boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[firefox-extension] › test/tests/boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[firefox-extension] › test/tests/boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[firefox-extension] › test/tests/boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[firefox-extension] › test/tests/boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test/tests/boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[chromium-extension] › test/tests/boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test/tests/boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[chromium-extension] › test/tests/boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[chromium-extension] › test/tests/boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[chromium-extension] › test/tests/boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[chromium-extension] › test/tests/boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[chromium-extension] › test/tests/boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box"
+   ],
+   "flaky": [],
+   "totals": {
+    "failed": 36,
+    "skipped": 5,
+    "passed": 509
+   }
+  },
+  "mid-ubuntu.log": {
+   "failed": [
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[firefox-extension] › test/tests/boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test/tests/boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[firefox-extension] › test/tests/boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[firefox-extension] › test/tests/boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[firefox-extension] › test/tests/boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[firefox-extension] › test/tests/boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[firefox-extension] › test/tests/boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test/tests/boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[chromium-extension] › test/tests/boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test/tests/boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[chromium-extension] › test/tests/boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[chromium-extension] › test/tests/boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[chromium-extension] › test/tests/boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[chromium-extension] › test/tests/boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[chromium-extension] › test/tests/boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box"
+   ],
+   "flaky": [
+    "[firefox-extension] › test/tests/boxing-auto-expand.spec.ts:9:3 › Auto-expand box survives enter+exit (BX-EXP-REGR) › large box with collapseHover=true still expands after visiting and returning",
+    "[chromium-extension] › test/tests/boxing-auto-expand.spec.ts:9:3 › Auto-expand box survives enter+exit (BX-EXP-REGR) › large box with collapseHover=true still expands after visiting and returning"
+   ],
+   "totals": {
+    "failed": 37,
+    "flaky": 2,
+    "skipped": 5,
+    "passed": 506
+   }
+  },
+  "mid-windows.log": {
+   "failed": [
+    "[firefox-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[firefox-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[firefox-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[firefox-extension] › test\\tests\\boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[firefox-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[firefox-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[firefox-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[firefox-extension] › test\\tests\\boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test\\tests\\boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[firefox-extension] › test\\tests\\boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[firefox-extension] › test\\tests\\boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[firefox-extension] › test\\tests\\boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[firefox-extension] › test\\tests\\boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[firefox-extension] › test\\tests\\boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[firefox-extension] › test\\tests\\boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[firefox-extension] › test\\tests\\boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[firefox-extension] › test\\tests\\boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test\\tests\\boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box",
+    "[chromium-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[chromium-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[chromium-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[chromium-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[chromium-extension] › test\\tests\\boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[chromium-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[chromium-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[chromium-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[chromium-extension] › test\\tests\\boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test\\tests\\boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[chromium-extension] › test\\tests\\boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[chromium-extension] › test\\tests\\boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[chromium-extension] › test\\tests\\boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[chromium-extension] › test\\tests\\boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[chromium-extension] › test\\tests\\boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[chromium-extension] › test\\tests\\boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[chromium-extension] › test\\tests\\boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[chromium-extension] › test\\tests\\boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box"
+   ],
+   "flaky": [
+    "[firefox-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload"
+   ],
+   "totals": {
+    "failed": 36,
+    "flaky": 1,
+    "skipped": 5,
+    "passed": 508
+   }
+  },
+  "new-data-golden.log": {
+   "failed": [
+    "[chromium-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)"
+   ],
+   "flaky": [],
+   "totals": {
+    "failed": 1,
+    "skipped": 1,
+    "passed": 5
+   }
+  },
+  "new-macos.log": {
+   "failed": [
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[firefox-extension] › test/tests/boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test/tests/boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[firefox-extension] › test/tests/boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[firefox-extension] › test/tests/boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[firefox-extension] › test/tests/boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[firefox-extension] › test/tests/boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[firefox-extension] › test/tests/boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test/tests/boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[chromium-extension] › test/tests/boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test/tests/boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[chromium-extension] › test/tests/boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[chromium-extension] › test/tests/boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[chromium-extension] › test/tests/boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[chromium-extension] › test/tests/boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[chromium-extension] › test/tests/boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box"
+   ],
+   "flaky": [
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload"
+   ],
+   "totals": {
+    "failed": 36,
+    "flaky": 1,
+    "skipped": 5,
+    "passed": 508
+   }
+  },
+  "new-ubuntu.log": {
+   "failed": [
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[firefox-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[firefox-extension] › test/tests/boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[firefox-extension] › test/tests/boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test/tests/boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[firefox-extension] › test/tests/boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[firefox-extension] › test/tests/boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[firefox-extension] › test/tests/boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[firefox-extension] › test/tests/boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[firefox-extension] › test/tests/boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[firefox-extension] › test/tests/boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test/tests/boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[chromium-extension] › test/tests/boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[chromium-extension] › test/tests/boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[chromium-extension] › test/tests/boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test/tests/boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[chromium-extension] › test/tests/boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[chromium-extension] › test/tests/boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[chromium-extension] › test/tests/boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[chromium-extension] › test/tests/boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[chromium-extension] › test/tests/boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[chromium-extension] › test/tests/boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box"
+   ],
+   "flaky": [
+    "[chromium-extension] › test/tests/boxing-auto-expand.spec.ts:9:3 › Auto-expand box survives enter+exit (BX-EXP-REGR) › large box with collapseHover=true still expands after visiting and returning"
+   ],
+   "totals": {
+    "failed": 37,
+    "flaky": 1,
+    "skipped": 5,
+    "passed": 507
+   }
+  },
+  "new-windows.log": {
+   "failed": [
+    "[firefox-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[firefox-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[firefox-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[firefox-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[firefox-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[firefox-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[firefox-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[firefox-extension] › test\\tests\\boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[firefox-extension] › test\\tests\\boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[firefox-extension] › test\\tests\\boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[firefox-extension] › test\\tests\\boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[firefox-extension] › test\\tests\\boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[firefox-extension] › test\\tests\\boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[firefox-extension] › test\\tests\\boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[firefox-extension] › test\\tests\\boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[firefox-extension] › test\\tests\\boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[firefox-extension] › test\\tests\\boxing-state-sync.spec.ts:170:3 › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+    "[firefox-extension] › test\\tests\\boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box",
+    "[chromium-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:214:3 › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+    "[chromium-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:229:3 › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+    "[chromium-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:244:3 › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+    "[chromium-extension] › test\\tests\\boxing-conn-delete-action.spec.ts:259:3 › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+    "[chromium-extension] › test\\tests\\boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+    "[chromium-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:97:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+    "[chromium-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:134:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+    "[chromium-extension] › test\\tests\\boxing-dr-export-envelope.spec.ts:211:3 › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+    "[chromium-extension] › test\\tests\\boxing-empty-state-buttons.spec.ts:269:3 › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+    "[chromium-extension] › test\\tests\\boxing-innerclip-pan.spec.ts:27:3 › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+    "[chromium-extension] › test\\tests\\boxing-innerclip.spec.ts:16:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+    "[chromium-extension] › test\\tests\\boxing-innerclip.spec.ts:76:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+    "[chromium-extension] › test\\tests\\boxing-innerclip.spec.ts:139:3 › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+    "[chromium-extension] › test\\tests\\boxing-popup-dragselect.spec.ts:18:3 › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+    "[chromium-extension] › test\\tests\\boxing-search.spec.ts:16:3 › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+    "[chromium-extension] › test\\tests\\boxing-search.spec.ts:50:3 › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+    "[chromium-extension] › test\\tests\\boxing-star-sync-audit.spec.ts:21:3 › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+    "[chromium-extension] › test\\tests\\boxing-zoom-arrow.spec.ts:42:3 › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box"
+   ],
+   "flaky": [
+    "[firefox-extension] › test\\tests\\boxing-data-golden.spec.ts:201:3 › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)"
+   ],
+   "totals": {
+    "failed": 36,
+    "flaky": 1,
+    "skipped": 5,
+    "passed": 508
+   }
+  }
+ },
+ "rows": [
+  {
+   "face": "boxing-auto-expand › Auto-expand box survives enter+exit (BX-EXP-REGR) › large box with collapseHover=true still expands after visiting and returning",
+   "spec": "boxing-auto-expand",
+   "base": "ubuntu",
+   "mid": "ubuntu",
+   "neu": "ubuntu",
+   "kind": "flaky",
+   "err": "Error: expect(received).toBeGreaterThan(expected)",
+   "exp": "> 80",
+   "rec": "60"
+  },
+  {
+   "face": "boxing-conn-delete-action › Boxing conn delete action (ADR-0006) › ctrl+click delete persists across reload",
+   "spec": "boxing-conn-delete-action",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "0",
+   "rec": "1"
+  },
+  {
+   "face": "boxing-conn-delete-action › Boxing conn delete action (ADR-0006) › double-click delete persists across reload",
+   "spec": "boxing-conn-delete-action",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "0",
+   "rec": "1"
+  },
+  {
+   "face": "boxing-conn-delete-action › Boxing conn delete action (ADR-0006) › select+delete persists across reload",
+   "spec": "boxing-conn-delete-action",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "0",
+   "rec": "1"
+  },
+  {
+   "face": "boxing-conn-delete-action › Boxing conn delete action (ADR-0006) › shift+click delete persists across reload",
+   "spec": "boxing-conn-delete-action",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed+flaky",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "0",
+   "rec": "1"
+  },
+  {
+   "face": "boxing-data-golden › Data-layer golden gates (ticket 45) @data-golden › gate 4: cross-page — window A update syncs to window B (same profile, non-incognito)",
+   "spec": "boxing-data-golden",
+   "base": "",
+   "mid": "data-golden+macos+ubuntu+windows",
+   "neu": "data-golden+macos+ubuntu+windows",
+   "kind": "failed+flaky",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "3",
+   "rec": "4"
+  },
+  {
+   "face": "boxing-dr-export-envelope › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC1+AC3: default export is an envelope with meta indices only, spec filename",
+   "spec": "boxing-dr-export-envelope",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "1",
+   "rec": "0"
+  },
+  {
+   "face": "boxing-dr-export-envelope › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC2: full DR package export embeds verbatim bodies, indices stay body-free",
+   "spec": "boxing-dr-export-envelope",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "1",
+   "rec": "0"
+  },
+  {
+   "face": "boxing-dr-export-envelope › Ticket 51 — export envelope + full DR package + copy-before-overwrite › AC4: WebDAV cloud-newer pull snapshots the discarded local side BEFORE overwrite",
+   "spec": "boxing-dr-export-envelope",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "\"pull\"",
+   "rec": "\"merge\""
+  },
+  {
+   "face": "boxing-empty-state-buttons › Empty state buttons + locate + perf (Bug 1-6 v2) › Bug5-dark: bm-add-btn stays transparent in dark mode",
+   "spec": "boxing-empty-state-buttons",
+   "base": "macos+ubuntu+windows",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "\"rgba(196, 168, 130, 0.12)\"",
+   "rec": "\"rgba(0, 0, 0, 0)\""
+  },
+  {
+   "face": "boxing-innerclip › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 is not covered by inner__canvas-head",
+   "spec": "boxing-innerclip",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "true",
+   "rec": "false"
+  },
+  {
+   "face": "boxing-innerclip › Boxing inner surface clip (BX-DEV-CLIP) › small-box at y=0 stays visible across zoom levels (no progressive clip)",
+   "spec": "boxing-innerclip",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "true",
+   "rec": "false"
+  },
+  {
+   "face": "boxing-innerclip › Boxing inner surface clip (BX-DEV-CLIP) › small-box title bar at y=0 does not visually intrude into head zone",
+   "spec": "boxing-innerclip",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "true",
+   "rec": "false"
+  },
+  {
+   "face": "boxing-innerclip-pan › Boxing inner surface clip under pan (BX-DEV-CLIP-PAN) › small-box panned to surface top is clipped by surface, not covered by head, across zoom",
+   "spec": "boxing-innerclip-pan",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "true",
+   "rec": "false"
+  },
+  {
+   "face": "boxing-popup-dragselect › Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT) › edit popup stays open when text drag-selection ends outside popup",
+   "spec": "boxing-popup-dragselect",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(locator).toBeVisible() failed",
+   "exp": "visible",
+   "rec": ""
+  },
+  {
+   "face": "boxing-search › Boxing bookmark search (BX-DEV-SEARCH) › search clears highlight when emptied",
+   "spec": "boxing-search",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "false",
+   "rec": "undefined"
+  },
+  {
+   "face": "boxing-search › Boxing bookmark search (BX-DEV-SEARCH) › search filters large boxes by title on main canvas",
+   "spec": "boxing-search",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "true",
+   "rec": "undefined"
+  },
+  {
+   "face": "boxing-snapshot-rotation › Snapshot split-key storage + rotation (Ticket 41R) › saveSnapshot writes one key per snapshot; listSnapshots returns metadata-only index",
+   "spec": "boxing-snapshot-rotation",
+   "base": "macos",
+   "mid": "",
+   "neu": "",
+   "kind": "",
+   "err": "",
+   "exp": "",
+   "rec": ""
+  },
+  {
+   "face": "boxing-star-sync-audit › Cross-tab star (isParent) sync — architecture audit Q1 › Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent",
+   "spec": "boxing-star-sync-audit",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "true",
+   "rec": "null"
+  },
+  {
+   "face": "boxing-state-sync › Boxing state isolation and live synchronization › concurrent creation in two tabs converges without losing either box",
+   "spec": "boxing-state-sync",
+   "base": "macos+ubuntu+windows",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "2",
+   "rec": "1"
+  },
+  {
+   "face": "boxing-title-select-all › Ticket 10 - title click selects all (large / small / crumb) › crumb title: click selects all AND gains focus; Enter saves, Escape restores",
+   "spec": "boxing-title-select-all",
+   "base": "macos+ubuntu+windows",
+   "mid": "",
+   "neu": "",
+   "kind": "",
+   "err": "",
+   "exp": "",
+   "rec": ""
+  },
+  {
+   "face": "boxing-title-select-all › Ticket 10 - title click selects all (large / small / crumb) › large title: click selects whole name, typing replaces, Enter saves, Escape restores",
+   "spec": "boxing-title-select-all",
+   "base": "macos+ubuntu+windows",
+   "mid": "",
+   "neu": "",
+   "kind": "",
+   "err": "",
+   "exp": "",
+   "rec": ""
+  },
+  {
+   "face": "boxing-title-select-all › Ticket 10 - title click selects all (large / small / crumb) › small title: click selects whole name, typing replaces, Enter saves",
+   "spec": "boxing-title-select-all",
+   "base": "macos+ubuntu+windows",
+   "mid": "",
+   "neu": "",
+   "kind": "",
+   "err": "",
+   "exp": "",
+   "rec": ""
+  },
+  {
+   "face": "boxing-zoom-arrow › Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW) › inner zoom arrows render with non-zero size after entering a large box",
+   "spec": "boxing-zoom-arrow",
+   "base": "",
+   "mid": "macos+ubuntu+windows",
+   "neu": "macos+ubuntu+windows",
+   "kind": "failed",
+   "err": "Error: expect(received).toBe(expected) // Object.is equality",
+   "exp": "true",
+   "rec": "false"
+  },
+  {
+   "face": "boxing-zoom-dblclick › BX-DEV-112C extra — click enter then dblclick inner after delay › single click enters; later dblclick inner creates exactly one small box",
+   "spec": "boxing-zoom-dblclick",
+   "base": "windows",
+   "mid": "",
+   "neu": "",
+   "kind": "",
+   "err": "",
+   "exp": "",
+   "rec": ""
+  }
+ ],
+ "midEqualsNew": true
+}
