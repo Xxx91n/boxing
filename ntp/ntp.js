@@ -35,7 +35,7 @@ import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_M
 import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS } from './i18n.js';
 // Ticket 07 (architecture-recovery): storage write facade — write chain + loop guard +
 // onChanged listener moved verbatim to ./storage.js; all chrome.storage writes go through it.
-import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, directSetBoxingLayout, ensurePreUpdateSnapshot, gcTombstones, initStorageFacade, listSnapshots, loadLayout, markDeleted, registerStorageOnChanged, restoreFromSnapshot, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
+import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, credKeyGet, credKeySet, directSetBoxingLayout, ensurePreUpdateSnapshot, gcTombstones, initStorageFacade, listSnapshots, loadLayout, markDeleted, registerStorageOnChanged, restoreFromSnapshot, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
 // Ticket 08 (architecture-recovery): layout/view-state persistence + theme packs + loadSettings moved verbatim to ./persist.js on top of the storage facade.
 import { BOOT_THEME_KEY, LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyTheme, clearBootThemeMirror, initPersistFacade, loadFallbackTabView, loadSettings, persistBootThemeMirror, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
 // Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool, ADR-0004),
@@ -476,7 +476,10 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   initPopupsFacade({ getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker, makeId, api, debug, debugWarn });
   // Ticket 10 (architecture-recovery): inject ntp.js-scope deps into the four settings/init-domain
   // modules (ADR-0016). Must stay after every DOM const it reads (ticket-08 TDZ lesson).
-  initCredentialsFacade({ debugErr });
+  // Ticket 81R2 (A-031): PIK storage access goes through the storage.js narrow port
+  // (boxingCredKey.* prefix-pinned) — credentials.js keeps zero direct chrome.storage calls
+  // (gate2 single-write-path) and stays a pure crypto leaf.
+  initCredentialsFacade({ debugErr, credKeyStore: { get: credKeyGet, set: credKeySet } });
   initSyncEngineFacade({ debug, debugErr, debugWarn, syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput });
   initSettingsUiFacade({ debug, debugErr, debugWarn, updateCaption, settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect });
   initOnboardingFacade({ debug, debugErr, updateCaption, langSelect });

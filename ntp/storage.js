@@ -622,7 +622,29 @@ export function registerStorageOnChanged() {
   }
 
   // ADR-0007 Q4a: drop tombstones older than 24h (Excalidraw soft-delete GC pattern).
-  export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
+  // ── Ticket 81R2 (A-031): per-install credential-key (PIK) narrow storage port ──────────
+// credentials.js must not touch chrome.storage directly (gate2 single-write-path scan;
+// WORKFLOW §6 write-chain discipline). The PIK (boxingCredKey.v1) is a NON-layout key —
+// it is deliberately outside boxingLayout so it never rides exports/sync payloads/snapshots
+// (ticket 81 threat model). This port is the sanctioned access seam: pinned to the
+// 'boxingCredKey.' prefix by construction, it is structurally incapable of writing
+// boxingLayout, so the single-write-path invariant stays structural, not caller-discipline.
+// Injection path: ntp.js init() → initCredentialsFacade({ credKeyStore }) (same facade-dep
+// pattern as debugErr ticket 10 / mirrorWriter ticket 60 — credentials.js leaf untouched).
+export function credKeyGet(key) {
+  if (typeof key !== 'string' || !key.startsWith('boxingCredKey.')) {
+    return Promise.reject(new Error('credKeyGet: only boxingCredKey.* keys allowed'));
+  }
+  return layoutStorage.get(key);
+}
+export function credKeySet(key, value) {
+  if (typeof key !== 'string' || !key.startsWith('boxingCredKey.')) {
+    return Promise.reject(new Error('credKeySet: only boxingCredKey.* keys allowed'));
+  }
+  return layoutStorage.set({ [key]: value });
+}
+
+export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
   export function gcTombstones(target) {
     const del = target && target._meta && target._meta.deleted;
     if (!del) return 0;

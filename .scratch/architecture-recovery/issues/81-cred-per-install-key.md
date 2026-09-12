@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human (cred e2e 回归归 CI; 代码/文档/测试已落地 reports/81-report.md)
+**Status:** done (2026-09-12 · 源码+81R+81R2 闭环 · gate2 绿 · e2e 子集 18 passed)
 
 ## Acceptance criteria
 

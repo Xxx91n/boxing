@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -36,22 +37,53 @@ test.describe('BX-CRED-V2: encrypted credential backup/restore', () => {
 
   test('new install persists a per-install key under boxingCredKey.v1, outside the layout', async ({ page }) => {
     await resetFresh(page);
+    // 81R2: the PIK reaches storage through the storage.js narrow port injected at
+    // init() — wait for injection so a pre-init encrypt cannot pin the session-key fallback.
+    await expect.poll(() => page.evaluate(() =>
+      (window as any).__boxingPerInstallKeyInfo?.()?.injected === true)).toBe(true);
+    await page.evaluate(async () => { await (window as any).__boxingEncryptCredential('probe'); });
+    // Extension lane: read chrome.storage.local directly. file:// lane: the SEC-01 mock
+    // keeps non-layout keys under the 'bxstore:' prefix (41R mock shape). Either way the
+    // PIK must exist and must NOT live inside boxingLayout.
     const info = await page.evaluate(async () => {
-      const enc = (window as any).__boxingEncryptCredential;
-      await enc('probe');
-      // Read chrome.storage.local directly — the PIK lives OUTSIDE boxingLayout.
-      const api = (typeof chrome !== 'undefined' && chrome.storage) ? chrome : (typeof browser !== 'undefined' && browser.storage) ? browser : null;
-      if (!api || !api.storage || !api.storage.local) return { lane: 'file', layoutHasPIK: null, storeHasKey: null };
-      const got = await api.storage.local.get({ 'boxingCredKey.v1': null, boxingLayout: null });
+      const api = (typeof chrome !== 'undefined' && chrome?.storage?.local) ? chrome
+        : (typeof browser !== 'undefined' && browser?.storage?.local) ? browser : null;
+      if (api) {
+        const got = await api.storage.local.get({ 'boxingCredKey.v1': null, boxingLayout: null });
+        return {
+          storeHasKey: typeof got['boxingCredKey.v1'] === 'string' && got['boxingCredKey.v1'].length >= 40,
+          layoutHasPIK: JSON.stringify(got.boxingLayout || {}).includes('boxingCredKey'),
+        };
+      }
+      let parsed = null;
+      try { parsed = JSON.parse(localStorage.getItem('bxstore:boxingCredKey.v1') || 'null'); } catch (_) { /* silent: malformed mock entry */ }
       return {
-        lane: 'extension',
-        storeHasKey: typeof got['boxingCredKey.v1'] === 'string' && got['boxingCredKey.v1'].length >= 40,
-        layoutHasPIK: JSON.stringify(got.boxingLayout || {}).includes('boxingCredKey'),
+        storeHasKey: typeof parsed === 'string' && parsed.length >= 40,
+        layoutHasPIK: (localStorage.getItem('boxingLayout') || '').includes('boxingCredKey'),
       };
     });
-    if (info.lane === 'file') return; // file:// lane: session fallback, no storage assertions
-    expect(info.storeHasKey).toBe(true);
-    expect(info.layoutHasPIK).toBe(false);
+    expect(info.storeHasKey, 'per-install key must be persisted outside boxingLayout').toBe(true);
+    expect(info.layoutHasPIK, 'layout must never contain the per-install key').toBe(false);
+  });
+
+  test('source contract: cred-key port prefix-pinned + credentials.js has no direct browser storage (81R2)', () => {
+    const rootDir = path.resolve(__dirname, '..', '..');
+    const storageSrc = fs.readFileSync(path.join(rootDir, 'ntp', 'storage.js'), 'utf8');
+    const portStart = storageSrc.indexOf('export function credKeyGet');
+    expect(portStart, 'storage.js must expose the cred-key narrow port').toBeGreaterThan(-1);
+    const port = storageSrc.slice(portStart, storageSrc.indexOf('export const TOMBSTONE_TTL_MS'));
+    expect(port).toContain("startsWith('boxingCredKey.')");
+    expect(port).toContain('only boxingCredKey.* keys allowed');
+    // gate2 single-write-path invariant, same line-scan semantics as gate 2 itself:
+    // comments may name the API, executable lines must not reach browser storage directly.
+    const credSrc = fs.readFileSync(path.join(rootDir, 'ntp', 'credentials.js'), 'utf8');
+    const credCodeLines = credSrc.split(/\r?\n/).filter((l) => {
+      const t = l.trim();
+      return !(t.startsWith('//') || t.startsWith('*') || t.startsWith('/*'));
+    });
+    const directAccess = credCodeLines.filter((l) =>
+      /\b(?:api|chrome|browser)\.storage\b|\b[a-zA-Z_$][a-zA-Z0-9_$]*[Ss]torage[a-zA-Z0-9_$]*\.(set|remove|clear)\s*\(/.test(l));
+    expect(directAccess, 'credentials.js executable lines must stay free of direct browser storage access').toEqual([]);
   });
 
   test('exported JSON and sync payload never contain the per-install key or PIK name', async ({ page }) => {

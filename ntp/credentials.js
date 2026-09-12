@@ -20,7 +20,8 @@
 // Policy, store listing). Honest wording: obfuscated at rest with a per-install random key that
 // stays in this browser profile; not user-keyed encryption.
 //
-// Pure crypto module: no DOM, no layout reads, persistence left entirely to callers.
+// Pure crypto module: no DOM, no layout reads, no direct chrome.storage access (81R2) —
+// persistence is left entirely to callers via the injected credKeyStore narrow port.
 // ADR-0016: envelope layer of the four-layer sync/backup model.
 // Moved verbatim from ntp.js (byte-exact except `export` prefixes + debugErr facade).
 // Checkpoint 2: only envelope objects leave this module — plaintext never enters logs.
@@ -42,10 +43,17 @@
 //     downgrade safe: they return '' and the caller re-prompts, no data corruption.
 
 let debugErr = () => {};
+let credKeyStore = null; // { get(key), set(key, value) } — storage.js narrow port (81R2)
 
 // Ticket 10: inject ntp.js-scope deps (logger) into the credentials module.
+// Ticket 81R2 (A-031): credKeyStore — the storage.js narrow port for the per-install
+// key (boxingCredKey.*, prefix-pinned; structurally cannot write boxingLayout). Injected
+// from ntp.js init() — persistence stays with callers, leaf purity of this module restored.
+// Without the store (unit probes / pre-injection calls) the module falls back to a
+// per-page random session key so encrypt/decrypt roundtrips still work in one page.
 export function initCredentialsFacade(deps) {
   debugErr = deps.debugErr;
+  credKeyStore = deps.credKeyStore || null;
 }
 
 // ── Credential envelope at rest (Web Crypto AES-GCM — obfuscation grade, see file header) ───
@@ -55,9 +63,10 @@ const ENC_ALGO = 'AES-GCM'; const ENC_KEY_LEN = 256;
 // not been rewritten to v3 yet. Never removed in a single release (expand/contract).
 const CRED_OBFUSCATION_SECRET = 'boxing-sync-cred-v2-app-secret-2024';
 // Ticket 81 (A-031): per-install key material. Stored OUTSIDE the layout object (independent
-// chrome.storage.local key) so it never enters buildSyncPayload, buildExportEnvelope or
-// snapshots. In file:// test lanes (no storage API) the module falls back to a per-page
-// random session key so roundtrips still work inside one page (SEC-01 mock stays local).
+// chrome.storage.local key, reached through the storage.js cred-key narrow port — 81R2) so
+// it never enters buildSyncPayload, buildExportEnvelope or snapshots. Without an injected
+// store (file:// pre-init probes) the module falls back to a per-page random session key so
+// roundtrips still work inside one page (SEC-01 mock stays local).
 const CRED_KEY_STORE_KEY = 'boxingCredKey.v1';
 const CRED_KEY_B64_LEN = 32; // 256-bit per-install key
 let __credDerivedKeyCache = null; // cached derived key (key derivation is the slowest step)
@@ -67,42 +76,23 @@ let __sessionKeyB64 = null; // file:// fallback: random per-page session key
 function b64ToU8(b64) { return Uint8Array.from(atob(b64), c => c.charCodeAt(0)); }
 function u8ToB64(u8) { return btoa(String.fromCharCode(...u8)); }
 
-function __storageGet(obj) {
-  try {
-    const api = (typeof chrome !== 'undefined' && chrome.storage) ? chrome
-      : (typeof browser !== 'undefined' && browser.storage) ? browser : null;
-    if (!api || !api.storage || !api.storage.local || !api.storage.local.get) return null;
-    return api.storage.local.get(obj);
-  } catch (_) { return null; } // silent: storage probe in non-extension context
-}
-function __storageSet(obj) {
-  try {
-    const api = (typeof chrome !== 'undefined' && chrome.storage) ? chrome
-      : (typeof browser !== 'undefined' && browser.storage) ? browser : null;
-    if (!api || !api.storage || !api.storage.local || !api.storage.local.set) return null;
-    return api.storage.local.set(obj);
-  } catch (_) { return null; } // silent: storage probe in non-extension context
-}
-
-// per-install key: generate once, persist under CRED_KEY_STORE_KEY, memoize in-page.
-// Concurrent callers share one promise (single-flight); storage-less contexts fall back
-// to a session key so the file:// test lane keeps working.
+// per-install key: generate once, persist via the injected credKeyStore (storage.js
+// narrow port), memoize in-page. Concurrent callers share one promise (single-flight);
+// a missing/rejected store falls back to a session key so the file:// lane keeps working.
 async function getPerInstallKeyB64() {
   if (__perInstallKeyPromise) return __perInstallKeyPromise;
   __perInstallKeyPromise = (async () => {
-    const storeGet = __storageGet({ [CRED_KEY_STORE_KEY]: null });
-    if (storeGet && typeof storeGet.then === 'function') {
+    if (credKeyStore && typeof credKeyStore.get === 'function' && typeof credKeyStore.set === 'function') {
       try {
-        const got = await storeGet;
+        const got = await credKeyStore.get(CRED_KEY_STORE_KEY);
         const existing = got && got[CRED_KEY_STORE_KEY];
         if (typeof existing === 'string' && existing.length >= 40) return existing;
         const fresh = u8ToB64(crypto.getRandomValues(new Uint8Array(CRED_KEY_B64_LEN)));
-        const put = __storageSet({ [CRED_KEY_STORE_KEY]: fresh });
-        if (put && typeof put.then === 'function') await put;
+        await credKeyStore.set(CRED_KEY_STORE_KEY, fresh);
         return fresh;
-      } catch (e) { debugErr('per-install key store read failed — falling back to session key', e); }
+      } catch (e) { debugErr('per-install key store failed — falling back to session key', e); }
     }
-    // file:// / storage-less lane: per-page random session key (never persisted).
+    // no store injected yet: per-page random session key (never persisted).
     if (!__sessionKeyB64) __sessionKeyB64 = u8ToB64(crypto.getRandomValues(new Uint8Array(CRED_KEY_B64_LEN)));
     return __sessionKeyB64;
   })();
@@ -114,8 +104,9 @@ async function getPerInstallKeyB64() {
 export function perInstallKeyInfo() {
   return {
     storeKey: CRED_KEY_STORE_KEY,
+    injected: Boolean(credKeyStore),
     hasPromise: Boolean(__perInstallKeyPromise),
-    sessionFallback: __sessionKeyB64 !== null && !__perInstallKeyPromise,
+    sessionFallback: __sessionKeyB64 !== null,
   };
 }
 

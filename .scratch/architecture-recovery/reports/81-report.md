@@ -119,3 +119,78 @@ scripts/import-graph-guard.mjs B-6 白名单为 credentials.js 增加条件放�
 
 - issue AC 全勾 ✓ · 报告追加 ✓ · 版本控制 WORKFLOW §4.2 ✓（but commit, 未 push）
 - node --check + import-graph-guard 均绿 ✓ · 与 current 决策无冲突（A-017 负向保持, 无 revised）
+
+
+---
+
+# 返工轮次 81R2 — data-golden gate2 / PIK 写路径（2026-09-12）
+
+> 触发: W8-W2-brain-review.md §0 gate2 FAIL + PV-W8-81R-1（81R 只闭环 B-6, 未处理 71/72 移交的 gate2）
+> 覆盖: A-031, A-025 · 分支: t81-cred-per-install-key (GitButler) · 检查点: 禁回滚 PIK / 禁全局削弱 gate2 — 均遵守
+
+## R2-1. 首脑失败签名（复核认同）
+
+W8-W2-brain-review.md §0 实测签名（原文）:
+
+    direct storage writes outside the facade:
+    ntp/credentials.js return api.storage.local.set(obj);
+
+成因认同: 票 81 PIK 在 credentials.js 直写 storage.local; 票 71 §6.1 已定谳归属（f76d9e13 可追溯）且
+用户裁定移交本窗口; gate2 writeRe 分支 1 精确命中 `api.storage.local.set(`。81R 未处理属 PV-W8-81R-1, 认同。
+
+## R2-2. 方案选择: facade（issue Notes 推荐 1）, 弃 scanner 窄例外
+
+71-report 预写了「钉死形状」的 gate2 scanner 例外补丁（可套用）。本票选 **facade 收口**（任务书 delta
+「优先 facade」）, 理由:
+
+- **gate2 spec 文本零改动** — never-quarantine 家族门禁, 71-report 自己指出「改它即口径变更」;
+  钉死例外虽合规仍是给 scanner 加攻击面。facade 方案 scanner 一字不动。
+- **恢复 credentials.js 自述契约** "persistence left entirely to callers" — 票 81 的直访其实违背了该契约, 本票修复。
+- **结构不变式取代调用者纪律**: storage.js 窄端口 credKeyGet/credKeySet 前缀钉死 boxingCredKey.*,
+  非前缀键 reject — 端口在结构上**不可能**写 boxingLayout, 满足「禁止恢复 credentials 对 layout 的写入」。
+- issue AC 双不变量保持: credentials.js 仍零 import（叶子不变量, 经 initCredentialsFacade 注入口 —
+  与 debugErr 票 10 / mirrorWriter 票 60 同款门面模式）; 81R B-6 窄白名单原样保留（收口后休眠,
+  防未来回潮, 不构成削弱）。
+
+## R2-3. 变更
+
+| 文件 | 变更 |
+|---|---|
+| ntp/storage.js | +credKeyGet/credKeySet 窄端口（boxingCredKey.* 前缀钉死, 注释 81R2/ADR-0016） |
+| ntp/credentials.js | 删 __storageGet/__storageSet 直访探测对（B-6×4 源头消失）; getPerInstallKeyB64 改走注入 credKeyStore; 无 store 时会话密钥回退保 file:// 车道; perInstallKeyInfo 增 injected 字段 |
+| ntp/ntp.js | storage.js import +credKeyGet/credKeySet; initCredentialsFacade 注入 { get: credKeyGet, set: credKeySet } |
+| test/tests/boxing-cred-encrypt.spec.ts | 持久化测试防竞态（poll injected===true 再 probe — 票 01 就绪信号教训）+ 双车道断言（扩展读 chrome.storage.local / file:// 读 41R mock 'bxstore:' 前缀）; +源码契约测试（端口前缀钉死 + credentials.js 可执行行零直访, 与 gate2 同逐行跳注释语义） |
+| scripts/import-graph-guard.mjs | 本票无改动（81R 白名单保留休眠） |
+
+file:// 车道语义变化（如实记录）: 注入来自 ntp.js mock layoutStorage → PIK 在 file:// 下也从会话态
+变为落 'bxstore:boxingCredKey.v1'（与 snap.v1 同约定, 41R mock 通用多键持久化的自然结果）。
+
+## R2-4. 验证（全实测, 非静态自证）
+
+| 项 | 结果 |
+|---|---|
+| gate2 精确模拟（writeRe+trio+header+端口前缀+纯度断言） | 全 PASS（0 violations, trio 钉死计数 3 不变） |
+| Node 功能冒烟（injected store 路径） | v3 无 k / roundtrip / PIK 经端口持久化 / 前缀 guard — 全 PASS |
+| node --check credentials/storage/ntp/import-graph-guard | 4/4 exit 0 |
+| node scripts/import-graph-guard.mjs | **0 violations, exit 0** |
+| **npx playwright ... --project=chromium-extension -g "gate 2"** | **2 passed**（gate2+gate2b, 16.2s） |
+| boxing-cred-encrypt spec（8 用例） | **8 passed** 串行（首轮 2 workers 并行 2 失败 = 浏览器启动饥饿 flake, launch 日志挂起签名, 符合票 01 备案; 串行确定性复跑绿） |
+| boxing-memory spec（含 flushCredentials v3 断言） | 6 passed |
+| boxing-webdav spec（cred 关联面） | 7 passed |
+| boxing-sync spec（cred 关联面） | 8 passed |
+
+## R2-5. AC 对照（issues/81R2）
+
+- [x] 已复核 W8-W2-brain-review.md §0 gate2 失败签名与 71-report §6.1 / 81-report 返工节（R2-1）
+- [x] npx playwright test --project=chromium-extension -g "gate 2" 全绿（R2-4, 2 passed）
+- [x] node scripts/import-graph-guard.mjs 仍 exit 0（R2-4）
+- [x] node --check ntp/credentials.js ntp/storage.js exit 0（R2-4, 含 ntp.js 共 4/4）
+- [x] 报告追加本「返工轮次 81R2」节, 81/81R 原记录未覆盖
+
+## R2-6. 门禁口径确认
+
+- 未回滚 PIK（v3 信封/独立键/不进导出 —— 语义与票 81 完全一致, 仅写路径合规化）。
+- gate2 全局口径未削弱（spec 文本零改动; ntp/** 新增直写照旧转红; storage.js 端口是门面内部, 属
+  "All boxingLayout writes flow through this module" 契约的正确形态）。
+- 与 current 决策无冲突, 无 revised, 无新增豁免; 未 tag、未宣称可发行。
+- 归属票 71 的专属验收「data-golden job 与主 lane 同绿」至此 gate2 面解除（71 §6.1 移交项闭环）。
