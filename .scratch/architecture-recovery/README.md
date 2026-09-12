@@ -379,3 +379,17 @@ Frontier: G-B 人工 · G-A land 后定谳 · 51/54 票务关账 · 禁 tag
 违规: V6-59-1 · V6-58-git(update-ref)
 
 Wave6 全票复核完毕。Frontier: G-B 人工 · land+G-A 定谳 · 51/54/59 票务关账 · 禁 tag
+
+
+### Wave 6 整轮收口（2026-09-12）
+
+> 报告: reports/W6-wave6-closeout.md · backlog: docs/history/2026-09-12-wave6-closeout-backlog.md
+> origin/main tip: **7dfd33d** · but status 清洁 · 分支已 land 删净
+
+| 项 | 状态 |
+|---|---|
+| 票 48–59 | 全部 land origin/main |
+| 构建闭环 | build EXIT 0 + 四守卫绿 |
+| 账本 | 10 implemented · 1 deferred(A-009 G-B) · 0 stale |
+| 文档 | CONTEXT 补 3 词条；ADR-0009/0017 对齐 |
+| 发行 | G-A pending CI · G-B 待人工 · **不可 tag** |
