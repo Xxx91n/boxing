@@ -294,7 +294,7 @@
     "message": "Sync & Backup"
   },
   "syncProviderHint": {
-    "message": "Boxing stores data in browser sync storage. Choose your provider."
+    "message": "Boxing stores your layout in this browser’s local storage. Pick a provider to sync across devices."
   },
   "urlOpenModeLabel": {
     "message": "Open bookmarks in",

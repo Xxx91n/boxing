@@ -282,7 +282,7 @@
     "message": "Synchronisation et sauvegarde"
   },
   "syncProviderHint": {
-    "message": "Boxing stocke les données dans le stockage de synchronisation du navigateur. Choisissez votre fournisseur."
+    "message": "Boxing stocke votre disposition dans le stockage local de ce navigateur. Choisissez un fournisseur pour la synchroniser entre appareils."
   },
   "urlOpenModeLabel": {
     "message": "Ouvrir les marque-pages dans",

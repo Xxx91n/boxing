@@ -180,10 +180,13 @@ export function initSyncEngineFacade(deps) {
 
     // BX-DEV-121 (Bug16): apply layout.settings.syncLevel — what to push to remote.
     function buildSyncPayload() {
+      // 66/A-020: every sync/export payload goes through the same sanitize boundary as
+      // persistence, so runtime-only diagnostics (__lastSaveError) and computed data
+      // (groups, ADR-0007 Q1) never leave the browser.
       const lvl = layout.settings.syncLevel || 'full';
-      if (lvl === 'settingsOnly') return Object.assign({}, layout, { boxes: [], connections: [], groups: [] });
-      if (lvl === 'boxesOnly') return Object.assign({}, layout, { settings: null });
-      return layout;
+      if (lvl === 'settingsOnly') return stripGroupsForPersist(Object.assign({}, layout, { boxes: [], connections: [], groups: [] }));
+      if (lvl === 'boxesOnly') return stripGroupsForPersist(Object.assign({}, layout, { settings: null }));
+      return stripGroupsForPersist(layout);
     }
     window.__bxSync = window.__bxSync || {};
     window.__bxSync.buildSyncPayload = buildSyncPayload;
@@ -578,7 +581,7 @@ export function initSyncEngineFacade(deps) {
           return { direction: 'pull', cloudBoxes: layout.boxes.length, localBoxes: layout.boxes.length };
         }
         // Local is newer → upload local over cloud.
-        const body = JSON.stringify(layout, null, 2);
+        const body = JSON.stringify(stripGroupsForPersist(layout), null, 2);
         await webdavPutLocal(fileUrl, user, pass, body);
         layout.settings.lastSyncAt = Date.now();
         setBaselineBoxCount(computeBoxCount(layout).total);
@@ -588,7 +591,7 @@ export function initSyncEngineFacade(deps) {
       }
 
       // Cloud absent or invalid → upload local.
-      const body = JSON.stringify(layout, null, 2);
+      const body = JSON.stringify(stripGroupsForPersist(layout), null, 2);
       await webdavPutLocal(fileUrl, user, pass, body);
       layout.settings.lastSyncAt = Date.now();
       setBaselineBoxCount(computeBoxCount(layout).total);
@@ -643,7 +646,7 @@ export function initSyncEngineFacade(deps) {
 
     function backupToLocal() {
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const blob = new Blob([JSON.stringify(layout, null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(stripGroupsForPersist(layout), null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'boxing-backup-' + ts + '.json';

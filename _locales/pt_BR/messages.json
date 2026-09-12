@@ -282,7 +282,7 @@
     "message": "Sincronização e backup"
   },
   "syncProviderHint": {
-    "message": "Boxing armazena dados no armazenamento de sincronização do navegador. Escolha seu provedor."
+    "message": "O Boxing armazena seu layout no armazenamento local deste navegador. Escolha um provedor para sincronizar entre dispositivos."
   },
   "urlOpenModeLabel": {
     "message": "Abrir favoritos em",

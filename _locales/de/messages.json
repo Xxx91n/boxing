@@ -282,7 +282,7 @@
     "message": "Sync & Backup"
   },
   "syncProviderHint": {
-    "message": "Boxing speichert Daten im Browser-Synchronisationsspeicher. Wählen Sie Ihren Anbieter."
+    "message": "Boxing speichert Ihr Layout im lokalen Speicher dieses Browsers. Wählen Sie einen Anbieter, um geräteübergreifend zu synchronisieren."
   },
   "urlOpenModeLabel": {
     "message": "Lesezeichen öffnen in",

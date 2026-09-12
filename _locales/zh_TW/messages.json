@@ -285,7 +285,7 @@
     "message": "同步與備份"
   },
   "syncProviderHint": {
-    "message": "Boxing 將數據存儲在瀏覽器同步存儲中。選擇您的同步方式。"
+    "message": "Boxing 將你的版面配置儲存在此瀏覽器的本機儲存空間中。選擇一個供應商即可跨裝置同步。"
   },
   "urlOpenModeLabel": {
     "message": "在以下位置打開書籤",

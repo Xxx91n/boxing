@@ -282,7 +282,7 @@
     "message": "동기화 및 백업"
   },
   "syncProviderHint": {
-    "message": "Boxing은 브라우저 동기화 저장소에 데이터를 저장합니다. 제공자를 선택하세요."
+    "message": "Boxing은 레이아웃을 이 브라우저의 로컬 스토리지에 저장합니다. 기기 간 동기화하려면 공급자를 선학하세요."
   },
   "urlOpenModeLabel": {
     "message": "북마크를 열 위치",

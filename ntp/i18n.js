@@ -59,7 +59,7 @@ const I18N_FALLBACK = {
   bookmarkEditTitle: 'Edit Bookmark',
   backupNow: 'Backup Now', backupNowHint: 'Create a timestamped backup of all layout data',
   autoBackupInterval: 'Auto-Backup Interval', syncProvider: 'Sync Provider',
-  syncProviderHint: 'Boxing stores data in browser sync storage. Choose your provider.',
+  syncProviderHint: 'Boxing stores your layout in this browser’s local storage. Pick a provider to sync across devices.',
   squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded',
   smallBoxCountLabel: '$1$ small boxes',
   autoExpand: 'Auto expand', autoExpandHover: 'Hover to expand',

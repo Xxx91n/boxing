@@ -282,7 +282,7 @@
     "message": "Đồng bộ và sao lưu"
   },
   "syncProviderHint": {
-    "message": "Boxing lưu trữ dữ liệu trong bộ nhớ đồng bộ của trình duyệt. Chọn nhà cung cấp của bạn."
+    "message": "Boxing lưu bố cục của bạn trong bộ nhớ cục bộ của trình duyệt này. Chọn một nhà cung cấp để đồng bộ giữa các thiết bị."
   },
   "urlOpenModeLabel": {
     "message": "Mở dấu trang trong",
