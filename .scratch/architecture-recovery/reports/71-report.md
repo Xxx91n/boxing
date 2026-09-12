@@ -26,6 +26,8 @@
 | 插桩 | `ntp/storage.js` 曾加 `T71PROBE` 调试输出取证，**已完全移除**（复核：`T71PROBE` / `T71-TEMP-REVERT` 计数均为 0） |
 | 静态门禁 | import-graph-guard / migration-golden-guard(28/28) / css-balance-guard / waiver-ledger-check 全 exit 0 |
 | 完整性 | `git diff --check` CLEAN；改动文件 LF-only、无 BOM |
+| 稳定性 | 三面 × chromium 3 轮 + firefox 2 轮重复跑，结果逐轮一致（§5.1） |
+| 验证基准 | 稳定性取证时 HEAD = `4ae889c1`（GitButler 工作区提交） |
 
 ---
 
@@ -191,6 +193,19 @@ CLOSURE-SHAPE boxTitle=Envelope Root    // 第一条 setItem 已执行，故 lay
 | waiver 无 N 桶行 | **满足** | `waiver-ledger-check` exit 0：2 行 active、字段完整、未过期、never-quarantine clear（未改台账） |
 | 专属验收：data-golden job 与主 lane 同绿 | **部分** | job 内 gate4 绿；**gate2 因跨票回归未绿**（§6.1） |
 
+### 5.1 稳定性（重复跑取证）
+
+H3 将 gate4 定性为「flaky 升级为稳定红」，故修复必须证明是**确定性绿**而非单次运气。三个 N 面连同其所在 spec 文件整体重复跑：
+
+| 通道 | 轮次 | 结果 |
+|---|---|---|
+| chromium-extension | 3 | 19 passed / 1 failed / 1 skipped，**逐轮完全一致** |
+| firefox-extension | 2 | 19 passed / 1 failed / 1 skipped，**逐轮完全一致** |
+
+「1 failed」恒为 gate2（静态源码扫描，确定性红，见 §6.1），与 N 面无关；「1 skipped」为 gate3（spec 自带 `test.skip`，票 45 接受）。
+
+结论：N1 / N2 / N3-N4 三面在双通道上均为**确定性绿**，无 flaky 残留。
+
 ---
 
 ## 6. 未绿项定责（均非本票引入）
@@ -201,6 +216,22 @@ CLOSURE-SHAPE boxTitle=Envelope Root    // 第一条 setItem 已执行，故 lay
 归属：`git merge-base --is-ancestor f76d9e13 HEAD` = **YES**，该行来自票 81（A-031，per-install key `boxingCredKey.v1`，刻意写在 layout 之外）。已合入 main，故 run C 之后才转红，不在票 70 的快照内。
 **本票不改**：gate2 属 never-quarantine 门禁家族，改它是门禁口径变更；且 81R 曾为同一写法在 `import-graph-guard` B-6 加条件白名单——同一决策应复用。
 建议（交票 81/81R 或新票）：把 45R 的「按键定向」语义从 SW 侧平移到 ntp 侧扫描——仍拦截任何 `boxingLayout` 写入，放行其它键（如 `boxingCredKey.v1`）。
+
+**可直接套用的补丁方案（本票未实施，待归属窗口裁定）** —— 沿用 gate2 已有的「钉死 + 计数」纪律（与 debug passthrough trio 同一手法），因此任何**新增**写点仍会转红：
+
+```ts
+// 与 debugPassthroughRe 并列，放在同一个 lines.forEach 内、writeRe 判定之前
+// Ticket 81 (A-031): 每安装随机密钥 boxingCredKey.v1 刻意写在 layout 之外
+// （永不进导出/备份/快照）；它不是 boxingLayout 写入，不违反 single-write-path 不变式。
+const credKeyWriteRe = /^\s*return api\.storage\.local\.set\(obj\);\s*$/;
+const credHits: string[] = [];
+// 循环内（紧邻 debugPassthroughRe 分支之后）:
+//   if (credKeyWriteRe.test(line)) { credHits.push(trimmed); return; }
+// 循环后，与 trio 同样钉死数量:
+expect(credHits.length, 'credentials.js PIK write site drifted').toBe(1);
+```
+
+如此 gate2 仍拦截 `ntp/**` 下任何新增直接写（含任何 `boxingLayout` 写），仅放行票 81 已具名、且数量被钉死的那一个非布局键写入点。
 
 ### 6.2 star-sync Scenario 1 — N? 遗留项
 
