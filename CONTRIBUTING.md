@@ -2,6 +2,8 @@
 
 Thanks for your interest in contributing! Boxing is a vanilla JS browser extension — no frameworks, no bundlers, no external runtime dependencies.
 
+New here? [docs/START-HERE.md](docs/START-HERE.md) routes users, contributors, and agents to the right entry point.
+
 ## Quick Start
 
 ```bash

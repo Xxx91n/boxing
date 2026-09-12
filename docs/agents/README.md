@@ -6,6 +6,8 @@ These files are not loaded into context by default. They are referenced from
 AGENTS.md `## Agent skills` block or `docs/CONTEXT.md` via context pointers and
 consulted only when a specific workflow branch triggers.
 
+> New to this repository (human or agent)? Start at [docs/START-HERE.md](../START-HERE.md) - it routes users, contributors, and agents to the right entry point.
+
 ## Reader and purpose
 
 **Reader**: AI agents working on this repo (Codex / Claude / equivalent).
