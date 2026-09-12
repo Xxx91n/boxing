@@ -42,6 +42,44 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     expect(await isSafe('not-a-url')).toBe(false);
   });
 
+  test('private-network opt-in: opt-in admits LAN hosts, denies nothing else (A-032)', async ({ page }) => {
+    await bootFresh(page);
+    const isSafe = (u: string, allow?: boolean) =>
+      page.evaluate(({ x, flag }) => (window as any).__boxingIsSafeExtUrl(x, flag), { x: u, flag: allow });
+
+    // Not opted in: identical to the refusal asserted above.
+    expect(await isSafe('https://192.168.1.50/dav/', false)).toBe(false);
+    // Opted in: private / loopback / link-local / LAN names are admitted...
+    expect(await isSafe('https://192.168.1.50/dav/', true)).toBe(true);
+    expect(await isSafe('https://10.0.0.5/dav/', true)).toBe(true);
+    expect(await isSafe('https://localhost:8443/dav/', true)).toBe(true);
+    expect(await isSafe('https://nas.local/dav/', true)).toBe(true);
+    // ...while every non-private rule is untouched.
+    expect(await isSafe('http://192.168.1.50/dav/', true)).toBe(false);
+    expect(await isSafe('https://user:pass@192.168.1.50/dav/', true)).toBe(false);
+    expect(await isSafe('https://192.168.1.50/dav/' + 'a'.repeat(2100), true)).toBe(false);
+    expect(await isSafe('https://app.koofr.net/dav/Koofr/', true)).toBe(true);
+  });
+
+  test('private-network opt-in defaults to off and follows the persisted setting (A-032)', async ({ page }) => {
+    await bootFresh(page);
+
+    // The settings checkbox ships unchecked and the setting is not opted in.
+    expect(await page.evaluate(() => {
+      const el = document.getElementById('webdav-allow-private') as HTMLInputElement | null;
+      return el ? el.checked : null;
+    })).toBe(false);
+    const opted = await page.evaluate(() => (window as any).__boxingDebug.layout.settings.webdavAllowPrivateHost);
+    expect(opted).toBeFalsy();
+
+    // Single-argument contract still denies, exactly as before this ticket.
+    expect(await page.evaluate(() => (window as any).__boxingIsSafeExtUrl('https://192.168.1.50/dav/'))).toBe(false);
+
+    // Flipping the setting the way the checkbox does makes the guard follow it.
+    await page.evaluate(() => { (window as any).__boxingDebug.layout.settings.webdavAllowPrivateHost = true; });
+    expect(await page.evaluate(() => (window as any).__boxingIsSafeExtUrl('https://192.168.1.50/dav/'))).toBe(true);
+  });
+
   test('testWebDAV guard rejects private hosts without emitting a network request', async ({ page }) => {
     await bootFresh(page);
     const requested: string[] = [];

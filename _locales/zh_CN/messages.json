@@ -482,6 +482,12 @@
   "webdavPass": {
     "message": "密码"
   },
+  "webdavAllowPrivateHost": {
+    "message": "允许私有/本地网络主机（高级）"
+  },
+  "webdavAllowPrivateHostHint": {
+    "message": "仅在你自己局域网或本机上自建的 WebDAV 服务时启用。启用后 Boxing 会从你的网络内部向你填写的地址发起请求——包括路由器管理页、NAS 管理界面以及 169.254.169.254 等云元数据端点——填错的网址将不再被拒绝。"
+  },
   "gistToken": {
     "message": "GitHub 令牌"
   },

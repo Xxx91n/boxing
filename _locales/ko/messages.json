@@ -479,6 +479,12 @@
   "webdavPass": {
     "message": "비밀번호"
   },
+  "webdavAllowPrivateHost": {
+    "message": "사설/로컬 네트워크 호스트 허용 (고급)"
+  },
+  "webdavAllowPrivateHostHint": {
+    "message": "직접 운영하는 LAN 또는 개인 컴퓨터의 WebDAV 서버에서만 사용하세요. 이 옵션을 켜면 Boxing이 네트워크 내부에서 입력한 주소로 요청을 보냅니다(공유기 관리 페이지, NAS 관리 화면, 169.254.169.254 같은 클라우드 메타데이터 엔드포인트 포함). 따라서 잘못 입력한 URL도 더 이상 거부되지 않습니다."
+  },
   "gistToken": {
     "message": "GitHub 토큰"
   },

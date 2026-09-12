@@ -15,14 +15,14 @@ import { renderCanvas } from './render.js';
 import { encryptCredential, decryptCredential } from './credentials.js';
 
 let debug, debugErr, debugWarn;
-let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn;
+let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput;
 
 // Ticket 10: inject ntp.js-scope deps (loggers + sync config DOM refs — the refs are declared
 // once in ntp.js; duplicate getElementById here would fork their null-ness).
 export function initSyncEngineFacade(deps) {
   debug = deps.debug; debugErr = deps.debugErr; debugWarn = deps.debugWarn;
   syncProviderSelect = deps.syncProviderSelect; webdavConfig = deps.webdavConfig; gistConfig = deps.gistConfig;
-  webdavUrlInput = deps.webdavUrlInput; webdavUserInput = deps.webdavUserInput; webdavPassInput = deps.webdavPassInput;
+  webdavUrlInput = deps.webdavUrlInput; webdavUserInput = deps.webdavUserInput; webdavPassInput = deps.webdavPassInput; webdavAllowPrivateInput = deps.webdavAllowPrivateInput;
   gistTokenInput = deps.gistTokenInput; gistIdInput = deps.gistIdInput;
   syncLevelSelect = deps.syncLevelSelect; syncFilenameInput = deps.syncFilenameInput;
   backupNowBtn = deps.backupNowBtn; remoteBackupZone = deps.remoteBackupZone;
@@ -31,16 +31,23 @@ export function initSyncEngineFacade(deps) {
 
   // BX-AUD-01/03 — front-end WebDAV URL guard (mirrors the stricter guard in background.js).
   // Rejects private / host-only hostnames and oversized URLs so users never silently target a local network.
+  // Ticket 82 (A-032): that private-network refusal is now an explicit opt-in. It stays the default;
+  // only a boolean true relaxes it, and the SSRF rationale is unchanged (see README Privacy).
   const AUD_PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fe80:|fc00:|fd00:)/i;
-  function isSafeExtUrl(urlStr) {
+  function isSafeExtUrl(urlStr, allowPrivateHost) {
+    // Undefined reads the persisted setting, so the single-argument contract used by existing
+    // callers and by Playwright keeps tracking the user's choice. Anything not boolean true denies.
+    if (allowPrivateHost === undefined) allowPrivateHost = layout.settings.webdavAllowPrivateHost === true;
     if (typeof urlStr !== 'string' || urlStr.length > 2048) return false;
     let u;
     try { u = new URL(urlStr); } catch (_) { return false; }
     if (u.protocol !== 'https:') return false;
     if (u.username || u.password) return false;
     const host = (u.hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
-    if (AUD_PRIVATE_HOST_RE.test(host)) return false;
-    if (host.endsWith('.local') || host.endsWith('.internal')) return false;
+    if (allowPrivateHost !== true) {
+      if (AUD_PRIVATE_HOST_RE.test(host)) return false;
+      if (host.endsWith('.local') || host.endsWith('.internal')) return false;
+    }
     return true;
   }
   window.__boxingIsSafeExtUrl = isSafeExtUrl;
@@ -68,6 +75,11 @@ export function initSyncEngineFacade(deps) {
       // Firefox browser.* returns a Promise from sendMessage without callback.
       // Chrome chrome.* supports callback-style. Try Promise first, fall back to callback.
       debug('sendToBackground:', msg.type);
+      // Ticket 82 (A-032): single injection point - every webdav-* message carries the opt-in to the
+      // background guard so both enforcement layers agree. Absent means deny on that side too.
+      if (msg && typeof msg.type === 'string' && msg.type.indexOf('webdav-') === 0) {
+        msg.allowPrivateHost = layout.settings.webdavAllowPrivateHost === true;
+      }
       // Try Promise-based API first (Firefox browser.* native, Chrome MV3 also supports this)
       if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
         return browser.runtime.sendMessage(msg).then(resp => {
@@ -605,7 +617,7 @@ export function initSyncEngineFacade(deps) {
       const target = new URL(urlStr);
       if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
       if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
-      if (AUD_PRIVATE_HOST_RE.test((target.hostname || '').toLowerCase())) throw new Error(i18n('webdavErrBlockedHost'));
+      if (layout.settings.webdavAllowPrivateHost !== true && AUD_PRIVATE_HOST_RE.test((target.hostname || '').toLowerCase())) throw new Error(i18n('webdavErrBlockedHost'));
     }
 
     // Expose sync for debug + tests.
@@ -726,6 +738,8 @@ export function bindSyncBackupUi() {
     if (layout.settings.webdavUrl && webdavUrlInput) webdavUrlInput.value = layout.settings.webdavUrl;
     if (layout.settings.webdavUser && webdavUserInput) webdavUserInput.value = layout.settings.webdavUser;
     if (layout.settings.gistId && gistIdInput) gistIdInput.value = layout.settings.gistId;
+    // Ticket 82 (A-032): private-network opt-in - off unless explicitly persisted as true.
+    if (webdavAllowPrivateInput) webdavAllowPrivateInput.checked = layout.settings.webdavAllowPrivateHost === true;
     // BX-DEV-121 (Bug16): sync level + filename (shared across all remote providers)
     if (syncLevelSelect) syncLevelSelect.value = layout.settings.syncLevel || 'full';
     if (syncFilenameInput) syncFilenameInput.value = layout.settings.syncFileName || '';
@@ -762,6 +776,11 @@ export function bindSyncBackupUi() {
     syncProviderSelect?.addEventListener('change', () => {
       layout.settings.syncProvider = syncProviderSelect.value;
       updateSyncConfigVisibility();
+      saveLayout();
+    });
+
+    webdavAllowPrivateInput?.addEventListener('change', () => {
+      layout.settings.webdavAllowPrivateHost = webdavAllowPrivateInput.checked === true;
       saveLayout();
     });
 

@@ -479,6 +479,12 @@
   "webdavPass": {
     "message": "パスワード"
   },
+  "webdavAllowPrivateHost": {
+    "message": "プライベート/ローカルネットワークのホストを許可（詳細設定）"
+  },
+  "webdavAllowPrivateHostHint": {
+    "message": "自分の LAN やマシン上で運用している WebDAV サーバーに対してのみ有効にしてください。有効にすると、Boxing はネットワーク内部から入力したアドレスへリクエストを送ります（ルーター管理画面、NAS の管理画面、169.254.169.254 などのクラウド メタデータ エンドポイントを含む）。そのため、入力を誤った URL も拒否されなくなります。"
+  },
   "gistToken": {
     "message": "GitHub トークン"
   },

@@ -330,6 +330,11 @@
                 <input id="webdav-user" class="modal__input" type="text" placeholder="" spellcheck="false">
                 <label class="modal__label" for="webdav-pass" data-i18n="webdavPass">Password</label>
                 <input id="webdav-pass" class="modal__input" type="password" placeholder="" spellcheck="false">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="webdav-allow-private">
+                  <span class="checkbox-label__text" data-i18n="webdavAllowPrivateHost">Allow private / local network hosts (advanced)</span>
+                </label>
+                <p class="modal__hint" data-i18n="webdavAllowPrivateHostHint">Only enable this for a WebDAV server you own on your own LAN or machine. It lets Boxing send requests from inside your network to the address you enter - router admin pages, NAS interfaces and cloud metadata endpoints such as 169.254.169.254 included - so a mistyped URL is no longer refused.</p>
                 <button id="webdav-test-btn" tabindex="-1" class="btn" data-i18n="webdavTestBtn" style="margin-top:8px;">Test Connection</button>
               </div>
               <!-- GitHub Gist config — provider group; sync-engine.js toggles #gist-config[hidden] -->

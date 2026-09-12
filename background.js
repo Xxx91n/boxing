@@ -70,20 +70,24 @@ try {
   // BX-AUD-01: refuse hostnames that resolve to private / loopback / link-local addresses.
   const BG_PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fe80:|fc00:|fd00:)/i;
 
-  function isSafeWebDAVUrl(urlStr) {
+  // Ticket 82 (A-032): the private-network refusal is an explicit opt-in, forwarded by the NTP caller
+  // on every webdav-* message. Absent or non-boolean means deny - unchanged for anything not opted in.
+  function isSafeWebDAVUrl(urlStr, allowPrivateHost) {
     if (typeof urlStr !== 'string' || urlStr.length > BG_MAX_URL) return false;
     let u;
     try { u = new URL(urlStr); } catch (_) { return false; }
     if (u.protocol !== 'https:') return false;          // BX-AUD-01: scheme lock
     if (u.username || u.password) return false;           // no embedded credentials
     const host = (u.hostname || '').toLowerCase();
-    if (BG_PRIVATE_HOST_RE.test(host)) return false;     // BX-AUD-01: private / host-only literals
-    if (host.endsWith('.local') || host.endsWith('.internal')) return false;
+    if (allowPrivateHost !== true) {
+      if (BG_PRIVATE_HOST_RE.test(host)) return false;     // BX-AUD-01: private / host-only literals
+      if (host.endsWith('.local') || host.endsWith('.internal')) return false;
+    }
     return true;
   }
 
   function guardWebDAVRequest(msg, requireBodyOK) {
-    if (!msg || !isSafeWebDAVUrl(msg.url)) {
+    if (!msg || !isSafeWebDAVUrl(msg.url, msg.allowPrivateHost)) {
       return { success: false, error: 'blocked unsafe WebDAV url', blocked: true };
     }
     if (requireBodyOK) {

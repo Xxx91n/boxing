@@ -479,6 +479,12 @@
   "webdavPass": {
     "message": "Contraseña"
   },
+  "webdavAllowPrivateHost": {
+    "message": "Permitir hosts privados / de red local (avanzado)"
+  },
+  "webdavAllowPrivateHostHint": {
+    "message": "Actívalo solo para un servidor WebDAV tuyo, en tu propia LAN o máquina. Al hacerlo, Boxing enviará peticiones desde el interior de tu red a la dirección que introduzcas —incluidas las páginas de administración del router, las interfaces del NAS y los endpoints de metadatos en la nube como 169.254.169.254—, por lo que una URL mal escrita ya no se rechazará."
+  },
   "gistToken": {
     "message": "Token GitHub"
   },

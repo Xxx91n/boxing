@@ -479,6 +479,12 @@
   "webdavPass": {
     "message": "Mật khẩu"
   },
+  "webdavAllowPrivateHost": {
+    "message": "Cho phép máy chủ mạng riêng tư / cục bộ (nâng cao)"
+  },
+  "webdavAllowPrivateHostHint": {
+    "message": "Chỉ bật cho máy chủ WebDAV do chính bạn sở hữu, trên LAN hoặc máy của bạn. Khi bật, Boxing sẽ gửi yêu cầu từ bên trong mạng của bạn tới địa chỉ bạn nhập — bao gồm trang quản trị router, giao diện NAS và các endpoint metadata đám mây như 169.254.169.254 — vì vậy một URL nhập sai sẽ không còn bị từ chối."
+  },
   "gistToken": {
     "message": "Token GitHub"
   },

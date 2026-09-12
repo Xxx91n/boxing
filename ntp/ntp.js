@@ -438,6 +438,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     const remoteBackupZone = document.getElementById('remote-backup-zone');
     const lastBackupTimeVal = document.getElementById('last-backup-time-value');
     const webdavTestBtn = document.getElementById('webdav-test-btn');
+    const webdavAllowPrivateInput = document.getElementById('webdav-allow-private');
   // Ticket 08: inject ntp.js-scope deps into the persistence module (./persist.js)
   // Ticket 60 (Wave7 zero-flash): inject the paint-critical mirror writer — writes the
   // boot mirror (theme/darkMode/fontSize) to localStorage so the next new tab's classic
@@ -476,7 +477,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   // Ticket 10 (architecture-recovery): inject ntp.js-scope deps into the four settings/init-domain
   // modules (ADR-0016). Must stay after every DOM const it reads (ticket-08 TDZ lesson).
   initCredentialsFacade({ debugErr });
-  initSyncEngineFacade({ debug, debugErr, debugWarn, syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn });
+  initSyncEngineFacade({ debug, debugErr, debugWarn, syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput });
   initSettingsUiFacade({ debug, debugErr, debugWarn, updateCaption, settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect });
   initOnboardingFacade({ debug, debugErr, updateCaption, langSelect });
 
