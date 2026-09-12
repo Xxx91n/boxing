@@ -1,6 +1,6 @@
 # Boxing Privacy Policy
 
-**Last updated:** 2026-08-08  
+**Last updated:** 2026-09-12  
 **Effective date:** 2026-08-08
 
 ## Introduction
@@ -18,7 +18,7 @@ The full source code is available at [https://github.com/Xxx91n/boxing](https://
 - Bookmark metadata (titles, URLs, descriptions, tags, custom icons)
 - Canvas layout data (box positions, sizes, connections, parent-child relationships)
 - Extension settings (theme, font size, zoom level, open-in-tab preference, connection delete action)
-- Encrypted WebDAV credentials (stored in `chrome.storage.local`, encrypted with a user-provided password)
+- WebDAV credentials and GitHub tokens, wrapped in an obfuscation envelope at rest (see Data Security)
 
 **Data we do NOT collect:**
 
@@ -47,16 +47,16 @@ All primary data is stored locally using `chrome.storage.local`, which persists 
 
 Boxing supports **optional** cloud backup via WebDAV or GitHub Gist. These features are **disabled by default** and require explicit user configuration:
 
-- **WebDAV backup:** You provide a WebDAV server URL, username, and password. Your data is transmitted directly from your browser to your WebDAV server. We never proxy or intercept this connection. Credentials are encrypted with a user-provided password and stored locally.
+- **WebDAV backup:** You provide a WebDAV server URL, username, and password. Your data is transmitted directly from your browser to your WebDAV server. We never proxy or intercept this connection. Credentials are stored locally in an obfuscated envelope, not under a user-supplied key (see Data Security). Use a dedicated WebDAV account or a narrowly scoped token.
 
-- **GitHub Gist backup:** You provide a GitHub personal access token. Your data is pushed directly to GitHub Gist API from your browser. We never see or store your token beyond local encrypted storage.
+- **GitHub Gist backup:** You provide a GitHub personal access token. Your data is pushed directly to GitHub Gist API from your browser. We never see your token; it is stored locally in an obfuscated envelope.
 
 In both cases, the data path is **directly from your browser to your chosen cloud provider**. Boxing's developer has no access to your data, your credentials, or your cloud accounts.
 
 ## Data Security
 
 - All local storage is scoped to the extension via `chrome.storage.local` — other extensions cannot access it.
-- WebDAV credentials are encrypted with AES-GCM using a user-provided password before storage.
+- **Credential storage is obfuscation, not user-keyed encryption:** WebDAV passwords and GitHub tokens are wrapped with AES-GCM using a key derived (PBKDF2) from a secret that ships inside the extension plus a per-record salt, so they are not readable at a glance in `chrome.storage.local`, in JSON exports, or in WebDAV/Gist backups. It does **not** protect them from anyone who can read your browser profile or who has a copy of the extension. There is no passphrase prompt and no user-supplied key material; do not rely on this as strong encryption.
 - All network connections use HTTPS (enforced by URL validation — HTTP is rejected).
 - No third-party libraries are loaded at runtime. The extension is 100% vanilla JavaScript with no external dependencies loaded from CDNs or remote servers.
 - The source code is publicly auditable.

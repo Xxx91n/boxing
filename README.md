@@ -24,12 +24,12 @@
 </p>
 
 <p>
-  <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="Install — ready-to-use packages on GitHub Releases" src="https://img.shields.io/badge/Install-GitHub_Releases-brightgreen?style=for-the-badge&logo=github" /></a>
+  <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="Latest published release: v2026.9.11 on GitHub Releases" src="https://img.shields.io/badge/Latest_published-v2026.9.11-brightgreen?style=for-the-badge&logo=github" /></a>
   <a href="docs/publishing-guide.md"><img alt="Edge Add-ons — rollout in progress" src="https://img.shields.io/badge/Edge_Add--ons-Coming_Soon-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
 </p>
 
 <p>
-  <a href="docs/publishing-guide.md"><img alt="Extension version 2026.9.12" src="https://img.shields.io/badge/extension_version-2026.9.12-orange?style=flat-square" /></a>
+  <a href="https://github.com/Xxx91n/boxing/releases/tag/v2026.9.11"><img alt="Latest published release: v2026.9.11 (tag; code baseline at v2026.9.11 — newer builds ship only after the G-A/G-B/G-C release gate)" src="https://img.shields.io/badge/latest_published_release-v2026.9.11-orange?style=flat-square" /></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Xxx91n/boxing?style=flat-square" /></a>
   <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange?style=flat-square" />
   <img alt="Languages" src="https://img.shields.io/badge/i18n-14%20languages-brightgreen?style=flat-square" />
@@ -151,6 +151,7 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 - All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
 - Optional WebDAV / GitHub Gist backup is the only outbound network usage
 - No analytics, no tracking, no third-party services
+- **Credential storage is obfuscation, not user-keyed encryption:** WebDAV passwords and GitHub tokens are wrapped in an AES-GCM envelope whose key is derived from a secret that ships inside the extension. They are therefore not readable at a glance in `chrome.storage.local`, in JSON exports, or in WebDAV/Gist backups — but they are recoverable by anyone who can read your browser profile or who has a copy of the extension. Boxing never asks for a passphrase and holds no user-supplied key.
 - Full privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md)
 
 ## Development
