@@ -28,3 +28,34 @@
 - A-009: **deferred** — G-B 本体待用户实机（交付物已齐 evidence/49）
 - 无 stale
 - 实现摘要已沉淀 docs/CONTEXT.md + ADR-0009 票51修订 + ADR-0017 票56 RA 具名；本账本随 .scratch 归档
+
+## Wave7 → Tickets（A-012.. · 2026-09-12）
+
+> 源: `.scratch/wave7-flash-grill/decision-ledger.md` D-001..D-004 + destination-reconciliation + plan W7-T*
+> 每条: ID / 问题描述原文摘录 / 规范化需求 / 显式约束 / 状态
+
+| ID | 问题描述（原文摘录） | 规范化需求 | 显式约束 | 状态 |
+|---|---|---|---|---|
+| A-012 | D-001 本轮范围 All：闪现/发行收口/锐评 | 三轨全收；主序闪现→锐评→发行票务 | G-B 前禁 tag/禁宣称；不解耦记忆 | implemented |
+| A-013 | D-002 零闪现验收 A+B 合成 | 主题层首帧记忆态 + 内容层禁错误盒子 | 禁 C 双真源；禁 inline；镜像不进迁移/同步/导出 | implemented |
+| A-014 | D-003 拆票 A+2 | 一张 P1 票；不改 ADR-0017；并行 G-B | 禁 G-D；闪现不进 G1–G6 | implemented |
+| A-015 | D-004#1 README vs ADR-0017 | 收窄声明到 Latest published v2026.9.11 | 禁写 main/2026.9.12 ready-to-use | implemented |
+| A-016 | D-004#2 Git 历史/平行宇宙 | 无正式声明则条件立票；有则台账 | 整理不预判是否已有声明 | implemented |
+| A-017 | D-004#3 CRED_APP_SECRET | 诚实标注或 per-install key 二选一 | 禁 passphrase 真加密重设计 | implemented |
+| A-018 | D-004#4 WebDAV 私网未文档化 | README Privacy 写明封锁 | opt-in 后置 | implemented |
+| A-019 | D-004#5 版本串 v3.7.8/v3.1 | 统一用户可见版本串 | — | implemented |
+| A-020 | D-004#8 债务标记合并 | footer add / syncProviderHint / __lastSaveError 一张票 | 不清理 i18n 重复键 | implemented |
+| A-021 | D-004#6 性能债 | 台账/backlog | 不立实施票 | deferred |
+| A-022 | D-004#7 popup/ 零改动 | 不立票 | 非缺陷 | deferred |
+| A-023 | D-004#9 .scratch/README 工作日志 | 台账；发行后 docs 里程碑 | 本波不搬家 | deferred |
+| A-024 | D-004#10 V6 违规仅归档 | 台账+月复核 | 禁止变发行门禁 | deferred |
+
+#
+### Wave7 结算（2026-09-12 收口审计）
+
+- A-012..A-020: **implemented**（票 60–66 源码/文档落地；W1/W2 首脑复核 + 收口硬验收 build/guards/spot FAIL_COUNT=0）
+- A-021..A-024: **deferred**（按 D-004 不立实施票 / 禁升门禁）
+- stale: 0
+- 实现摘要已沉淀 docs/CONTEXT.md（zero-flash / paint-critical boot mirror；CRED 混淆诚实；WebDAV 私网文档化要点）
+- 报告: reports/60–66-report.md · W1/W2-brain-review.md · W7-closeout-audit.md
+- PV: 61/63/64/66 issue AC 未勾；60 慢放人工证据待补 — 不追认，见 backlog

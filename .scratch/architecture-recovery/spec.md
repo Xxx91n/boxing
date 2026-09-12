@@ -204,3 +204,50 @@ Wave5 底座（snap.v1 / COW / fork / golden / ADR-0017）已 land，但仍：
 
 - 源账本 D-xxx 与 A-xxx 1:1；实现票 AC 以 local issue 为准。
 - 通用调研（atomcode+ADR+CONTEXT+工业对标）写在各 handoff，启动器只引用路径。
+
+## Wave7 — 零闪现 + 发行卫生（2026-09-12）
+
+**覆盖 A-xxx:** A-012, A-013, A-014, A-015, A-016, A-017, A-018, A-019, A-020（deferred 见 Out of Scope: A-021..A-024）
+
+### Problem Statement
+
+新开标签页会闪现默认主题/错误内容（Firefox 更明显）；README 宣称 ready-to-use 与 ADR-0017 门禁矛盾；CRED 硬编码密钥与用户可见版本串/债务标记不诚实或不一致。
+
+### Solution
+
+一张 P1 修零闪现（主题首帧 + 内容遮罩）；并行发行卫生票收窄 README、诚实标注 CRED、文档化 WebDAV 限制、统一版本串、合并用户可见债务清理；G-B 仍人工并行，不扩门禁。
+
+### User Stories
+
+- 作为用户，新开标签时第一帧已是我的主题与记忆布局语义，无 beige/亮暗跳变/错误盒子。
+- 作为用户/审核方，README 只陈述已发布事实，不宣称未过门禁的构建可安装。
+- 作为隐私读者，凭据保护级别与 WebDAV 私网限制被如实说明。
+
+### Implementation Decisions
+
+| 项 | 决定 | 源 |
+|---|---|---|
+| 零闪现 | 一张票；paint-critical 镜像 + classic boot；内容遮罩；boxingLayout 仍为真源 | A-013/A-014 |
+| 门禁 | 不改 ADR-0017 合取；闪现不进 G1–G6；不设 G-D | A-014 |
+| README | Latest published=v2026.9.11；候选 draft/pre-release | A-015 |
+| CRED | 诚实标注或 per-install key；不做 passphrase 重设计 | A-017 |
+| WebDAV | 仅文档化；opt-in 后置 | A-018 |
+| 债务 | 一张合并卫生票；i18n 重复键不动 | A-020 |
+
+### Testing Decisions
+
+- 零闪现: Chrome+Firefox 新开标签慢放人工 AC（票内）；不勾 G-B 六项。
+- 文档票: 文案 diff + 门禁一致性自检（不得出现可发行宣称）。
+- CRED: 若改 key 策略需单测/手工备份还原；仅改标注则文案审查。
+
+### Out of Scope
+
+- A-021 性能债实施；A-022 popup 改造；A-023 .scratch 搬家；A-024 V6 升为门禁。
+- G-B 实机本体与 #9 close（用户并行）。
+- 源码实施不在 spec 撰写窗口。
+
+### Further Notes
+
+- 权威 current: wave7-flash-grill/decision-ledger.md D-001..D-004。
+- 对账: wave7-flash-grill/destination-reconciliation.md。
+- CONTEXT 词条已增补 zero-flash / paint-critical boot mirror。

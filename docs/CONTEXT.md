@@ -38,6 +38,9 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **Create render-before-persist** — create entry points mutate then render then `void saveLayout()`; never await storage before paint (ticket 09).
 - **urlOpenMode** — settings default `sameTab`; explicit stored `newTab` preserved; missing key migrates via defaultLayout spread (ticket 11).
 - **favicon single-flight + SWR** — `inflight` Map host→Promise dedupes concurrent probes; hydrate keeps stale URLs paintable until SWR ceiling then background-refreshes once (ticket 12).
+- **zero-flash new tab** — First visible frame of a new tab must already match remembered theme/dark mode; layout content must not show a wrong/default box or viewport before restore completes (Wave7 D-002).
+- **paint-critical boot mirror** — Sync-readable first-paint cache of already-persisted paint-critical settings (theme, darkMode). Authoritative layout stays in storage-backed layout; mirror is not a second layout source and is not part of migrate/sync/export (Wave7 D-002).
+- **Wave7 settle (2026-09-12)** — Tickets 60–66 landed: zero-flash boot (boot-theme.js + boxingBootTheme.v1), README claims narrowed to Latest published v2026.9.11, credentials honestly labeled obfuscation-grade (CRED_OBFUSCATION_SECRET; literal unchanged), WebDAV private-host block documented in README Privacy, user-visible version strings read manifest calver, runtime-only settings stripped on persist. Release gate unchanged (G-A∧G-B∧G-C).
 
 ### Mutation API (ADR-0007)
 - **commit(op, payload, opts)** — single mutation entry (tldraw Store pattern). Ops: `addConn`, `removeConn`, `toggleStar`, `deleteLargeBox`, `deleteSmallBox`, `applyExternal`. Owns tombstones, DSU dirty, viewState clear, optional save/render.
