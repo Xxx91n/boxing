@@ -1,0 +1,16 @@
+{
+  "keys": [
+    "boxingLayout"
+  ],
+  "snapIndex": null,
+  "layoutType": "object",
+  "layoutKeys": [
+    "_meta",
+    "boxes",
+    "connections",
+    "nextLargeIndex",
+    "schemaVersion",
+    "settings",
+    "version"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "version": 3.5,
+  "schemaVersion": 1,
+  "boxes": [
+    {
+      "children": [],
+      "height": 220,
+      "id": "large-mtyjd4t7-8b60ba40-1",
+      "nextSmallIndex": 1,
+      "pinned": false,
+      "title": "GB-DRYRUN-ALPHA",
+      "type": "large",
+      "width": 320,
+      "x": 120,
+      "y": 90
+    }
+  ],
+  "nextLargeIndex": 2,
+  "connections": [],
+  "groups": [],
+  "settings": {
+    "selectedLanguage": "zh_CN",
+    "rememberLastPos": true,
+    "zoomLevel": 1,
+    "darkMode": false,
+    "fontSize": 14,
+    "squareCorners": false,
+    "autoBackupInterval": 86400,
+    "headerPinned": true,
+    "syncProvider": "local",
+    "urlOpenMode": "sameTab",
+    "connDeleteAction": "alt+click",
+    "theme": "beige",
+    "onboardingCompleted": true
+  },
+  "_meta": {
+    "__groupsMigrated": true,
+    "deleted": {},
+    "revision": 3,
+    "updatedAt": 1789226673996,
+    "writerId": "5127f8f1-123e-406a-b793-e5908b60ba40"
+  }
+}

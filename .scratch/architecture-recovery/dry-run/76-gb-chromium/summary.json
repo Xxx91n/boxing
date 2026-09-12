@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-09-12T15:25:09.856Z",
+  "artifact": "D:/rel-2026.9.12/chrome",
+  "lane": "chromium (real unpacked product)",
+  "isGbEvidence": false,
+  "note": "Dry-run rehearsal only. NOT G-B evidence - see scripts/gb-dryrun-chrome.mjs header.",
+  "outOfScope": [
+    "G3 real backup import (needs a backup produced by the previous release)",
+    "G4 upgrade install from v2026.9.11 + pre-update snapshot",
+    "G6 named human sign-off",
+    "Firefox lane (Playwright cannot load an unpacked extension without signing)",
+    "service-worker console (no Playwright event surface)"
+  ],
+  "results": [
+    {
+      "id": "P0-manifest",
+      "ok": true,
+      "detail": "version=2026.9.12 manifest_version=3"
+    },
+    {
+      "id": "P0-zero-flash-in-package",
+      "ok": true,
+      "detail": "ntp/boot-theme.js present in the unpacked candidate"
+    },
+    {
+      "id": "P0-not-repo-root",
+      "ok": true,
+      "detail": "target is an unpacked artifact, not the repo working tree"
+    },
+    {
+      "id": "P1-extension-origin",
+      "ok": true,
+      "detail": "protocol=chrome-extension:"
+    },
+    {
+      "id": "P1-facade",
+      "ok": true,
+      "detail": "window.__boxingDebug reachable"
+    },
+    {
+      "id": "G1a-onboarding-shown",
+      "ok": true,
+      "detail": "shown=true steps=3"
+    },
+    {
+      "id": "G1b-onboarding-completable",
+      "ok": true,
+      "detail": "Next clicked 3 time(s), dismissed=true"
+    },
+    {
+      "id": "G1c-main-surface-clickable",
+      "ok": true,
+      "detail": "#add-box click: 0 -> 1 boxes"
+    },
+    {
+      "id": "G2-persist-across-reload",
+      "ok": true,
+      "detail": "seeded={\"boxes\":1,\"title\":\"GB-DRYRUN-ALPHA\",\"x\":120,\"y\":90} reread={\"boxes\":1,\"title\":\"GB-DRYRUN-ALPHA\",\"x\":120,\"y\":90}"
+    },
+    {
+      "id": "P2-real-storage",
+      "ok": true,
+      "detail": "1 storage keys"
+    },
+    {
+      "id": "G5b-v2-single-trip",
+      "ok": true,
+      "detail": "children=1 bookmarks=1 titles=[\"Legacy\"] corrupt=[] OBSERVATION schemaVersion=undefined connectionsKey=true"
+    },
+    {
+      "id": "G1a-console-clean",
+      "ok": true,
+      "detail": "0 page error(s)"
+    }
+  ],
+  "verdict": "DRY-RUN GREEN (not a G-B claim)"
+}

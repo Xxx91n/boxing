@@ -90,3 +90,65 @@ WORKFLOW §4.2：`but diff` 确认改动 → `but commit -b ticket-76-gb-manual-
 1. 在真 Chrome 与 Firefox 各开独立 profile，装载 `D:/rel-2026.9.12/{chrome,firefox}`，按 `gb-execution-card.md` 走 G1–G6。
 2. 证据按 `<G项>-<摘要>.<png|txt|json>` 落在对应浏览器目录，并回填 `checklist-2026.9.12-{chrome,firefox}.md` 的证据行。
 3. 回传后由复核人按 `writeback-draft.md` 逐条验证，再走票 78 更新/关闭 #9。
+
+---
+
+## 附录 A — Chromium dry-run 预检（本窗口追加 · **非 G-B 证据**）
+
+起因：用户询问「能否等其余票据完成后用 Playwright 完成这些自动化测试」。
+结论：**可机械化预检，不可替代 G-B**。以下为实测依据与交付。
+
+### A.1 能力边界（实测，非推断）
+
+| 判断 | 依据 |
+|---|---|
+| 现有 46 个 spec **不等于** G-B | 全部走 `file://` mock 车道（`pathToFileURL(EXTENSION_PATH/ntp/index.html)`）；`boxing-cred-encrypt.spec.ts:44` 显式处理 file 车道下 storage API 缺失。G-B 铁律要求验收对象为 zip 解包产物 |
+| **Firefox 车道无自动化可能** | `test/playwright.config.ts` 的 `firefox-extension` 项目无 `--load-extension`（Firefox 不支持该参数），且未签名不可装载 → 保持人工 |
+| **Chromium 真实扩展车道可行** | `test/tests/take-store-screenshots.mjs` 已有先例：`launchPersistentContext` + `--load-extension=<unpacked dir>` + `chrome://newtab`（经 `chrome_url_overrides` 解析到 NTP） |
+
+### A.2 交付
+
+`scripts/gb-dryrun-chrome.mjs`：12 项检查的预检脚本。默认指向 `D:/rel-2026.9.12/chrome`，
+支持 `--ext=` / `--out=`；**不触发 build、不签名、不发 release**，只读磁盘上已存在的解包产物。
+产物落在 `.scratch/architecture-recovery/dry-run/76-gb-chromium/`（与 G-B 证据目录物理隔离，含 README 声明「非 G-B 证据」）。
+
+### A.3 实跑结果（2026-09-12，`D:/rel-2026.9.12/chrome`，12/12）
+
+| 检查 | 结果 | 实测值 |
+|---|---|---|
+| P0-manifest | PASS | version=2026.9.12, manifest_version=3 |
+| P0-zero-flash-in-package | PASS | `ntp/boot-theme.js` 在包内 |
+| P0-not-repo-root | PASS | 目标是解包产物，非仓库工作树 |
+| P1-extension-origin | PASS | `protocol=chrome-extension:`（真实扩展源，非 file:// mock） |
+| P1-facade | PASS | `window.__boxingDebug` 可达 |
+| G1a-onboarding-shown | PASS | 引导显示，3 步 |
+| G1b-onboarding-completable | PASS | Next 点 3 次引导关闭 |
+| G1c-main-surface-clickable | PASS | `#add-box`：0 → 1 盒 |
+| G2-persist-across-reload | PASS | 播种 `GB-DRYRUN-ALPHA` (120,90) 重载后一致 |
+| P2-real-storage | PASS | 真实 `chrome.storage.local` 可读 |
+| G5b-v2-single-trip | PASS | children=1 bookmarks=1 保留，corrupt 键 0 |
+| G1a-console-clean | PASS | 0 条 page error |
+
+### A.4 预检发现（登记，本票不修）
+
+1. **v2 迁移分支缺 `schemaVersion`（新）**：`ntp/utils.js:175-192` 的 `version === 2` 分支返回对象不含 `schemaVersion`（`connectionsKey=true` 故仅此一项）。
+   实测**数据无损**（Legacy 盒子 + 1 子项 + 1 书签保留，无误判损坏归档）；下一次加载会由 `version >= 3` 分支回填为 1。
+   属「执行卡 G5b 表述（connections/groups/schemaVersion 补齐）与实现不符」的**一致性缺口**，非数据丢失。建议另票处理；本票不修源码（会令 2026.9.12 产物失效）。
+2. **发行包混入 `.scratch/` 10 项**（见正文「上报大脑」节），本轮未修复。
+
+### A.5 边界声明
+
+dry-run 全绿 **不构成** G-B 通过，不用于放行 tag。G3 / G4 / G6 / 整个 Firefox 车道 / SW console 仍须人工。
+本结果仅对 2026.9.12（run 34689649760）解包产物成立；源码变更后需出新候选包并重跑，届时结果作废、不追认。
+
+
+---
+
+## 用户强制通过（2026-09-12 · D-009 / A-038）
+
+- 原文裁定: 「强制通过76 77不需要产物」
+- 处理: issues/76 全部 AC 置 [x]，Status=done (user-forced, no artifacts)
+- **本记录不是** ADR-0017 意义上的 G-B 人工黄金路径取证完成
+- 勾选单 checklist-2026.9.12-*.md 仍为 0 勾、无证据文件；evidence 目录未填充
+- 对外禁止表述「G-B 证据齐全 / 黄金路径已取证」
+- 78 可推进，关闭评论须写明 G-B 为强制通过、无证据包
