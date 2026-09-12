@@ -150,6 +150,10 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 
 - All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
 - Optional WebDAV / GitHub Gist backup is the only outbound network usage
+- **WebDAV targets must be public HTTPS endpoints.** Private, loopback, and link-local hosts are refused by design: `localhost`, `127.0.0.0/8`, `10.0.0.0/8`, `192.168.0.0/16`, `169.254.0.0/16` (including the cloud metadata address `169.254.169.254`), `172.16.0.0/12`, `*.local`, and `*.internal`.
+  - **Why:** a WebDAV URL you enter is later fetched by the extension background proxy. Allowing private addresses would turn a mistyped or hand-supplied URL into a request originating from inside your network (SSRF-style exposure) — router admin pages, NAS interfaces, cloud metadata endpoints — so the refusal is unconditional rather than a warning.
+  - **Also refused:** non-HTTPS URLs, URLs longer than 2048 characters, and URLs with an embedded username/password. The check runs in the settings UI and again in the background proxy before any request leaves the browser.
+  - **Self-hosted WebDAV on your LAN or on `localhost` does not work today.** There is no setting to relax this; an explicit opt-in is deliberately deferred (out of scope for now).
 - No analytics, no tracking, no third-party services
 - **Credential storage is obfuscation, not user-keyed encryption:** WebDAV passwords and GitHub tokens are wrapped in an AES-GCM envelope whose key is derived from a secret that ships inside the extension. They are therefore not readable at a glance in `chrome.storage.local`, in JSON exports, or in WebDAV/Gist backups — but they are recoverable by anyone who can read your browser profile or who has a copy of the extension. Boxing never asks for a passphrase and holds no user-supplied key.
 - Full privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md)
