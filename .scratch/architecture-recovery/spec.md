@@ -109,3 +109,98 @@
 
 - atomcode 明确信息缺口：AMO 阶段发布一手文档未核验；单键拆小是否降低损坏率属工程共识非实证——落地时以 Sidebery/MetaMask 事故为风险驱动，不以实证为前置。
 - CSS 修复（票 40）与数据容灾可并行，但发行门禁（票 46）两者都要绿。
+
+
+---
+
+# Wave6 Spec — 容灾 M1 产品化 + 门禁收口 + 票务 + urlOpenMode
+
+> 数据源: `.scratch/wave6-dr-grill/decision-ledger.md`（D-001..D-011）→ `decision-ledger.md`（A-001..A-011）
+> 状态: ready-for-agent（local issues）· 日期: 2026-09-12
+> 每条 Implementation Decision **声明覆盖的 A-xxx**
+
+## Problem Statement（Wave6）
+
+Wave5 底座（snap.v1 / COW / fork / golden / ADR-0017）已 land，但仍：
+
+1. 用户**点不到**一键回滚（API 有、设置无入口）；导出不含历史索引语义未定。
+2. main test.yml 仍红（G-A 未满足）；G-B 人工 zip 黄金路径未执行 → **不可发行**。
+3. 事故票 #9 未更新；B15–B23 只在 history 文档未立票。
+4. 用户实机：新装/重置后书签仍开新标签（与 main 源码 sameTab 默认矛盾）。
+
+## Solution（Wave6）
+
+| 轨 | 方案 | 覆盖 A-xxx |
+|---|---|---|
+| 容灾 α | Time Machine 一键回滚 UI + 恢复/覆盖/导入前安全快照 | A-003, A-011 |
+| 容灾 β | 默认导出 layout+meta 索引；可选完整包；覆盖必先本地副本；RPO/RTO 入 ADR | A-003, A-006, A-011 |
+| 门禁 | G-A 修绿优先+受控豁免；G-B 用户人工检查单；#9 绑门禁后关 | A-002, A-007, A-008, A-009 |
+| 设置 | urlOpenMode 新装/重置默认 sameTab（以实机为准） | A-004, A-005 |
+| 票务 | B15–B23 全立；P2 不占带宽 | A-010 |
+
+## User Stories（Wave6 增量）
+
+21. 作为扩展用户，我希望在设置里列出快照并一键回滚到某个时间点。
+22. 作为扩展用户，我希望回滚/覆盖/导入前系统自动再存一份当前状态，误操作可撤销。
+23. 作为扩展用户，我希望默认导出是干净的当前布局+元数据索引，换机可还原现状。
+24. 作为扩展用户，我可选导出「完整容灾包」以带走快照正文。
+25. 作为扩展用户，我希望新装或重置后点书签默认在**当前标签页**打开。
+26. 作为发布者，我希望残红要么修绿要么具名到期豁免，数据完整性测试永不豁免。
+27. 作为发布者，我希望 G-B 由人在真浏览器对 zip 解包产物签字验收。
+28. 作为发布者，我希望 #9 仅在 G-A+G-B 完成后关闭并链证据。
+
+## Implementation Decisions（Wave6）
+
+### W6-D1 回滚 UI + 安全快照（覆盖 A-003, A-011）
+- 设置数据区：快照列表（ts/schemaVersion/size）+ 回滚二次确认。
+- 回滚/恢复/覆盖/导入入口统一先 `saveSnapshot('pre-restore')`。
+- 禁止无安全快照的整替恢复。
+
+### W6-D2 导出混合策略（覆盖 A-003, A-006, A-011）
+- 默认导出信封：主布局 + `meta:{schemaVersion, snapshots:[索引], corrupt:[索引], conflicts:[索引]}`（**不含正文**）。
+- 可选完整容灾包才打包正文；体积预估 + 5MB 处理。
+- 文件名 `boxing-backup-YYYYMMDD.json`。
+- 同步/导入覆盖路径必先本地副本（代码级+测试）。
+- RPO/RTO 写入 ADR-0009 修订 + ADR-0017 交叉引用。
+
+### W6-D3 G-A 治理（覆盖 A-002, A-008）
+- 修绿优先；豁免仅 flaky/环境性且签名匹配。
+- 数据完整性/迁移/回滚类 **never-quarantine**。
+- 豁免字段：用例名、基线 run、签名、归属票、到期；到期未修禁用或删除。
+- 发行前校验台账未过期且签名仍匹配。
+
+### W6-D4 G-B 人工路径（覆盖 A-009, A-007）
+- ready-for-human：用户在真 Chrome+Firefox 对发行 zip 解包产物按 WORKFLOW §4.4 勾选。
+- 含 pre-update 快照与回滚演练；禁止纯自动化宣称完成。
+- 完成前只更新 #9；完成后 close 并链证据。
+
+### W6-D5 urlOpenMode（覆盖 A-004, A-005）
+- 验收以实机为准：新装或重置后点击书签=当前标签导航。
+- 根因面：旧包、重置未清 settings、首帧 DOM newTab、残留写路径。
+- 不接受仅修下拉显示关票。
+
+### W6-D6 票务卫生（覆盖 A-010, A-001）
+- 必立：48 GA · 49 GB · 50 DR-α · 51 DR-β · 52 URLOPEN · 53 B17 · 54 B20。
+- P2 立票可见：55 B18 · 56 B19 · 57 B21 · 58 B22 · 59 B23。
+- 红线：三门禁齐备前禁 tag（A-002）。
+
+## Testing Decisions（Wave6）
+
+- 优先既有 seam：`__boxingDebug` + storage facade + Playwright chromium-extension。
+- α：回滚往返、安全快照计数（seed→reload 须中和 unload 写回）。
+- β：导出信封不含正文、完整包含正文、导入还原、覆盖前副本。
+- urlOpenMode：空 storage 新装路径点书签=当前标签；首帧 select 值。
+- G-A：以「改动不存在的分支 CI run」做残红基线对照。
+- 禁 file:// 把 `chrome.storage` 当主 seam。
+
+## Out of Scope（Wave6）
+
+- 冲突解决 UI 实施（A-003 deferred；票 55 可见不实施）
+- OPFS 介质迁移、CRDT、导出加密（A-003 deferred）
+- 书签找回（B24 closed）
+- 商店实际上架操作（A-46-2 wave5 deferred）
+
+## Further Notes
+
+- 源账本 D-xxx 与 A-xxx 1:1；实现票 AC 以 local issue 为准。
+- 通用调研（atomcode+ADR+CONTEXT+工业对标）写在各 handoff，启动器只引用路径。

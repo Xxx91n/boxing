@@ -312,3 +312,70 @@ W4: 46（等 42+45；40/47 已绿）
 - V5-41-2 P0 CM-1 未登记
 - V5-40-1 NOTE 分支已 push origin（待用户裁定）
 - V5-47-1 NOTE 报告未写明「先 merge main 再 dispatch」
+
+
+---
+
+## Wave 6 — 容灾 M1 + 门禁收口 + 票务 + urlOpenMode（2026-09-12）
+
+> Spec: spec.md（Wave6 节）· Ledger: decision-ledger.md（A-001..A-011）· Grill: .scratch/wave6-dr-grill/
+> 波次由 issue 的 **Blocked by** 字段推导，不另造顺序。
+
+| Wave | 票 | 标题 | Blocked by | 可并行 |
+|---|---|---|---|---|
+| W1 | 48 | CI 残红清零（修绿优先+受控豁免） | None | 是（与 49–54） |
+| W1 | 49 | G-B 人工 zip 黄金路径（ready-for-human） | None | 是 |
+| W1 | 50 | Time Machine 一键回滚 UI + 安全快照 | None | 是（与 51） |
+| W1 | 51 | 导出信封/完整包 + 覆盖副本 + RPO/RTO | None | 是（与 50） |
+| W1 | 52 | urlOpenMode 新装/重置默认 sameTab | None | 是 |
+| W1 | 53 | 构建期 CSS 括号 balance 门禁 | None | 是 |
+| W1 | 54 | @data-golden 摘 continue-on-error | None | 是 |
+| P2 | 55 | 冲突解决 UI（实施 deferred） | None | 可见不占带宽 |
+| P2 | 56 | legacyReader 冻结读端 | None | 可见不占带宽 |
+| P2 | 57 | ADR-0017 复核 2026-10-12 | None | 日历 |
+| P2 | 58 | 本地 main ref 对齐 | None | 待授权 |
+| P2 | 59 | sync-engine 空凭据冗余写 | None | 可见不占带宽 |
+
+### 红线（A-002）
+
+- G-A ∧ G-B ∧ G-C 齐备前 **禁止 tag / 禁止宣称可发行**
+- #9 在 G-A+G-B 完成前只更新不关闭（A-007）
+- P2 不阻塞 G-A/G-B
+
+### 启动器
+
+`prompts/48-…` … `prompts/59-…`（每份 ≤60 行，调研细节在 handoff）
+
+### Wave 6 W1 首脑复核状态（2026-09-12）
+
+> 报告: reports/W6-W1-brain-review.md · 守卫实跑 + t50 3 passed + issue 勾选
+
+| 票 | 裁决 | 证据 | 分支 |
+|---|---|---|---|
+| 48 | PASS-with-caveats | waiver-check OK；CI 定谳 pending | ticket/48 |
+| 49 | PASS 交付 / G-B open | evidence/49 齐 | ticket/49 |
+| 50 | PASS | 3 passed (7.1s) | t50 |
+| 51 | PASS-with-caveat | 代码+ADR 在；issue 0/6 | t51 |
+| 52 | PASS-with-violation | 代码在盘；hunk 在 t51 | ticket-52 |
+| 53 | PASS | guard exit 0；--css-only OK | ticket/53 |
+| 54 | PASS-with-caveat | workflow 已改；issue 0/3 | ticket/54 |
+
+违规: V6-51-1 · V6-54-1 · V6-52-1 · V6-54-push · V6-48-ci
+
+Frontier: G-B 人工 · G-A land 后定谳 · 51/54 票务关账 · 禁 tag
+
+### Wave 6 W2 首脑复核状态（2026-09-12）
+
+> 报告: reports/W6-W2-brain-review.md
+
+| 票 | 裁决 | 证据 |
+|---|---|---|
+| 55 | PASS deferred | 冲突锚点在盘；4/4；零代码 |
+| 56 | PASS 设计 | ADR RA-1..6 + CONTEXT；guard 28/28 |
+| 57 | PASS 未到期 | 保持 open；ADR 未改 |
+| 58 | PASS | main=origin/main=ffa55f8 0/0 |
+| 59 | PASS-with-caveat | 守卫在盘；guards 绿；issue 0/4 |
+
+违规: V6-59-1 · V6-58-git(update-ref)
+
+Wave6 全票复核完毕。Frontier: G-B 人工 · land+G-A 定谳 · 51/54/59 票务关账 · 禁 tag
