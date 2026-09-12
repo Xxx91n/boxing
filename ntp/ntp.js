@@ -1,4 +1,11 @@
-/** Boxing — NTP core v3.1: Obsidian-style infinite canvas, manual drag (real-time), title-only edit zone, elastic snap, bookmark CRUD, i18n store, settings modal, debug */
+/** Boxing — NTP core: Obsidian-style infinite canvas, manual drag (real-time), title-only edit zone, elastic snap, bookmark CRUD, i18n store, settings modal, debug */
+
+// Ticket 65 (A-019): this file carries no literal version number. The single user-visible version
+// is the manifest calver (manifest.version_name || manifest.version), stamped by build.mjs and read
+// at runtime through __boxingVersion() below. A hardcoded literal here drifts on the next calver
+// stamp, and users paste these strings into bug reports (ADR-0017 postmortem requires an accurate
+// version). Section comments may still cite historical SemVer markers (v3.6.5+, v3.7.2) as feature
+// provenance; they are not the extension version. History: docs/history/boxing-changelog.md.
 'use strict';
 // Ticket 03 (architecture-recovery): favicon cache block extracted verbatim to ./favicon.js — first ES module of the zero-build pipeline (spec.md).
 import { loadFavicon } from './favicon.js';
@@ -200,6 +207,21 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   function debugWarn(...args) { __logPush(LOG_WARN, args); }
   function debugInfo(...args) { __logPush(LOG_INFO, args); }
 
+  // -- Ticket 65 (A-019): single source of truth for user-visible version strings ---------------
+  // Version is the manifest calver ONLY: manifest.version_name || manifest.version. Alignment
+  // strategy (no fifth version source): manifest.json is the sole writer; build.mjs restamps both
+  // version and version_name from BOXING_BUILD_VERSION (ticket 08); ntp/index.html keeps a static
+  // calver fallback for the file:// mock lane; settings-ui.js overwrites the settings footer from
+  // this same manifest read at runtime. ntp.js is only the fourth reader of that one field.
+  // SEC-01: read-only, defines no globals; the file:// mock lane has no chrome API at all.
+  function __boxingVersion() {
+    try {
+      const m = globalThis.chrome?.runtime?.getManifest?.();
+      const v = m?.version_name || m?.version;
+      return v ? 'Boxing v' + v : 'Boxing v(manifest unavailable)';
+    } catch (e) { /* silent: B-class, diagnostic-only version tag; mock lane has no chrome API */ }
+    return 'Boxing v(manifest unavailable)';
+  }
   // ── Enhanced debug system (v3.6.5+) ─────────────────
   // DEBUG=true enables all logs. Set DEBUG=false for production.
   // URL param ?debug=1 enables debug regardless of DEBUG constant.
@@ -1051,7 +1073,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // empty-canvas judgment inside initOnboarding (ticket-03 lesson).
     try { initOnboarding({ reason: installReason }); } catch (e) { debugErr('onboarding init', e); }
     persistViewState(true);
-    debug('init complete v3.7.8', { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, headerPinned, darkMode: layout.settings.darkMode });
+    debug('init complete ' + __boxingVersion(), { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, headerPinned, darkMode: layout.settings.darkMode });
   }
 
 
