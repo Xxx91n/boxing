@@ -233,6 +233,17 @@ expect(credHits.length, 'credentials.js PIK write site drifted').toBe(1);
 
 如此 gate2 仍拦截 `ntp/**` 下任何新增直接写（含任何 `boxingLayout` 写），仅放行票 81 已具名、且数量被钉死的那一个非布局键写入点。
 
+**裁定（2026-09-12 · 用户）**：维持现状，**交票 81/81R 归属窗口**处理。本票不改门禁文本（never-quarantine 家族，改它即口径变更）、不改他人文件（多窗口规则）。上述补丁随本报告一并移交，可直接套用。
+
+移交摘要（供 81/81R 取用）：
+
+| 项 | 值 |
+|---|---|
+| 失败点 | gate2 `violations` 含 `ntp/credentials.js return api.storage.local.set(obj);` |
+| 引入提交 | `f76d9e13`（票 81，A-031），`git merge-base --is-ancestor f76d9e13 HEAD` = YES |
+| 后果 | data-golden job 逐 run 稳定红，阻塞票 71 专属验收「data-golden job 与主 lane 同绿」 |
+| 复现 | 双通道 `--grep "gate 2"` 同红（chromium 3 轮 + firefox 2 轮一致） |
+
 ### 6.2 star-sync Scenario 1 — N? 遗留项
 
 `starB = null`。**因果对照已证明与本票无关**（还原旧判定式后同样 null）。成因是 harness：`boot(b)` 先 `localStorage.clear()` 再 reload，把 A 的数据抹掉后 B 无从加载；叠加 writerId 守卫（§3.2 第 2 条）后 A 不会重新发布。票 70 §4 已标为「N? 先定 N/B 再修」，维持该定性。
@@ -270,3 +281,9 @@ expect(credHits.length, 'credentials.js PIK write site drifted').toBe(1);
 遵循 WORKFLOW §4.2：`but diff` 确认改动 → `but commit -b <branch> -m "<消息>" <改动id...>`。不 push、不开 PR、不 tag。
 
 **归属说明**：`ntp/ntp.js` 的单行改动在实施期间被 GitButler 工作区快照 `c66d2326` 一并带走（代码在 HEAD 中已存在，可用 `git show HEAD:ntp/ntp.js | grep preserveUpdatedAt` 核验），因此本票提交集中为 `ntp/storage.js` 与 `test/tests/boxing-dr-export-envelope.spec.ts`。
+
+---
+
+## 收口回填（2026-09-12）
+
+gate2 已由 **81R2** 转绿（storage.js credKeyGet/Set 窄端口；credentials 零直写）。本报告 §6.1「gate2 未绿」为当时事实，现已解除。data-golden job 全绿仍以 main CI 复跑为准。

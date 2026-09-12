@@ -17,6 +17,7 @@
 
 ## Notes
 
+- 跨窗口移交：data-golden gate2 因票 81 `credentials.js` 直接写 `boxingCredKey.v1` 而红；2026-09-12 用户裁定交票 81/81R 处理，可直接套用的补丁方案见 `reports/71-report.md` §6.1。本票 4 项 AC 不受影响，均已达。
 - 版本控制遵循 WORKFLOW §4.2
 - 完成定义遵循 handoff 内的完成定义
 - 调研要求见 handoff（atomcode + ADR/CONTEXT + 工业对标），本文件不复述
