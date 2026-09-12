@@ -95,6 +95,18 @@
 | node --check | ntp/ntp.js · ntp/storage.js | exit 0 |
 | import-graph-guard | node scripts/import-graph-guard.mjs | ok，15 modules / 48 edges / 0 violations |
 | git diff --check | — | 干净（无 CRLF 引入） |
+| 全量套件（单浏览器） | 44 spec / 285 用例，--workers=2 | **280 passed / 1 skipped / 4 failed**（4 红全部非本票，见 §4.1） |
+
+### 4.1 全量残红归因（逐条取证，不冒领、不甩锅）
+
+| 残红用例 | solo 复跑 | 归因 | 是否本票 |
+|---|---|---|---|
+| data-golden gate 2 — single write path | **仍红（确定性）** | 扫描报 `ntp/credentials.js return api.storage.local.set(obj);` —— 票 81（per-install key）在 credentials.js 直写 chrome.storage.local 键 boxingCredKey.v1；81R 只放宽了 import-graph-guard 的 B-6，未同步 data-golden gate 2 白名单 | **否**，属 N 桶/票 81R 遗留 |
+| data-golden gate 5 — near-full storage | **绿** | 并发窗口争用 | 否（环境性） |
+| star-sync Scenario 1 | 未 solo（70 已列 N?） | 70 §4 列为「N? star-sync（建议 NQ 评估）」，属票 71 面 | **否**，属 N? 桶/票 71 |
+| webdav — test button shows error message on failure | **绿** | 并发窗口争用 | 否（环境性） |
+
+**结论**: 全量 4 红中 0 条由本票引入；本票 13 面在全量跑中仍全绿。
 
 ---
 
@@ -103,7 +115,7 @@
 - **无冲突、无 revised**。A-025（N/B 禁豁免、禁假绿、不改 ADR-0017、不回滚零闪现）、A-008（修绿优先）、A-037（D-005 调研协议）全部被服从。
 - **未向豁免台账加任何 broken 行**，未动 waiver ledger。
 - 未扩 ADR-0017、未新增 G-D、未 tag、未宣称可发行。
-- 对 70 的一处**措辞修正建议**（非改向）：§4 分桶汇总「B 14」与其逐行清单合计 13 不一致，建议以逐行清单为准或补注第 14 面。
+- 对 70 §4 的一处**计数修正建议**（非改向，附推导）：70 写「N 5（含 N? 1）+ B 14 + B/F 1 = 20」。按其 §2 逐行清单重算：增量 17 面中 B = conn-delete 4 + innerclip 4 + popup-dragselect 1 + search 2 + zoom-arrow 1 = **12**；存量 3 面中 B = Bug5-dark **1**。故 **B = 13**；而 N = 增量 data-golden 1 + dr-export 3 + star-sync 1 = 5，加存量 state-sync 1 → **N = 6**。即正确分解为 **N 6 + B 13 + B/F 1 = 20**，70 把 star-sync/state-sync 的归属与 B 的合计各偏了 1。本票按逐行清单（B 13）验收，不按汇总数字冒领，也不替 N 桶销账。
 
 ---
 
