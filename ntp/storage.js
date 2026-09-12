@@ -633,7 +633,21 @@ export function registerStorageOnChanged() {
     layout._meta = { ...(layout._meta || {}), deleted };
   }
 
-  export async function saveLayout() {
+  // Ticket 71 (Wave8 G-A, N3 dr-export AC4): `saveLayout(opts)` — when
+  // `opts.preserveUpdatedAt` is set, the write keeps the existing `_meta.updatedAt`
+  // instead of re-stamping it to now.
+  //
+  // Why: `_meta.updatedAt` is the DATA timestamp — "when did the user's layout
+  // content last change". Sync-provider configuration (URL / user / encrypted
+  // password) lives in the same `layout.settings` object but is connection config,
+  // not layout data. Persisting it through the ordinary path advanced the data
+  // timestamp, so the next WebDAV sync saw `localUpdatedAt > lastSyncAt`, concluded
+  // "both sides changed since the last sync", and took the concurrent-change
+  // field-merge path even though only the cloud had moved. That is a phantom local
+  // change, and it is what made the cloud-newer pull land as `merge` (AC4).
+  // The revision still advances, so the write propagates and ordering stays
+  // monotonic; only the data timestamp is held back.
+  export async function saveLayout(opts) {
     setStorageWriteChain(storageWriteChain.then(async () => {
       debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
       persistViewState(true);
@@ -652,9 +666,28 @@ export function registerStorageOnChanged() {
           remote = migrateLayout(stored.boxingLayout);
         }
       }
+      // Ticket 71 (Wave8 G-A, N2 state-sync): a save-time merge can bring in boxes this
+      // tab has never rendered — e.g. a box created concurrently in another tab and
+      // discovered here only when saveLayout() merges the stored side. Memory and DOM
+      // must not diverge, so re-render when the merge actually changed the box set.
+      //
+      // Cross-tab updates normally render through applyExternalLayout, but that path is
+      // a no-op when the payload carries this tab's own `_meta.writerId` (merge
+      // overwrites `_meta` wholesale, so a tab can end up holding a peer payload stamped
+      // with its own id) and it never runs at all where storage events do not fire
+      // (file:// lane). Without this render, a converged tab keeps showing a stale
+      // canvas until something else happens to repaint.
+      const boxSigBefore = Array.isArray(layout.boxes) ? layout.boxes.map(b => (b && b.id) || '').join('|') : '';
       setLayout(mergeConcurrentLayout(layout, remote));
+      const boxSigAfter = Array.isArray(layout.boxes) ? layout.boxes.map(b => (b && b.id) || '').join('|') : '';
+      if (boxSigAfter !== boxSigBefore) {
+        try { renderCanvas(); } catch (e) { debugErr('saveLayout: renderCanvas after merge', e); }
+      }
       const revision = Math.max(Number(layout._meta?.revision) || 0, Number(remote?._meta?.revision) || 0) + 1;
-      layout._meta = { ...(layout._meta || {}), revision, updatedAt: Date.now(), writerId };
+      // Ticket 71: hold the data timestamp for config-only writes (see saveLayout docs).
+      const prevUpdatedAt = Number(layout._meta && layout._meta.updatedAt) || 0;
+      const nextUpdatedAt = (opts && opts.preserveUpdatedAt && prevUpdatedAt) ? prevUpdatedAt : Date.now();
+      layout._meta = { ...(layout._meta || {}), revision, updatedAt: nextUpdatedAt, writerId };
       // BX-AUD-04: explicit chrome.storage.local quota failure handling — sets a user-visible flag
       // and writes a emergency localStorage snapshot so data is never silently lost.
       try {
@@ -690,6 +723,59 @@ export function registerStorageOnChanged() {
    }, 120));
  }
 
+  // ── Ticket 71 (Wave8 G-A, N1 data-golden gate4) ───────────────────────────
+  // Canonical, order-insensitive projection of the REPLICATED USER DATA. Used for
+  // one decision only: after adopting an external layout, does this tab still hold
+  // anything of its own that the incoming payload does not already carry?
+  //
+  // The previous decision was `JSON.stringify(layout) !== JSON.stringify(incoming)`,
+  // which compared the whole in-memory object and therefore counted three classes of
+  // NON-user difference as "I have local changes to publish":
+  //   (a) merge bookkeeping — mergeConcurrentLayout always synthesises `_meta.deleted`
+  //       and re-stamps revision/updatedAt/writerId, so `_meta` is structurally
+  //       different from an incoming payload that (legitimately) has no tombstones;
+  //   (b) key order — the merged object is built by spread, so its key order is the
+  //       local object's, not the incoming's;
+  //   (c) computed-only state — `groups` (ADR-0007 Q1: runtime-only, never persisted)
+  //       can never appear in an incoming payload.
+  // Consequence: every tab echoed exactly one extra revision the first time it
+  // received a cross-tab update. That is write amplification, and it is what turned
+  // data-golden gate4 red (revision 3 -> 4 inside a settle window that must be quiet).
+  //
+  // Excluded from the projection because they are bookkeeping, not user data:
+  // `_meta.revision` / `_meta.updatedAt` / `_meta.writerId`. Tombstones
+  // (`_meta.deleted`) ARE kept — a deletion is real user intent, and dropping it from
+  // the comparison would let a resurrecting peer silently win.
+  function stableJson(value) {
+    if (Array.isArray(value)) {
+      // Collections are compared as SETS: two tabs that merged the same entities in a
+      // different order must still be considered converged.
+      const items = value.map(stableJson);
+      items.sort();
+      return '[' + items.join(',') + ']';
+    }
+    if (value && typeof value === 'object') {
+      const keys = Object.keys(value).sort();
+      return '{' + keys.map(k => JSON.stringify(k) + ':' + stableJson(value[k])).join(',') + '}';
+    }
+    return JSON.stringify(value === undefined ? null : value);
+  }
+
+  function canonicalReplicated(src) {
+    let clone;
+    try { clone = JSON.parse(JSON.stringify(src || {})); } catch (_) { return ''; }
+    if (!clone || typeof clone !== 'object') return '';
+    delete clone.groups; // ADR-0007 Q1: computed-only, never part of the replicated state
+    if (clone.settings && typeof clone.settings === 'object') {
+      for (const k of Object.keys(clone.settings)) {
+        if (RUNTIME_ONLY_SETTING_RE.test(k)) delete clone.settings[k]; // 66/A-020 diagnostics
+      }
+    }
+    const deleted = (clone._meta && clone._meta.deleted) || {};
+    delete clone._meta;
+    clone.deleted = deleted;
+    return stableJson(clone);
+  }
 
   export function applyExternalLayout(raw) {
     if (!raw || applyingExternalLayout) return false;
@@ -713,11 +799,10 @@ export function registerStorageOnChanged() {
     // post-guard body is now inside the try/finally.
     try {
     const staleLargeBoxId = currentLargeBoxId;
-    const incomingSerialized = JSON.stringify(incoming);
     setLayout(incomingWins
       ? mergeConcurrentLayout(incoming, layout)
       : mergeConcurrentLayout(layout, incoming));
-    const needsReconcileWrite = JSON.stringify(layout) !== incomingSerialized;
+    const needsReconcileWrite = canonicalReplicated(layout) !== canonicalReplicated(incoming);
     // A5: groupIdx no longer needed; dsuRebuild reads box.isParent
     markDsuDirty(); dsuRebuildFromConnections();
     try { ensureGroups(); } catch (e) { debugErr("ensureGroups conn ops", e); }

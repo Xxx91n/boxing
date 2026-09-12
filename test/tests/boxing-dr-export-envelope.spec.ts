@@ -35,12 +35,21 @@ function bareLayout(title) {
 // file:// mock storage: layoutStorage maps every non-main key through the
 // 'bxstore:' localStorage prefix (ntp.js mock). Index entries are {ts,
 // schemaVersion, size} — NO data field; the body key holds {ts, schemaVersion, data}.
+// Ticket 71 (Wave8 G-A, N4): `ts` MUST ride in on the serialized `seed` argument.
+// Playwright serializes an init script with fn.toString() and evaluates it in the
+// page, so a module-scope constant like SNAP_TS is a FREE VARIABLE there — reading
+// it throws ReferenceError and aborts the remainder of the script. That seeded
+// boxingLayout (first statement) but never the snapshot keys, so AC1/AC2 asserted
+// against an empty snapshot index (0 instead of 1) and could never go green. Same
+// class of bug as the t43R "single goto, no reload" harness discipline: the
+// fixture must survive the serialization boundary.
 const SNAP_TS = 111;
 function seedStorage(localTitle) {
   return (seed) => {
+    const ts = seed.ts;
     localStorage.setItem('boxingLayout', JSON.stringify(seed.layout));
-    localStorage.setItem('bxstore:snap.v1.index', JSON.stringify([{ ts: SNAP_TS, schemaVersion: 3, size: 999 }]));
-    localStorage.setItem('bxstore:snap.v1.' + SNAP_TS, JSON.stringify({ ts: SNAP_TS, schemaVersion: 3, data: seed.snapData }));
+    localStorage.setItem('bxstore:snap.v1.index', JSON.stringify([{ ts, schemaVersion: 3, size: 999 }]));
+    localStorage.setItem('bxstore:snap.v1.' + ts, JSON.stringify({ ts, schemaVersion: 3, data: seed.snapData }));
   };
 }
 
@@ -100,7 +109,7 @@ test.describe('Ticket 51 — export envelope + full DR package + copy-before-ove
     const page = await context.newPage();
     const pageErrors = [];
     page.on('pageerror', err => pageErrors.push(err.message));
-    await page.addInitScript(seedStorage(), { layout: bareLayout('Envelope Root'), snapData: bareLayout('Seeded Snap') });
+    await page.addInitScript(seedStorage(), { layout: bareLayout('Envelope Root'), snapData: bareLayout('Seeded Snap'), ts: SNAP_TS });
     await boot(page);
 
     await armExportCapture(page);
@@ -137,7 +146,7 @@ test.describe('Ticket 51 — export envelope + full DR package + copy-before-ove
     const page = await context.newPage();
     const pageErrors = [];
     page.on('pageerror', err => pageErrors.push(err.message));
-    await page.addInitScript(seedStorage(), { layout: bareLayout('Envelope Root'), snapData: bareLayout('Seeded Snap') });
+    await page.addInitScript(seedStorage(), { layout: bareLayout('Envelope Root'), snapData: bareLayout('Seeded Snap'), ts: SNAP_TS });
     await boot(page);
 
     await armExportCapture(page);
