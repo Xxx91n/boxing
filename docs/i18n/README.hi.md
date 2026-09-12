@@ -65,7 +65,7 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 ## Install
 
 > [!TIP]
-> Ready-to-use packages are published on GitHub Releases: the [latest release](https://github.com/Xxx91n/boxing/releases/latest) ships `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi`, and `SHA256SUMS.txt`. Store listings are still rolling out (Edge in progress, Chrome Web Store deferred, no public AMO listing) — the release `.xpi` is the self-hosted Firefox install path.
+> Latest published release: v2026.9.11 on GitHub Releases: the [latest release](https://github.com/Xxx91n/boxing/releases/latest) ships `boxing-chrome-2026.9.11.zip` / `.crx`, `boxing-firefox-2026.9.11.zip` / `.xpi`, and `SHA256SUMS.txt`. Newer builds (including current `main`) are not released yet — they ship only after passing the release gate (G-A/G-B/G-C, ADR-0017); candidates stay draft/pre-release until then. Store listings are still rolling out (Edge in progress, Chrome Web Store deferred, no public AMO listing) — the release `.xpi` is the self-hosted Firefox install path.
 
 ### Chrome / Edge (Chromium)
 

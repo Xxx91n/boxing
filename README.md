@@ -76,13 +76,16 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 ## Install
 
 > [!IMPORTANT]
-> **Ready-to-use packages are published on GitHub Releases.** The
-> [latest release](https://github.com/Xxx91n/boxing/releases/latest) ships `boxing-chrome-<version>.zip` / `.crx`,
-> `boxing-firefox-<version>.zip` / `.xpi`, and `SHA256SUMS.txt`. Store listings are still
+> **Latest published release: v2026.9.11.** The
+> [latest release](https://github.com/Xxx91n/boxing/releases/latest) (v2026.9.11, published 2026-09-09) ships `boxing-chrome-2026.9.11.zip` / `.crx`,
+> `boxing-firefox-2026.9.11.zip` / `.xpi`, and `SHA256SUMS.txt`. These are the only packages
+> this README describes as published. Newer builds (including current `main`) are
+> **not released yet**: they ship only after passing the release gate (CI green G-A, manual
+> zip golden-path G-B, Pages 200 G-C) per [ADR-0017](docs/adr/0017-release-data-gate.md);
+> candidates stay draft/pre-release until then. Store listings are still
 > rolling out: Edge Add-ons is in progress, Chrome Web Store is deferred until Edge is
 > live, and AMO has no public listing yet (the release `.xpi` is the self-hosted Firefox
-> install path). Rollout and signing workflow: the [publishing guide](docs/publishing-guide.md);
-> store-status evidence: the [publication-surface verification report](.scratch/architecture-recovery/35-authoritative-publication-surface-verification-report.md).
+> install path). Rollout and signing workflow: the [publishing guide](docs/publishing-guide.md).
 
 ### Chrome / Edge (Chromium)
 

@@ -29,6 +29,22 @@ candidates stay draft/pre-release until then. The latest published release remai
 - `.github/scripts/build.mjs`: `BOXING_BUILD_VERSION` now overrides `version_name` alongside
   `version`, closing the stale-calver gap in dist injection (ticket 08).
 
+## [2026.9.11] - 2026-09-09
+
+Latest published release ([tag f2ab29c](https://github.com/Xxx91n/boxing/releases/tag/v2026.9.11),
+dist manifest version 2026.9.11 via `BOXING_BUILD_VERSION` injection, CI run 34384723535).
+
+### Changed
+- manifest `description` shortened to 131 chars to fit the Edge/Chrome 132-character store limit.
+- Brand icons regenerated from the docs/brand logo (white-body `logo-light-theme`) before packaging;
+  the icon step moved into the build pipeline with a setup-python step for macOS (PEP 668).
+- Store listing pack: field-ready AMO + Edge listings (EN/zh-CN) added under docs/store-assets
+  (store-listings-2026-09.md).
+
+### Fixed
+- CI: `amo_sign` build input to skip unlisted signing for versions reserved for the AMO
+  listed-channel upload.
+
 ## [2026.9.9] - 2026-09-09
 
 ### Changed
