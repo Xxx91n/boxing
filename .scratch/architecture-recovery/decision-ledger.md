@@ -59,3 +59,51 @@
 - 实现摘要已沉淀 docs/CONTEXT.md（zero-flash / paint-critical boot mirror；CRED 混淆诚实；WebDAV 私网文档化要点）
 - 报告: reports/60–66-report.md · W1/W2-brain-review.md · W7-closeout-audit.md
 - PV: 61/63/64/66 issue AC 未勾；60 慢放人工证据待补 — 不追认，见 backlog
+
+## Wave8 → Tickets（A-025.. · 2026-09-12）
+
+> 源: `.scratch/wave8-release-grill/decision-ledger.md` D-001..D-008 + handoffs/next-round.md
+> 每条: ID / 问题描述（原文摘录）/ 规范化需求 / 显式约束 / 状态
+
+| ID | 问题描述（原文摘录） | 规范化需求 | 显式约束 | 状态 |
+|---|---|---|---|---|
+| A-025 | D-006 G-A 残红裁定：N/B 禁豁免；T-GA1..5；与 G-B 并行；tag 锁 | G-A 治理票 70–74；禁假绿 | 不改 ADR-0017；禁 G-D；不回滚零闪现 | implemented |
+| A-026 | D-002/D-004 发行号 2026.9.12 新 build；amo_sign=true；make_release=false | 工件下载票 75 + G-B 用新包；闪现进本版 | 过闸前禁 tag/禁宣称；勿复用 gb-2026.9.13 | implemented |
+| A-027 | D-003/D-008 G-B 基线 v2026.9.11；#9 close 绑 G-B | 人工票 76 + 关账票 78 | 禁纯自动化宣称 G-B | implemented |
+| A-028 | D-008 B41 60 慢放人工证据 | 人工票 77 | 不进 G1–G6 合取 | implemented-user-forced |
+| A-029 | D-007 R1 冲突副本读取口 | 票 79 | 列表+单条导出；不扩门禁 | implemented |
+| A-030 | D-007 R2 WebDAV merge 质量 | 票 80 方案先行 | 勿静默改 newer-wins | implemented |
+| A-031 | D-007 R3 CRED per-install key | 票 81 | 含迁移/备份兼容；禁 passphrase 真加密重设计 | implemented |
+| A-032 | D-007 R4 WebDAV 私网 opt-in（含旧 B47） | 票 82 | 设置+i18n+README | implemented |
+| A-033 | D-007 R5 搜索 debounce（含旧 B48 性能） | 票 83 | 全量重建维持 ADR-0013 Q3=B | implemented |
+| A-034 | D-007 R6 popup/ 纳入（重开 A-022） | 票 84 | 非阻塞 tag | implemented |
+| A-035 | D-007 R7 文档产品化（重开 A-023） | 票 85 | 不阻塞 G-A/G-B | implemented |
+| A-036 | D-007/D-008 R8 票务卫生 B40+B44 | 票 86 | 禁止升发行门禁 | implemented |
+| A-037 | D-001/D-005 三轨范围 + atomcode 调研协议（已交付 research） | 本 spec 红线与协议 + research 文件 | 冲突须 revised；禁静默改向 | implemented |
+
+### Wave8 覆盖自评
+
+- 源 D-001..D-008: 8 · 映射 A-025..A-037: 13 · 无去向: 无
+- Wave7 A-021..024 deferred 被 D-007 显式重开 → 实施去向 A-033/A-034/A-035/A-036（不改写 Wave7 结算原文）
+
+### Wave8 补记（D-009 · 2026-09-12）
+
+| ID | 问题描述 | 规范化需求 | 显式约束 | 状态 |
+|---|---|---|---|---|
+| A-038 | D-009 76/77 强制通过免产物 | 用户强制关闭 G-B/慢放票；票面 done + 强制标注 | 非 ADR-0017 可审计 G-B；禁对外宣称证据齐全；tag 仍须明令 | implemented-user-forced |
+
+### Wave8 补记（78 关账偏离 · 2026-09-12）
+
+| ID | 问题描述 | 规范化需求 | 显式约束 | 状态 |
+|---|---|---|---|---|
+| A-039 | 78 报告：#9 在 G-A 未满足下关闭，与 A-007 前置张力 | 用户强制路径（D-009）下的过程性关账；**不**等于 A-007 门禁达成 | 关闭评论已写 G-A 未满足 + G-B 强制无证据包；对外仍「不可发行」；不扩 ADR-0017 | implemented |
+
+### Wave8 结算（2026-09-12 收口审计）
+
+- A-025..A-037: **implemented**（票 70–86 源码/文档/守卫落地；W1–W3 首脑复核 + 收口硬验收 build/guards/gate2/e2e-subset 绿）
+- A-028 / A-038: **implemented-user-forced**（D-009 免产物强制通过；非 ADR-0017 可审计 G-B）
+- A-039: **implemented**（#9 过程性关账偏离已显式记账）
+- stale: 0 · deferred: 无（Wave8 未另挂 deferred）
+- 实现摘要已沉淀 docs/CONTEXT.md Wave8 settle
+- 报告: W8-W1/W2/W3-brain-review · W8-closeout-crosscheck · 70–86-report · 79R/81R/81R2 返工节
+- G-A 仍依赖 main CI 复跑；G-B 为强制豁免；**tag 仍禁**直至用户明令

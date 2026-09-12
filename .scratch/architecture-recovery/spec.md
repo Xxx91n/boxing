@@ -251,3 +251,65 @@ Wave5 底座（snap.v1 / COW / fork / golden / ADR-0017）已 land，但仍：
 - 权威 current: wave7-flash-grill/decision-ledger.md D-001..D-004。
 - 对账: wave7-flash-grill/destination-reconciliation.md。
 - CONTEXT 词条已增补 zero-flash / paint-critical boot mirror。
+
+---
+
+# Wave8 Spec — G-A 残红治理 · 2026.9.12 发行候选 · 锐评重开项
+
+> 状态: ready-for-agent
+> 覆盖 A-xxx: A-025..A-037
+> 源: wave8 decision-ledger D-001..D-008 · next-round.md · atomcode-ga-residual-research.md
+> 关联: ADR-0017（门禁合取，未修改）· ADR-0009/0016 · ADR-0013 Q3=B
+
+## Problem Statement
+
+1. G-A 不成立：main test.yml run 34686760142 全红；台账仅 2 条 active 豁免，不能折算为绿；N 桶 never-quarantine，B 桶 broken。
+2. 正式发行号 2026.9.12（含零闪现）；候选包 34689649760；G-B 必须在该新包人工执行；过闸前禁 tag/禁宣称。
+3. 锐评未关项 Wave8 全量重开：冲突副本读取口、merge 质量、CRED per-install、WebDAV opt-in、搜索 debounce、popup/、文档产品化、票务卫生。
+
+## Solution
+
+- 并行：G-A 源码 70–74 ｜ G-B 人工 75–76/78 ｜ 锐评 79–86。
+- 门禁纯度：不扩 ADR-0017；禁 G-D；N/B 禁豁免。
+- 单一台账：B45–B48 废止并入对应票。
+
+## User Stories
+
+1. 作为发布者，数据完整性用例红灯时不能用豁免冒充可发行。
+2. 作为发布者，2026.9.12 包含零闪现且 G-B 在该包取证。
+3. 作为发布者，升级/回滚基线固定 v2026.9.11。
+4. 作为用户，冲突副本可列表并导出 JSON。
+5. 作为用户，WebDAV 合并不静默丢子盒（方案先行）。
+6. 作为用户，凭据混淆诚实且可选 per-install key。
+7. 作为用户，可显式 opt-in 私网 WebDAV。
+8. 作为用户，搜索输入不卡顿。
+9. 作为维护者，popup/与文档/卫生有票面。
+10. 作为审计者，每票声明 A-xxx，波次由 Blocked by 推导。
+
+## Implementation Decisions
+
+- 分桶权威：atomcode-ga-residual-research.md；H1–H4 由票 70 定谳。
+- 票 73 仅当 H1；禁止回滚零闪现。
+- 候选包 version=2026.9.12 amo_sign=true make_release=false；路径禁 gb-2026.9.13。
+- R2 先方案；R8 禁升门禁。
+- 本地 tracker issues/NN-slug.md；版本控制遵循 WORKFLOW §4.2。
+
+## Testing Decisions
+
+- 优先既有 Playwright seam；never-quarantine 家族不得 skip/豁免。
+- G-A 验收：N/B 用例绿或书面退役；waiver-ledger-check exit 0 且无 N/B 行。
+- R1：settings 冲突列表+导出；R4：opt-in 开关默认仍拒。
+- G-B 仍为人工黄金路径。
+
+## Out of Scope
+
+- 修改 ADR-0017 合取 / 新增 G-D。
+- 回滚票 60 零闪现或解耦记忆。
+- passphrase 真加密重写。
+- 过程违规升 release-blocking。
+- tag/Release/商店提交（须明令且三门齐备）。
+
+## Further Notes
+
+- Wave7 A-021..024 已由 D-007 重开；结算原文不改写。
+- 人工项不阻塞源码票并行。
