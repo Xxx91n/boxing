@@ -61,8 +61,10 @@
 | chromium-extension | debounce: 按键连发只跑一次 | PASS |
 | chromium-extension | debounce: Enter 立即 flush | PASS |
 | firefox-extension | 同上两例（solo，--timeout=120000 --workers=1） | PASS 2/2 |
+| chromium + firefox | 整份 boxing-search.spec.ts 终局复跑（宿主空闲，--timeout=120000） | 8 passed / 4 failed，4 红 = 既有 B3 两例 × 双浏览器 |
 
 - Firefox 首轮批跑两例均卡在 page.goto 30s 超时；按票 13/15 教训（Firefox 有头冷启动约 22s 吃掉默认预算、满负载车道整批假失败）提预算后 solo 终验 2/2 绿 —— 判定为宿主环境性，非代码。
+- 补充：宿主空闲后的终局复跑中，Firefox 两例新用例直接在 36s 内绿（连同 chromium 共 8 绿 / 4 红，4 红全部是既有 B3 两例），进一步印证首轮 Firefox 超时与同批 chromium 的 browserType.launch 180s 超时都是并发窗口争用资源所致，非代码。
 - 同批 chromium 的 favicon Promise.any 一例出现 browserType.launch Timeout 180000ms exceeded（并发窗口抢资源），与本次改动无因果关系。
 - 静态守卫：migration-golden-guard OK、css-balance-guard OK、git diff --check 干净；import-graph-guard 报 boxing-conflict-copy-readout.spec.ts 未被 cluster-map 覆盖 —— 该 spec 属票 79 并行新增，非本票面，见 §7。
 
