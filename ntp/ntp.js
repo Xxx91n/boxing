@@ -29,6 +29,7 @@ import {
   setScrollTimeout, setIdSequence, setClearedTombstones,
   setNextGroupId, setCanvasConnSvg, setInnerConnSvg, setConnectMode, setProvisionalLine,
   setProvisionalGhost, setSelectedConnId, setConfirmCallback, setSizeObserver,
+  saveDebounceTimer, setSaveDebounceTimer,
 } from './state.js';
 import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, screenToWorld, smallKey, snapCanvas, snapInner } from './utils.js';
 import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS } from './i18n.js';
@@ -251,7 +252,13 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     state() { return { boxes: layout.boxes.length, currentLargeBoxId, canvasZoom, innerZoom, headerPinned, darkMode: layout.settings.darkMode, lang: currentLang, fontSize: layout.settings.fontSize }; },
     dumpLayout() { console.table(layout.boxes.map(b => ({ id: b.id, title: b.title, x: b.x, y: b.y, w: b.width, h: b.height, children: b.children?.length || 0 }))); },
     dumpStorage() { layoutStorage?.get?.(null).then(d => console.log('[Boxing] storage:', d)).catch(e => console.error('[Boxing] storage read:', e)); },
-    persistView() { persistViewState(true); },
+    // Ticket 72 (Wave8 G-A B-bucket): the debug persistence seam must actually persist.
+    // persistViewState() only writes view state (session/localStorage), never boxingLayout,
+    // so anything seeded through __boxingDebug.layout was lost on the next reload. Ticket 59
+    // had been masking that by saving the layout on every unload (42R root cause). saveLayout()
+    // already calls persistViewState(true) internally, so this is a strict superset of the old
+    // behaviour; the returned promise lets callers await durability.
+    persistView() { return saveLayout(); },
     applyExternalLayout(raw) { return applyExternalLayout(raw); },
     saveLayout,
     // Ticket 41R: snapshot subsystem + storage seams for Playwright assertions (spec.md D1).
@@ -279,7 +286,10 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       if (urlInput) urlInput.value = url || '';
       if (userInput) userInput.value = user || '';
       if (passInput) passInput.value = pass || '';
-      return saveLayout();
+      // Ticket 71 (Wave8 G-A, N3): this is connection config, not layout data —
+      // persist it without advancing `_meta.updatedAt`, or the next sync sees a
+      // phantom local change and merges where it should pull (dr-export AC4).
+      return saveLayout({ preserveUpdatedAt: true });
     },
     async testWebDAV() { return await window.__boxingTestWebDAV(); },
     async backupWebDAV() { return await window.__boxingBackupWebDAV(); },
@@ -1013,11 +1023,26 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // Window resize
     window.addEventListener('resize', onWindowResize);
 
+    // Ticket 72 (Wave8 G-A B-bucket): unload flush for the PENDING debounced layout write.
+    // saveLayoutDebounced() defers the boxingLayout write by 120ms (pan/zoom/drag/conn-delete
+    // paths), so a tab closed or reloaded inside that window loses the change. Ticket 59 removed
+    // the unconditional unload saveLayout() (the 42R redundant-write root cause) which had been
+    // masking this gap. This restores durability WITHOUT restoring the redundant write: the flush
+    // happens only when a debounced write is actually pending; no pending timer means no write.
+    // Kept in ntp.js (not storage.js) so this ticket never has to touch a file another window owns.
+    function flushPendingLayoutSave() {
+      if (!saveDebounceTimer) return false;
+      clearTimeout(saveDebounceTimer);
+      setSaveDebounceTimer(null);
+      saveLayout();
+      return true;
+    }
+
     // Per-tab session state survives reload but is isolated from every other tab.
-    window.addEventListener('pagehide', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } });
+    window.addEventListener('pagehide', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } persistViewState(false); try { flushPendingLayoutSave(); } catch (e) { /* silent: flush helper may not exist */ } try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } });
     // BX-DEV-111M: flush credentials on tab switch / window hide / beforeunload —
     // fixes the 'close browser loses WebDAV password' bug (blur never fires in those paths).
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } persistViewState(false); try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } persistViewState(false); try { flushPendingLayoutSave(); } catch (e) { /* silent: flush helper may not exist */ } try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } } });
     // BX-DEV-120 (Bug8 return freeze): when returning to the Boxing tab after
     // opening a bookmark in a new tab, any lingering dragState/panState + a
     // stalled async storage-write chain could leave the UI trapped. On visibility
@@ -1042,7 +1067,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
         } catch (e) { debugWarn('visibility-visible recovery', e); }
       }
     });
-    window.addEventListener('beforeunload', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } });
+    window.addEventListener('beforeunload', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } try { flushPendingLayoutSave(); } catch (e) { /* silent: flush helper may not exist */ } try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } });
 
     registerStorageOnChanged();
 

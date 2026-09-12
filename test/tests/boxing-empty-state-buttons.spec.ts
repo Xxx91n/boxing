@@ -292,9 +292,13 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
       return bg;
     });
     await page.hover('.bm-add-btn');
-    const hoverBg = await page.evaluate(() =>
-      getComputedStyle(document.querySelector('.bm-add-btn')!).backgroundColor);
-    expect(hoverBg).toBe(probeBg);
+    // Ticket 72 (Wave8 G-A B-bucket): .bm-add-btn transitions `background` over --dur-fast
+    // (140ms), so reading the computed style in the same turn as the hover sampled the START of
+    // the transition (rgba(0,0,0,0)) and red. Poll for the settled value instead — the assertion
+    // itself is unchanged: dark :hover must still paint --color-accent-soft. Not a waiver: the
+    // CSS contract is real, the old read was a transition race (probe: t0=transparent, t500=accent-soft).
+    await expect.poll(() => page.evaluate(() =>
+      getComputedStyle(document.querySelector('.bm-add-btn')!).backgroundColor)).toBe(probeBg);
   });
 
   // Bug 6: will-change:transform + contain:layout on boxes
