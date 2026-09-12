@@ -47,7 +47,16 @@ for (const file of files) {
     if (raw.includes('/*')) { blockComment = !raw.includes('*/'); return; }
     if (!['storage.js', 'ntp.js'].includes(file) && /\b(?:layoutStorage|chrome\.storage\.(?:local|sync))\b/.test(raw) && !/^\s*(?:\/\/|\*|\/\*)/.test(raw)) add('B-5', `ntp/${file}`, index + 1, 'storage must be accessed through storage.js facade');
     if (/\b(?:chrome|browser)\./.test(raw)) {
-      const allowed = file === 'ntp.js' || file === 'sync-engine.js' || (file === 'popups.js' && /openBookmarksInNewTabs/.test(raw));
+      // credentials.js (ticket 81 / A-031, rework 81R): the per-install credential key (PIK) is
+      // persisted under an independent chrome.storage.local key (boxingCredKey.v1) OUTSIDE the
+      // layout, so it never enters buildSyncPayload/buildExportEnvelope/snapshots (offline-copy
+      // attack surface closed). Conditional whitelist: ONLY the cross-browser storage probe idiom
+      // (typeof chrome/browser !== 'undefined' && chrome/browser.storage) plus storage.local
+      // get/set pass — the minimal PIK access chain. Any other browser API in credentials.js
+      // (runtime, tabs, storage.sync direct use, ...) still violates B-6 (rule not weakened).
+      const allowed = file === 'ntp.js' || file === 'sync-engine.js'
+        || (file === 'popups.js' && /openBookmarksInNewTabs/.test(raw))
+        || (file === 'credentials.js' && /typeof\s(?:chrome|browser)\s!==\s'undefined'\s&&\s(?:chrome|browser)\.storage|storage\.local\.(?:get|set)\b/.test(raw));
       if (!allowed && !/^\s*(?:\/\/|\*|\/\*)/.test(raw)) add('B-6', `ntp/${file}`, index + 1, 'direct browser API access is outside the whitelist');
     }
   });
