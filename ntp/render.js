@@ -376,6 +376,10 @@ export function initRenderFacade(deps) {
     renderConnections(); // Bug2: sync render — same JS tick, no flash
     applyCanvasTransform();
     updateCaption();
+    // Ticket 60 (Wave7 zero-flash): render complete — unmask content. The boot theme
+    // script masked the canvas until the remembered state was confirmed applied; the
+    // theme background was already correct, so this unmask never reveals a wrong UI.
+    try { document.documentElement.classList.remove('boot-pending'); } catch (e) { debugWarn('boot unmask', e); }
   }
 
   // BX-DEV-105: measure body scrollHeight and set CSS --body-max-height for precise drawer animation
@@ -702,6 +706,8 @@ export function initRenderFacade(deps) {
     // BX-DEV-137++: re-render cross-level connections after entering large box —
     // small-box DOM elements are now live so leader-line can resolve tiered keys.
     renderConnections();
+    // Ticket 60 (Wave7 zero-flash): inner render complete — unmask content (boot path).
+    try { document.documentElement.classList.remove('boot-pending'); } catch (e) { debugWarn('boot unmask', e); }
   }
 
   export function exitToCanvas() {

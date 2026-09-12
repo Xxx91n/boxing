@@ -10,14 +10,19 @@ import { hexToRgbTriplet } from './utils.js';
 import { saveLayout } from './storage.js';
 
 // Injected ntp.js-scope deps (set once at boot, before any runtime call).
-let debugWarn, darkModeBtn, getLargeBox;
+let debugWarn, darkModeBtn, getLargeBox, mirrorWriter;
 export function initPersistFacade(deps) {
   debugWarn = deps.debugWarn;
   darkModeBtn = deps.darkModeBtn;
   getLargeBox = deps.getLargeBox;
+  mirrorWriter = deps.mirrorWriter;
 }
 
   export const TAB_VIEW_KEY = 'boxingTabView.v2';
+  // Ticket 60 (Wave7 zero-flash): paint-critical boot mirror key — sync-readable first-paint
+  // cache of already-persisted theme/darkMode/fontSize. Written by the storage facade's
+  // successful persist path; read by ntp/boot-theme.js (classic blocking script).
+  export const BOOT_THEME_KEY = 'boxingBootTheme.v1';
   export const LAST_ACTIVE_VIEW_KEY = 'boxingLastActiveView.v2';
   // BX-DEV-111L: permanent tab-view history (survives browser restart). LRU-bounded to prevent heap blow-up.
   const TAB_VIEW_HISTORY_KEY = 'boxingTabViewHistory.v3';
@@ -58,6 +63,29 @@ export function initPersistFacade(deps) {
     hist.push(snap);
     if (hist.length > MAX_TAB_VIEW_HISTORY) hist = hist.slice(hist.length - MAX_TAB_VIEW_HISTORY);
     try { localStorage.setItem(TAB_VIEW_HISTORY_KEY, JSON.stringify(hist)); } catch (_) { /* quota exceeded — fail-soft; in-memory hist still valid this session */ }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // Paint-critical boot mirror (ticket 60, Wave7 A-013/A-014)
+  // ═══════════════════════════════════════════════════
+  // Sync-readable first-paint cache: ONLY paint-critical settings (theme/darkMode/
+  // fontSize) mirrored from the layout AFTER a successful boxingLayout persist. NOT a
+  // second layout source (D-002 negative): never read by loadLayout/migrate/sync/export;
+  // the authoritative values stay in boxingLayout and loadSettings() re-applies them.
+  // Written via the mirror-writer injected by ntp.js (the storage facade's success path)
+  // so the mirror can never drift ahead of a persisted layout.
+  export function persistBootThemeMirror(mirrorWriter) {
+    try {
+      mirrorWriter({
+        theme: layout.settings.theme || 'beige',
+        darkMode: layout.settings.darkMode === true,
+        fontSize: typeof layout.settings.fontSize === 'number' ? layout.settings.fontSize : 14
+      });
+    } catch (e) { debugWarn('boot theme mirror write', e); }
+  }
+
+  export function clearBootThemeMirror() {
+    try { localStorage.removeItem(BOOT_THEME_KEY); } catch (e) { /* silent: localStorage clear, already gone */ }
   }
 
   export function loadFallbackTabView() {
@@ -231,6 +259,12 @@ export function initPersistFacade(deps) {
     setInnerZoom(layout.settings.zoomLevel || 1.0);
     const fs = layout.settings.fontSize || 14;
     document.documentElement.style.setProperty('--font-size-base', fs + 'px');
+    // Ticket 60 (Wave7 zero-flash): authoritative hydration — boxingLayout is the source of
+    // truth; re-apply over whatever the boot mirror applied (covers the one-shot default
+    // downgrade after localStorage was cleared, and theme changes made in another tab).
+    if (typeof mirrorWriter === 'function') {
+      persistBootThemeMirror(mirrorWriter);
+    }
 
    // dark mode
    if (layout.settings.darkMode) {

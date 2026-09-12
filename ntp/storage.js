@@ -27,11 +27,13 @@ import { defaultLayout, isPlausibleLayout, mergeById, migrateLayout } from './ut
 // ── injected ntp.js-scope bindings (assigned once by initStorageFacade, before any call) ──
 let api = null;
 let layoutStorage = null;
+let mirrorWriter = null; // ticket 60: paint-critical boot mirror writer (persist.js facade)
 let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning;
 
 export function initStorageFacade(deps) {
   api = deps.api;
   layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
+  mirrorWriter = deps.mirrorWriter; // ticket 60: boot mirror writer (localStorage, sync-readable first paint)
   debug = deps.debug;
   debugErr = deps.debugErr;
   debugWarn = deps.debugWarn;
@@ -589,10 +591,20 @@ export function registerStorageOnChanged() {
   }
 
   // ADR-0007: persist helper — groups are computed-only (Q1).
+  // 66/A-020: also the single sanitize boundary for runtime-only diagnostics. Keys
+  // prefixed "__" are in-memory flags, never part of the user's persisted settings;
+  // they are dropped from the deep clone so src (the live layout) stays untouched.
+  export const RUNTIME_ONLY_SETTING_RE = /^__/;
   export function stripGroupsForPersist(src) {
     const out = Object.assign({}, src);
     delete out.groups;
-    return JSON.parse(JSON.stringify(out));
+    const cloned = JSON.parse(JSON.stringify(out));
+    if (cloned.settings && typeof cloned.settings === 'object') {
+      for (const k of Object.keys(cloned.settings)) {
+        if (RUNTIME_ONLY_SETTING_RE.test(k)) delete cloned.settings[k];
+      }
+    }
+    return cloned;
   }
 
   // ADR-0007 Q4a: drop tombstones older than 24h (Excalidraw soft-delete GC pattern).
@@ -643,7 +655,7 @@ export function registerStorageOnChanged() {
       setLayout(mergeConcurrentLayout(layout, remote));
       const revision = Math.max(Number(layout._meta?.revision) || 0, Number(remote?._meta?.revision) || 0) + 1;
       layout._meta = { ...(layout._meta || {}), revision, updatedAt: Date.now(), writerId };
-      // BX-AUD-04: explicit chrome.storage.sync quota failure handling — sets a user-visible flag
+      // BX-AUD-04: explicit chrome.storage.local quota failure handling — sets a user-visible flag
       // and writes a emergency localStorage snapshot so data is never silently lost.
       try {
         // ADR-0007 Q1: groups is runtime-only — never persist.
@@ -651,6 +663,11 @@ export function registerStorageOnChanged() {
         await layoutStorage.set({ boxingLayout: persisted });
         try { gcTombstones(layout); } catch (_gc) { /* non-fatal */ }
         if (layout.settings && layout.settings.__lastSaveError) { layout.settings.__lastSaveError = null; }
+        // Ticket 60 (Wave7 zero-flash): mirror paint-critical settings AFTER a successful
+        // boxingLayout persist so the first paint of the next new tab is already the
+        // remembered theme. Mirror is derived-only (never a second layout source, D-002);
+        // failure here is fail-soft — the boot script falls back to default theme once.
+        try { if (typeof mirrorWriter === 'function') mirrorWriter(); } catch (_mw) { /* non-fatal */ }
       } catch (e) {
         debugErr('saveLayout: set failed (quota?) — writing fallback snapshot', e);
         try {

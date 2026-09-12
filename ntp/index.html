@@ -6,6 +6,9 @@
   <title>Boxing</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <!-- Ticket 60 (Wave7 zero-flash): classic blocking boot script — NOT type=module.
+       Must stay BEFORE the stylesheets so theme vars + ntp--dark apply before first paint. -->
+  <script src="boot-theme.js"></script>
   <link rel="stylesheet" href="design-system.css">
   <link rel="stylesheet" href="ntp.css">
   <meta http-equiv="Content-Security-Policy"
@@ -89,8 +92,7 @@
 
     <footer class="foot">
       <span class="foot__dot" aria-hidden="true"></span>
-      <span class="foot__txt" data-i18n="footerHint">Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen
-        add</span>
+      <span class="foot__txt" data-i18n="footerHint">Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen</span>
     </footer>
   </main>
 
@@ -273,8 +275,7 @@
                 <option value="webdav" data-i18n="syncWebDAV">WebDAV</option>
                 <option value="gist" data-i18n="syncGitHubGist">GitHub Gist</option>
               </select>
-              <p class="modal__hint" data-i18n="syncProviderHint">Boxing stores data in browser sync storage. Choose
-                your provider.</p>
+              <p class="modal__hint" data-i18n="syncProviderHint">Boxing stores your layout in this browser’s local storage. Pick a provider to sync across devices.</p>
             </section>
             <section class="modal__section" id="last-backup-section">
               <p class="modal__hint" style="margin:0;font-size:11px;"><span data-i18n="lastBackupTime">Last

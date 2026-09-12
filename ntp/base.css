@@ -1232,3 +1232,17 @@ body {
   border-color: var(--color-accent);
   border-style: solid;
 }
+
+/* ═══════════════════════════════════════════════
+ * Ticket 60 (Wave7 zero-flash): boot content mask
+ * html.boot-pending is set by ntp/boot-theme.js (classic blocking head script) and
+ * removed by render.js renderCanvas/_enterLargeBox once the remembered state is
+ * rendered. Canvas content stays invisible while the page background (already the
+ * remembered theme color) paints — no wrong-theme frame, no default-box flash.
+ * A 4s failsafe in boot-theme.js clears the class if init dies (never permanently hidden).
+ * ═══════════════════════════════════════════════ */
+html.boot-pending .canvas__surface,
+html.boot-pending .canvas__empty,
+html.boot-pending .inner {
+  visibility: hidden;
+}

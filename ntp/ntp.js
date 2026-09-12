@@ -36,7 +36,7 @@ import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS 
 // onChanged listener moved verbatim to ./storage.js; all chrome.storage writes go through it.
 import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, directSetBoxingLayout, ensurePreUpdateSnapshot, gcTombstones, initStorageFacade, listSnapshots, loadLayout, markDeleted, registerStorageOnChanged, restoreFromSnapshot, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
 // Ticket 08 (architecture-recovery): layout/view-state persistence + theme packs + loadSettings moved verbatim to ./persist.js on top of the storage facade.
-import { LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyTheme, initPersistFacade, loadFallbackTabView, loadSettings, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
+import { BOOT_THEME_KEY, LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyTheme, clearBootThemeMirror, initPersistFacade, loadFallbackTabView, loadSettings, persistBootThemeMirror, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
 // Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool, ADR-0004),
 // DSU groups, pan/zoom transforms, drag handlers, canvas render + box CRUD + bookmark UI. Diffs = export prefixes only.
 import { _execDeleteLargeBox, _execDeleteSmallBox, addLargeBox, addLargeBoxAt, addPopupTracker, addSmallBox, addSmallBoxAt, applyCanvasTransform, applyInnerTransform, clampCanvasPan, clampInnerPan, commit, enterLargeBox, exitToCanvas, getLargeBox, getSmallBox, initRenderFacade, initSizeObserver, innerSurfaceContent, isWithinCreateCooldown, markCreate, onBoxDragEnd, onCanvasPanEnd, onCanvasPanStart, onCanvasWheel, onInnerPanEnd, onInnerPanStart, onInnerWheel, refreshContainerSizes, removePopupTracker, renderCanvas, renderCrumbs, renderInnerSurface, showBoxDeletedWarning, updateAutohideUI, zoomStep } from './render.js';
@@ -135,7 +135,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   // Ticket 07 (architecture-recovery): inject ntp.js-scope deps into the storage write facade
   // (./storage.js) — write chain + loop guard + onChanged listener moved there verbatim.
-  initStorageFacade({ api, debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning });
+  initStorageFacade({ api, debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning, mirrorWriter: () => { persistBootThemeMirror((mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } }); } });
 
   // ── constants ──────────────────────────────────────────
   const DEBUG = true;
@@ -429,7 +429,12 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     const lastBackupTimeVal = document.getElementById('last-backup-time-value');
     const webdavTestBtn = document.getElementById('webdav-test-btn');
   // Ticket 08: inject ntp.js-scope deps into the persistence module (./persist.js)
-  initPersistFacade({ debugWarn, darkModeBtn, getLargeBox });
+  // Ticket 60 (Wave7 zero-flash): inject the paint-critical mirror writer — writes the
+  // boot mirror (theme/darkMode/fontSize) to localStorage so the next new tab's classic
+  // blocking boot script (ntp/boot-theme.js) paints the remembered theme before first
+  // frame. localStorage here is the sync-readable first-paint cache (Wave7 D-002);
+  // boxingLayout stays the only authoritative layout source.
+  initPersistFacade({ debugWarn, darkModeBtn, getLargeBox, mirrorWriter: (mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } } });
 
   // ── state ── moved verbatim to ./state.js (ticket 06, architecture-recovery) ──
 
