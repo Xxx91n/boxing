@@ -104,6 +104,13 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **fork restore (quarantine)** — corrupt-but-readable main-key payloads are archived verbatim to `boxingLayout.corrupt.<ts>` (+ `boxingLayout.corrupt.index`, ≤20 entries) BEFORE rebuilding from the latest healthy snapshot; `saveLayout()`'s read-chain applies the same archive-first rule, so an un-archived overwrite of corrupt data is impossible (ticket 43/43R). API-level unreadable (get rejects) does not fake an archive — recovery only (ABP #6599 boundary).
 - **conflict copy** — import/WebDAV same-id divergence never silently overwrites: the losing subtree is archived to `boxingLayout.conflict.<ts>` (+ index); "overwrite restore" remains available only behind a two-step explicit confirmation that itself snapshots first (ticket 44). Abolishes silent newer-wins as a default (spec D4).
 - **golden fixture** — `test/fixtures/schema/{v1,legacy-groups,legacy-v2}.json` + `scripts/migration-golden-guard.mjs` (28 named checks incl. expand/contract rollback safety, wired into pretest as a blocking gate) + `@data-golden` runtime specs (ticket 45/45R; burn-in until 2026-09-18).
+- **frozen legacy reader（票 56 定界 / 接口设计）** — `migration-golden-guard.mjs` 的 `legacyReader` 是上一发行版读取契约的测试侧镜像（准入门 BX-DEV-085 `version >= 3`；白名单投影 boxes/connections/groups/settings；丢弃 schemaVersion/_meta 装饰；契约锚点 = pre-ADR-0009 + pre-ADR-0007-Q1）。升格方向：独立 append-only 冻结模块 `scripts/legacy-reader-frozen.mjs`（契约注册表，生产 `ntp/**` 永不 import），其回滚块 6 项具名检查 RA-1..RA-6 = ADR-0017 回滚兼容义务的可执行验收面（名字冻结、禁豁免）。本波零代码落地，接口定稿见 `.scratch/architecture-recovery/reports/56-legacy-reader-freeze-rollback-ac-report.md`。
+- **Time Machine 一键回滚 + pre-restore**（票 50 / W6-D1） — 设置数据区列出 snap.v1 快照（ts/schemaVersion/size）；回滚二次确认后 `restoreFromSnapshot` → `replaceLayoutFromRestored`（绕过跨标签 merge 防回滚盒复活）；回滚/恢复/覆盖/导入前统一 `saveSnapshot('pre-restore')`，失败 fail-closed 取消整替。
+
+- **导出信封 / 完整容灾包**（票 51 / D-006） — 默认导出 `{layout, _exportedAt, meta:{schemaVersion, fullPackage:false, snapshots[], corrupt[], conflicts[]}}` 仅索引不含正文；可选完整包含 `_bodies` 正文与体积预估；文件名 `boxing-backup-YYYYMMDD.json`；导入经 `unwrapExportEnvelope` 还原。
+
+- **A10 CSS 括号门禁**（票 53） — build 对源 CSS fail-closed：final depth≠0 或嵌套 `[hidden]` 即构建失败；`scripts/css-balance-guard.mjs` 进 pretest。
+
 - **release gate** — "releasable" is the conjunction G-A (main-lane CI reds cleared or per-item written waiver) + G-B (manual zip golden path on unpacked artifacts, both browsers) + G-C (Pages three URLs live 200); before all hold, tagging and any releasable claim are forbidden. Full terms + postmortem template: ADR-0017; checklist: WORKFLOW §4.4.
 
 ## Architectural Invariants (BX-EXPLORE-005..009)

@@ -43,6 +43,8 @@ Accepted（裁决来源: 票 46 + spec D7 + atomcode 2026-09-11/12 发布门禁�
 
 **数据韧性 RPO/RTO 交叉引用（票 51，2026-09-12）**：容灾留存义务的定量口径（RPO＝距最近留存点的编辑丢失窗口，破坏性入口写前 COW 使该事件 RPO=0、稳态 ≤ 自动备份间隔；RTO＝恢复到可用布局的时间，整机丢失目标 ≤ 5 分钟）见 ADR-0009「修订 2026-09-12（票 51）」。发行门禁与它的关系：G-A 数据完整性类测试（含信封导出/导入往返、覆盖前副本矩阵）永不豁免；G-B 人工黄金路径必须在解包产物上执行一次「默认信封导出 → 换 profile 导入还原」与一次「WebDAV pull 覆盖后快照回滚演练」，并记录所用备份文件的 `_exportedAt`（即实测 RPO 证据）。
 
+**回滚验收 AC 具名升格（票 56，2026-09-12）**：本 ADR「数据兼容义务」的自动化镜像正式具名为回滚验收清单 RA-1..RA-6（= `scripts/migration-golden-guard.mjs` 回滚块与 v2 二过归一的检查名，实现体已存在，名字自此冻结）：`rollback-old-reader-accepts` · `rollback-bookmarks-visible` · `rollback-boxes-visible` · `rollback-connections-visible` · `rollback-isparent-self-contained` · `v2-second-pass-normalized`（v2 单程路径样例具名项）。治理口径：任一红 = G-A 数据兼容面残红，属 `migration-golden` never-quarantine 家族，禁入豁免台账；G-B「回滚演练」人工项按同名 RA 清单对照勾选。冻结读端（legacy reader）定界与独立模块接口设计（`scripts/legacy-reader-frozen.mjs`，append-only 契约注册表，生产 `ntp/**` 永不 import）见 `.scratch/architecture-recovery/reports/56-legacy-reader-freeze-rollback-ac-report.md`；落地接线留后续票。
+
 **被否决备选**：
 
 - 仅 CI 绿自动发行（无人工黄金路径）——否决：商店审核无法覆盖行为正确性，冻结恰是「绿灯 ≠ 可用」形态；atomcode G2「禁止无人复核的自动发布」为工业共识。
