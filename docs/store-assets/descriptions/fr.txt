@@ -1,0 +1,67 @@
+Boxing transforme votre nouvel onglet en un espace de travail visuel infini pour vos favoris.
+Fini les dossiers à plat : organisez les liens dans des étiquettes-que vous déplacez, reliez et imbriquez selon votre pensée.
+
+Fonctionnalités
+
+Canevas infini
+• Panoramique et zoom avec Ctrl+molette
+• Boîtes illimitées sur un seul canevas
+• Reliez les boîtes par des lignes pour montrer les relations
+• Déplacement parent-enfant : déplacez le parent, les enfants suivent
+• Double-cliquez sur un espace vide pour créer une boîte
+• Clic droit pour revenir au canevas parent
+
+Gestion des favoris
+• Chaque boîte a sa propre collection de favoris
+• Vues liste et grille
+• Ajout, modification et suppression dans une boîte de dialogue claire
+• Titre, URL et description personnalisés
+• Glisser pour réordonner dans la boîte
+• Ouvrir dans l’onglet actuel ou un nouvel onglet (configurable)
+
+Organisation hiérarchique
+• Les boîtes peuvent contenir un sous-canevas — cliquez pour entrer
+• Fil d’Ariane pour votre chemin
+• Imbrication illimitée ; chaque niveau reste indépendant
+
+Design et thème
+• Esthétique beige/crème minimaliste et calme
+• Mode clair et sombre (suit le système)
+• Taille de police et zoom ajustables
+• Lignes de connexion SVG fluides
+• Coins arrondis en option
+
+Confidentialité d’abord
+• Toutes les données restent sur votre appareil
+• Sauvegarde WebDAV vers votre serveur (optionnel)
+• Sauvegarde GitHub Gist (optionnel)
+• Pas d’analyse, pas de suivi, pas de services tiers
+• Open source (Apache-2.0)
+
+Connexions
+• Supprimez une ligne avec Alt+clic (clic/double-clic aussi configurable)
+• Relations visibles par des lignes
+
+Autorisations
+
+storage — stocke favoris, disposition et réglages localement
+tabs — ouvre les favoris dans un nouvel onglet selon vos réglages
+Accès hôte optionnel (Chrome) / accès hôte (Firefox) — uniquement pour votre sauvegarde WebDAV
+
+Nous ne demandons pas l’historique, les téléchargements, le presse-papiers ni d’autres données d’activité.
+
+Cas d’usage
+
+• Projets de recherche — un canevas par projet, des boîtes par sujet
+• Collections de favoris organisées visuellement
+• Cartes de connaissances spatialisées
+• Tableau de bord rapide des liens fréquents
+
+Technique
+
+JavaScript natif, sans framework ni bundler.
+Fonctionne sur Chrome, Edge, Firefox et autres navigateurs Chromium.
+Manifest V3.
+Code source : https://github.com/Xxx91n/boxing
+Licence : Apache-2.0
+Confidentialité : https://xxx91n.github.io/boxing/privacy-policy.html

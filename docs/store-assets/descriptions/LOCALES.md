@@ -1,27 +1,32 @@
 # Store description locales — rollout
 
 Canonical EN/zh-CN live in this folder as plain text (see ../STORE-COPY.md).
+All 14 extension-UI locales now have a store Description draft (2026-09-13).
 
-| File | Edge language name | Status | Next action |
+| File | Edge language name | Status | Notes |
 |---|---|---|---|
-| en.txt | English | ready | Keep as source of truth |
-| zh-CN.txt | Chinese (Simplified) | ready | Paste into Edge zh-hans listing |
-| zh-TW.txt | Chinese (Traditional) | pending | Translate from en.txt or adapt zh-CN |
-| ja.txt | Japanese | pending | Translate from en.txt |
-| ko.txt | Korean | pending | Translate from en.txt |
-| de.txt | German | pending | Translate from en.txt |
-| fr.txt | French | pending | Translate from en.txt |
-| es.txt | Spanish | pending | Translate from en.txt |
-| pt-BR.txt | Portuguese (Brazil) | pending | Translate from en.txt |
-| ru.txt | Russian | pending | Translate from en.txt |
-| ar.txt | Arabic | pending | Translate from en.txt |
-| hi.txt | Hindi | pending | Translate from en.txt |
-| th.txt | Thai | pending | Translate from en.txt |
-| vi.txt | Vietnamese | pending | Translate from en.txt |
+| en.txt | English | ready | Source of truth |
+| zh-CN.txt | Chinese (Simplified) | ready | Faithful localization |
+| zh-TW.txt | Chinese (Traditional) | ready | Draft from zh-CN/en |
+| ja.txt | Japanese | ready | Draft |
+| ko.txt | Korean | ready | Draft |
+| de.txt | German | ready | Draft |
+| fr.txt | French | ready | Draft |
+| es.txt | Spanish | ready | Draft |
+| pt-BR.txt | Portuguese (Brazil) | ready | Draft |
+| ru.txt | Russian | ready | Draft |
+| ar.txt | Arabic | ready | Draft |
+| hi.txt | Hindi | ready | Draft |
+| th.txt | Thai | ready | Draft |
+| vi.txt | Vietnamese | ready | Draft |
 
 ## Rules
 
 - One sentence per line where possible; bullets with `•`
 - No Markdown markup
-- Do not add a language to Partner Center until its `.txt` exists
-- Update Status here when a locale becomes ready
+- Prefer native review before adding a language to Partner Center if you want polished copy; drafts are structurally store-safe
+- Update Status when a locale is human-reviewed (mark `ready-reviewed`)
+
+## Human review queue (optional)
+
+Non-EN/zh-CN files are **drafts** suitable for Partner Center paste after a quick native skim (terminology: 书签/ブックマーク/북마크 etc. already aligned with `_locales`).

@@ -1,0 +1,67 @@
+Boxing verwandelt Ihren neuen Tab in einen visuellen, unendlichen Arbeitsbereich für Lesezeichen.
+Statt flacher Ordner ordnen Sie Links in beschrifteten Boxen – ziehen, verbinden, verschachteln, ganz nach Ihrem Denken.
+
+Funktionen
+
+Unendliche Leinwand
+• Pan und Zoom mit Strg+Scroll
+• Unbegrenzt viele Boxen auf einer Leinwand
+• Boxen mit Linien verbinden, um Beziehungen zu zeigen
+• Eltern-Kind-Bewegung: Eltern bewegen, Kinder folgen
+• Doppelklick auf leere Fläche erstellt eine Box
+• Rechtsklick kehrt zur übergeordneten Leinwand zurück
+
+Lesezeichen-Verwaltung
+• Jede Box hat eine eigene Lesezeichen-Sammlung
+• Listen- und Rasteransicht
+• Lesezeichen in einem klaren Dialog hinzufügen, bearbeiten, löschen
+• Eigener Titel, URL und Beschreibung je Lesezeichen
+• Per Ziehen innerhalb der Box sortieren
+• Im aktuellen Tab oder in einem neuen Tab öffnen (konfigurierbar)
+
+Hierarchische Organisation
+• Boxen können eine Unterleinwand enthalten – Klick zum Öffnen
+• Breadcrumb-Navigation zeigt Ihren Pfad
+• Beliebig tief verschachtelt; Ebenen bleiben unabhängig
+
+Design und Thema
+• Ruhiges Beige/Creme, minimalistisch
+• Heller und dunkler Modus (folgt dem System)
+• Schriftgröße und Zoom anpassbar
+• Glatte SVG-Verbindungslinien
+• Optionale abgerundete Ecken
+
+Datenschutz zuerst
+• Alle Daten bleiben auf Ihrem Gerät
+• Optional WebDAV-Backup auf Ihren eigenen Server
+• Optional GitHub-Gist-Backup
+• Keine Analyse, kein Tracking, keine Drittanbieter
+• Open Source (Apache-2.0)
+
+Verbindungen
+• Linie mit Alt+Klick löschen (auch Klick/Doppelklick konfigurierbar)
+• Beziehungen als sichtbare Linien
+
+Berechtigungen
+
+storage — Lesezeichen, Layout und Einstellungen lokal speichern
+tabs — Lesezeichen bei Bedarf in einem neuen Tab öffnen
+Optionaler Host-Zugriff (Chrome) / Host-Zugriff (Firefox) — nur für Ihr WebDAV-Backup
+
+Wir fordern keine Verlauf-, Download- oder Clipboard-Daten an.
+
+Anwendungsfälle
+
+• Forschungsprojekte – eine Leinwand pro Projekt, Boxen pro Thema
+• Langjährige Lesezeichen visuell ordnen
+• Wissenskarten mit räumlichen Verbindungen
+• Schnellzugriff auf häufige Links in jedem neuen Tab
+
+Technisches
+
+Reines JavaScript, keine Frameworks oder Bundler.
+Funktioniert in Chrome, Edge, Firefox und anderen Chromium-Browsern.
+Manifest V3.
+Quellcode: https://github.com/Xxx91n/boxing
+Lizenz: Apache-2.0
+Datenschutz: https://xxx91n.github.io/boxing/privacy-policy.html

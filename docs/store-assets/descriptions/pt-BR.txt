@@ -1,0 +1,67 @@
+Boxing transforma sua nova aba em um espaço de trabalho visual de tela infinita para favoritos.
+Em vez de pastas planas, organize links em caixas com rótulos: arraste, conecte e aninhe do jeito que você pensa.
+
+Recursos
+
+Tela infinita
+• Panorâmica e zoom com Ctrl+rolagem
+• Caixas ilimitadas em uma única tela
+• Conecte caixas com linhas para mostrar relações
+• Movimento pai-filho: mova o pai e os filhos seguem
+• Clique duplo no espaço vazio para criar uma caixa
+• Clique direito para voltar à tela pai
+
+Gerenciamento de favoritos
+• Cada caixa tem sua própria coleção de favoritos
+• Visualização em lista e grade
+• Adicionar, editar e excluir em um diálogo limpo
+• Título, URL e descrição personalizados
+• Arraste para reordenar dentro da caixa
+• Abrir na aba atual ou em nova aba (configurável)
+
+Organização hierárquica
+• Caixas podem conter uma sub-tela — clique para entrar
+• Navegação em trilha mostra seu caminho
+• Aninhamento sem limite; cada nível é independente
+
+Design e tema
+• Estética minimalista bege/creme, calma
+• Modo claro e escuro (segue o sistema)
+• Tamanho da fonte e zoom ajustáveis
+• Linhas de conexão SVG suaves
+• Cantos arredondados opcionais
+
+Privacidade em primeiro lugar
+• Todos os dados ficam no seu dispositivo
+• Backup WebDAV opcional no seu servidor
+• Backup GitHub Gist opcional
+• Sem análise, sem rastreamento, sem serviços de terceiros
+• Código aberto (Apache-2.0)
+
+Conexões
+• Apague uma linha com Alt+clique (também configurável para clique ou clique duplo)
+• Relações visíveis como linhas
+
+Permissões
+
+storage — salva favoritos, layout e configurações localmente
+tabs — abre favoritos em nova aba conforme sua configuração
+Acesso a host opcional (Chrome) / acesso a host (Firefox) — apenas para seu backup WebDAV
+
+Não pedimos histórico, downloads, área de transferência ou outros dados de atividade.
+
+Casos de uso
+
+• Projetos de pesquisa: uma tela por projeto, caixas por tema
+• Coleções de favoritos organizadas visualmente
+• Mapas de conhecimento com links espaciais
+• Acesso rápido a links frequentes em cada nova aba
+
+Técnico
+
+JavaScript puro, sem frameworks ou empacotadores.
+Funciona no Chrome, Edge, Firefox e outros navegadores Chromium.
+Manifest V3.
+Código: https://github.com/Xxx91n/boxing
+Licença: Apache-2.0
+Privacidade: https://xxx91n.github.io/boxing/privacy-policy.html

@@ -1,0 +1,67 @@
+Boxing biến tab mới của bạn thành không gian làm việc trực quan trên canvas vô hạn cho dấu trang.
+Thay vì thư mục phẳng, hãy sắp xếp liên kết vào các hộp có nhãn: kéo, nối, lồng theo cách bạn tư duy.
+
+Tính năng
+
+Canvas vô hạn
+• Cuộn và thu phóng bằng Ctrl+chuột
+• Tạo vô hạn hộp trên một canvas
+• Nối hộp bằng đường để thể hiện quan hệ
+• Di chuyển cha–con: kéo cha thì con đi theo
+• Nhấp đúp khoảng trống để tạo hộp
+• Nhấp phải để quay lại canvas cấp trên
+
+Quản lý dấu trang
+• Mỗi hộp có bộ dấu trang riêng
+• Xem dạng danh sách và lưới
+• Thêm, sửa, xóa trong hộp thoại gọn
+• Tùy chỉnh tiêu đề, URL, mô tả
+• Kéo để sắp xếp trong hộp
+• Mở ở tab hiện tại hoặc tab mới (có thể cấu hình)
+
+Tổ chức phân cấp
+• Hộp có thể chứa canvas con — nhấp để vào
+• Điều hướng breadcrumb hiển thị đường đi
+• Lồng không giới hạn; mỗi tầng độc lập
+
+Giao diện và chủ đề
+• Thẩm mỹ be/kem tối giản, yên tĩnh
+• Chế độ sáng/tối (theo hệ thống)
+• Điều chỉnh cỡ chữ và thu phóng
+• Đường nối SVG mượt
+• Tùy chọn bo góc
+
+Quyền riêng vấn trước tiên
+• Mọi dữ liệu nằm trên thiết bị của bạn
+• Sao lưu WebDAV tùy chọn tới máy chủ của bạn
+• Sao lưu GitHub Gist tùy chọn
+• Không phân tích, theo dõi hay dịch vụ bên thứ ba
+• Mã nguồn mở (Apache-2.0)
+
+Kết nối
+• Xóa đường bằng Alt+nhấp (có thể đặt là nhấp hoặc nhấp đúp)
+• Quan hệ hiển thị bằng đường nối
+
+Quyền
+
+storage — lưu dấu trang, bố cục và cài đặt cục bộ
+tabs — mở dấu trang ở tab mới theo cấu hình
+Truy cập host tùy chọn (Chrome) / truy cập host (Firefox) — chỉ cho sao lưu WebDAV của bạn
+
+Chúng tôi không yêu cầu lịch sử duyệt, tải xuống, clipboard hay dữ liệu hoạt động khác.
+
+Trường hợp sử dụng
+
+• Dự án nghiên cứu — mỗi dự án một canvas, mỗi chủ đề một hộp
+• Tổ chức bộ sưu tập dấu trang lâu năm trực quan
+• Bản đồ tri thức với liên kết không gian
+• Truy cập nhanh liên kết thường dùng trên mọi tab mới
+
+Kỹ thuật
+
+JavaScript thuần, không framework hay bundler.
+Chạy trên Chrome, Edge, Firefox và trình duyệt Chromium khác.
+Manifest V3.
+Mã nguồn: https://github.com/Xxx91n/boxing
+Giấy phép: Apache-2.0
+Quyền riêng tư: https://xxx91n.github.io/boxing/privacy-policy.html

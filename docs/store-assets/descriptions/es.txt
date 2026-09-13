@@ -1,0 +1,67 @@
+Boxing convierte tu nueva pestaña en un espacio de trabajo visual de lienzo infinito para marcadores.
+En lugar de carpetas planas, organiza enlaces en cajas con etiqueta: arrastra, conecta y anida según tu forma de pensar.
+
+Funciones
+
+Lienzo infinito
+• Paneo y zoom con Ctrl+rueda
+• Cajas ilimitadas en un solo lienzo
+• Conecta cajas con líneas para mostrar relaciones
+• Movimiento padre-hijo: mueve el padre y los hijos siguen
+• Doble clic en espacio vacío para crear una caja
+• Clic derecho para volver al lienzo superior
+
+Gestión de marcadores
+• Cada caja tiene su propia colección de marcadores
+• Vistas de lista y cuadrícula
+• Añadir, editar y borrar en un diálogo limpio
+• Título, URL y descripción personalizados
+• Arrastra para reordenar dentro de la caja
+• Abrir en la pestaña actual o en una nueva (configurable)
+
+Organización jerárquica
+• Las cajas pueden contener un sublienzo — haz clic para entrar
+• Navegación de migas de pan
+• Anidamiento sin límite; cada nivel es independiente
+
+Diseño y tema
+• Estética minimalista beige/crema, tranquila
+• Modo claro y oscuro (sigue al sistema)
+• Tamaño de fuente y zoom ajustables
+• Líneas de conexión SVG suaves
+• Esquinas redondeadas opcionales
+
+Privacidad primero
+• Todos los datos se quedan en tu dispositivo
+• Copia WebDAV opcional a tu propio servidor
+• Copia de GitHub Gist opcional
+• Sin analítica, sin rastreo, sin servicios de terceros
+• Código abierto (Apache-2.0)
+
+Conexiones
+• Borra una línea con Alt+clic (también configurable a clic o doble clic)
+• Relaciones visibles como líneas
+
+Permisos
+
+storage — guarda marcadores, diseño y ajustes localmente
+tabs — abre marcadores en una pestaña nueva según tu configuración
+Acceso a host opcional (Chrome) / acceso a host (Firefox) — solo para tu copia WebDAV
+
+No pedimos historial, descargas, portapapeles ni otros datos de actividad.
+
+Casos de uso
+
+• Proyectos de investigación: un lienzo por proyecto, cajas por tema
+• Colecciones de marcadores organizadas visualmente
+• Mapas de conocimiento con enlaces espaciales
+• Acceso rápido a enlaces frecuentes en cada pestaña nueva
+
+Técnico
+
+JavaScript puro, sin frameworks ni empaquetadores.
+Funciona en Chrome, Edge, Firefox y otros navegadores Chromium.
+Manifest V3.
+Código: https://github.com/Xxx91n/boxing
+Licencia: Apache-2.0
+Privacidad: https://xxx91n.github.io/boxing/privacy-policy.html
