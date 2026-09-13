@@ -25,7 +25,8 @@
 
 <p>
   <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="Latest published release: v2026.9.11 on GitHub Releases" src="https://img.shields.io/badge/Latest_published-v2026.9.11-brightgreen?style=for-the-badge&logo=github" /></a>
-  <a href="docs/publishing-guide.md"><img alt="Edge Add-ons — rollout in progress" src="https://img.shields.io/badge/Edge_Add--ons-Coming_Soon-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
+  <a href="https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi"><img alt="Edge Add-ons — published" src="https://img.shields.io/badge/Edge_Add--ons-Published-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
+  <a href="https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/"><img alt="Firefox Add-ons — published" src="https://img.shields.io/badge/Firefox_Add--ons-Published-FF7139?style=for-the-badge&logo=firefox-browser&logoColor=white" /></a>
 </p>
 
 <p>
@@ -76,61 +77,38 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 ## Install
 
 > [!IMPORTANT]
-> **Latest published release: v2026.9.11.** The
-> [latest release](https://github.com/Xxx91n/boxing/releases/latest) (v2026.9.11, published 2026-09-09) ships `boxing-chrome-2026.9.11.zip` / `.crx`,
-> `boxing-firefox-2026.9.11.zip` / `.xpi`, and `SHA256SUMS.txt`. These are the only packages
-> this README describes as published. Newer builds (including current `main`) are
-> **not released yet**: they ship only after passing the release gate (CI green G-A, manual
-> zip golden-path G-B, Pages 200 G-C) per [ADR-0017](docs/adr/0017-release-data-gate.md);
-> candidates stay draft/pre-release until then. Store listings are still
-> rolling out: Edge Add-ons is in progress, Chrome Web Store is deferred until Edge is
-> live, and AMO has no public listing yet (the release `.xpi` is the self-hosted Firefox
-> install path). Rollout and signing workflow: the [publishing guide](docs/publishing-guide.md).
+> **Install from official store pages** (recommended). GitHub Releases are a **user-facing
+> changelog** and optional source/sideload zips — they **no longer ship `.xpi` / `.crx`**.
+> Version **2026.9.12** store packages are prepared for AMO / Edge upload by the publisher;
+> the **latest published store version remains 2026.9.11** until you finish those submissions.
+> Gate background: [ADR-0017](docs/adr/0017-release-data-gate.md). Publisher workflow:
+> [publishing guide](docs/publishing-guide.md) · [store plan](docs/store-publishing-plan.md).
 
-### Chrome / Edge (Chromium)
+### Firefox（正式安装）
 
-**From the release package (no build tools needed):**
+1. 打开 [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+2. 点击 **Add to Firefox**，按浏览器提示完成安装
 
-1. Download `boxing-chrome-<version>.zip` from the [latest release](https://github.com/Xxx91n/boxing/releases/latest) and unzip it
-2. Go to `chrome://extensions` (or `edge://extensions`)
-3. Enable **Developer mode** (top-right toggle)
-4. Click **Load unpacked** and select the unzipped `boxing-chrome/` folder
+### Edge / Chromium（正式安装）
 
-**From source:**
+1. 打开 [Edge Add-ons — Boxing](https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. 点击 **Get** / **获取** 完成安装（Chromium 系请使用 Edge 商店页面）
 
-1. Clone or download this repository
-2. Install [Node.js](https://nodejs.org) >= 18, then run `npm install` followed by `npm run build` inside the repo folder
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable **Developer mode** (top-right toggle)
-5. Click **Load unpacked** and select the `dist/boxing-chrome/` folder
+### 开发者：从源码构建
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**From the release package:**
-
-1. Download `boxing-firefox-<version>.xpi` from the [latest release](https://github.com/Xxx91n/boxing/releases/latest) and open it in Firefox — AMO-signed builds install directly; unsigned builds load only in Firefox Developer Edition/Nightly
-2. Or download `boxing-firefox-<version>.zip`, unzip it, go to `about:debugging#/runtime/this-firefox`, and click **Load Temporary Add-on...** pointing at the unzipped `manifest.json`
-
-**From source:**
-
-1. Clone or download this repository
-2. Run `npm install` followed by `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click **Load Temporary Add-on...** and select `dist/boxing-firefox/manifest.json` (temporary add-ons are removed when Firefox restarts — expected for unsigned development installs)
+- Chrome/Edge：`chrome://extensions` → 开发者模式 → **加载已解压的扩展程序** → 选 `dist/boxing-chrome/`
+- Firefox：`about:debugging#/runtime/this-firefox` → **临时载入附加组件** → 选 `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> **Signing status of build artifacts.** The build produces a `.zip` per browser for store
-> upload; it is not signed by this repository. The `.crx` is self-signed only when a CRX3
-> private key is configured in CI (`CRX_PRIVATE_KEY_PEM`); otherwise it is an unsigned local
-> placeholder. The `.xpi` is an unsigned development build unless AMO API credentials are
-> configured, in which case AMO signs it on the unlisted channel. Production signing is
-> provided by the stores (Edge Add-ons) or AMO/web-ext at publish time. The GitHub release
-> packages are the current official download surface; the store listings are still pending.
-
-> [!TIP]
-> End-user installs do not need Node.js or npm — load the unzipped release package (or the
-> signed `.xpi` on Firefox). Build tools are only required for the from-source route or when
-> contributing; see the [publishing guide](docs/publishing-guide.md).
+> 构建产物 zip 供**商店上传或本地调试**，不是用户正式安装渠道。正式安装请走上方商店链接。
+> 签名由商店完成；本仓 GitHub Release **不再**分发 `.xpi` / `.crx`。
 
 ## Usage
 

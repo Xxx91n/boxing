@@ -1,185 +1,91 @@
-# Publishing Guide
+# Publishing Guide — Boxing（2026-09-13 修订）
 
-This guide walks you through setting up CRX3 signing and AMO signing for production releases of Boxing.
+> 面向：**发布者（用户）**。商店上传由你完成；本指南给路径、材料与红线。
+> 保留心智模型：Chrome/Firefox 权限拆分、隐私页走 Pages、AMO 版号烧录教训、ADR-0017 门禁。
+> 已废除：「以 GitHub `.xpi`/`.crx` 为官方安装源」的旧叙述。
 
-> **Current rollout order (decided 2026-08-22):** Edge Add-ons first, Chrome Web Store **deferred** until Edge is live. Firefox AMO signing can continue in parallel because it produces the signed `.xpi` used for self-hosted download.
+## 当前发行口径（2026.9.12）
 
-## Prerequisites
+| 渠道 | 角色 |
+|---|---|
+| **Firefox AMO** | 正式安装源（9.11 已上线；9.12 由你提交新版本） |
+| **Edge Add-ons** | 正式安装源（9.11 已上线；9.12 由你提交） |
+| Chrome Web Store | 可选；历史上 Edge 优先 |
+| **GitHub Releases** | **变更日志 + 可选源码/侧载 zip**；**不发布 .xpi / .crx** |
 
-- Clone the repo: `git clone git@github.com:Xxx91n/boxing.git`
-- Run `npm install` (downloads build dependencies)
-- Node.js >= 18 (see `.nvmrc`)
+已上线 listing：
 
-## Part 1: CRX3 Signing (Chrome Web Store)
+- Firefox: https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/
+- Edge: https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi
 
-### Step 1: Generate a private key
+## 材料位置（本机）
 
-```bash
-openssl genrsa -out boxing.pem 2048
-```
+见 `D:\boxing-user-test-2026.9.12\README-TEST.txt` 与：
 
-This `.pem` file is your permanent CRX signing key. **Keep it safe** — if you lose it, you'll need to republish the extension with a new ID.
+- `boxing-chrome-2026.9.12.zip` — Edge/CWS 上传
+- `boxing-firefox-2026.9.12.zip` — AMO 上传
+- `boxing-source-2026.9.12.zip` — 商店源代码审核
+- `SOURCE-REVIEW-README.txt` — 审核说明
 
-### Step 2: Base64 encode the key for GitHub Secrets
+构建复现：Node ≥ 18，`npm ci && npm run build`。产物在 `dist/`。
 
-```bash
-# On Windows (Git Bash):
-base64 -w 0 boxing.pem | tr -d '\n' > boxing.pem.b64
-# On macOS/Linux:
-base64 -i boxing.pem | tr -d '\n' > boxing.pem.b64
-```
+## Part 1 — Firefox AMO 新版本
 
-### Step 3: Add to GitHub Secrets
+1. [Developer Hub](https://addons.mozilla.org/developers/) → 你的 listing → **Upload New Version**
+2. 上传 **未签名** `boxing-firefox-2026.9.12.zip`（商店负责签名）
+3. 版本说明：用 `CHANGELOG.md` 中 **2026.9.12** 用户向条目（勿贴 git log）
+4. 若要求源码：上传 `boxing-source-2026.9.12.zip`，说明：Vanilla JS、无混淆、`npm ci && npm run build`
+5. 隐私政策 URL：https://xxx91n.github.io/boxing/privacy-policy.html
+6. Submit
 
-1. Go to your repo on GitHub: `https://github.com/Xxx91n/boxing`
-2. Settings > Secrets and variables > Actions > New repository secret
-3. Name: `CRX_PRIVATE_KEY_PEM`
-4. Value: paste the base64-encoded content from `boxing.pem.b64`
-5. Add secret
+**红线（历史教训）：** 本地 `web-ext sign` + 真 API key 会**永久占用版号**。演练请用 `99.9.x` 或只跑 `web-ext lint`。商店网页上传不占用本仓 CI 的 AMO 签名步。
 
-### Result
+## Part 2 — Edge Add-ons 新版本
 
-When you trigger the Build workflow, the CRX3 step will use this key to produce a signed `.crx` file instead of a placeholder.
+1. [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) → Boxing → 新提交/新包
+2. 上传 `boxing-chrome-2026.9.12.zip`
+3. 文案与截图：`docs/store-assets/`
+4. 隐私政策 URL 同上
+5. Submit
 
-## Part 2: AMO Signing (Firefox Add-ons)
+## Part 3 — GitHub Release（用户向日志）
 
-### Step 1: Get AMO API credentials
+1. Tag：仅在你接受当前门禁状态后创建（见 ADR-0017；G-B 为 D-009 强制豁免须知情）
+2. 标题示例：`Boxing 2026.9.12`
+3. 正文结构（用户能读懂）：
+   - 一句话摘要
+   - **新增 / 改进 / 修复**（来自 CHANGELOG）
+   - **从哪里安装**（AMO / Edge 链接）
+   - 已知限制（若有）
+4. 附件（可选）：
+   - `boxing-source-2026.9.12.zip`（+ sha256）
+   - 可选 `boxing-chrome-2026.9.12.zip` 供开发者侧载
+   - **不要**上传 `.xpi` / `.crx`
+5. 不要把 release 写成工程师变更集（长 commit 列表、内部票号表）
 
-1. Go to [https://addons.mozilla.org/developers/](https://addons.mozilla.org/developers/)
-2. Log in with your Firefox/Mozilla account
-3. Click **API Keys** in the sidebar
-4. Generate a new API key/secret pair
-5. Copy the **JWT issuer** (API key) and **JWT secret** (API secret)
+## Part 4 — 权限与隐私（grill 保留）
 
-### Step 2: Add to GitHub Secrets
+- Chrome：`optional_host_permissions` — WebDAV 时再请求
+- Firefox：`host_permissions` — 审核更宽容
+- 隐私页：GitHub Pages `/docs`
+- 凭据：per-install key + AES-GCM **混淆级**信封，非用户口令加密（见 Privacy 文案）
 
-1. Go to your repo: `https://github.com/Xxx91n/boxing/settings/secrets/actions`
-2. New repository secret:
-   - Name: `AMO_API_KEY`
-   - Value: your JWT issuer key
-3. New repository secret:
-   - Name: `AMO_API_SECRET`
-   - Value: your JWT secret
-
-### Result
-
-When you trigger the Build workflow, the AMO step will run `web-ext sign --channel unlisted` to produce a signed XPI. The signed XPI replaces the unsigned dev XPI in the release artifacts.
-
-- `unlisted` channel means the XPI is signed but not listed on AMO — users install it from your release page.
-- If you want it listed on AMO, change `--channel unlisted` to `--channel listed` in the workflow (requires AMO review).
-
-## Part 3: Triggering a Build
-
-### Manual trigger (recommended)
-
-1. Go to `Actions` tab in your GitHub repo
-2. Select **Build & Package** workflow
-3. Click **Run workflow**
-4. Optionally enter a version number override
-5. Click **Run workflow**
-
-### What you get
-
-After the build completes, download the **boxing-release** artifact:
-
-| File | Description |
-|------|-------------|
-| `boxing-chrome-<ver>.zip` | Chrome build — for Chrome Web Store upload or "Load unpacked" |
-| `boxing-chrome-<ver>.crx` | CRX3 signed pack (if CRX_PRIVATE_KEY_PEM set) |
-| `boxing-firefox-<ver>.zip` | Firefox build — for AMO upload |
-| `boxing-firefox-<ver>.xpi` | AMO signed XPI (if AMO_API_KEY/SECRET set) or unsigned dev XPI |
-
-## Part 4: Store Submission
-
-### Edge Add-ons (current priority)
-
-Microsoft Edge uses the same Chromium Manifest V3 package format as Chrome — upload the same `boxing-chrome-<ver>.zip`.
-
-1. Sign in to [Microsoft Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) with a Microsoft account and enroll in the Edge Add-ons program (one-time).
-2. Create a new extension from the **Overview** page.
-3. On the **Packages** step, drag `boxing-chrome-<ver>.zip` onto **Drag your package here (.zip)**, wait for validation, click **Continue**.
-4. On **Availability**, choose **Public** (default, discoverable) or **Hidden** (listing URL only), and set target markets.
-5. On **Store listings**, fill `docs/store-assets/store-listing.md`; upload screenshots from `docs/store-assets/screenshots/`.
-6. Set privacy policy URL: `https://Xxx91n.github.io/boxing/privacy-policy.html`
-7. On **Properties / Contact**, set support email and website.
-8. **Publish** to submit for review. Typical review SLA: ~7 business days (often faster than Chrome Web Store).
-
-See the [official step-by-step guide](https://learn.microsoft.com/en-us/microsoft-edge/extensions/publish/publish-extension) for full screenshots of each Partner Center page.
-
-### Chrome Web Store (deferred)
-
-> Do **not** submit to Chrome Web Store yet — postponed until Edge listing is live and stable. Keep this section for later.
-
-1. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole/)
-2. Pay the $5 one-time developer fee (if first time)
-3. **Add new item** > upload `boxing-chrome-<ver>.zip`
-4. Fill in store listing (use `docs/store-assets/store-listing.md`)
-5. Upload screenshots from `docs/store-assets/screenshots/` (replace placeholders first!)
-6. Set privacy policy URL: `https://Xxx91n.github.io/boxing/privacy-policy.html`
-7. Submit for review (1-3 business days)
-
-### Firefox Add-ons (AMO)
-
-1. Go to [AMO Developer Hub](https://addons.mozilla.org/developers/)
-2. **Submit a New Add-on**
-3. Choose **On this site** (for listed)
-4. Upload `boxing-firefox-<ver>.zip`
-5. Fill in store listing
-6. Set privacy policy URL: `https://Xxx91n.github.io/boxing/privacy-policy.html`
-7. Submit for review
-
-## Part 5: GitHub Pages (Privacy Policy)
-
-1. Go to repo **Settings** > **Pages**
-2. Source: **Deploy from a branch**
-3. Branch: `main`, folder: `/docs`
-4. Save
-5. Your privacy policy will be available at `https://Xxx91n.github.io/boxing/privacy-policy.html`
-
-Note: GitHub Pages may need a _config.yml or index file. If Pages doesn't work with just markdown, create a simple `docs/_config.yml` or convert `privacy-policy.md` to `privacy-policy.html`.
-
-## Part 6: Local Testing Safety
-
-> **CRITICAL**: `web-ext sign` with real API credentials uploads to AMO and
-> permanently occupies the version number — even with `--channel unlisted`.
-> Deleted versions cannot be reused. This is not a bug; it is AMO policy.
-
-### Rule 1: Local validation uses `web-ext lint`, not `web-ext sign`
+## Part 5 — 本地验证（不烧号）
 
 ```bash
+npm ci
+npm run build
+node scripts/import-graph-guard.mjs
 npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 ```
 
-This checks manifest, permissions, and code style without uploading anything.
+`build.yml` 可用 `amo_sign=true` `make_release=false` 做 CI 打包且**不**打 tag、不烧 AMO 号。
 
-### Rule 2: If you absolutely must verify signing end-to-end
+## 安全清单
 
-Use a throwaway version number that you will never use for a real release:
-
-```bash
-# Temporarily set version to 99.9.1 in the Firefox dist manifest
-npx web-ext sign --channel unlisted --api-key "$AMO_KEY" --api-secret "$AMO_SECRET" \
-  --source-dir dist/boxing-firefox/release/firefox/boxing --artifacts-dir dist
-# Delete version 99.9.1 from AMO Developer Hub afterwards
-```
-
-Throwaway version numbers like `99.9.x` are safe because you will never use
-them for a real release. After signing, delete the version from the AMO
-Developer Hub versions page.
-
-### What happened (lesson learned)
-
-During K5 local CI simulation, `web-ext sign --channel unlisted` was run
-with real API keys and the production version numbers 3.7.0 and 3.7.1. Both
-versions were uploaded to AMO and approved as unlisted. The version numbers
-are now permanently consumed and cannot be reused even after deletion.
-Future releases start from 3.7.2.
-
-## Security Checklist
-
-- [ ] CRX private key stored securely (not in the repo)
-- [ ] AMO API secrets stored in GitHub Secrets (not in the repo)
-- [ ] `boxing.pem` file is backed up safely (losing it means republishing with a new extension ID)
-- [ ] Privacy policy page is accessible
-- [ ] Screenshots are replaced with real ones (not transparent placeholders)
-- [ ] Store listing descriptions are reviewed for accuracy
+- [ ] 商店上传使用本地已核对的 zip（sha256 与 README-TEST 一致）
+- [ ] 源码包无 `.git` / secrets / `.pem`
+- [ ] 隐私政策 URL 可打开
+- [ ] 截图非透明占位（若商店要求实图）
+- [ ] GitHub Release 无 xpi/crx，安装链到商店
+- [ ] 你知道 G-B 为强制豁免、G-A 以 CI 为准

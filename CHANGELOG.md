@@ -7,10 +7,36 @@ and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) st
 
 ## [Unreleased]
 
-Not released yet. Per [ADR-0017](docs/adr/0017-release-data-gate.md) these changes ship only
-after the release gate passes (CI green G-A, manual zip golden-path G-B, Pages 200 G-C);
-candidates stay draft/pre-release until then. The latest published release remains
-[v2026.9.11](https://github.com/Xxx91n/boxing/releases/tag/v2026.9.11).
+Internal work after 2026.9.12. Per [ADR-0017](docs/adr/0017-release-data-gate.md) store
+uploads and GitHub tags still follow the release gate. Install from official store pages
+(see [publishing guide](docs/publishing-guide.md)); GitHub Releases are changelog-first
+and no longer ship `.xpi` / `.crx`.
+
+## [2026.9.12] - 2026-09-13
+
+User-facing notes for store listings and the GitHub Release body.
+
+### Added
+- **Zero-flash new tab** — first paint already uses your remembered theme and dark mode; no beige flash.
+- **Conflict copy browser** — settings Data tab lists archived conflict copies and can export each as JSON.
+- **WebDAV private/LAN host opt-in** — default still blocks private hosts; you can explicitly allow your own NAS/server in Settings → Sync.
+- **Search debounce** — canvas search no longer re-queries on every keystroke.
+
+### Improved
+- **Credential hardening** — backup passwords/tokens use a per-install random key (obfuscation-grade at rest, not passphrase encryption).
+- Stronger data-integrity write-path checks so layout writes stay behind the storage facade.
+- Popup primary button uses the design-system accent color.
+- Docs: clearer store/release guides; GitHub Releases point at official store pages.
+
+### Fixed
+- Unload race that could drop a just-deleted connection or seeded boxes on reload.
+- Cross-tab / snapshot consistency issues behind the data-resilience suite.
+- UI version strings follow the manifest calver.
+
+### Install
+- Firefox: [AMO listing](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+- Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://xxx91n.github.io/boxing/privacy-policy.html)
 
 ### Changed
 - Toolbar icons realigned with the curated docs/brand assets (ticket 01).
