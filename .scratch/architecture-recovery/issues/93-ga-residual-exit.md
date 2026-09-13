@@ -6,14 +6,14 @@
 
 **Blocked by:** 87, 88, 89
 
-**Status:** ready-for-agent（前置 CI 绿 https://github.com/Xxx91n/boxing/actions/runs/34773593267 · 2026-09-14）
+**Status:** done（2026-09-14 · G-A 出口 run https://github.com/Xxx91n/boxing/actions/runs/34773593267 全绿 + corroboration run https://github.com/Xxx91n/boxing/actions/runs/34778641702（tip 02d31657）全绿 · 报告 reports/93-report.md）
 
 ## Acceptance criteria
 
-- [ ] R1–R3 关闭或具名 F
-- [ ] N 桶/数据完整性零豁免
-- [ ] 附 green run URL；更新账本状态
-- [ ] reports/93-report.md
+- [x] R1–R3 关闭或具名 F（R1 关闭 · R3 关闭 · R2 具名 F）
+- [x] N 桶/数据完整性零豁免
+- [x] 附 green run URL；更新账本状态
+- [x] reports/93-report.md
 
 ## Notes
 
