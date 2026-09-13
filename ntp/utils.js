@@ -460,9 +460,15 @@ function mergeLayoutThreeWay(cloud, local, base) {
       // No base for this box: legacy ticket-44 heuristic on non-children fields.
       // nextSmallIndex is an auto-increment counter — already unified via maxIdx
       // below, so a difference here is not a user-data conflict (AC1/AC2 fix).
+      // Only keys present on BOTH sides can diverge: page init/migrate may inject
+      // bookkeeping fields (isParent, etc.) on one side only — those are not
+      // user-data conflicts and must not inflate boxConflicts (ticket 91 CI).
       const divergedFields = [];
-      for (const key of Object.keys(lb)) {
+      const fieldKeys = new Set([...Object.keys(lb), ...Object.keys(existing)]);
+      for (const key of fieldKeys) {
         if (key === 'children' || key === 'nextSmallIndex') continue;
+        if (!Object.prototype.hasOwnProperty.call(lb, key)) continue;
+        if (!Object.prototype.hasOwnProperty.call(existing, key)) continue;
         if (JSON.stringify(existing[key]) !== JSON.stringify(lb[key])) divergedFields.push(key);
       }
       if (divergedFields.length > 0) boxConflicts.push({ ...existing });
