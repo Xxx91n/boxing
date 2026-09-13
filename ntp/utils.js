@@ -458,9 +458,11 @@ function mergeLayoutThreeWay(cloud, local, base) {
       box = mergedBox;
     } else {
       // No base for this box: legacy ticket-44 heuristic on non-children fields.
+      // nextSmallIndex is an auto-increment counter — already unified via maxIdx
+      // below, so a difference here is not a user-data conflict (AC1/AC2 fix).
       const divergedFields = [];
       for (const key of Object.keys(lb)) {
-        if (key === 'children') continue;
+        if (key === 'children' || key === 'nextSmallIndex') continue;
         if (JSON.stringify(existing[key]) !== JSON.stringify(lb[key])) divergedFields.push(key);
       }
       if (divergedFields.length > 0) boxConflicts.push({ ...existing });
