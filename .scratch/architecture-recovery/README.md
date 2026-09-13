@@ -160,3 +160,20 @@ Frontier 更新: 76/77 按 D-009 关闭；**78 可开工**（关闭评论须写�
 | 合并 | 栈就绪 · **未 land/push** |
 | 报告 | reports/W7-closeout-audit.md |
 | backlog | docs/history/2026-09-12-wave7-closeout-backlog.md |
+
+## Wave9 波次表（2026-09-13 · 由 Blocked by 推导）
+
+| 波次 | 票 | Covers | Blocked by | 状态 |
+|---|---|---|---|---|
+| W1 | 87 star-sync | A-041 | — | ready |
+| W1 | 88 empty-state | A-042 | — | ready |
+| W1 | 89 auto-expand | A-043 | — | ready |
+| W1 | 90 webdav-b54 | A-044 | — | ready |
+| W1 | 91 merge-three-way | A-045 | — | ready |
+| W1 | 92 boot-pending-e2e | A-046 | — | ready |
+| W2 | 93 ga-residual-exit | A-047 | 87,88,89 | blocked |
+| W3 | 94 version-2026-9-15 | A-048 | 91,92,93 | blocked |
+
+- A-040 纸面债: implemented（无票）
+- GH 镜像: #10→87 · #11→91 · #12→93
+- Spec: `spec.md` · 对账: `destination-reconciliation-wave9.md`（无去向=空）
