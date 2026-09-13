@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** done-when-CI（e2e 代码+报告+账本落盘、静态验证绿；运行时锚点=wave9 CI 派发 run，见 reports/92 §3/P-92-2）
+**Status:** done（2026-09-14 · https://github.com/Xxx91n/boxing/actions/runs/34773593267）
 
 ## Acceptance criteria
 

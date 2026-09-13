@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** implemented (local; CI-open) — 2026-09-13 · 证据 reports/90-report.md · commit `vwu` @ `wave9-ticket90-webdav-b54`
+**Status:** done（2026-09-14 · https://github.com/Xxx91n/boxing/actions/runs/34773593267）
 
 ## Acceptance criteria
 

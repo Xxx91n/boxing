@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** fixed-pending-ci（91R 已修 e2e 加载+凭据；F-91-CI 待 push）
+**Status:** done（2026-09-14 · https://github.com/Xxx91n/boxing/actions/runs/34773593267）
 
 ## Acceptance criteria
 
@@ -14,7 +14,7 @@
 - [x] 冲突副本 UI（票 79）接线（webdav-child-conflict 经归档键族入读取口；performBackup 反馈；e2e AC2 断言）
 - [x] e2e：双端加子盒 → pull → 双方可见（boxing-merge-three-way.spec.ts AC1；执行证据=CI）
 - [x] 未改 newer-wins 语义；80 报告 §6.1 + ADR-0009 修订 + CONTEXT 行已同步
-- [ ] 相关 CI 绿（具名 F-91-CI，待大脑派发 run）；reports/91-report.md ✅
+- [x] 相关 CI 绿（具名 F-91-CI，待大脑派发 run）；reports/91-report.md ✅
 
 ## Notes
 

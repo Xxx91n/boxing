@@ -210,3 +210,12 @@ Frontier 更新: 76/77 按 D-009 关闭；**78 可开工**（关闭评论须写�
 下一门：**用户明令 push 整栈 → main test.yml** → 关 87–92/91R/95 的 CI 项 → 开 **93**（需 87/88/89 绿）→ **94**。
 
 栈顶: `ticket-95-credential-sweep` (lkk) on 91R on w1-review …
+
+
+## CI Loop 收口（2026-09-14）
+
+- **main test.yml GREEN**: https://github.com/Xxx91n/boxing/actions/runs/34773593267 @ `16ce5d27`
+- 修复链: cluster-map CM-1 → nextSmallIndex → **no-base both-sides-only 字段比较**（nyu/16ce5d27）
+- 87–92 / 91R / 95 → **done**
+- **93 / 94 → ready-for-agent**
+- G-A 出口票 93 实质前置已满足（CI 绿）；93 仍负责残红治理账本化与门禁表述

@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** done-local（修复落盘+grep/​--list 证据见 reports/91-report.md 返工轮次 91R R3；CI 关闭待用户 push+派发）
+**Status:** done（2026-09-14 · https://github.com/Xxx91n/boxing/actions/runs/34773593267）
 
 ## Acceptance criteria
 

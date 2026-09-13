@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** done-when-CI（首脑核验通过 2026-09-14：grep 0 + env 在位 + --list 可加载；F-95-CI 待 push）
+**Status:** done（2026-09-14 · https://github.com/Xxx91n/boxing/actions/runs/34773593267）
 
 ## Acceptance criteria
 

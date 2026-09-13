@@ -6,7 +6,7 @@
 
 **Blocked by:** 87, 88, 89
 
-**Status:** ready-for-agent
+**Status:** ready-for-agent（前置 CI 绿 https://github.com/Xxx91n/boxing/actions/runs/34773593267 · 2026-09-14）
 
 ## Acceptance criteria
 

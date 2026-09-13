@@ -6,13 +6,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** fixed-pending-ci（W1 复核：产品修复已实物确认；CI 待 push）
+**Status:** done（2026-09-14 · https://github.com/Xxx91n/boxing/actions/runs/34773593267）
 
 ## Acceptance criteria
 
-- [ ] 分诊 env vs 产品；产品修复 token/样式
-- [ ] 非只改断言掩盖缺陷
-- [ ] 报告 reports/88-report.md + CI 证据
+- [x] 分诊 env vs 产品；产品修复 token/样式
+- [x] 非只改断言掩盖缺陷
+- [x] 报告 reports/88-report.md + CI 证据
 
 ## Notes
 
