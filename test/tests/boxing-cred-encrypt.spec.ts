@@ -5,6 +5,9 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
+// Ticket 95 (A-049): no real account in source — the user field only needs a
+// placeholder shape; BOXING_SPEC_WEBDAV_USER env overrides (91R pattern).
+const WEBDAV_USER = process.env.BOXING_SPEC_WEBDAV_USER || 'spec-user';
 
 async function resetFresh(page) {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
@@ -147,13 +150,13 @@ test.describe('BX-CRED-V2: encrypted credential backup/restore', () => {
   test('exported JSON contains encrypted credentials, never plaintext', async ({ page }) => {
     await resetFresh(page);
     // Set a webdav pass via encrypt then verify export excludes plaintext form.
-    await page.evaluate(async () => {
+    await page.evaluate(async (user) => {
       const enc = (window as any).__boxingEncryptCredential;
       const dbg = (window as any).__boxingDebug;
       dbg.layout.settings._encWebdavPass = await enc('super-secret-pass-123');
-      dbg.layout.settings.webdavUser = 'jinxi2410@gmail.com';
+      dbg.layout.settings.webdavUser = user;
       await dbg.layout.settings;
-    });
+    }, WEBDAV_USER);
     // Snapshot layout export
     const exportPayload = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;

@@ -24,9 +24,9 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     await bootFresh(page);
     const isSafe = (u: string) => page.evaluate((x) => (window as any).__boxingIsSafeExtUrl(x), u);
 
-    expect(await isSafe('https://app.koofr.net/dav/Koofr/')).toBe(true);
+    expect(await isSafe('https://dav.example.net/dav/webdav/')).toBe(true);
     expect(await isSafe('https://example.com/foo')).toBe(true);
-    expect(await isSafe('http://app.koofr.net/dav/Koofr/')).toBe(false);
+    expect(await isSafe('http://dav.example.net/dav/webdav/')).toBe(false);
     expect(await isSafe('https://127.0.0.1/dav/')).toBe(false);
     expect(await isSafe('https://10.0.0.1/dav/')).toBe(false);
     expect(await isSafe('https://192.168.1.1/dav/')).toBe(false);
@@ -37,8 +37,8 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     expect(await isSafe('https://host.local/dav/')).toBe(false);
     expect(await isSafe('https://host.internal/dav/')).toBe(false);
     expect(await isSafe('https://[::1]/dav/')).toBe(false);
-    expect(await isSafe('https://user:pass@app.koofr.net/dav/Koofr/')).toBe(false);
-    expect(await isSafe('https://app.koofr.net/dav/' + 'a'.repeat(2100))).toBe(false);
+    expect(await isSafe('https://user:pass@dav.example.net/dav/webdav/')).toBe(false);
+    expect(await isSafe('https://dav.example.net/dav/' + 'a'.repeat(2100))).toBe(false);
     expect(await isSafe('not-a-url')).toBe(false);
   });
 
@@ -58,7 +58,7 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     expect(await isSafe('http://192.168.1.50/dav/', true)).toBe(false);
     expect(await isSafe('https://user:pass@192.168.1.50/dav/', true)).toBe(false);
     expect(await isSafe('https://192.168.1.50/dav/' + 'a'.repeat(2100), true)).toBe(false);
-    expect(await isSafe('https://app.koofr.net/dav/Koofr/', true)).toBe(true);
+    expect(await isSafe('https://dav.example.net/dav/webdav/', true)).toBe(true);
   });
 
   test('private-network opt-in defaults to off and follows the persisted setting (A-032)', async ({ page }) => {

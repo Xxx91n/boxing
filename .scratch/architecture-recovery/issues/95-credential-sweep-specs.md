@@ -6,14 +6,14 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done-when-CI（票 95 落地，2026-09-14；CI 证据 = 具名 F-95-CI，见 reports/95-report.md §6）
 
 ## Acceptance criteria
 
-- [ ] `grep -R kel988 / jinxi2410 / 真实 koofr 主机` 在 `test/` 与 `.codex-tmp/` 工作树 **0 命中**（历史 commit 不在本票范围）
-- [ ] 各 spec 使用 env override + 占位；`--list` 仍可加载
-- [ ] 不削弱既有断言；`reports/95-report.md` 落盘
-- [ ] 提醒用户：密码仍须轮换（多文件历史已含）
+- [x] `grep -R kel988 / jinxi2410 / 真实 koofr 主机` 在 `test/` 与 `.codex-tmp/` 工作树 **0 命中**（历史 commit 不在本票范围）— 实测 case-sensitive 与 case-insensitive 均 0；36 处（test/ 22 + zip-verify 副本 14）全部 env 化
+- [x] 各 spec 使用 env override + 占位；`--list` 仍可加载 — 7 spec 合收 Total: 108 tests in 7 files
+- [x] 不削弱既有断言；`reports/95-report.md` 落盘 — 逐文件论证见报告 §2/§3/§4
+- [x] 提醒用户：密码仍须轮换（多文件历史已含）— 报告 §5 重申；本窗口收口消息具名提醒
 
 ## Notes
 

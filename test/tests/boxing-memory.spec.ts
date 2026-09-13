@@ -5,6 +5,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 
+// Ticket 95 (A-049 credential sweep): NO real credentials in source. This test only
+// types values into the settings inputs and asserts the flush round-trip, so the
+// placeholders never hit the network; a staging account can be injected via
+// BOXING_SPEC_WEBDAV_* env vars (91R pattern).
+const WEBDAV_URL = process.env.BOXING_SPEC_WEBDAV_URL || 'https://webdav.invalid/dav/';
+const WEBDAV_USER = process.env.BOXING_SPEC_WEBDAV_USER || 'spec-user';
+const WEBDAV_PASS = process.env.BOXING_SPEC_WEBDAV_PASS || 'spec-pass';
+
 // BX-DEV-111M/N/L regression: permanent memory + per-box viewState + credential flush.
 // Covers: (1) closing-tab loses credential bug fix via flushUnsavedCredentials,
 //         (2) each large box persists its own inner zoom/pan -> cross-tab + browser restart,
@@ -98,17 +106,17 @@ test.describe('Permanent memory + per-box viewState (BX-DEV-111M/N/L)', () => {
   test('flushCredentials persists the current _encWebdavPass even without blur (close-browser bug fix)', async ({ page }) => {
     await resetFreshSkipOnboarding(page);
     // Simulate user typing credentials directly into the input fields (no blur fired).
-    await page.evaluate(() => {
+    await page.evaluate((cfg) => {
       const urlInput = document.getElementById('webdav-url');
       const userInput = document.getElementById('webdav-user');
       const passInput = document.getElementById('webdav-pass');
-      if (urlInput) urlInput.value = 'https://app.koofr.net/dav/Koofr/';
-      if (userInput) userInput.value = 'jinxi2410@gmail.com';
-      if (passInput) passInput.value = 'kel988j8tv44f2v0';
+      if (urlInput) urlInput.value = cfg.url;
+      if (userInput) userInput.value = cfg.user;
+      if (passInput) passInput.value = cfg.pass;
       // Open the settings modal so inputs exist / are readable.
       const modal = document.getElementById('settings-modal');
       if (modal) modal.hidden = false;
-    });
+    }, { url: WEBDAV_URL, user: WEBDAV_USER, pass: WEBDAV_PASS });
     // Fire flushUnsavedCredentials without firing blur — simulates pagehide / browser close path.
     const flushed = await page.evaluate(() => {
       const fn = (window as any).__boxingFlushCredentials;
@@ -130,8 +138,8 @@ test.describe('Permanent memory + per-box viewState (BX-DEV-111M/N/L)', () => {
       url: (window as any).__boxingDebug.layout.settings.webdavUrl,
       user: (window as any).__boxingDebug.layout.settings.webdavUser,
     }));
-    expect(cfg.url).toBe('https://app.koofr.net/dav/Koofr/');
-    expect(cfg.user).toBe('jinxi2410@gmail.com');
+    expect(cfg.url).toBe(WEBDAV_URL);
+    expect(cfg.user).toBe(WEBDAV_USER);
   });
 });
 

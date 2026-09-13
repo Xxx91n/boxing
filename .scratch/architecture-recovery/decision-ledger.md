@@ -125,4 +125,4 @@
 | A-046 | B56 boot-pending 专项 e2e（73 呈报 P-73-1） | 防零闪现回归自动化 | 不回滚零闪现实现 | fixed-pending-ci（票 92 · W1 复核）|
 | A-047 | G-A 不成立（run 34749813393）：三 OS test 红；出口=main test.yml 绿或仅具名 F | 残红治理至可发行 G-A | N 桶/数据完整性永不豁免；关联 GH #12 | current |
 | A-048 | 目标版本 2026.9.15 全部修复出口（D-004/005）：版本串+notes+G-A∧G-B∧G-C | 版本就绪且门禁可宣称前禁止夸大 | 持有 9.12 不热修；G-B=用户声明 pass 禁 agent 代签 | current |
-| A-049 | 存量 spec 真实 WebDAV 凭据（91R R4：cred-encrypt / dr-export / import-merge / memory / sync 等 + .codex-tmp 副本） | 统一 env 化占位；工作树 grep 0 | 不改写历史；不弱化断言；密码轮换仍属用户 | current |
+| A-049 | 存量 spec 真实 WebDAV 凭据（91R R4：cred-encrypt / dr-export / import-merge / memory / sync 等 + .codex-tmp 副本） | 统一 env 化占位；工作树 grep 0 | 不改写历史；不弱化断言；密码轮换仍属用户 | swept-pending-ci（票95：test/ 22 处 + zip-verify 副本 14 处 env 化，grep 0 / --list 108；历史仍含旧字节待用户轮换；CI 具名 F-95-CI 待大脑派发） |

@@ -4,7 +4,11 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
-const WEBDAV_URL = 'https://app.koofr.net/dav/Koofr';
+// Ticket 95 (A-049 credential sweep): NO real credentials in source; the lane's
+// sendMessage mock fully answers webdav-*, so the URL only needs to pass
+// checkUrlValid (https, non-private, no embedded auth). Staging account via
+// BOXING_SPEC_WEBDAV_URL env (91R pattern).
+const WEBDAV_URL = process.env.BOXING_SPEC_WEBDAV_URL || 'https://webdav.invalid/dav';
 
 // Mock chrome.runtime.sendMessage so ntp.js's sendToBackground works in file:// context.
 // The heart function receives the message and returns a simulated WebDAV response.
@@ -268,7 +272,7 @@ test.describe('WebDAV private-host opt-in propagation (ticket 90 / A-044)', () =
   });
 
   test('non-private host is unaffected by the opt-in either way', async ({ page }) => {
-    await bootAndSeed(page, 'https://app.koofr.net/dav/Koofr/', false);
+    await bootAndSeed(page, WEBDAV_URL, false);
     const err = await page.evaluate(async () => {
       try { await (window as any).__boxingDebug.syncWebDAV({ bypassLossGuard: true }); return null; }
       catch (e) { return e.message; }

@@ -17,9 +17,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
 const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp', 'index.html')).href;
-const WEBDAV_URL = 'https://app.koofr.net/dav/Koofr/';
-const WEBDAV_USER = 'jinxi2410@gmail.com';
-const WEBDAV_PASS = 'kel988j8tv44f2v0';
+// Ticket 95 (A-049 credential sweep): NO real credentials in source. This spec's
+// WebDAV transport is fully stubbed by the runtime.sendMessage mock, so the config
+// only needs to pass checkUrlValid (https, non-private host, no embedded auth).
+// A staging account can be injected via BOXING_SPEC_WEBDAV_* env vars (91R pattern).
+const WEBDAV_URL = process.env.BOXING_SPEC_WEBDAV_URL || 'https://webdav.invalid/dav/';
+const WEBDAV_USER = process.env.BOXING_SPEC_WEBDAV_USER || 'spec-user';
+const WEBDAV_PASS = process.env.BOXING_SPEC_WEBDAV_PASS || 'spec-pass';
 
 function bareLayout(title) {
   return {
