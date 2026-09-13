@@ -6,13 +6,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done-when-CI（e2e 代码+报告+账本落盘、静态验证绿；运行时锚点=wave9 CI 派发 run，见 reports/92 §3/P-92-2）
 
 ## Acceptance criteria
 
-- [ ] e2e 覆盖首帧主题/遮罩行为
-- [ ] 不回滚 boot-theme 实现
-- [ ] reports/92-report.md
+- [x] e2e 覆盖首帧主题/遮罩行为
+- [x] 不回滚 boot-theme 实现
+- [x] reports/92-report.md
 
 ## Notes
 
