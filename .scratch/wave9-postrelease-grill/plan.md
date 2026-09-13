@@ -60,9 +60,9 @@ A 纸面债收口 · B G-A 定谳与修绿 · C 技术债实施。
 
 | ID | 标题方向 | AC 要点 |
 |---|---|---|
-| W9-I1 | R1 star-sync B桶修绿 | 三 OS test 不再红该签名；附 run URL |
-| W9-I2 | B55 merge 三向 | 双端加子盒 pull 后双方可见；禁静默吞没 |
-| W9-I3 | G-A 残红治理出口 | main test.yml 绿或仅具名 F；N 桶禁豁免 |
+| W9-I1 = [#10](https://github.com/Xxx91n/boxing/issues/10) | R1 star-sync B桶修绿 | 三 OS test 不再红该签名；附 run URL |
+| W9-I2 = [#11](https://github.com/Xxx91n/boxing/issues/11) | B55 merge 三向 | 双端加子盒 pull 后双方可见；禁静默吞没 |
+| W9-I3 = [#12](https://github.com/Xxx91n/boxing/issues/12) | G-A 残红治理出口 | main test.yml 绿或仅具名 F；N 桶禁豁免 |
 
 ## 6. 过程约束（D-008 / D-002）
 
@@ -77,6 +77,12 @@ A 纸面债收口 · B G-A 定谳与修绿 · C 技术债实施。
 - 结论: data-golden 绿；三 OS test 红 → **G-A 不成立**  
 - 分桶: R1=B 稳定 · R2=F/B 待分诊 · R3=F  
 - 文件: `ga-definitive-b4f3df2.md` · `ga-baseline-34737182812.md`
+
+## 7b. 状态（2026-09-13 整理后）
+
+- 纸面 W9-P1..P5: **已落盘**（ADR-0017 修订 / notes live 刷新 / README 徽章 / AGENTS+CONTEXT 路径 / history 声明 / docs-pointer-check 机器路径扫描）
+- Issues: **#10 #11 #12** 已建
+- 分支: `wave9-paper-debt` 两笔线性提交（tsn / nwy）；**未 push**
 
 ## 8. 实施清单（执行序，授权后）
 
