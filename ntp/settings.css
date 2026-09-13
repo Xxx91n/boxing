@@ -745,8 +745,13 @@ body.box-resizing {
   /* ticket 13: legacy element-selector override removed — bm-add-btn is the only
      button in .bm-add-row (popups.js); explicit transparent reset beats base (0-3-0 > 0-2-0) */
   background: transparent;
-  border-color: var(--color-hairline);
-  color: var(--color-muted);
+  /* ticket 88 (A-042): dark ghost affordance. --color-hairline in dark resolves to
+     rgba(255,255,255,0.06) = 1.20:1 against --color-elevated (#302D29); with a
+     transparent fill that hairline was the only boundary cue. --color-muted (#9A9285)
+     measures 4.45:1 and --color-ink-soft (#C8C2B6) 7.72:1 — both clear the 3:1
+     non-text and 4.5:1 text lines. Semantic tokens only; no literal colors. */
+  border-color: var(--color-muted);
+  color: var(--color-ink-soft);
 }
 .ntp--dark .bm-add-row .bm-add-btn:hover {
   background: var(--color-accent-soft);

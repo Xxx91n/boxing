@@ -301,6 +301,150 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
       getComputedStyle(document.querySelector('.bm-add-btn')!).backgroundColor)).toBe(probeBg);
   });
 
+  // Ticket 88 (A-042): the dark bm-add-btn is a transparent ghost by design (ticket 13), so its
+  // perceivability rests entirely on the glyph colour and the dashed boundary. Measured on the
+  // small-box backdrop (--color-elevated #302D29) before this ticket: glyph 4.45:1 (below WCAG 2.1
+  // SC 1.4.3's 4.5:1 for 13px/500 text) and hairline border 1.20:1 (far below the 3:1 line SC
+  // 1.4.11 sets for non-text cues). Fixed by moving the dark override onto --color-ink-soft /
+  // --color-muted. This test asserts the CONTRAST RATIO derived from computed styles, so any
+  // future token change that dims the button fails here — it is a contract lock, not a waiver.
+  test('Bug5-dark contrast: bm-add-btn is perceivable and clickable in dark mode', async ({ page }) => {
+    await resetBoxing(page);
+    const lbId = await addLargeBox(page);
+    await enterLargebox(page, lbId);
+    await createSmallBox(page);
+    await page.evaluate(() => {
+      document.getElementById('app')?.classList.add('ntp--dark');
+      document.body.classList.add('ntp--dark');
+    });
+
+    // Contrast is derived from the real computed styles: the glyph colour and the dashed border,
+    // each composited over the first opaque ancestor background (the ghost itself is transparent).
+    const measure = () => page.evaluate(() => {
+      const btn = document.querySelector('.bm-add-btn') as HTMLElement | null;
+      if (!btn) return null;
+      const parse = (s: string) => {
+        const m = /rgba?\(([^)]+)\)/.exec(s || '');
+        if (!m) return null;
+        const p = m[1].split(',').map(x => parseFloat(x.trim()));
+        return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+      };
+      const lum = (c: any) => {
+        const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+        return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+      };
+      const ratio = (a: any, b: any) => {
+        const l1 = lum(a), l2 = lum(b);
+        return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      };
+      let node: HTMLElement | null = btn.parentElement;
+      let backdrop: any = null;
+      while (node) {
+        const c = parse(getComputedStyle(node).backgroundColor);
+        if (c && c.a > 0.85) { backdrop = { r: c.r, g: c.g, b: c.b, a: 1 }; break; }
+        node = node.parentElement;
+      }
+      if (!backdrop) return null;
+      const cs = getComputedStyle(btn);
+      const glyph = parse(cs.color);
+      const border = parse(cs.borderTopColor);
+      if (!glyph || !border) return null;
+      const over = (fg: any) => ({
+        r: fg.r * fg.a + backdrop.r * (1 - fg.a),
+        g: fg.g * fg.a + backdrop.g * (1 - fg.a),
+        b: fg.b * fg.a + backdrop.b * (1 - fg.a),
+        a: 1,
+      });
+      return { text: ratio(over(glyph), backdrop), border: ratio(over(border), backdrop) };
+    });
+
+    // `color` and `border-color` are transitioned over --dur-fast (140ms), so sample the settled
+    // value by polling (ticket 72 convention) rather than reading the start of the transition.
+    await expect.poll(measure).not.toBeNull();
+    await expect.poll(async () => (await measure())!.text).toBeGreaterThanOrEqual(4.5);
+    await expect.poll(async () => (await measure())!.border).toBeGreaterThanOrEqual(3);
+
+    // Clickable: a real pointer click must open the add-bookmark popup (not just a DOM .click()).
+    await page.click('.bm-add-btn');
+    await expect.poll(() => page.evaluate(() =>
+      Boolean(document.querySelector('.bm-edit-popup')))).toBe(true);
+  });
+
+  // Ticket 88 (A-042) — the AC says "空态添加按钮", which is a FAMILY, not just .bm-add-btn.
+  // Measured in dark: .canvas__empty-action / .large-box__empty-action / .inner__empty-action all
+  // paint a filled (--color-accent-soft) button whose label measures 5.75–6.22:1 — above SC 1.4.3.
+  // Their borders measure ~1.8:1, which is NOT a 1.4.11 failure: Understanding "Boundaries"
+  // exempts the boundary when the control has sufficiently contrasting content identifying it.
+  // (Contrast with .bm-add-btn above: its "+" was 4.45:1, i.e. the content itself was sub-threshold,
+  // so there the boundary had to be strengthened.) This test locks the family-wide text contract so
+  // a future token change cannot silently drop the empty-state labels below 4.5:1.
+  async function emptyStateTextContrast(page: any, selector: string) {
+    return page.evaluate((sel: string) => {
+      const btn = document.querySelector(sel) as HTMLElement | null;
+      if (!btn) return null;
+      const parse = (s: string) => {
+        const m = /rgba?\(([^)]+)\)/.exec(s || '');
+        if (!m) return null;
+        const p = m[1].split(',').map(x => parseFloat(x.trim()));
+        return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+      };
+      const lum = (c: any) => {
+        const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+        return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+      };
+      const ratio = (a: any, b: any) => {
+        const l1 = lum(a), l2 = lum(b);
+        return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      };
+      let node: HTMLElement | null = btn.parentElement;
+      let backdrop: any = null;
+      while (node) {
+        const c = parse(getComputedStyle(node).backgroundColor);
+        if (c && c.a > 0.85) { backdrop = { r: c.r, g: c.g, b: c.b, a: 1 }; break; }
+        node = node.parentElement;
+      }
+      if (!backdrop) return null;
+      const cs = getComputedStyle(btn);
+      const fg = parse(cs.color);
+      const bg = parse(cs.backgroundColor);
+      if (!fg || !bg) return null;
+      const fill = {
+        r: bg.r * bg.a + backdrop.r * (1 - bg.a),
+        g: bg.g * bg.a + backdrop.g * (1 - bg.a),
+        b: bg.b * bg.a + backdrop.b * (1 - bg.a),
+        a: 1,
+      };
+      const label = {
+        r: fg.r * fg.a + fill.r * (1 - fg.a),
+        g: fg.g * fg.a + fill.g * (1 - fg.a),
+        b: fg.b * fg.a + fill.b * (1 - fg.a),
+        a: 1,
+      };
+      return ratio(label, fill);
+    }, selector);
+  }
+
+  test('Bug5-dark contrast: empty-state action buttons keep legible labels in dark mode', async ({ page }) => {
+    await resetBoxing(page);
+    await page.evaluate(() => {
+      document.getElementById('app')?.classList.add('ntp--dark');
+      document.body.classList.add('ntp--dark');
+    });
+    // These labels are transitioned over --dur-fast; poll for the settled ratio (ticket 72 convention).
+    await expect.poll(() => emptyStateTextContrast(page, '.canvas__empty-action')).not.toBeNull();
+    await expect.poll(() => emptyStateTextContrast(page, '.canvas__empty-action'))
+      .toBeGreaterThanOrEqual(4.5);
+
+    const lbId = await addLargeBox(page);
+    expect(lbId).toBeTruthy();
+    await expect.poll(() => emptyStateTextContrast(page, '.large-box__empty-action'))
+      .toBeGreaterThanOrEqual(4.5);
+
+    await enterLargebox(page, lbId);
+    await expect.poll(() => emptyStateTextContrast(page, '.inner__empty-action'))
+      .toBeGreaterThanOrEqual(4.5);
+  });
+
   // Bug 6: will-change:transform + contain:layout on boxes
   test('Bug6: will-change:transform on large-box', async ({ page }) => {
     await resetBoxing(page);
