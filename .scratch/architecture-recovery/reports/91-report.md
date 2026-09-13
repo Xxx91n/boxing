@@ -91,3 +91,47 @@ ctx source=`atomcode-91-baseline`（2026-09-13，三引擎 9 查询/8 全文抓�
 ## 首脑复核标注（2026-09-13 · 非返工窗口写入）
 
 W1 首脑复核判定本票 **blocked-rework**：明文凭据 + `fileURLToPath` 缺失。详细见 `reports/W1-brain-review.md`。返工章节由 91R 窗口追加。
+
+---
+
+# 返工轮次 91R（A-045 · 凭据清除 + e2e 可加载）
+
+- 日期: 2026-09-14 · 窗口: 91R 返工子窗口 · 输入: reports/W1-brain-review.md（首脑已核验缺陷，本窗口先实物复核再改，非「自述一致」）
+- 边界: **不回滚** mergeLayoutThreeWay/syncBase 产品实现；**不** amend/改写 commit `38a2d005`（未获明令）；不恢复任何真实凭据；不宣称 CI 绿。
+
+## R1. 缺陷实物复核（与 W1 结论一致）
+
+| # | 缺陷 | 实物确认 |
+|---|---|---|
+| 1 | `test/tests/boxing-merge-three-way.spec.ts` L26–28 真实 Koofr URL + gmail + 明文密码（随 wmt=`38a2d005` 入库） | ✅ 命中（grep 修复前 3 处） |
+| 2 | L21 只 import `pathToFileURL`、L23 用 `fileURLToPath` → Playwright 加载 ReferenceError、`--list` 0 tests，阻断全量 suite | ✅ 与 W1 `--list` 证据一致；根因=首版抄 import-merge 先例时漏抄 `fileURLToPath` |
+
+## R2. 修复内容（本票 diff）
+
+- `import { fileURLToPath, pathToFileURL } from 'url';`（补齐，与 import-merge 同式）。
+- 三行凭据 → `BOXING_SPEC_WEBDAV_URL/USER/PASS` env override + 占位默认值（`https://webdav.invalid/dav/` / `spec-user` / `spec-pass`）。mock 车道 `runtime.sendMessage` 桩全量接管 webdav-get/put，占位仅需过 `checkUrlValid`（https、非私网、无内嵌 auth）——**断言意图零削弱**（4 用例的合并语义断言/归档断言/UI 接线断言一字未动）。
+
+## R3. 验证（本票完成定义证据）
+
+| 门禁 | 结果 |
+|---|---|
+| grep 门禁（`jinxi2410\|kel988\|koofr\|gmail` on spec） | **0 命中** |
+| `npx playwright test --list --config=test/playwright.config.ts test/tests/boxing-merge-three-way.spec.ts` | **Total: 8 tests in 1 file**（chromium-extension + firefox-extension 各 4），无 ReferenceError |
+| `git diff --check` | 干净 |
+
+## R4. 安全事件后续（用户决策项，非本票权限）
+
+1. **密码轮换提醒（issue 91R AC6）**: `38a2d005` 历史仍含旧字节（本票禁改写他人历史）；该 Koofr 应用密码应视为已暴露——即使分支从未 push，也请用户在 Koofr 侧**轮换**。
+2. **存量扩散（呈报，未动）**: repo-wide grep 显示同一凭据还存在于既有 spec（boxing-cred-encrypt / boxing-dr-export-envelope / boxing-import-merge / boxing-memory / boxing-sync）及 `.codex-tmp/zip-verify/` 副本——非票 91 引入，属他票/用户文件，本票按 §4.2「不改他人工作」边界不处置；建议大脑另立凭据清扫票（统一 env 化 + CI secret 注入）。
+
+## R5. 通用调研（返工轮口径）
+
+- atomcode 跳过，理由 = 修复为机械单行导入补齐 + 删密（handoff 明示可跳过并记理由）。
+- CONTEXT/ADR 快速回顾：票 91 首轮已同步（CONTEXT「Wave9 merge」行 + ADR-0009「修订 2026-09-13（票 91）」+ 80 报告 §6.1，均在栈内 wmt）；91R 仅触测试文件与本报告，产品语义无新增变化 → 无 ADR/CONTEXT 追加。
+- 首脑降账：A-045 = `blocked-rework（91R）` 维持，**待用户 push + CI 后**由大脑升 fixed-pending-ci/implemented；本票不改账本。
+
+## R6. 过程违规认领（W1「过程违规」1/2 条，属实）
+
+- 明文凭据入库：抄 import-merge 先例时把**其测试账号常量一并抄进新文件**——先例复用必须审凭据面，教训候选：「mock 车道 spec 模板化时凭据行一律换占位」。
+- 「e2e ✅（落盘）」属**自述未验证**：未跑 `--list` 就宣称可加载——本票起「spec 落盘必附 `playwright --list` 锚点」为硬门槛。
+- 原 §2 AC 表中「e2e（落盘）✅」行保留原文不覆盖，以本 R1/R3 为准修正。

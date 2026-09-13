@@ -18,14 +18,18 @@
 // stub, sync driven through window.__boxingDebug.syncWebDAV(). The mock never pollutes
 // self.chrome beyond the local object (SEC-01).
 import { test, expect } from '@playwright/test';
-import { pathToFileURL } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
-const WEBDAV_URL = 'https://app.koofr.net/dav/Koofr/';
-const WEBDAV_USER = 'jinxi2410@gmail.com';
-const WEBDAV_PASS = 'kel988j8tv44f2v0';
+// Ticket 91R (A-045 rework): NO real credentials in source. This file-lane's
+// transport is fully stubbed by the runtime.sendMessage mock above, so the config
+// only needs to pass checkUrlValid (https, non-private host, no embedded auth).
+// A private staging account can be injected via BOXING_SPEC_WEBDAV_* env vars.
+const WEBDAV_URL = process.env.BOXING_SPEC_WEBDAV_URL || 'https://webdav.invalid/dav/';
+const WEBDAV_USER = process.env.BOXING_SPEC_WEBDAV_USER || 'spec-user';
+const WEBDAV_PASS = process.env.BOXING_SPEC_WEBDAV_PASS || 'spec-pass';
 
 const S = (id, title) => ({ id, title, x: 0, y: 0, width: 240, height: 180, pinned: true, bookmarks: [{ id: 'b-' + id, title, url: 'https://t91.test/' + id }] });
 
