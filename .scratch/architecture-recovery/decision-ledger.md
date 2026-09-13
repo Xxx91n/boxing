@@ -107,3 +107,21 @@
 - 实现摘要已沉淀 docs/CONTEXT.md Wave8 settle
 - 报告: W8-W1/W2/W3-brain-review · W8-closeout-crosscheck · 70–86-report · 79R/81R/81R2 返工节
 - G-A 仍依赖 main CI 复跑；G-B 为强制豁免；**tag 仍禁**直至用户明令
+
+## Wave9 → Tickets（A-040.. · 2026-09-13）
+
+> 源: `.scratch/wave9-postrelease-grill/` plan.md + ga-definitive-b4f3df2.md + decision-ledger D-001..D-010
+> 架构报告路径: 同上（定谳 run 34749813393）
+> 每条: ID / 问题描述（原文摘录）/ 规范化需求 / 显式约束 / 状态
+
+| ID | 问题描述（原文摘录） | 规范化需求 | 显式约束 | 状态 |
+|---|---|---|---|---|
+| A-040 | W9-P1..P5 纸面债（ADR-0017 修订 / release-notes live / 徽章 / AGENTS+路径门禁 / history 真话） | 已随 wave9-paper-debt 落盘；不立实施票 | 数据源仅 D-001..D-010；不宣称三门达成 | implemented |
+| A-041 | R1 boxing-star-sync-audit Scenario 1（跨 tab isParent 领养）三 OS × ff+ch 稳定残红（ga-definitive） | 产品或测试根因分诊后修绿；禁止豁免折绿 | 目标 2026.9.15；线性提交；关联 GH #10 | current |
+| A-042 | R2 empty-state Bug5-dark bm-add 暗色透明（ubuntu，F/B 待分诊） | 分诊 env vs 产品；产品则修 | 不得只改断言掩盖产品缺陷 | current |
+| A-043 | R3 auto-expand collapseHover（ubuntu flaky） | 去 flaky 或稳定具名 skip+票 | 禁止永久 silent skip | current |
+| A-044 | B54 票 82 已知缺口：checkUrlValid .local、opt-in 导出传播 | 小修收口 | 维持默认拒私网 | current |
+| A-045 | B55 merge 质量：票 80 方案未实施；子盒静默吞没（D-009 整票） | baseRevision/等价 + 子盒/id 级合并 + e2e | 禁只落方案；禁静默改 newer-wins；关联 GH #11 | current |
+| A-046 | B56 boot-pending 专项 e2e（73 呈报 P-73-1） | 防零闪现回归自动化 | 不回滚零闪现实现 | current |
+| A-047 | G-A 不成立（run 34749813393）：三 OS test 红；出口=main test.yml 绿或仅具名 F | 残红治理至可发行 G-A | N 桶/数据完整性永不豁免；关联 GH #12 | current |
+| A-048 | 目标版本 2026.9.15 全部修复出口（D-004/005）：版本串+notes+G-A∧G-B∧G-C | 版本就绪且门禁可宣称前禁止夸大 | 持有 9.12 不热修；G-B=用户声明 pass 禁 agent 代签 | current |
