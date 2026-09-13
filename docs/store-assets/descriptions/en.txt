@@ -1,0 +1,67 @@
+Boxing turns your new tab into a visual, infinite-canvas workspace for bookmarks.
+Instead of flat folders, organize links into labeled boxes you can drag, connect, and nest.
+
+FEATURES
+
+Infinite canvas
+• Pan and zoom with Ctrl+scroll
+• Unlimited boxes on one canvas
+• Connect boxes with lines to show relationships
+• Parent-child movement: move a parent, children follow
+• Double-click empty space to create a box
+• Right-click to go back to the parent canvas
+
+Bookmark management
+• Each box has its own bookmark collection
+• List and grid views
+• Add, edit, and delete bookmarks in a clean dialog
+• Custom title, URL, and description per bookmark
+• Drag to reorder inside a box
+• Open links in the current tab or a new tab (configurable)
+
+Hierarchical organization
+• Boxes can contain a sub-canvas — click to enter
+• Breadcrumb navigation for your path
+• Nest as deep as you need; each level stays independent
+
+Design and theme
+• Calm beige/cream minimalist look
+• Light and dark mode (follows the system)
+• Adjustable font size and zoom
+• Smooth SVG connection lines
+• Optional rounded corners
+
+Privacy first
+• All data stays on your device (browser local storage)
+• Optional WebDAV backup to a server you control
+• Optional GitHub Gist backup
+• No analytics, no tracking, no third-party services
+• Open source (Apache-2.0)
+
+Connections
+• Delete a line with Alt+Click (also configurable to click or double-click)
+• Visual lines between related boxes
+
+PERMISSIONS
+
+storage — store bookmarks, layout, and settings locally
+tabs — open bookmarks in a new tab when you choose that
+optional host access (Chrome) / host access (Firefox) — only when you set up WebDAV backup to your own server
+
+We do not request browsing history, downloads, clipboard, or other activity data.
+
+USE CASES
+
+• Research projects — one canvas per project, boxes per topic
+• Long-term bookmark collections, organized visually
+• Knowledge maps with spatial links
+• A quick dashboard of your most-used links on every new tab
+
+TECHNICAL
+
+Vanilla JavaScript, no frameworks or bundlers.
+Works on Chrome, Edge, Firefox, and other Chromium browsers.
+Manifest V3.
+Source: https://github.com/Xxx91n/boxing
+License: Apache-2.0
+Privacy: https://xxx91n.github.io/boxing/privacy-policy.html

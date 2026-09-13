@@ -1,12 +1,18 @@
-# Store Listing
+# Store Listing（仓库内阅读版）
+
+> **粘贴到商店时请用纯文本：** [`descriptions/en.txt`](descriptions/en.txt) · [`descriptions/zh-CN.txt`](descriptions/zh-CN.txt)  
+> 治理规范与 Edge 多语言操作: [`STORE-COPY.md`](STORE-COPY.md)  
+> 字段表与完整提交步骤: [`store-listings-2026-09.md`](store-listings-2026-09.md)
 
 ## Short Description (132 chars max)
 
 > Hierarchical infinite-canvas bookmark organizer with a calm beige design. Organize bookmarks into labeled boxes; list & grid views.
 
-## Detailed Description
+## Detailed Description（Markdown 仅文档用）
 
 Boxing transforms your new tab page into a visual, infinite-canvas workspace for your bookmarks. Instead of flat folders and lists, organize your bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them exactly how you think.
+
+See `descriptions/en.txt` for the **store-paste** version (plain text, no Markdown).
 
 ### Features
 
