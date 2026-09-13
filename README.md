@@ -24,13 +24,14 @@
 </p>
 
 <p>
-  <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="Latest published release: v2026.9.11 on GitHub Releases" src="https://img.shields.io/badge/Latest_published-v2026.9.11-brightgreen?style=for-the-badge&logo=github" /></a>
+  <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="Latest GitHub release (dynamic)" src="https://img.shields.io/github/v/release/Xxx91n/boxing?style=for-the-badge&logo=github" /></a>
   <a href="https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi"><img alt="Edge Add-ons — published" src="https://img.shields.io/badge/Edge_Add--ons-Published-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
   <a href="https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/"><img alt="Firefox Add-ons — published" src="https://img.shields.io/badge/Firefox_Add--ons-Published-FF7139?style=for-the-badge&logo=firefox-browser&logoColor=white" /></a>
 </p>
 
 <p>
-  <a href="https://github.com/Xxx91n/boxing/releases/tag/v2026.9.11"><img alt="Latest published release: v2026.9.11 (tag; code baseline at v2026.9.11 — newer builds ship only after the G-A/G-B/G-C release gate)" src="https://img.shields.io/badge/latest_published_release-v2026.9.11-orange?style=flat-square" /></a>
+  <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="GitHub latest release (dynamic); store listing may lag — see Install" src="https://img.shields.io/github/v/release/Xxx91n/boxing?style=flat-square&label=GitHub_latest" /></a>
+  <img alt="Store published as of 2026-09-13: v2026.9.12" src="https://img.shields.io/badge/store_published-v2026.9.12%20(as%20of%202026--09--13)-orange?style=flat-square" />
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Xxx91n/boxing?style=flat-square" /></a>
   <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange?style=flat-square" />
   <img alt="Languages" src="https://img.shields.io/badge/i18n-14%20languages-brightgreen?style=flat-square" />
@@ -79,8 +80,8 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 > [!IMPORTANT]
 > **Install from official store pages** (recommended). GitHub Releases are a **user-facing
 > changelog** and optional source/sideload zips — they **no longer ship `.xpi` / `.crx`**.
-> Version **2026.9.12** store packages are prepared for AMO / Edge upload by the publisher;
-> the **latest published store version remains 2026.9.11** until you finish those submissions.
+> **Latest published store version: 2026.9.12** (AMO + Edge, as of 2026-09-13).
+> GitHub Releases track the same user-facing changelog; install from the store links below.
 > Gate background: [ADR-0017](docs/adr/0017-release-data-gate.md). Publisher workflow:
 > [publishing guide](docs/publishing-guide.md) · [store plan](docs/store-publishing-plan.md).
 

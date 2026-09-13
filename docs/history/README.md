@@ -23,15 +23,23 @@ rules or hard boundaries (those live in AGENTS.md and docs/agents/).
 - ponytail-debt.md — ponytail technical debt ledger
 - grill-plan-ui-audit-fix.md — completed grill UI audit fix plan (one-shot workflow deliverable, retired)
 
-## Git history declaration (ticket 62, 2026-09-12)
+## Git history declaration (revised 2026-09-13, Wave9 D-008)
 
 **Authoritative history**: `origin/main` on GitHub
 (<https://github.com/Xxx91n/boxing>). The remote branch is the only
 authoritative history line; local refs and the GitButler workspace commit are
-regenerable and are never the source of truth. Never rewrite pushed history:
-no force-push, no history surgery. Past local-only ref drift (ticket 58, six
-stale duplicate commits) was resolved by pointing the local ref at the remote,
-verifying zero content loss by patch-id comparison.
+regenerable and are never the source of truth.
+
+**Append-only on pushed `main`**: once a commit is on `origin/main`, do not
+replace `main` with a new root commit and do not force-push history surgery
+onto `main`. New work lands as linear commits on the current tip. Local
+GitButler branch/workspace operations remain allowed; the constraint applies
+to the published `main` line.
+
+**Why this wording**: earlier snapshots were sometimes exported as new root
+commits. That model is retired as of the Wave9 / 2026.9.15 wave. Evidence
+anchors (CI runs, scratch reports) that predate a historical root export may
+be unreachable on `main` even when still resolvable by SHA on GitHub.
 
 **CI run URLs**: CI evidence is cited from
 `https://github.com/Xxx91n/boxing/actions/runs/<id>` run pages and their

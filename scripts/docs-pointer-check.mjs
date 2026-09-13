@@ -159,9 +159,41 @@ for (const r of results) {
   for (const b of r.broken) console.log('           - ' + b);
 }
 
+// Machine-absolute path scan (Wave9 W9-P4 / D-005#7): public entry docs must not
+// hardcode host paths such as D:\... or D:/... (portable repo-root wording only).
+function findMachinePaths(content, rel) {
+  const hits = [];
+  const parts = content.split(String.fromCharCode(10));
+  const re = /(?:^|[\s(\'"`[])([A-Za-z]:[\\/](?![\\/])[^\s)\]'"`<>]*)/g;
+  for (let i = 0; i < parts.length; i++) {
+    let line = parts[i];
+    if (line.charCodeAt(line.length - 1) === 13) line = line.slice(0, -1);
+    // Skip pure URLs (https://...) — drive-letter pattern will not match those.
+    const m = line.match(re);
+    if (m) {
+      for (const x of m) {
+        // Allow Windows drive references that are clearly not user home clones? Deny all in entry docs.
+        hits.push(rel + ':' + (i + 1) + ': ' + x);
+      }
+    }
+  }
+  return hits;
+}
+
+const pathHits = [];
+for (const rel of ENTRIES) {
+  const abs = path.join(ROOT, rel);
+  if (!fs.existsSync(abs)) continue;
+  pathHits.push(...findMachinePaths(fs.readFileSync(abs, 'utf8'), rel));
+}
+
 console.log('');
-if (totalBroken > 0) {
-  console.log('docs-pointer-check: FAILED - ' + totalBroken + ' broken pointer(s) of ' + totalChecked + ' checked.');
+if (totalBroken > 0 || pathHits.length > 0) {
+  if (pathHits.length > 0) {
+    console.log('machine-path scan: FAILED - ' + pathHits.length + ' absolute host path(s):');
+    for (const h of pathHits) console.log('           - ' + h);
+  }
+  console.log('docs-pointer-check: FAILED - broken=' + totalBroken + ' machinePaths=' + pathHits.length + ' of ' + totalChecked + ' pointers.');
   process.exit(1);
 }
-console.log('docs-pointer-check: PASSED - ' + totalChecked + ' key pointers resolve across ' + results.length + ' entry documents.');
+console.log('docs-pointer-check: PASSED - ' + totalChecked + ' key pointers resolve across ' + results.length + ' entry documents; 0 machine paths.');

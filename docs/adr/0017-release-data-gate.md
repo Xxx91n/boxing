@@ -4,7 +4,7 @@
 2026-09-12
 
 ## Status
-Accepted（裁决来源: 票 46 + spec D7 + atomcode 2026-09-11/12 发布门禁调研，ctx source=atomcode，18 信源官方文档全文核验）
+Accepted（票 46 + atomcode 调研）· **修订 2026-09-13**（v2026.9.12 强制路径记账 + G-B 用户声明 pass · Wave9 D-003/004/006/007）
 
 ## Context
 
@@ -50,6 +50,30 @@ Accepted（裁决来源: 票 46 + spec D7 + atomcode 2026-09-11/12 发布门禁�
 - 仅 CI 绿自动发行（无人工黄金路径）——否决：商店审核无法覆盖行为正确性，冻结恰是「绿灯 ≠ 可用」形态；atomcode G2「禁止无人复核的自动发布」为工业共识。
 - 只设数据门禁（票 45 形态），不管可观测面——否决：privacy-policy 404 直接阻断商店提交（票 47 教训）；渲染冻结类缺陷不在数据层覆盖内（票 40 教训）。
 - 允许「已知红」永久豁免——否决：无到期条件的豁免会让残红台账固化为债。
+
+## 修订 2026-09-13（Wave9 · D-003/004/006/007）
+
+**既成事实（如实记账，不改三门合取定义）**：
+
+1. **v2026.9.12 已于 2026-09-13 发布**（GitHub Release + CI 四附件）。发行时 G-B 为用户强制豁免（D-009/A-038，无证据包）；G-A 当时未对发行 tip 定谳。
+2. **G-A 定谳（2026-09-13）**：对 `origin/main` `b4f3df2` 触发 `test.yml` run
+   [34749813393](https://github.com/Xxx91n/boxing/actions/runs/34749813393)
+   ——data-golden **success**；ubuntu/macos/windows test **failure**。
+   分桶：R1 `boxing-star-sync-audit` Scenario 1 = **B 稳定残红**（三 OS）；
+   R2 empty-state Bug5-dark = F/B 待分诊；R3 auto-expand = F flaky。
+   **结论：G-A 不成立**。详见 `.scratch/wave9-postrelease-grill/ga-definitive-b4f3df2.md`。
+3. **商店**：AMO + Edge 已过审可见 **2026.9.12**（2026-09-13，发布方声明）。
+   商店可见 **不** 等价于三门合取达成。
+4. **发行姿态**：2026.9.12 **持有不热修**；下一目标版本 **2026.9.15** 全部修复（W9）。
+
+**G-B 证据形态（常设口径，D-007）**：
+
+- G-B = **用户在发行 zip/产物上的人工声明 pass**（须含 **版本号 + 日期**）。
+- 可不附勾选单/截图；**禁止 agent 代签或伪造 G-B pass**。
+- G-A 仍必须 main CI 绿（残红按 N/B/F 规则；N 桶与数据完整性永不豁免）；G-C 仍须三 URL 200。
+- 本口径取代「必须归档检查单勾选记录」作为 G-B 的唯一合法形态；检查单仍可作为用户自愿附件。
+
+**对齐 W9**：修绿 R1–R3 与纸面债后，以 2026.9.15 重新走 G-A∧G-B∧G-C；在 G-A 绿之前不得宣称门禁达成。
 
 ## Consequences
 

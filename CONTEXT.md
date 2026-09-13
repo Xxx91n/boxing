@@ -21,7 +21,7 @@ Historical grill phase tables live in git history and `docs/archive/` / `docs/ad
 ## Language
 
 **Source tree**:
-The raw checked-out repository root (D:/Aworker/crx/boxing). Contains manifest.json (Firefox-tailored), ntp/, background.js, _locales/, icons/, popup/. Can be loaded directly in Firefox for dev, but Chrome rejects it due to the MV3 service_worker + background.scripts dual-spec (and, on older checkouts, the browserSettings permission).
+The raw checked-out repository root (<repo-root>). Contains manifest.json (Firefox-tailored), ntp/, background.js, _locales/, icons/, popup/. Can be loaded directly in Firefox for dev, but Chrome rejects it due to the MV3 service_worker + background.scripts dual-spec (and, on older checkouts, the browserSettings permission).
 _Avoid_: repo root, project root (ambiguous in multi-workspace setups)
 
 **dist/boxing-chrome**:

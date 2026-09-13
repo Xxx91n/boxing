@@ -22,7 +22,7 @@
 
 | Field | Value |
 |---|---|
-| Scope | Browser extension development under `D:\Aworker\crx\boxing` |
+| Scope | Browser extension development in this repository (clone root; do not hardcode machine paths) |
 | Primary reader | Future AI coding agents |
 | Style | Machine-readable first: tables, command blocks, MUST/MUST NOT rules |
 | Target browsers | Chrome + Firefox unless a project-specific guide narrows scope |
@@ -66,12 +66,12 @@
 | Existing unpacked extension validation | Load unpacked extension in Chrome/Firefox | Extension loads without manifest errors. |
 | UI verification | Use available browser runtime screenshot/DOM/console inspection | Visual result matches requested state. |
 | Syntax pre-check | `node --check ntp/ntp.js && node --check background.js` | Both exit 0. |
-| Full e2e | `cd D:/Aworker/crx/boxing && npx playwright test --config=test/playwright.config.ts --project=chromium --reporter=line` | ~3-4 min, all Boxing specs PASS (`extension-test.spec.ts` + `boxing-*` specs). |
+| Full e2e | From repo root: `npx playwright test --config=test/playwright.config.ts --project=chromium --reporter=line` | ~3-4 min, all Boxing specs PASS (`extension-test.spec.ts` + `boxing-*` specs). |
 | Standard local verification | `npm run test:changed` (ticket 25: process-level mutex + changed-surface selection; ambiguous/config/test changes auto-fall back to the full suite) | Bounded subset green; second concurrent run rejected with exit 75. |
 
 ## Playwright & Browser Testing
 
-Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test/playwright.config.ts` `EXTENSION_PATH` path-resolves to `..` = repo root. Specs live in `test/tests/` and are prefixed `boxing-*`.
+Test dir: `<repo-root>/test` (after `npm install` at repo root). `test/playwright.config.ts` `EXTENSION_PATH` path-resolves to `..` = repo root. Specs live in `test/tests/` and are prefixed `boxing-*`.
 - Chromium project (headed, persistent context, `--load-extension`) is the primary lane.
 - Firefox project uses `-no-remote`; LibreWolf is manual-verify only (no remote debug).
 - Run a single spec: `npx playwright test --config=test/playwright.config.ts test/tests/boxing-viewstate-sync.spec.ts --project=chromium`.
@@ -85,7 +85,7 @@ Test dir: `D:/Aworker/crx/boxing/test` (after `npm install` at repo root). `test
 - **Fast reload** (skip build): `npm run dev:chrome:no-build` or `npm run dev:firefox:no-build` — web-ext loads existing `dist/` without rebuilding. Only safe after at least one `npm run build` in the current session.
 - Load unpacked (Chrome): `chrome://extensions` -> Developer mode -> Load unpacked -> select `dist/boxing-chrome/` (auto-discover from project root — do NOT load repo root in Chrome).
 - Load unpacked (Firefox): `about:debugging` -> This Firefox -> Load Temporary Add-on -> select `dist/boxing-firefox/manifest.json` (or raw repo root for Firefox dev).
-- Tip: If you accidentally load the repo root (`D:/Aworker/crx/boxing`) in Chrome, Chrome will show `background.scripts requires MV2` (older checkouts that still declared `browserSettings` may also warn `Permission 'browserSettings' unknown`) — this is expected. Rebuild with `node .github/scripts/build.mjs` and load `dist/boxing-chrome/` instead.
+- Tip: If you accidentally load the repo root in Chrome, Chrome will show `background.scripts requires MV2` (older checkouts that still declared `browserSettings` may also warn `Permission 'browserSettings' unknown`) — this is expected. Rebuild with `node .github/scripts/build.mjs` and load `dist/boxing-chrome/` instead.
 - Inspect: service worker (`chrome://extensions` -> Details -> service worker), popup (right-click toolbar icon -> Inspect popup), errors (Errors button on extension card).
 - MV3 requirements: valid `manifest.json`, service worker active, only declared permissions requested.
 - New tab override should load `ntp/index.html` with beige theme and zero console errors.
@@ -121,7 +121,7 @@ Both are referenced from here, never bulk-loaded into context.
 
 | Field | Value |
 |---|---|
-| Project path | D:\Aworker\crx\boxing |
+| Project path | Repository root (portable; resolve from checkout) |
 | Current extension | Boxing (manifest version 2026.9.12, calver) |
 | Current manifest | Manifest V3 |
 | Target browsers | Chrome + Firefox |
