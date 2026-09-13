@@ -35,7 +35,7 @@ User-facing notes for store listings and the GitHub Release body.
 
 ### Install
 - Firefox: [AMO listing](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
-- Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+- Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
 - Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://xxx91n.github.io/boxing/privacy-policy.html)
 
 ### Changed

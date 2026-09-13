@@ -25,7 +25,7 @@
 
 <p>
   <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="Latest published release: v2026.9.11 on GitHub Releases" src="https://img.shields.io/badge/Latest_published-v2026.9.11-brightgreen?style=for-the-badge&logo=github" /></a>
-  <a href="https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi"><img alt="Edge Add-ons — published" src="https://img.shields.io/badge/Edge_Add--ons-Published-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
+  <a href="https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi"><img alt="Edge Add-ons — published" src="https://img.shields.io/badge/Edge_Add--ons-Published-0C88C5?style=for-the-badge&logo=microsoftedge&logoColor=white" /></a>
   <a href="https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/"><img alt="Firefox Add-ons — published" src="https://img.shields.io/badge/Firefox_Add--ons-Published-FF7139?style=for-the-badge&logo=firefox-browser&logoColor=white" /></a>
 </p>
 
@@ -91,7 +91,7 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 
 ### Edge / Chromium（正式安装）
 
-1. 打开 [Edge Add-ons — Boxing](https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+1. 打开 [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
 2. 点击 **Get** / **获取** 完成安装（Chromium 系请使用 Edge 商店页面）
 
 ### 开发者：从源码构建

@@ -16,18 +16,18 @@
 已上线 listing：
 
 - Firefox: https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/
-- Edge: https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi
+- Edge: https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi
 
-## 材料位置（本机）
+## 材料从哪来
 
-见 `D:\boxing-user-test-2026.9.12\README-TEST.txt` 与：
+| 材料 | 获取方式 |
+|---|---|
+| `boxing-chrome-<ver>.zip` | GitHub Actions `build` 工件，或本地 `npm run build` → `dist/boxing-chrome/release/chrome/` |
+| `boxing-firefox-<ver>.zip` | 同上 → `dist/boxing-firefox/release/firefox/` |
+| 源码审核包 | `git archive -o boxing-source-<ver>.zip v<ver>` 或 GitHub「Download ZIP」后去掉 `.git`/`node_modules` |
+| 商店文案 | `docs/store-assets/descriptions/` |
 
-- `boxing-chrome-2026.9.12.zip` — Edge/CWS 上传
-- `boxing-firefox-2026.9.12.zip` — AMO 上传
-- `boxing-source-2026.9.12.zip` — 商店源代码审核
-- `SOURCE-REVIEW-README.txt` — 审核说明
-
-构建复现：Node ≥ 18，`npm ci && npm run build`。产物在 `dist/`。
+构建：Node ≥ 18，`npm ci && npm run build`。
 
 ## Part 1 — Firefox AMO 新版本
 

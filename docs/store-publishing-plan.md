@@ -9,7 +9,7 @@
 | 渠道 | 状态 |
 |---|---|
 | **Firefox AMO** | **9.11 已过审上线** — [addons.mozilla.org/…/boxing-newtab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) |
-| **Edge Add-ons** | **9.11 已过审上线** — [Edge listing](https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
+| **Edge Add-ons** | **9.11 已过审上线** — [Edge listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
 | Chrome Web Store | 可选；历史上 Edge 优先 |
 | GitHub Releases | **日志化、面向用户**；**不再分发 .xpi / .crx**；安装引导到商店 |
 | 版本 | **2026.9.12** 候选包与源码包已就绪 |
@@ -28,20 +28,20 @@
 | Wave8 D-009 | G-B 用户强制通过（无产物） | 发布权限方裁定；**非**可审计 G-B |
 | 2026-09-13 发版 | GitHub **不再发 xpi/crx**；安装走官方商店 | 避免双源与未签名包；商店为唯一正式安装真源 |
 
-## 2026.9.12 材料包（Agent 已备）
+## 2026.9.12 材料包（从哪拿）
 
-| 材料 | 路径 | 用途 |
+| 材料 | 获取方式 | 用途 |
 |---|---|---|
-| Chrome 商店包 | `D:\boxing-user-test-2026.9.12\boxing-chrome-2026.9.12.zip` | Edge / CWS 上传 |
-| Firefox 商店包 | `D:\boxing-user-test-2026.9.12\boxing-firefox-2026.9.12.zip` | AMO 上传（源码 zip） |
-| **源码审核包** | `D:\boxing-user-test-2026.9.12\boxing-source-2026.9.12.zip` | 商店「源代码」审核 |
-| 源码说明 | `D:\boxing-user-test-2026.9.12\SOURCE-REVIEW-README.txt` | 审核员构建说明 |
-| 文案 | `docs/store-assets/store-listing.md` + `store-listings-2026-09.md` | 短/长描述 |
-| 截图 | `docs/store-assets/screenshots/` | 1280×800 |
-| 隐私政策 | GitHub Pages URL（上） | 商店必填 |
-| 用户向 Changelog | `CHANGELOG.md` §2026.9.12 | GitHub Release 正文 |
+| Chrome 商店包 | CI `build.yml` 工件 `boxing-chrome-<ver>.zip`，或本地 `npm run build` 后 `dist/boxing-chrome/release/chrome/` | Edge / CWS 上传 |
+| Firefox 商店包 | 同上 `boxing-firefox-<ver>.zip` | AMO 上传 |
+| 源码审核包 | 从 Git tag 导出，或 `git archive -o boxing-source-<ver>.zip v<ver>`（不含 `.git`/`node_modules`/`dist`） | 商店「源代码」审核 |
+| 文案 | `docs/store-assets/descriptions/<locale>.txt`（纯文本，可粘贴） | Description |
+| 短摘要/字段表 | `store-listings-2026-09.md` | Summary、权限理由 |
+| 截图 | `docs/store-assets/screenshots/`（1280×800） | 商店截图 |
+| 隐私政策 | https://xxx91n.github.io/boxing/privacy-policy.html | 商店必填 |
+| 用户向 Changelog | `CHANGELOG.md` §对应版本 | Release 正文 / 商店版本说明 |
 
-**注意：** AMO 上传通常用 **未签名 zip**（商店代签）。不要用本地 `.xpi` 当正式上架包。
+**注意：** AMO 上传用**未签名 zip**（商店代签）。不要把 CI 的 `.xpi`/`.crx` 当正式上架包。
 
 ## 用户执行清单（发版权在你）
 
@@ -73,7 +73,7 @@
 | 浏览器 | 正式安装 |
 |---|---|
 | Firefox | [AMO 列表页](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) |
-| Edge / Chromium | [Edge Add-ons 列表页](https://microsoftedge.crxsoso.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
+| Edge / Chromium | [Edge Add-ons 列表页](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
 | 从源码 | clone → `npm ci` → `npm run build` → 加载 unpacked（开发者） |
 
 ## 风险与红线（未改）
