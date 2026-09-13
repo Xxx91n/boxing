@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** done-when-CI（票 95 落地，2026-09-14；CI 证据 = 具名 F-95-CI，见 reports/95-report.md §6）
+**Status:** done-when-CI（首脑核验通过 2026-09-14：grep 0 + env 在位 + --list 可加载；F-95-CI 待 push）
 
 ## Acceptance criteria
 

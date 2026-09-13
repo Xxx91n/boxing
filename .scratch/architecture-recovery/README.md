@@ -195,3 +195,18 @@ Frontier 更新: 76/77 按 D-009 关闭；**78 可开工**（关闭评论须写�
 **用户必做：轮换 91 泄漏的 WebDAV 密码**（本地 git 对象库已含；未推 origin 仍须轮换）
 
 完整对照: `reports/W1-brain-review.md`
+
+## 95 首脑核验（2026-09-14）
+
+| 检查 | 结果 |
+|---|---|
+| grep kel988/jinxi2410 on test/ + .codex-tmp/ | **0** |
+| env 占位（91R 同构） | dr-export / import-merge / sync / memory / cred-encrypt 等在位 |
+| playwright --list 抽样 | 3 spec 可加载（报告称 7 文件 108 tests） |
+| 账本 A-049 | swept-pending-ci |
+| 用户 | 声明已移除/轮换该密码 |
+
+**Frontier：无新实施票可开。**  
+下一门：**用户明令 push 整栈 → main test.yml** → 关 87–92/91R/95 的 CI 项 → 开 **93**（需 87/88/89 绿）→ **94**。
+
+栈顶: `ticket-95-credential-sweep` (lkk) on 91R on w1-review …
