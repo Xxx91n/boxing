@@ -50,7 +50,9 @@
       "data-recovery.spec.ts",
       "extension-test.spec.ts",
       "boxing-time-machine-rollback.spec.ts",
-      "boxing-dr-export-envelope.spec.ts"
+      "boxing-dr-export-envelope.spec.ts",
+      "boxing-boot-pending.spec.ts",
+      "boxing-merge-three-way.spec.ts"
     ],
     "ntp/render.js": [
       "boxing-auto-expand.spec.ts",
@@ -105,7 +107,8 @@
       "data-recovery.spec.ts",
       "boxing-time-machine-rollback.spec.ts",
       "boxing-dr-export-envelope.spec.ts",
-      "boxing-conflict-copy-readout.spec.ts"
+      "boxing-conflict-copy-readout.spec.ts",
+      "boxing-merge-three-way.spec.ts"
     ],
     "ntp/persist.js": [
       "boxing-accent-theme.spec.ts",
@@ -120,7 +123,8 @@
       "boxing-sync.spec.ts",
       "boxing-webdav.spec.ts",
       "data-recovery.spec.ts",
-      "boxing-dr-export-envelope.spec.ts"
+      "boxing-dr-export-envelope.spec.ts",
+      "boxing-merge-three-way.spec.ts"
     ],
     "ntp/credentials.js": [
       "boxing-cred-encrypt.spec.ts",
