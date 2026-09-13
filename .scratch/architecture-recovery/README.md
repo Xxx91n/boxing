@@ -191,7 +191,7 @@ Frontier 更新: 76/77 按 D-009 关闭；**78 可开工**（关闭评论须写�
 | 93 | A-047 | — | **blocked**（87/88/89 CI） |
 | 94 | A-048 | — | **blocked**（91R/92/93） |
 
-**Frontier 可开工：仅 91R**  
+**Frontier 可开工：95（凭据清扫）** · 91R 已核验关闭（wyw）  
 **用户必做：轮换 91 泄漏的 WebDAV 密码**（本地 git 对象库已含；未推 origin 仍须轮换）
 
 完整对照: `reports/W1-brain-review.md`

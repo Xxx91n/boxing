@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** blocked-rework（91R）— 凭据 + fileURLToPath · 见 W1-brain-review
+**Status:** fixed-pending-ci（91R 已修 e2e 加载+凭据；F-91-CI 待 push）
 
 ## Acceptance criteria
 
