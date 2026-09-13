@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -195,5 +195,84 @@ test.describe('Boxing WebDAV backup', () => {
     );
     const btnText = await page.locator('#webdav-test-btn').textContent();
     expect(btnText).not.toBe('Testing...');
+  });
+});
+
+// Ticket 90 (A-044): the WebDAV private-host opt-in must reach BOTH the export
+// (backup) and pull (sync) paths, and .local / .internal / IPv6-loopback hosts must
+// be refused by default on both. Ticket 82 only pinned the isSafeExtUrl seam; the
+// pull path ran through checkUrlValid, which matched the raw hostname - so it kept
+// the IPv6 brackets ("[::1]" never matched the "::1$" alternative) and had no
+// .local/.internal suffix rule, letting the default deny leak on that path only.
+test.describe('WebDAV private-host opt-in propagation (ticket 90 / A-044)', () => {
+  const PRIVATE_HOSTS = ['https://nas.local/dav/', 'https://host.internal/dav/', 'https://[::1]/dav/'];
+
+  async function bootAndSeed(page: Page, url: string, optedIn: boolean) {
+    await bootWithMockRuntime(page, (msg) => {
+      if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, data: null };
+      if (msg.type === 'webdav-put') return { success: true, status: 201, ok: true };
+      return { success: true, status: 207, ok: true };
+    });
+    await resetBoxing(page);
+    await page.evaluate(({ u, flag }) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.webdavAllowPrivateHost = flag;
+      dbg.layout.settings.webdavUrl = u;
+      dbg.layout.settings.webdavUser = '';
+      dbg.layout.settings._encWebdavPass = null;
+      const pass = document.getElementById('webdav-pass') as HTMLInputElement | null;
+      if (pass) pass.value = '';
+    }, { u: url, flag: optedIn });
+  }
+
+  for (const url of PRIVATE_HOSTS) {
+    test('default deny, pull path: syncWebDAV refuses ' + url + ' with zero network calls', async ({ page }) => {
+      await bootAndSeed(page, url, false);
+      const err = await page.evaluate(async () => {
+        try { await (window as any).__boxingDebug.syncWebDAV({ bypassLossGuard: true }); return null; }
+        catch (e) { return e.message; }
+      });
+      expect(err).toBeTruthy();
+      expect(await page.evaluate(() => (window as any).__webdavCalls.length)).toBe(0);
+    });
+
+    test('default deny, export path: backupWebDAV refuses ' + url + ' with zero network calls', async ({ page }) => {
+      await bootAndSeed(page, url, false);
+      const err = await page.evaluate(async () => {
+        try { await (window as any).__boxingDebug.backupWebDAV(); return null; }
+        catch (e) { return e.message; }
+      });
+      expect(err).toBeTruthy();
+      expect(await page.evaluate(() => (window as any).__webdavCalls.length)).toBe(0);
+    });
+  }
+
+  test('opt-in admits .local on the pull path (propagates to checkUrlValid)', async ({ page }) => {
+    await bootAndSeed(page, 'https://nas.local/dav/', true);
+    const err = await page.evaluate(async () => {
+      try { await (window as any).__boxingDebug.syncWebDAV({ bypassLossGuard: true }); return null; }
+      catch (e) { return e.message; }
+    });
+    expect(err).toBeNull();
+    expect(await page.evaluate(() => (window as any).__webdavCalls.length)).toBeGreaterThan(0);
+  });
+
+  test('opt-in admits IPv6 loopback on the pull path', async ({ page }) => {
+    await bootAndSeed(page, 'https://[::1]/dav/', true);
+    const err = await page.evaluate(async () => {
+      try { await (window as any).__boxingDebug.syncWebDAV({ bypassLossGuard: true }); return null; }
+      catch (e) { return e.message; }
+    });
+    expect(err).toBeNull();
+    expect(await page.evaluate(() => (window as any).__webdavCalls.length)).toBeGreaterThan(0);
+  });
+
+  test('non-private host is unaffected by the opt-in either way', async ({ page }) => {
+    await bootAndSeed(page, 'https://app.koofr.net/dav/Koofr/', false);
+    const err = await page.evaluate(async () => {
+      try { await (window as any).__boxingDebug.syncWebDAV({ bypassLossGuard: true }); return null; }
+      catch (e) { return e.message; }
+    });
+    expect(err).toBeNull();
   });
 });

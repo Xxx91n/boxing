@@ -78,7 +78,9 @@ try {
     try { u = new URL(urlStr); } catch (_) { return false; }
     if (u.protocol !== 'https:') return false;          // BX-AUD-01: scheme lock
     if (u.username || u.password) return false;           // no embedded credentials
-    const host = (u.hostname || '').toLowerCase();
+    // Ticket 90 (A-044): strip the IPv6 literal brackets so "::1$" / "fe80:" / "fc00:" match
+    // here exactly as they do in the NTP guard (URL.hostname keeps "[::1]").
+    const host = (u.hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
     if (allowPrivateHost !== true) {
       if (BG_PRIVATE_HOST_RE.test(host)) return false;     // BX-AUD-01: private / host-only literals
       if (host.endsWith('.local') || host.endsWith('.internal')) return false;

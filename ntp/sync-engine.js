@@ -33,7 +33,26 @@ export function initSyncEngineFacade(deps) {
   // Rejects private / host-only hostnames and oversized URLs so users never silently target a local network.
   // Ticket 82 (A-032): that private-network refusal is now an explicit opt-in. It stays the default;
   // only a boolean true relaxes it, and the SSRF rationale is unchanged (see README Privacy).
+  // Ticket 90 (A-044): one hostname normaliser + one private-host predicate are shared by every
+  // WebDAV entry point (test / export / pull). The pull path used to inline this regex and missed
+  // both the IPv6 bracket strip and the .local/.internal suffix rule, so the default deny leaked
+  // there only. OWASP SSRF guidance: a guard applied inconsistently across request paths is
+  // equivalent to no guard.
   const AUD_PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fe80:|fc00:|fd00:)/i;
+
+  // URL.hostname keeps the brackets around an IPv6 literal ("[::1]"), so strip them before
+  // matching - otherwise the "::1$" / "fe80:" / "fc00:" alternatives never fire.
+  function normalizeHostname(u) {
+    return (u.hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+  }
+  // Private unless the opt-in is the literal boolean true. Non-public name spaces:
+  // .local (mDNS, RFC 6761/6762) and .internal (ICANN-reserved private-use TLD) both
+  // resolve only inside the user's own network.
+  function isPrivateHost(host, allowPrivateHost) {
+    if (allowPrivateHost === true) return false;
+    if (AUD_PRIVATE_HOST_RE.test(host)) return true;
+    return host.endsWith('.local') || host.endsWith('.internal');
+  }
   function isSafeExtUrl(urlStr, allowPrivateHost) {
     // Undefined reads the persisted setting, so the single-argument contract used by existing
     // callers and by Playwright keeps tracking the user's choice. Anything not boolean true denies.
@@ -43,12 +62,7 @@ export function initSyncEngineFacade(deps) {
     try { u = new URL(urlStr); } catch (_) { return false; }
     if (u.protocol !== 'https:') return false;
     if (u.username || u.password) return false;
-    const host = (u.hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
-    if (allowPrivateHost !== true) {
-      if (AUD_PRIVATE_HOST_RE.test(host)) return false;
-      if (host.endsWith('.local') || host.endsWith('.internal')) return false;
-    }
-    return true;
+    return !isPrivateHost(normalizeHostname(u), allowPrivateHost);
   }
   window.__boxingIsSafeExtUrl = isSafeExtUrl;
 
@@ -617,7 +631,10 @@ export function initSyncEngineFacade(deps) {
       const target = new URL(urlStr);
       if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
       if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
-      if (layout.settings.webdavAllowPrivateHost !== true && AUD_PRIVATE_HOST_RE.test((target.hostname || '').toLowerCase())) throw new Error(i18n('webdavErrBlockedHost'));
+      // Ticket 90 (A-044): share the exact predicate isSafeExtUrl uses, so the pull path denies
+      // the same hosts the export/test paths deny. The old inline regex tested the raw hostname
+      // (keeping the IPv6 brackets) and had no .local/.internal suffix rule.
+      if (isPrivateHost(normalizeHostname(target), layout.settings.webdavAllowPrivateHost === true)) throw new Error(i18n('webdavErrBlockedHost'));
     }
 
     // Expose sync for debug + tests.
