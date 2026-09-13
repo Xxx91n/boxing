@@ -178,22 +178,43 @@ jobs:
             dist/boxing-firefox-${{ steps.ver.outputs.version }}.xpi
           if-no-files-found: error
 
-      - name: Create draft GitHub Release (optional)
-        if: github.event.inputs.make_release == 'true'
+      - name: Build store-facing release pack (source zip + checksums)
+        if: matrix.os == 'ubuntu-latest' && github.event.inputs.make_release == 'true'
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Source archive for store review (no .git / node_modules / dist)
+          git archive --format=zip -o "dist/boxing-source-${VER}.zip" HEAD
+          # SHA256 for the public zip set (no .xpi / .crx on GitHub Releases)
+          cd dist
+          sha256sum \
+            "boxing-chrome-${VER}.zip" \
+            "boxing-firefox-${VER}.zip" \
+            "boxing-source-${VER}.zip" \
+            > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Publish GitHub Release (store zips only)
+        if: matrix.os == 'ubuntu-latest' && github.event.inputs.make_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.release_tag != '' && github.event.inputs.release_tag || format('v{0}', steps.ver.outputs.version) }}
           name: Boxing ${{ steps.ver.outputs.version }}
           files: |
             dist/boxing-chrome-${{ steps.ver.outputs.version }}.zip
-            dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx
             dist/boxing-firefox-${{ steps.ver.outputs.version }}.zip
-            dist/boxing-firefox-${{ steps.ver.outputs.version }}.xpi
-          draft: true
-          prerelease: true
+            dist/boxing-source-${{ steps.ver.outputs.version }}.zip
+            dist/SHA256SUMS.txt
+          draft: false
+          prerelease: false
           body: |
-            Manual build artifacts. See CHANGELOG for details.
-            - `boxing-chrome-${{ steps.ver.outputs.version }}.zip`  -> load via Chrome > Manage extensions > Developer mode > Load unpacked.
-            - `boxing-chrome-${{ steps.ver.outputs.version }}.crx`  -> CRX3 pack (signed when secret CRX_PRIVATE_KEY_PEM is present).
-            - `boxing-firefox-${{ steps.ver.outputs.version }}.zip` -> Firefox build (zipped folder).
-            - `boxing-firefox-${{ steps.ver.outputs.version }}.xpi` -> unsigned dev XPI (needs AMO signing for production).
+            Install from the official store pages (recommended):
+
+            - Firefox: https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/
+            - Edge / Chromium: https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi
+
+            This GitHub Release is a **user-facing changelog** plus optional sideload/source zips.
+            It does **not** ship `.xpi` / `.crx` (store signing is authoritative).
+
+            See `CHANGELOG.md` for Added / Improved / Fixed notes for this version.

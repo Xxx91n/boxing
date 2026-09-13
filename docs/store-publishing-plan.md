@@ -61,12 +61,15 @@
 4. 隐私政策 URL 保持 Pages 链接
 5. 提交审核
 
-### C. GitHub Release（日志化，用户向）
+### C. GitHub Release（日志化，用户向 · **必须 CI**）
 
-1. 不附带 `.xpi` / `.crx`
-2. 可附：`boxing-chrome-2026.9.12.zip`（开发者/侧载可选）+ `boxing-source-2026.9.12.zip` + SHA256
-3. **正文用 CHANGELOG §2026.9.12**，不要贴 commit 列表
-4. 顶部安装引导：Firefox → AMO；Edge/Chrome → Edge 商店（及 CWS 若已开）
+```bash
+gh workflow run build.yml -f version=2026.9.12 -f make_release=true -f amo_sign=true
+```
+
+CI 在 ubuntu 腿自动生成并 Publish：`chrome.zip` `firefox.zip` `source.zip` `SHA256SUMS.txt`。
+**禁止**本地 `gh release upload` 手工塞附件；**禁止**上传 `.xpi` / `.crx`。
+正文模板含商店安装链；如需润色再 `gh release edit --notes-file`。
 
 ### D. 安装引导（GitHub / README 口径）
 

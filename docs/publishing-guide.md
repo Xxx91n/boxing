@@ -48,20 +48,25 @@
 4. 隐私政策 URL 同上
 5. Submit
 
-## Part 3 — GitHub Release（用户向日志）
+## Part 3 — GitHub Release（用户向日志 · **必须走 CI**）
 
-1. Tag：仅在你接受当前门禁状态后创建（见 ADR-0017；G-B 为 D-009 强制豁免须知情）
-2. 标题示例：`Boxing 2026.9.12`
-3. 正文结构（用户能读懂）：
-   - 一句话摘要
-   - **新增 / 改进 / 修复**（来自 CHANGELOG）
-   - **从哪里安装**（AMO / Edge 链接）
-   - 已知限制（若有）
-4. 附件（可选）：
-   - `boxing-source-2026.9.12.zip`（+ sha256）
-   - 可选 `boxing-chrome-2026.9.12.zip` 供开发者侧载
-   - **不要**上传 `.xpi` / `.crx`
+**禁止**在本地 `gh release upload` 手工塞附件。统一走：
+
+```bash
+gh workflow run build.yml -f version=<VER> -f make_release=true -f amo_sign=true
+```
+
+- `make_release=true`：ubuntu-latest 腿生成 `chrome/firefox/source zip` + `SHA256SUMS.txt` 并 **Publish** Release  
+- **不上传** `.xpi` / `.crx`（商店签名是安装真源；workflow artifact 里仍可有 crx/xpi 供调试）  
+- `amo_sign=true`：跳过 AMO 签名，避免烧版号（商店网页上传不烧本仓号）
+
+1. Tag 名默认 `v<version>`（可用 `release_tag` 覆盖）
+2. 标题：`Boxing <version>`（由 action 生成）
+3. 正文：workflow 内模板（商店安装链 + 说明 CHANGELOG）；发版后如需润色再 `gh release edit --notes-file`
+4. 发版后核对：四个附件齐全、无 xpi/crx、`SHA256SUMS.txt` 与 zip 一致
 5. 不要把 release 写成工程师变更集（长 commit 列表、内部票号表）
+
+**demo-deploy** 会在 `release: published` 时自动部署 Pages；若 deploy job 失败，见 Part 5 备注。
 
 ## Part 4 — 权限与隐私（grill 保留）
 
