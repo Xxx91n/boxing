@@ -1,56 +1,116 @@
-# W1 首脑复核报告（票 60/61/62/63/65/66）
+# W1 首脑复核 — tickets 87–92（2026-09-13）
 
-> 2026-09-12 · 立场: 不信报告自述；关键声明均回仓库实物复验
-> 复验命令: node --check ×7 · import-graph-guard · migration-golden-guard · css-balance-guard · but status · python 源码锚点抽查
+> 原则: 不信报告自述；每条关键声明回仓库实物验证。  
+> 数据: git show / grep / node import / playwright --list / but status / origin/main。
 
-## 总表（声明 → 证据 → 结论）
+## 总裁
 
-| 票 | 覆盖 | 报告声明 | 实物证据（本窗口亲测） | 结论 |
+| 票 | Covers | 报告自述 | 实物结论 | 可关？ |
 |---|---|---|---|---|
-| 60 | A-013,A-014 | boot-theme classic + 镜像 + boot-pending；守卫绿 | `ntp/boot-theme.js` 122 行 IIFE；`index.html` L11 script 在 stylesheet **前**；无 `type=module`；`import`/`chrome.` 仅注释零 API；`render.js` L382/L710 摘 boot-pending；`persist.js` BOOT_THEME_KEY+mirror；node --check 7/7；import-graph 0 viol；migration 28/28；css-balance OK；but 分支 `t60-ntp-zero-flash` | **PASS-with-caveat** |
-| 61 | A-015 | README 收窄到 v2026.9.11 | README L27/L79+ `Latest published…v2026.9.11`；全文件 `ready-to-use` **0**；门禁措辞在 IMPORTANT 块；but 分支 `61-readme-release-claims-narrow` | **PASS-source** · 票务卫生违规见 PV |
-| 62 | A-016 | 无正式声明 → 最小声明 | `docs/history/README.md` 含 Git history declaration；代码零改动；条件 AC「有→」正确不适用；but 分支 `wave7-62-git-history-declaration` | **PASS** |
-| 63 | A-017 | 诚实标注混淆级；字面量不动 | `credentials.js` `CRED_OBFUSCATION_SECRET`；字面量 `boxing-sync-cred-v2-app-secret-2024` **intact**；`privacy-policy` `user-provided password`=0，`obfuscat`=4；无 passphrase；but 分支 `ticket-63-cred-honest-label` | **PASS-source** · 票务卫生违规见 PV |
-| 65 | A-019 | init complete 读 manifest | `ntp.js` 无 `v3.7.8`/头 `v3.1`；`__boxingVersion()` 读 `version_name\|\|version`；Issue done 3/3；but 分支 `65-user-visible-version-strings` | **PASS** |
-| 66 | A-020 | footer/hint/lastSaveError 净化 | footer 无游离 add；`RUNTIME_ONLY_SETTING_RE` 进 `stripGroupsForPersist`；`syncProviderHint`=local storage；`node --check` OK；but 分支 `66-visible-debt-markers-merge`；41 残红见诚实边界 | **PASS-source** · 票务卫生违规见 PV |
+| 87 | A-041 | 测试夹具修绿，本地 6/6 | **部分采信**：diff 确为 boot(reset) + poll；产品零改动；**无 CI** | 否（缺 CI） |
+| 88 | A-042 | 暗色对比度产品修复 | **采信产品修复**（settings.css 实物 token 切换）；亮色仍不达标已呈报；**无 CI**；issue 状态未同步 | 否（缺 CI） |
+| 89 | A-043 | overlay 确定性 dismiss | **采信**：auto-expand spec 增加 waitForInitComplete/dismissOnboarding；账本写 implemented **过早** | 否（缺 CI） |
+| 90 | A-044 | 统一私网拒绝 | **采信代码**：normalizeHostname/isPrivateHost 在位；**无 CI** | 否（缺 CI） |
+| 91 | A-045 | 三向合并已落地 | **代码在位但 e2e 不可加载 + 明文凭据** → **返工 91R** | **否 · P0** |
+| 92 | A-046 | boot-pending e2e 落盘 | **采信文件存在**（264 行）；仅静态验证；**无 CI** | 否（缺 CI） |
 
-## 守卫门（亲测，非引用报告）
+**G-A / 票 93**：frontier **不可开**。origin/main 最近 Test 仍为 run 34749813393 **failure**；W1 全部未 push。
 
-| 门 | 结果 |
+---
+
+## 声明 → 证据 → 结论（逐票）
+
+### 87 · A-041
+| 声明 | 证据 | 结论 |
+|---|---|---|
+| 根因=测试 boot 清 storage | `git show 7c254992` 仅改 `boxing-star-sync-audit.spec.ts`（reset 选项 + expect.poll） | 与报告一致 |
+| 产品 isParent 正确 | 报告反证 boxCount/found/isParent；CONTEXT 一致 | 未独立复跑产品路径，**弱采信**（测试改动合理） |
+| 本地 6/6 绿 | 无 CI run；分支 `wave9-ticket87-star-sync` **未 push** | **AC2 未完成** |
+| 无 waiver/不热修 9.12 | diff 无 skip/waiver | 通过 |
+
+### 88 · A-042
+| 声明 | 证据 | 结论 |
+|---|---|---|
+| 产品缺陷=暗色对比度 | `ntp/settings.css` L744–754：hairline→muted，muted→ink-soft | **实物确认** |
+| 非只改断言 | 改产品 CSS；新增比值测试 | 通过 |
+| 亮色仍不达标 | 报告 Q1 自呈 | 如实；**待另票**（非本 AC） |
+| CI 证据 | 未 push，无 run | **AC3 未完成** |
+| issue Status | 仍 `ready-for-agent` | **过程漂移**（报告已完成） |
+
+### 89 · A-043
+| 声明 | 证据 | 结论 |
+|---|---|---|
+| overlay 拦 hover | `git show 27dbdefc` 测试侧 dismissUntilHidden + waitForInitComplete | 采信 |
+| 账本 implemented | decision-ledger A-043 | **过早**（应 fixed-pending-ci） |
+| 无 CI | 未 push | 未关 |
+
+### 90 · A-044
+| 声明 | 证据 | 结论 |
+|---|---|---|
+| 统一 deny | `sync-engine.js` L45–65 isPrivateHost/normalizeHostname | 代码在位 |
+| 默认拒私网 | allowPrivateHost 仅 true 放行 | 通过 |
+| CI | 未 push | 未关 |
+
+### 91 · A-045 · **P0 返工**
+| 声明 | 证据 | 结论 |
+|---|---|---|
+| mergeLayoutThreeWay 落地 | `utils.js:347/407` + `sync-engine.js:404` + `storage.js getSyncBase` | **产品代码在位** |
+| e2e 可执行 | `playwright --list` → **ReferenceError: fileURLToPath is not defined**；Total 0 tests | **阻断全量 suite** |
+| 无真实凭据 | spec L26–28：**真实 Koofr URL + 邮箱 + 明文密码**，commit `38a2d005` | **安全事件** |
+| 推送状态 | 仅本地 `ticket-91-merge-three-way`；**未进 origin/main** | 略减暴露面，**不豁免轮换** |
+
+### 92 · A-046
+| 声明 | 证据 | 结论 |
+|---|---|---|
+| e2e 文件存在 | `boxing-boot-pending.spec.ts` 264 行 | 通过 |
+| 运行时绿 | 仅静态 check；未 push | 未关 |
+| P-92-1 failsafe 早退 | 报告呈报产品缺口 | **记 backlog，不阻本票**（范围外） |
+
+---
+
+## 账本维度（A-xxx）
+
+| A | 账本状态 | 复核修正 |
+|---|---|---|
+| A-041 | fixed-pending-ci | 维持；**禁止 implemented** |
+| A-042 | fixed-pending-ci | 维持；补 issue Status |
+| A-043 | implemented | **降为 fixed-pending-ci** |
+| A-044 | implemented | **降为 fixed-pending-ci** |
+| A-045 | implemented | **降为 blocked-rework（91R）** |
+| A-046 | implemented | **降为 fixed-pending-ci** |
+| A-047/048 | current | 维持；93/94 不可开 |
+
+---
+
+## 过程违规（不追认）
+
+1. **票 91 明文凭据入库**（P0 安全）— 报告已升级，属实。  
+2. **票 91 e2e 阻断 Playwright 加载** — 88 Q4 升级属实；91 自称 e2e 落盘但未做 `--list`。  
+3. **账本过早 implemented**（89/90/91/92）vs CI-only + 禁未明令 push。  
+4. **issue 88/89 Status 未与报告同步**。  
+5. 全部 W1 **未 push** — 符合禁令；同时导致 **零 CI 证据**，AC 无法关闭。
+
+---
+
+## Frontier（重算）
+
+| 波次 | 票 | 状态 |
+|---|---|---|
+| — | **91R 返工** | **立即可开**（P0） |
+| W1 收口 | 87,88,89,90,92 + 91R | 代码/文档在；**待用户明令 push + CI** |
+| W2 | 93 | **blocked**（87+88+89 CI 未绿） |
+| W3 | 94 | **blocked**（91/92/93） |
+
+**下一波可开工：仅 91R。**  
+**用户侧必做：立即轮换 Koofr/邮箱对应 WebDAV 密码**（凭据已进本地 git 对象库；未推 origin 不能视为未泄露）。
+
+---
+
+## 88 待裁决项处置
+
+| Q | 处置 |
 |---|---|
-| node --check boot-theme/persist/storage/ntp/render/credentials/i18n | ALL_CHECK_OK |
-| import-graph-guard | ok=true, 15 modules, 48 edges, violations=[] |
-| migration-golden-guard | ok=true, 28/28 |
-| css-balance-guard | OK, 6 CSS balanced |
-
-## 账本 A-xxx 逐条
-
-| A-xxx | 实现证据 | 状态 |
-|---|---|---|
-| A-013 | boot 镜像 + boot-pending + 负向（无第二 layout 真源） | 实现面齐；慢放人工证据未齐 |
-| A-014 | 单票 60；未改 ADR-0017；未进 G1–G6 | 符合 |
-| A-015 | README/CHANGELOG 收窄 | 符合 |
-| A-016 | history declaration | 符合 |
-| A-017 | 诚实标注；禁 passphrase | 符合 |
-| A-019 | 版本串对齐 | 符合 |
-| A-020 | 债务标记合并；i18n 重复键未动 | 符合 |
-| A-012 | 范围轨 | 保持 |
-
-## 过程违规（不追认，单独呈报）
-
-| ID | 描述 | 影响 |
-|---|---|---|
-| PV-W7-61-1 | 报告称完成，**issue 仍 ready-for-agent，AC 0/5 未勾** | 票务状态与报告脱节 |
-| PV-W7-63-1 | 同上，issue AC 0/5 | 同上 |
-| PV-W7-66-1 | 同上，issue AC 0/5 | 同上 |
-| PV-W7-60-1 | issue AC 已 7/7 勾且 Status done，但 **slow-mo 仅 evidence/60-flash/README.md**，无录屏实物 | D-002 慢放 AC 仍开放 |
-
-## 源码返工？
-
-**否。** 未发现需重发修复版启动器的源码缺陷。票务卫生（勾 AC/改 Status）与 60 慢放证据属轻量补账，不走返工轮次。
-
-## Frontier
-
-- W1 源码面: 60/61/62/63/65/66 可视为实现完成（60 附带人工慢放待办）
-- **W2 可开工: 64**（Blocked by 61 源码已落）
-- 并行待办（非新票）: 补勾 61/63/66 issue AC；用户侧 60 慢放；G-B 实机仍并行
+| Q1 亮色对比度 | 记 backlog **A-042b**（另票），不阻 W1 |
+| Q2 DESIGN.md hairline | 记 revised 呈报，待用户 |
+| Q3 CI | 随 push 一并解决 |
+| Q4/Q5 | 见 91R |

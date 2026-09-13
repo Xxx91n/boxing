@@ -84,3 +84,10 @@ ctx source=`atomcode-91-baseline`（2026-09-13，三引擎 9 查询/8 全文抓�
 |---|---|---|
 | 2026-09-13 | 票91 | 方案票的「存储边界」也可能被后续专项调研否证：base 随 payload 携带（票 80 §4.3）在单文件静态云下是反模式（Joplin/livesync/Syncthing 全部本地存基线）；实施票修订方案边界时必须显式记 revised + 信源，而非静默换形 |
 | 2026-09-13 | 票91 | 多窗并行下 decision-ledger 是热冲突文件：本票只动 A-045 行、提交按 hunk 隔离（票 83 教训的 ledger 版应用）|
+
+
+---
+
+## 首脑复核标注（2026-09-13 · 非返工窗口写入）
+
+W1 首脑复核判定本票 **blocked-rework**：明文凭据 + `fileURLToPath` 缺失。详细见 `reports/W1-brain-review.md`。返工章节由 91R 窗口追加。

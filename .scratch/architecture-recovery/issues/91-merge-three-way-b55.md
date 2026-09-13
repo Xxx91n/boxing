@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** done-when-CI（本地实施+文档+e2e 落盘；F-91-CI 具名待办，见 reports/91-report.md §2/§4）
+**Status:** blocked-rework（91R）— 凭据 + fileURLToPath · 见 W1-brain-review
 
 ## Acceptance criteria
 
