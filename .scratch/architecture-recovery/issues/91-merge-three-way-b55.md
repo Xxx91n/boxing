@@ -6,15 +6,15 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done-when-CI（本地实施+文档+e2e 落盘；F-91-CI 具名待办，见 reports/91-report.md §2/§4）
 
 ## Acceptance criteria
 
-- [ ] 子盒/id 级合并落地
-- [ ] 冲突副本 UI（票 79）接线
-- [ ] e2e：双端加子盒 → pull → 双方可见
-- [ ] 若改 newer-wins 语义，同步更新 80 报告/文档
-- [ ] 相关 CI 绿；reports/91-report.md
+- [x] 子盒/id 级合并落地（utils.mergeChildrenById/mergeLayoutThreeWay + sync-engine 三参化）
+- [x] 冲突副本 UI（票 79）接线（webdav-child-conflict 经归档键族入读取口；performBackup 反馈；e2e AC2 断言）
+- [x] e2e：双端加子盒 → pull → 双方可见（boxing-merge-three-way.spec.ts AC1；执行证据=CI）
+- [x] 未改 newer-wins 语义；80 报告 §6.1 + ADR-0009 修订 + CONTEXT 行已同步
+- [ ] 相关 CI 绿（具名 F-91-CI，待大脑派发 run）；reports/91-report.md ✅
 
 ## Notes
 

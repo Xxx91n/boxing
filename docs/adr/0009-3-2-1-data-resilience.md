@@ -100,3 +100,13 @@ crash-fork 与 pre-update 的 COW 语义（票 42/43）与本表同族，构成�
     完整容灾包额外带走快照/隔离区正文，恢复历史纵深不需额外换机操作。
 - 交叉引用：本修订的留存义务是 ADR-0017 发行门禁「数据兼容义务」的度量基线；G-B
   黄金路径检查单须对解包产物验证「信封导出→导入还原」往返。复核日期：2026-10-12。
+
+## 修订 2026-09-13（票 91 · Wave9 A-045 / B55）：WebDAV 并发合并粒度下沉到子盒/id 级
+
+票 80 §4.4 预告的粒度修订正式落地。`mergeLayoutFields`（sync-engine）从「大盒 id 级 + 整 children 数组覆盖」升级为 `utils.mergeLayoutThreeWay` 的子盒/id 级三向合并：
+
+- **共同祖先基线**：客户端本地单槽键 `boxingLayout.syncBase`（storage 门面独占 `getSyncBase`/`setSyncBase`；永不上传——Joplin sync_items.base_* 模型，ctx source=atomcode-91-baseline）。干净 pull/merge/push 落地后滚动刷新；缺失/不可读 → 退化为并集式两向，仍不弱于旧语义（不吞子盒）。
+- **子盒合并**：children 按小盒 id diff3——单边编辑静默采纳；双边真分歧保留本地 + 云侧子盒 parent-wrapped 归档（reason=`webdav-child-conflict`，进入票 79 读取口）；一侧纯删除（对侧相对 base 未动）被尊重；delete-vs-edit 保留有内容一侧。新增 id 永不静默吞没（B55 核心缺陷）。
+- **大盒与字段**：有 base 记录的大盒走字段级 diff3；无 base 的大盒保留票 44 字段启发式（>3 字段）与 `webdav-field-conflict` 归档契约，既有测试面逐字节兼容。
+- **不变项**：merge 失败回落（归档败者再 LWW）与 cloud-newer pull（快照先行）两形态不动；连接 from:to 并集、settings 本地权威、groups runtime-only 维持原基线。冲突副本键族/轮转/LRU 不变（票 44/79 裁决保持）。
+- 交叉引用：票 91 报告 `.scratch/architecture-recovery/reports/91-report.md`；方案基线票 80 报告 §6.1。

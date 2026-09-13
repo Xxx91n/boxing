@@ -153,6 +153,17 @@
 - 下票引用: 实施票以 §4.2 阶段 1 为第一刀（备选 A 子集），§4.3 边界表为验收基线。
 - 遗留: 阶段 2/3 无票面，由大脑在下轮 to-tickets 时决定是否立票；本票不越权立票。
 
+### 6.1 票 91 实施落地记录（2026-09-13 · Wave9 A-045 / B55）
+
+- 本方案（§4.2 备选 B，阶段 1+2 合并落地）已由票 91 实施：
+  - **纯函数**：`ntp/utils.js` `mergeChildrenById`（子盒 id 级 diff3 / 无 base 退化两向并集）+ `mergeLayoutThreeWay`（大盒 id 级 + 非 children 字段 diff3；无 base 大盒保留票 44 字段启发式契约）。
+  - **base 载体修订（对 §4.3「存储边界」的显式修订，非静默改向）**：atomcode-91-baseline 工业对标（Joplin sync_items.base_* / obsidian-livesync / Syncthing）一致结论 = base 存执行合并一侧的客户端本地、永不随 payload 上云。落地为 storage 门面单槽键 `boxingLayout.syncBase`（getSyncBase/setSyncBase，干净 pull/merge/push 后滚动刷新）；payload `_meta.baseRevision` 保留为信息性锚点（本次合并所 diff 的云 revision）。
+  - **冲突副本粒度**：新增 reason=`webdav-child-conflict`（parent-wrapped，票 79 读取口自动展示，零新 i18n 键）；box 级 `webdav-field-conflict` 形态不变。粒度变更记录见 ADR-0009「修订 2026-09-13（票 91）」。
+  - **退化契约**：syncBase 缺失/不可读 → 并集式两向（备选 A 行为），任何一侧的子盒永不静默吞没；≥ never-worse。
+  - **newer-wins 语义未扩用**：失败回落与 cloud-newer pull 两形态保持票 44/51「归档/快照先行」原样；本票改的是 merge 成功路径的粒度，不是 LWW 面。§4.0 红线遵守。
+  - **e2e**：`test/tests/boxing-merge-three-way.spec.ts`（AC1 双端加子盒双方可见 / AC2 子盒冲突→票 79 UI 行 / AC3 三向删除与单边编辑 / AC3b delete-vs-edit）。CI 证据按 CI-only 政策待派发 run。
+  - 报告：`.scratch/architecture-recovery/reports/91-report.md`。
+
 ## 7. 教训（写回候选，WORKFLOW §6）
 
 | 日期 | 来源 | 教训 |

@@ -121,7 +121,7 @@
 | A-042 | R2 empty-state Bug5-dark bm-add 暗色透明（ubuntu）— **已分诊**：CI 残红 = env（onboarding 遮罩拦截 + 140ms 过渡竞态，票 48/72 已修）；产品侧暗色对比度缺陷（字形 4.45:1、边界 1.20:1）已修至 7.73:1 / 4.45:1（票 88） | 分诊 env vs 产品；产品则修 | 不得只改断言掩盖产品缺陷 | fixed-pending-ci（本地 ff+ch 各 20/20 绿；暗色对比度已实测达标；CI run URL 待明令 push） |
 | A-043 | R3 auto-expand collapseHover（ubuntu flaky） | 去 flaky 或稳定具名 skip+票 | 禁止永久 silent skip | current |
 | A-044 | B54 票 82 已知缺口：checkUrlValid .local、opt-in 导出传播 | 小修收口 | 维持默认拒私网 | implemented（票 90 · reports/90-report.md · commit `vwu` @ `wave9-ticket90-webdav-b54`；local 双浏览器 23/23 绿，CI 待明令 push） |
-| A-045 | B55 merge 质量：票 80 方案未实施；子盒静默吞没（D-009 整票） | baseRevision/等价 + 子盒/id 级合并 + e2e | 禁只落方案；禁静默改 newer-wins；关联 GH #11 | current |
+| A-045 | B55 merge 质量：票 80 方案未实施；子盒静默吞没（D-009 整票） | baseRevision/等价 + 子盒/id 级合并 + e2e | 禁只落方案；禁静默改 newer-wins；关联 GH #11 | implemented（票 91 · 2026-09-13：mergeLayoutThreeWay/syncBase 落地，e2e spec 落盘；F-91-CI 具名待办随 wave9 收口关闭，见 reports/91-report.md） |
 | A-046 | B56 boot-pending 专项 e2e（73 呈报 P-73-1） | 防零闪现回归自动化 | 不回滚零闪现实现 | implemented（票 92 · boxing-boot-pending.spec.ts 落盘；CI 锚点待 wave9 派发 P-92-2 · reports/92） |
 | A-047 | G-A 不成立（run 34749813393）：三 OS test 红；出口=main test.yml 绿或仅具名 F | 残红治理至可发行 G-A | N 桶/数据完整性永不豁免；关联 GH #12 | current |
 | A-048 | 目标版本 2026.9.15 全部修复出口（D-004/005）：版本串+notes+G-A∧G-B∧G-C | 版本就绪且门禁可宣称前禁止夸大 | 持有 9.12 不热修；G-B=用户声明 pass 禁 agent 代签 | current |

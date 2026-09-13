@@ -326,3 +326,179 @@ function unwrapExportEnvelope(data) {
 }
 
 export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
+
+// ─── Ticket 91 (Wave9 A-045 · B55): id-level three-way layout merge ──────────
+// Implements the ticket-80 recommended plan (three-way with base, degrading to the
+// two-way additive merge when no base). Industrial baseline: Joplin sync_items.base_*
+// client-local common-ancestor + refresh-on-clean-sync, Syncthing/Dropbox conflict-
+// copy semantics (ctx sources: atomcode-91-baseline, atomcode-merge-quality).
+// Pure functions — no storage/DOM/i18n access (utils purity contract).
+
+// Merge one large box's children array by child-box id. baseChildren = last agreed
+// state; pass null (box the base never had) → additive two-way fallback, never worse
+// than the old whole-array overwrite. Rules (id = small-box id):
+//  - same id, equal → keep local verbatim;
+//  - with base: the side that moved alone vs base is adopted silently (diff3);
+//  - same id, true both-side divergence → local child stays on canvas, the cloud
+//    child is returned as a child-level conflict copy (caller archives it);
+//  - one side lacks a base-known child: pure deletion (other side unchanged vs
+//    base) is honored; delete-vs-edit keeps the side that has content;
+//  - new ids from either side are additive — this is the B55 silent-swallow fix.
+function mergeChildrenById(localChildren, cloudChildren, baseChildren) {
+  const localArr = Array.isArray(localChildren) ? localChildren : [];
+  const cloudArr = Array.isArray(cloudChildren) ? cloudChildren : [];
+  const hasBase = Array.isArray(baseChildren);
+  const byCloud = new Map();
+  for (const s of cloudArr) if (s && s.id && !byCloud.has(s.id)) byCloud.set(s.id, s);
+  const byBase = new Map();
+  if (hasBase) for (const s of baseChildren) if (s && s.id && !byBase.has(s.id)) byBase.set(s.id, s);
+  const children = [];
+  const childConflicts = [];
+  const seen = new Set();
+  for (const s of localArr) {
+    if (!s || !s.id) { if (s) children.push(s); continue; }
+    if (seen.has(s.id)) continue;
+    seen.add(s.id);
+    const cs = byCloud.get(s.id);
+    const bs = byBase.get(s.id);
+    if (!cs) {
+      // Cloud lacks it: local addition (keep) or cloud deletion (only base can tell).
+      if (!bs || !deepJsonEquals(s, bs)) children.push(s); // else: pure cloud deletion honored
+      continue;
+    }
+    if (deepJsonEquals(s, cs)) { children.push(s); continue; }
+    if (bs) {
+      const localChanged = !deepJsonEquals(s, bs);
+      const cloudChanged = !deepJsonEquals(cs, bs);
+      if (localChanged && !cloudChanged) { children.push(s); continue; }
+      if (!localChanged && cloudChanged) { children.push(cs); continue; }
+    }
+    // Both sides edited differently (or two-way ambiguity): keep local, archive cloud.
+    children.push(s);
+    childConflicts.push(cs);
+  }
+  for (const s of cloudArr) {
+    if (!s) continue;
+    if (!s.id) {
+      const dup = localArr.some((x) => x && !x.id && deepJsonEquals(x, s));
+      if (!dup) children.push(s);
+      continue;
+    }
+    if (seen.has(s.id)) continue;
+    seen.add(s.id);
+    const bs = byBase.get(s.id);
+    if (!bs || !deepJsonEquals(s, bs)) children.push(s); // cloud addition, or cloud edit surviving a local delete
+    // base-known + cloud unchanged = pure local deletion → honored (skip)
+  }
+  return { children, childConflicts };
+}
+
+// Three-way merge of the whole layout (cloud x local x optional base).
+// cloud/local MUST be migrateLayout-ed; base is the raw syncBase slot payload as
+// stored (already normalized when written) or null. Per box id: children ALWAYS
+// merge via mergeChildrenById (the B55 fix — children is no longer clobbered as one
+// field); non-children fields use diff3 vs base when a base box exists, else the
+// preserved ticket-44 heuristic (>3 diverged fields -> local wins wholesale, else
+// field merge local-wins; any divergence archives the cloud box verbatim as a
+// conflict copy — never silent). Boxes absent from one side: additive by default;
+// with base, a pure one-side deletion (other side unchanged vs base) is honored.
+// Connections stay a from:to-union; settings stay local-authoritative (ticket-80
+// semantics unchanged). nextLargeIndex/nextSmallIndex take max (id-collision guard).
+function mergeLayoutThreeWay(cloud, local, base) {
+  const cloudBoxes = Array.isArray(cloud.boxes) ? cloud.boxes : [];
+  const localBoxes = Array.isArray(local.boxes) ? local.boxes : [];
+  const hasBase = !!(base && Array.isArray(base.boxes));
+  const baseById = new Map();
+  if (hasBase) for (const b of base.boxes) if (b && b.id && !baseById.has(b.id)) baseById.set(b.id, b);
+  const localById = new Map();
+  for (const b of localBoxes) if (b && b.id && !localById.has(b.id)) localById.set(b.id, b);
+  const boxConflicts = [];
+  const childConflicts = [];
+  const maxIdx = (...vs) => vs.reduce((a, v) => Math.max(a, Number(v) || 1), 1);
+  const byId = new Map();
+  for (const cb of cloudBoxes) if (cb) byId.set(cb.id, { ...cb });
+  for (const lb of localBoxes) {
+    if (!lb) continue;
+    const existing = byId.get(lb.id);
+    if (!existing) {
+      const bb = baseById.get(lb.id);
+      if (bb && deepJsonEquals(lb, bb)) continue; // cloud deleted it, local unchanged -> honor
+      byId.set(lb.id, { ...lb });
+      continue;
+    }
+    const bb = baseById.get(lb.id);
+    const baseChildArr = bb ? (Array.isArray(bb.children) ? bb.children : []) : null;
+    const childMerge = mergeChildrenById(lb.children, existing.children, baseChildArr);
+    for (const cs of childMerge.childConflicts) {
+      childConflicts.push({ parentId: lb.id, parentTitle: lb.title != null ? lb.title : existing.title, child: cs });
+    }
+    let box;
+    if (bb) {
+      // diff3 per field: adopt the side that moved vs base; both moved differently
+      // -> local wins the main key and the cloud box is archived verbatim.
+      const mergedBox = { ...existing };
+      let conflicted = false;
+      const fieldKeys = new Set([...Object.keys(lb), ...Object.keys(existing)]);
+      for (const key of fieldKeys) {
+        if (key === 'children') continue;
+        const inL = Object.prototype.hasOwnProperty.call(lb, key);
+        const lv = inL ? lb[key] : undefined;
+        const cv = existing[key];
+        const bv = bb[key];
+        const localChanged = !deepJsonEquals(lv, bv);
+        const cloudChanged = !deepJsonEquals(cv, bv);
+        if (localChanged && !cloudChanged) { if (inL) mergedBox[key] = lv; else delete mergedBox[key]; }
+        else if (!localChanged && cloudChanged) { /* cloud moved alone - spread already carries it */ }
+        else if (localChanged && cloudChanged && !deepJsonEquals(lv, cv)) {
+          conflicted = true;
+          if (inL) mergedBox[key] = lv; else delete mergedBox[key];
+        }
+      }
+      if (conflicted) boxConflicts.push({ ...existing });
+      box = mergedBox;
+    } else {
+      // No base for this box: legacy ticket-44 heuristic on non-children fields.
+      const divergedFields = [];
+      for (const key of Object.keys(lb)) {
+        if (key === 'children') continue;
+        if (JSON.stringify(existing[key]) !== JSON.stringify(lb[key])) divergedFields.push(key);
+      }
+      if (divergedFields.length > 0) boxConflicts.push({ ...existing });
+      box = divergedFields.length > 3 ? { ...lb } : { ...existing, ...lb };
+    }
+    box.children = childMerge.children;
+    box.nextSmallIndex = bb
+      ? maxIdx(lb.nextSmallIndex, existing.nextSmallIndex, bb.nextSmallIndex)
+      : maxIdx(lb.nextSmallIndex, existing.nextSmallIndex);
+    byId.set(lb.id, box);
+  }
+  if (hasBase) {
+    // Honor pure local deletions of cloud-side boxes (cloud unchanged vs base).
+    for (const id of Array.from(byId.keys())) {
+      if (localById.has(id)) continue;
+      const bb = baseById.get(id);
+      if (bb && deepJsonEquals(byId.get(id), bb)) byId.delete(id);
+    }
+  }
+  const connSet = new Set();
+  const mergedConns = [];
+  for (const c of (cloud.connections || []).concat(local.connections || [])) {
+    if (!c) continue;
+    const key = (c.from || c.source || '') + ':' + (c.to || c.target || '');
+    if (!connSet.has(key)) { connSet.add(key); mergedConns.push(c); }
+  }
+  const merged = {
+    ...cloud,
+    ...local,
+    boxes: Array.from(byId.values()),
+    connections: mergedConns,
+    groups: [], // ADR-0007 Q1: runtime mirror only
+    schemaVersion: Math.max(cloud.schemaVersion || 1, local.schemaVersion || 1),
+    nextLargeIndex: maxIdx(cloud.nextLargeIndex, local.nextLargeIndex),
+    settings: { ...cloud.settings, ...local.settings },
+    _meta: { ...local._meta, updatedAt: Date.now() },
+  };
+  return { merged, conflicts: boxConflicts, childConflicts, stats: { boxes: merged.boxes.length, boxConflicts: boxConflicts.length, childConflicts: childConflicts.length, base: hasBase } };
+}
+
+export { mergeChildrenById, mergeLayoutThreeWay };

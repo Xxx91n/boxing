@@ -507,6 +507,30 @@ export function registerStorageOnChanged() {
     } catch (e) { debugErr('getConflictArchive', e); return null; }
   }
 
+  // ── Ticket 91 (Wave9 A-045 / B55): sync base slot ───────────────────────────────
+  // Client-local record of the last state BOTH sides agreed on — the common
+  // ancestor the sync-engine three-way merge (utils.mergeLayoutThreeWay) diffs
+  // against. Written only after a clean pull/merge/push lands and NEVER uploaded
+  // (Joplin sync_items.base_* model — ctx source=atomcode-91-baseline). Single
+  // slot, overwritten per successful sync. Failures are soft by design: a
+  // missing/unreadable base degrades the merge to the additive two-way path
+  // (ticket-80 fallback contract). Read-only for callers outside sync-engine.
+  const SYNC_BASE_KEY = 'boxingLayout.syncBase';
+  export async function getSyncBase() {
+    try {
+      const stored = await layoutStorage.get(SYNC_BASE_KEY);
+      const raw = stored && stored[SYNC_BASE_KEY];
+      if (!isPlausibleLayout(raw)) return null;
+      return raw;
+    } catch (e) { debugErr('getSyncBase', e); return null; }
+  }
+  export async function setSyncBase(payload) {
+    try {
+      await layoutStorage.set({ [SYNC_BASE_KEY]: payload });
+      return true;
+    } catch (e) { debugWarn('setSyncBase failed \u2014 base stays stale; next merge degrades to two-way', e); return false; }
+  }
+
   // ── Ticket 51 (spec W6-D2): full DR package bodies ───────────────────────────
   // The optional "full disaster-recovery package" export needs the VERBATIM bodies
   // behind the three index keys (snap.v1.*, boxingLayout.corrupt.*, boxingLayout.
