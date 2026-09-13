@@ -70,7 +70,20 @@
 - 隐私页：GitHub Pages `/docs`
 - 凭据：per-install key + AES-GCM **混淆级**信封，非用户口令加密（见 Privacy 文案）
 
-## Part 5 — 本地验证（不烧号）
+## Part 5 — GitHub Pages / Demo 同步（现行）
+
+| 触发 | 行为 |
+|---|---|
+| **`release` published** | `demo-deploy.yml` checkout **该 tag** → 构建 demo + privacy → 部署 Pages |
+| `workflow_dispatch` | checkout **main** 手动重部 |
+
+因此：**每次正式 GitHub Release 后，Pages/demo 应自动跟该发行 tag 同步**（`demo-deploy.yml`），无需再手动 push gh-pages。  
+隐私政策页与 `/demo/` 同属该 artifact；未发 Release 时 Pages 停在上一次部署内容。  
+（历史教训：`GITHUB_TOKEN` push 不会触发 Pages build，故用 Actions artifact 而非 gh-pages 分支。）
+
+**运维备注（2026-09-13）：** 偶发 `release` 触发的 **deploy** job 失败时，可先 `gh workflow run demo-deploy.yml`（checkout main）重部，或 `gh run rerun <id> --failed`。验收以 `/demo/` 与 privacy URL 200 为准。
+
+## Part 6 — 本地验证（不烧号）
 
 ```bash
 npm ci
