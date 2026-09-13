@@ -6,13 +6,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** implemented (local; CI-open) — 2026-09-13 · 证据 reports/90-report.md · commit `vwu` @ `wave9-ticket90-webdav-b54`
 
 ## Acceptance criteria
 
-- [ ] 默认仍拒私网
-- [ ] opt-in 设置在导出与 pull 路径传播
-- [ ] 报告 reports/90-report.md
+- [x] 默认仍拒私网
+- [x] opt-in 设置在导出与 pull 路径传播
+- [x] 报告 reports/90-report.md
 
 ## Notes
 

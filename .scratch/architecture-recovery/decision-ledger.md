@@ -120,7 +120,7 @@
 | A-041 | R1 boxing-star-sync-audit Scenario 1（跨 tab isParent 领养）三 OS × ff+ch 稳定残红（ga-definitive） | 产品或测试根因分诊后修绿；禁止豁免折绿 | 目标 2026.9.15；线性提交；关联 GH #10 | fixed-pending-ci（本地 ff+ch 6/6 绿；根因=测试缺陷 boot() 清 storage；CI run URL 待明令 push） |
 | A-042 | R2 empty-state Bug5-dark bm-add 暗色透明（ubuntu）— **已分诊**：CI 残红 = env（onboarding 遮罩拦截 + 140ms 过渡竞态，票 48/72 已修）；产品侧暗色对比度缺陷（字形 4.45:1、边界 1.20:1）已修至 7.73:1 / 4.45:1（票 88） | 分诊 env vs 产品；产品则修 | 不得只改断言掩盖产品缺陷 | fixed-pending-ci（本地 ff+ch 各 20/20 绿；暗色对比度已实测达标；CI run URL 待明令 push） |
 | A-043 | R3 auto-expand collapseHover（ubuntu flaky） | 去 flaky 或稳定具名 skip+票 | 禁止永久 silent skip | current |
-| A-044 | B54 票 82 已知缺口：checkUrlValid .local、opt-in 导出传播 | 小修收口 | 维持默认拒私网 | current |
+| A-044 | B54 票 82 已知缺口：checkUrlValid .local、opt-in 导出传播 | 小修收口 | 维持默认拒私网 | implemented（票 90 · reports/90-report.md · commit `vwu` @ `wave9-ticket90-webdav-b54`；local 双浏览器 23/23 绿，CI 待明令 push） |
 | A-045 | B55 merge 质量：票 80 方案未实施；子盒静默吞没（D-009 整票） | baseRevision/等价 + 子盒/id 级合并 + e2e | 禁只落方案；禁静默改 newer-wins；关联 GH #11 | current |
 | A-046 | B56 boot-pending 专项 e2e（73 呈报 P-73-1） | 防零闪现回归自动化 | 不回滚零闪现实现 | current |
 | A-047 | G-A 不成立（run 34749813393）：三 OS test 红；出口=main test.yml 绿或仅具名 F | 残红治理至可发行 G-A | N 桶/数据完整性永不豁免；关联 GH #12 | current |
