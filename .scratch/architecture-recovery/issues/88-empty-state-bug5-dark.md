@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** fixed-pending-ci（W1 复核：产品修复已实物确认；CI 待 push）
 
 ## Acceptance criteria
 
