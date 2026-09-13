@@ -10,8 +10,8 @@
 
 ## Acceptance criteria
 
-- [ ] 稳定通过或具名 skip+说明（禁止 silent 永久 skip）
-- [ ] CI 证据 + reports/89-report.md
+- [x] 稳定通过（本地锚点：CI worker 数 --repeat-each=3 --workers=2 → 6/6；负例具名 "pointer intercepted by DIV#onboarding-overlay"；禁止 silent 永久 skip 已遵守）
+- [ ] CI 证据（**待补**：本票分支未 push，遵循 WORKFLOW §4.2；本地证据链 + 全量 595 passed/5 skipped 见 reports/89-report.md §4）
 
 ## Notes
 
