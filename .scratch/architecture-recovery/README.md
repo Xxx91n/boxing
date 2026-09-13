@@ -177,3 +177,21 @@ Frontier 更新: 76/77 按 D-009 关闭；**78 可开工**（关闭评论须写�
 - A-040 纸面债: implemented（无票）
 - GH 镜像: #10→87 · #11→91 · #12→93
 - Spec: `spec.md` · 对账: `destination-reconciliation-wave9.md`（无去向=空）
+
+## Wave9 W1 首脑复核状态（2026-09-13）
+
+| 票 | Covers | 复核结论 | 状态 |
+|---|---|---|---|
+| 87 | A-041 | 测试夹具修复实物确认 | fixed-pending-ci · 待 push |
+| 88 | A-042 | 暗色 token 产品修复确认；亮色另票 | fixed-pending-ci · 待 push |
+| 89 | A-043 | overlay deflake 确认 | fixed-pending-ci · 待 push |
+| 90 | A-044 | 私网 deny 代码在位 | fixed-pending-ci · 待 push |
+| 91 | A-045 | **P0 凭据 + e2e 加载失败** | **blocked-rework → 91R** |
+| 92 | A-046 | e2e 文件在位，仅静态 | fixed-pending-ci · 待 push |
+| 93 | A-047 | — | **blocked**（87/88/89 CI） |
+| 94 | A-048 | — | **blocked**（91R/92/93） |
+
+**Frontier 可开工：仅 91R**  
+**用户必做：轮换 91 泄漏的 WebDAV 密码**（本地 git 对象库已含；未推 origin 仍须轮换）
+
+完整对照: `reports/W1-brain-review.md`

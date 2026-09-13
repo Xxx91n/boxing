@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** fixed-pending-ci（W1 复核）
 
 ## Acceptance criteria
 
