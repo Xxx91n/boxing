@@ -9,9 +9,16 @@ const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.
 // without the layout.groups shim. Results determine if Block 1 (L1417-1430) in
 // dsuRebuildFromConnections can be safely removed.
 
-async function boot(page: Page) {
+// A-041 (ticket 87): `reset` controls the storage wipe. Default true = clean slate.
+// Pass { reset: false } for a tab that must ADOPT state another tab persisted: clearing
+// storage there deletes the very data under test. Scenario 1 did exactly that and
+// regressed to starB === null (box absent, not unstarred) on all three OS.
+async function boot(page: Page, opts: { reset?: boolean } = {}) {
+  const reset = opts.reset !== false;
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  if (reset) {
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  }
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
   await page.evaluate(() => (window as any).__boxingDebug.skipOnboarding());
@@ -47,16 +54,22 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
     await a.waitForTimeout(400);
 
-    // Open tab B (fresh — loads from storage)
+    // Open tab B (fresh — loads from storage). reset:false keeps the layout tab A
+    // just persisted; without it this scenario can never observe adoption.
     const b = await ctx.newPage();
-    await boot(b);
-    await b.waitForTimeout(600);
+    await boot(b, { reset: false });
 
-    // Check if tab B adopted the star via box.isParent (without layout.groups)
-    const starB = await b.evaluate((id) => {
-      const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
-      return lb ? lb.isParent : null;
-    }, idA);
+    // Check if tab B adopted the star via box.isParent (without layout.groups).
+    // expect.poll replaces the fixed 600ms sleep so slow CI runners are not flaky;
+    // the predicate and the `true` expectation are unchanged.
+    let starB: boolean | null = null;
+    await expect.poll(async () => {
+      starB = await b.evaluate((id) => {
+        const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
+        return lb ? lb.isParent : null;
+      }, idA);
+      return starB;
+    }, { timeout: 10000 }).toBe(true);
 
     console.log('Scenario 1: starB =', starB);
     expect(starB).toBe(true);

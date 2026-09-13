@@ -6,13 +6,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** fixed-pending-ci（AC2 需明令 push 触发 CI）
 
 ## Acceptance criteria
 
-- [ ] 根因结论写入 reports/87-report.md（产品/测试/环境）
-- [ ] 修复后 test.yml 该签名三 OS 非 failed；附 run URL
-- [ ] 不引入 waiver；不热修 9.12
+- [x] 根因结论写入 reports/87-report.md（产品/测试/环境）—— 定谳：测试缺陷（boot() 无条件清 storage）
+- [ ] 修复后 test.yml 该签名三 OS 非 failed；附 run URL —— 本地 ff+ch 双 lane 6/6 绿；run URL 待明令 push 后补
+- [x] 不引入 waiver；不热修 9.12
 
 ## Notes
 
