@@ -208,13 +208,6 @@ jobs:
             dist/SHA256SUMS.txt
           draft: false
           prerelease: false
-          body: |
-            Install from the official store pages (recommended):
-
-            - Firefox: https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/
-            - Edge / Chromium: https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi
-
-            This GitHub Release is a **user-facing changelog** plus optional sideload/source zips.
-            It does **not** ship `.xpi` / `.crx` (store signing is authoritative).
-
-            See `CHANGELOG.md` for Added / Improved / Fixed notes for this version.
+          # Curated user-facing notes only. Never invent a template body here —
+          # that overwrites the published changelog. Require docs/release-notes/<ver>.md.
+          body_path: docs/release-notes/${{ steps.ver.outputs.version }}.md

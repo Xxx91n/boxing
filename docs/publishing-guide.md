@@ -57,13 +57,15 @@ gh workflow run build.yml -f version=<VER> -f make_release=true -f amo_sign=true
 ```
 
 - `make_release=true`：ubuntu-latest 腿生成 `chrome/firefox/source zip` + `SHA256SUMS.txt` 并 **Publish** Release  
+- **Release 正文唯一来源**：`docs/release-notes/<version>.md`（用户向，已定稿）；CI 用 `body_path` 粘贴，**禁止**在 workflow 内写模板 body 覆盖  
+- 发版前必须先提交该 notes 文件，否则 CI 不应跑 `make_release`  
 - **不上传** `.xpi` / `.crx`（商店签名是安装真源；workflow artifact 里仍可有 crx/xpi 供调试）  
 - `amo_sign=true`：跳过 AMO 签名，避免烧版号（商店网页上传不烧本仓号）
 
 1. Tag 名默认 `v<version>`（可用 `release_tag` 覆盖）
 2. 标题：`Boxing <version>`（由 action 生成）
-3. 正文：workflow 内模板（商店安装链 + 说明 CHANGELOG）；发版后如需润色再 `gh release edit --notes-file`
-4. 发版后核对：四个附件齐全、无 xpi/crx、`SHA256SUMS.txt` 与 zip 一致
+3. 正文：**不要**在 CI 或本地发明模板；事先写好 `docs/release-notes/<ver>.md` 并提交，CI 用 `body_path` 发布。如需改字，改该文件后再 `gh release edit --notes-file`（或重跑 make_release）
+4. 发版后核对：四个附件齐全、无 xpi/crx、正文仍是你的用户向 notes（不是英文模板）
 5. 不要把 release 写成工程师变更集（长 commit 列表、内部票号表）
 
 **demo-deploy** 会在 `release: published` 时自动部署 Pages；若 deploy job 失败，见 Part 5 备注。
