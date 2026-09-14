@@ -6,13 +6,13 @@
 
 **Blocked by:** 100, 104
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-14 首脑复核 · docs/release-status.md 实物 + pointer-check 74/74）
 
 ## Acceptance criteria
 
-- [ ] docs/ 层存在 Release status 或 ADR-0017 等价 live 节
-- [ ] 写明 34808080000 为中间里程碑
-- [ ] 公开路径无本机绝对路径
+- [x] docs/ 层存在 Release status 或 ADR-0017 等价 live 节 — docs/release-status.md
+- [x] 写明 34808080000 为中间里程碑 — §三 G-A 行
+- [x] 公开路径无本机绝对路径 — grep D: = 0
 
 ## Notes
 

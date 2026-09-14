@@ -7,8 +7,8 @@
 | W2 | 98 frozen-comments-rui8 | A-052 | 96, 100 | **done**（首脑采信） |
 | W2 | 104 boot-failsafe-b68 | A-058 | 96, 100 | **done-with-named-F**（env launch timeout） |
 | W2 | 102 bm-add-contrast-b66 | A-056 | 96, 100 | **done**（首脑采信 · 账本 pretest 误写已纠） |
-| W3 | 101 deflake-b65 | A-055 | 104 | ready-for-agent |
-| W3 | 97 release-status-rui6 | A-051 | 100, 104 | ready-for-agent |
+| W3 | 101 deflake-b65 | A-055 | 104 | **done-with-named-F**（F-101-01 CI · N-101-06 zoom） |
+| W3 | 97 release-status-rui6 | A-051 | 100, 104 | **done**（首脑采信） |
 | W4 | 106 innerclip-b70 | A-060 | 101 | ready-for-agent |
 | W4 | 99 locale-readme-b63 | A-053 | 97 | ready-for-agent |
 | W4 | 103 design-hairline-b67 | A-057 | 102 | ready-for-agent |
@@ -18,7 +18,16 @@
 - GH 镜像: #13→96 · #14→101 · #15→104 · #16→102
 - Spec: `spec.md` · 对账: `destination-reconciliation-wave915.md`（无去向=空）
 - D 账本: `../wave9-915-release-grill/decision-ledger.md` D-001..D-009
-- Frontiers: **W3 = 101 ∥ 97**（W2 实现齐）
+- Frontiers: **W4 = 106 ∥ 99 ∥ 103 ∥ 105**（W3 齐）
+
+## W3 首脑复核 — 97/101（2026-09-14）
+
+| 票 | 结论 |
+|---|---|
+| 97 / A-051 | **done** · release-status.md + pointer 74/74 + 不可发行口径 |
+| 101 / A-055 | **done-with-named-F** · onboarding helper+guard pretest；F-101-01 CI；N-101-06 zoom |
+
+详表: `reports/W3-brain-review-97-101.md`
 
 ## W2 首脑复核 — 98/104/102（2026-09-14）
 
