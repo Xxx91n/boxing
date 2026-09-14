@@ -13,7 +13,7 @@
  *   onboarding walk-through, create/persist/reload round-trip (G2-shaped), storage dumps,
  *   legacy-v2 single-trip normalization (G5b, ADR-0017 named item).
  * OUT OF SCOPE: G3 (real backup from previous release), G4 (upgrade install from
- *   v2026.9.11 + pre-update snapshot), G6 (named human sign-off), the whole Firefox lane
+ *   v2026.9.12 + pre-update snapshot), G6 (named human sign-off), the whole Firefox lane
  *   (Playwright cannot load an unpacked extension without signing), service-worker console.
  *
  * Usage: node scripts/gb-dryrun-chrome.mjs [--ext=<unpacked-dir>] [--out=<dir>]
@@ -34,7 +34,7 @@ function arg(name, dflt) {
   return hit ? hit.slice(prefix.length) : dflt;
 }
 
-const EXT = arg("ext", "D:/rel-2026.9.12/chrome");
+const EXT = arg("ext", "D:/rel-2026.9.15/chrome");
 const OUT = arg("out", path.join(REPO_ROOT, ".scratch/architecture-recovery/dry-run/76-gb-chromium"));
 const FIXTURE = path.join(REPO_ROOT, "test/fixtures/schema/legacy-v2.json");
 
@@ -51,7 +51,7 @@ async function run() {
 
   // P0: artifact identity read from disk, not from the browser.
   const manifest = JSON.parse(fs.readFileSync(path.join(EXT, "manifest.json"), "utf8"));
-  rec("P0-manifest", manifest.version === "2026.9.12" && manifest.manifest_version === 3,
+  rec("P0-manifest", manifest.version === "2026.9.15" && manifest.manifest_version === 3,
     "version=" + manifest.version + " manifest_version=" + manifest.manifest_version);
   rec("P0-zero-flash-in-package", fs.existsSync(path.join(EXT, "ntp/boot-theme.js")),
     "ntp/boot-theme.js present in the unpacked candidate");
@@ -217,7 +217,7 @@ async function run() {
     note: "Dry-run rehearsal only. NOT G-B evidence - see scripts/gb-dryrun-chrome.mjs header.",
     outOfScope: [
       "G3 real backup import (needs a backup produced by the previous release)",
-      "G4 upgrade install from v2026.9.11 + pre-update snapshot",
+      "G4 upgrade install from v2026.9.12 + pre-update snapshot",
       "G6 named human sign-off",
       "Firefox lane (Playwright cannot load an unpacked extension without signing)",
       "service-worker console (no Playwright event surface)",

@@ -1,18 +1,18 @@
-# Store Publishing Plan — Boxing 2026.9.12
+# Store Publishing Plan — Boxing 2026.9.15
 
-> 状态: **商店发版进行中（用户执行，Agent 供材）** · 更新: 2026-09-13
-> Grill 心智模型保留于「Grill Decisions」节；执行表已按 2026.9.12 现况重写。
+> 状态: **商店发版进行中（用户执行，Agent 供材）** · 更新: 2026-09-14
+> Grill 心智模型保留于「Grill Decisions」节；执行表已按 2026.9.15 现况重写。
 > 隐私政策: https://xxx91n.github.io/boxing/privacy-policy.html
 
-## 现况（2026-09-13）
+## 现况（2026-09-14）
 
 | 渠道 | 状态 |
 |---|---|
-| **Firefox AMO** | **9.11 已过审上线** — [addons.mozilla.org/…/boxing-newtab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) |
-| **Edge Add-ons** | **9.11 已过审上线** — [Edge listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
+| **Firefox AMO** | **9.12 已过审上线** — [addons.mozilla.org/…/boxing-newtab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) |
+| **Edge Add-ons** | **9.12 已过审上线** — [Edge listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
 | Chrome Web Store | 可选；历史上 Edge 优先 |
 | GitHub Releases | **日志化、面向用户**；**不再分发 .xpi / .crx**；安装引导到商店 |
-| 版本 | **2026.9.12** 候选包与源码包已就绪 |
+| 版本 | **2026.9.15** 候选包与源码包已就绪 |
 
 ## Grill Decisions（历史裁定，仍有效）
 
@@ -28,7 +28,7 @@
 | Wave8 D-009 | G-B 用户强制通过（无产物） | 发布权限方裁定；**非**可审计 G-B |
 | 2026-09-13 发版 | GitHub **不再发 xpi/crx**；安装走官方商店 | 避免双源与未签名包；商店为唯一正式安装真源 |
 
-## 2026.9.12 材料包（从哪拿）
+## 2026.9.15 材料包（从哪拿）
 
 | 材料 | 获取方式 | 用途 |
 |---|---|---|
@@ -48,15 +48,15 @@
 ### A. Firefox AMO（已有 listing → 新版本）
 
 1. [AMO Developer Hub](https://addons.mozilla.org/developers/) → Boxing New Tab → **Upload New Version**
-2. 上传 `boxing-firefox-2026.9.12.zip`
-3. 若要求源代码：上传 `boxing-source-2026.9.12.zip`，并可粘贴 SOURCE-REVIEW-README 要点（构建命令、无混淆）
-4. 更新版本说明：粘贴 CHANGELOG §2026.9.12 的用户向条目
+2. 上传 `boxing-firefox-2026.9.15.zip`
+3. 若要求源代码：上传 `boxing-source-2026.9.15.zip`，并可粘贴 SOURCE-REVIEW-README 要点（构建命令、无混淆）
+4. 更新版本说明：粘贴 CHANGELOG §2026.9.15 的用户向条目
 5. 提交审核
 
 ### B. Edge Add-ons（已有 listing → 新版本）
 
 1. [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) → Boxing
-2. **Packages** → 上传 `boxing-chrome-2026.9.12.zip`
+2. **Packages** → 上传 `boxing-chrome-2026.9.15.zip`
 3. 同步商店文案与截图（若改过）
 4. 隐私政策 URL 保持 Pages 链接
 5. 提交审核
@@ -64,7 +64,7 @@
 ### C. GitHub Release（日志化，用户向 · **必须 CI**）
 
 ```bash
-gh workflow run build.yml -f version=2026.9.12 -f make_release=true -f amo_sign=true
+gh workflow run build.yml -f version=2026.9.15 -f make_release=true -f amo_sign=true
 ```
 
 CI 在 ubuntu 腿自动生成并 Publish：`chrome.zip` `firefox.zip` `source.zip` `SHA256SUMS.txt`。

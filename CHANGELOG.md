@@ -7,10 +7,31 @@ and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) st
 
 ## [Unreleased]
 
-Internal work after 2026.9.12. Per [ADR-0017](docs/adr/0017-release-data-gate.md) store
+Internal work after 2026.9.15. Per [ADR-0017](docs/adr/0017-release-data-gate.md) store
 uploads and GitHub tags still follow the release gate. Install from official store pages
 (see [publishing guide](docs/publishing-guide.md)); GitHub Releases are changelog-first
 and no longer ship `.xpi` / `.crx`.
+
+## [2026.9.15] - 2026-09-15
+
+User-facing notes for store listings and the GitHub Release body.
+
+### Fixed
+- **Cross-tab star sync** — a star set on a large box in one window now appears in a freshly opened tab.
+- **Dark-mode empty-state contrast** — the add-bookmark button in empty states now meets contrast targets in dark mode (7.73:1 text / 4.45:1 border).
+- **Auto-expand after re-entry** — collapsing and re-entering a large box no longer breaks auto-expand.
+- **WebDAV private-host consistency** — private/LAN host handling now honors your opt-in setting uniformly across URL validation and export.
+
+### Improved
+- **WebDAV sync merge** — sync now merges three-way: small boxes added on two devices under the same large box all survive a pull, and same-id divergence produces browsable conflict copies instead of silently dropping one side.
+
+### Internal
+- Boot zero-flash regression covered by e2e; test fixtures swept to env-credential placeholders; main CI lane green (data-golden included).
+
+### Install
+- Firefox: [AMO listing](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+- Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://xxx91n.github.io/boxing/privacy-policy.html)
 
 ## [2026.9.12] - 2026-09-13
 

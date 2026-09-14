@@ -71,4 +71,4 @@ Partner Center **Store listings → 每种语言一个独立页签**。操作顺
 
 ## 6. 版本
 
-2026.9.12 商店提交请使用本目录下 **en.txt / zh-CN.txt** 全文粘贴；`store-listing.md` 的 `###` 结构仅供仓库内阅读，**不要**再原样粘进 Partner Center。
+2026.9.15 商店提交请使用本目录下 **en.txt / zh-CN.txt** 全文粘贴；`store-listing.md` 的 `###` 结构仅供仓库内阅读，**不要**再原样粘进 Partner Center。
