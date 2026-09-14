@@ -133,7 +133,7 @@
 | A-057 | D-003⑧ B67 DESIGN.md hairline 语义 | 文档 revised 闭环 | 不与既有暗色 token 修正冲突 | current |
 | A-056 | D-003⑦ B66 亮色 bm-add-btn 对比度（88 Q1） | 达标或书面 token 决策 | 与暗色修复不矛盾；GH #16 | implemented（2026-09-14 · ticket 102 · ntp/base.css 亮色 token 配对改为 --color-ink-soft / --color-muted：字形 3.81:1→9.78:1（SC 1.4.3 ≥4.5），边框 1.11:1→3.81:1（SC 1.4.11 ≥3，留细线抗锯齿余量 27%），hover 边框 1.3:1→5.04:1、focus 边框 2.91:1→5.52:1；与暗色 ticket 88 同一配对、暗色 CSS 零改动；新增 scripts/contrast-guard.mjs 并接入 test.yml「Contrast guard」步骤（Run tests 前；本机 8/8 PASS exit 0）；**未**串入 package.json pretest（N-102-03 跨窗口行级依赖，报告 §6）；新增 Bug5-light contrast e2e（全 spec 22/22）；报告 reports/102-report.md） [ticket-102 窗口] |
 | A-055 | D-003⑥ B65 fire-and-forget 测试族 flaky | 家族清单 + deflake 或稳定 skip+票；CI 证据 | N 桶/数据完整性永不豁免；GH #14 | current |
-| A-054 | D-003⑤ B64 calver 一致性无门禁 | pre-commit/CI 校验 manifest/package/notes 版本面一致，失败非零退出 | 不阻断策略与仓库约定冲突时须书面说明 | current |
+| A-054 | D-003⑤ B64 calver 一致性无门禁 | pre-commit/CI 校验 manifest/package/notes 版本面一致，失败非零退出 | 不阻断策略与仓库约定冲突时须书面说明 | implemented（2026-09-14 · ticket 100 · scripts/calver-guard.mjs 接入 pretest；报告 reports/100-report.md） |
 | A-053 | D-003④ B63 locale README 14 语滞后（曾 hi 钉 9.11） | 与主 README/Release status 版本口径对齐 | 不扩写无关 i18n 重构 | current |
 | A-052 | D-003③ 锐评8：ntp.js [''] 与 i18n 重复键无冻结注释 | 就地 // frozen by ticket 83/66 + 报告指针；不改字节契约 | 禁止修改冻结语义 | implemented（2026-09-14 · ticket 98 · ntp/ntp.js:578 与 ntp/i18n.js:79 各加 `FROZEN by ticket 83/66` 六要素指针注释；git diff 仅注释行（+18/-0），零契约字节改动；报告 reports/98-report.md） |
 | A-051 | D-003② 锐评6：可发行状态只活在 .scratch/ADR 修订，docs 层无 live Release status | docs/ 层落地当前版本/三门状态/在效豁免/欠账指针；记中间里程碑 34808080000 与发行终谳预留 | 不得只活在 .scratch；不宣称三门达成 | current |
