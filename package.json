@@ -13,7 +13,7 @@
     "dev:firefox:no-build": "web-ext run --source-dir=dist/boxing-firefox --no-reload",
     "guard:import-graph": "node scripts/import-graph-guard.mjs",
     "guard:calver": "node scripts/calver-guard.mjs",
-    "pretest": "node scripts/import-graph-guard.mjs && node scripts/migration-golden-guard.mjs && node scripts/css-balance-guard.mjs && node scripts/calver-guard.mjs",
+    "pretest": "node scripts/import-graph-guard.mjs && node scripts/migration-golden-guard.mjs && node scripts/css-balance-guard.mjs && node scripts/calver-guard.mjs && node scripts/onboarding-guard.mjs",
     "test": "node scripts/test-mutex.mjs full",
     "test:all": "node scripts/test-mutex.mjs full",
     "test:changed": "node scripts/test-mutex.mjs changed",
