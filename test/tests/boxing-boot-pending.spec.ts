@@ -20,6 +20,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // order, mask rule, both unmask sites, 4s failsafe) so a rollback cannot pass CI.
 // This spec touches NO production code — it must never "delete boot-pending to fix
 // the test" (forbidden by reports/73 section 2 checkpoint).
+// Ticket 104 (Wave9.15, A-058, B68) added the second describe block below together
+// with the production fix it locks (boot-theme.js: failsafe armed before early return).
 // ════════════════════════════════════════════════════════════════════════════
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -260,5 +262,89 @@ test.describe('B56: boot-pending zero-flash e2e (ticket 92 / A-046)', () => {
     expect(css).toContain('html.boot-pending .canvas__surface,');
     expect(css).toContain('html.boot-pending .canvas__empty,');
     expect(css).toContain('html.boot-pending .inner {');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// Ticket 104 (Wave9.15, A-058, B68): boot-theme early-return failsafe.
+// P-92-1 found that the two early returns in boot-theme.js (mirror missing / mirror
+// malformed) skipped the trailing 4s failsafe registration: a fresh profile whose init
+// died before renderCanvas left html.boot-pending on <html> forever (permanent blank).
+// The fix arms the timer right after the mask is added, so every exit path carries it.
+//
+// Both tests below are mutants against the pre-104 code:
+//   - the behavioural test times out on the old ordering (the mask never lifts);
+//   - the source contract fails on the old ordering (timer sits after the returns).
+// The probe re-loads the PRODUCTION file through a same-directory <script src> (the CSP
+// is script-src 'self', so an inline injection would be blocked; the static head tag in
+// index.html proves the same URL is allowed), and only AFTER the real page finished its
+// own boot — so the only actor that can lift the mask is the failsafe under test.
+// ══════════════════════════════════════════════════════════════════════════
+
+const BOOT_FAILSAFE_MS = 4000;
+const BOOT_TIMER_SRC = "setTimeout(function () { root.classList.remove('boot-pending'); }, 4000)";
+
+test.describe('B68: boot-theme early-return failsafe (ticket 104 / A-058)', () => {
+  test.setTimeout(120000);
+
+  async function bootThenWaitForDebug(page: Page): Promise<void> {
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
+    // render.js has unmasked by now — a mask present after this can only come from the probe.
+    await expect.poll(() => page.evaluate(() => document.documentElement.classList.contains('boot-pending')), { timeout: 10000 }).toBe(false);
+  }
+
+  async function injectBootTheme(page: Page): Promise<void> {
+    await page.evaluate(() => new Promise<void>((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'boot-theme.js'; // same directory as index.html -> CSP script-src 'self'
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('probe: boot-theme.js failed to load'));
+      document.head.appendChild(s);
+    }));
+  }
+
+  const masked = (page: Page) => page.evaluate(() => document.documentElement.classList.contains('boot-pending'));
+
+  for (const [label, seed] of [
+    ['no mirror (fresh profile)', 'remove'],
+    ['malformed mirror (non-object JSON)', 'malformed'],
+  ] as const) {
+    test(`early-return path — ${label}: mask is added, then lifted by the 4s failsafe`, async ({ browser }) => {
+      const ctx = await browser.newContext();
+      const page = await ctx.newPage();
+      await bootThenWaitForDebug(page);
+      await page.evaluate(({ key, mode }: { key: string; mode: string }) => {
+        localStorage.removeItem(key);
+        // '123' parses to a number -> typeof !== 'object' -> early return #2.
+        if (mode === 'malformed') localStorage.setItem(key, '123');
+      }, { key: BOOT_MIRROR_KEY, mode: seed });
+      await injectBootTheme(page);
+      // boot-theme.js is synchronous: by onload the mask is already on <html>.
+      expect(await masked(page), 'probe must mask the canvas like the real head script').toBe(true);
+      // Nothing else can lift the mask now (render.js already ran), so still masked
+      // shortly after proves the later lift is the failsafe, not a stray unmask.
+      await page.waitForTimeout(600);
+      expect(await masked(page), 'mask must survive until the failsafe fires (no stray unmask)').toBe(true);
+      await expect.poll(() => masked(page), {
+        timeout: BOOT_FAILSAFE_MS + 6000,
+        message: 'failsafe must lift the mask on the early-return path (P-92-1 regression)',
+      }).toBe(false);
+      await ctx.close();
+    });
+  }
+
+  test('source contract: the failsafe is armed before every early return', async () => {
+    const boot = fs.readFileSync(path.join(ROOT, 'ntp', 'boot-theme.js'), 'utf8');
+    const timerIdx = boot.indexOf(BOOT_TIMER_SRC);
+    expect(timerIdx, 'boot-theme.js must register the 4s failsafe').toBeGreaterThanOrEqual(0);
+    const earlyReturns = [...boot.matchAll(/\breturn;/g)].map((m) => m.index as number);
+    expect(earlyReturns.length, 'boot-theme.js early-return sites (P-92-1)').toBeGreaterThanOrEqual(2);
+    for (const idx of earlyReturns) {
+      expect(timerIdx, 'the failsafe must be armed before every early return (ticket 104 / B68)').toBeLessThan(idx);
+    }
+    expect(boot.split("root.classList.remove('boot-pending')").length - 1,
+      'exactly one failsafe registration (no duplicated timer)').toBe(1);
+    expect(boot.indexOf("classList.add('boot-pending')"), 'mask added before the failsafe').toBeLessThan(timerIdx);
   });
 });

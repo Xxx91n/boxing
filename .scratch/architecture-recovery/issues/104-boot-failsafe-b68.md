@@ -6,13 +6,15 @@
 
 **Blocked by:** 96, 100
 
-**Status:** ready-for-agent
+**Status:** implemented（2026-09-14 · 双车道实测绿 + mutant 验证；CI 复跑待大脑派发）
 
 ## Acceptance criteria
 
-- [ ] 早退路径有 failsafe
-- [ ] 相关 e2e 或书面否证
-- [ ] 零闪现路径不回退
+- [x] 早退路径有 failsafe
+- [x] 相关 e2e 或书面否证
+- [x] 零闪现路径不回退
+
+> 2026-09-14 · 实测锚点: `boxing-boot-pending.spec.ts` chromium 7/7 (16.3s) + firefox 7/7 (33.4s)，含本票新增 3 例（早退双路径行为 + 源码顺序契约）；M2 mutant 杀 3/3（exit 1）。CI 复跑归大脑窗口（本窗口未获 push 明令）。报告 `reports/104-report.md`。
 
 ## Notes
 

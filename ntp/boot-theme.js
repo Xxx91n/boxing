@@ -16,13 +16,20 @@
  *     default-theme downgrade, corrected by loadSettings() hydration right after (AC).
  *   - Adds html.boot-pending: canvas content stays invisible until renderCanvas /
  *     _enterLargeBox complete (removed in render.js); a 4s failsafe clears it if init
- *     dies, so content is never permanently hidden. The page background is already the
- *     remembered theme color, so the hidden state never shows a wrong/default UI. */
+ *     dies, so content is never permanently hidden (ticket 104 / B68: the failsafe is
+ *     armed before any early return). The page background is already the remembered
+ *     theme color, so the hidden state never shows a wrong/default UI. */
 (function () {
   'use strict';
   var KEY = 'boxingBootTheme.v1';
   var root = document.documentElement;
   root.classList.add('boot-pending');
+  // Failsafe (ticket 104 / B68): arm the unmask timer BEFORE any early return below.
+  // The mask is already on <html>, so every exit path out of this script — mirror
+  // missing, mirror malformed, JSON parse throw, or the normal flow — must leave the
+  // failsafe armed. Registering it last (ticket 60) let the two early returns skip it:
+  // a fresh profile whose init died before renderCanvas stayed masked forever.
+  setTimeout(function () { root.classList.remove('boot-pending'); }, 4000);
   try {
     var raw = localStorage.getItem(KEY);
     if (!raw) return; // fresh profile: default beige theme is already correct
@@ -115,7 +122,4 @@
     var b = parseInt(hex.slice(5, 7), 16);
     return r + ', ' + g + ', ' + b;
   }
-  // Failsafe: if ntp.js init never completes (crash before first render), unmask
-  // content after 4s so the page is never permanently blank.
-  setTimeout(function () { root.classList.remove('boot-pending'); }, 4000);
 })();

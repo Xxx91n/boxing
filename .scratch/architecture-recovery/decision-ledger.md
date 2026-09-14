@@ -129,7 +129,7 @@
 | A-061 | D-002/D-004 中间 G-A 34808080000 ≠ 发行终谳；B 轨 land 后须新 tip 重跑 | 发行 G-A 绑最终 tip test.yml 四 job 全绿；等用户 G-B | 禁止用旧 run 冒充；tag/商店另令（D-007） | current |
 | A-060 | D-003⑪ B70 innerclip firefox 本地 flaky | CI 复现则修，否则书面观察结案 | 禁止静默丢弃 | current |
 | A-059 | D-003⑩ B69 撤账判据未写入规则 | 「≥2 连续 main 绿」等判据写入测试治理/豁免规则 | 与 ADR-0017 豁免规则不冲突 | current |
-| A-058 | D-003⑨ B68 boot-theme 早退路径无 failsafe（92 P-92-1） | 早退 failsafe；不破坏零闪现 | 产品行为变更须 e2e/否证；GH #15 | current |
+| A-058 | D-003⑨ B68 boot-theme 早退路径无 failsafe（92 P-92-1） | 早退 failsafe；不破坏零闪现 | 产品行为变更须 e2e/否证；GH #15 | implemented（2026-09-14 · 票104：failsafe 注册前移至 mask 之后 / try 之前；新增 3 例 e2e（早退双路径行为 + 源码顺序契约）双车道 7/7；M2 mutant 杀 3/3；报告 reports/104-report.md） |
 | A-057 | D-003⑧ B67 DESIGN.md hairline 语义 | 文档 revised 闭环 | 不与既有暗色 token 修正冲突 | current |
 | A-056 | D-003⑦ B66 亮色 bm-add-btn 对比度（88 Q1） | 达标或书面 token 决策 | 与暗色修复不矛盾；GH #16 | implemented（2026-09-14 · ticket 102 · ntp/base.css 亮色 token 配对改为 --color-ink-soft / --color-muted：字形 3.81:1→9.78:1（SC 1.4.3 ≥4.5），边框 1.11:1→3.81:1（SC 1.4.11 ≥3，留细线抗锯齿余量 27%），hover 边框 1.3:1→5.04:1、focus 边框 2.91:1→5.52:1；与暗色 ticket 88 同一配对、暗色 CSS 零改动；新增 scripts/contrast-guard.mjs 并接入 test.yml「Contrast guard」步骤（Run tests 前；本机 8/8 PASS exit 0）；**未**串入 package.json pretest（N-102-03 跨窗口行级依赖，报告 §6）；新增 Bug5-light contrast e2e（全 spec 22/22）；报告 reports/102-report.md） [ticket-102 窗口] |
 | A-055 | D-003⑥ B65 fire-and-forget 测试族 flaky | 家族清单 + deflake 或稳定 skip+票；CI 证据 | N 桶/数据完整性永不豁免；GH #14 | current |
