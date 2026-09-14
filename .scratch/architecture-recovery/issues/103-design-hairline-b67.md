@@ -6,12 +6,12 @@
 
 **Blocked by:** 102
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-14 · AC 2/2 达成 · 报告 `reports/103-report.md`）
 
 ## Acceptance criteria
 
-- [ ] DESIGN.md 有明确 hairline 修订说明
-- [ ] 与暗色 token 修正不矛盾
+- [x] DESIGN.md 有明确 hairline 修订说明（新增「Hairline 与控件边界的语义契约」三档决策表 + §2 脚注 + §2b ghost 按钮表）
+- [x] 与暗色 token 修正不矛盾（§2b 与票 88 暗色修复逐字对齐；暗色 CSS 零改动；contrast-guard 暗色 4 项仍 PASS）
 
 ## Notes
 

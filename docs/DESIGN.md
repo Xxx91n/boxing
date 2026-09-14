@@ -49,6 +49,27 @@ Layer 3: Component (component-specific — defined per-component below, applied 
 Same ramp structure (`--color-warm-dark-*`, `--color-accent-dark-*`) with inverted lightness.
 Dark mode overrides only Layer 2 semantic tokens to reference dark primitives — component CSS unchanged.
 
+### Hairline 与控件边界的语义契约（revised 2026-09-14 · ticket 103 / A-057 / B67）
+
+`--color-hairline` / `--color-hairline-strong` 的语义是**弱分隔线（decorative divider）**：
+只负责在视觉上分组与收边，本身不承担任何可访问性义务。二者由 ink 基色经 rgba 派生
+（亮色 `rgba(42,37,32,0.06)` / 暗色 `rgba(255,255,255,0.06)`），刻意贴近背景。
+
+| 场景 | 能否用 `--color-hairline` | 依据 |
+|---|---|---|
+| 非交互元素的分隔线 / 收边（卡片内部分隔、栏头下划线、面板装饰描边） | 可以 | 纯装饰，无识别义务 |
+| 交互控件上**附加**的描边，且该控件已有其他达标示能（如 `.btn`：填充 + 文字 `--color-ink` = 12.11:1 ≥ 4.5:1） | 可以 | SC 1.4.11 豁免：控件有文字 / 位置 / 上下文等区分指示时，边界不额外要求 3:1 |
+| 交互控件的**唯一或主要示能边界**（透明填充 ghost 按钮、纯图标按钮、以虚线为唯一线索的输入与按钮） | **禁止** | 边界为唯一线索时必须 ≥ 3:1；hairline 亮色实测 1.11:1、暗色 1.20:1，远低于阈值 |
+
+**控件边界的替代 token**：描边用 `--color-muted`（亮 `#7B7167` 对 `--color-elevated` = 3.81:1、
+暗 `#9A9285` = 4.45:1），字形同步用 `--color-ink-soft`（亮 9.78:1、暗 7.73:1），使「边界 + 文字」双通道达标。
+细线受抗锯齿侵蚀，实际渲染对比度低于声明值，故取 3.81:1 而非压线值（相对 3:1 约留 27% 余量）。
+
+**已按此契约修正的实现**（本文档据此同步）：
+- `.bm-add-row .bm-add-btn`（透明填充 ghost）：暗色由 ticket 88（A-042）、亮色由 ticket 102（A-056）
+  统一改为 `--color-muted` 边界 + `--color-ink-soft` 字形；两主题使用同一 token 配对，不再漂移。
+- 门禁：`scripts/contrast-guard.mjs`（ticket 102）从 CSS 源文件读取真实契约，任何改回 hairline 的提交立即非零退出。
+
 ### Typography
 | Token | Stack | Usage |
 |-------|-------|-------|
@@ -120,15 +141,38 @@ implement these exact mappings.
 | z-index | 1 | 2 | 5 | 0 |
 | border-radius | `var(--radius-tile)` | (same) | (same, no regression BX-145) | (same) |
 
+> 注意（代码现实偏差 · 登记 N-103-01，本票不改）：`ntp/base.css` 中 `.large-box` / `.small-box` 的
+> **default** 描边是 `1px solid var(--color-hairline)`（hover 才切 `--color-card-edge`、拖拽切 `--color-accent`），
+> 与本表 default = `--color-card-edge` 不符；`border-radius` 代码为 `--radius-card`。该偏差早于本票且涉及
+> 「容器边界是否承担示能」的产品判定，已具名登记，待专项票按代码现实校正（ADR-0008 Phase 4 同款对齐原则）。
+
 ### 2. Button (.btn)
 
 | Property | Default | Hover | Active | Disabled |
 |----------|---------|-------|--------|---------|
 | background | `var(--color-elevated)` | `var(--color-surface)` | `var(--color-surface)` | `var(--color-canvas)` |
-| color | `var(--color-ink)` | `var(--color-card-edge)` | `var(--color-card-edge)` | `var(--color-faint)` |
-| border | 1px solid `var(--color-hairline)` | 1px solid `var(--color-card-edge)` | 1px solid `var(--color-card-edge)` | 1px solid `var(--color-hairline)` |
+| color | `var(--color-ink)` | (same) | (same) | `var(--color-faint)` |
+| border | 1px solid `var(--color-hairline)` | 1px solid `var(--color-card-edge)` | (same as hover) | 1px solid `var(--color-hairline)` |
 | cursor | pointer | pointer | pointer | not-allowed |
 | opacity | 1 | 1 | 0.9 | 0.5 |
+
+> **hairline 适用性（ticket 103 / A-057）**：`.btn` 是**填充**按钮（背景 `--color-elevated`、
+> 文字 `--color-ink` = 12.11:1 ≥ 4.5:1），命中 SC 1.4.11 的「控件已有其他区分指示」豁免，
+> 因此 hairline 作为**附加**描边成立，本表保留。该豁免**不适用于**透明填充的 ghost 按钮 —— 见 §2b。
+
+#### 2b. Ghost / 透明填充按钮（.bm-add-row .bm-add-btn）
+
+透明填充时边框是**唯一**示能线索，3:1 义务成立，**禁止** `--color-hairline`。
+
+| Property | Default | Hover | Focus-visible |
+|---|---|---|---|
+| background | transparent | `var(--color-accent-soft)` | (same as default) |
+| border | 1px dashed `var(--color-muted)` | 1px solid `var(--color-accent-ink)` | 1px solid `var(--color-accent-ink)` |
+| color | `var(--color-ink-soft)` | `var(--color-accent-ink)` | (same as default) |
+
+实测（对 `--color-elevated`）：亮色边界 3.81:1 / 字形 9.78:1，暗色边界 4.45:1 / 字形 7.73:1。
+契约由 `scripts/contrast-guard.mjs` 锁死（ticket 102）；暗色侧见 `ntp/settings.css` 的 ticket 88 注释，
+亮色侧见 `ntp/base.css` 的 ticket 102 注释。
 
 ### 3. Search (.search)
 
@@ -164,6 +208,10 @@ implement these exact mappings.
 | button bg | transparent | `var(--color-surface)` | `var(--color-surface)` | — |
 | button color | `var(--color-muted)` | `var(--color-ink)` | `var(--color-ink)` | — |
 | button border | 1px solid `var(--color-hairline)` | 1px solid `var(--color-accent)` | 1px solid `var(--color-accent)` | — |
+
+> 注意（代码现实偏差 · 登记 N-103-02，本票不改）：`ntp/settings.css` 的 `.zoom-btn` 为 `border: 0`
+> （hover 仅改 background / color），本表「button border」的 hairline / accent 值与代码不符。
+> 按 §Hairline 契约，透明填充的 `.zoom-btn` 即使有描边也**不得**用 `--color-hairline`；已具名登记，待专项票校正。
 
 ### 7. Bookmark Row (.bm-row)
 
@@ -212,6 +260,12 @@ Based on PWM research (W3C DTCG spec 2025.10, Vercel Geist, Linear, Stripe, Appl
 - **Warm earth accent** — distinct from Linear's blue or Stripe's purple; matches Boxing's
   beige minimalist identity
 - **Dark mode via token override** — industry standard; per-component overrides are an anti-pattern
+- **Divider 与 control boundary 分家**（ticket 103 / A-057 调研，2026-09-14）：ttoss 把 `border.divider`
+  的契约写成 “purely structural; low emphasis”、`border.outline.control` 写成 “defines control boundary”；
+  Carbon 用 `$border-subtle`（分隔）/ `$border-strong`（控件边界）并逐组件分列；Polaris 在 v11 迁移里
+  把复合的 `--p-border-divider` 拆解废弃，只保留颜色 alias + Divider 组件。三者结论一致：**弱分隔线
+  与控件边界必须是两个语义 token，且后者须按主题重算对比度**
+  （Carbon issue #14597 即为 `$border-subtle` 在暗色下与背景同值、边界隐形的真实事故）。
 
 ## Related
 - [ADR-0008](adr/0008-design-system-three-layer-tokens.md) — token architecture decision
