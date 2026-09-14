@@ -51,3 +51,12 @@ JSON: `reports/W915-closeout-hard-acceptance.json`
 - `docs/release-notes/2026.9.15.md`（中文 body SSOT）
 - `docs/release-notes/2026.9.15.en.md`（英文对照）
 - 本地 G-B 包: `dist/boxing-chrome/release/chrome/boxing-2026.9.15.zip` · `dist/boxing-firefox/release/firefox/boxing-2026.9.15.zip`
+
+## 8. Land 与发行 G-A（执行后回写）
+
+- but pull → but land ticket/106-innerclip-b70 --whole-stack --yes → **pushed origin/main**
+- 新 tip: `8a8798c9`
+- ticket/* 与 wave915-grill-settle 分支已随 land 清理
+- **AI Docs Governance** run 34857433250 = success（A-050 CI F 关闭）
+- **发行 G-A test.yml** run [34857433215](https://github.com/Xxx91n/boxing/actions/runs/34857433215) = **success**（data-golden + 三 OS）
+- 本地 G-B 包已重建（无 .scratch）：chrome/firefox `boxing-2026.9.15.zip`

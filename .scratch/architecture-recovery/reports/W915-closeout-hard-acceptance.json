@@ -66,6 +66,11 @@
       "label": "npm-build",
       "ok": true,
       "tail": "chrome+firefox 2026.9.15 zip/crx/xpi; .scratch excluded (PACK-01 fix)"
+    },
+    {
+      "label": "release-G-A",
+      "ok": true,
+      "tail": "run 34857433215 @ 8a8798c9 success"
     }
   ],
   "checks": [
@@ -88,6 +93,13 @@
     {
       "name": "zip-no-scratch",
       "ok": true
+    },
+    {
+      "name": "release-G-A-post-land",
+      "ok": true,
+      "run": "34857433215",
+      "tip": "8a8798c9",
+      "tail": "4/4 success"
     }
   ],
   "findings": [
