@@ -89,8 +89,11 @@ docs/ 层落地可维护的发行状态页：当前版本、G-A/G-B/G-C 三门�
 ## 7. 版本控制实况（WORKFLOW §4.2）
 
 - 全程使用 GitButler（`but`）检视与提交；未 push、未开 PR、未改写其他窗口提交。
-- 本窗口仅提交三处改动：`docs/release-status.md`（新）、`docs/START-HERE.md`、`docs/CONTEXT.md`。
-- **跨窗口隔离**：工作区同时存在他窗改动（`package.json` 已修改、`scripts/onboarding-guard.mjs` 未跟踪、`.scratch/101-atomcode/` 未跟踪），均**未纳入本票提交**。
+- 分支 `ticket/97-release-status-rui6`，两个提交（自底向上）：
+  - `twk` docs(release)：`docs/release-status.md`（新）、`docs/START-HERE.md`、`docs/CONTEXT.md`、`reports/97-report.md`；
+  - `yzu` docs(ledger)：`.scratch/architecture-recovery/decision-ledger.md` A-051 置 implemented。
+- **栈位置调整（关键决策）**：账本 hunk 的 diff 上下文依赖栈上更高分支对 `decision-ledger.md` 的既有改动（A-050 / A-052 / A-054 等行已被他窗票改为 implemented），`but commit` 以「line 139 depends on wave915-grill-settle」拒绝落盘。按提示 `--above wave915-grill-settle` 仍不通过（该分支不含更高分支的改动），最终将本票分支移至栈顶（`but move ticket/97-release-status-rui6 --above ticket/96-docsgov-deadlink`）后提交成功。**仅调整分支顺序，未改写任何其他窗口的提交内容。**
+- **跨窗口隔离**：工作区同期存在他窗改动（`reports/101-report.md` 等），均未纳入本票提交；提交完成后工作区只剩他窗未跟踪项。
 
 ## 8. 禁止项自检
 
