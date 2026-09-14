@@ -1,0 +1,102 @@
+{
+  "date": "2026-09-14",
+  "version": "2026.9.15",
+  "log": [
+    {
+      "label": "node-check-src",
+      "ok": true,
+      "tail": "all ntp/*.js + background.js + scripts/*.mjs"
+    },
+    {
+      "label": "import-graph",
+      "ok": true,
+      "tail": "15 modules, 0 violations"
+    },
+    {
+      "label": "migration-golden",
+      "ok": true,
+      "tail": "28/28"
+    },
+    {
+      "label": "css-balance",
+      "ok": true,
+      "tail": "OK"
+    },
+    {
+      "label": "calver",
+      "ok": true,
+      "tail": "OK version=2026.9.15 8 faces"
+    },
+    {
+      "label": "onboarding-guard",
+      "ok": true,
+      "tail": "7/7 46 specs"
+    },
+    {
+      "label": "locale-readme-guard",
+      "ok": true,
+      "tail": "13 locales 0 blocking"
+    },
+    {
+      "label": "contrast-guard",
+      "ok": true,
+      "tail": "8/8 PASS"
+    },
+    {
+      "label": "docs-link-guard",
+      "ok": true,
+      "tail": "8 refs 0 dead"
+    },
+    {
+      "label": "waiver-ledger-check",
+      "ok": true,
+      "tail": "4 rows, revocation criteria present"
+    },
+    {
+      "label": "docs-pointer-check",
+      "ok": true,
+      "tail": "74 pointers 0 broken"
+    },
+    {
+      "label": "pretest",
+      "ok": true,
+      "tail": "6 gates exit 0"
+    },
+    {
+      "label": "npm-build",
+      "ok": true,
+      "tail": "chrome+firefox 2026.9.15 zip/crx/xpi; .scratch excluded (PACK-01 fix)"
+    }
+  ],
+  "checks": [
+    {
+      "name": "issues-96-106-status",
+      "ok": true
+    },
+    {
+      "name": "readme-wave-table",
+      "ok": true
+    },
+    {
+      "name": "A-050..A-060-implemented",
+      "ok": true
+    },
+    {
+      "name": "A-061-current-exec",
+      "ok": true
+    },
+    {
+      "name": "zip-no-scratch",
+      "ok": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "PACK-01",
+      "severity": "P0-packaging",
+      "summary": "release zip packaged 40 .scratch files; build SKIP lacked .scratch",
+      "fix": "added .scratch to SKIP; rebuild verified 0 scratch entries"
+    }
+  ],
+  "pass": true
+}
