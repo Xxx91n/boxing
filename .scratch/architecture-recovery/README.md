@@ -4,9 +4,9 @@
 |---|---|---|---|---|
 | W1 | 96 docsgov-deadlink | A-050 | — | **implemented-pending-ci**（本地绿 · CI F） |
 | W1 | 100 calver-guard-b64 | A-054 | — | **done**（首脑采信） |
-| W2 | 98 frozen-comments-rui8 | A-052 | 96, 100 | ready-for-agent |
-| W2 | 104 boot-failsafe-b68 | A-058 | 96, 100 | ready-for-agent |
-| W2 | 102 bm-add-contrast-b66 | A-056 | 96, 100 | ready-for-agent |
+| W2 | 98 frozen-comments-rui8 | A-052 | 96, 100 | **done**（首脑采信） |
+| W2 | 104 boot-failsafe-b68 | A-058 | 96, 100 | **done-with-named-F**（env launch timeout） |
+| W2 | 102 bm-add-contrast-b66 | A-056 | 96, 100 | **done**（首脑采信 · 账本 pretest 误写已纠） |
 | W3 | 101 deflake-b65 | A-055 | 104 | ready-for-agent |
 | W3 | 97 release-status-rui6 | A-051 | 100, 104 | ready-for-agent |
 | W4 | 106 innerclip-b70 | A-060 | 101 | ready-for-agent |
@@ -18,7 +18,17 @@
 - GH 镜像: #13→96 · #14→101 · #15→104 · #16→102
 - Spec: `spec.md` · 对账: `destination-reconciliation-wave915.md`（无去向=空）
 - D 账本: `../wave9-915-release-grill/decision-ledger.md` D-001..D-009
-- Frontiers: **W2 = 98 ∥ 104 ∥ 102**（W1 实现齐；96 CI 待 land）
+- Frontiers: **W3 = 101 ∥ 97**（W2 实现齐）
+
+## W2 首脑复核 — 98/104/102（2026-09-14）
+
+| 票 | 结论 |
+|---|---|
+| 98 / A-052 | **done** · FROZEN 双处 + node --check |
+| 104 / A-058 | **done-with-named-F** · 源码契约绿；chromium 启动超时=env F |
+| 102 / A-056 | **done** · contrast-guard 8/8；A-056 账本 pretest 误写已纠为 test.yml 步骤 |
+
+详表: `reports/W2-brain-review-98-104-102.md`
 
 ## W1 首脑复核 — 96/100（2026-09-14）
 
