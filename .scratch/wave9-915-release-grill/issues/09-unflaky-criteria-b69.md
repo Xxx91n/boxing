@@ -6,8 +6,8 @@
 
 **Source:** D-003⑩
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-14 · 主票 105；实施见 .scratch/architecture-recovery/reports/105-report.md）
 
-- [ ] 规则文档含连续绿次数与 N/B/F 分桶约束
-- [ ] 与 ADR-0017 书面豁免规则不冲突
+- [x] 规则文档含连续绿次数与 N/B/F 分桶约束
+- [x] 与 ADR-0017 书面豁免规则不冲突
 

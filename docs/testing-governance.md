@@ -59,3 +59,44 @@ Classification protocol and evidence: ticket 31
 Incident-row rule: a row is resolved (deleted) once a CI run after the lockfile repair (ticket 29)
 shows its test green in the chromium lane. Rows do not auto-extend: past due without CI-green
 evidence, the next governance pass must reclassify — defect repair or tagged quarantine.
+
+
+## Waiver ledger revocation criteria (ticket 105 / B69)
+
+The G-A residual-red written-waiver ledger (`.scratch/architecture-recovery/WORKFLOW.md` §4.4) is
+the release-gate evidence surface for residual flaky reds. The ledger holds the operational rule
+text; this section is the docs-layer record of its **revocation criterion**. Revoking an entry
+(`active` → `closed`) is a **two-run** decision, never a one-run observation.
+
+**The criterion (conjunctive):**
+
+- **Consecutive-green count (≥2).** A row may be closed only after the target test shows **zero
+  recurrence of its recorded signature across ≥2 consecutive full `test.yml` runs on main**. A
+  single run with zero occurrence is **not** sufficient. Ticket 74 closed `boxing-zoom-dblclick`
+  on one clean run; ticket 93 observed the same face recur on the next run. That premature
+  revocation is the incident this rule exists to prevent.
+- **Consecutive means consecutive.** Any change to the tested surface between the two runs
+  (`ntp/**`, `test/**`, `.github/workflows/test.yml`, `manifest.json`) **resets** the count. A
+  `.scratch/**`-only difference may be carried over via the tip-equivalence rule (`test.yml`
+  `on.push.paths` excludes `.scratch`).
+- **Evidence shape.** At least one of the two runs must be a same-commit corroboration run
+  (`workflow_dispatch` on the same headSha, or a re-verification run on identical tested code)
+  annotated `corroboration`; the two runs must come from **different trigger sources** (push vs
+  `workflow_dispatch`/`schedule`) **or be ≥24h apart**. The closed row disposal record must carry a
+  `撤账证据:` marker followed by **≥2 distinct run references** and the revocation date.
+- **Recurrence re-enters the ledger.** If the same signature recurs in any later main run, the row
+  immediately returns to `active` and the revocation counts as a failure. This is the safety net
+  (GitLab: monitor for 1 week after de-quarantine; Mill: the auto-quarantine system catches it back).
+- **N / B / F bucket constraints.** Only **F** (flaky — same code, different outcomes) is ever
+  waivable, so only F can be revoked. **B** (broken — identical signature on every lane) is never
+  waivable, so it has **no revocation path**: repair, or retire with a written reason. **N**
+  (never-quarantine: data-integrity / migration-roundtrip / rollback-drill families) never enters
+  the ledger and is never revoked — red there is fix-only.
+- **Gate boundary.** Revocation changes only whether a red is still in effect. It is not a waiver,
+  not G-A satisfaction, and it does not relax ADR-0017 (G-A ∧ G-B ∧ G-C), the no-permanent-waiver
+  rule, or the per-release re-check.
+
+**Machine check.** `node scripts/waiver-ledger-check.mjs` (extended by ticket 105) exits non-zero
+when the criteria section is missing from the ledger, when a `closed` row cites fewer than two run
+references or lacks the `corroboration` annotation, or when any row (including `closed`) matches the
+never-quarantine family list.

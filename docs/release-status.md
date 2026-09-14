@@ -68,7 +68,7 @@
 
 ## 四、在效豁免（Waiver Ledger）
 
-机器校验：`node scripts/waiver-ledger-check.mjs` → **exit 0**（2026-09-14 实测：台账 4 行、字段齐全、无过期、never-quarantine 零命中）。
+机器校验：`node scripts/waiver-ledger-check.mjs` → **exit 0**（2026-09-14 实测：台账 4 行、字段齐全、无过期、never-quarantine 零命中**含 closed 行**、撤账判据节存在；票 105 扩展后并校验 closed 行撤账证据 ≥2 run）。
 
 | 状态 | 用例 | 基线 run | 归属票 | 到期 |
 |---|---|---|---|---|
@@ -80,6 +80,7 @@
 硬约束：
 
 - 三条 active 均属 **F（flaky）** 桶；**N（never-quarantine）与数据完整性类永不豁免**。
+- **撤账判据（票 105 / B69）**：`closed` 行须满足「**≥2 连续 main 全绿 run 且签名零出现，其中 ≥1 次须为同码 corroboration run**」——单 run 零出现**不构成**撤账（票 74 撤账过早事故：`boxing-zoom-dblclick` 单 run 撤账后于下一 run 复发）；**仅 F 可撤账**，**B 无撤账路径**（只能修或书面退役），**N 永不入账/永不撤账**；**复发即重新入账**；撤账 ≠ 豁免成立 ≠ G-A 达成。
 - 到期未修 → 主 lane 禁用或删除并回填处置记录；禁止无动作续期（棘轮：豁免文件只许缩小）。
 - 逐行失败签名与最新基线 run 的人工比对，是每次发行 G-A 步骤的必做项。
 - 台账全表与签名正文见 `.scratch/architecture-recovery/WORKFLOW.md` §4.4（工作日志层证据）。
@@ -97,7 +98,7 @@
 | A-056 | B66 亮色 bm-add-btn 对比度 | 102 | implemented |
 | A-057 | B67 DESIGN.md hairline 语义 | 103 | implemented |
 | A-058 | B68 boot-theme 早退 failsafe | 104 | done-with-named-F |
-| A-059 | B69 撤账判据写入规则 | 105 | 进行中 |
+| A-059 | B69 撤账判据写入规则 | 105 | implemented |
 | A-060 | B70 innerclip firefox 本地 flaky（CI 复现则修，否则书面结案） | 106 | 进行中 |
 | A-061 | 发行终谳 G-A 绑最终 tip 四 job 全绿 + 等 G-B | 无票（执行） | 进行中 |
 
@@ -127,3 +128,4 @@ A-058 的具名 F：`no-mirror` e2e chromium 启动超时（环境性），源�
 | 日期 | 变更 |
 |---|---|
 | 2026-09-14 | 票 97 / A-051 建立本页；G-C 三 URL 实测 200；豁免台账 exit 0 |
+| 2026-09-14 | 票 105 / A-059：撤账判据（≥2 连续 main 全绿 + N/B/F 约束）写入 WORKFLOW §4.4 与 testing-governance.md；waiver-ledger-check 扩展为机器校验（closed 行须 ≥2 run 撤账证据） |

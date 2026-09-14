@@ -6,12 +6,12 @@
 
 **Blocked by:** 97
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-14 · 撤账判据写入 WORKFLOW §4.4 + docs/testing-governance.md + docs/release-status.md；waiver-ledger-check 机器校验 5/5 负向对照咬合 · 报告 reports/105-report.md）
 
 ## Acceptance criteria
 
-- [ ] 规则文档含连续绿次数与 N/B/F 约束
-- [ ] 与 ADR-0017 书面豁免规则不冲突
+- [x] 规则文档含连续绿次数与 N/B/F 约束（≥2 连续 main 全绿；仅 F 可撤账 / B 无撤账路径 / N 永不出账）
+- [x] 与 ADR-0017 书面豁免规则不冲突（撤账仅改变残红是否在效，不构成豁免成立/G-A 达成，不放松三门合取与不得永久豁免）
 
 ## Notes
 

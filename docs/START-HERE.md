@@ -36,7 +36,7 @@ Then the domain and design decisions:
 
 - [AGENTS.md](../AGENTS.md) - **the single entry point**: hard rules, tool routing, verification commands
 - [docs/agents/README.md](agents/README.md) - on-demand reference layer; do not preload
-- [docs/testing-governance.md](testing-governance.md) - quarantine register, expiry rule, incident register
+- [docs/testing-governance.md](testing-governance.md) - quarantine register, expiry rule, incident register, waiver revocation criteria
 
 ## 4. I am publishing or auditing a release
 

@@ -91,6 +91,14 @@ The mapping is seeded by ticket 20 and owned by ticket 21, whose import-graph
 gate fails on stale cluster entries. CI itself still runs the full suite; the
 selector is the local/agent fast path.
 
+**Waiver revocation criteria**
+
+The G-A residual-red waiver ledger and its revocation criteria (≥2 consecutive green main runs with
+zero recurrence of the recorded signature, at least one a same-commit corroboration run; only F is
+revocable, B has no revocation path, N is never revoked) live in `docs/testing-governance.md` and
+`.scratch/architecture-recovery/WORKFLOW.md` §4.4;
+`scripts/waiver-ledger-check.mjs` enforces them.
+
 **Hot-file single-agent convention**
 
 When several agent windows are parallel, `ntp/ntp.js`, `ntp/render.js`, and

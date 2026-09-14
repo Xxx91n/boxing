@@ -12,13 +12,13 @@
 | W4 | 106 innerclip-b70 | A-060 | 101 | ready-for-agent |
 | W4 | 99 locale-readme-b63 | A-053 | 97 | ready-for-agent |
 | W4 | 103 design-hairline-b67 | A-057 | 102 | ready-for-agent |
-| W4 | 105 unflaky-criteria-b69 | A-059 | 97 | ready-for-agent |
+| W4 | 105 unflaky-criteria-b69 | A-059 | 97 | **implemented**（agent 侧闭环 · 规则+机器闸 7/7 负向咬合 · 待首脑复核） |
 
 - A-061 发行 G-A 重跑 + 等 G-B: **无实施票**（执行动作，W5）
 - GH 镜像: #13→96 · #14→101 · #15→104 · #16→102
 - Spec: `spec.md` · 对账: `destination-reconciliation-wave915.md`（无去向=空）
 - D 账本: `../wave9-915-release-grill/decision-ledger.md` D-001..D-009
-- Frontiers: **W4 = 106 ∥ 99 ∥ 103 ∥ 105**（W3 齐）
+- Frontiers: **W4 = 106 ∥ 99 ∥ 103**（105 已 agent 侧闭环，待首脑复核；W3 齐）
 
 ## W3 首脑复核 — 97/101（2026-09-14）
 
