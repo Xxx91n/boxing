@@ -61,6 +61,27 @@ shows its test green in the chromium lane. Rows do not auto-extend: past due wit
 evidence, the next governance pass must reclassify — defect repair or tagged quarantine.
 
 
+### Local-only flake observations (not CI residual reds)
+
+Tests observed failing **only on a contended local host** and never in the CI main lane are recorded
+here, not in the G-A waiver ledger (`../.scratch/architecture-recovery/WORKFLOW.md` §4.4). The ledger
+holds main-lane residual reds; filing a never-red test there would *widen* the waiver surface, against
+the ratchet rule (the waiver file may only shrink). Closure follows the industry "downgrade + SLA" path:
+the row keeps an owner, a due date, and a concrete escalation trigger, so the observation is never
+silently dropped and never becomes a `worksforme` close.
+
+| Test (spec) | Lane | Classification | Observed | Registered | Due | Escalation trigger |
+| --- | --- | --- | --- | --- | --- | --- |
+| `boxing-innerclip.spec.ts` + `boxing-innerclip-pan.spec.ts` | firefox | environment-only (host-load) | local full run (ticket 94) and local targeted rerun (ticket 106): the **first test in the file** consumes the Firefox headed cold-start cost under host contention and hits the 30s default budget at the shared `resetBoxing` fixture — never a geometry assertion | 2026-09-14 | 2026-10-14 | the face shows `failed`/`flaky` in any main full `test.yml` run, or the `resetBoxing` navigation-timeout signature reappears in CI logs → apply the ticket-13 repair (`test.setTimeout` budget bump) to the two specs and validate on both lanes |
+
+CI evidence for the row (ticket 106): across 9 full-matrix main `test.yml` runs spanning 2026-09-11 →
+2026-09-14 the face shows **zero occurrence in 216 executions** (Wilson 95% upper bound ≈ 1.75%). The two
+2026-09-12 runs that did show it were a **B (broken)** commit-wide failure — 113 numbered failures,
+identical signature on all three OSes and both lanes, including `data-golden` gate 4 — not this
+observation. Row rule: a row is resolved (deleted) when the escalation trigger fires and the repair
+lands, or when the due date passes with the face green across ≥2 consecutive full `test.yml` runs on
+main and the classification re-confirmed as environment-only. Rows do not auto-extend.
+
 ## Waiver ledger revocation criteria (ticket 105 / B69)
 
 The G-A residual-red written-waiver ledger (`.scratch/architecture-recovery/WORKFLOW.md` §4.4) is
