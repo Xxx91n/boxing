@@ -123,6 +123,8 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 
 - **release gate** — "releasable" is the conjunction G-A (main-lane CI reds cleared or per-item written waiver) + G-B (manual zip golden path on unpacked artifacts, both browsers) + G-C (Pages three URLs live 200); before all hold, tagging and any releasable claim are forbidden. Full terms + postmortem template: ADR-0017; checklist: WORKFLOW §4.4.
 
+- **release status page** — the live per-release status board (current version, G-A/G-B/G-C state, active waivers, open A-ledger debt) lives in [release-status.md](release-status.md); ADR-0017 remains the normative gate definition, and the checklist template stays in WORKFLOW §4.4.
+
 ## Architectural Invariants (BX-EXPLORE-005..009)
 - **BX-EXPLORE-005**: Box dragging uses `left`/`top` only — NEVER `translate3d()` (causes 2x position flash).
 - **BX-EXPLORE-006**: NEVER add `will-change: transform` / `translateZ(0)` to `.large-box`, `.small-box`, `--dragging`, `canvasSurface`, `innerSurfaceContent`, or `.conn-line`. Chrome rasterizes to fixed bitmaps → blurry text at low zoom.

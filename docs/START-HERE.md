@@ -43,6 +43,7 @@ Then the domain and design decisions:
 - [docs/publishing-guide.md](publishing-guide.md) - store rollout and signing workflow
 - [docs/store-publishing-plan.md](store-publishing-plan.md) - rollout plan
 - [docs/adr/0017-release-data-gate.md](adr/0017-release-data-gate.md) - the release gate definition
+- [docs/release-status.md](release-status.md) - live release status: current version, three gates, active waivers, open debt
 - [docs/privacy-policy.md](privacy-policy.md) - user-facing privacy policy
 
 ## Rules of thumb
