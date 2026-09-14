@@ -6,12 +6,12 @@
 
 **Blocked by:** 96, 100
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-14 首脑复核 · contrast-guard 8/8 + CSS token 实物；账本 pretest 误写已纠）
 
 ## Acceptance criteria
 
-- [ ] 对比度达标或 DESIGN/token 书面决策
-- [ ] 与暗色 empty-state 修正不矛盾
+- [x] 对比度达标或 DESIGN/token 书面决策
+- [x] 与暗色 empty-state 修正不矛盾
 
 ## Notes
 

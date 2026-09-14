@@ -6,7 +6,7 @@
 
 **Blocked by:** 96, 100
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-14 首脑复核 · FROZEN 注释实物 + node --check）
 
 ## Acceptance criteria
 
