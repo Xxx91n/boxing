@@ -151,5 +151,17 @@ color: var(--color-ink-soft);
 - [x] 附 CI/实测锚点（§5，含负向自检）
 - [x] 账本状态更新（A-056 置 done，见 decision-ledger）
 - [x] 报告落盘 `reports/102-report.md`
-- [x] 版本控制遵循 WORKFLOW §4.2（独立分支 `ticket/102-...`，不 push、不开 PR）
+- [x] 版本控制遵循 WORKFLOW §4.2（分支 `ticket/102-bm-add-contrast-b66`，不 push、不开 PR）
+
+## 8. 版本控制实况（WORKFLOW §4.2）
+
+| 提交 | 内容 |
+|---|---|
+| `qos` | 主修复：`ntp/base.css` + `scripts/contrast-guard.mjs` + `.github/workflows/test.yml` + 亮色 e2e + 本报告 |
+| `zzu` | 账本：`decision-ledger.md` 的 A-056 置 implemented |
+
+- **分支堆叠（如实记录）**：`decision-ledger.md` 的 A-056 行与 `ticket/98-frozen-comments-rui8`（vtq）存在行级依赖，GitButler 拒绝提交并给出官方解法；已按提示 `but move ticket/102-bm-add-contrast-b66 --above ticket/98-frozen-comments-rui8` 堆叠后提交。**未改写任何他人提交**。
+- `package.json` 的 `pretest` 串联因跨窗口行级依赖（ticket/100-calver-guard，xky）未能提交，已按「不改写他人提交」原则撤回转由 test.yml 独立步骤承担（§6 N-102-03）。
+- issue 文件的 Status/AC 勾选行由 wave915 复核分支占用（跨窗口行级依赖），本窗口不改写，文件保持原样；AC 结论以本报告 §4 为准。
+- 未 push、未开 PR、未换 root、未 tag。
 - [x] 未对已推送 main 换 root；未 push/tag/force-push；未做 9.12 热修；未用 run 34808080000 冒充发行 G-A
