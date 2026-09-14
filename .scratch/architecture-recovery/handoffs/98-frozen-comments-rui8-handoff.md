@@ -13,7 +13,7 @@ ntp.js 冻结点与 i18n 重复键增加 // frozen by ticket 83/66 及报告指�
 |---|---|
 | 本票 | issues/98-frozen-comments-rui8.md |
 | Spec | spec.md |
-| A 账本 | decision-ledger.md（A-050..） |
+| A 账本 | decision-ledger.md |
 | D 账本 | ../wave9-915-release-grill/decision-ledger.md |
 | Plan | ../wave9-915-release-grill/plan.md |
 | 门禁 | docs/adr/0017-release-data-gate.md |

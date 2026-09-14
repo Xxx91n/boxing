@@ -13,7 +13,7 @@ docs/DESIGN.md hairline 语义修订闭环（88 Q2）。
 |---|---|
 | 本票 | issues/103-design-hairline-b67.md |
 | Spec | spec.md |
-| A 账本 | decision-ledger.md（A-050..） |
+| A 账本 | decision-ledger.md |
 | D 账本 | ../wave9-915-release-grill/decision-ledger.md |
 | Plan | ../wave9-915-release-grill/plan.md |
 | 门禁 | docs/adr/0017-release-data-gate.md |

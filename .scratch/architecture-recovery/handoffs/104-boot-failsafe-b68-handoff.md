@@ -13,7 +13,7 @@ boot-theme 早退路径增加 failsafe，避免无罩/半渲染；不破坏零�
 |---|---|
 | 本票 | issues/104-boot-failsafe-b68.md |
 | Spec | spec.md |
-| A 账本 | decision-ledger.md（A-050..） |
+| A 账本 | decision-ledger.md |
 | D 账本 | ../wave9-915-release-grill/decision-ledger.md |
 | Plan | ../wave9-915-release-grill/plan.md |
 | 门禁 | docs/adr/0017-release-data-gate.md |
