@@ -1,0 +1,70 @@
+{
+  "log": [
+    {
+      "label": "node-check-src",
+      "ok": true,
+      "tail": ""
+    },
+    {
+      "label": "import-graph",
+      "ok": true,
+      "tail": "{\n  \"ok\": true,\n  \"modules\": 15,\n  \"edges\": 48,\n  \"violations\": []\n}"
+    },
+    {
+      "label": "migration-golden",
+      "ok": true,
+      "tail": "{\"ok\":true,\"passed\":28,\"total\":28,\"failures\":[]}"
+    },
+    {
+      "label": "css-balance",
+      "ok": true,
+      "tail": "css-balance guard: OK — self-check passed, 6 source CSS files balanced, no nested [hidden]"
+    },
+    {
+      "label": "waiver-ledger",
+      "ok": true,
+      "tail": "waiver-ledger-check: OK — 4 ledger row(s), all fields complete, none expired, never-quarantine clear (as of 2026-09-14)."
+    },
+    {
+      "label": "docs-pointer",
+      "ok": true,
+      "tail": "OK       CONTEXT.md  pointers=0  broken=0\nOK       AGENTS.md  pointers=5  broken=0\nOK       docs/START-HERE.md  pointers=16  broken=0\nOK       docs/index.md  pointers=12  broken=0\nOK       docs/CONTEXT.md  pointers=5  broken=0\nOK       docs/agents/README.md  pointers=1  broken=0\nOK       docs/testing-governance.md  pointers=3  broken=0\ndocs-pointer-check: PASSED - 73 key pointers resolve across 9 entry documents; 0 machine paths."
+    },
+    {
+      "label": "npm-build",
+      "ok": true,
+      "tail": "Chrome release:\n  D:\\Aworker\\crx\\boxing\\dist\\boxing-chrome\\release\\chrome\\boxing\n  D:\\Aworker\\crx\\boxing\\dist\\boxing-chrome\\release\\chrome\\boxing-2026.9.15.zip\n  D:\\Aworker\\crx\\boxing\\dist\\boxing-chrome\\release\\chrome\\boxing-2026.9.15.crx\nFirefox release:\n  D:\\Aworker\\crx\\boxing\\dist\\boxing-firefox\\release\\firefox\\boxing\n  D:\\Aworker\\crx\\boxing\\dist\\boxing-firefox\\release\\firefox\\boxing-2026.9.15.zip\n  D:\\Aworker\\crx\\boxing\\dist\\boxing-firefox\\release\\firefox\\boxing-2026.9.15.xpi"
+    }
+  ],
+  "checks": [
+    {
+      "name": "chrome-manifest-915",
+      "ok": true
+    },
+    {
+      "name": "ff-manifest-915",
+      "ok": true
+    },
+    {
+      "name": "src-manifest",
+      "ok": true
+    },
+    {
+      "name": "notes-915",
+      "ok": true
+    },
+    {
+      "name": "merge-both-sides",
+      "ok": true
+    },
+    {
+      "name": "e2e-clean",
+      "ok": true
+    },
+    {
+      "name": "no-creds",
+      "ok": true
+    }
+  ],
+  "pass": true
+}

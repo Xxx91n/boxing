@@ -165,14 +165,14 @@ Frontier 更新: 76/77 按 D-009 关闭；**78 可开工**（关闭评论须写�
 
 | 波次 | 票 | Covers | Blocked by | 状态 |
 |---|---|---|---|---|
-| W1 | 87 star-sync | A-041 | — | ready |
-| W1 | 88 empty-state | A-042 | — | ready |
-| W1 | 89 auto-expand | A-043 | — | ready |
-| W1 | 90 webdav-b54 | A-044 | — | ready |
-| W1 | 91 merge-three-way | A-045 | — | ready |
-| W1 | 92 boot-pending-e2e | A-046 | — | ready |
-| W2 | 93 ga-residual-exit | A-047 | 87,88,89 | blocked |
-| W3 | 94 version-2026-9-15 | A-048 | 91,92,93 | blocked |
+| W1 | 87 star-sync | A-041 | — | done |
+| W1 | 88 empty-state | A-042 | — | done |
+| W1 | 89 auto-expand | A-043 | — | done |
+| W1 | 90 webdav-b54 | A-044 | — | done |
+| W1 | 91 merge-three-way | A-045 | — | done |
+| W1 | 92 boot-pending-e2e | A-046 | — | done |
+| W2 | 93 ga-residual-exit | A-047 | 87,88,89 | done |
+| W3 | 94 version-2026-9-15 | A-048 | 91,92,93 | done |
 
 - A-040 纸面债: implemented（无票）
 - GH 镜像: #10→87 · #11→91 · #12→93
