@@ -1,73 +1,58 @@
-# Spec — Wave9 2026.9.15 全部修复
+# Spec — Wave9.15 发行收口 + B 轨全完成（A-050..A-061）
 
-> 数据源: `.scratch/wave9-postrelease-grill/decision-ledger.md` D-001..D-010 · plan.md · ga-definitive-b4f3df2.md  
-> A 账本: `.scratch/architecture-recovery/decision-ledger.md` A-040..A-048  
-> 目标版本: **2026.9.15**（持有 2026.9.12，不热修）
+> 数据源: `.scratch/wave9-915-release-grill/decision-ledger.md` D-001..D-009  
+> 前序 Wave9 票 87–95 已 done；本 spec 仅覆盖 W915 波。  
+> 目标版本: **2026.9.15** · 基线 tip `9fa4666c`（中间 G-A run 34808080000）
 
-## A-xxx Coverage（对账用，强制全集）
+## A-xxx Coverage（强制全集）
 
-| A-xxx | 状态 | 实施工件 |
+| A-xxx | 票 | 段 |
 |---|---|---|
-| A-040 | implemented（纸面债） | 已落盘，无票 |
-| A-041 | current | ticket 87 · GH #10 |
-| A-042 | current | ticket 88 |
-| A-043 | current | ticket 89 |
-| A-044 | current | ticket 90 |
-| A-045 | current | ticket 91 · GH #11 |
-| A-046 | current | ticket 92 |
-| A-047 | current | ticket 93 · GH #12 |
-| A-048 | current | ticket 94 |
-
-**并集约束**：本表 = decision-ledger Wave9 块全部记录；票 Covers 并集 = 本表除去 A-040（无票）。
+| A-050 | 96 | ① |
+| A-051 | 97 | ④ |
+| A-052 | 98 | ② |
+| A-053 | 99 | ④ |
+| A-054 | 100 | ① |
+| A-055 | 101 | ③ |
+| A-056 | 102 | ② |
+| A-057 | 103 | ④ |
+| A-058 | 104 | ② |
+| A-059 | 105 | ④ |
+| A-060 | 106 | ③ |
+| A-061 | 无票（执行：新 tip G-A + 等 G-B） | ⑤ |
 
 ## Problem Statement
 
-2026.9.12 已在 G-A 未满足下发往 GitHub Release 与两店（D-004/006）。对 tip `b4f3df2` 的定谳（run 34749813393）显示 data-golden 绿但三 OS test 仍红：跨 tab 星标同步（R1）稳定失败，空态暗色按钮与 auto-expand 在 Linux 上异常/闪。同步合并仍是 newer-wins 启发式，双端同盒各加子盒会静默吞没一侧。用户需要一个可过闸、文档与行为一致的 **2026.9.15**。
+Wave9 实施 land 后 tip 全绿（R1–R3/B55/版本面 2026.9.15），但 GitHub #10–12 曾 open（已按 D-005 关闭）、docs-gov dead-link 红、锐评 6/8 与 B63–B70 未收。用户要求「所有内容都要完成」（D-003）。B 轨再 land 改变 tip → 发行 G-A 必须重跑（D-004）。
 
 ## Solution
 
-在 `b4f3df2` 之上线性实施：修绿 G-A 残红（R1–R3）、补齐 WebDAV 缺口、整票落地 merge 三向与 boot-pending e2e，完成 2026.9.15 版本面与门禁重跑。纸面债（A-040）已落盘，不在本 spec 重复实施。
+按 D-006 五段完成 A-050..A-060 → 新 tip 发行 G-A（A-061）→ 用户 G-B（2026.9.15+日期）→ tag/商店另令。
 
 ## User Stories
 
-1. As a user with Boxing open in two windows, I want a star set on a large box in one tab to appear in a fresh tab so that isParent state stays consistent.
-2. As a user in dark mode, I want the empty-state add-bookmark control to keep an accessible contrast so that I can see and click it.
-3. As a user who collapses and re-enters a box, I want auto-expand to still work so that hover-collapse does not trap content.
-4. As a user with a NAS on .local or an opt-in private host, I want URL validation and export to honor the private-host setting so that sync does not silently fail.
-5. As a user syncing WebDAV from phone and PC, I want both sides' new small boxes under the same large box to survive a pull so that merge never silently archives one side.
-6. As a developer, I want boot-pending covered by e2e so that zero-flash cannot regress unnoticed.
-7. As a release publisher, I want main test.yml green (or only named F that does not fail the job) so that G-A can be honestly claimed for 2026.9.15.
-8. As a release publisher, I want version 2026.9.15 notes and store packages ready so that G-B (user-declared pass) and G-C can complete the gate.
-9. As an auditor, I want residual reds bucketed N/B/F with no N waivers so that G-A cannot be faked.
-10. As the next agent window, I want each ticket declaring covered A-xxx so that ledger reconciliation stays closed.
+- 维护者只读 docs 层 Release status 即知版本/三门/欠账（A-051）。
+- CI 治理面 dead-link 恢复绿（A-050）。
+- 冻结点现场可读到票号指针（A-052）。
+- 用户在 G-B 前不会被 agent 宣称可发行或自动 tag（A-061 / D-007）。
 
 ## Implementation Decisions
 
-- **Modules**: star/isParent cross-tab path (ntp state + sync); empty-state dark tokens; auto-expand enter/exit; WebDAV URL/export opt-in; layout merge engine (baseRevision or equivalent) + conflict-copy wiring; boot-pending e2e harness; version/release notes surface.
-- **Merge**: ticket 80 plan is authoritative direction; full implementation in this wave (D-009 B), not plan-only.
-- **History model**: linear append-only on pushed main (D-008); no new root.
-- **G-B**: user-declared pass with version+date; agents must not sign (D-007 / ADR-0017 revision).
-- **Paper debt**: already landed (A-040); tickets must not reopen it unless a ticket's AC explicitly regresses a doc.
-- **GitHub P0 mirrors**: #10 (A-041), #11 (A-045), #12 (A-047) — local tickets are the implementation source of truth under architecture-recovery.
+- 主序五段见 D-006 / plan；波次由 Blocked by 推导（见 README）。
+- 票务混合：GH #13–#16 镜像 96/101/104/102；其余本地 issues/。
+- 中间 G-A 34808080000 有效但非发行终谳（A-061）。
+- G-B 用户声明；禁止 agent 代签；tag/商店另令。
 
 ## Testing Decisions
 
-- Prefer existing Playwright extension seams (`test/tests/boxing-*.spec.ts`) over new frameworks.
-- Test external behavior: cross-tab adoption, contrast visibility, expand after enter+exit, dual-end box visibility after pull, boot first-paint.
-- Prior art: boxing-star-sync-audit, boxing-empty-state-buttons, boxing-auto-expand, boxing-viewstate-sync, data-recovery.
-- G-A exit is CI evidence (test.yml run URL), not a local-only claim.
-- N-bucket / data-golden never waived.
+- 发行 G-A = 最终 tip test.yml 四 job 全绿。
+- A-050 以 docs-gov success 为证。
+- A-055/A-060 不得用 silent skip 冒充绿；A-060 无复现须书面结案。
 
 ## Out of Scope
 
-- Hotfix tag for 2026.9.12 (D-004).
-- Reopening user-resolved G-B/慢放/store upload (D-005 12–14).
-- Expanding ADR-0017 beyond the 2026-09-13 revision.
-- Force-push / new root history export (D-008).
-- Large redesign beyond merge three-way + listed residual fixes.
+- B61 用户 G-B 本体；B62 发行后 G-C；tag；商店上传；9.12 热修；无关重构。
 
 ## Further Notes
 
-- Ledger: A-040..A-048. Spec/tracks cover all; A-040 implemented, no ticket.
-- Waves derive from ticket Blocked-by only.
-- Version control: GitButler per WORKFLOW §4.2.
+- 前序账本 A-040..A-049 与 D 账本 wave9-postrelease / wave9-915 保持 current，不重写。
