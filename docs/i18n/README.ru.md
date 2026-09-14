@@ -60,42 +60,35 @@ Boxing превращает новую вкладку в визуальное р
 
 ## Установка
 
-> [!TIP]
-> Готовые установочные пакеты опубликованы в GitHub Releases: [последний релиз](https://github.com/Xxx91n/boxing/releases/latest) содержит `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` и `SHA256SUMS.txt`. Размещение в магазинах ещё в процессе (Edge — идёт, Chrome Web Store отложен, публичного листинга в AMO нет) — self-hosted-путь для Firefox — `.xpi` из релиза.
+> [!IMPORTANT]
+> **Устанавливайте с официальных страниц магазинов** (рекомендуется). Этапы установки и актуальная версия в магазинах приведены в [англоязычном README — Install](../../README.md#install) и на [странице статуса релиза](../../docs/release-status.md).
+> GitHub Releases — это **журнал изменений для пользователей**: [последний релиз](https://github.com/Xxx91n/boxing/releases/latest).
 
-### Chrome / Edge (Chromium)
+### Firefox (официальная установка)
 
-**Из пакета релиза (инструменты сборки не нужны)**
+1. Откройте [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+2. Нажмите **Добавить в Firefox** и следуйте подсказкам браузера
 
-1. Скачайте `boxing-chrome-<version>.zip` из [последнего релиза](https://github.com/Xxx91n/boxing/releases/latest) и распакуйте
-2. Откройте `chrome://extensions` (или `edge://extensions`)
-3. Включите **режим разработчика** (переключатель в правом верхнем углу)
-4. Нажмите **Загрузить распакованное расширение** и выберите распакованную папку `boxing-chrome/`
+### Edge / Chromium (официальная установка)
 
-**Из исходного кода**
+1. Откройте [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. Нажмите **Get** / **Получить**, чтобы установить (в Chromium используйте страницу магазина Edge)
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### Разработчикам: сборка из исходников
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**Из пакета релиза**
-
-1. Скачайте `boxing-firefox-<version>.xpi` из [последнего релиза](https://github.com/Xxx91n/boxing/releases/latest) и откройте в Firefox — сборки с подписью AMO устанавливаются напрямую; неподписанные загружаются только в Firefox Developer Edition/Nightly
-2. Или распакуйте `boxing-firefox-<version>.zip` и на странице `about:debugging#/runtime/this-firefox` выберите **Временно запустить дополнение**, указав на распакованный `manifest.json`
-
-**Из исходного кода**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → Режим разработчика → **Загрузить распакованное расширение** → выберите `dist/boxing-chrome/`
+- Firefox: `about:debugging#/runtime/this-firefox` → **Загрузить временное дополнение** → выберите `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> Node.js и npm нужны только для сборки из исходников; установка из пакета GitHub Releases обходится без них. После публикации в магазинах не понадобится ничего.
+> Собранные zip-архивы предназначены **для загрузки в магазины или локальной отладки**, это не официальный канал установки. Используйте ссылки на магазины выше.
+> Подпись выполняют магазины; GitHub Releases этого репозитория **больше не** распространяют `.xpi` / `.crx`.
 
 ## Использование
 

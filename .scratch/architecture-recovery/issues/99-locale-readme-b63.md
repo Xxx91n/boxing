@@ -6,12 +6,12 @@
 
 **Blocked by:** 97
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-14 · 报告 reports/99-report.md）
 
 ## Acceptance criteria
 
-- [ ] 14 语无过时版本残留
-- [ ] 与 README store_published / GitHub latest 口径一致
+- [x] 14 语无过时版本残留
+- [x] 与 README store_published / GitHub latest 口径一致
 
 ## Notes
 

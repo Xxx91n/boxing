@@ -60,42 +60,35 @@ Boxing เปลี่ยนหน้าแท็บใหม่ของคุ�
 
 ## การติดตั้ง
 
-> [!TIP]
-> แพ็กเกจติดตั้งพร้อมใช้งานเผยแพร่บน GitHub Releases แล้ว: [รุ่นล่าสุด](https://github.com/Xxx91n/boxing/releases/latest) มี `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` และ `SHA256SUMS.txt` รายการร้านค้ายังทยอยเปิด (Edge กำลังดำเนินการ, Chrome Web Store รอหลัง Edge เปิด, AMO ยังไม่มีรายการสาธารณะ) — ไฟล์ `.xpi` จากรุ่นนี้คือเส้นทางติดตั้ง Firefox แบบโฮสต์เอง
+> [!IMPORTANT]
+> **ติดตั้งจากหน้าร้านค้าอย่างเป็นทางการ** (แนะนำ) ขั้นตอนการติดตั้งและเวอร์ชันที่เผยแพร่บนร้านค้าอ้างอิงได้จาก [README ภาษาอังกฤษ — Install](../../README.md#install) และ [หน้าสถานะการปล่อยเวอร์ชัน](../../docs/release-status.md)
+> GitHub Releases เป็น **บันทึกการเปลี่ยนแปลงสำหรับผู้ใช้**: [รีลีสล่าสุด](https://github.com/Xxx91n/boxing/releases/latest)
 
-### Chrome / Edge (Chromium)
+### Firefox (การติดตั้งอย่างเป็นทางการ)
 
-**ติดตั้งจากแพ็กเกจรุ่นเผยแพร่ (ไม่ต้องมีเครื่องมือ build)**
+1. เปิด [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+2. คลิก **Add to Firefox** และทำตามขั้นตอนของเบราว์เซอร์
 
-1. ดาวน์โหลด `boxing-chrome-<version>.zip` จาก[รุ่นล่าสุด](https://github.com/Xxx91n/boxing/releases/latest) แล้วแตกไฟล์
-2. เปิด `chrome://extensions` (หรือ `edge://extensions`)
-3. เปิด **โหมดนักพัฒนา** (สวิตช์มุมขวาบน)
-4. คลิก **โหลดส่วนขยายแบบแยกไฟล์** แล้วเลือกโฟลเดอร์ `boxing-chrome/` ที่แตกไฟล์
+### Edge / Chromium (การติดตั้งอย่างเป็นทางการ)
 
-**Build จากซอร์สโค้ด**
+1. เปิด [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. คลิก **Get** เพื่อติดตั้ง (เบราว์เซอร์ตระกูล Chromium ใช้หน้าร้าน Edge)
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### สำหรับนักพัฒนา: บิลด์จากซอร์สโค้ด
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**ติดตั้งจากแพ็กเกจรุ่นเผยแพร่**
-
-1. ดาวน์โหลด `boxing-firefox-<version>.xpi` จาก[รุ่นล่าสุด](https://github.com/Xxx91n/boxing/releases/latest) แล้วเปิดใน Firefox — รุ่นที่เซ็นโดย AMO ติดตั้งได้โดยตรง รุ่นไม่เซ็นโหลดได้เฉพาะ Firefox Developer Edition/Nightly
-2. หรือแตกไฟล์ `boxing-firefox-<version>.zip` แล้วไปที่ `about:debugging#/runtime/this-firefox` เลือก **โหลดส่วนเสริมชั่วคราว** ไปที่ `manifest.json` ที่แตกไฟล์
-
-**Build จากซอร์สโค้ด**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → โหมดนักพัฒนา → **โหลดส่วนขยายที่ยังไม่ได้แพ็ก** → เลือก `dist/boxing-chrome/`
+- Firefox: `about:debugging#/runtime/this-firefox` → **โหลดส่วนเสริมชั่วคราว** → เลือก `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> ต้องใช้ Node.js และ npm เฉพาะเมื่อ build จากซอร์สโค้ด การติดตั้งจากแพ็กเกจ GitHub Releases ไม่จำเป็นต้องมี และเมื่อรายการร้านค้าเปิดแล้วจะติดตั้งได้ในคลิกเดียว
+> ไฟล์ zip ที่บิลด์ได้ใช้สำหรับ **อัปโหลดขึ้นร้านค้าหรือดีบักภายในเครื่อง** ไม่ใช่ช่องทางติดตั้งอย่างเป็นทางการ โปรดใช้ลิงก์ร้านค้าด้านบน
+> การเซ็นชื่อทำโดยร้านค้า GitHub Releases ของรีโพนี้ **ไม่ได้** แจกจ่าย `.xpi` / `.crx` อีกต่อไป
 
 ## การใช้งาน
 

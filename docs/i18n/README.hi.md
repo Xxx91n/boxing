@@ -64,42 +64,35 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 
 ## Install
 
-> [!TIP]
-> Latest published release: v2026.9.11 on GitHub Releases: the [latest release](https://github.com/Xxx91n/boxing/releases/latest) ships `boxing-chrome-2026.9.11.zip` / `.crx`, `boxing-firefox-2026.9.11.zip` / `.xpi`, and `SHA256SUMS.txt`. Newer builds (including current `main`) are not released yet — they ship only after passing the release gate (G-A/G-B/G-C, ADR-0017); candidates stay draft/pre-release until then. Store listings are still rolling out (Edge in progress, Chrome Web Store deferred, no public AMO listing) — the release `.xpi` is the self-hosted Firefox install path.
+> [!IMPORTANT]
+> **ऑफिशियल स्टोर पेज से इंस्टॉल करें** (अनुशंसित). इंस्टॉल चरण और वर्तमान में प्रकाशित स्टोर वर्शन का प्रामाणिक स्रोत [अंग्रेज़ी README — Install](../../README.md#install) और [रिलीज़ स्टेटस पेज](../../docs/release-status.md) है।
+> GitHub Releases एक **यूज़र-फेसिंग चेंजलॉग** है: [नवीनतम रिलीज़](https://github.com/Xxx91n/boxing/releases/latest)।
 
-### Chrome / Edge (Chromium)
+### Firefox (ऑफिशियल इंस्टॉल)
 
-**From the release package (no build tools needed)**
+1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) खोलें
+2. **Add to Firefox** पर क्लिक करें और ब्राउज़र के निर्देशों का पालन करें
 
-1. Download `boxing-chrome-<version>.zip` from the [latest release](https://github.com/Xxx91n/boxing/releases/latest) and unzip it
-2. Go to `chrome://extensions` (or `edge://extensions`)
-3. Enable **Developer mode** (top-right toggle)
-4. Click **Load unpacked** and select the unzipped `boxing-chrome/` folder
+### Edge / Chromium (ऑफिशियल इंस्टॉल)
 
-**From source**
+1. [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) खोलें
+2. इंस्टॉल करने के लिए **Get** पर क्लिक करें (Chromium ब्राउज़र के लिए Edge स्टोर पेज का उपयोग करें)
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### डेवलपर: स्रोत से बिल्ड करें
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**From the release package**
-
-1. Download `boxing-firefox-<version>.xpi` from the [latest release](https://github.com/Xxx91n/boxing/releases/latest) and open it in Firefox — AMO-signed builds install directly; unsigned builds load only in Firefox Developer Edition/Nightly
-2. Or download `boxing-firefox-<version>.zip`, unzip it, go to `about:debugging#/runtime/this-firefox`, and click **Load Temporary Add-on...** pointing at the unzipped `manifest.json`
-
-**From source**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → डेवलपर मोड → **अनपैक्ड एक्सटेंशन लोड करें** → `dist/boxing-chrome/` चुनें
+- Firefox: `about:debugging#/runtime/this-firefox` → **अस्थायी ऐड-ऑन लोड करें** → `dist/boxing-firefox/manifest.json` चुनें
 
 > [!NOTE]
-> Node.js and npm are only required for the from-source build; installing from the GitHub release package needs neither. Once the store listings are live, end-user installs are one click.
+> बिल्ड आर्टिफैक्ट (zip) **स्टोर अपलोड या लोकल डिबगिंग** के लिए हैं, आधिकारिक इंस्टॉल चैनल नहीं। इंस्टॉल के लिए ऊपर दिए स्टोर लिंक का उपयोग करें।
+> साइनिंग स्टोर करते हैं; इस रिपॉजिटरी की GitHub Releases अब `.xpi` / `.crx` **वितरित नहीं करतीं**।
 
 ## Usage
 

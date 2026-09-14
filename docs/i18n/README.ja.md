@@ -60,42 +60,35 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
 
 ## インストール
 
-> [!TIP]
-> プリビルドのインストールパッケージは GitHub Releases で公開中です。[最新版リリース](https://github.com/Xxx91n/boxing/releases/latest) には `boxing-chrome-<version>.zip` / `.crx`、`boxing-firefox-<version>.zip` / `.xpi`、`SHA256SUMS.txt` が含まれます。ストア掲載は準備中（Edge は進行中、Chrome Web Store は Edge 公開後、AMO に公開掲載なし）のため、Firefox はリリースの `.xpi` を直接ご利用いただけます。
+> [!IMPORTANT]
+> **公式ストアページからインストールしてください**（推奨）。インストール手順と現在公開されているストアバージョンの一次情報は [英語版 README — Install](../../README.md#install) と [リリース状況ページ](../../docs/release-status.md) にあります。
+> GitHub Releases は**ユーザー向けの変更履歴**です：[最新リリース](https://github.com/Xxx91n/boxing/releases/latest).
 
-### Chrome / Edge (Chromium)
+### Firefox（正式インストール）
 
-**リリースパッケージからインストール（ビルド工具不要）**
+1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) を開く
+2. **Firefox に追加** をクリックし、画面の指示に従ってインストールします
 
-1. [最新版リリース](https://github.com/Xxx91n/boxing/releases/latest) から `boxing-chrome-<version>.zip` をダウンロードして解凍する
-2. `chrome://extensions`（または `edge://extensions`）を開く
-3. **開発者モード**（右上のトグル）を有効にする
-4. **ファイルをロード** をクリックし、解凍した `boxing-chrome/` フォルダを選択する
+### Edge / Chromium（正式インストール）
 
-**ソースからビルド**
+1. [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) を開く
+2. **Get** をクリックしてインストールします（Chromium 系ブラウザーは Edge ストアページを使用）
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### 開発者向け：ソースからビルド
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**リリースパッケージからインストール**
-
-1. [最新版リリース](https://github.com/Xxx91n/boxing/releases/latest) から `boxing-firefox-<version>.xpi` をダウンロードし、Firefox で開く — AMO 署名済みビルドは直接インストールできます。無署名ビルドは Firefox Developer Edition/Nightly でのみ読み込めます
-2. または `boxing-firefox-<version>.zip` を解凍し、`about:debugging#/runtime/this-firefox` で **一時アドオンとして読み込む** を選んで解凍先の `manifest.json` を指定する
-
-**ソースからビルド**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → デベロッパーモード → **パッケージ化されていない拡張機能を読み込む** → `dist/boxing-chrome/` を選択
+- Firefox: `about:debugging#/runtime/this-firefox` → **一時的なアドオンを読み込む** → `dist/boxing-firefox/manifest.json` を選択
 
 > [!NOTE]
-> Node.js と npm が必要になるのはソースからのビルドのみで、GitHub Release のパッケージからのインストールには不要です。ストア掲載後はワンクリックでインストールできます。
+> ビルド成果物の zip は**ストアへのアップロードまたはローカル検証用**であり、ユーザー向けの正式なインストール経路ではありません。インストールには上記のストアリンクを使用してください。
+> 署名はストアが行います。本リポジトリの GitHub Releases では `.xpi` / `.crx` を**配布していません**。
 
 ## 使い方
 

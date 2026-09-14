@@ -60,42 +60,35 @@ Boxing은 브라우저 새 탭 페이지를 시각적 북마크 워크스페이�
 
 ## 설치
 
-> [!TIP]
-> 사전 빌드 설치 패키지가 GitHub Releases에 게시되어 있습니다. [최신 릴리스](https://github.com/Xxx91n/boxing/releases/latest)에는 `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi`, `SHA256SUMS.txt`가 포함됩니다. 스토어 등록은 진행 중입니다(Edge 진행 중, Chrome 웹 스토어는 Edge 등록 후 예정, AMO 공개 등록 없음) — Firefox는 릴리스 `.xpi`를 바로 설치할 수 있습니다.
+> [!IMPORTANT]
+> **공식 스토어 페이지에서 설치하세요** (권장). 설치 절차와 현재 게시된 스토어 버전의 기준 정보는 [영문 README — Install](../../README.md#install) 및 [릴리스 상태 페이지](../../docs/release-status.md)에 있습니다.
+> GitHub Releases는 **사용자용 변경 로그**입니다: [최신 릴리스](https://github.com/Xxx91n/boxing/releases/latest).
 
-### Chrome / Edge (Chromium)
+### Firefox (공식 설치)
 
-**릴리스 패키지로 설치 (빌드 도구 불필요)**
+1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) 열기
+2. **Firefox에 추가** 를 클릭하고 브라우저 안내에 따라 설치합니다
 
-1. [최신 릴리스](https://github.com/Xxx91n/boxing/releases/latest)에서 `boxing-chrome-<version>.zip`을 다운로드하여 압축을 풉니다
-2. `chrome://extensions`(또는 `edge://extensions`) 열기
-3. **개발자 모드**(우측 상단 토글) 활성화
-4. **압축 해제된 확장 프로그램 로드**를 클릭하고 압축 푼 `boxing-chrome/` 폴더 선택
+### Edge / Chromium (공식 설치)
 
-**소스에서 빌드**
+1. [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) 열기
+2. **Get** 을 클릭해 설치합니다 (Chromium 계열은 Edge 스토어 페이지 이용)
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### 개발자: 소스에서 빌드
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**릴리스 패키지로 설치**
-
-1. [최신 릴리스](https://github.com/Xxx91n/boxing/releases/latest)에서 `boxing-firefox-<version>.xpi`를 다운로드하여 Firefox에서 엽니다 — AMO 서명 빌드는 바로 설치되며, 무서명 빌드는 Firefox Developer Edition/Nightly에서만 로드됩니다
-2. 또는 `boxing-firefox-<version>.zip`을 압축 해제한 뒤 `about:debugging#/runtime/this-firefox`에서 **임시 애드온으로 로드**를 눌러 압축 푼 `manifest.json`을 선택하세요
-
-**소스에서 빌드**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → 개발자 모드 → **압축 해제된 확장 프로그램 로드** → `dist/boxing-chrome/` 선택
+- Firefox: `about:debugging#/runtime/this-firefox` → **임시 부가 기능 로드** → `dist/boxing-firefox/manifest.json` 선택
 
 > [!NOTE]
-> Node.js와 npm은 소스 빌드 시에만 필요합니다. GitHub 릴리스 패키지 설치에는 필요 없으며, 스토어 등록 후에는 원클릭으로 설치할 수 있습니다.
+> 빌드 산출물 zip은 **스토어 업로드 또는 로컬 디버깅용**이며 공식 설치 경로가 아닙니다. 위 스토어 링크를 이용하세요.
+> 서명은 스토어가 수행하며, 이 저장소의 GitHub Releases는 `.xpi` / `.crx` 를 **더 이상 배포하지 않습니다**.
 
 ## 사용법
 

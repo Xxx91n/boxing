@@ -60,42 +60,35 @@ Boxing يحول صفحة التبويب الجديدة إلى مساحة عمل 
 
 ## التثبيت
 
-> [!TIP]
-> حزم التثبيت الجاهزة منشورة على GitHub Releases: يوفّر [أحدث إصدار](https://github.com/Xxx91n/boxing/releases/latest) `boxing-chrome-<version>.zip` / `.crx` و`boxing-firefox-<version>.zip` / `.xpi` و`SHA256SUMS.txt`. الإدراجات في المتاجر ما زالت قيد التدرّج (Edge جارٍ، وChrome Web Store مؤجّل، ولا إدراج عام على AMO) — ملف `.xpi` من الإصدار هو مسار التثبيت المستضاف ذاتيًا لـ Firefox.
+> [!IMPORTANT]
+> **ثبّت الإضافة من صفحات المتاجر الرسمية** (موصى به). خطوات التثبيت المعتمدة وإصدار المتجر المنشور حاليًا موجودة في [ملف README الإنجليزي — Install](../../README.md#install) و[صفحة حالة الإصدار](../../docs/release-status.md).
+> إصدارات GitHub Releases هي **سجل تغييرات موجّه للمستخدمين**: [أحدث إصدار](https://github.com/Xxx91n/boxing/releases/latest).
 
-### Chrome / Edge (Chromium)
+### Firefox (التثبيت الرسمي)
 
-**من حزمة الإصدار (لا أدوات بناء مطلوبة)**
+1. افتح [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+2. اضغط **Add to Firefox** واتبع تعليمات المتصفح
 
-1. نزّل `boxing-chrome-<version>.zip` من [أحدث إصدار](https://github.com/Xxx91n/boxing/releases/latest) وفك ضغطه
-2. افتح `chrome://extensions` (أو `edge://extensions`)
-3. فعّل **وضع المطور** (المفتاح أعلى اليمين)
-4. اضغط **تحميل إضافة غير مغلّفة** واختر مجلد `boxing-chrome/` المفكوك
+### Edge / Chromium (التثبيت الرسمي)
 
-**من المصدر**
+1. افتح [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. اضغط **Get** لإتمام التثبيت (على متصفحات Chromium استخدم صفحة متجر Edge)
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### للمطوّرين: البناء من الشيفرة المصدرية
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**من حزمة الإصدار**
-
-1. نزّل `boxing-firefox-<version>.xpi` من [أحدث إصدار](https://github.com/Xxx91n/boxing/releases/latest) وافتحه في Firefox — الحزم الموقعة من AMO تُثبَّت مباشرة؛ وغير الموقعة تُحمَّل فقط في Firefox Developer Edition/Nightly
-2. أو فك ضغط `boxing-firefox-<version>.zip` ثم من `about:debugging#/runtime/this-firefox` اختر **تحميل إضافة مؤقتة** وحدّد `manifest.json` المفكوك
-
-**من المصدر**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` — وضع المطوّر — **تحميل إضافة غير مضغوطة** — اختر `dist/boxing-chrome/`
+- Firefox: `about:debugging#/runtime/this-firefox` — **تحميل إضافة مؤقتة** — اختر `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> ‏Node.js وnpm مطلوبان فقط للبناء من المصدر؛ التثبيت من حزمة GitHub Releases لا يحتاجهما، وبعد إدراج المتاجر لن تكون هناك حاجة لأيٍّ منهما.
+> حزم zip الناتجة عن البناء مخصّصة **للرفع إلى المتاجر أو للتصحيح المحلي**، وليست قناة التثبيت الرسمية. استخدم روابط المتاجر أعلاه.
+> التوقيع يتم من قِبل المتاجر؛ إصدارات GitHub Releases في هذا المستودع **لم تعد** توزّع `.xpi` / `.crx`.
 
 ## الاستخدام
 

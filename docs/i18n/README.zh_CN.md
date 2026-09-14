@@ -60,42 +60,35 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 
 ## 安装
 
-> [!TIP]
-> 预构建安装包已发布于 GitHub Releases：[最新版本](https://github.com/Xxx91n/boxing/releases/latest) 提供 `boxing-chrome-<version>.zip` / `.crx`、`boxing-firefox-<version>.zip` / `.xpi` 与 `SHA256SUMS.txt`。商店上架仍在推进中（Edge 进行中，Chrome Web Store 延后至 Edge 上线，AMO 暂无公开列表），发布版 `.xpi` 即 Firefox 自托管安装途径。
+> [!IMPORTANT]
+> **请通过官方商店页面安装**（推荐）。权威安装步骤与当前已发布的商店版本维护在 [英文 README — Install](../../README.md#install) 与 [发行状态页](../../docs/release-status.md)。
+> GitHub Releases 仅作为**面向用户的更新日志**：[最新版本](https://github.com/Xxx91n/boxing/releases/latest).
 
-### Chrome / Edge (Chromium)
+### Firefox（正式安装）
 
-**从 Release 安装包安装（无需构建工具）**
+1. 打开 [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+2. 点击 **Add to Firefox**，按浏览器提示完成安装
 
-1. 从[最新版本](https://github.com/Xxx91n/boxing/releases/latest)下载 `boxing-chrome-<version>.zip` 并解压
-2. 打开 `chrome://extensions`（或 `edge://extensions`）
-3. 启用**开发者模式**（右上角开关）
-4. 点击**加载已解压的扩展程序**，选择解压出的 `boxing-chrome/` 目录
+### Edge / Chromium（正式安装）
 
-**从源码构建**
+1. 打开 [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. 点击 **Get** / **获取** 完成安装（Chromium 系请使用 Edge 商店页面）
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### 开发者：从源码构建
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**从 Release 安装包安装**
-
-1. 从[最新版本](https://github.com/Xxx91n/boxing/releases/latest)下载 `boxing-firefox-<version>.xpi` 并在 Firefox 中打开——经 AMO 签名的构建可直接安装；未签名构建仅能在 Firefox Developer Edition/Nightly 加载
-2. 或下载 `boxing-firefox-<version>.zip` 解压后，在 `about:debugging#/runtime/this-firefox` 点击**加载临时附加组件**并选择解压出的 `manifest.json`
-
-**从源码构建**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge：`chrome://extensions` → 开发者模式 → **加载已解压的扩展程序** → 选 `dist/boxing-chrome/`
+- Firefox：`about:debugging#/runtime/this-firefox` → **临时载入附加组件** → 选 `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> 只有从源码构建才需要 Node.js 与 npm；从 GitHub Release 安装包安装无需它们。商店上架完成后即可一键安装。
+> 构建产物 zip 供**商店上传或本地调试**，不是用户正式安装渠道。正式安装请走上方商店链接。
+> 签名由商店完成；本仓 GitHub Release **不再**分发 `.xpi` / `.crx`。
 
 ## 使用
 

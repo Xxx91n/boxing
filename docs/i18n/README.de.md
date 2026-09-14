@@ -60,42 +60,35 @@ Helle und dunkle Logos, Erweiterungs-Icons, Favicons, Store-Kacheln und die Vari
 
 ## Installation
 
-> [!TIP]
-> Fertige Installationspakete sind auf GitHub Releases veröffentlicht: Der [neueste Release](https://github.com/Xxx91n/boxing/releases/latest) enthält `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` und `SHA256SUMS.txt`. Die Store-Listings rollen noch aus (Edge läuft, Chrome Web Store zurückgestellt, AMO ohne öffentliches Listing) — das Release-`.xpi` ist der selbst gehostete Firefox-Weg.
+> [!IMPORTANT]
+> **Installieren Sie über die offiziellen Store-Seiten** (empfohlen). Maßgeblich für die Installationsschritte und die aktuell veröffentlichte Store-Version sind das [englische README — Install](../../README.md#install) und die [Release-Statusseite](../../docs/release-status.md).
+> GitHub Releases sind ein **Änderungsprotokoll für Nutzer**: [neueste Release](https://github.com/Xxx91n/boxing/releases/latest).
 
-### Chrome / Edge (Chromium)
+### Firefox (offizielle Installation)
 
-**Aus dem Release-Paket (keine Build-Tools nötig)**
+1. Öffnen Sie [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+2. Klicken Sie auf **Zu Firefox hinzufügen** und folgen Sie den Hinweisen des Browsers
 
-1. `boxing-chrome-<version>.zip` vom [neuesten Release](https://github.com/Xxx91n/boxing/releases/latest) herunterladen und entpacken
-2. `chrome://extensions` (oder `edge://extensions`) öffnen
-3. **Entwicklermodus** (Schalter oben rechts) aktivieren
-4. **Entpackte Erweiterung laden** klicken und den entpackten Ordner `boxing-chrome/` auswählen
+### Edge / Chromium (offizielle Installation)
 
-**Aus dem Quellcode bauen**
+1. Öffnen Sie [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. Klicken Sie auf **Get** / **Hinzufügen**, um die Installation abzuschließen (Chromium-Browser: nutzen Sie die Edge-Store-Seite)
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### Entwickler: Aus dem Quellcode bauen
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**Aus dem Release-Paket**
-
-1. `boxing-firefox-<version>.xpi` vom [neuesten Release](https://github.com/Xxx91n/boxing/releases/latest) herunterladen und in Firefox öffnen — AMO-signierte Builds installieren direkt; unsignierte Builds laden nur in Firefox Developer Edition/Nightly
-2. Alternativ `boxing-firefox-<version>.zip` entpacken und auf `about:debugging#/runtime/this-firefox` per **Add-on vorübergehend laden** die entpackte `manifest.json` auswählen
-
-**Aus dem Quellcode bauen**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → Entwicklermodus → **Entpackte Erweiterung laden** → `dist/boxing-chrome/` wählen
+- Firefox: `about:debugging#/runtime/this-firefox` → **Temporäres Add-on laden** → `dist/boxing-firefox/manifest.json` wählen
 
 > [!NOTE]
-> Node.js und npm werden nur für den Build aus dem Quellcode benötigt; die Installation aus dem GitHub-Release-Paket kommt ohne sie aus. Nach den Store-Listings entfällt beides.
+> Die Build-Artefakte (zip) dienen **dem Store-Upload oder dem lokalen Debuggen**, nicht als offizieller Installationsweg. Nutzen Sie die Store-Links oben.
+> Die Signierung erfolgt durch die Stores; die GitHub Releases dieses Repositorys verteilen **keine** `.xpi` / `.crx` mehr.
 
 ## Verwendung
 

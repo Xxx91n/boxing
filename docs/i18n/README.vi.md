@@ -60,42 +60,35 @@ Logo sáng/tối, biểu tượng phần mở rộng, favicon, ô ảnh cửa h�
 
 ## Cài đặt
 
-> [!TIP]
-> Các gói cài đặt dựng sẵn đã được phát hành trên GitHub Releases: [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest) gồm `boxing-chrome-<version>.zip` / `.crx`, `boxing-firefox-<version>.zip` / `.xpi` và `SHA256SUMS.txt`. Việc lên cửa hàng vẫn đang triển khai (Edge đang tiến hành, Chrome Web Store hoãn cho tới khi Edge lên sóng, AMO chưa có danh sách công khai) — tệp `.xpi` của bản phát hành là đường cài Firefox tự quản.
+> [!IMPORTANT]
+> **Cài đặt từ trang cửa hàng chính thức** (khuyến nghị). Các bước cài đặt và phiên bản đã phát hành trên cửa hàng được quy định tại [README tiếng Anh — Install](../../README.md#install) và [trang trạng thái phát hành](../../docs/release-status.md).
+> GitHub Releases là **nhật ký thay đổi dành cho người dùng**: [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest).
 
-### Chrome / Edge (Chromium)
+### Firefox (cài đặt chính thức)
 
-**Từ gói phát hành (không cần công cụ build)**
+1. Mở [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+2. Nhấn **Add to Firefox** và làm theo hướng dẫn của trình duyệt
 
-1. Tải `boxing-chrome-<version>.zip` từ [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest) và giải nén
-2. Mở `chrome://extensions` (hoặc `edge://extensions`)
-3. Bật **chế độ nhà phát triển** (công tắc góc trên bên phải)
-4. Nhấn **Tải tiện ích chưa đóng gói** và chọn thư mục `boxing-chrome/` đã giải nén
+### Edge / Chromium (cài đặt chính thức)
 
-**Từ mã nguồn**
+1. Mở [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. Nhấn **Get** để cài đặt (trình duyệt Chromium dùng trang cửa hàng Edge)
 
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `chrome://extensions` (or `edge://extensions`)
-4. Enable Developer mode
-5. Click Load unpacked and select `dist/boxing-chrome/`
+### Nhà phát triển: build từ mã nguồn
 
-### Firefox
+```bash
+git clone https://github.com/Xxx91n/boxing.git
+cd boxing
+npm ci
+npm run build
+```
 
-**Từ gói phát hành**
-
-1. Tải `boxing-firefox-<version>.xpi` từ [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest) và mở trong Firefox — bản ký AMO cài trực tiếp; bản chưa ký chỉ chạy trên Firefox Developer Edition/Nightly
-2. Hoặc giải nén `boxing-firefox-<version>.zip`, mở `about:debugging#/runtime/this-firefox` và chọn **Tải tiện ích tạm thời** trỏ tới `manifest.json` đã giải nén
-
-**Từ mã nguồn**
-
-1. Clone or download the repository: https://github.com/Xxx91n/boxing
-2. Run `npm install` then `npm run build`
-3. Go to `about:debugging#/runtime/this-firefox`
-4. Click Load Temporary Add-on and select `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → Chế độ nhà phát triển → **Tải tiện ích chưa đóng gói** → chọn `dist/boxing-chrome/`
+- Firefox: `about:debugging#/runtime/this-firefox` → **Tải tiện ích tạm thời** → chọn `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> Node.js và npm chỉ cần khi build từ mã nguồn; cài từ gói GitHub Releases không cần chúng. Khi các cửa hàng lên sóng, việc cài đặt còn một cú nhấp.
+> Các file zip được build ra dùng để **tải lên cửa hàng hoặc gỡ lỗi cục bộ**, không phải kênh cài đặt chính thức. Hãy dùng liên kết cửa hàng ở trên.
+> Việc ký được thực hiện bởi cửa hàng; GitHub Releases của repo này **không còn** phân phối `.xpi` / `.crx`.
 
 ## Sử dụng
 
