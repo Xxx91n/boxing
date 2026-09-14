@@ -6,7 +6,7 @@
 
 **Blocked by:** 96, 100
 
-**Status:** implemented（2026-09-14 · 双车道实测绿 + mutant 验证；CI 复跑待大脑派发）
+**Status:** done-with-named-F（2026-09-14 · 源码契约绿；no-mirror e2e chromium 启动超时=env F）
 
 ## Acceptance criteria
 
