@@ -95,7 +95,7 @@
 | A-054 | B64 calver 一致性门禁 | 100 | implemented |
 | A-055 | B65 fire-and-forget 测试族 deflake | 101 | 进行中 |
 | A-056 | B66 亮色 bm-add-btn 对比度 | 102 | implemented |
-| A-057 | B67 DESIGN.md hairline 语义 | 103 | 进行中 |
+| A-057 | B67 DESIGN.md hairline 语义 | 103 | implemented |
 | A-058 | B68 boot-theme 早退 failsafe | 104 | done-with-named-F |
 | A-059 | B69 撤账判据写入规则 | 105 | 进行中 |
 | A-060 | B70 innerclip firefox 本地 flaky（CI 复现则修，否则书面结案） | 106 | 进行中 |
