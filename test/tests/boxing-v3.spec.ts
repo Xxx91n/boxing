@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import fs from 'fs';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
@@ -223,7 +224,7 @@ test.describe('Boxing v3 Extension', () => {
     await page.waitForTimeout(300);
 
     // BX-ONBOARDING: dismiss first-run onboarding overlay so canvas interaction works.
-    await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+    await dismissOnboarding(page);
     await expect(page.locator('#settings-modal')).toBeVisible();
     await page.screenshot({ path: 'test-results/boxing-v3-settings-modal.png', fullPage: true });
 
@@ -265,7 +266,7 @@ test.describe('Boxing v3 Extension', () => {
     await page.waitForTimeout(1500);
 
     // BX-ONBOARDING: dismiss first-run onboarding overlay so canvas interaction works.
-    await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+    await dismissOnboarding(page);
 
     // 1. Button exists and is visible in header bar (default: pinned)
     const pinBtn = page.locator('#header-pin-btn');
@@ -322,7 +323,7 @@ test.describe('Boxing v3 Extension', () => {
     await page.waitForTimeout(2500);
 
     // BX-ONBOARDING: dismiss first-run onboarding overlay so canvas interaction works.
-    await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+    await dismissOnboarding(page);
 
     // 1. Create a large box and verify
     const canvasBox = await page.locator('#canvas').boundingBox();

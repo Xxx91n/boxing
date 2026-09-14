@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import fs from 'fs';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
@@ -15,7 +16,7 @@ const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html')).href;
 async function boot(page: Page) {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
-  await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+  await dismissOnboarding(page);
   await page.waitForTimeout(300);
 }
 

@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
@@ -21,7 +22,7 @@ async function boot(page: Page, opts: { reset?: boolean } = {}) {
   }
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
-  await page.evaluate(() => (window as any).__boxingDebug.skipOnboarding());
+  await dismissOnboarding(page);
 }
 
 test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => {

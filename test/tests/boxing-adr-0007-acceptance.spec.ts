@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
@@ -10,7 +11,7 @@ async function resetBoxing(page) {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
-  await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+  await dismissOnboarding(page);
 }
 
 test.describe('ADR-0007 acceptance gates', () => {

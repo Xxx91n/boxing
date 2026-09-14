@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = `file:///${path
@@ -12,7 +13,7 @@ async function boot(page: Page) {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
-  await page.evaluate(() => (window as any).__boxingDebug.skipOnboarding());
+  await dismissOnboarding(page);
 }
 
 // Capture selection state + focus state

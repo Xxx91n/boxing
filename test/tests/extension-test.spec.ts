@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EXT_PATH = path.resolve(__dirname, '..', '..');
@@ -28,7 +29,7 @@ test.describe('Boxing Extension — Basic Rendering', () => {
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 
     // Dismiss onboarding overlay
-    await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+    await dismissOnboarding(page);
     await page.waitForTimeout(300);
 
     await page.screenshot({ path: 'test-results/04-ntp-direct-render.png', fullPage: true });

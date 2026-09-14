@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
@@ -14,7 +15,7 @@ async function resetFresh(page) {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
-  await page.evaluate(() => (window as any).__boxingDebug?.skipOnboarding?.());
+  await dismissOnboarding(page);
   // __boxingEncryptCredential/__boxingDecryptCredential are exposed inside init()
   // (after async loadLayout/loadSettings), NOT synchronously with __boxingDebug.
   // Poll for the functions this suite actually uses, else Firefox hits

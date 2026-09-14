@@ -2,6 +2,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -126,7 +127,7 @@ test.describe('B56: boot-pending zero-flash e2e (ticket 92 / A-046)', () => {
     await p1.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
     await p1.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => p1.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
-    await p1.evaluate(() => (window as any).__boxingDebug.skipOnboarding());
+    await dismissOnboarding(p1);
     // Memory state: forest pack + dark mode + one large box (so unmask witnesses rendered content).
     await p1.evaluate(async () => {
       (window as any)._boxingAddLargeBox();
@@ -207,7 +208,7 @@ test.describe('B56: boot-pending zero-flash e2e (ticket 92 / A-046)', () => {
     await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
-    await page.evaluate(() => (window as any).__boxingDebug.skipOnboarding());
+    await dismissOnboarding(page);
     await page.evaluate(async () => {
       (window as any)._boxingAddLargeBox();
       await (window as any).__boxingDebug.saveLayout();

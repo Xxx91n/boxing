@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { dismissOnboarding } from '../helpers/onboarding';
 
 // Ticket 45 (architecture-recovery): CI data-compatibility golden gates — migration
 // + rollback half. The assertion logic lives in scripts/migration-golden-guard.mjs so
@@ -25,7 +26,7 @@ async function bootNtp(page: import('@playwright/test').Page) {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
-  await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+  await dismissOnboarding(page);
 }
 
 test.describe('Migration golden fixtures (ticket 45)', () => {

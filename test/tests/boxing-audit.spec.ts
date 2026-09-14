@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = `file:///${path
@@ -16,7 +17,7 @@ async function bootFresh(page: Page) {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
-  await page.evaluate(() => (window as any).__boxingDebug.skipOnboarding());
+  await dismissOnboarding(page);
 }
 
 test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {

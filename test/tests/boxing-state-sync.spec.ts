@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
@@ -14,7 +15,7 @@ async function resetBoxing(page: import('@playwright/test').Page) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
   // BX-ONBOARDING: dismiss first-run overlay so settings/UI clicks are not intercepted.
-  await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+  await dismissOnboarding(page);
 }
 
 /**

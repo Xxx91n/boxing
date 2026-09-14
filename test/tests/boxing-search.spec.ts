@@ -32,19 +32,17 @@ test.describe('Boxing bookmark search (BX-DEV-SEARCH)', () => {
     // Type in search box
     const searchInput = page.locator('#q');
     await searchInput.fill('GitHub');
-    await page.waitForTimeout(200);
 
-    const result = await page.evaluate(() => {
-      const matchEl = document.querySelector('.large-box[data-id="search-test-1"]');
-      const hiddenEl = document.querySelector('.large-box[data-id="search-test-2"]');
-      return {
-        matchHasClass: matchEl?.classList.contains('large-box--search-match'),
-        hiddenHasClass: hiddenEl?.classList.contains('large-box--search-hidden'),
-        caption: document.getElementById('caption')?.textContent,
-      };
-    });
-    expect(result.matchHasClass).toBe(true);
-    expect(result.hiddenHasClass).toBe(true);
+    // Ticket 101 (B65, ledger face boxing-search): the historic form was
+    // fill -> fixed 200ms sleep -> read the class. Search is debounced (120ms,
+    // ticket 83), so on a slow runner the class had not been applied yet and the
+    // read raced the debounce (ledger signature: Expected true / Received false,
+    // macos-latest firefox only). A web-first assertion retries instead of
+    // guessing a delay — and it is the only form that cannot pass vacuously.
+    const matchBox = page.locator('.large-box[data-id="search-test-1"]');
+    const hiddenBox = page.locator('.large-box[data-id="search-test-2"]');
+    await expect(matchBox).toHaveClass(/large-box--search-match/);
+    await expect(hiddenBox).toHaveClass(/large-box--search-hidden/);
   });
 
   test('search clears highlight when emptied', async ({ page }) => {
@@ -62,30 +60,26 @@ test.describe('Boxing bookmark search (BX-DEV-SEARCH)', () => {
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 
     const searchInput = page.locator('#q');
+    const box = page.locator('.large-box[data-id="clear-test-1"]');
     await searchInput.fill('TestBox');
-    await page.waitForTimeout(200);
+    // Ticket 101: wait until the debounced search has actually applied, otherwise
+    // the assertions below can pass vacuously (the classes were never added).
+    await expect(box).toHaveClass(/large-box--search-match/);
     await searchInput.fill('');
-    await page.waitForTimeout(200);
-
-    const result = await page.evaluate(() => {
-      const el = document.querySelector('.large-box[data-id="clear-test-1"]');
-      return {
-        hasMatch: el?.classList.contains('large-box--search-match'),
-        hasHidden: el?.classList.contains('large-box--search-hidden'),
-      };
-    });
-    expect(result.hasMatch).toBe(false);
-    expect(result.hasHidden).toBe(false);
+    // The contract is that clearing REMOVES the classes — not that they were
+    // absent because the search never ran.
+    await expect(box).not.toHaveClass(/large-box--search-match/);
+    await expect(box).not.toHaveClass(/large-box--search-hidden/);
   });
 
   test('Escape clears search', async ({ page }) => {
     await resetBoxing(page);
     const searchInput = page.locator('#q');
     await searchInput.fill('test');
-    await page.waitForTimeout(200);
     await searchInput.press('Escape');
-    await page.waitForTimeout(100);
-    expect(await searchInput.inputValue()).toBe('');
+    // Ticket 101: Escape clears the input synchronously; a retrying value
+    // assertion replaces the fixed 200ms/100ms sleeps that raced it.
+    await expect(searchInput).toHaveValue('');
   });
 
   test('favicon uses Promise.any parallel race (no serial waterfall)', async ({ page }) => {

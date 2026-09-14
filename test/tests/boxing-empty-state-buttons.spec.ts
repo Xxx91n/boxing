@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { assertPointerReaches, dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
@@ -15,7 +16,7 @@ async function resetBoxing(page) {
   // is evaluate-only; Bug5-dark's page.hover is the sole real pointer action and
   // the aria-modal overlay deterministically intercepts it. Same convention as
   // state-sync/zoom specs: dismiss the tour before real input.
-  await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+  await dismissOnboarding(page);
 }
 
 // Helper: create a large box via debug API and return its id
@@ -291,6 +292,11 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
       el.remove();
       return bg;
     });
+    // Ticket 101 (B65, ledger face boxing-empty-state-buttons Bug5-dark): the tour
+    // overlay (.modal-overlay, position:fixed; inset:0; z-index:100) wins the hit test
+    // and the hover below never reaches the button. resetBoxing now proves the overlay
+    // hidden, and this guard names the blocker if it ever reappears.
+    await assertPointerReaches(page, '.bm-add-btn');
     await page.hover('.bm-add-btn');
     // Ticket 72 (Wave8 G-A B-bucket): .bm-add-btn transitions `background` over --dur-fast
     // (140ms), so reading the computed style in the same turn as the hover sampled the START of

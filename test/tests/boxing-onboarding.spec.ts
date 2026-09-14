@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
@@ -26,7 +27,7 @@ test.describe('Onboarding (first-run guided tour)', () => {
 
   test('overlay does not show when onboardingCompleted=true (already onboarded)', async ({ page }) => {
     await resetFreshInstall(page);
-    await page.evaluate(() => (window as any).__boxingDebug.skipOnboarding());
+    await dismissOnboarding(page);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
     const visible = await page.evaluate(() => {

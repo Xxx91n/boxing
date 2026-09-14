@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { dismissOnboarding } from '../helpers/onboarding';
 
 // Ticket 45 (architecture-recovery) — CI data-layer golden gates.
 // Five gates over the single-writer storage chain (see docs/adr/0009, ADR-0016,
@@ -33,7 +34,7 @@ async function bootNtp(page: import('@playwright/test').Page) {
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
-  await page.evaluate(() => { try { (window as any).__boxingDebug?.skipOnboarding?.(); } catch (_) {} });
+  await dismissOnboarding(page);
 }
 
 async function readStoredLayout(page: import('@playwright/test').Page) {
