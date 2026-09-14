@@ -10,9 +10,9 @@
 
 ## Acceptance criteria
 
-- [ ] ntp.js 冻结点有票 83 指针注释
-- [ ] i18n.js 重复键有票 66 指针注释
-- [ ] 冻结契约行为不变
+- [x] ntp.js 冻结点有票 83 指针注释 — ntp/ntp.js:578 `FROZEN by ticket 83`（见的 reports/83-report.md §7）
+- [x] i18n.js 重复键有票 66 指针注释 — ntp/i18n.js:79 `FROZEN by ticket 66`（见的 reports/66-report.md §2/§5）
+- [x] 冻结契约行为不变 — git diff -U0 仅注释行（+18/-0），node --check ×2 绿，npm run build DONE_BUILD，测试见 reports/98-report.md
 
 ## Notes
 

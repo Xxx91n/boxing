@@ -76,6 +76,16 @@ const I18N_FALLBACK = {
  exportData: 'Export Data', importData: 'Import Data',
   importSuccess: 'Data imported successfully', importFailed: 'Import failed: invalid data format',
   importTooLarge: 'Import failed: file too large (max 5MB)',
+  // FROZEN by ticket 66 — do NOT de-duplicate the block below. See
+  // .scratch/architecture-recovery/reports/66-report.md §2 (未触碰) / §5 and issues/66-visible-debt-markers-merge.md.
+  // The block repeats 10 keys already defined ~22 lines above: dblclickCreateHint, bookmarkSave,
+  // bookmarkDelete, bookmarkEditTitle, backupNow, backupNowHint, autoBackupInterval, syncProvider,
+  // squareCorners, squareCornersHint. ES2015+ object literals resolve duplicate keys last-wins and the
+  // repeated values are byte-identical, so rendered output is stable today.
+  // Removal consequence: de-dup rewrites the I18N_FALLBACK en table key set/order — a contract-byte
+  // change that ticket 66 AC4 explicitly forbade. Unfreeze when: a dedicated ticket diffs the rendered
+  // fallback strings before/after. Ceiling: 10 duplicated keys, no new ones. Owner: ticket 66 / A-020.
+  // (The module header block above records the same debt without a machine-greppable ticket pointer.)
   dblclickCreateHint: 'Double-click to create',
   bookmarkSave: 'Save', bookmarkDelete: 'Delete',
   bookmarkEditTitle: 'Edit Bookmark',

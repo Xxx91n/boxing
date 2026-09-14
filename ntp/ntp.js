@@ -575,6 +575,14 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       if (lt.includes(q)) pushHit('large', lb.id, lb.title || i18n('untitledBox'), null, null, null);
       for (const sb of (lb.children || [])) {
         const st = (sb.title || '').toLowerCase();
+        // FROZEN by ticket 83 — do NOT tidy this expression. See
+        // .scratch/architecture-recovery/reports/83-report.md §7 (发现但未修) and issues/83-search-debounce.md.
+        // `['']?.[0] || ''` evaluates to '' — an intentionally preserved placeholder hack: it keeps the
+        // two-arg `i18n('newLargeBox', substitution)` call shape (newLargeBox = "Box $count$", $1 = count).
+        // Removal consequence: dropping the 2nd arg leaves `$count$` unresolved and changes the rendered
+        // fallback title of a nameless small box in search results — a contract-byte change, not a cleanup.
+        // Unfreeze when: a dedicated ticket re-derives this fallback (e.g. from i18n('untitledBox') or a real
+        // count). Ceiling: this is the only surviving occurrence; a second copy is not acceptable. Owner: ticket 83 / A-033.
         if (st.includes(q)) pushHit('small', lb.id, lb.title || i18n('untitledBox'), sb.id, sb.title || i18n('newLargeBox', ['']?.[0] || ''), null);
         for (const bm of (sb.bookmarks || [])) {
           const bt = (bm.title || '').toLowerCase();
