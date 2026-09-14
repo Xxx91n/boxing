@@ -2,8 +2,8 @@
 
 | 波次 | 票 | Covers | Blocked by | 状态 |
 |---|---|---|---|---|
-| W1 | 96 docsgov-deadlink | A-050 | — | ready-for-agent |
-| W1 | 100 calver-guard-b64 | A-054 | — | ready-for-agent |
+| W1 | 96 docsgov-deadlink | A-050 | — | **implemented-pending-ci**（本地绿 · CI F） |
+| W1 | 100 calver-guard-b64 | A-054 | — | **done**（首脑采信） |
 | W2 | 98 frozen-comments-rui8 | A-052 | 96, 100 | ready-for-agent |
 | W2 | 104 boot-failsafe-b68 | A-058 | 96, 100 | ready-for-agent |
 | W2 | 102 bm-add-contrast-b66 | A-056 | 96, 100 | ready-for-agent |
@@ -18,7 +18,16 @@
 - GH 镜像: #13→96 · #14→101 · #15→104 · #16→102
 - Spec: `spec.md` · 对账: `destination-reconciliation-wave915.md`（无去向=空）
 - D 账本: `../wave9-915-release-grill/decision-ledger.md` D-001..D-009
-- Frontiers: **W1 = 96 ∥ 100**
+- Frontiers: **W2 = 98 ∥ 104 ∥ 102**（W1 实现齐；96 CI 待 land）
+
+## W1 首脑复核 — 96/100（2026-09-14）
+
+| 票 | 结论 |
+|---|---|
+| 96 / A-050 | implemented-pending-ci · docs-link-guard 本机 8/8 绿 · AC1/2 具名 F |
+| 100 / A-054 | **采信 done** · calver-guard 正/负向 + pretest 4/4 |
+
+详表: `reports/W1-brain-review-96-100.md`
 
 # Architecture Recovery — 票务索引
 

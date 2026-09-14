@@ -6,13 +6,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-14 首脑复核 · pretest/负向实测）
 
 ## Acceptance criteria
 
-- [ ] 覆盖 manifest version+version_name、package.json、对应 release-notes 文件名
-- [ ] 失败时非零退出
-- [ ] 策略与仓库约定一致或书面说明
+- [x] 覆盖 manifest version+version_name、package.json、对应 release-notes 文件名
+- [x] 失败时非零退出（负向 exit 1）
+- [x] 策略与仓库约定一致或书面说明（报告 AC-3）
 
 ## Notes
 

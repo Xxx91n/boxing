@@ -6,13 +6,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** implemented-pending-ci（2026-09-14 首脑复核 · 本地 guard 全绿；AC1/2 CI 具名 F 待 push）
 
 ## Acceptance criteria
 
-- [ ] 修复后 tip 上 AI Docs Governance conclusion=success
-- [ ] 附 green run URL
-- [ ] AGENTS/CONTEXT 仍保留 agents/history 引用能力
+- [x] AGENTS/CONTEXT 仍保留 agents/history 引用能力（本机 8/8 OK）
+- [ ] 修复后 tip 上 AI Docs Governance conclusion=success（具名 F · 待 push）
+- [ ] 附 green run URL（具名 F · 待 push）
 
 ## Notes
 
