@@ -370,6 +370,79 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
       Boolean(document.querySelector('.bm-edit-popup')))).toBe(true);
   });
 
+
+  // Ticket 102 (A-056 / B66): the LIGHT bm-add-btn carried the mirror image of the dark defect
+  // fixed by ticket 88. Measured on the small-box backdrop (--color-elevated #EBE5DB) before this
+  // ticket: glyph --color-muted #7B7167 = 3.81:1 (below SC 1.4.3 4.5:1 for 13px/500 text) and the
+  // dashed border --color-hairline = 1.11:1 (far below the 3:1 line SC 1.4.11 sets for non-text).
+  // Fixed by moving the light rule onto the SAME token pair the dark override already used
+  // (--color-ink-soft / --color-muted) — 9.78:1 glyph / 3.81:1 border — so the two themes can no
+  // longer drift apart. Like the dark test above this asserts the CONTRAST RATIO derived from
+  // computed styles: a contract lock, not a waiver.
+  // scripts/contrast-guard.mjs is the offline first gate (token pairing, no browser needed);
+  // this test is the in-browser third gate (axe-core does not check SC 1.4.11 at all).
+  test('Bug5-light contrast: bm-add-btn is perceivable and clickable in light mode', async ({ page }) => {
+    await resetBoxing(page);
+    const lbId = await addLargeBox(page);
+    await enterLargebox(page, lbId);
+    await createSmallBox(page);
+
+    // Precondition: this lane must really be the light theme, otherwise a dark-mode pass could
+    // masquerade as a light-mode pass.
+    await expect.poll(() => page.evaluate(() => !document.body.classList.contains('ntp--dark'))).toBe(true);
+
+    const measure = () => page.evaluate(() => {
+      const btn = document.querySelector('.bm-add-btn') as HTMLElement | null;
+      if (!btn) return null;
+      const parse = (s: string) => {
+        const src = s || '';
+        const open = src.indexOf('(');
+        const close = src.lastIndexOf(')');
+        if (open < 0 || close < 0) return null;
+        const p = src.slice(open + 1, close).split(',').map((x) => parseFloat(x.trim()));
+        return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+      };
+      const lum = (c: any) => {
+        const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+        return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+      };
+      const ratio = (a: any, b: any) => {
+        const l1 = lum(a), l2 = lum(b);
+        return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      };
+      let node: HTMLElement | null = btn.parentElement;
+      let backdrop: any = null;
+      while (node) {
+        const c = parse(getComputedStyle(node).backgroundColor);
+        if (c && c.a > 0.85) { backdrop = { r: c.r, g: c.g, b: c.b, a: 1 }; break; }
+        node = node.parentElement;
+      }
+      if (!backdrop) return null;
+      const cs = getComputedStyle(btn);
+      const glyph = parse(cs.color);
+      const border = parse(cs.borderTopColor);
+      if (!glyph || !border) return null;
+      const over = (fg: any) => ({
+        r: fg.r * fg.a + backdrop.r * (1 - fg.a),
+        g: fg.g * fg.a + backdrop.g * (1 - fg.a),
+        b: fg.b * fg.a + backdrop.b * (1 - fg.a),
+        a: 1,
+      });
+      return { text: ratio(over(glyph), backdrop), border: ratio(over(border), backdrop) };
+    });
+
+    // 'color' and 'border-color' transition over --dur-fast (140ms); poll for the settled value
+    // rather than sampling the start of the transition (ticket 72 convention).
+    await expect.poll(measure).not.toBeNull();
+    await expect.poll(async () => (await measure())!.text).toBeGreaterThanOrEqual(4.5);
+    await expect.poll(async () => (await measure())!.border).toBeGreaterThanOrEqual(3);
+
+    // Clickable: a real pointer click must open the add-bookmark popup (not just a DOM .click()).
+    await page.click('.bm-add-btn');
+    await expect.poll(() => page.evaluate(() =>
+      Boolean(document.querySelector('.bm-edit-popup')))).toBe(true);
+  });
+
   // Ticket 88 (A-042) — the AC says "空态添加按钮", which is a FAMILY, not just .bm-add-btn.
   // Measured in dark: .canvas__empty-action / .large-box__empty-action / .inner__empty-action all
   // paint a filled (--color-accent-soft) button whose label measures 5.75–6.22:1 — above SC 1.4.3.

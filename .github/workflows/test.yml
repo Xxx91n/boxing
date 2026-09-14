@@ -63,6 +63,9 @@ jobs:
       - name: Build extension
         run: node .github/scripts/build.mjs
 
+      - name: Contrast guard (ticket 102 / A-056 / B66)
+        run: node scripts/contrast-guard.mjs
+
       - name: Run tests
         run: xvfb-run --auto-servernum npm test
         if: runner.os == 'Linux'
