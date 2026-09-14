@@ -9,16 +9,29 @@
 | W2 | 102 bm-add-contrast-b66 | A-056 | 96, 100 | **done**（首脑采信 · 账本 pretest 误写已纠） |
 | W3 | 101 deflake-b65 | A-055 | 104 | **done-with-named-F**（F-101-01 CI · N-101-06 zoom） |
 | W3 | 97 release-status-rui6 | A-051 | 100, 104 | **done**（首脑采信） |
-| W4 | 106 innerclip-b70 | A-060 | 101 | ready-for-agent |
-| W4 | 99 locale-readme-b63 | A-053 | 97 | ready-for-agent |
-| W4 | 103 design-hairline-b67 | A-057 | 102 | ready-for-agent |
-| W4 | 105 unflaky-criteria-b69 | A-059 | 97 | **implemented**（agent 侧闭环 · 规则+机器闸 7/7 负向咬合 · 待首脑复核） |
+| W4 | 106 innerclip-b70 | A-060 | 101 | **done**（观察结案） |
+| W4 | 99 locale-readme-b63 | A-053 | 97 | **done**（首脑采信） |
+| W4 | 103 design-hairline-b67 | A-057 | 102 | **done**（首脑采信） |
+| W4 | 105 unflaky-criteria-b69 | A-059 | 97 | **done**（首脑采信 · 规则+机器闸） |
 
 - A-061 发行 G-A 重跑 + 等 G-B: **无实施票**（执行动作，W5）
 - GH 镜像: #13→96 · #14→101 · #15→104 · #16→102
 - Spec: `spec.md` · 对账: `destination-reconciliation-wave915.md`（无去向=空）
 - D 账本: `../wave9-915-release-grill/decision-ledger.md` D-001..D-009
-- Frontiers: **W4 = 106 ∥ 99 ∥ 103**（105 已 agent 侧闭环，待首脑复核；W3 齐）
+- Frontiers: **W5 执行 = land 全栈 → 新 tip 发行 G-A → 用户 G-B**（96–106 实施齐）
+
+## W4 首脑复核 — 106/99/103/105（2026-09-14）
+
+| 票 | 结论 |
+|---|---|
+| 106 / A-060 | **done** · CI 不复现书面结案 · testing-governance 登记 · 不入豁免台账 |
+| 99 / A-053 | **done** · locale-readme-guard 13 语 0 blocking · pretest 6 门 |
+| 103 / A-057 | **done** · DESIGN hairline 契约 revised · contrast 8/8 |
+| 105 / A-059 | **done** · 撤账判据 + waiver-check 机器校验 |
+
+详表: `reports/W4-brain-review-106-99-103-105.md`
+
+**实施票 96–106 全部完成。下一门 = W5 发行执行（A-061）。**
 
 ## W3 首脑复核 — 97/101（2026-09-14）
 
