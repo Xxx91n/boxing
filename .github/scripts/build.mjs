@@ -17,7 +17,7 @@ const ROOT = path.resolve(__dirname, "..", "..");
 const DIST = path.resolve(ROOT, "dist");
 
 const SKIP = new Set([
-  ".git", ".github", ".codex-tmp", ".codex", ".omx", ".codegraph",
+  ".git", ".github", ".scratch", ".codex-tmp", ".codex", ".omx", ".codegraph",
   "node_modules", "dist", "package", "package.json", "package-lock.json",
   "playwright", "playwright-report", "test", "test-results", "docs", "scripts", "release", "tools",
   "dev-chrome", "dev-firefox",
