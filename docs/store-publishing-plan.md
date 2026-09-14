@@ -1,6 +1,6 @@
 # Store Publishing Plan — Boxing 2026.9.15
 
-> 状态: **商店发版进行中（用户执行，Agent 供材）** · 更新: 2026-09-14
+> 状态: **2026.9.15 已过审上架（AMO+Edge，用户声明）+ GitHub Release 已发布** · 更新: 2026-09-14
 > Grill 心智模型保留于「Grill Decisions」节；执行表已按 2026.9.15 现况重写。
 > 隐私政策: https://xxx91n.github.io/boxing/privacy-policy.html
 
@@ -8,11 +8,12 @@
 
 | 渠道 | 状态 |
 |---|---|
-| **Firefox AMO** | **9.12 已过审上线** — [addons.mozilla.org/…/boxing-newtab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) |
-| **Edge Add-ons** | **9.12 已过审上线** — [Edge listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
+| **Firefox AMO** | **2026.9.15 已过审上线** — [addons.mozilla.org/…/boxing-newtab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) |
+| **Edge Add-ons** | **2026.9.15 已过审上线** — [Edge listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
 | Chrome Web Store | 可选；历史上 Edge 优先 |
-| GitHub Releases | **日志化、面向用户**；**不再分发 .xpi / .crx**；安装引导到商店 |
-| 版本 | **2026.9.15** 候选包与源码包已就绪 |
+| GitHub Releases | **[v2026.9.15](https://github.com/Xxx91n/boxing/releases/tag/v2026.9.15) 已发布**（chrome/firefox/source/SHA256SUMS）；**不发 .xpi / .crx**；正式安装以商店为准 |
+| 三门 | G-A run 34857433215 绿 · G-B 用户声明「通过」· G-C 三 URL 200 |
+| 版本 | **2026.9.15** 已过审上架 + GitHub Release 已发布 |
 
 ## Grill Decisions（历史裁定，仍有效）
 
@@ -61,11 +62,11 @@
 4. 隐私政策 URL 保持 Pages 链接
 5. 提交审核
 
-### C. GitHub Release（日志化，用户向 · **必须 CI**）
+### C. GitHub Release — **已完成（2026-09-14）**
 
-```bash
-gh workflow run build.yml -f version=2026.9.15 -f make_release=true -f amo_sign=true
-```
+已完成：https://github.com/Xxx91n/boxing/releases/tag/v2026.9.15
+
+正文 SSOT：`docs/release-notes/2026.9.15.md` + 英文 `2026.9.15.en.md`（合并为 `2026.9.15.bilingual.md`）。改正文：`gh release edit v2026.9.15 --notes-file <file>`。
 
 CI 在 ubuntu 腿自动生成并 Publish：`chrome.zip` `firefox.zip` `source.zip` `SHA256SUMS.txt`。
 **禁止**本地 `gh release upload` 手工塞附件；**禁止**上传 `.xpi` / `.crx`。
