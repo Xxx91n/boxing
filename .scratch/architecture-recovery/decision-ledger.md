@@ -131,7 +131,7 @@
 | A-059 | D-003⑩ B69 撤账判据未写入规则 | 「≥2 连续 main 绿」等判据写入测试治理/豁免规则 | 与 ADR-0017 豁免规则不冲突 | current |
 | A-058 | D-003⑨ B68 boot-theme 早退路径无 failsafe（92 P-92-1） | 早退 failsafe；不破坏零闪现 | 产品行为变更须 e2e/否证；GH #15 | current |
 | A-057 | D-003⑧ B67 DESIGN.md hairline 语义 | 文档 revised 闭环 | 不与既有暗色 token 修正冲突 | current |
-| A-056 | D-003⑦ B66 亮色 bm-add-btn 对比度（88 Q1） | 达标或书面 token 决策 | 与暗色修复不矛盾；GH #16 | implemented（2026-09-14 · ticket 102 · ntp/base.css 亮色 token 配对改为 --color-ink-soft / --color-muted：字形 3.81:1→9.78:1（SC 1.4.3 ≥4.5），边框 1.11:1→3.81:1（SC 1.4.11 ≥3，留细线抗锯齿余量 27%），hover 边框 1.3:1→5.04:1、focus 边框 2.91:1→5.52:1；与暗色 ticket 88 同一配对、暗色 CSS 零改动；新增 scripts/contrast-guard.mjs 接入 pretest（8/8 PASS，负向自检 exit 1 且源码字节还原）；新增 Bug5-light contrast e2e（全 spec 22/22）；报告 reports/102-report.md） [ticket-102 窗口] |
+| A-056 | D-003⑦ B66 亮色 bm-add-btn 对比度（88 Q1） | 达标或书面 token 决策 | 与暗色修复不矛盾；GH #16 | implemented（2026-09-14 · ticket 102 · ntp/base.css 亮色 token 配对改为 --color-ink-soft / --color-muted：字形 3.81:1→9.78:1（SC 1.4.3 ≥4.5），边框 1.11:1→3.81:1（SC 1.4.11 ≥3，留细线抗锯齿余量 27%），hover 边框 1.3:1→5.04:1、focus 边框 2.91:1→5.52:1；与暗色 ticket 88 同一配对、暗色 CSS 零改动；新增 scripts/contrast-guard.mjs 并接入 test.yml「Contrast guard」步骤（Run tests 前；本机 8/8 PASS exit 0）；**未**串入 package.json pretest（N-102-03 跨窗口行级依赖，报告 §6）；新增 Bug5-light contrast e2e（全 spec 22/22）；报告 reports/102-report.md） [ticket-102 窗口] |
 | A-055 | D-003⑥ B65 fire-and-forget 测试族 flaky | 家族清单 + deflake 或稳定 skip+票；CI 证据 | N 桶/数据完整性永不豁免；GH #14 | current |
 | A-054 | D-003⑤ B64 calver 一致性无门禁 | pre-commit/CI 校验 manifest/package/notes 版本面一致，失败非零退出 | 不阻断策略与仓库约定冲突时须书面说明 | current |
 | A-053 | D-003④ B63 locale README 14 语滞后（曾 hi 钉 9.11） | 与主 README/Release status 版本口径对齐 | 不扩写无关 i18n 重构 | current |
