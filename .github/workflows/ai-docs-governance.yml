@@ -9,6 +9,7 @@ on:
       - 'docs/history/**'
       - 'docs/CONTEXT.md'
       - '.github/workflows/ai-docs-governance.yml'
+      - 'scripts/docs-link-guard.mjs'
   push:
     branches: [main, master]
     paths:
@@ -17,6 +18,7 @@ on:
       - 'docs/history/**'
       - 'docs/CONTEXT.md'
       - '.github/workflows/ai-docs-governance.yml'
+      - 'scripts/docs-link-guard.mjs'
 
 jobs:
   governance:
@@ -25,22 +27,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Dead-link check (docs/agents/ and docs/history/ references)
-        run: |
-          set -e
-          errors=0
-          # Extract docs/agents/ and docs/history/ path references from AGENTS.md and CONTEXT.md
-          for ref in $(grep -ohE 'docs/agents/[^ )"'''>]+|docs/history/[^ )"'''>]+' AGENTS.md docs/CONTEXT.md 2>/dev/null | sort -u); do
-            if [ ! -f "$ref" ]; then
-              echo "::error::Dead link: $ref (referenced in AGENTS.md or CONTEXT.md)"
-              errors=$((errors + 1))
-            else
-              echo "OK: $ref"
-            fi
-          done
-          if [ "$errors" -gt 0 ]; then
-            echo "::error::$errors dead link(s) found in agent/history layer references"
-            exit 1
-          fi
+        run: node scripts/docs-link-guard.mjs
 
       - name: Layer separation guard (no agent/history files at docs/ top level)
         run: |
