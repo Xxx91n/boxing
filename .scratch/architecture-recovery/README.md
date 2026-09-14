@@ -1,3 +1,25 @@
+## Wave9.15 波次表（2026-09-14 · 由 Blocked by 推导）
+
+| 波次 | 票 | Covers | Blocked by | 状态 |
+|---|---|---|---|---|
+| W1 | 96 docsgov-deadlink | A-050 | — | ready-for-agent |
+| W1 | 100 calver-guard-b64 | A-054 | — | ready-for-agent |
+| W2 | 98 frozen-comments-rui8 | A-052 | 96, 100 | ready-for-agent |
+| W2 | 104 boot-failsafe-b68 | A-058 | 96, 100 | ready-for-agent |
+| W2 | 102 bm-add-contrast-b66 | A-056 | 96, 100 | ready-for-agent |
+| W3 | 101 deflake-b65 | A-055 | 104 | ready-for-agent |
+| W3 | 97 release-status-rui6 | A-051 | 100, 104 | ready-for-agent |
+| W4 | 106 innerclip-b70 | A-060 | 101 | ready-for-agent |
+| W4 | 99 locale-readme-b63 | A-053 | 97 | ready-for-agent |
+| W4 | 103 design-hairline-b67 | A-057 | 102 | ready-for-agent |
+| W4 | 105 unflaky-criteria-b69 | A-059 | 97 | ready-for-agent |
+
+- A-061 发行 G-A 重跑 + 等 G-B: **无实施票**（执行动作，W5）
+- GH 镜像: #13→96 · #14→101 · #15→104 · #16→102
+- Spec: `spec.md` · 对账: `destination-reconciliation-wave915.md`（无去向=空）
+- D 账本: `../wave9-915-release-grill/decision-ledger.md` D-001..D-009
+- Frontiers: **W1 = 96 ∥ 100**
+
 # Architecture Recovery — 票务索引
 
 ## Wave8 波次表（由 issue Blocked by 推导 · 2026-09-12）

@@ -126,3 +126,15 @@
 | A-047 | G-A 不成立（run 34749813393）：三 OS test 红；出口=main test.yml 绿或仅具名 F | 残红治理至可发行 G-A | N 桶/数据完整性永不豁免；关联 GH #12 | implemented（2026-09-14 · CI https://github.com/Xxx91n/boxing/actions/runs/34773593267 green：4 job 全 success / 0 failed；R1 star-sync 与 R3 auto-expand 零出现→关闭，R2 empty-state Bug5-dark 具名 F + 2 条新 flaky（zoom-dblclick windows / search macos）入台账；data-golden 绿、never-quarantine 零命中、waiver-ledger-check exit 0；corroboration 同码重跑 https://github.com/Xxx91n/boxing/actions/runs/34778641702（headSha = tip 02d31657）亦 4 job 全 success / 0 failed，3/4 签名逐字复发、无新增 broken → 连续 2 个全量 main run 全绿，稳定态声明成立） |
 | A-048 | 目标版本 2026.9.15 全部修复出口（D-004/005）：版本串+notes+G-A∧G-B∧G-C | 版本就绪且门禁可宣称前禁止夸大 | 持有 9.12 不热修；G-B=用户声明 pass 禁 agent 代签 | implemented（2026-09-14 · 版本面/notes 一致至 2026.9.15 + 门禁重跑备妥；G-A 证据 run 34773593267 + corroboration 34778641702 双绿；G-B 用户声明与发行后 G-C 复核为出口余项，未宣称达成） |
 | A-049 | 存量 spec 真实 WebDAV 凭据（91R R4：cred-encrypt / dr-export / import-merge / memory / sync 等 + .codex-tmp 副本） | 统一 env 化占位；工作树 grep 0 | 不改写历史；不弱化断言；密码轮换仍属用户 | implemented（2026-09-14 · CI https://github.com/Xxx91n/boxing/actions/runs/34773593267 green） |
+| A-061 | D-002/D-004 中间 G-A 34808080000 ≠ 发行终谳；B 轨 land 后须新 tip 重跑 | 发行 G-A 绑最终 tip test.yml 四 job 全绿；等用户 G-B | 禁止用旧 run 冒充；tag/商店另令（D-007） | current |
+| A-060 | D-003⑪ B70 innerclip firefox 本地 flaky | CI 复现则修，否则书面观察结案 | 禁止静默丢弃 | current |
+| A-059 | D-003⑩ B69 撤账判据未写入规则 | 「≥2 连续 main 绿」等判据写入测试治理/豁免规则 | 与 ADR-0017 豁免规则不冲突 | current |
+| A-058 | D-003⑨ B68 boot-theme 早退路径无 failsafe（92 P-92-1） | 早退 failsafe；不破坏零闪现 | 产品行为变更须 e2e/否证；GH #15 | current |
+| A-057 | D-003⑧ B67 DESIGN.md hairline 语义 | 文档 revised 闭环 | 不与既有暗色 token 修正冲突 | current |
+| A-056 | D-003⑦ B66 亮色 bm-add-btn 对比度（88 Q1） | 达标或书面 token 决策 | 与暗色修复不矛盾；GH #16 | current |
+| A-055 | D-003⑥ B65 fire-and-forget 测试族 flaky | 家族清单 + deflake 或稳定 skip+票；CI 证据 | N 桶/数据完整性永不豁免；GH #14 | current |
+| A-054 | D-003⑤ B64 calver 一致性无门禁 | pre-commit/CI 校验 manifest/package/notes 版本面一致，失败非零退出 | 不阻断策略与仓库约定冲突时须书面说明 | current |
+| A-053 | D-003④ B63 locale README 14 语滞后（曾 hi 钉 9.11） | 与主 README/Release status 版本口径对齐 | 不扩写无关 i18n 重构 | current |
+| A-052 | D-003③ 锐评8：ntp.js [''] 与 i18n 重复键无冻结注释 | 就地 // frozen by ticket 83/66 + 报告指针；不改字节契约 | 禁止修改冻结语义 | current |
+| A-051 | D-003② 锐评6：可发行状态只活在 .scratch/ADR 修订，docs 层无 live Release status | docs/ 层落地当前版本/三门状态/在效豁免/欠账指针；记中间里程碑 34808080000 与发行终谳预留 | 不得只活在 .scratch；不宣称三门达成 | current |
+| A-050 | D-003① AI Docs Governance dead-link 红（run 34808079960 @ 9fa4666c）：naive regex 将 markdown ](path 吞进路径 | 修 CI regex 与/或 AGENTS/CONTEXT 链接写法至治理 workflow success；不得静默删检查 | 不与 test.yml G-A 混写；不热修 9.12；GH #13 | current |
