@@ -570,6 +570,7 @@ export function initSyncEngineFacade(deps) {
           setLayout(cloud);
           if (savedSettings) layout.settings = { ...cloud.settings, ...savedSettings };
           if (savedMeta) layout._meta = { ...cloud._meta, ...savedMeta, updatedAt: Date.now(), writerId };
+          // layout-bypass-allow: sync-preserve-conns - settingsOnly sync strips connections from the payload; keep the local ones
           if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
           layout._meta = layout._meta || {};
           layout._meta.updatedAt = Date.now();

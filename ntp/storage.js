@@ -595,11 +595,13 @@ export function registerStorageOnChanged() {
     for (const localBox of boxes) {
       const remoteBox = remoteBoxMap.get(localBox.id);
       if (!remoteBox) continue;
+      // layout-bypass-allow: storage-facade-merge - the storage facade owns the cross-tab merge write chain (BX-EXPLORE-014)
       localBox.children = mergeById(localBox.children, remoteBox.children, tombstones);
       const remoteChildMap = new Map();
       for (const rc of (remoteBox.children || [])) if (rc?.id) remoteChildMap.set(rc.id, rc);
       for (const localChild of localBox.children) {
         const remoteChild = remoteChildMap.get(localChild.id);
+        // layout-bypass-allow: storage-facade-merge-bookmarks - same merge chain, bookmark level
         if (remoteChild) localChild.bookmarks = mergeById(localChild.bookmarks, remoteChild.bookmarks, tombstones);
       }
     }

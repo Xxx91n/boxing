@@ -66,6 +66,9 @@ jobs:
       - name: Contrast guard (ticket 102 / A-056 / B66)
         run: node scripts/contrast-guard.mjs
 
+      - name: Layout bypass guard (ticket 108 / A-063)
+        run: node scripts/layout-bypass-guard.mjs
+
       - name: Run tests
         run: xvfb-run --auto-servernum npm test
         if: runner.os == 'Linux'

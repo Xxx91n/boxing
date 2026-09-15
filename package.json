@@ -14,7 +14,7 @@
     "guard:import-graph": "node scripts/import-graph-guard.mjs",
     "guard:calver": "node scripts/calver-guard.mjs",
     "guard:locale-readme": "node scripts/locale-readme-guard.mjs",
-    "pretest": "node scripts/import-graph-guard.mjs && node scripts/migration-golden-guard.mjs && node scripts/css-balance-guard.mjs && node scripts/contrast-guard.mjs && node scripts/calver-guard.mjs && node scripts/onboarding-guard.mjs && node scripts/locale-readme-guard.mjs",
+    "pretest": "node scripts/import-graph-guard.mjs && node scripts/layout-bypass-guard.mjs && node scripts/migration-golden-guard.mjs && node scripts/css-balance-guard.mjs && node scripts/contrast-guard.mjs && node scripts/calver-guard.mjs && node scripts/onboarding-guard.mjs && node scripts/locale-readme-guard.mjs",
     "test": "node scripts/test-mutex.mjs full",
     "test:all": "node scripts/test-mutex.mjs full",
     "test:changed": "node scripts/test-mutex.mjs changed",

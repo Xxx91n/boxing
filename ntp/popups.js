@@ -407,9 +407,10 @@ export function initPopupsFacade(deps) {
         if (i !== dragIdx && ev.clientY < rects[i].bottom && ev.clientY > rects[i].top) { targetIdx = i; break; }
       }
       if (targetIdx !== dragIdx) {
-        const bms = sb.bookmarks, item = bms[dragIdx];
-        bms.splice(dragIdx, 1); bms.splice(targetIdx, 0, item);
-        saveLayout();
+        // Ticket 108 (A-063): reorder goes through the single mutation entry.
+        // A direct splice on a layout collection here is rejected by
+        // scripts/layout-bypass-guard.mjs - this was the last deletion-class bypass.
+        commit("reorderBookmarks", { largeId, smallId: sb.id, from: dragIdx, to: targetIdx }, { save: true });
         // BX-DEV-111k: only re-render bookmarks for this small box — don't rebuild entire surface
         const smallBoxEl = row.closest('.small-box');
         const bodyEl = smallBoxEl?.querySelector('.small-box__body');

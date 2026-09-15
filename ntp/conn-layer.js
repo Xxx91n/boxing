@@ -70,9 +70,11 @@ export function initConnFacade(deps) {
     const validKeys = allValidKeys();
     const rawIds = new Set(layout.boxes.map(b => b.id));
     const isValidKey = k => validKeys.has(k) || rawIds.has(k);   // tiered or legacy
+      // layout-bypass-allow: conn-layer-prune-validity - save-path sanitize: drops conns whose endpoint keys no longer resolve (no user-visible delete path)
     layout.connections = layout.connections.filter(c => isValidKey(c.from) && isValidKey(c.to) && c.from !== c.to);
     // ponytail: O(n) prune on save only — runs once per saveLayout, not hot path.
     if (layout.connections.length > MAX_CONNECTIONS) {
+      // layout-bypass-allow: conn-layer-max-cap - hard MAX_CONNECTIONS cap enforced on the save path only
       layout.connections = layout.connections.slice(layout.connections.length - MAX_CONNECTIONS);
     }
     // Groups: parentId and members may be tiered keys or legacy raw ids.
@@ -564,6 +566,7 @@ export function ensureGroups() {
     }
   }
   // ADR-0007 Q1: runtime mirror only — stripGroupsForPersist removes groups on save.
+  // layout-bypass-allow: runtime-groups-mirror - ADR-0007 Q1: layout.groups is a computed runtime mirror, never persisted
   layout.groups = gs;
   return gs;
 }

@@ -577,6 +577,7 @@ export function bindSettingsUi() {
           setLayout(incoming);
           // AUD-SEC: preserve local connections if the import file lacks them
           // (older backups predate the connections system; full replace would lose user lines).
+          // layout-bypass-allow: import-preserve-conns - restore local connections when the import file predates the connections system
           if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
           importMode = 'replace-empty';
         } else {
@@ -604,6 +605,7 @@ export function bindSettingsUi() {
             importMode = 'overwrite-confirmed';
             await saveSnapshot('pre-restore'); // Ticket 50 (W6-D1): COW before destructive replace (ADR-0009 / atomcode 4.1-1)
             setLayout(incoming);
+            // layout-bypass-allow: import-overwrite-preserve-conns - same restore on the two-step confirmed overwrite path
             if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
           }
         }

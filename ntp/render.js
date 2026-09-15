@@ -190,6 +190,24 @@ export function initRenderFacade(deps) {
         parentLargeId: largeId
       };
     },
+    // Ticket 108 (A-063): drag-to-reorder is a layout mutation too. It used to
+    // splice sb.bookmarks directly in popups.js - the last deletion-class bypass
+    // outside this table, and the reason the layout-bypass gate exists. The op is
+    // net-neutral (remove + re-insert, no tombstone), so no tombstoneIds are
+    // returned: commit() only persists (opts.save) and popups.js keeps its own
+    // targeted re-render (BX-DEV-111k: never rebuild the whole surface).
+    reorderBookmarks(state, { largeId, smallId, from, to }) {
+      const lb = getLargeBox(largeId);
+      if (!lb) return { skipped: true };
+      const sb = (lb.children || []).find(s => s.id === smallId);
+      if (!sb || !Array.isArray(sb.bookmarks)) return { skipped: true };
+      const bms = sb.bookmarks;
+      if (!Number.isInteger(from) || !Number.isInteger(to)) return { skipped: true };
+      if (from === to || from < 0 || to < 0 || from >= bms.length || to >= bms.length) return { skipped: true };
+      const moved = bms.splice(from, 1)[0];
+      bms.splice(to, 0, moved);
+      return { reordered: { largeId, smallId, from, to } };
+    },
     applyExternal(state, { incoming, incomingWins }) {
       // merge already applied by caller onto layout; handler only signals rebuild
       return { isExternal: true, connChanged: true, forceMaps: true };
