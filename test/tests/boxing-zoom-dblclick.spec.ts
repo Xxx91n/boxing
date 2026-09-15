@@ -192,3 +192,40 @@ test.describe('BX-DEV-112C extra — click enter then dblclick inner after delay
     expect(afterCount).toBe(beforeCount + 1);
   });
 });
+
+// BX-DEV-112G (ticket 110 / N-101-06): deterministic regression for the stale hit-test
+// window. Creating a large box and clicking it INSIDE THE SAME page.evaluate keeps the hit
+// test resolving to the box ROOT (.large-box) instead of .large-box__body for the rest of
+// the frame; before the fix that click never reached the child-scoped enter listener, so the
+// box silently failed to enter — the residual N-101-06 signature, where #inner never
+// un-hides and the 15s enter poll times out. Doing both steps in one evaluate pins that
+// window open, so this test fails deterministically without the fix (measured 39/39 on the
+// firefox lane) instead of on ~4% of runs.
+test.describe('BX-DEV-112G — box created and clicked in the same frame still enters', () => {
+  test('create + click in one evaluate still enters the large box', async ({ page }: { page: Page }) => {
+    test.setTimeout(60000);
+    await boot(page);
+    await page.evaluate(() => {
+      (window as any)._boxingAddLargeBox();
+      const lb = (window as any).__boxingDebug.layout.boxes[0];
+      const el = document.querySelector('.large-box[data-id="' + lb.id + '"]') as HTMLElement;
+      const r = el.getBoundingClientRect();
+      const cx = r.x + r.width / 2;
+      const cy = r.y + r.height / 2;
+      function fire(type: string, clickCount: number) {
+        const t = (document.elementFromPoint(cx, cy) as HTMLElement) || document.body;
+        t.dispatchEvent(new MouseEvent(type, {
+          bubbles: true, cancelable: true, view: window,
+          clientX: cx, clientY: cy, button: 0, buttons: type === 'mouseup' ? 0 : 1,
+          detail: clickCount,
+        }));
+      }
+      fire('mousedown', 1); fire('mouseup', 1); fire('click', 1);
+    });
+    // The invariant under test is the ENTER outcome, not which element the transient hit
+    // test resolves to — that is browser-timing detail and is deliberately not asserted.
+    await expect.poll(() => page.evaluate(() =>
+      !((document.getElementById('inner') as HTMLElement)?.hidden)
+    ), { timeout: 15000, intervals: [100, 250, 500] }).toBe(true);
+  });
+});

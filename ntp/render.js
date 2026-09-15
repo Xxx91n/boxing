@@ -575,7 +575,9 @@ export function initRenderFacade(deps) {
         && !tgt.closest('.box-pin-btn') && !tgt.closest('.box-expand-btn')
         && !tgt.closest('.box-resize-handle');
     }, true); // capture: fires before onBoxDragStart
-    body.addEventListener('click', (ev) => {
+    // BX-DEV-112G (ticket 110 / N-101-06): the enter decision is shared by two bindings —
+    // see the root binding below for why a second entry point is required.
+    const onBoxEnterClick = (ev) => {
       if (ev.target.closest('.box-resize-handle') || ev.target.closest('.large-box__delete')) return;
       // BX-DEV-077: clear stale drag state FIRST before any other checks
       if (lastDragEndId === box.id) { setLastDragEndId(null); barDownWasDragZone = false; barDownX = 0; barDownY = 0; }
@@ -593,7 +595,19 @@ export function initRenderFacade(deps) {
       setLastEnterLargeBoxAt(Date.now());
       setSuppressInnerDblClickOnce(true);
       enterLargeBox(box.id);
-    });
+    };
+    body.addEventListener('click', onBoxEnterClick);
+    // BX-DEV-112G (ticket 110 / N-101-06): enter must ALSO fire when the click hit-tests to
+    // the box ROOT. Measured, not inferred: right after renderCanvas() inserts a box,
+    // document.elementFromPoint(boxCenter) resolves to the .large-box element itself for the
+    // rest of the frame even though the subtree is attached (kids=7, bodyH=172); it only
+    // resolves to .large-box__body once layout settles (probe: 39/39 root immediately vs
+    // 38/38 body after one round-trip). A click dispatched on the root never reaches the
+    // child-scoped body listener, so the click was silently dropped and the box never
+    // entered — the residual N-101-06 signature. ev.target === el selects exactly that case:
+    // in steady state a click lands on .large-box__body (or deeper) and is handled by the
+    // body binding, so this binding cannot double-fire.
+    el.addEventListener('click', (ev) => { if (ev.target === el) onBoxEnterClick(ev); });
     if (childCount) {
       const chips = document.createElement('div');
       chips.className = 'large-box__chips';
