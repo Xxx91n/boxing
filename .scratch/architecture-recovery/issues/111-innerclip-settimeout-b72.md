@@ -6,13 +6,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-15 · 两 spec 各加 test.setTimeout(120_000)+书面理由（票 13 同签名同形）；断言逐字未动；firefox/chromium 双车道 4/4，workers=4 争用亦 4/4；waiver-ledger-check exit 0（台账零改动）；docs/testing-governance.md 观察行 closed 2026-09-15；具名残余 N-111-01（locale-readme-guard 既有红，属 113/99 面）· N-111-02（worker 预热 fixture）· 报告 reports/111-report.md）
 
 ## Acceptance criteria
 
-- [ ] 为相关 spec 设合理 test.setTimeout 预算或等价稳定性措施
-- [ ] 不扩大豁免面
-- [ ] testing-governance 观察行可结案更新
+- [x] 为相关 spec 设合理 test.setTimeout 预算或等价稳定性措施
+- [x] 不扩大豁免面
+- [x] testing-governance 观察行可结案更新
 
 ## Notes
 

@@ -18,6 +18,10 @@ async function resetBoxing(page) {
 // overflow:hidden must clip it at the surface top edge, NOT let it intrude into the
 // inner__canvas-head's solid background band. Verifies surface.top >= head.bottom.
 test.describe('Boxing inner surface clip under pan (BX-DEV-CLIP-PAN)', () => {
+  // Ticket 111 / B72 / N-106-01: same cold-start budget as boxing-innerclip.spec.ts -- the
+  // first test in the file carries the Firefox headed cold-start cost and the 30s default
+  // budget dies in the shared resetBoxing fixture under host contention (ticket 106).
+  test.setTimeout(120_000);
   // Ticket 27 (quarantine convergence): @quarantine retired. The pan that reproduces
   // the bug is app-level state (mousedown → mousemove deltas), not input realness —
   // native mouse.move/down/up stalled on the firefox lane (playwright#16095 class,

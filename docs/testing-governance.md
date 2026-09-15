@@ -70,9 +70,9 @@ the ratchet rule (the waiver file may only shrink). Closure follows the industry
 the row keeps an owner, a due date, and a concrete escalation trigger, so the observation is never
 silently dropped and never becomes a `worksforme` close.
 
-| Test (spec) | Lane | Classification | Observed | Registered | Due | Escalation trigger |
+| Test (spec) | Lane | Classification | Observed | Registered | Due | Status | Escalation trigger |
 | --- | --- | --- | --- | --- | --- | --- |
-| `boxing-innerclip.spec.ts` + `boxing-innerclip-pan.spec.ts` | firefox | environment-only (host-load) | local full run (ticket 94) and local targeted rerun (ticket 106): the **first test in the file** consumes the Firefox headed cold-start cost under host contention and hits the 30s default budget at the shared `resetBoxing` fixture — never a geometry assertion | 2026-09-14 | 2026-10-14 | the face shows `failed`/`flaky` in any main full `test.yml` run, or the `resetBoxing` navigation-timeout signature reappears in CI logs → apply the ticket-13 repair (`test.setTimeout` budget bump) to the two specs and validate on both lanes |
+| `boxing-innerclip.spec.ts` + `boxing-innerclip-pan.spec.ts` | firefox | environment-only (host-load) | local full run (ticket 94) and local targeted rerun (ticket 106): the **first test in the file** consumes the Firefox headed cold-start cost under host contention and hits the 30s default budget at the shared `resetBoxing` fixture — never a geometry assertion | 2026-09-14 | 2026-10-14 | the face shows `failed`/`flaky` in any main full `test.yml` run, or the `resetBoxing` navigation-timeout signature reappears in CI logs → apply the ticket-13 repair (`test.setTimeout` budget bump) to the two specs and validate on both lanes | **closed 2026-09-15** |
 
 CI evidence for the row (ticket 106): across 9 full-matrix main `test.yml` runs spanning 2026-09-11 →
 2026-09-14 the face shows **zero occurrence in 216 executions** (Wilson 95% upper bound ≈ 1.75%). The two
@@ -81,6 +81,16 @@ identical signature on all three OSes and both lanes, including `data-golden` ga
 observation. Row rule: a row is resolved (deleted) when the escalation trigger fires and the repair
 lands, or when the due date passes with the face green across ≥2 consecutive full `test.yml` runs on
 main and the classification re-confirmed as environment-only. Rows do not auto-extend.
+
+**Third closure path - preemptive repair (added 2026-09-15, ticket 111 / A-066).** A row is also
+resolved when a wave decision promotes the observation into a repair ticket and that repair lands
+- without waiting for the CI escalation trigger or the due date. The row is then marked `closed`
+in place (not deleted), so the closure evidence stays in the governance record. First use: the
+`boxing-innerclip` firefox row above was closed 2026-09-15 by ticket 111 / A-066 / B72 - the
+wave-9.20 grill (D-004 item 2) promoted residual **N-106-01** into the 9.20 implementation wave
+ahead of the 2026-10-14 due date, and the ticket-13 repair (`test.setTimeout(120_000)`, with a
+written rationale comment in both specs) landed with both lanes green. Evidence:
+`.scratch/architecture-recovery/reports/111-report.md`.
 
 ## Waiver ledger revocation criteria (ticket 105 / B69)
 

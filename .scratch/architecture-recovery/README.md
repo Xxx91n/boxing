@@ -5,7 +5,7 @@
 | W1 | 107 bookmark-delete-commit-p0 | A-062 | — | ready-for-agent |
 | W1 | 109 pages-gc-version-verify | A-064 | — | ready-for-agent |
 | W1 | 110 zoom-dblclick-b71 | A-065 | — | ready-for-agent |
-| W1 | 111 innerclip-settimeout-b72 | A-066 | — | ready-for-agent |
+| W1 | 111 innerclip-settimeout-b72 | A-066 | — | **done**（具名既有红 N-111-01，非本票面） |
 | W1 | 112 contrast-guard-pretest-b73 | A-067 | — | ready-for-agent |
 | W1 | 113 release-status-single-block | A-068 | — | ready-for-agent |
 | W1 | 114 design-box-zoom-b74 | A-069 | — | **done**（AC 2/2 · 报告 reports/114-report.md） |

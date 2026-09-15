@@ -13,6 +13,16 @@ async function resetBoxing(page) {
 }
 
 test.describe('Boxing inner surface clip (BX-DEV-CLIP)', () => {
+  // Ticket 111 / B72 / N-106-01: the first test in this file carries the Firefox headed
+  // cold-start cost on this host (~22s launch alone; ticket 13 DEBUG=pw:api evidence) and,
+  // under multi-worker host contention, the 30s default budget is consumed inside the shared
+  // resetBoxing fixture (page.goto / page.reload) before any geometry assertion runs --
+  // ticket 106 signature: Test timeout of 30000ms exceeded, no page snapshot in the error
+  // context. Playwright counts fixture setup inside the test timeout (official docs), so the
+  // budget must cover launch + navigation + reload + poll. 120s is the ticket-13 form already
+  // used by boxing-i18n-module.spec.ts for the same signature; the geometry assertions keep
+  // their own poll budgets and are unchanged. See WORKFLOW section 6 (tickets 13/15).
+  test.setTimeout(120_000);
   test('small-box at y=0 is not covered by inner__canvas-head', async ({ page }) => {
     await resetBoxing(page);
     // Create a large box and a small box at y=0 (surface top)
