@@ -138,3 +138,25 @@
 | A-052 | D-003③ 锐评8：ntp.js [''] 与 i18n 重复键无冻结注释 | 就地 // frozen by ticket 83/66 + 报告指针；不改字节契约 | 禁止修改冻结语义 | implemented（2026-09-14 · ticket 98 · ntp/ntp.js:578 与 ntp/i18n.js:79 各加 `FROZEN by ticket 83/66` 六要素指针注释；git diff 仅注释行（+18/-0），零契约字节改动；报告 reports/98-report.md） |
 | A-051 | D-003② 锐评6：可发行状态只活在 .scratch/ADR 修订，docs 层无 live Release status | docs/ 层落地当前版本/三门状态/在效豁免/欠账指针；记中间里程碑 34808080000 与发行终谳预留 | 不得只活在 .scratch；不宣称三门达成 | implemented（2026-09-14 · ticket 97 · 新增 docs/release-status.md：当前版本 2026.9.15 + G-A/G-B/G-C 三门状态 + 在效豁免表（waiver-ledger-check exit 0）+ 欠账指针 A-050..A-061；记中间里程碑 run 34808080000 @ 9fa4666c 与发行终谳预留（待填）；导航接入 docs/START-HERE.md §4 与 docs/CONTEXT.md release gate 段；结论维持「不可发行」，未代签 G-B、未宣称三门合取达成；报告 reports/97-report.md） |
 | A-050 | D-003① AI Docs Governance dead-link 红（run 34808079960 @ 9fa4666c）：naive regex 将 markdown ](path 吞进路径 | 修 CI regex 与/或 AGENTS/CONTEXT 链接写法至治理 workflow success；不得静默删检查 | 不与 test.yml G-A 混写；不热修 9.12；GH #13 | implemented（2026-09-14 · 票96：naive grep 字符类替换为 scripts/docs-link-guard.mjs 手写扫描器（allowlist tokenizer + markdown 链接目标解析 + 7 fixture 自测 + 反空洞断言）；workflow dead-link 步骤与双端 paths 触发面同步更新；本地 job 三步等价模拟全绿 exit 0；反向对照真死链仍 exit 1 且 AGENTS.md 字节级还原 sha256 一致；CI green run URL 具名 F 待 push 授权） |
+
+## Wave9.20 → Tickets（A-062.. · 2026-09-15）
+
+> 源: `.scratch/wave9-920-grill/decision-ledger.md` D-001..D-008 + reports/Q2·Q3 + W915-backlog B71–B77
+> 每条: ID / 问题描述（原文摘录）/ 规范化需求 / 显式约束 / 状态
+
+| ID | 问题描述（原文摘录） | 规范化需求 | 显式约束 | 状态 |
+|---|---|---|---|---|
+| A-062 | D-002 · Q2 调研 · popups.js:189 · 用户日志：P0 书签单条删除旁路 commit：splice 后 fire-and-forget saveLayout、不写墓碑；mergeById 并集复活；盒删除路径已正确 tomb bookmarks | deleteBookmark mutationHandler 走 commit，tombstoneIds:[bmId]；废弃裸 splice；never-quarantine 回归 add→delete→陈旧合并/reload | 禁手术式单行 markDeleted 而不留门禁；禁绕过 commit；数据完整性禁豁免；add/reorder 是否同票实施时裁定；不热修 9.15 | current |
+| A-063 | D-002② · 锐评 Top-5 #5：layout 数据删除/改写可绕过 mutationHandlers（popups add L282/301、reorder L407 等旁路） | 静态门禁：ntp/** 中 layout 集合删除/改写不在 handlers 即 exit 1（白名单注释豁免）；串 pretest 或 test.yml | 白名单须具名；不得静默删检查；与 A-062 同波/紧随 | current |
+| A-064 | D-001/D-003 · Q3 调研 · B75：G-C 仅三 URL 200，无法发现「过时但 200」；Pages 发行后同步无新鲜度断言 | G-C=200 + GET demo/version.json(cache-buster)==最新 tag；deploy 尾部 verify ≤180s；保留人工检查单；修订 ADR-0017 G-C 行；吸收 B75 | 不做 mike 多版本；不取消人工复核；失败两态写入检查单；核查 environment 放行 tag、Pages 仅 Actions | current |
+| A-065 | D-004① · B71 · N-101-06：zoom-dblclick 异源签名：一次 dblclick 双建 small box（firefox ~%，创建冷却族） | 根因修复或稳定化；禁 skip 冒充绿；回归可复现 | 不弱化该断言不变式；属创建冷却族非 fire-and-forget | current |
+| A-066 | D-004② · B72 · N-106-01：innerclip 两 spec 未设 test.setTimeout 预算（原观察至 2026-10-14，D-004 提前进 9.20） | 为相关 spec 设合理 setTimeout 预算或等价稳定性措施 | 不得再以观察未到期推迟；不入 G-A 豁免台账扩大面 | current |
+| A-067 | D-004③ · B73 · N-102-03：contrast-guard 仅 test.yml，未串 package.json pretest，本地 npm test ≠ 对比度门禁 | 一行集成串入 pretest（或书面接受 CI-only 并记账） | 不破坏既有 pretest 6 门；跨窗口行级依赖已过期可修 | current |
+| A-068 | D-005① · 锐评 #2：release-status.md 同页三套状态并存：页首「三门达成」vs §一「不可发行」vs §三 实测；终谳预留仍待填 | 收敛单一现役状态块；删/降级矛盾表；终谳块填 09-14 实测；旧 run 标 Superseded；页内规则「有且只有一个状态块」 | 禁止只改标题不删矛盾；不代写未发生的 9.20 三门 | current |
+| A-069 | D-004④ · B74 · N-103-01/02：DESIGN.md Box/Zoom 表与代码现实偏差注记未收 | 偏差注记或表校正；不回退 hairline 契约（票103） | 不扩写无关重构；零非必要 CSS/JS 改动 | current |
+| A-070 | D-004⑦ · B77：CHANGELOG [2026.9.15] 段偏薄，与 release-notes 不对齐 | 与 docs/release-notes/2026.9.15.md 要点对齐扩写 | 不虚构未落地功能 | current |
+| A-071 | D-007 · calver-guard 票100：版本面仍为 2026.9.15；9.20 发行需 calver 一致推进 | 实施波内 manifest×2/package/notes/CHANGELOG/脚注等一致推至 2026.9.20，过 calver-guard | 不前导零；与 store 真源不冲突；G-B 前禁宣称可发行 | current |
+| A-P01 | D-005② 线性追加红线 | 9.20 全部提交只在 a1acaaac 之上线性追加 | 第二次 root 导出即停波；导出工具做不到先改工具 | current（过程红线，无独立票） |
+| A-P02 | D-004⑨/D-005③ 豁免清零出口 | 3 条 active F 09-19 到期；按 105 撤账至 0 active F | 绑 9.20 G-A；不得无动作续期 | current（出口条件） |
+| A-P03 | D-006 发行出口 | G-A 新 tip 四 job 全绿 + G-B 用户声明 + G-C 升格；tag/商店另令 | 禁 agent 代签 G-B；9.15 不热修 | current（出口边界） |
+

@@ -1,4 +1,27 @@
+## Wave9.20 波次表（2026-09-15 · 由 Blocked by 推导）
+
+| 波次 | 票 | Covers | Blocked by | 状态 |
+|---|---|---|---|---|
+| W1 | 107 bookmark-delete-commit-p0 | A-062 | — | ready-for-agent |
+| W1 | 109 pages-gc-version-verify | A-064 | — | ready-for-agent |
+| W1 | 110 zoom-dblclick-b71 | A-065 | — | ready-for-agent |
+| W1 | 111 innerclip-settimeout-b72 | A-066 | — | ready-for-agent |
+| W1 | 112 contrast-guard-pretest-b73 | A-067 | — | ready-for-agent |
+| W1 | 113 release-status-single-block | A-068 | — | ready-for-agent |
+| W1 | 114 design-box-zoom-b74 | A-069 | — | ready-for-agent |
+| W1 | 115 changelog-915-b77 | A-070 | — | ready-for-agent |
+| W1 | 116 calver-2026-9-20 | A-071 | — | ready-for-agent |
+| W2 | 108 layout-bypass-static-gate | A-063 | **107** | ready-for-agent |
+| W3 | 发行 G-A 执行 | A-P02/A-P03 | 107–116 land | 执行动作 |
+
+- 对账: `destination-reconciliation-w920.md`（无去向=空）
+- Spec: `spec.md` · D 账本: `../wave9-920-grill/decision-ledger.md`
+- GitHub Issue 镜像: **未创建**（待另令）
+- 红线: a1acaaac 线性追加（A-P01）；豁免清零绑 G-A（A-P02）
+
 ## Wave9.20 Grill 定稿（2026-09-15）— 下一波入口
+
+（实施票已立，见下方波次表）
 
 > 状态: **grill 完成 · 整理完成 · 未建票未实施**（建票/GitHub Issue 须用户下令）
 

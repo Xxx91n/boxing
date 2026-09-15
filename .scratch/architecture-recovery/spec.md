@@ -1,58 +1,64 @@
-# Spec — Wave9.15 发行收口 + B 轨全完成（A-050..A-061）
+# Spec — Wave9.20 全收 + Pages 同步门禁 + P0 书签删除
 
-> 数据源: `.scratch/wave9-915-release-grill/decision-ledger.md` D-001..D-009  
-> 前序 Wave9 票 87–95 已 done；本 spec 仅覆盖 W915 波。  
-> 目标版本: **2026.9.15** · 基线 tip `9fa4666c`（中间 G-A run 34808080000）
-
-## A-xxx Coverage（强制全集）
-
-| A-xxx | 票 | 段 |
-|---|---|---|
-| A-050 | 96 | ① |
-| A-051 | 97 | ④ |
-| A-052 | 98 | ② |
-| A-053 | 99 | ④ |
-| A-054 | 100 | ① |
-| A-055 | 101 | ③ |
-| A-056 | 102 | ② |
-| A-057 | 103 | ④ |
-| A-058 | 104 | ② |
-| A-059 | 105 | ④ |
-| A-060 | 106 | ③ |
-| A-061 | 无票（执行：新 tip G-A + 等 G-B） | ⑤ |
+> 上游: `.scratch/wave9-920-grill/decision-ledger.md` D-001..D-008  
+> A 账本: 本目录 decision-ledger.md A-062..A-071 · A-P01..P03  
+> 目标版本: **2026.9.20** · 基线 `a1acaaac` 线性追加
 
 ## Problem Statement
 
-Wave9 实施 land 后 tip 全绿（R1–R3/B55/版本面 2026.9.15），但 GitHub #10–12 曾 open（已按 D-005 关闭）、docs-gov dead-link 红、锐评 6/8 与 B63–B70 未收。用户要求「所有内容都要完成」（D-003）。B 轨再 land 改变 tip → 发行 G-A 必须重跑（D-004）。
+1. 用户删除书签后退出再进，书签复活（P0，商店产品内，数据完整性家族）。
+2. G-C 仅 HTTP 200，Pages 可过时而不红。
+3. B71–B77 与 release-status 矛盾、豁免到期未清（全收）。
 
 ## Solution
 
-按 D-006 五段完成 A-050..A-060 → 新 tip 发行 G-A（A-061）→ 用户 G-B（2026.9.15+日期）→ tag/商店另令。
+①P0 deleteBookmark+门禁 → ②测试硬化 → ③Pages G-C → ④文档 → ⑤G-A → 用户 G-B → tag 另令。
+
+## A-xxx 覆盖声明
+
+| A-xxx | 来源 | 覆盖票 |
+|---|---|---|
+| A-062 | grill/research | **107** |
+| A-063 | grill/research | **108** |
+| A-064 | grill/research | **109** |
+| A-065 | grill/research | **110** |
+| A-066 | grill/research | **111** |
+| A-067 | grill/research | **112** |
+| A-068 | grill/research | **113** |
+| A-069 | grill/research | **114** |
+| A-070 | grill/research | **115** |
+| A-071 | grill/research | **116** |
+| A-P01 | D-005② | 全票过程红线（无独立票） |
+| A-P02 | D-004⑨ | G-A 出口（无独立票） |
+| A-P03 | D-006 | 出口边界（无独立票） |
 
 ## User Stories
 
-- 维护者只读 docs 层 Release status 即知版本/三门/欠账（A-051）。
-- CI 治理面 dead-link 恢复绿（A-050）。
-- 冻结点现场可读到票号指针（A-052）。
-- 用户在 G-B 前不会被 agent 宣称可发行或自动 tag（A-061 / D-007）。
+1. 作为用户，删除书签后重进/同步不再复活。
+2. 作为维护者，layout 旁路删除会被静态门禁拦下。
+3. 作为发行检查员，G-C 断言 version.json == 最新 tag。
+4. 作为审计者，release-status 只有一个现役状态块。
+5. 作为用户，9.20 在 G-A∧G-B∧G-C 前不被宣称可发行。
 
 ## Implementation Decisions
 
-- 主序五段见 D-006 / plan；波次由 Blocked by 推导（见 README）。
-- 票务混合：GH #13–#16 镜像 96/101/104/102；其余本地 issues/。
-- 中间 G-A 34808080000 有效但非发行终谳（A-061）。
-- G-B 用户声明；禁止 agent 代签；tag/商店另令。
+- A-062: `deleteBookmark` + `commit` + never-quarantine 回归；add/reorder 实施裁定。
+- A-063: 静态门禁白名单注释；与 A-062 同波。
+- A-064: G-C 升格 + deploy verify；ADR-0017 显式修订。
+- A-065..A-071: 见各 issue AC。
+- 票务: 本地 issue 107–116（本命令授权 scratch 票；GitHub Issue 仍待另令）。
 
 ## Testing Decisions
 
-- 发行 G-A = 最终 tip test.yml 四 job 全绿。
-- A-050 以 docs-gov success 为证。
-- A-055/A-060 不得用 silent skip 冒充绿；A-060 无复现须书面结案。
+- 外部行为：删除后 reload/合并不复活 + 墓碑键存在。
+- 门禁：故意旁路应 exit 1。
+- G-A: 新 tip test.yml 四 job 全绿；active F=0。
 
 ## Out of Scope
 
-- B61 用户 G-B 本体；B62 发行后 G-C；tag；商店上传；9.12 热修；无关重构。
+- B76 商店 listing；B78；tag/商店/G-B 执行；9.15 热修；GitHub Issue 创建（另令）。
 
 ## Further Notes
 
-- 前序账本 A-040..A-049 与 D 账本 wave9-postrelease / wave9-915 保持 current，不重写。
+- Grill spec/plan: ../wave9-920-grill/
+- 调研: ../wave9-920-grill/reports/
