@@ -6,12 +6,12 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-15 · CHANGELOG [2026.9.15] 与 release-notes 逐条对齐扩写（12 要点对账）；零虚构；报告 reports/115-report.md）
 
 ## Acceptance criteria
 
-- [ ] 与 docs/release-notes/2026.9.15.md 要点对齐扩写
-- [ ] 不虚构未落地功能
+- [x] 与 docs/release-notes/2026.9.15.md 要点对齐扩写
+- [x] 不虚构未落地功能
 
 ## Notes
 

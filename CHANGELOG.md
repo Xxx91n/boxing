@@ -7,31 +7,61 @@ and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) st
 
 ## [Unreleased]
 
-Internal work after 2026.9.15. Per [ADR-0017](docs/adr/0017-release-data-gate.md) store
+Internal work after 2026.9.20. Per [ADR-0017](docs/adr/0017-release-data-gate.md) store
 uploads and GitHub tags still follow the release gate. Install from official store pages
 (see [publishing guide](docs/publishing-guide.md)); GitHub Releases are changelog-first
 and no longer ship `.xpi` / `.crx`.
 
-## [2026.9.15] - 2026-09-15
+## [2026.9.20] - 2026-09-20
 
 User-facing notes for store listings and the GitHub Release body.
 
-### Fixed
-- **Cross-tab star sync** — a star set on a large box in one window now appears in a freshly opened tab.
-- **Dark-mode empty-state contrast** — the add-bookmark button in empty states now meets contrast targets in dark mode (7.73:1 text / 4.45:1 border).
-- **Auto-expand after re-entry** — collapsing and re-entering a large box no longer breaks auto-expand.
-- **WebDAV private-host consistency** — private/LAN host handling now honors your opt-in setting uniformly across URL validation and export.
+A data-integrity release: single-bookmark deletion now commits and tombstones, and the
+Pages demo deploy is gated on post-release version freshness.
 
-### Improved
-- **WebDAV sync merge** — sync now merges three-way: small boxes added on two devices under the same large box all survive a pull, and same-id divergence produces browsable conflict copies instead of silently dropping one side.
+### Fixed
+- **Deleted bookmarks no longer come back** — deleting a single bookmark from the popup now goes through the commit channel and writes a tombstone; restarting the browser or pulling a WebDAV sync no longer resurrects it.
+- **Zoom double-click no longer creates a stray box** — the double-click-to-zoom path that could create a duplicate small box (Firefox signature) is fixed.
 
 ### Internal
-- Boot zero-flash regression covered by e2e; test fixtures swept to env-credential placeholders; main CI lane green (data-golden included).
+- Static gate: layout data deletions/rewrites that bypass the mutation handlers are rejected by a pretest/CI scan (named-whitelist comments only).
+- Pages release-sync gate upgraded: the deploy workflow tail now polls `demo/version.json` until it matches the release tag (≤180s) — a stale-but-200 Pages deploy turns red.
+- Test hardening: innerclip specs carry explicit timeout budgets; the contrast guard now runs in the local `pretest` chain.
+- Docs: release-status converged to a single live status block; DESIGN box/zoom table annotated for drift.
 
 ### Install
 - Firefox: [AMO listing](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
 - Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
 - Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://xxx91n.github.io/boxing/privacy-policy.html)
+
+## [2026.9.15] - 2026-09-15
+
+User-facing notes for store listings and the GitHub Release body.
+
+A stability-hardening release: cross-tab star sync fix, dark-mode contrast compliance,
+and WebDAV sync upgraded to a three-way merge.
+
+### Fixed
+- **Cross-tab star sync** — a star set on a large box in one window now appears in a freshly opened tab.
+- **Dark-mode empty-state contrast** — the add-bookmark button in empty canvas/box states now meets contrast targets in dark mode (7.73:1 text / 4.45:1 border), visible and clickable.
+- **Auto-expand after re-entry** — collapsing a large box on hover and re-entering it no longer breaks auto-expand.
+- **WebDAV private-host consistency** — `.local` and other private/LAN hosts now honor your opt-in setting uniformly across URL validation and the export path.
+
+### Improved
+- **WebDAV sync merge** — sync now merges three-way: small boxes added on two devices under the same large box all survive a pull, and same-id divergence produces conflict copies (listed and exportable under the settings Data tab) instead of silently dropping one side.
+
+### Internal
+- Boot zero-flash regression covered by e2e; test fixtures swept to env-credential placeholders.
+- Main CI lane green including the data-golden job; the residual-red waiver ledger is down to named flaky entries only.
+- Release zips no longer bundle `.scratch` working logs (packaging hygiene).
+
+### Install
+- Firefox: [AMO listing](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+- Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+- This release no longer ships `.xpi` / `.crx` downloads — signing and updates are handled by the stores.
+- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://xxx91n.github.io/boxing/privacy-policy.html) — build locally with `npm ci && npm run build`.
+- Release attachments include the store source-review package plus side-loadable Chromium/Firefox zips; verify integrity with `SHA256SUMS.txt`.
+- Release-gate background: [ADR-0017](docs/adr/0017-release-data-gate.md); the release checklist lives in the docs area.
 
 ## [2026.9.12] - 2026-09-13
 

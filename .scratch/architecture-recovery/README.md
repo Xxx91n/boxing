@@ -9,7 +9,7 @@
 | W1 | 112 contrast-guard-pretest-b73 | A-067 | — | ready-for-agent |
 | W1 | 113 release-status-single-block | A-068 | — | ready-for-agent |
 | W1 | 114 design-box-zoom-b74 | A-069 | — | **done**（AC 2/2 · 报告 reports/114-report.md） |
-| W1 | 115 changelog-915-b77 | A-070 | — | ready-for-agent |
+| W1 | 115 changelog-915-b77 | A-070 | — | **done**（AC 2/2 · 报告 reports/115-report.md） |
 | W1 | 116 calver-2026-9-20 | A-071 | — | ready-for-agent |
 | W2 | 108 layout-bypass-static-gate | A-063 | **107** | ready-for-agent |
 | W3 | 发行 G-A 执行 | A-P02/A-P03 | 107–116 land | 执行动作 |
