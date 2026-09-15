@@ -140,7 +140,7 @@
 | N-111-03 | 既有告警（复用票111 具名） | `git diff --check` 在 `decision-ledger.md:162`（EOF 空行）与 `spec.md:3-4`（行尾空格）报既有告警，非本票引入 | 他人窗口面 |
 | N-112-02 | 建议（不实施） | CI 同 job 双跑 contrast（pretest + 显式步骤）。若后续要消除，建议用 env 短路（如 `BOXING_GUARD_SKIP=1`）或在 test.yml 去掉显式步骤并接受 pretest 单源；本票按调研保留双层 | 后续票 |
 | N-112-03 | 建议（不实施） | 研究 §4 推荐的单一编排入口 `scripts/guard-all.mjs`（pretest 引用同一入口）可降低链式维护成本；属重构，超本票范围 | 后续票 |
-| **N-112-04** | **本窗口操作副作用（已修复）** | 为隔离账本同 hunk 纠缠（票111 A-066 行与我的 A-067 行同属 hunk `sq:3`），我按 GitButler skill 的隔离法将 A-066 **临时还原**为 `current`（原文本已备份至 OS temp）。**票111 窗口在我还原期间完成提交**，使 A-066 的 `implemented` 证据文本被固化为 `current`（丢失去向）。**已从备份原样还原到工作树**（26124 → 26853 B，+729）；但按全局规则「不提交他人 agent 的工作」，**未代为提交** → 该行仍为未提交态，**需票111 窗口或大脑补提交**。同一事件的反向效应：我的 A-067 行落入票111 的提交 `02a7c1b5`（非本票分支）——已具名呈报 | 票111 / 大脑 |
+| **N-112-04** | **本窗口操作副作用 — 已消解（2026-09-15 复核）** | 为隔离账本同 hunk 纠缠（票111 A-066 行与我的 A-067 行同属 hunk `sq:3`），我按 GitButler skill 的隔离法将 A-066 **临时还原**为 `current`（原文本已备份至 OS temp）。**票111 窗口在我还原期间完成提交**，使 A-066 的 `implemented` 证据文本一度被固化为 `current`。**处置结果：票111 窗口已自行补交**（`c8e7e9d4 docs(111): A-066 flipped to implemented in the A ledger`，随后 `9ace4840` 补报告 §6.2）。**复核证据**：`A-066 [工作树] == [HEAD]`（653/653 字符逐字相同），行内含 `ticket 111`、无 `current` 标记 → **该残余关闭**。反向效应保留披露：我的 A-067 行曾落入票111 的提交 `02a7c1b5`（非本票分支） | 已关闭（票111 窗口补交） |
 
 **波基红面警示（呈报大脑）**：`origin/main` == `a1acaaac` 的 pretest 面**自带 N-111-01 红**，且因 `a1acaaac` 只改 README/docs（不在 test.yml `paths` 内）**CI 从未验证过该 tip**。当前 tip 的 `npm test` 会在 pretest 阶段中止。A-P02（豁免清零出口）/ 段⑤ G-A 全绿依赖此红被清偿。
 
@@ -159,7 +159,7 @@
 
 - 路径：`but diff`（确认 `sz:b` 为唯一 hunk）→ `but commit -b ticket/112-contrast-guard-pretest -m "..." sz`。
 - **代码提交**：`5ae7619b test(pretest): wire contrast-guard into npm pretest — ... (ticket 112 / A-067 / B73)`，分支 `ticket/112-contrast-guard-pretest`（change id `uqz`）。`git show HEAD:package.json` 第 17 行确认含 `contrast-guard`。
-- **账本 A-067 行**：因与票111 的 A-066 行同属一个 diff hunk（GitButler 无法按 hunk 拆分），最终随票111 的提交 `02a7c1b5` 落地（非本票分支）；`git show HEAD:decision-ledger.md` 的 A-067 行已为 `implemented（... ticket 112 ...）`。**属跨票提交纠缠，已具名呈报（§6 N-112-04）**。
+- **账本 A-067 行**：因与票111 的 A-066 行同属一个 diff hunk（GitButler 无法按 hunk 拆分），最终随票111 的提交 `02a7c1b5` 落地（非本票分支）；`git show HEAD:decision-ledger.md` 的 A-067 行已为 `implemented（... ticket 112 ...）`。**属跨票提交纠缠，已具名呈报（§6 N-112-04）**。 复核（2026-09-15）：A-066 已由票111 窗口补交 `c8e7e9d4`，工作树与 HEAD 逐字一致，N-112-04 关闭。
 - **分支 stack**：A-067 行位于 w920 文档提交 `rpk` 新增的 Wave9.20 段落内 → 账本改动**真实依赖** `w920-tickets` 分支。按工具提示执行 `but move ticket/112-contrast-guard-pretest --above w920-tickets` 完成 stack（记录在案，供大脑裁决是否 unstack）。
 - **并行窗口隔离**：`but status` 显示 107/111/113/116 等窗口的 `ntp/*.js`、`test/**`、`docs/**`、`.scratch/*-atomcode/` 在途 → **均未纳入本票提交**（只认领 `sz` = `package.json`）。
 - **受阻与恢复（如实记录）**：首次 `but commit` 报 `unresolved conflicts exist in the index`（3 个 `.scratch` 文件 `UU`/`UD`，源自并行窗口的 workspace 级回退）。本窗口未擅自解冲突（mtime 显示有活跃写入者）；重试时冲突已被并行窗口清除，提交一次成功。
