@@ -88,8 +88,8 @@ Dark mode overrides only Layer 2 semantic tokens to reference dark primitives �
 ### Radii
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--radius-card` | 18px | Cards, modals, search results |
-| `--radius-tile` | 12px | Boxes, tiles |
+| `--radius-card` | 18px | Cards, modals, search results, boxes (.large-box/.small-box) |
+| `--radius-tile` | 12px | Popup/menu items, settings nav items, theme presets, inline popups & toasts |
 | `--radius-pill` | 999px | Toggle pills, tags |
 
 ### Motion
@@ -132,19 +132,21 @@ implement these exact mappings.
 
 ### 1. Box (.large-box / .small-box — BX-DUAL-WRITE)
 
-| Property | Default | Hover | Active (dragging) | Disabled |
-|----------|---------|-------|--------------------|---------|
-| background | `var(--color-elevated)` | (same) | (same) | `var(--color-surface)` |
-| border-color | `var(--color-card-edge)` | `var(--color-card-edge)` | `var(--color-card-edge)` | `var(--color-hairline)` |
-| box-shadow | `var(--shadow-1)` | `var(--shadow-2)` | `var(--shadow-2)` | none |
-| cursor | default | default | grabbing | not-allowed |
-| z-index | 1 | 2 | 5 | 0 |
-| border-radius | `var(--radius-tile)` | (same) | (same, no regression BX-145) | (same) |
+| Property | Default | Hover | Active (dragging) | (no disabled state) |
+|----------|---------|-------|--------------------|---------------------|
+| background | `var(--color-elevated)` | (same) | (same) | — |
+| border | 1px solid `var(--color-hairline)` | `var(--color-card-edge)` | `var(--color-accent)` | — |
+| box-shadow | none | `var(--shadow-2)` | `var(--shadow-pop)` | — |
+| cursor | default | default | grabbing | — |
+| z-index | 1 | (same) | 5 | — |
+| border-radius | `var(--radius-card)` | (same) | (same, no regression BX-145) | — |
 
-> 注意（代码现实偏差 · 登记 N-103-01，本票不改）：`ntp/base.css` 中 `.large-box` / `.small-box` 的
-> **default** 描边是 `1px solid var(--color-hairline)`（hover 才切 `--color-card-edge`、拖拽切 `--color-accent`），
-> 与本表 default = `--color-card-edge` 不符；`border-radius` 代码为 `--radius-card`。该偏差早于本票且涉及
-> 「容器边界是否承担示能」的产品判定，已具名登记，待专项票按代码现实校正（ADR-0008 Phase 4 同款对齐原则）。
+> 偏差收口（N-103-01 → closed 2026-09-15 · ticket 114 / A-069 / B74）：本表已按 `ntp/base.css`
+> 代码现实校正（ADR-0008 Phase 4 对齐原则）——default 描边 `1px solid var(--color-hairline)`、
+> hover 才切 `--color-card-edge`、拖拽切 `--color-accent`；`border-radius` 实为 `--radius-card`；
+> default 无 box-shadow、hover 无 z-index 变化；代码无 disabled 态，列名按 §3/§5 惯例改写。
+> hairline 在此是**填充容器上的装饰收边/附加描边**（`--color-elevated` 填充 + 标题/栏头辨识），
+> 命中 §Hairline 契约前两档「允许」，非控件唯一示能边界 —— 契约不回退。
 
 ### 2. Button (.btn)
 
@@ -202,16 +204,20 @@ implement these exact mappings.
 
 ### 6. Zoom Controls (.zoom-controls)
 
-| Property | Default | Button hover | Active (pressing) | (no disabled) |
+| Property | Default | Button hover | (no :active rule) | (no disabled) |
 |----------|---------|-------------|-------------------|---------------|
 | background | `var(--color-elevated)` | — | — | — |
-| button bg | transparent | `var(--color-surface)` | `var(--color-surface)` | — |
-| button color | `var(--color-muted)` | `var(--color-ink)` | `var(--color-ink)` | — |
-| button border | 1px solid `var(--color-hairline)` | 1px solid `var(--color-accent)` | 1px solid `var(--color-accent)` | — |
+| border (container) | 1px solid `var(--color-hairline)` | (same) | — | — |
+| button bg | transparent | `var(--color-surface)` | — | — |
+| button color | `var(--color-ink-soft)` | `var(--color-ink)` | — | — |
+| button border | none (`border: 0`) | (same) | — | — |
 
-> 注意（代码现实偏差 · 登记 N-103-02，本票不改）：`ntp/settings.css` 的 `.zoom-btn` 为 `border: 0`
-> （hover 仅改 background / color），本表「button border」的 hairline / accent 值与代码不符。
-> 按 §Hairline 契约，透明填充的 `.zoom-btn` 即使有描边也**不得**用 `--color-hairline`；已具名登记，待专项票校正。
+> 偏差收口（N-103-02 → closed 2026-09-15 · ticket 114 / A-069 / B74）：本表已按 `ntp/settings.css`
+> 代码现实校正——`.zoom-btn` 为 `border: 0`、无 `:active` 规则，hover 仅改 background/color；
+> 原表的 hairline/accent 描边实际位于容器 `.zoom-controls`（填充面板的装饰收边，§Hairline 契约
+> 允许），已补为「border (container)」行。透明 `.zoom-btn` 的示能由图标字形承担
+> （`--color-ink-soft` 对 `--color-elevated` = 9.78:1 ≥ 4.5:1，箭头同色系），无边界义务；
+> 若未来给 `.zoom-btn` 补描边，仍**禁止** `--color-hairline`（ghost 唯一边界须 ≥3:1）。
 
 ### 7. Bookmark Row (.bm-row)
 

@@ -6,12 +6,12 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-15 · AC 2/2 达成 · 报告 `reports/114-report.md`）
 
 ## Acceptance criteria
 
-- [ ] N-103-01/02 收口
-- [ ] hairline 契约不回退
+- [x] N-103-01/02 收口（两表按代码现实校正，注记翻转为 closed）
+- [x] hairline 契约不回退（零 CSS 改动；§52 契约段未动；contrast-guard 8/8）
 
 ## Notes
 

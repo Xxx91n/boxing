@@ -153,7 +153,7 @@
 | A-066 | D-004② · B72 · N-106-01：innerclip 两 spec 未设 test.setTimeout 预算（原观察至 2026-10-14，D-004 提前进 9.20） | 为相关 spec 设合理 setTimeout 预算或等价稳定性措施 | 不得再以观察未到期推迟；不入 G-A 豁免台账扩大面 | current |
 | A-067 | D-004③ · B73 · N-102-03：contrast-guard 仅 test.yml，未串 package.json pretest，本地 npm test ≠ 对比度门禁 | 一行集成串入 pretest（或书面接受 CI-only 并记账） | 不破坏既有 pretest 6 门；跨窗口行级依赖已过期可修 | current |
 | A-068 | D-005① · 锐评 #2：release-status.md 同页三套状态并存：页首「三门达成」vs §一「不可发行」vs §三 实测；终谳预留仍待填 | 收敛单一现役状态块；删/降级矛盾表；终谳块填 09-14 实测；旧 run 标 Superseded；页内规则「有且只有一个状态块」 | 禁止只改标题不删矛盾；不代写未发生的 9.20 三门 | current |
-| A-069 | D-004④ · B74 · N-103-01/02：DESIGN.md Box/Zoom 表与代码现实偏差注记未收 | 偏差注记或表校正；不回退 hairline 契约（票103） | 不扩写无关重构；零非必要 CSS/JS 改动 | current |
+| A-069 | D-004④ · B74 · N-103-01/02：DESIGN.md Box/Zoom 表与代码现实偏差注记未收 | 偏差注记或表校正；不回退 hairline 契约（票103） | 不扩写无关重构；零非必要 CSS/JS 改动 | implemented |
 | A-070 | D-004⑦ · B77：CHANGELOG [2026.9.15] 段偏薄，与 release-notes 不对齐 | 与 docs/release-notes/2026.9.15.md 要点对齐扩写 | 不虚构未落地功能 | current |
 | A-071 | D-007 · calver-guard 票100：版本面仍为 2026.9.15；9.20 发行需 calver 一致推进 | 实施波内 manifest×2/package/notes/CHANGELOG/脚注等一致推至 2026.9.20，过 calver-guard | 不前导零；与 store 真源不冲突；G-B 前禁宣称可发行 | current |
 | A-P01 | D-005② 线性追加红线 | 9.20 全部提交只在 a1acaaac 之上线性追加 | 第二次 root 导出即停波；导出工具做不到先改工具 | current（过程红线，无独立票） |
