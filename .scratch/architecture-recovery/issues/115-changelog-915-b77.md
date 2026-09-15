@@ -10,8 +10,8 @@
 
 ## Acceptance criteria
 
-- [ ] 对齐扩写
-- [ ] 不虚构
+- [ ] 与 docs/release-notes/2026.9.15.md 要点对齐扩写
+- [ ] 不虚构未落地功能
 
 ## Notes
 

@@ -29,7 +29,7 @@
 
 ## 本票 delta
 
-- manifest version+version_name
+- 实施波内一致推至 2026.9.20：manifest version+version_name
 - package.json/lock
 - notes/CHANGELOG/脚注
 - calver-guard exit 0

@@ -10,7 +10,7 @@
 
 ## Acceptance criteria
 
-- [ ] 两 spec 设 test.setTimeout 或等价
+- [ ] 为相关 spec 设合理 test.setTimeout 预算或等价稳定性措施
 - [ ] 不扩大豁免面
 - [ ] testing-governance 观察行可结案更新
 

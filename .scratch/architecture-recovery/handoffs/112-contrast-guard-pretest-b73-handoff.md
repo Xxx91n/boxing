@@ -29,8 +29,8 @@
 
 ## 本票 delta
 
-- 串入 package.json pretest
-- 本机 pretest 含 contrast 全绿
+- 一行集成串入 pretest（package.json）；或书面接受 CI-only 并记账（二选一须落盘）
+- 本机 pretest 含 contrast 全绿（若选串入）
 - test.yml 路径不回归
 
 ## 完成定义
