@@ -21,7 +21,7 @@ Accepted（票 46 + atomcode 调研）· **修订 2026-09-13**（v2026.9.12 强�
 |---|---|---|
 | **G-A CI** | main 全量 CI 主 lane 残红**清零**，或每条残红均有**书面定谳豁免** | CI run URL + 豁免台账（见下书面豁免规则） |
 | **G-B 黄金路径** | 对发行 zip **解包产物**的人工黄金路径验收通过（Chrome + Firefox 双浏览器） | 发行检查单勾选记录（WORKFLOW §4.4 模板） |
-| **G-C Pages** | `https://xxx91n.github.io/boxing/demo/`、`/boxing/demo/ntp.css`、`/boxing/privacy-policy.html` 三 URL live HTTP 200（privacy-policy 为商店提交硬依赖） | HTTP 状态码记录 |
+| **G-C Pages** | `https://xxx91n.github.io/boxing/demo/`、`/boxing/demo/ntp.css`、`/boxing/privacy-policy.html` 三 URL live HTTP 200（privacy-policy 为商店提交硬依赖） | HTTP 状态码记录（**原句保留**；2026-09-15 追加 `version.json` 新鲜度断言，见文末「修订 2026-09-15（票 109 · A-064）」） |
 
 **数据兼容义务（Rollback 兼容，两商店官方文本共同要求）**：
 
@@ -74,6 +74,32 @@ Accepted（票 46 + atomcode 调研）· **修订 2026-09-13**（v2026.9.12 强�
 - 本口径取代「必须归档检查单勾选记录」作为 G-B 的唯一合法形态；检查单仍可作为用户自愿附件。
 
 **对齐 W9**：修绿 R1–R3 与纸面债后，以 2026.9.15 重新走 G-A∧G-B∧G-C；在 G-A 绿之前不得宣称门禁达成。
+
+## 修订 2026-09-15（票 109 · A-064）：G-C 升格为「200 + 新鲜度」
+
+**触发事实（2026-09-15 实测，非假设）**：三 URL live 200 **全部成立**，但带 cache-buster 的 `GET https://xxx91n.github.io/boxing/demo/version.json` 返回 `version=2026.9.12`（`deployedAt` 缺失 = 旧产物），而 `gh api repos/Xxx91n/boxing/releases/latest` = `v2026.9.15`。即：**旧口径 G-C 判「达成」的同一时刻，Pages 停在两个版本之前** —— 这正是 A-064 / B75 记录的「过时但 200」盲区，旧定义无力发现。
+
+**修订内容（在上门禁表原句之上追加，不删除、不弱化原条件）**：
+
+| 门禁 | 条件（修订后） | 证据形态 |
+|---|---|---|
+| **G-C Pages** | 三 URL live HTTP 200 **且** `GET /boxing/demo/version.json?<cache-buster>` 解析出的 `version` == 最新 release tag（`v` 前缀归一化后相等） | HTTP 状态码记录 + version.json 快照（version / deployedAt）+ 判定命令输出 |
+
+**机制与分工**：
+
+- **构建期**：`.github/scripts/build-demo.mjs` 稳定产出 `demo/version.json = { version, deployedAt, source, builtAt }`，产出后**回读校验**（探针损坏即 fail closed）；同时把版本号渲染进 demo（`data-boxing-version` + `<meta name="boxing-version">`），构成 HTML 侧第二探针（B75 的「demo 渲染 version」由此机器化）。
+- **部署期**：`.github/workflows/demo-deploy.yml` deploy job 尾部 `node scripts/pages-gc-verify.mjs --mode=deploy-tail --timeout=180`（≤180s 轮询，不收敛即红）。
+- **发行期**：`npm run verify:pages-gc`（等价 `node scripts/pages-gc-verify.mjs --mode=gate`，默认取最新 release tag）；人工检查单按同一口径勾选。
+- **探针必绕缓存**：请求带 `?_=<ts>` 与 `no-cache` 头。GitHub Pages 固定 `max-age=600` 且不可配置（社区讨论 #11884），不绕缓存会产生「看起来没到达」的假阴性。
+
+**失败两态（写入发行检查单，禁止笼统记「Pages 红」）**：
+
+- `MISMATCH` = 部署链路未落地 → 重跑 `demo-deploy`、核查 `github-pages` environment 是否放行 tag 引用。
+- `UNREACHABLE` = 存活/读取问题 → Pages 故障、被缓存的 404、`version.json` 不可读。
+
+**未改变**：三门合取定义、G-B 用户声明口径（禁止 agent 代签）、人工检查单 —— 自动 verify 是**追加**探针，不取代人工复核（ADR-0017「禁止无人复核的自动发布」）。
+
+**2026-09-15 一次性核查结论**：Pages 构建源 = **GitHub Actions 单一模式**（`build_type: workflow`）✔；`github-pages` environment **未放行 tag** ✘ —— release 触发的 run [34860199679](https://github.com/Xxx91n/boxing/actions/runs/34860199679) deploy job 0 step、2 秒内失败，而 dispatch（main）同流程成功。放行需**人工**在 Settings → Environments → github-pages → Deployment branches and tags 增加 `v*`；在放行前，release 触发的 Pages 同步**不会**发生，G-C 新口径将持续判红。
 
 ## Consequences
 

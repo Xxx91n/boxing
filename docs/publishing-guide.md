@@ -88,7 +88,17 @@ gh workflow run build.yml -f version=<VER> -f make_release=true -f amo_sign=true
 隐私政策页与 `/demo/` 同属该 artifact；未发 Release 时 Pages 停在上一次部署内容。  
 （历史教训：`GITHUB_TOKEN` push 不会触发 Pages build，故用 Actions artifact 而非 gh-pages 分支。）
 
-**运维备注（2026-09-13）：** 偶发 `release` 触发的 **deploy** job 失败时，可先 `gh workflow run demo-deploy.yml`（checkout main）重部，或 `gh run rerun <id> --failed`。验收以 `/demo/` 与 privacy URL 200 为准。
+**运维备注（2026-09-13，2026-09-15 更新）：** 偶发 `release` 触发的 **deploy** job 失败时，可先 `gh workflow run demo-deploy.yml`（checkout main）重部，或 `gh run rerun <id> --failed`。**验收口径已升级**：不再以 `/demo/` 与 privacy URL 200 为准，而以 `npm run verify:pages-gc`（三 URL 200 **且** `demo/version.json` 的 `version` == 最新 release tag）为准 —— 200 无法发现「过时但 200」。
+
+### G-C 升格：Pages 新鲜度断言（2026-09-15 · 票 109 / A-064）
+
+| 环节 | 机制 |
+|---|---|
+| 构建 | `build-demo.mjs` 产出 `demo/version.json = { version, deployedAt, source, builtAt }` 并回读校验；demo 同时渲染版本（`data-boxing-version`、`meta[name=boxing-version]`） |
+| 部署 | `demo-deploy.yml` deploy job 尾部 `node scripts/pages-gc-verify.mjs --mode=deploy-tail --timeout=180`（≤180s 不收敛即红） |
+| 发行人工检查 | `npm run verify:pages-gc`（默认比对最新 release tag）；失败按两态处置：`MISMATCH` = 部署链路未落地（重跑 demo-deploy / 查 environment 放行 tag）；`UNREACHABLE` = 存活-读取问题 |
+
+**已知阻塞（需人工放行，非 agent 范围）**：`github-pages` environment 当前**未放行 tag**，release 触发的 deploy job 会被保护规则拦截（run [34860199679](https://github.com/Xxx91n/boxing/actions/runs/34860199679) 的 deploy job 0 step、2 秒内失败），因此 Pages 仍停在 2026-09-13 的 dispatch 产物（`version=2026.9.12`）。放行路径：Settings → Environments → github-pages → Deployment branches and tags 增加 `v*`。Pages 构建源已确认为 **GitHub Actions 单一模式**（`build_type: workflow`），无需变更。
 
 ## Part 6 — 本地验证（不烧号）
 

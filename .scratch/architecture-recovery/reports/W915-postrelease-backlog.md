@@ -8,7 +8,7 @@
 | B72 | N-106-01 innerclip 两 spec 未设 test.setTimeout 预算 | P3 | 观察到期 2026-10-14；到期未绿再开票 |
 | B73 | N-102-03 contrast-guard 未串入 package.json pretest（仅 test.yml） | P3 | 集成窗一行；或接受 CI-only |
 | B74 | N-103-01/02 DESIGN.md Box/Zoom 表与代码现实偏差注记 | P3 | 文档专项或下波 DESIGN 同步 |
-| B75 | 发行后 G-C 断言 demo 渲染 version == v2026.9.15 | P1 | 人工/脚本抽查一次即可关 |
+| B75 | ~~发行后 G-C 断言 demo 渲染 version == v2026.9.15~~ | P1 | **已关闭（2026-09-15 · 票 109 / A-064）**：G-C 升格为「三 URL 200 **且** `demo/version.json` == 最新 release tag」，demo 已渲染版本（`data-boxing-version` + `meta boxing-version`），人工检查单保留。证据见 `.scratch/architecture-recovery/reports/109-report.md` |
 | B76 | 商店 listing 文案/截图是否需随 9.15 更新 | P2 | 用户侧；材料在 docs/store-assets/ |
 | B77 | CHANGELOG [2026.9.15] 段偏薄，可与 release-notes 对齐扩写 | P3 | 文档 |
 | B78 | F-101-01 等具名 F 已随 land CI 绿闭环 — 无需立票 | — | 已消 |

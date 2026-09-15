@@ -30,7 +30,20 @@ if (inputVersion) {
   version = manifest.version;
   versionSource = "manifest";
 }
+// Ticket 109 (A-064): store the bare calver (2026.9.20), not the tag spelling
+// (v2026.9.20). G-C compares this string with the release tag after the same
+// normalisation, and the demo banner renders it.
+if (version.length > 1 && (version[0] === "v" || version[0] === "V")) version = version.slice(1);
+if (!version) {
+  console.error("FATAL: resolved version is empty - version.json would not be verifiable");
+  process.exit(1);
+}
+// Ticket 109 (A-064): the artifact carries its own version marker so G-C can assert
+// freshness instead of trusting a bare 200. deployedAt = when this artifact was
+// assembled and handed to Pages (build, upload and deploy happen in one run);
+// builtAt is kept for build-time forensics.
 const builtAt = new Date().toISOString();
+const deployedAt = builtAt;
 
 function copyFile(src, destDir) {
   fs.mkdirSync(destDir, { recursive: true });
@@ -85,11 +98,19 @@ if (!html.includes(moduleTag)) {
   process.exit(1);
 }
 html = html.replace(moduleTag, '<script src="chrome-stub.js"></script>\n' + moduleTag);
+// Ticket 109 (A-064): machine-readable build marker - the HTML twin of
+// demo/version.json, so a cached version.json alone cannot fool the gate.
+if (!html.includes("<head>")) {
+  console.error("FATAL: <head> tag not found in ntp/index.html");
+  process.exit(1);
+}
+html = html.replace("<head>", '<head>\n  <meta name="boxing-version" content="' + version + '">');
 const banner = '<body>\n' +
   '  <div id="boxing-demo-banner" style="position:fixed;top:0;left:0;right:0;z-index:9999;' +
   'text-align:center;padding:6px 12px;background:rgba(244,239,229,.92);color:#3a3226;' +
   'font:13px/1.4 system-ui,sans-serif;border-bottom:1px solid rgba(0,0,0,.08);">' +
   'Boxing web preview &mdash; a static demo; the layout is stored only in this browser. ' +
+  '<span data-boxing-version="' + version + '">v' + version + '</span> &middot; ' +
   '<a href="https://github.com/Xxx91n/boxing" style="color:#c2410c">Get the extension</a></div>';
 if (!html.includes("<body>")) {
   console.error("FATAL: <body> tag not found in ntp/index.html");
@@ -101,9 +122,21 @@ fs.writeFileSync(path.join(DEMO, "index.html"), html, "utf8");
 // version.json = release tag (or dispatch input, then manifest fallback)
 fs.writeFileSync(
   path.join(DEMO, "version.json"),
-  JSON.stringify({ version, source: versionSource, builtAt }, null, 2) + "\n",
+  JSON.stringify({ version, deployedAt, source: versionSource, builtAt }, null, 2) + "\n",
   "utf8",
 );
+
+// Ticket 109 (A-064): read the marker back before the artifact leaves the build - a
+// broken probe would silently invalidate every later G-C run.
+const versionCheck = JSON.parse(fs.readFileSync(path.join(DEMO, "version.json"), "utf8"));
+if (versionCheck.version !== version || !versionCheck.deployedAt) {
+  console.error("FATAL: version.json read-back mismatch " + JSON.stringify(versionCheck));
+  process.exit(1);
+}
+if (!html.includes(version)) {
+  console.error("FATAL: demo index.html does not render the version");
+  process.exit(1);
+}
 
 // placeholder landing — see demo/README.md; full landing parity is a
 // follow-up ticket (the ticket 06 docs/index.md is Jekyll-rendered, and
@@ -187,6 +220,7 @@ function renderPrivacyPolicy(md) {
 console.log(JSON.stringify({
   out: path.relative(ROOT, OUT),
   version,
+  deployedAt,
   versionSource,
   builtAt,
   ntpCssBytes: fs.statSync(ntpCssSrc).size,

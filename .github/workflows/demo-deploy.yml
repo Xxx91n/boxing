@@ -27,6 +27,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
     steps:
       - name: Checkout release tag
         if: github.event_name == 'release'
@@ -51,6 +53,9 @@ jobs:
         run: |
           test -s pages-artifact/demo/ntp.css
           test -s pages-artifact/privacy-policy.html
+      - name: Publish expected version (G-C)
+        id: version
+        run: echo "value=$(node -p "require('./pages-artifact/demo/version.json').version")" >> "$GITHUB_OUTPUT"
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
@@ -68,3 +73,19 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      # Ticket 109 (A-064): a green deploy is not proof that Pages serves the new
+      # build. Poll demo/version.json with a cache-buster until it reports the
+      # version we just deployed; not converged inside 180s = red.
+      - name: Checkout (verify script lives in the repo)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Verify Pages freshness (deploy tail, <=180s)
+        timeout-minutes: 5
+        env:
+          EXPECTED_VERSION: ${{ needs.build.outputs.version }}
+        run: node scripts/pages-gc-verify.mjs --mode=deploy-tail --timeout=180

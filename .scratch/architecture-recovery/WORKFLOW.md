@@ -55,7 +55,7 @@
 
 - **G-A CI**: main 全量 CI 主 lane 残红清零, 或每条残红均有书面定谳豁免 (条目含: 失败用例名、基线 run URL、失败签名、归属票号、到期条件; 每次发行前复查, 不得永久豁免)。台账本体与规则见下「G-A 残红书面豁免台账」节; 机器校验 `node scripts/waiver-ledger-check.mjs` (票48)。
 - **G-B 人工 zip 黄金路径**: 对发行 zip 解包产物, 在真 Chrome + Firefox 走完检查单黄金路径 (含升级安装的 pre-update 快照与回滚演练)。
-- **G-C Pages 200**: /boxing/demo/、/boxing/demo/ntp.css、/boxing/privacy-policy.html 三 URL live HTTP 200 (privacy-policy 为商店提交硬依赖)。
+- **G-C Pages**: /boxing/demo/、/boxing/demo/ntp.css、/boxing/privacy-policy.html 三 URL live HTTP 200 (privacy-policy 为商店提交硬依赖)；**2026-09-15 修订 (票 109 / A-064, ADR-0017)**：且 `GET /boxing/demo/version.json?<cache-buster>` 的 `version` == 最新 release tag。机器判定 `npm run verify:pages-gc`（部署尾部自动版 `--mode=deploy-tail --timeout=180`）。
 
 渠道条款 (atomcode 2026-09-11 官方文档核验): CWS 百分比发布需 >10k 七日活跃且只增不减, 未达标走可信测试者/自托管 zip canary; CWS 回滚 = 新版本号重发上一版 (~1 分钟免审, 两版循环陷阱, 丢弃进行中百分比); AMO 无百分比发布, 高风险版本用 unlisted canary, 回滚需 ≥2 批准版本且限退一版, 生效按 24h 窗口; 首次上架必须人工, CI 只承接增量。发行检查单必须记录可回滚目标版本。
 
@@ -76,10 +76,13 @@ G-B 人工 zip 黄金路径 (Chrome 与 Firefox 各一遍, 用解包产物)
 - [ ] 升级安装 (上一发行版 → 新 zip): 首开前 pre-update 快照存在; 迁移后数据完整、无冻结
 - [ ] 回滚演练: 新版代码写入后的数据, 用上一版代码读回无损失 (含 v2 单程路径样例 — ADR-0017 具名项)
 - [ ] 至少 1 名具发布权限者确认已知风险与回滚预案 (禁止无人复核发布)
-G-C Pages
+G-C Pages (200 + 新鲜度, 2026-09-15 升格)
 - [ ] https://xxx91n.github.io/boxing/demo/ → 200 且有主题渲染
 - [ ] https://xxx91n.github.io/boxing/demo/ntp.css → 200 text/css
 - [ ] https://xxx91n.github.io/boxing/privacy-policy.html → 200 含政策正文与 Last updated
+- [ ] npm run verify:pages-gc → exit 0 (version.json 带 cache-buster 的 version == 最新 release tag)
+- [ ] demo 渲染版本与 version.json 一致 (data-boxing-version / meta boxing-version)
+- [ ] 失败两态具名: MISMATCH = 部署链路未落地 (重跑 demo-deploy, 查 github-pages environment 是否放行 tag) / UNREACHABLE = 存活-读取问题 (Pages 故障, 缓存 404)
 渠道与商店
 - [ ] 可回滚目标版本已记录 (CWS: 上一发布版 / AMO: 上一批准版且无已知问题)
 - [ ] 商店文案/截图/权限声明/隐私政策与本次产物一致; 版本号与 manifest 一致
