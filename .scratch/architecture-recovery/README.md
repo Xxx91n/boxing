@@ -1,3 +1,21 @@
+## Wave9.20 Grill 定稿（2026-09-15）— 下一波入口
+
+> 状态: **grill 完成 · 整理完成 · 未建票未实施**（建票/GitHub Issue 须用户下令）
+
+| 项 | 值 |
+|---|---|
+| 目标版本 | **2026.9.20** |
+| 基线 | origin/main `a1acaaac` 之上线性追加（禁 root） |
+| D 账本 | `../wave9-920-grill/decision-ledger.md` D-001..D-008 current |
+| Spec / Plan | `../wave9-920-grill/spec.md` · `plan.md` |
+| 对账 | `destination-reconciliation.md` 无去向=0 |
+| Scratch 票 | `issues/01-release-status` · `02-B74` · `03-B77` |
+| Handoff | `../wave9-920-grill/handoff.md` |
+| 主序 | ①P0+静态门禁 → ②B71/72/73 → ③Pages G-C → ④文档 → ⑤G-A |
+| 出口 | G-A 新 tip 全绿 + active F=0 → 用户 G-B → tag/商店另令 |
+
+GitHub 票占位（未创建）: P0 · static-gate · pages-gc · B71 · B72 · B73
+
 ## Wave9.15 波次表（2026-09-14 · 由 Blocked by 推导）
 
 | 波次 | 票 | Covers | Blocked by | 状态 |
