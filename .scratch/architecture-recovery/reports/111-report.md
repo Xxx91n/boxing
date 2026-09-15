@@ -115,7 +115,7 @@
 ## 6. 版本控制（WORKFLOW §4.2）
 
 - 路径：`but status` 取 change id → `but commit -b ticket/111-innerclip-settimeout-b72 -m "..." nt sq qls zk tw to zn`。
-- **结果**：commit `szy`（`02a7c1b5`）建于分支 `ticket/111-innerclip-settimeout-b72`，**恰好 7 文件**（无他人改动卷入）：`README.md` · `decision-ledger.md` · `issues/111` · `reports/111-report.md` · `docs/testing-governance.md` · 两个 spec。
+- **结果**：分支 `ticket/111-innerclip-settimeout-b72` 上两个提交（详见 §6.2）：`szy`（`694195ac`）7 文件 + `uqq`（`c8e7e9d4`）ledger 隔离提交。
 - **并行窗口隔离**：提交时 `but status` 在途面含 107 / 112 / 113 / 115 / 116 各窗口文件（`ntp/*.js`、`docs/CONTEXT.md`、`CHANGELOG.md`、`.scratch/*-atomcode/*`、`reports/107|112-report.md` 等）→ **逐文件比对 hunk 归属后只提交本票 7 项**（`git diff HEAD -- <file>` 逐文件确认每文件仅含本票 hunk）。
 - 未 push / 未开 PR / 未 tag / 未改 root（A-P01）。
 
@@ -130,6 +130,20 @@
    - **波分支改名**：原元数据名 `grill/w920-docs` 被孤立条目永久占用（`but branch delete` 报 `Could not find branch`、`but clean` 报 `No empty branches found`、`but reword` 报 `already exists` 三者互相矛盾），**无法还原原名**；已改名为中性描述名 **`w920-tickets`**（仍持有原 4 个提交，内容零改动）。**此改名需大脑窗口知悉**。
    - **最终栈结构**：`w920-tickets`（rrm / mvs / rpk / trw）← `ticket/112-contrast-guard-pretest`（uqz）← **`ticket/111-innerclip-settimeout-b72`（szy，本票）**。
    - **教训（建议写入 WORKFLOW §6）**：① GitButler 0.22.3 下**禁止用 `but branch delete` 删除已应用分支**（会把未提交改动写成冲突标记并重排栈）；② `but branch new --above` **只用完整分支名**，**禁用** CLI 短 ID，**禁用** commit 锚点去“验证”（会吞并既有提交）；③ 探针应在**独立临时 repo** 验证，不在活动工作区建探针。
+### 6.2 提交与 amend 的两次修正（如实披露）
+
+1. **amend 丢改动**：为把报告更新（§6.1）折进同一提交，执行 `but amend -t ticket/111-innerclip-settimeout-b72 zk` → 报告更新已进提交，但**同一文件的 ledger 改动被重新置为未提交**（A-066 不在提交内）。教训：本版本下 **amend 后必须做字节级比对**（`git show <sha>:<path>` vs 工作树），不能只信 “Amended szy” 回显。
+2. **同文件跨窗口共提交（工具粒度限制）**：GitButler 的 change id 是**整文件粒度**；提交时 `decision-ledger.md` 的单一 change id 同时含**本票 A-066** 与**窗口 112 的 A-067** 两行 → 首次提交把窗口 112 的 A-067 行一并带入。非人为越界（无法用整文件 id 切分，除非用隔离法）；**内容正确、零损失**，但**归属落在票 111 的提交内**，特此披露。
+3. **修正**：按「隔离法」暂摘窗口 114 的 A-069 行 → 单独提交本票 A-066（commit `uqq` / `c8e7e9d4`）→ 原样还回 A-069 行（字节级一致，仍留在未提交区归窗口 114）。
+
+**最终提交**：
+
+| commit | change id | 内容 |
+|---|---|---|
+| `694195ac` | `szy` | 7 文件：README 行 111 · decision-ledger（本票 A-066 + 窗口 112 的 A-067 行）· issues/111 · reports/111-report.md（含 §6.1）· docs/testing-governance.md · 两个 spec |
+| `c8e7e9d4` | `uqq` | decision-ledger：A-066 → implemented（隔离提交） |
+
+栈结构：`w920-tickets`（rrm/mvs/rpk/trw）← `ticket/112-contrast-guard-pretest`（uqz）← **`ticket/111-innerclip-settimeout-b72`（szy + uqq，本票）**。
 ## 7. 残余与风险
 
 - **N-111-01（既有红，非本票面）**：`npm run pretest` 第 6 门 `locale-readme-guard` exit 1 —— `README.md` 的 `store_published-v2026.9.15` != `docs/release-status.md` 的「上一已发布版本（可回滚目标）= 2026.9.12」。**定性：门禁语义缺陷**（guard 把「已发布版本」与「可回滚目标版本」当同一语义比较，`publishedFromStatus()` 只抓「上一已发布版本」行）。由 `a1acaaac`（README 徽章随 2026.9.15 发布前移）引入；两个输入文件在工作树与提交中**一致**（`git status --short -- README.md docs/release-status.md` 为空）→ **与任何未提交改动无关**。**影响**：CI 的 `Run tests: npm test` 会先跑 pretest → 当前 tip 的 pretest 面为红（仅记事实，**不宣称 G-A 状态**）。归属：A-068（票 113 release-status 单状态块）/ A-053（票 99 的 guard 本体）。**本票不动**（跨票面，避免与 113/116 窗口冲突）。
