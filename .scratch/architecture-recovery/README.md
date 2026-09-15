@@ -1,17 +1,25 @@
+## W2 首脑复核 — 108（2026-09-15）
+
+详表: `reports/W920-W2-brain-review.md` · **实施票 107–116 全 done** · frontier=发行 G-A（豁免清零 + test.yml）
+
+## W1 首脑复核（2026-09-15）
+
+详表: `reports/W920-W1-brain-review.md` · frontier=**108** + 109R cluster-map + 113R store-published
+
 ## Wave9.20 波次表（2026-09-15 · 由 Blocked by 推导）
 
 | 波次 | 票 | Covers | Blocked by | 状态 |
 |---|---|---|---|---|
-| W1 | 107 bookmark-delete-commit-p0 | A-062 | — | ready-for-agent |
-| W1 | 109 pages-gc-version-verify | A-064 | — | ready-for-agent |
-| W1 | 110 zoom-dblclick-b71 | A-065 | — | ready-for-agent |
+| W1 | 107 bookmark-delete-commit-p0 | A-062 | — | **done**（首脑复核） |
+| W1 | 109 pages-gc-version-verify | A-064 | — | **done-with-named-F** + 返工 cluster-map |
+| W1 | 110 zoom-dblclick-b71 | A-065 | — | **done-with-named-F** |
 | W1 | 111 innerclip-settimeout-b72 | A-066 | — | **done**（具名既有红 N-111-01，非本票面） |
-| W1 | 112 contrast-guard-pretest-b73 | A-067 | — | ready-for-agent |
-| W1 | 113 release-status-single-block | A-068 | — | ready-for-agent |
+| W1 | 112 contrast-guard-pretest-b73 | A-067 | — | **done** |
+| W1 | 113 release-status-single-block | A-068 | — | **done-with-named-F** + 返工 store-published |
 | W1 | 114 design-box-zoom-b74 | A-069 | — | **done**（AC 2/2 · 报告 reports/114-report.md） |
 | W1 | 115 changelog-915-b77 | A-070 | — | **done**（AC 2/2 · 报告 reports/115-report.md） |
 | W1 | 116 calver-2026-9-20 | A-071 | — | **done**（AC 4/4 · calver-guard exit 0 · 报告 reports/116-report.md） |
-| W2 | 108 layout-bypass-static-gate | A-063 | **107** | ready-for-agent |
+| W2 | 108 layout-bypass-static-gate | A-063 | **107** | **done**（W2 首脑复核 · 含 109R/113R） |
 | W3 | 发行 G-A 执行 | A-P02/A-P03 | 107–116 land | 执行动作 |
 
 - 对账: `destination-reconciliation-w920.md`（无去向=空）

@@ -81,3 +81,16 @@
 - **残留风险 2（预算张力）**：atomcode 建议 Pages 场景预算 15–30 分钟（CDN 传播 + `max-age=600` 不可配），本票按 D-003 取 180s。若后续出现「稍后即收敛」的误红，应回来调预算并记账，不得把红直接改绿。
 - **残留风险 3（人工依赖）**：放行 `github-pages` environment 的 `v*` tag 需用户在 Settings 执行（或 `POST /repos/Xxx91n/boxing/environments/github-pages/deployment_branch_policies`，需管理员权限）。本窗口只核查、不代改。
 - **边界声明**：release-status 的「单一状态块」收敛属 A-068 / 票 114，本票仅在 §三 内追加日期化修订，未改写 §一 投影与其他块。
+
+## 六、版本控制（WORKFLOW §4.2）
+
+- 提交：`but commit -b ticket/109-pages-gc-version-verify -m "feat(109): G-C asserts Pages freshness + deploy-tail verify (A-064)" …` → commit **`zso`**。因 issue 文件依赖 `w920-tickets`（`rpk`），分支建在其之上（`but branch new … --above w920-tickets`）。
+- 采用 **hunk 级选择**提交：`package.json` 只取 `szw:c`（`verify:pages-gc`）、`docs/publishing-guide.md` 只取 `wz:a6c`、`WORKFLOW.md` 取 `py:0`+`py:9`、`ADR-0017` 取 `nv:1`+`nv:4` —— 避免夹带其他窗口（116 calver、112 pretest、111/113 等）的同文件改动。
+- **未 push、未开 PR、未 tag**（§4.2 默认；发行动作需用户另令）。
+
+### 跨窗口待落盘两项（内容已在工作树，文件权属其他分支）
+
+| 项 | 现状 | 归属 |
+|---|---|---|
+| `docs/release-status.md` 的 G-C 修订（G-C 行标注 + 「G-C 2026-09-15 实测（升格口径）」+ F-113-01 根因） | 已在工作树，并随该文件所属分支进入索引（`git diff` 为空） | 文件属 `ticket/113-release-status-single-block`，由 113 窗口落盘 |
+| `.scratch/architecture-recovery/decision-ledger.md` A-064 行 → implemented | 已在工作树（`git diff` 可见：含「票 109：…」字样） | 该文件同时被 A-066/067/068/071 窗口编辑，GitButler 仅暴露一个不可拆分 hunk，故**未**并入本票提交，避免夹带他人改动 |

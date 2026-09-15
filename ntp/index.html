@@ -18,7 +18,8 @@
 <body>
   <main id="app" class="ntp" aria-label="New tab dashboard">
     <header class="ntp__bar" role="banner">
-      <button id="back-btn" tabindex="-1" class="btn btn--ghost btn--icon" aria-label="Go back" data-i18n-title="backTooltip">
+      <button id="back-btn" tabindex="-1" class="btn btn--ghost btn--icon" aria-label="Go back"
+        data-i18n-title="backTooltip">
         <span aria-hidden="true">←</span>
       </button>
       <div class="brand">
@@ -37,14 +38,16 @@
       <div id="search-results" class="search-results" hidden role="listbox" aria-label="Search results"></div>
       <span class="header-count" id="caption"></span>
       <nav class="actions" aria-label="Page actions">
-        <button id="add-box" tabindex="-1" class="btn btn--ghost" aria-label="Add large box" data-i18n-title="addLargeBoxTooltip">
+        <button id="add-box" tabindex="-1" class="btn btn--ghost" aria-label="Add large box"
+          data-i18n-title="addLargeBoxTooltip">
           <span aria-hidden="true">+</span>
         </button>
-        <button id="settings-btn" tabindex="-1" class="btn btn--ghost" aria-label="Open settings" data-i18n-title="settingsTooltip">
+        <button id="settings-btn" tabindex="-1" class="btn btn--ghost" aria-label="Open settings"
+          data-i18n-title="settingsTooltip">
           <span aria-hidden="true">⚙</span>
         </button>
-        <button id="dark-mode-btn" tabindex="-1" class="btn btn--ghost" aria-label="Dark mode" data-i18n-title="darkMode"
-          style="font-size:14px;">
+        <button id="dark-mode-btn" tabindex="-1" class="btn btn--ghost" aria-label="Dark mode"
+          data-i18n-title="darkMode" style="font-size:14px;">
           <span aria-hidden="true">☀</span>
         </button>
       </nav>
@@ -61,12 +64,15 @@
           <div class="canvas__empty-icon" aria-hidden="true">📦</div>
           <div class="canvas__empty-title" data-i18n="emptyCanvasTitle"></div>
           <div class="canvas__empty-hint" data-i18n="emptyCanvasHint"></div>
-          <button class="canvas__empty-action" data-i18n="emptyCanvasAction" tabindex="-1" aria-label="emptyCanvasAction"></button>
+          <button class="canvas__empty-action" data-i18n="emptyCanvasAction" tabindex="-1"
+            aria-label="emptyCanvasAction"></button>
         </div>
         <div class="zoom-controls" id="canvas-zoom">
-          <button class="zoom-btn" data-zoom="out" tabindex="-1" aria-label="Zoom out" data-i18n-title="zoomOut"><span class="zoom-arrow" aria-hidden="true"></span></button>
+          <button class="zoom-btn" data-zoom="out" tabindex="-1" aria-label="Zoom out" data-i18n-title="zoomOut"><span
+              class="zoom-arrow" aria-hidden="true"></span></button>
           <span class="zoom-value" id="canvas-zoom-value">100%</span>
-          <button class="zoom-btn" data-zoom="in" tabindex="-1" aria-label="Zoom in" data-i18n-title="zoomIn"><span class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
+          <button class="zoom-btn" data-zoom="in" tabindex="-1" aria-label="Zoom in" data-i18n-title="zoomIn"><span
+              class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
         </div>
       </div>
 
@@ -81,9 +87,11 @@
         <div id="inner-canvas" class="inner__canvas">
           <div id="inner-surface" class="inner__surface"></div>
           <div class="zoom-controls" id="inner-zoom">
-            <button class="zoom-btn" data-zoom="out" tabindex="-1" aria-label="Zoom out" data-i18n-title="zoomOut"><span class="zoom-arrow" aria-hidden="true"></span></button>
+            <button class="zoom-btn" data-zoom="out" tabindex="-1" aria-label="Zoom out" data-i18n-title="zoomOut"><span
+                class="zoom-arrow" aria-hidden="true"></span></button>
             <span class="zoom-value" id="inner-zoom-value">100%</span>
-            <button class="zoom-btn" data-zoom="in" tabindex="-1" aria-label="Zoom in" data-i18n-title="zoomIn"><span class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
+            <button class="zoom-btn" data-zoom="in" tabindex="-1" aria-label="Zoom in" data-i18n-title="zoomIn"><span
+                class="zoom-arrow zoom-arrow--right" aria-hidden="true"></span></button>
           </div>
         </div>
       </div>
@@ -92,7 +100,8 @@
 
     <footer class="foot">
       <span class="foot__dot" aria-hidden="true"></span>
-      <span class="foot__txt" data-i18n="footerHint">Ctrl+scroll to zoom · Drag blank to pan · Double-click to create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen</span>
+      <span class="foot__txt" data-i18n="footerHint">Ctrl+scroll to zoom · Drag blank to pan · Double-click to create
+        box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen</span>
     </footer>
   </main>
 
@@ -143,7 +152,8 @@
                 tabs</p>
             </section>
             <section class="modal__section">
-              <label class="modal__label" for="url-open-mode-select" data-i18n="urlOpenModeLabel">Open bookmarks in</label>
+              <label class="modal__label" for="url-open-mode-select" data-i18n="urlOpenModeLabel">Open bookmarks
+                in</label>
               <select id="url-open-mode-select" class="modal__select">
                 <option value="sameTab" selected data-i18n="urlOpenModeCurrentTab">Current Tab</option>
                 <option value="newTab" data-i18n="urlOpenModeNewTab">New Tab</option>
@@ -151,7 +161,8 @@
               <p class="modal__hint" data-i18n="urlOpenModeHint">Choose where bookmarks open when clicked</p>
             </section>
             <section class="modal__section">
-              <label class="modal__label" for="conn-delete-action-select" data-i18n="connDeleteActionLabel">Delete connection by</label>
+              <label class="modal__label" for="conn-delete-action-select" data-i18n="connDeleteActionLabel">Delete
+                connection by</label>
               <select id="conn-delete-action-select" class="modal__select">
                 <option value="alt+click" data-i18n="connDeleteActionAltClick">Alt + Click</option>
                 <option value="ctrl+click" data-i18n="connDeleteActionCtrlClick">Ctrl + Click</option>
@@ -159,7 +170,8 @@
                 <option value="double-click" data-i18n="connDeleteActionDoubleClick">Double-click</option>
                 <option value="select+delete" data-i18n="connDeleteActionSelectDelete">Click + Delete key</option>
               </select>
-              <p class="modal__hint" data-i18n="connDeleteActionHint">Choose how to delete a connection line between two boxes</p>
+              <p class="modal__hint" data-i18n="connDeleteActionHint">Choose how to delete a connection line between two
+                boxes</p>
             </section>
           </div>
 
@@ -175,11 +187,21 @@
             <section class="modal__section" id="theme-section">
               <label class="modal__label" data-i18n="themeColorLabel">Color Theme</label>
               <div class="theme-presets" id="theme-presets">
-                <button class="theme-preset theme-preset--active" data-theme="beige" data-i18n-title="themeBeige"><span class="theme-preset__swatch" style="background:linear-gradient(135deg,#F1EEE8 0 50%,#A08060 50% 100%)"></span></button>
-                <button class="theme-preset" data-theme="graphite" data-i18n-title="themeGraphite"><span class="theme-preset__swatch" style="background:linear-gradient(135deg,#E8E8E8 0 50%,#5C5C5C 50% 100%)"></span></button>
-                <button class="theme-preset" data-theme="coastal" data-i18n-title="themeCoastal"><span class="theme-preset__swatch" style="background:linear-gradient(135deg,#EDF2F3 0 50%,#5A8A9A 50% 100%)"></span></button>
-                <button class="theme-preset" data-theme="forest" data-i18n-title="themeForest"><span class="theme-preset__swatch" style="background:linear-gradient(135deg,#EDF1EC 0 50%,#6A9870 50% 100%)"></span></button>
-                <button class="theme-preset" data-theme="pure" data-i18n-title="themePure"><span class="theme-preset__swatch" style="background:linear-gradient(135deg,#F8F8F8 0 50%,#777777 50% 100%)"></span></button>
+                <button class="theme-preset theme-preset--active" data-theme="beige" data-i18n-title="themeBeige"><span
+                    class="theme-preset__swatch"
+                    style="background:linear-gradient(135deg,#F1EEE8 0 50%,#A08060 50% 100%)"></span></button>
+                <button class="theme-preset" data-theme="graphite" data-i18n-title="themeGraphite"><span
+                    class="theme-preset__swatch"
+                    style="background:linear-gradient(135deg,#E8E8E8 0 50%,#5C5C5C 50% 100%)"></span></button>
+                <button class="theme-preset" data-theme="coastal" data-i18n-title="themeCoastal"><span
+                    class="theme-preset__swatch"
+                    style="background:linear-gradient(135deg,#EDF2F3 0 50%,#5A8A9A 50% 100%)"></span></button>
+                <button class="theme-preset" data-theme="forest" data-i18n-title="themeForest"><span
+                    class="theme-preset__swatch"
+                    style="background:linear-gradient(135deg,#EDF1EC 0 50%,#6A9870 50% 100%)"></span></button>
+                <button class="theme-preset" data-theme="pure" data-i18n-title="themePure"><span
+                    class="theme-preset__swatch"
+                    style="background:linear-gradient(135deg,#F8F8F8 0 50%,#777777 50% 100%)"></span></button>
               </div>
               <p class="modal__hint" data-i18n="themeColorHint">Select a color theme for the entire interface</p>
             </section>
@@ -210,7 +232,8 @@
             <section class="modal__section">
               <div style="display:flex;gap:8px;">
                 <button id="export-data-btn" tabindex="-1" class="btn" data-i18n="exportData">Export Data</button>
-                <button id="export-full-dr-btn" tabindex="-1" class="btn" data-i18n="exportFullPackage">Full DR package</button>
+                <button id="export-full-dr-btn" tabindex="-1" class="btn" data-i18n="exportFullPackage">Full DR
+                  package</button>
                 <button id="import-data-btn" tabindex="-1" class="btn" data-i18n="importData">Import Data</button>
                 <input type="file" id="import-file-input" accept=".json" hidden>
               </div>
@@ -223,15 +246,18 @@
               <label class="modal__label" data-i18n="dataHealthTitle">Data health</label>
               <p class="modal__hint" style="margin:2px 0 0;font-size:11px;">
                 <span data-i18n="dataSnapshotCount">Snapshot count</span>: <span id="data-snapshot-count">–</span>
-                · <span data-i18n="dataLastSnapshotTime">Latest snapshot</span>: <span id="data-last-snapshot-time">–</span>
+                · <span data-i18n="dataLastSnapshotTime">Latest snapshot</span>: <span
+                  id="data-last-snapshot-time">–</span>
               </p>
               <p class="modal__hint" id="data-corrupt-row" style="margin:2px 0 0;font-size:11px;color:#b3261e;" hidden>
-                <span data-i18n="dataCorruptArchived">Corrupted layout archived</span>: <span id="data-corrupt-count">0</span>
+                <span data-i18n="dataCorruptArchived">Corrupted layout archived</span>: <span
+                  id="data-corrupt-count">0</span>
                 · <span id="data-corrupt-time">–</span>
               </p>
               <!-- Ticket 44 (spec D4): conflict-copy row — archived losing sides from import/sync merge conflicts. -->
               <p class="modal__hint" id="data-conflict-row" style="margin:2px 0 0;font-size:11px;color:#8a6d1a;" hidden>
-                <span data-i18n="dataConflictArchived">Conflict copies archived</span>: <span id="data-conflict-count">0</span>
+                <span data-i18n="dataConflictArchived">Conflict copies archived</span>: <span
+                  id="data-conflict-count">0</span>
                 · <span id="data-conflict-time">–</span>
               </p>
               <!-- Ticket 79 (spec Wave8 A-029): conflict-copy readout list — one row per
@@ -241,7 +267,9 @@
                 <label class="modal__label" data-i18n="dataConflictList" style="margin-top:6px;">Conflict copies</label>
                 <div id="data-conflict-list"></div>
               </div>
-              <p class="modal__hint" data-i18n="dataHealthHint" style="margin:2px 0 0;font-size:11px;">Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot.</p>
+              <p class="modal__hint" data-i18n="dataHealthHint" style="margin:2px 0 0;font-size:11px;">Boxing keeps
+                time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never
+                silently overwritten) and rebuilt from the latest healthy snapshot.</p>
               <!-- Ticket 50 (spec W6-D1): Time Machine — every retained snapshot (ts /
                    schemaVersion / size) with a per-row rollback behind a secondary confirm.
                    Rollback is itself undoable: a pre-restore safety snapshot is captured
@@ -262,8 +290,10 @@
                 and never persists across browser restarts.</p>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <button id="diag-export-log-btn" tabindex="-1" class="btn" data-i18n="diagExportLog">Export Log</button>
-                <button id="diag-clear-log-btn" tabindex="-1" class="btn btn--ghost" data-i18n="diagClearLog">Clear Log</button>
-                <label class="modal__label" for="diag-log-level-select" data-i18n="diagLogLevelLabel" style="font-weight:normal;margin:0;">Log level</label>
+                <button id="diag-clear-log-btn" tabindex="-1" class="btn btn--ghost" data-i18n="diagClearLog">Clear
+                  Log</button>
+                <label class="modal__label" for="diag-log-level-select" data-i18n="diagLogLevelLabel"
+                  style="font-weight:normal;margin:0;">Log level</label>
                 <select id="diag-log-level-select" class="modal__select" style="width:auto;">
                   <option value="1" data-i18n="diagLogLevelError">Error</option>
                   <option value="2" data-i18n="diagLogLevelWarn">Warning</option>
@@ -282,7 +312,8 @@
                 <option value="webdav" data-i18n="syncWebDAV">WebDAV</option>
                 <option value="gist" data-i18n="syncGitHubGist">GitHub Gist</option>
               </select>
-              <p class="modal__hint" data-i18n="syncProviderHint">Boxing stores your layout in this browser’s local storage. Pick a provider to sync across devices.</p>
+              <p class="modal__hint" data-i18n="syncProviderHint">Boxing stores your layout in this browser’s local
+                storage. Pick a provider to sync across devices.</p>
             </section>
             <section class="modal__section" id="last-backup-section">
               <p class="modal__hint" style="margin:0;font-size:11px;"><span data-i18n="lastBackupTime">Last
@@ -304,8 +335,10 @@
                   <p class="modal__hint" data-i18n="syncLevelHint">Choose what to sync with remote backup</p>
                 </section>
                 <section class="modal__section">
-                  <label class="modal__label" for="sync-filename-input" data-i18n="syncFileNameLabel">Sync File Name</label>
-                  <input id="sync-filename-input" class="modal__input" type="text" spellcheck="false" data-i18n-placeholder="syncFileNamePlaceholder" placeholder="boxing-backup.json">
+                  <label class="modal__label" for="sync-filename-input" data-i18n="syncFileNameLabel">Sync File
+                    Name</label>
+                  <input id="sync-filename-input" class="modal__input" type="text" spellcheck="false"
+                    data-i18n-placeholder="syncFileNamePlaceholder" placeholder="boxing-backup.json">
                   <p class="modal__hint" data-i18n="syncFileNameHint">Custom file name for the remote backup file</p>
                 </section>
                 <section class="modal__section">
@@ -325,17 +358,23 @@
               <div class="sync-group sync-group--provider" id="webdav-config" hidden>
                 <h4 class="sync-group__title" data-i18n="syncWebDAV">WebDAV</h4>
                 <label class="modal__label" for="webdav-url" data-i18n="webdavUrl">WebDAV URL</label>
-                <input id="webdav-url" class="modal__input" type="url" placeholder="https://dav.example.com/boxing/" spellcheck="false">
+                <input id="webdav-url" class="modal__input" type="url" placeholder="https://dav.example.com/boxing/"
+                  spellcheck="false">
                 <label class="modal__label" for="webdav-user" data-i18n="webdavUser">Username</label>
                 <input id="webdav-user" class="modal__input" type="text" placeholder="" spellcheck="false">
                 <label class="modal__label" for="webdav-pass" data-i18n="webdavPass">Password</label>
                 <input id="webdav-pass" class="modal__input" type="password" placeholder="" spellcheck="false">
                 <label class="checkbox-label">
                   <input type="checkbox" id="webdav-allow-private">
-                  <span class="checkbox-label__text" data-i18n="webdavAllowPrivateHost">Allow private / local network hosts (advanced)</span>
+                  <span class="checkbox-label__text" data-i18n="webdavAllowPrivateHost">Allow private / local network
+                    hosts (advanced)</span>
                 </label>
-                <p class="modal__hint" data-i18n="webdavAllowPrivateHostHint">Only enable this for a WebDAV server you own on your own LAN or machine. It lets Boxing send requests from inside your network to the address you enter - router admin pages, NAS interfaces and cloud metadata endpoints such as 169.254.169.254 included - so a mistyped URL is no longer refused.</p>
-                <button id="webdav-test-btn" tabindex="-1" class="btn" data-i18n="webdavTestBtn" style="margin-top:8px;">Test Connection</button>
+                <p class="modal__hint" data-i18n="webdavAllowPrivateHostHint">Only enable this for a WebDAV server you
+                  own on your own LAN or machine. It lets Boxing send requests from inside your network to the address
+                  you enter - router admin pages, NAS interfaces and cloud metadata endpoints such as 169.254.169.254
+                  included - so a mistyped URL is no longer refused.</p>
+                <button id="webdav-test-btn" tabindex="-1" class="btn" data-i18n="webdavTestBtn"
+                  style="margin-top:8px;">Test Connection</button>
               </div>
               <!-- GitHub Gist config — provider group; sync-engine.js toggles #gist-config[hidden] -->
               <div class="sync-group sync-group--provider" id="gist-config" hidden>
@@ -391,7 +430,7 @@
         <select id="onboarding-lang-select" class="modal__select onboarding__lang-select"></select>
         <p class="onboarding__lang-hint" data-i18n="onboardingLangDesc">Pick a language for the interface</p>
       </div>
-            <div class="modal__body onboarding__body">
+      <div class="modal__body onboarding__body">
         <!-- Step 1: Add large boxes -->
         <div class="onboarding__step" data-step="1">
           <div class="onboarding__step-icon" aria-hidden="true">＋</div>
@@ -417,7 +456,8 @@
             server. Your boxes sync across browsers and tabs; data is backed up safely with timestamp-based two-way
             sync.</p>
           <div style="margin-top:8px;">
-            <button type="button" class="btn btn--ghost" id="onboarding-restore-btn" tabindex="-1" data-i18n="onboardingRestore">Restore from backup</button>
+            <button type="button" class="btn btn--ghost" id="onboarding-restore-btn" tabindex="-1"
+              data-i18n="onboardingRestore">Restore from backup</button>
           </div>
         </div>
         <div class="onboarding__dots" aria-hidden="true">
@@ -427,7 +467,8 @@
         </div>
       </div>
       <div class="modal__foot onboarding__foot">
-        <button class="btn btn--ghost" id="onboarding-prev-btn" tabindex="-1" disabled data-i18n="onboardingPrev">Previous</button>
+        <button class="btn btn--ghost" id="onboarding-prev-btn" tabindex="-1" disabled
+          data-i18n="onboardingPrev">Previous</button>
         <button class="btn" id="onboarding-next-btn" tabindex="-1" data-i18n="onboardingNext">Next</button>
       </div>
     </div>
