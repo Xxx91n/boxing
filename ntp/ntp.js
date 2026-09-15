@@ -474,7 +474,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   // Ticket 08: inject ntp.js-scope deps into the render module (./render.js)
   initRenderFacade({ addLargeBtn, api, appEl, backBtn, canvasContainer, canvasEmpty, canvasSurface, canvasZoomCtrl, canvasZoomVal, debug, debugErr, debugSampled, debugWarn, enterAndLocateSmallBox, headerBar, headerPinBtn, innerCanvas, innerCrumbTitle, innerSurface, innerWrapper, innerZoomCtrl, innerZoomVal, makeId, openConfirmModal, rebuildBoxMaps, updateCaption, zoomSlider, zoomSliderVal });
   initConnFacade({ commit, getLargeBox, getSmallBox, getInnerSurfaceContent: () => innerSurfaceContent, rebuildBoxMaps, debug, debugSampled, canvasSurface, canvasContainer, innerCanvas, innerSurface });
-  initPopupsFacade({ getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker, makeId, api, debug, debugWarn });
+  initPopupsFacade({ getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker, makeId, api, debug, debugWarn, commit });
   // Ticket 10 (architecture-recovery): inject ntp.js-scope deps into the four settings/init-domain
   // modules (ADR-0016). Must stay after every DOM const it reads (ticket-08 TDZ lesson).
   // Ticket 81R2 (A-031): PIK storage access goes through the storage.js narrow port

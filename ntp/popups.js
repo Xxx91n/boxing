@@ -15,12 +15,13 @@ import { loadFavicon } from './favicon.js';
 
 // Injected render.js/ntp.js-scope deps (set once at boot, before any runtime call).
 let getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker,
-    makeId, api, debug, debugWarn;
+    makeId, api, debug, debugWarn, commit;
 export function initPopupsFacade(deps) {
   getLargeBox = deps.getLargeBox; renderInnerSurface = deps.renderInnerSurface;
   showBoxDeletedWarning = deps.showBoxDeletedWarning; addPopupTracker = deps.addPopupTracker;
   removePopupTracker = deps.removePopupTracker;
   makeId = deps.makeId; api = deps.api; debug = deps.debug; debugWarn = deps.debugWarn;
+  commit = deps.commit;
 }
   export function renderBookmarks(body, largeId, sb) {
     body.innerHTML = '';
@@ -186,8 +187,11 @@ export function initPopupsFacade(deps) {
       e.stopPropagation();
       // BX-DEV-111k: validate box still exists before deleting bookmark
       if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
-      sb.bookmarks.splice(index, 1);
-      saveLayout();
+      // Ticket 107 (A-062): route through the ADR-0007 unified commit entry so the
+      // handler writes the bookmark tombstone (markDeleted) before the save. The bare
+      // splice + fire-and-forget saveLayout that used to live here wrote no tombstone,
+      // so a stale remote copy re-adopted the bookmark on the next cross-tab merge.
+      commit("deleteBookmark", { largeId, smallId: sb.id, bmId: bm && bm.id, index }, { save: true });
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
       popup.remove();

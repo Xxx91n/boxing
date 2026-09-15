@@ -163,6 +163,33 @@ export function initRenderFacade(deps) {
         parentLargeId: largeId
       };
     },
+    // Ticket 107 (A-062): single-bookmark delete is a first-class mutation op. The old
+    // popups.js path spliced the array and fire-and-forgot saveLayout, so no tombstone was
+    // written; a stale remote copy then re-adopted the bookmark through the cross-tab merge
+    // (mergeConcurrentLayout -> mergeById) — the P0 "deleted bookmark comes back" bug.
+    // Tombstoning the bm id here makes the existing recursive tombstone filter
+    // (boxes / children / bookmarks) authoritative for this path too.
+    deleteBookmark(state, { largeId, smallId, bmId, index }) {
+      const lb = getLargeBox(largeId);
+      if (!lb) return { skipped: true };
+      const sb = (lb.children || []).find(s => s.id === smallId);
+      if (!sb || !Array.isArray(sb.bookmarks)) return { skipped: true };
+      // Id-first: the id is the merge key, so it survives an external reload that
+      // replaced the array while the popup was open (a stale positional index does not).
+      let idx = bmId ? sb.bookmarks.findIndex(b => b && b.id === bmId) : -1;
+      // Legacy payloads (the v2 migration never backfills ids) can only be addressed by
+      // position. mergeById already drops id-less entries, so they carry no resurrection
+      // path — the index fallback keeps delete working without weakening the tombstone.
+      if (idx < 0 && Number.isInteger(index) && index >= 0 && index < sb.bookmarks.length) idx = index;
+      if (idx < 0) return { skipped: true };
+      const removed = sb.bookmarks[idx];
+      sb.bookmarks.splice(idx, 1);
+      return {
+        tombstoneIds: removed && removed.id ? [removed.id] : [],
+        deletedBookmark: { largeId, smallId, bmId: (removed && removed.id) || null },
+        parentLargeId: largeId
+      };
+    },
     applyExternal(state, { incoming, incomingWins }) {
       // merge already applied by caller onto layout; handler only signals rebuild
       return { isExternal: true, connChanged: true, forceMaps: true };

@@ -11,7 +11,7 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 
 ### Boxes
 - **Large box** — top-level container rendered on the outer canvas. Has `id: 'L<n>'`, `x`, `y`, `w`, `h`, `title`, `isParent` (star mark), `autoExpand`, `viewState` (inner zoom/pan).
-- **Small box** — leaf container inside a large box's inner surface. Has `id: 'S<n>'`, same geometry fields, `bookmarks: [{title,url}]`.
+- **Small box** — leaf container inside a large box's inner surface. Has `id: 'S<n>'`, same geometry fields, `bookmarks: [{id, title, url}]` — `id` is the merge/tombstone key (ticket 107).
 - **isParent** — boolean star-mark on a box indicating it's the movement-leader of its DSU group. Visualized as a filled star (empty star = not parent). See ADR-0003.
 - **autoExpand** — boolean: when true, the box renders expanded on hover without needing a click toggle.
 
@@ -50,7 +50,7 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **Wave9 version surface (2026-09-14 · ticket 94 / A-048)** — version surface advanced to **2026.9.15**: manifest `version`+`version_name`, package.json/lock, settings-footer static fallback, AGENTS.md, CHANGELOG `[2026.9.15]`, and `docs/release-notes/2026.9.15.md` (release-body SSOT consumed by build.yml `body_path`). Gate re-run prep per ADR-0017: G-A evidence = consecutive green main runs 34773593267 + 34778641702 (tip 02d31657); re-run required on the post-bump tip; G-B stays user-declared (version+date, no agent sign-off); G-C baseline 3-URL 200 verified 2026-09-14, post-release re-check asserts rendered version == v2026.9.15.
 
 ### Mutation API (ADR-0007)
-- **commit(op, payload, opts)** — single mutation entry (tldraw Store pattern). Ops: `addConn`, `removeConn`, `toggleStar`, `deleteLargeBox`, `deleteSmallBox`, `applyExternal`. Owns tombstones, DSU dirty, viewState clear, optional save/render.
+- **commit(op, payload, opts)** — single mutation entry (tldraw Store pattern). Ops: `addConn`, `removeConn`, `toggleStar`, `deleteLargeBox`, `deleteSmallBox`, `deleteBookmark` (ticket 107: single-bookmark delete; tombstones the bm id), `applyExternal`. Owns tombstones, DSU dirty, viewState clear, optional save/render.
 - **boxById / smallBoxById** — O(1) box lookups; rebuilt on load/external apply.
 - **__dsuDirty / markDsuDirty()** — skip full DSU rebuild on hot path when clean.
 - **Spatial hash (elasticSnap)** — threshold 32; cell = 2× max box dim (GDevelop pattern).

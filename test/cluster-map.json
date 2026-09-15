@@ -38,6 +38,7 @@
       "boxing-update-cow-before-migrate.spec.ts",
       "boxing-star-sync-audit.spec.ts",
       "boxing-state-sync.spec.ts",
+      "boxing-sync-bookmark-delete-tombstone.spec.ts",
       "boxing-sync-level.spec.ts",
       "boxing-sync-ui-grouping.spec.ts",
       "boxing-sync.spec.ts",
@@ -68,6 +69,7 @@
       "boxing-innerclip-pan.spec.ts",
       "boxing-innerclip.spec.ts",
       "boxing-popup-dragselect.spec.ts",
+      "boxing-sync-bookmark-delete-tombstone.spec.ts",
       "boxing-search.spec.ts",
       "boxing-title-select-all.spec.ts",
       "boxing-v3.spec.ts",
@@ -85,6 +87,7 @@
     "ntp/popups.js": [
       "boxing-memory.spec.ts",
       "boxing-popup-dragselect.spec.ts",
+      "boxing-sync-bookmark-delete-tombstone.spec.ts",
       "boxing-search.spec.ts",
       "boxing-v3.spec.ts"
     ],
@@ -98,6 +101,7 @@
       "boxing-settings-persist.spec.ts",
       "boxing-snapshot-rotation.spec.ts",
       "boxing-update-cow-before-migrate.spec.ts",
+      "boxing-sync-bookmark-delete-tombstone.spec.ts",
       "boxing-state-sync.spec.ts",
       "boxing-sync-level.spec.ts",
       "boxing-sync.spec.ts",
@@ -176,6 +180,7 @@
       "boxing-memory.spec.ts",
       "boxing-migration-golden.spec.ts",
       "boxing-search.spec.ts",
+      "boxing-sync-bookmark-delete-tombstone.spec.ts",
       "boxing-state-sync.spec.ts",
       "boxing-v3.spec.ts",
       "boxing-dr-export-envelope.spec.ts"
