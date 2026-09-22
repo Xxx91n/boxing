@@ -1,6 +1,6 @@
 # Store Publishing Plan — Boxing 2026.9.20
 
-> 状态: **2026.9.15 已过审上架（AMO+Edge，用户声明）+ GitHub Release 已发布；下一目标 2026.9.20（发版待三门合取 + 用户另令）** · 更新: 2026-09-15
+> 状态: **2026.9.20 已上架（AMO，用户声明「已经稳定」）+ GitHub Release v2026.9.20 已发布 + 三门合取达成** · 更新: 2026-09-22
 > Grill 心智模型保留于「Grill Decisions」节；执行表已按 2026.9.20 现况重写。
 > 隐私政策: https://xxx91n.github.io/boxing/privacy-policy.html
 

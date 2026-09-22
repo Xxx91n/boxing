@@ -4,11 +4,11 @@
 > 本页是**状态页**，不是门禁定义：与 [ADR-0017](adr/0017-release-data-gate.md) 冲突时以 ADR-0017 为准，并在此记 `revised`。
 > 检查单模板与豁免台账全表见仓库内 `.scratch/architecture-recovery/WORKFLOW.md` §4.4（工作日志层，仅作证据引用）。
 
-**最后核验（Last verified）：2026-09-22** · 现役 tag `v2026.9.15` @ `cc30edcc` · 现役发行版本 **2026.9.15（已发布）** · 目标发行版本 **2026.9.20（G-A∧G-B 已齐，待 C08 tag 后 G-C 复验 + 商店）** · 本波 tip `w920-followup-impl`（G-A run 35694278677）
+**最后核验（Last verified）：2026-09-22** · 现役 tag **`v2026.9.20`** · 现役发行版本 **2026.9.20（已发布）** · GitHub Release 已发布 · 商店 **2026.9.20 已上架（用户声明「已经稳定」）** · G-C version.json=`2026.9.20`
 
 ## 一、结论（§三 的投影，非独立状态块）
 
-**现役结论：v2026.9.15 已发布（三门合取达成，不回溯改判）。2026.9.20 目标版：G-A ∧ G-B（用户声明 2026-09-22 · Xxx91n）已齐；G-C 对最新 tag 已 PASS（version.json=2026.9.15）；待用户 C08 打 v2026.9.20 后由 v* 策略自动 deploy 再跑 G-C 复验，然后才允许宣称 2026.9.20 可发行。** 禁止把 G-B 通过读成三门齐。**
+**现役结论：2026.9.20 三门合取达成 · v2026.9.20 已发布。** tag `v2026.9.20` 已打；GitHub Release 已发布（chrome / firefox / source zip + SHA256SUMS）；商店 **2026.9.20 已上架（用户声明 2026-09-22「已经稳定」）**；G-C `verify:pages-gc` **PASS**（version.json=`2026.9.20`）。9.15 历史不回溯改判。
 
 > 本节只把 §三「发行终谳（2026-09-14 实测）」的结论投影到首屏；**本节不设状态表、不独立陈述门状态**。页内唯一现役状态块是 §三。
 
@@ -31,9 +31,9 @@
 
 | 门 | 状态 | 证据 | 说明 |
 |---|---|---|---|
-| **G-A CI** | **2026.9.20 达成** | run [35694278677](https://github.com/Xxx91n/boxing/actions/runs/35694278677) @ `w920-followup-impl` 四 job 全 success | 2026-09-22 本波终谳（data-golden + ubuntu/windows/macos）；9.15 终谳 34857433215 见历史表 |
-| **G-B 人工黄金路径** | **2026.9.20 达成（用户声明）** | 2026-09-22 用户声明「人工已经声明通过，执行人 **Xxx91n**」2026.9.20 zip | 含版本+执行人；09-15 声明不覆盖新产物（D-004⑤）已重签；禁止 agent 代签 |
-| **G-C Pages** | **升格口径达成（对最新 tag）** | `npm run verify:pages-gc` **G-C PASS** expected=2026.9.15 · version.json=`2026.9.15` deployedAt=2026-09-22T07:48:24Z · 三 URL 200 | deploy run [35701446566](https://github.com/Xxx91n/boxing/actions/runs/35701446566)（main dispatch）+ deploy-tail 收敛；**F-113-01 已收敛**（demo 不再是 2026.9.12）；对 **v2026.9.20** 的 G-C 待 C08 tag 后由 v* 策略触发 deploy 再验 |
+| **G-A CI** | **达成** | run [35694278677](https://github.com/Xxx91n/boxing/actions/runs/35694278677) 四 job 全 success | 2026-09-22 终谳 |
+| **G-B 人工黄金路径** | **达成（用户声明）** | 2026-09-22 用户声明「人工已经声明通过，执行人 **Xxx91n**」2026.9.20 | 禁止 agent 代签 |
+| **G-C Pages** | **达成（升格口径）** | `npm run verify:pages-gc` **G-C PASS** expected=**2026.9.20** · version.json=`2026.9.20` deployedAt=2026-09-22T08:23:10Z · 三 URL 200 | deploy run [35704498181](https://github.com/Xxx91n/boxing/actions/runs/35704498181) + deploy-tail 收敛 |
 
 ### G-C 实测锚点（2026-09-14）
 
@@ -145,5 +145,5 @@ A-058 的具名 F：`no-mirror` e2e chromium 启动超时（环境性），源�
 | 2026-09-14 | 票 97 / A-051 建立本页；G-C 三 URL 实测 200；豁免台账 exit 0 |
 | 2026-09-14 | 票 105 / A-059：撤账判据（≥2 连续 main 全绿 + N/B/F 约束）写入 WORKFLOW §4.4 与 testing-governance.md；waiver-ledger-check 扩展为机器校验（closed 行须 ≥2 run 撤账证据） |
 | 2026-09-15 | 票 107–116 land origin/main tip `2f167ca7`；版本面 2026.9.20；**G-B 用户声明「测试通过」2026.9.20**（zip 黄金路径）；G-A CI / G-C Pages 待发行动作 |
-| 2026-09-22 | W920 followup：G-A run 35694278677 四 job 全绿；G-B 用户声明 2026.9.20 · Xxx91n；C01 三豁免处置（active=0）；C04 env v* 放行；G-C 升格 PASS（version.json=2026.9.15==最新 tag，F-113-01 收敛）；C05 addBookmark→commit + C07 豁免 expires+ticket |
+| 2026-09-22 | **2026.9.20 三门齐 + 发行**：G-A 35694278677 · G-B Xxx91n · G-C PASS（version.json=2026.9.20）· tag/Release v2026.9.20 · 商店已上架（用户「已经稳定」）· AMO lint 清零（去 data_collection_permissions + innerHTML→textContent）· 多余 zip/crx 清理（15→2） |
 | 2026-09-15 | 票 113 / A-068：收敛单一现役状态块 —— 删/降级 §一 矛盾表（改为 §三 投影句）；§三 发行终谳填 2026-09-14 实测；三条旧 G-A run 标 **Superseded**；新增「有且只有一个状态块」页内硬契约（§三 / §六）；按 git 血缘把 tip `41fcf1e4` 修正为 `8a8798c9`（现役 tag `v2026.9.15` @ `cc30edcc`）；录具名 F-113-01（demo 渲染 v2026.9.12） |
