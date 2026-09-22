@@ -851,7 +851,11 @@ export function initRenderFacade(deps) {
    if (!lb.children || lb.children.length === 0) {
      const emptyWrap = document.createElement('div');
      emptyWrap.className = 'inner__empty-state';
-     emptyWrap.innerHTML = '<div class="inner__empty-hint">' + i18n('emptyInnerHint') + '</div>';
+      // AMO lint: no dynamic innerHTML — hint text goes through textContent.
+      const emptyHint = document.createElement("div");
+      emptyHint.className = "inner__empty-hint";
+      emptyHint.textContent = i18n("emptyInnerHint");
+      emptyWrap.appendChild(emptyHint);
      const actionBtn = document.createElement('button');
      actionBtn.className = 'inner__empty-action';
      actionBtn.textContent = i18n('emptyInnerAction');
