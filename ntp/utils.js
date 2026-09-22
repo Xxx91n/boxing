@@ -474,7 +474,7 @@ function mergeLayoutThreeWay(cloud, local, base) {
       if (divergedFields.length > 0) boxConflicts.push({ ...existing });
       box = divergedFields.length > 3 ? { ...lb } : { ...existing, ...lb };
     }
-    // layout-bypass-allow: pure-merge-output - utils.js is a leaf module: mergeSmallBoxChildren returns fresh arrays
+    // layout-bypass-allow: pure-merge-output - leaf module mergeSmallBoxChildren returns fresh arrays (expires:2027-03-31; ticket:108)
     box.children = childMerge.children;
     box.nextSmallIndex = bb
       ? maxIdx(lb.nextSmallIndex, existing.nextSmallIndex, bb.nextSmallIndex)

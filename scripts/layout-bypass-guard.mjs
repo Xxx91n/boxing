@@ -32,11 +32,12 @@
 // Allow-region (no comment needed)
 //   The mutationHandlers object literal and the commit() body in ntp/render.js.
 //
-// Exemption (named, in place)
-//   // layout-bypass-allow: <name> - <reason>
+// Exemption (named, expiring, ticketed — C07 / D-005)
+//   // layout-bypass-allow: <name> - <reason> (expires:YYYY-MM-DD; ticket:<ref>)
 //   on the same line or the line directly above. <name> must match
-//   [a-z0-9][a-z0-9._-]* and <reason> must be at least 12 characters, otherwise
-//   the comment is NOT a valid exemption and the site stays a violation.
+//   [a-z0-9][a-z0-9._-]*, <reason> must be at least 12 characters, and the reason
+//   must carry both expires:YYYY-MM-DD and ticket:<ref> — no permanent allow.
+//   Missing name/reason/expires/ticket => NOT a valid exemption (fail closed).
 //   There is deliberately NO module-level blanket exemption: the exemption
 //   surface cannot be widened by naming a module.
 //
@@ -203,7 +204,13 @@ function matchExemption(line) {
   if (!m) return null;
   const reason = (m[2] || "").trim();
   if (reason.length < MIN_REASON) return null;
-  return { name: m[1], reason: reason };
+  // C07 (D-005): rewrite exemptions are named + expiring + ticketed. No permanent allow.
+  // expires:YYYY-MM-DD and ticket:<ref> must appear in the reason, otherwise the
+  // comment is NOT a valid exemption and the site stays a violation (fail closed).
+  const exp = /expires:(\d{4}-\d{2}-\d{2})/.exec(reason);
+  const tkt = /ticket:([A-Za-z0-9._\/-]+)/.exec(reason);
+  if (!exp || !tkt) return null;
+  return { name: m[1], reason: reason, expires: exp[1], ticket: tkt[1] };
 }
 
 function findAllowRegions(lines) {
@@ -318,9 +325,10 @@ function selfTest() {
   check("normalization guard (X = X || []) is not a violation", popups("  sb.bookmarks = sb.bookmarks || [];"), "");
   check("normalization guard (if !Array.isArray) is not a violation", popups("  if (!Array.isArray(layout.connections)) layout.connections = [];"), "");
   check("DOM .children receiver is not a layout collection", popups("  canvasSurface.children.length = 0;"), "");
-  check("named exemption comment exempts the line below", popups("  // layout-bypass-allow: storage-facade-merge - facade owns the merge write chain" + NL + "  localBox.children = mergeById(a, b, t);"), "");
+  check("named exemption comment exempts the line below", popups("  // layout-bypass-allow: storage-facade-merge - facade owns the merge write chain (expires:2027-03-31; ticket:108)" + NL + "  localBox.children = mergeById(a, b, t);"), "");
   check("exemption without a name or reason is NOT an exemption", popups("  // layout-bypass-allow: no-name-just-text" + NL + "  layout.boxes = layout.boxes.filter(Boolean);"), "LB-2@3");
-  check("unused exemption is red (LB-3 ratchet)", popups("  // layout-bypass-allow: stale-rot - this comment no longer exempts anything" + NL + "  const ok = 1;"), "LB-3@2");
+  check("exemption without expires+ticket is NOT an exemption (C07)", popups("  // layout-bypass-allow: no-expiry-rot - facade owns the merge write chain here" + NL + "  localBox.children = mergeById(a, b, t);"), "LB-2@3");
+  check("unused exemption is red (LB-3 ratchet)", popups("  // layout-bypass-allow: stale-rot - this comment no longer exempts anything (expires:2027-03-31; ticket:108)" + NL + "  const ok = 1;"), "LB-3@2");
   check("missing allow-region markers fail closed", [{ rel: "ntp/render.js", text: "const a = 1;" + NL + "  layout.boxes = layout.boxes.filter(Boolean);" + NL }], "LB-0@1,LB-0@1,LB-2@2");
   return { bad: bad, lines: lines };
 }

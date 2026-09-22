@@ -7,7 +7,7 @@
  * (The conn SVG layer previously lived here — see conn-layer.js.)
  * Cross-scope deps injected once via initRenderFacade() before any runtime call. */
 import {
-  MAX_LARGE_BOXES, MAX_SMALL_BOXES,
+  MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS,
   __popupTrackers, __sizeObserver, __viewStatePersistTimers,
   boxById, smallBoxById, connLines, connById,
   clearedTombstones,
@@ -207,6 +207,26 @@ export function initRenderFacade(deps) {
       const moved = bms.splice(from, 1)[0];
       bms.splice(to, 0, moved);
       return { reordered: { largeId, smallId, from, to } };
+    },
+    // Ticket N-108-01 / C05 (D-005): addBookmark is a layout mutation too. The old
+    // popups.js path did sb.bookmarks.push + fire-and-forget saveLayout outside
+    // commit(), so write-path consistency (and any future add-side tombstone/merge
+    // policy) had no single entry. Net-additive: no tombstoneIds.
+    addBookmark(state, { largeId, smallId, bookmark }) {
+      const lb = getLargeBox(largeId);
+      if (!lb) return { skipped: true };
+      const sb = (lb.children || []).find(s => s.id === smallId);
+      if (!sb) return { skipped: true };
+      sb.bookmarks = sb.bookmarks || [];
+      if (sb.bookmarks.length >= MAX_BOOKMARKS) return { skipped: true, reason: "max-bookmarks" };
+      const entry = bookmark && bookmark.id
+        ? { id: bookmark.id, title: bookmark.title, url: bookmark.url }
+        : { id: "bm-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6), title: (bookmark && bookmark.title) || "", url: (bookmark && bookmark.url) || "" };
+      sb.bookmarks.push(entry);
+      return {
+        addedBookmark: { largeId, smallId, bmId: entry.id },
+        parentLargeId: largeId
+      };
     },
     applyExternal(state, { incoming, incomingWins }) {
       // merge already applied by caller onto layout; handler only signals rebuild

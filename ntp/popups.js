@@ -272,26 +272,8 @@ export function initPopupsFacade(deps) {
     const addBtn = document.createElement('button');
     addBtn.textContent = i18n('addBookmarkBtn');
     addBtn.style.cssText = 'padding:5px 14px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;';
-    addBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      const title = titleInput.value.trim();
-      const url = urlInput.value.trim();
-      if (!url) return;
-      const normalizedUrl = normalizeBookmarkUrl(url);
-      if (!normalizedUrl) { urlInput.style.borderColor = 'red'; return; }
-      // BX-DEV-111j: validate large box still exists before saving bookmark
-      if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
-      sb.bookmarks = sb.bookmarks || [];
-      if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
-      sb.bookmarks.push({ id: makeId('bm'), title: title || new URL(normalizedUrl).hostname, url: normalizedUrl });
-      saveLayout();
-      const lb = getLargeBox(largeId);
-      if (lb) renderInnerSurface(lb);
-      popup.remove();
-      removePopupTracker(popup);
-    });
-
-    // Enter key in either input = add bookmark (BX-DEV-057)
+    // Ticket N-108-01 / C05 (D-005): addBookmark goes through commit(op) so the
+    // write path is consistent with deleteBookmark/reorderBookmarks (ADR-0007 Q2).
     const addBmAction = () => {
       const title = titleInput.value.trim();
       const url = urlInput.value.trim();
@@ -302,13 +284,17 @@ export function initPopupsFacade(deps) {
       if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       sb.bookmarks = sb.bookmarks || [];
       if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
-      sb.bookmarks.push({ id: makeId('bm'), title: title || new URL(normalizedUrl).hostname, url: normalizedUrl });
-      saveLayout();
+      const entry = { id: makeId('bm'), title: title || new URL(normalizedUrl).hostname, url: normalizedUrl };
+      commit("addBookmark", { largeId, smallId: sb.id, bookmark: entry }, { save: true });
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);
       popup.remove();
       removePopupTracker(popup);
     };
+    addBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      addBmAction();
+    });
     // Update addBtn click to delegate:
     // Feat-4: Enter on title advances to URL field; Enter on URL adds the bookmark.
     titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); urlInput.focus(); urlInput.select(); } });
