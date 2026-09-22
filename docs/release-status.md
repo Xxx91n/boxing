@@ -4,11 +4,11 @@
 > 本页是**状态页**，不是门禁定义：与 [ADR-0017](adr/0017-release-data-gate.md) 冲突时以 ADR-0017 为准，并在此记 `revised`。
 > 检查单模板与豁免台账全表见仓库内 `.scratch/architecture-recovery/WORKFLOW.md` §4.4（工作日志层，仅作证据引用）。
 
-**最后核验（Last verified）：2026-09-14** · 发行证据 tip `8a8798c9` · 现役 tag `v2026.9.15` @ `cc30edcc` · 现役发行版本 **2026.9.15（已发布）**
+**最后核验（Last verified）：2026-09-22** · 现役 tag `v2026.9.15` @ `cc30edcc` · 现役发行版本 **2026.9.15（已发布）** · 目标发行版本 **2026.9.20（G-A∧G-B 已齐，待 C08 tag 后 G-C 复验 + 商店）** · 本波 tip `w920-followup-impl`（G-A run 35694278677）
 
 ## 一、结论（§三 的投影，非独立状态块）
 
-**现役结论：2026.9.15 三门合取达成 · v2026.9.15 已发布。** tag `v2026.9.15` @ `cc30edcc` 已打；GitHub Release 已发布（chrome / firefox / source zip + SHA256SUMS）；AMO + Edge **2026.9.15 已过审上线**（用户声明 2026-09-14）；CWS 为可选渠道，本版无上架声明。
+**现役结论：v2026.9.15 已发布（三门合取达成，不回溯改判）。2026.9.20 目标版：G-A ∧ G-B（用户声明 2026-09-22 · Xxx91n）已齐；G-C 对最新 tag 已 PASS（version.json=2026.9.15）；待用户 C08 打 v2026.9.20 后由 v* 策略自动 deploy 再跑 G-C 复验，然后才允许宣称 2026.9.20 可发行。** 禁止把 G-B 通过读成三门齐。**
 
 > 本节只把 §三「发行终谳（2026-09-14 实测）」的结论投影到首屏；**本节不设状态表、不独立陈述门状态**。页内唯一现役状态块是 §三。
 
@@ -31,9 +31,9 @@
 
 | 门 | 状态 | 证据 | 说明 |
 |---|---|---|---|
-| **G-A CI** | **达成** | 发行 tip run [34857433215](https://github.com/Xxx91n/boxing/actions/runs/34857433215) @ `8a8798c9` 四 job 全 success | 2026-09-14 land 后终谳；中间里程碑 34808080000 仅作历史 |
-| **G-B 人工黄金路径** | **达成（用户声明）** | 2026-09-14 用户声明「通过」2026.9.15（Chrome+Firefox 本地 zip） | 无勾选单/截图；禁止 agent 代签 — 本条为用户本人声明 |
-| **G-C Pages** | **达成（旧口径：三 URL 200）** | 三 URL live 200（2026-09-14 复测） | 2026-09-15 起 G-C 升格（票 109 / A-064 · ADR-0017 修订）= 200 **且** `demo/version.json` == 最新 release tag；**新口径下 2026-09-15 实测不成立**，见下「G-C 2026-09-15 实测（升格口径）」；9.15 已发行事实不因口径变更而回改（不回溯改判已发布版本） |
+| **G-A CI** | **2026.9.20 达成** | run [35694278677](https://github.com/Xxx91n/boxing/actions/runs/35694278677) @ `w920-followup-impl` 四 job 全 success | 2026-09-22 本波终谳（data-golden + ubuntu/windows/macos）；9.15 终谳 34857433215 见历史表 |
+| **G-B 人工黄金路径** | **2026.9.20 达成（用户声明）** | 2026-09-22 用户声明「人工已经声明通过，执行人 **Xxx91n**」2026.9.20 zip | 含版本+执行人；09-15 声明不覆盖新产物（D-004⑤）已重签；禁止 agent 代签 |
+| **G-C Pages** | **升格口径达成（对最新 tag）** | `npm run verify:pages-gc` **G-C PASS** expected=2026.9.15 · version.json=`2026.9.15` deployedAt=2026-09-22T07:48:24Z · 三 URL 200 | deploy run [35701446566](https://github.com/Xxx91n/boxing/actions/runs/35701446566)（main dispatch）+ deploy-tail 收敛；**F-113-01 已收敛**（demo 不再是 2026.9.12）；对 **v2026.9.20** 的 G-C 待 C08 tag 后由 v* 策略触发 deploy 再验 |
 
 ### G-C 实测锚点（2026-09-14）
 
@@ -77,17 +77,17 @@
 | 商店 | AMO + Edge：2026.9.15 已过审上线（用户声明 2026-09-14）· CWS：可选渠道，本版无上架声明 |
 | 结论 | 三门合取达成 → **2026.9.15 已发布**；后续任何 tag / 商店动作仍须用户另一次明令 |
 
-> **具名 F-113-01（不静默）**：2026-09-15 实测 Pages demo（`https://xxx91n.github.io/boxing/demo/`）底部渲染 **v2026.9.12**，与现役 v2026.9.15 不一致。9.15 波次 G-C 定义为「三 URL live 200」，故不计入 9.15 G-C 判定；该项按 9.20 波次 B75 欠账（demo `version.json` == 最新 tag）跟踪。**2026-09-15 补充根因**：`version.json` 实测 `2026.9.12`、最新 tag `v2026.9.15`；release 触发的 deploy job 被 `github-pages` environment 保护规则拦截（run 34860199679，0 step、2 秒失败），dispatch（main）成功 —— 故 Pages 停在 2026-09-13 的 dispatch 产物。B75 已由票 109 吸收关闭。
+> **具名 F-113-01 — 已收敛（2026-09-22）**：曾渲染 **v2026.9.12**；经 C04 放行 `v*` + demo-deploy run 35701446566 后 version.json=`2026.9.15` == 最新 tag，**收敛**。原文：2026-09-15 实测 Pages demo 渲染 v2026.9.12。9.15 波次 G-C 定义为「三 URL live 200」，故不计入 9.15 G-C 判定；该项按 9.20 波次 B75 欠账（demo `version.json` == 最新 tag）跟踪。**2026-09-15 补充根因**：`version.json` 实测 `2026.9.12`、最新 tag `v2026.9.15`；release 触发的 deploy job 被 `github-pages` environment 保护规则拦截（run 34860199679，0 step、2 秒失败），dispatch（main）成功 —— 故 Pages 停在 2026-09-13 的 dispatch 产物。B75 已由票 109 吸收关闭。
 
 ## 四、在效豁免（Waiver Ledger）
 
-机器校验：`node scripts/waiver-ledger-check.mjs` → **exit 0**（2026-09-14 实测：台账 4 行、字段齐全、无过期、never-quarantine 零命中**含 closed 行**、撤账判据节存在；票 105 扩展后并校验 closed 行撤账证据 ≥2 run）。
+机器校验：`node scripts/waiver-ledger-check.mjs` → **exit 0**（2026-09-22 C01 处置后：台账 4 行 = 3 closed + 1 expired-handled；**active=0**；无过期；never-quarantine 零命中；撤账判据节存在）。
 
 | 状态 | 用例 | 基线 run | 归属票 | 到期 |
 |---|---|---|---|---|
-| active | `boxing-empty-state-buttons` › Bug5-dark：bm-add-btn 暗色透明（ubuntu firefox + chromium） | 34773593267 | 93 | 2026-09-19 |
-| active | `boxing-zoom-dblclick` › single click enters; later dblclick inner creates one small box（windows firefox） | 34773593267 | 93 | 2026-09-19 |
-| active | `boxing-search` › search filters large boxes by title on main canvas（macos firefox） | 34773593267 | 93 | 2026-09-19 |
+| closed | `boxing-empty-state-buttons` › Bug5-dark | 34773593267 | 93 | 2026-09-19 | C01 2026-09-22：A-055 已修 + 105 双绿撤账（34857433215 + 34955347673） |
+| expired-handled | `boxing-zoom-dblclick` › single click enters; later dblclick… | 34773593267 | 93 | 2026-09-19 | C01 2026-09-22：票110 已修；105 双绿不足 → 非 active 非续期；用例保留 |
+| closed | `boxing-search` › search filters large boxes by title | 34773593267 | 93 | 2026-09-19 | C01 2026-09-22：A-055 已修 + 105 双绿撤账 |
 | closed | `boxing-auto-expand` › large box with collapseHover=true still expands（chromium） | 34626507101 | 48 | 已撤账（票 93，2026-09-14） |
 
 硬约束：
@@ -145,4 +145,5 @@ A-058 的具名 F：`no-mirror` e2e chromium 启动超时（环境性），源�
 | 2026-09-14 | 票 97 / A-051 建立本页；G-C 三 URL 实测 200；豁免台账 exit 0 |
 | 2026-09-14 | 票 105 / A-059：撤账判据（≥2 连续 main 全绿 + N/B/F 约束）写入 WORKFLOW §4.4 与 testing-governance.md；waiver-ledger-check 扩展为机器校验（closed 行须 ≥2 run 撤账证据） |
 | 2026-09-15 | 票 107–116 land origin/main tip `2f167ca7`；版本面 2026.9.20；**G-B 用户声明「测试通过」2026.9.20**（zip 黄金路径）；G-A CI / G-C Pages 待发行动作 |
+| 2026-09-22 | W920 followup：G-A run 35694278677 四 job 全绿；G-B 用户声明 2026.9.20 · Xxx91n；C01 三豁免处置（active=0）；C04 env v* 放行；G-C 升格 PASS（version.json=2026.9.15==最新 tag，F-113-01 收敛）；C05 addBookmark→commit + C07 豁免 expires+ticket |
 | 2026-09-15 | 票 113 / A-068：收敛单一现役状态块 —— 删/降级 §一 矛盾表（改为 §三 投影句）；§三 发行终谳填 2026-09-14 实测；三条旧 G-A run 标 **Superseded**；新增「有且只有一个状态块」页内硬契约（§三 / §六）；按 git 血缘把 tip `41fcf1e4` 修正为 `8a8798c9`（现役 tag `v2026.9.15` @ `cc30edcc`）；录具名 F-113-01（demo 渲染 v2026.9.12） |
