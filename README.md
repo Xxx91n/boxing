@@ -30,7 +30,6 @@
 </p>
 
 <p>
-  <a href="https://github.com/Xxx91n/boxing/releases/latest"><img alt="GitHub latest release (dynamic); store listing may lag — see Install" src="https://img.shields.io/github/v/release/Xxx91n/boxing?style=flat-square&label=GitHub_latest" /></a>
   <img alt="Store published as of 2026-09-14: v2026.9.15" src="https://img.shields.io/badge/store_published-v2026.9.15%20(as%20of%202026--09--14)-orange?style=flat-square" />
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Xxx91n/boxing?style=flat-square" /></a>
   <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange?style=flat-square" />
@@ -85,17 +84,17 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 > Gate background: [ADR-0017](docs/adr/0017-release-data-gate.md). Publisher workflow:
 > [publishing guide](docs/publishing-guide.md) · [store plan](docs/store-publishing-plan.md).
 
-### Firefox（正式安装）
+### Firefox (official install)
 
-1. 打开 [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
-2. 点击 **Add to Firefox**，按浏览器提示完成安装
+1. Open [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
+2. Click **Add to Firefox** and follow the browser prompts to finish installing
 
-### Edge / Chromium（正式安装）
+### Edge / Chromium (official install)
 
-1. 打开 [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-2. 点击 **Get** / **获取** 完成安装（Chromium 系请使用 Edge 商店页面）
+1. Open [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. Click **Get** to install (Chromium browsers should use the Edge store page)
 
-### 开发者：从源码构建
+### Developers: build from source
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -104,12 +103,12 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge：`chrome://extensions` → 开发者模式 → **加载已解压的扩展程序** → 选 `dist/boxing-chrome/`
-- Firefox：`about:debugging#/runtime/this-firefox` → **临时载入附加组件** → 选 `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → Developer mode → **Load unpacked** → select `dist/boxing-chrome/`
+- Firefox: `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → select `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> 构建产物 zip 供**商店上传或本地调试**，不是用户正式安装渠道。正式安装请走上方商店链接。
-> 签名由商店完成；本仓 GitHub Release **不再**分发 `.xpi` / `.crx`。
+> Build output zips are for **store upload or local debugging only**, not the official end-user install path. Install from the store links above.
+> Signing is handled by the stores; this repository's GitHub Releases **no longer** ship `.xpi` / `.crx`.
 
 ## Usage
 
