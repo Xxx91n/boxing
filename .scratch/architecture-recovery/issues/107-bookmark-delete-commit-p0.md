@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-15 · W1 首脑复核采信 · commit 1a7d572e · 报告 reports/107-report.md）
 
 ## Acceptance criteria
 

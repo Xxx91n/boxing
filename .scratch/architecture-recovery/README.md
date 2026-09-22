@@ -1,3 +1,7 @@
+## Wave9.20 收口（2026-09-15）
+
+详表: `reports/W920-closeout-audit.md` · backlog: `reports/W920-postrelease-backlog.md` · handoff: `handoffs/W920-closeout-handoff.md`
+
 ## W2 首脑复核 — 108（2026-09-15）
 
 详表: `reports/W920-W2-brain-review.md` · **实施票 107–116 全 done** · frontier=发行 G-A（豁免清零 + test.yml）

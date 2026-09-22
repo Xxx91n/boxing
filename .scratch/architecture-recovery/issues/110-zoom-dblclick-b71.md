@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done-with-named-F（2026-09-15 · W1 复核 · 报告 reports/110-report.md）
 
 ## Acceptance criteria
 

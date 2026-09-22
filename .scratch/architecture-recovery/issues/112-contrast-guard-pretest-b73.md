@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done（2026-09-15 · W1 复核 · contrast 8/8 · 报告 reports/112-report.md）
 
 ## Acceptance criteria
 

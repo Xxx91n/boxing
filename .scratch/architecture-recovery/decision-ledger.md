@@ -156,7 +156,7 @@
 | A-069 | D-004④ · B74 · N-103-01/02：DESIGN.md Box/Zoom 表与代码现实偏差注记未收 | 偏差注记或表校正；不回退 hairline 契约（票103） | 不扩写无关重构；零非必要 CSS/JS 改动 | implemented |
 | A-070 | D-004⑦ · B77：CHANGELOG [2026.9.15] 段偏薄，与 release-notes 不对齐 | 与 docs/release-notes/2026.9.15.md 要点对齐扩写 | 不虚构未落地功能 | implemented（2026-09-15 · ticket 115 · CHANGELOG [2026.9.15] 小节与 docs/release-notes/2026.9.15.md 逐条对齐扩写（12 要点对账：小节导语 / 私网 .local 具名 / 冲突副本 settings Data tab 落点 / 停发 .xpi·.crx / npm ci 构建 / 审核包+侧载 zip / SHA256SUMS / ADR-0017 指针 / .scratch 打包卫生 / 残红台账半句）；零虚构——新增行 100% notes 溯源；纯文档零代码；9808 B 无 BOM 纯 LF、diff --check 零告警；报告 reports/115-report.md） |
 | A-071 | D-007 · calver-guard 票100：版本面仍为 2026.9.15；9.20 发行需 calver 一致推进 | 实施波内 manifest×2/package/notes/CHANGELOG/脚注等一致推至 2026.9.20，过 calver-guard | 不前导零；与 store 真源不冲突；G-B 前禁宣称可发行 | implemented（2026-09-15 · ticket 116 · 版本面推进 2026.9.20：manifest version+version_name、package.json、package-lock ×2、ntp/index.html 脚注、CHANGELOG `[2026.9.20]` 小节、docs/release-notes/2026.9.20.md（build.yml body_path SSOT）、AGENTS.md；伴随面 publishing-guide/store-publishing-plan/STORE-COPY/gb-dryrun 重定向（G-B 工件 rel-2026.9.20、升级基线 v2026.9.15）；商店真源保持 2026.9.15 不动；`node scripts/calver-guard.mjs` exit 0（8 面一致 + 13 例自检）；未宣称可发行；报告 reports/116-report.md） |
-| A-P01 | D-005② 线性追加红线 | 9.20 全部提交只在 a1acaaac 之上线性追加 | 第二次 root 导出即停波；导出工具做不到先改工具 | current（过程红线，无独立票） |
-| A-P02 | D-004⑨/D-005③ 豁免清零出口 | 3 条 active F 09-19 到期；按 105 撤账至 0 active F | 绑 9.20 G-A；不得无动作续期 | current（出口条件） |
-| A-P03 | D-006 发行出口 | G-A 新 tip 四 job 全绿 + G-B 用户声明 + G-C 升格；tag/商店另令 | 禁 agent 代签 G-B；9.15 不热修 | current（出口边界） |
+| A-P01 | D-005② 线性追加红线 | 9.20 全部提交只在 a1acaaac 之上线性追加 | 第二次 root 导出即停波；导出工具做不到先改工具 | implemented（2026-09-15 · land 后 origin/main 为线性 tip 2f167ca7，自 a1acaaac 追加，无新 root） |
+| A-P02 | D-004⑨/D-005③ 豁免清零出口 | 3 条 active F 09-19 到期；按 105 撤账至 0 active F | 绑 9.20 G-A；不得无动作续期 | deferred（2026-09-15 · 须 main CI 连续绿后按 105 撤账；G-B 已声明，G-A CI 待跑） |
+| A-P03 | D-006 发行出口 | G-A 新 tip 四 job 全绿 + G-B 用户声明 + G-C 升格；tag/商店另令 | 禁 agent 代签 G-B；9.15 不热修 | implemented（2026-09-15 · **G-B 用户声明「测试通过」2026.9.20 · 2026-09-15**；G-A CI 与 G-C Pages 为发行后余项；tag/商店仍另令） |
 
