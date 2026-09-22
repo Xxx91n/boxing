@@ -11,7 +11,7 @@ Wave9.20 票 107–116 全 implemented 并 land 至 origin/main（tip `2f167ca7`
 | 主题 | 路径 |
 |---|---|
 | 收口审计 | .scratch/architecture-recovery/reports/W920-closeout-audit.md |
-| 遗留 backlog | reports/W920-postrelease-backlog.md |
+| 遗留 backlog | .scratch/architecture-recovery/reports/W920-postrelease-backlog.md |
 | W1/W2 首脑复核 | reports/W920-W1-brain-review.md · W920-W2-brain-review.md |
 | A 账本 | decision-ledger.md A-062..A-071 · A-P01..03 |
 | Grill D 账本 | ../wave9-920-grill/decision-ledger.md |
