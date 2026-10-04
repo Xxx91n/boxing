@@ -184,6 +184,89 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     expect((src.match(/void saveLayout\(\);/g) || []).length).toBe(3);
   });
 
+  test('D-003 source contract: per-focus flag + mouseup re-assert guard present', () => {
+    const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
+    // Per-focus-cycle flag (not a bare "first ever click" boolean) gates the select-all.
+    expect(src).toContain('let selectedThisFocus = false;');
+    expect(src).toContain('let guardFirstMouseUp = false;');
+    expect(src).toContain('if (!selectedThisFocus) {');
+    // blur resets both flags so the next focus cycle re-selects.
+    expect(src).toContain('selectedThisFocus = false;');
+    // mouseup normalization guard re-asserts the swallowed first-click select-all.
+    expect(src).toContain('if (guardFirstMouseUp) {');
+    expect(src).toContain('e.preventDefault();');
+  });
+
+  test('D-003: second activation places a native caret (first click still selects all)', async ({ page }) => {
+    test.setTimeout(30000);
+    await boot(page);
+    await seedTitles(page);
+
+    // Deterministic first activation: synthetic mousedown/mouseup → focus + select-all.
+    expect(await jsClickTitle(page, '.large-box__title')).toBe(true);
+    expect((await selState(page)).text).toBe('Alpha');
+
+    // Second activation: a real (trusted) click on the already-focused title must collapse
+    // the selection to a native caret instead of re-selecting the whole name.
+    await page.locator('.large-box__title').click();
+    const after = await page.evaluate(() => {
+      const sel = window.getSelection();
+      const active = document.activeElement as HTMLElement | null;
+      return { collapsed: sel ? sel.isCollapsed : false, active: (active?.className || '').toString() };
+    });
+    expect(after.active).toContain('large-box__title');
+    expect(after.collapsed).toBe(true);
+  });
+
+  test('D-003: arrow key collapses the select-all; Shift+Arrow makes a partial selection', async ({ page }) => {
+    test.setTimeout(30000);
+    await boot(page);
+    await seedTitles(page);
+
+    // Deterministic first activation: synthetic mousedown/mouseup → focus + select-all.
+    expect(await jsClickTitle(page, '.large-box__title')).toBe(true);
+    expect((await selState(page)).text).toBe('Alpha');
+
+    // ArrowLeft collapses the whole-name selection to a caret (browser native).
+    await page.keyboard.press('ArrowLeft');
+    const collapsed = await page.evaluate(() => {
+      const sel = window.getSelection();
+      return { collapsed: sel ? sel.isCollapsed : false };
+    });
+    expect(collapsed.collapsed).toBe(true);
+
+    // Shift+ArrowRight extends a PARTIAL selection (not the whole name).
+    await page.keyboard.press('Shift+ArrowRight');
+    const partial = await selState(page);
+    expect(partial.text.length).toBeGreaterThan(0);
+    expect(partial.text.length).toBeLessThan('Alpha'.length);
+    expect('Alpha'.includes(partial.text)).toBe(true);
+  });
+
+  test('D-003: mouse drag makes a partial selection (native)', async ({ page }) => {
+    test.setTimeout(30000);
+    await boot(page);
+    await seedTitles(page);
+
+    // Focus + select-all, then collapse to the start so the drag extends rightwards.
+    expect(await jsClickTitle(page, '.large-box__title')).toBe(true);
+    expect((await selState(page)).text).toBe('Alpha');
+    await page.keyboard.press('ArrowLeft');
+
+    const box = await page.locator('.large-box__title').boundingBox();
+    if (!box) throw new Error('.large-box__title not found');
+    const y = box.y + box.height / 2;
+    await page.mouse.move(box.x + 3, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width * 0.5, y, { steps: 6 });
+    await page.mouse.up();
+
+    const s = await selState(page);
+    expect(s.text.length).toBeGreaterThan(0);
+    expect(s.text.length).toBeLessThan('Alpha'.length);
+    expect('Alpha'.includes(s.text)).toBe(true);
+  });
+
   test('D-005: favicon Phase-1 hot pool, decode(), is-loading and is-cached classes', () => {
     const favSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/favicon.js'), 'utf8');
     const popSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/popups.js'), 'utf8');
