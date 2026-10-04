@@ -75,18 +75,34 @@ export function initRenderFacade(deps) {
   function makeTitleFocusMachine(el) {
     if (el._titleFocusMachineAttached) return;
     el._titleFocusMachineAttached = true;
-    let selectedThisFocus = false;
-    el.addEventListener('mousedown', e => { e.stopPropagation(); /* no preventDefault */ });
-    el.addEventListener('focus', () => {
-      if (!selectedThisFocus) { selectedThisFocus = true; selectAllTitleText(el); }
-    });
-    el.addEventListener('mouseup', () => {
-      if (selectedThisFocus) {
-        const sel = window.getSelection();
-        if (sel && sel.isCollapsed && el === document.activeElement) { selectAllTitleText(el); }
+    let isFirstFocusClick = false;
+
+    el.addEventListener('mousedown', e => {
+      e.stopPropagation();
+      if (document.activeElement !== el) {
+        isFirstFocusClick = true;
+        el.focus();
       }
     });
-    el.addEventListener('blur', () => { selectedThisFocus = false; });
+
+    el.addEventListener('focus', () => {
+      selectAllTitleText(el);
+      isFirstFocusClick = true;
+    });
+
+    el.addEventListener('mouseup', () => {
+      if (isFirstFocusClick) {
+        isFirstFocusClick = false;
+        const sel = window.getSelection();
+        if (sel && sel.isCollapsed && el === document.activeElement) {
+          selectAllTitleText(el);
+        }
+      }
+    });
+
+    el.addEventListener('blur', () => {
+      isFirstFocusClick = false;
+    });
   }
 
 
