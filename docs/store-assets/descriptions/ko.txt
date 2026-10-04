@@ -64,4 +64,4 @@ Chrome, Edge, Firefox 및 기타 Chromium 브라우저에서 동작.
 Manifest V3.
 소스: https://github.com/Xxx91n/boxing
 라이선스: Apache-2.0
-개인정보: https://xxx91n.github.io/boxing/privacy-policy.html
+개인정보: https://boxing.xxx91n.com/privacy-policy.html

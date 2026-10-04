@@ -77,7 +77,7 @@ Accepted（票 46 + atomcode 调研）· **修订 2026-09-13**（v2026.9.12 强�
 
 ## 修订 2026-09-15（票 109 · A-064）：G-C 升格为「200 + 新鲜度」
 
-**触发事实（2026-09-15 实测，非假设）**：三 URL live 200 **全部成立**，但带 cache-buster 的 `GET https://xxx91n.github.io/boxing/demo/version.json` 返回 `version=2026.9.12`（`deployedAt` 缺失 = 旧产物），而 `gh api repos/Xxx91n/boxing/releases/latest` = `v2026.9.15`。即：**旧口径 G-C 判「达成」的同一时刻，Pages 停在两个版本之前** —— 这正是 A-064 / B75 记录的「过时但 200」盲区，旧定义无力发现。
+**触发事实（2026-09-15 实测，非假设）**：三 URL live 200 **全部成立**，但带 cache-buster 的 `GET https://boxing.xxx91n.com/demo/version.json` 返回 `version=2026.9.12`（`deployedAt` 缺失 = 旧产物），而 `gh api repos/Xxx91n/boxing/releases/latest` = `v2026.9.15`。即：**旧口径 G-C 判「达成」的同一时刻，Pages 停在两个版本之前** —— 这正是 A-064 / B75 记录的「过时但 200」盲区，旧定义无力发现。
 
 **修订内容（在上门禁表原句之上追加，不删除、不弱化原条件）**：
 

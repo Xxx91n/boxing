@@ -64,4 +64,4 @@ tabs — 按你的配置在新标签页打开书签
 Manifest V3。
 源码：https://github.com/Xxx91n/boxing
 许可：Apache-2.0
-隐私政策：https://xxx91n.github.io/boxing/privacy-policy.html
+隐私政策：https://boxing.xxx91n.com/privacy-policy.html

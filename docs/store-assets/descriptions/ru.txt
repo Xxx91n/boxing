@@ -64,4 +64,4 @@ tabs — открывает закладки в новой вкладке по �
 Manifest V3.
 Исходники: https://github.com/Xxx91n/boxing
 Лицензия: Apache-2.0
-Приватность: https://xxx91n.github.io/boxing/privacy-policy.html
+Приватность: https://boxing.xxx91n.com/privacy-policy.html

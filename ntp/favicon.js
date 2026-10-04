@@ -124,6 +124,20 @@ function persistFaviconCacheDebounced() {
 // BX-DEV-121: hydrate the mem cache on first script load.
 try { loadFaviconCacheFromStorage(); } catch (e) { /* silent: favicon cache hydration, regenerates on demand */ }
 
+function applyDecodedFavicon(img, host, src) {
+  const probe = new Image();
+  probe.src = src;
+  probe.decode().then(() => {
+    img.src = probe.src;
+    img.classList.remove('is-loading');
+    img.classList.add('is-cached');
+    _faviconHotPool.set(host, probe);
+  }).catch(() => {
+    img.classList.remove('is-loading');
+    img.style.display = 'none';
+  });
+}
+
 async function loadFavicon(img, url, opts) {
   // BX-DEV-126 (B10): parallel CDN race via Promise.any — fastest token wins, no serial waterfall.
   // BX ticket 12 (single-flight + SWR): concurrent same-host loads share ONE in-flight probe
@@ -144,7 +158,6 @@ async function loadFavicon(img, url, opts) {
       // Cache hit — instant render, zero network. Stale hits paint too (SWR), refreshed below.
       if (entry.url === null) {
         img.classList.remove('is-loading');
-        img.classList.add('is-cached');
         img.style.display = 'none';
       } else {
         const pooled = _faviconHotPool.get(host);
@@ -153,17 +166,7 @@ async function loadFavicon(img, url, opts) {
           img.classList.remove('is-loading');
           img.classList.add('is-cached');
         } else {
-          const probe = new Image();
-          probe.src = entry.url;
-          probe.decode().then(() => {
-            img.src = probe.src;
-            img.classList.remove('is-loading');
-            img.classList.add('is-cached');
-            _faviconHotPool.set(host, probe);
-          }).catch(() => {
-            img.classList.remove('is-loading');
-            img.style.display = 'none';
-          });
+          applyDecodedFavicon(img, host, entry.url);
         }
       }
       if (Date.now() - entry.ts > favFreshTtl(entry.url) && !inflight.has(host)) {
@@ -216,17 +219,7 @@ async function loadFavicon(img, url, opts) {
     img.classList.remove('is-loading');
     img.style.display = 'none';
   } else {
-    const probe = new Image();
-    probe.src = winner;
-    probe.decode().then(() => {
-      img.src = probe.src;
-      img.classList.remove('is-loading');
-      img.classList.add('is-cached');
-      _faviconHotPool.set(host, probe);
-    }).catch(() => {
-      img.classList.remove('is-loading');
-      img.style.display = 'none';
-    });
+    applyDecodedFavicon(img, host, winner);
   }
 }
 

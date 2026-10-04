@@ -64,4 +64,4 @@ JavaScript ล้วน ไม่มีเฟรมเวิร์กหรื�
 Manifest V3
 ซอร์ส: https://github.com/Xxx91n/boxing
 สัญญาอนุญาต: Apache-2.0
-ความเป็นส่วนตัว: https://xxx91n.github.io/boxing/privacy-policy.html
+ความเป็นส่วนตัว: https://boxing.xxx91n.com/privacy-policy.html

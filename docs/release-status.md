@@ -39,9 +39,9 @@
 
 | URL | 结果 |
 |---|---|
-| `https://xxx91n.github.io/boxing/demo/` | 200 · 渲染 NTP 预览界面 |
-| `https://xxx91n.github.io/boxing/demo/ntp.css` | 200 · 返回样式表正文 |
-| `https://xxx91n.github.io/boxing/privacy-policy.html` | 200 · 含政策正文，Last updated 2026-09-12 |
+| `https://boxing.xxx91n.com/demo/` | 200 · 渲染 NTP 预览界面 |
+| `https://boxing.xxx91n.com/demo/ntp.css` | 200 · 返回样式表正文 |
+| `https://boxing.xxx91n.com/privacy-policy.html` | 200 · 含政策正文，Last updated 2026-09-12 |
 
 ### G-C 2026-09-15 实测（升格口径 · 票 109 / A-064）
 

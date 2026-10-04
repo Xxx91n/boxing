@@ -64,4 +64,4 @@ Chrome, Edge, Firefox और अन्य Chromium ब्राउज़रो�
 Manifest V3।
 स्रोत: https://github.com/Xxx91n/boxing
 लाइसेंस: Apache-2.0
-गोपनीयता: https://xxx91n.github.io/boxing/privacy-policy.html
+गोपनीयता: https://boxing.xxx91n.com/privacy-policy.html

@@ -42,7 +42,7 @@ Boxing 扩展的在线预览（GitHub Pages demo）与公开隐私政策（priva
   - 仅绑定 `boxing.xxx91n.com`，不绑定其他别名；保持 `https_enforced: true`。
 
 ## Review
-- 复核日期: 2026-11-11
+- 复核日期: 2026-11-10
 - 复核项:
   1. `boxing.xxx91n.com` 域名解析与 HTTPS 证书签发是否正常生效。
   2. GitHub Pages 部署后 `verify:pages-gc` 针对新域名的三 URL 与 `version.json` 探针是否全绿。

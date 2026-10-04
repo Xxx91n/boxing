@@ -30,7 +30,7 @@ Real screenshots from the extension (1280×800):
 
 ## Preview
 
-An interactive, playable preview of the Boxing new tab page is deployed automatically with every release by the [Deploy NTP demo (Pages) workflow](https://github.com/Xxx91n/boxing/actions/workflows/demo-deploy.yml). Open it live at [**xxx91n.github.io/boxing/demo/**](https://xxx91n.github.io/boxing/demo/). The demo runs the real new-tab UI as a static mirror with a `chrome.*` web stub — your layout is stored only in your own browser. Prefer a quick look first?
+An interactive, playable preview of the Boxing new tab page is deployed automatically with every release by the [Deploy NTP demo (Pages) workflow](https://github.com/Xxx91n/boxing/actions/workflows/demo-deploy.yml). Open it live at [**boxing.xxx91n.com/demo/**](https://boxing.xxx91n.com/demo/). The demo runs the real new-tab UI as a static mirror with a `chrome.*` web stub — your layout is stored only in your own browser. Prefer a quick look first?
 
 - Browse the [screenshots above](#screenshots) to see the out-of-the-box state
 - [Install from the stores above](#install) to try Boxing right now
@@ -39,7 +39,7 @@ An interactive, playable preview of the Boxing new tab page is deployed automati
 
 Boxing keeps all data on your device: bookmarks, canvas layout, and settings live in the browser's local extension storage. No analytics, no telemetry, no accounts. The optional WebDAV / GitHub Gist backup only talks to servers you configure yourself.
 
-Full policy: [Boxing Privacy Policy](https://xxx91n.github.io/boxing/privacy-policy.html)
+Full policy: [Boxing Privacy Policy](https://boxing.xxx91n.com/privacy-policy.html)
 
 ## Links
 

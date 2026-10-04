@@ -31,7 +31,7 @@ for (const file of files) {
   });
 }
 
-const leaves = new Set(['state.js', 'utils.js', 'credentials.js', 'favicon.js', 'i18n.js', 'storage.js']);
+const leaves = new Set(['state.js', 'utils.js', 'credentials.js', 'favicon.js', 'i18n.js', 'storage.js', 'site-constants.js']);
 for (const file of leaves) for (const target of edges.get(file) || []) {
   if (file === 'storage.js' && target === 'utils.js') continue;
   add('B-1', `ntp/${file}`, 0, `leaf module imports sibling module ${target}`);
@@ -90,7 +90,7 @@ for (const file of facades) {
   if (!entry.includes(`${fn}(`)) add('B-7', 'ntp/ntp.js', 1, `entry does not invoke ${fn}`);
 }
 
-const featureLeaves = new Set(['state.js', 'utils.js', 'credentials.js', 'favicon.js', 'i18n.js', 'storage.js']);
+const featureLeaves = new Set(['state.js', 'utils.js', 'credentials.js', 'favicon.js', 'i18n.js', 'storage.js', 'site-constants.js']);
 const entryModule = 'ntp.js';
 const acceptedFeatureSiblingEdges = new Set([
   'onboarding.js->render.js',

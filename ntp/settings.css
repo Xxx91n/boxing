@@ -568,7 +568,7 @@ body.box-resizing {
 
 /* === DARK MODE TOGGLE BUTTON === */
 #dark-mode-btn {
-  font-size: calc(var(--font-size-base) * 1.071);
+  font-size: var(--fs-lg);
 }
 
 #dark-mode-btn span {
@@ -1087,19 +1087,19 @@ html.ntp--dark {
 
 .about-name {
   margin: 0;
-  font-size: var(--fs-lg, 18px);
+  font-size: var(--fs-lg);
   color: var(--color-ink);
 }
 
 .about-sub {
   margin: 0;
-  font-size: var(--fs-md, 13px);
+  font-size: var(--fs-md);
   color: var(--color-muted);
 }
 
 .about-version {
   margin: 0;
-  font-size: var(--fs-sm, 12px);
+  font-size: var(--fs-sm);
   color: var(--color-muted);
 }
 
@@ -1117,7 +1117,7 @@ html.ntp--dark {
 
 .about-license {
   margin: 0;
-  font-size: var(--fs-sm, 12px);
+  font-size: var(--fs-xs);
   color: var(--color-muted);
   text-align: center;
 }

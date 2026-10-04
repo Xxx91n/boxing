@@ -46,7 +46,7 @@ URL: https://addons.mozilla.org/developers/addon/submit/
 | Tags | bookmark manager, new tab, infinite canvas, bookmarks organizer |
 | Screenshot | upload all 5 from docs/store-assets/screenshots/ (1280x800, AMO-recommended size) |
 | This add-on is experimental | leave UNCHECKED |
-| Privacy policy | CHECK, paste URL: https://xxx91n.github.io/boxing/privacy-policy.html (200 OK verified 2026-09-06, re-verify before submit) |
+| Privacy policy | CHECK, paste URL: https://boxing.xxx91n.com/privacy-policy.html (200 OK verified 2026-09-06, re-verify before submit) |
 | Notes for Reviewer | "New Tab override extension. All data stays local (storage.local); optional WebDAV/Gist backup only contacts servers the user configures themselves. Manifest declares host_permissions https://*/* solely so the optional WebDAV backup can reach the user's own server; no browsing data is read, transmitted, or shared. Source: https://github.com/Xxx91n/boxing (tag v2026.9.9)." |
 
 **Summary (EN, 250-char limit — this is 236 chars):**
@@ -106,7 +106,7 @@ Microsoft developer account; free registration, no fee).
 | Permission justification: host_permissions https://*/* | Used only at runtime for the user-configured WebDAV backup endpoint; no other hosts are contacted and no browsing data is read. |
 | Are you using remote code? | **No** (all code ships in the package) |
 | Data usage certifications | Does not collect any user data → answer "No" to all collection questions |
-| Privacy policy URL | https://xxx91n.github.io/boxing/privacy-policy.html |
+| Privacy policy URL | https://boxing.xxx91n.com/privacy-policy.html |
 
 6. **Store listings** — add languages **English (en)** and **Chinese
    (Simplified, zh-hans)**, then per language:
@@ -128,7 +128,7 @@ Microsoft developer account; free registration, no fee).
 > configure their own WebDAV server for backups (off by default). Test:
 > install, open a new tab, double-click empty canvas to create a box, add a
 > bookmark, drag to connect two boxes, open Settings for theme/sync options.
-> Privacy policy: https://xxx91n.github.io/boxing/privacy-policy.html
+> Privacy policy: https://boxing.xxx91n.com/privacy-policy.html
 
 **Detailed description (EN, also reused for AMO long description — 1,876 chars):**
 

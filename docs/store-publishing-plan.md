@@ -2,7 +2,7 @@
 
 > 状态: **2026.9.20 已上架（AMO，用户声明「已经稳定」）+ GitHub Release v2026.9.20 已发布 + 三门合取达成** · 更新: 2026-09-22
 > Grill 心智模型保留于「Grill Decisions」节；执行表已按 2026.9.20 现况重写。
-> 隐私政策: https://xxx91n.github.io/boxing/privacy-policy.html
+> 隐私政策: https://boxing.xxx91n.com/privacy-policy.html
 
 ## 现况（2026-09-15）
 
@@ -21,7 +21,7 @@
 |---|----------|-----------|
 | Q1 | A+B sync, prepare everything at once | Screenshots as placeholders, human replaces later |
 | Q2 | (A) Chrome optional_host_permissions + Firefox keeps host_permissions | Chrome review: narrower permissions = higher pass rate; Firefox more tolerant of WebDAV |
-| Q3 | (A) GitHub Pages hosts privacy policy | https://xxx91n.github.io/boxing/privacy-policy.html |
+| Q3 | (A) GitHub Pages hosts privacy policy | https://boxing.xxx91n.com/privacy-policy.html |
 | Q4 | (A) 5 transparent 1280x800 PNG placeholders + README | Human overwrites same filenames later |
 | Q5 | CRX pem + AMO API key deferred to daytime interactive setup | Involves user account identity, needs hands-on guidance |
 | 发行门禁 (ADR-0017) | 可发行 = G-A ∧ G-B ∧ G-C | 数据事故驱动；程序性门禁，非流水线硬拦 |
@@ -39,7 +39,7 @@
 | 文案 | `docs/store-assets/descriptions/<locale>.txt`（纯文本，可粘贴） | Description |
 | 短摘要/字段表 | `store-listings-2026-09.md` | Summary、权限理由 |
 | 截图 | `docs/store-assets/screenshots/`（1280×800） | 商店截图 |
-| 隐私政策 | https://xxx91n.github.io/boxing/privacy-policy.html | 商店必填 |
+| 隐私政策 | https://boxing.xxx91n.com/privacy-policy.html | 商店必填 |
 | 用户向 Changelog | `CHANGELOG.md` §对应版本 | Release 正文 / 商店版本说明 |
 
 **注意：** AMO 上传用**未签名 zip**（商店代签）。不要把 CI 的 `.xpi`/`.crx` 当正式上架包。

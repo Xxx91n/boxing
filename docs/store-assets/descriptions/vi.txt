@@ -64,4 +64,4 @@ Chạy trên Chrome, Edge, Firefox và trình duyệt Chromium khác.
 Manifest V3.
 Mã nguồn: https://github.com/Xxx91n/boxing
 Giấy phép: Apache-2.0
-Quyền riêng tư: https://xxx91n.github.io/boxing/privacy-policy.html
+Quyền riêng tư: https://boxing.xxx91n.com/privacy-policy.html

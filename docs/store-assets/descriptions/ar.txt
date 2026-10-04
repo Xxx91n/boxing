@@ -64,4 +64,4 @@ JavaScript خام بلا أطر عمل أو أدوات حزم.
 Manifest V3.
 المصدر: https://github.com/Xxx91n/boxing
 الرخصة: Apache-2.0
-الخصوصية: https://xxx91n.github.io/boxing/privacy-policy.html
+الخصوصية: https://boxing.xxx91n.com/privacy-policy.html

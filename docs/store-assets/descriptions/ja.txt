@@ -64,4 +64,4 @@ Chrome、Edge、Firefox、その他の Chromium 系で動作。
 Manifest V3。
 ソース: https://github.com/Xxx91n/boxing
 ライセンス: Apache-2.0
-プライバシー: https://xxx91n.github.io/boxing/privacy-policy.html
+プライバシー: https://boxing.xxx91n.com/privacy-policy.html

@@ -64,4 +64,4 @@ Fonctionne sur Chrome, Edge, Firefox et autres navigateurs Chromium.
 Manifest V3.
 Code source : https://github.com/Xxx91n/boxing
 Licence : Apache-2.0
-Confidentialité : https://xxx91n.github.io/boxing/privacy-policy.html
+Confidentialité : https://boxing.xxx91n.com/privacy-policy.html

@@ -64,4 +64,4 @@ tabs — 依你的設定在新分頁開啟書籤
 Manifest V3。
 原始碼：https://github.com/Xxx91n/boxing
 授權：Apache-2.0
-隱私權政策：https://xxx91n.github.io/boxing/privacy-policy.html
+隱私權政策：https://boxing.xxx91n.com/privacy-policy.html

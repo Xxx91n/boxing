@@ -35,7 +35,7 @@
 2. 上传 **未签名** `boxing-firefox-2026.9.20.zip`（商店负责签名）
 3. 版本说明：用 `CHANGELOG.md` 中 **2026.9.20** 用户向条目（勿贴 git log）
 4. 若要求源码：上传 `boxing-source-2026.9.20.zip`，说明：Vanilla JS、无混淆、`npm ci && npm run build`
-5. 隐私政策 URL：https://xxx91n.github.io/boxing/privacy-policy.html
+5. 隐私政策 URL：https://boxing.xxx91n.com/privacy-policy.html
 6. Submit
 
 **红线（历史教训）：** 本地 `web-ext sign` + 真 API key 会**永久占用版号**。演练请用 `99.9.x` 或只跑 `web-ext lint`。商店网页上传不占用本仓 CI 的 AMO 签名步。

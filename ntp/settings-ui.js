@@ -13,6 +13,7 @@ import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
+import { PRIVACY_URL } from './site-constants.js';
 
 let debug, debugErr, debugWarn, updateCaption;
 let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
@@ -332,7 +333,7 @@ export function initAboutTab() {
     'about-link-repo': 'https://github.com/Xxx91n/boxing',
     'about-link-issues': 'https://github.com/Xxx91n/boxing/issues',
     'about-link-pulls': 'https://github.com/Xxx91n/boxing/pulls',
-    'about-link-privacy': 'https://boxing.xxx91n.com/privacy-policy.html',
+    'about-link-privacy': PRIVACY_URL,
   };
   for (const [id, url] of Object.entries(links)) {
     const btn = document.getElementById(id);
