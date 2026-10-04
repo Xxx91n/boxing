@@ -923,5 +923,29 @@
   "dataConflictExportBtn": {
     "message": "تصدير",
     "description": "Settings data tab: per-row conflict-copy export button (ticket 79)"
+  },
+  "settingsNavAbout": {
+    "message": "حول"
+  },
+  "aboutVersion": {
+    "message": "الإصدار"
+  },
+  "aboutLinksTitle": {
+    "message": "الروابط"
+  },
+  "aboutLinkRepo": {
+    "message": "مستودع GitHub"
+  },
+  "aboutLinkIssues": {
+    "message": "المشكلات"
+  },
+  "aboutLinkPulls": {
+    "message": "طلبات السحب"
+  },
+  "aboutLinkPrivacy": {
+    "message": "سياسة الخصوصية"
+  },
+  "aboutLicense": {
+    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   }
 }

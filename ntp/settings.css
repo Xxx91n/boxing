@@ -1067,3 +1067,57 @@ html.ntp--dark {
   box-shadow: none;
   border-color: var(--color-focus);
 }
+
+/* ══════════════════════════════════════════════
+   About Tab (D-006)
+   ══════════════════════════════════════════════ */
+.about-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-4) 0;
+  gap: var(--space-2);
+}
+
+.about-icon {
+  border-radius: var(--radius-tile);
+  box-shadow: var(--shadow-1);
+}
+
+.about-name {
+  margin: 0;
+  font-size: var(--fs-lg, 18px);
+  color: var(--color-ink);
+}
+
+.about-sub {
+  margin: 0;
+  font-size: var(--fs-md, 13px);
+  color: var(--color-muted);
+}
+
+.about-version {
+  margin: 0;
+  font-size: var(--fs-sm, 12px);
+  color: var(--color-muted);
+}
+
+.about-links {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.about-link-btn {
+  text-align: center;
+  justify-content: center;
+}
+
+.about-license {
+  margin: 0;
+  font-size: var(--fs-sm, 12px);
+  color: var(--color-muted);
+  text-align: center;
+}

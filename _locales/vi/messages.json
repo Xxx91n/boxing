@@ -923,5 +923,29 @@
   "dataConflictExportBtn": {
     "message": "Xuất",
     "description": "Settings data tab: per-row conflict-copy export button (ticket 79)"
+  },
+  "settingsNavAbout": {
+    "message": "Giới thiệu"
+  },
+  "aboutVersion": {
+    "message": "Phiên bản"
+  },
+  "aboutLinksTitle": {
+    "message": "Liên kết"
+  },
+  "aboutLinkRepo": {
+    "message": "Kho lưu trữ GitHub"
+  },
+  "aboutLinkIssues": {
+    "message": "Vấn đề"
+  },
+  "aboutLinkPulls": {
+    "message": "Yêu cầu kéo"
+  },
+  "aboutLinkPrivacy": {
+    "message": "Chính sách quyền riêng tư"
+  },
+  "aboutLicense": {
+    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   }
 }

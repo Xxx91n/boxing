@@ -30,6 +30,7 @@ export function initSettingsUiFacade(deps) {
 }
 
   export function syncSettingsDOM() {
+    initAboutTab();
     if (typeof langSelect !== 'undefined' && langSelect) langSelect.value = layout.settings.selectedLanguage || 'en';
     if (typeof rememberCheck !== 'undefined' && rememberCheck) rememberCheck.checked = layout.settings.rememberLastPos !== false;
     if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'sameTab';
@@ -307,8 +308,41 @@ export function initSettingsUiFacade(deps) {
     } catch (e) { debugErr('exportConflictCopy', e); }
   }
 
+let _aboutTabInited = false;
+export function initAboutTab() {
+  const versionEl = document.getElementById('about-version-value');
+  if (versionEl) {
+    try {
+      const cr = globalThis.chrome || globalThis.browser;
+      const mf = cr?.runtime?.getManifest ? cr.runtime.getManifest() : null;
+      versionEl.textContent = (mf && (mf.version_name || mf.version)) || '–';
+    } catch (_) { versionEl.textContent = '–'; }
+  }
+  if (_aboutTabInited) return;
+  _aboutTabInited = true;
+  function openLink(url) {
+    try {
+      const cr = globalThis.chrome || globalThis.browser;
+      if (cr?.tabs?.create) {
+        cr.tabs.create({ url, active: true });
+      } else { window.open(url, '_blank', 'noopener'); }
+    } catch (_) { window.open(url, '_blank', 'noopener'); }
+  }
+  const links = {
+    'about-link-repo': 'https://github.com/Xxx91n/boxing',
+    'about-link-issues': 'https://github.com/Xxx91n/boxing/issues',
+    'about-link-pulls': 'https://github.com/Xxx91n/boxing/pulls',
+    'about-link-privacy': 'https://boxing.xxx91n.com/privacy-policy.html',
+  };
+  for (const [id, url] of Object.entries(links)) {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', () => openLink(url));
+  }
+}
+
 // Init-time wiring, called from ntp.js init() at the position of the original statement blocks.
 export function bindSettingsUi() {
+    initAboutTab();
     // Ticket 08 (2026.9.12): footer version reflects the manifest version_name at runtime so it
     // can never drift again; static markup stays the fallback for the file:// mock lane
     // (no extension chrome API there — SEC-01: read-only, never defines globals).

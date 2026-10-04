@@ -64,6 +64,7 @@ function isValidPublicUrl(url) {
 }
 
 const faviconCache = new Map(); // volatile: cleared on browser restart (session-scoped)
+const _faviconHotPool = new Map(); // host -> HTMLImageElement
 // BX-DEV-121 (Bug12): persistent favicon URL cache in localStorage with TTLs.
 //   hit  (url != null) → 7-day TTL
 //   miss (url == null) → 90-day TTL (avoid re-racing 404 sites)
@@ -131,13 +132,40 @@ async function loadFavicon(img, url, opts) {
   // revalidation via { background: true } re-entry, which skips the cache check and
   // joins/starts the shared probe; its result overwrites the cache AND repaints this img.
   const background = !!(opts && opts.background);
-  if (!isValidPublicUrl(url)) { img.style.display = 'none'; return; }
+  if (!isValidPublicUrl(url)) {
+    img.classList.remove('is-loading');
+    img.style.display = 'none';
+    return;
+  }
   const host = new URL(url).hostname;
   if (!background) {
     const entry = faviconCache.get(host);
     if (entry) {
       // Cache hit — instant render, zero network. Stale hits paint too (SWR), refreshed below.
-      if (entry.url === null) img.style.display = 'none'; else img.src = entry.url;
+      if (entry.url === null) {
+        img.classList.remove('is-loading');
+        img.classList.add('is-cached');
+        img.style.display = 'none';
+      } else {
+        const pooled = _faviconHotPool.get(host);
+        if (pooled && pooled.complete) {
+          img.src = pooled.src;
+          img.classList.remove('is-loading');
+          img.classList.add('is-cached');
+        } else {
+          const probe = new Image();
+          probe.src = entry.url;
+          probe.decode().then(() => {
+            img.src = probe.src;
+            img.classList.remove('is-loading');
+            img.classList.add('is-cached');
+            _faviconHotPool.set(host, probe);
+          }).catch(() => {
+            img.classList.remove('is-loading');
+            img.style.display = 'none';
+          });
+        }
+      }
       if (Date.now() - entry.ts > favFreshTtl(entry.url) && !inflight.has(host)) {
         loadFavicon(img, url, { background: true });
       }
@@ -184,7 +212,22 @@ async function loadFavicon(img, url, opts) {
     task.then(forget, forget);
   }
   const winner = await task;
-  if (winner === null) img.style.display = 'none'; else img.src = winner;
+  if (winner === null) {
+    img.classList.remove('is-loading');
+    img.style.display = 'none';
+  } else {
+    const probe = new Image();
+    probe.src = winner;
+    probe.decode().then(() => {
+      img.src = probe.src;
+      img.classList.remove('is-loading');
+      img.classList.add('is-cached');
+      _faviconHotPool.set(host, probe);
+    }).catch(() => {
+      img.classList.remove('is-loading');
+      img.style.display = 'none';
+    });
+  }
 }
 
 export { loadFavicon };

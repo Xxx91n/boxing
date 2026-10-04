@@ -923,5 +923,29 @@
   "dataConflictExportBtn": {
     "message": "निर्यात",
     "description": "Settings data tab: per-row conflict-copy export button (ticket 79)"
+  },
+  "settingsNavAbout": {
+    "message": "के बारे में"
+  },
+  "aboutVersion": {
+    "message": "संस्करण"
+  },
+  "aboutLinksTitle": {
+    "message": "लिंक्स"
+  },
+  "aboutLinkRepo": {
+    "message": "GitHub रिपॉजिटरी"
+  },
+  "aboutLinkIssues": {
+    "message": "समस्याएं"
+  },
+  "aboutLinkPulls": {
+    "message": "पुल रिक्वेस्ट"
+  },
+  "aboutLinkPrivacy": {
+    "message": "गोपनीयता नीति"
+  },
+  "aboutLicense": {
+    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   }
 }

@@ -170,9 +170,11 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
     // Shared helper defined once...
     expect((src.match(/function selectAllTitleText\(/g) || []).length).toBe(1);
-    // ...wired into exactly the three title mousedown surfaces.
-    expect((src.match(/selectAllTitleText\(title\)/g) || []).length).toBe(2);   // large + small
-    expect((src.match(/selectAllTitleText\(innerCrumbTitle\)/g) || []).length).toBe(1); // crumb
+    // D-003: focus-state machine defined once...
+    expect((src.match(/function makeTitleFocusMachine\(/g) || []).length).toBe(1);
+    // ...wired into exactly the three title surfaces.
+    expect((src.match(/makeTitleFocusMachine\(title\)/g) || []).length).toBe(2);   // large + small
+    expect((src.match(/makeTitleFocusMachine\(innerCrumbTitle\)/g) || []).length).toBe(1); // crumb
     // AC4: crumb Enter/Escape contract present.
     expect(src).toContain('innerCrumbTitle.onkeydown');
     // SEC-03: plain-text paste stays on all three editable titles.
@@ -180,5 +182,70 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     // Ticket 09 scope untouched: create pipeline still renders before fire-and-forget save.
     expect(src).not.toContain('await saveLayout');
     expect((src.match(/void saveLayout\(\);/g) || []).length).toBe(3);
+  });
+
+  test('D-005: favicon Phase-1 hot pool, decode(), is-loading and is-cached classes', () => {
+    const favSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/favicon.js'), 'utf8');
+    const popSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/popups.js'), 'utf8');
+    const cssSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/base.css'), 'utf8');
+
+    expect(favSrc).toContain('const _faviconHotPool = new Map();');
+    expect(favSrc).toContain('probe.decode()');
+    expect(favSrc).toContain("img.classList.remove('is-loading')");
+    expect(favSrc).toContain("img.classList.add('is-cached')");
+
+    expect(popSrc).toContain("fav.className = 'bm-row__favicon is-loading';");
+
+    expect(cssSrc).toContain('.bm-row__favicon.is-loading');
+    expect(cssSrc).toContain('.bm-row__favicon.is-cached');
+  });
+
+  test('D-006: About tab markup, initAboutTab, and 14-locale i18n completeness', () => {
+    const htmlSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8');
+    const settingsUiSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/settings-ui.js'), 'utf8');
+    const i18nSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/i18n.js'), 'utf8');
+
+    expect(htmlSrc).toContain('data-tab="about"');
+    expect(htmlSrc).toContain('data-i18n="settingsNavAbout"');
+    expect(htmlSrc).toContain('id="tab-about"');
+    expect(htmlSrc).toContain('id="about-version-value"');
+    expect(htmlSrc).toContain('id="about-link-repo"');
+    expect(htmlSrc).toContain('id="about-link-issues"');
+    expect(htmlSrc).toContain('id="about-link-pulls"');
+    expect(htmlSrc).toContain('id="about-link-privacy"');
+
+    expect(settingsUiSrc).toContain('export function initAboutTab()');
+
+    const expectedKeys = [
+      'settingsNavAbout',
+      'aboutVersion',
+      'aboutLinksTitle',
+      'aboutLinkRepo',
+      'aboutLinkIssues',
+      'aboutLinkPulls',
+      'aboutLinkPrivacy',
+      'aboutLicense',
+    ];
+
+    for (const key of expectedKeys) {
+      expect(i18nSrc).toContain(`I18N_FALLBACK.${key} = `);
+    }
+
+    const localesDir = path.join(EXTENSION_PATH, '_locales');
+    const langs = fs.readdirSync(localesDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+
+    expect(langs.length).toBe(14);
+
+    for (const lang of langs) {
+      const msgPath = path.join(localesDir, lang, 'messages.json');
+      const msgs = JSON.parse(fs.readFileSync(msgPath, 'utf8'));
+      for (const key of expectedKeys) {
+        expect(msgs[key], `Missing key "${key}" in _locales/${lang}/messages.json`).toBeDefined();
+        expect(typeof msgs[key].message).toBe('string');
+        expect(msgs[key].message.length).toBeGreaterThan(0);
+      }
+    }
   });
 });

@@ -120,6 +120,7 @@
           <button class="settings-nav__item" data-tab="appearance" data-i18n="settingsNavAppearance">Appearance</button>
           <button class="settings-nav__item" data-tab="data" data-i18n="settingsNavData">Data</button>
           <button class="settings-nav__item" data-tab="sync" data-i18n="settingsNavSync">Sync & Backup</button>
+          <button class="settings-nav__item" data-tab="about" data-i18n="settingsNavAbout">About</button>
         </nav>
         <div class="settings-content">
           <!-- General tab -->
@@ -386,6 +387,27 @@
                 <input id="gist-id" class="modal__input" type="text" readonly placeholder="Created on first backup">
               </div>
             </div>
+          </div>
+          <!-- About tab (D-006) -->
+          <div class="settings-tab" id="tab-about" hidden>
+            <section class="modal__section about-section">
+              <img src="../icons/icon_128.png" alt="Boxing" class="about-icon" width="64" height="64">
+              <p class="about-name"><strong data-i18n="brandName">Boxing</strong></p>
+              <p class="about-sub" data-i18n="brandSub">organize bookmarks hierarchically</p>
+              <p class="about-version"><span data-i18n="aboutVersion">Version</span> <span id="about-version-value">–</span></p>
+            </section>
+            <section class="modal__section">
+              <label class="modal__label" data-i18n="aboutLinksTitle">Links</label>
+              <div class="about-links">
+                <button class="btn about-link-btn" id="about-link-repo" data-i18n="aboutLinkRepo">GitHub Repository</button>
+                <button class="btn about-link-btn" id="about-link-issues" data-i18n="aboutLinkIssues">Issues</button>
+                <button class="btn about-link-btn" id="about-link-pulls" data-i18n="aboutLinkPulls">Pull Requests</button>
+                <button class="btn about-link-btn" id="about-link-privacy" data-i18n="aboutLinkPrivacy">Privacy Policy</button>
+              </div>
+            </section>
+            <section class="modal__section">
+              <p class="about-license" data-i18n="aboutLicense">Licensed under Apache-2.0 · © 2024–2026 Xxx91n</p>
+            </section>
           </div>
         </div>
       </div>
