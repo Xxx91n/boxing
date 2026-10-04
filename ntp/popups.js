@@ -64,7 +64,7 @@ export function initPopupsFacade(deps) {
       grip.className = 'bm-row__grip';
       grip.textContent = '⋮⋮';
       grip.title = i18n('dragToReorder');
-      grip.style.cssText = 'cursor:grab;color:var(--color-muted);font-size:10px;padding:0 3px;flex-shrink:0;line-height:1;user-select:none;opacity:0.5;';
+      grip.style.cssText = 'cursor:grab;color:var(--color-muted);font-size:var(--fs-xxs);padding:0 3px;flex-shrink:0;line-height:1;user-select:none;opacity:0.5;';
       grip.addEventListener('mouseenter', () => { grip.style.opacity = '1'; });
       grip.addEventListener('mouseleave', () => { grip.style.opacity = '0.5'; });
       grip.addEventListener('mousedown', e => {
@@ -76,15 +76,11 @@ export function initPopupsFacade(deps) {
       dot.setAttribute('aria-hidden', 'true');
 
       const fav = document.createElement('img');
-      fav.className = 'bm-row__favicon';
-      // BX-DEV-107: multi-source async favicon with session cache
-      fav.src = '';  // placeholder, loaded async below
+      fav.className = 'bm-row__favicon is-loading';
+      fav.src = '';
       fav.width = 16; fav.height = 16;
       fav.style.flexShrink = '0';
-      fav.style.display = 'none';  // hidden until loaded
-      fav.onload = () => { fav.style.display = ''; };
       fav.onerror = () => { fav.style.display = 'none'; };
-      // async load, non-blocking
       loadFavicon(fav, bm.url);
 
       const tEl = document.createElement('span');
@@ -96,7 +92,7 @@ export function initPopupsFacade(deps) {
       editBtn.className = 'bm-row__edit-btn';
       editBtn.title = i18n('editBookmarkLabel');
       editBtn.textContent = '⋯';
-      editBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:14px;color:var(--color-muted);padding:0 4px;flex-shrink:0;';
+      editBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:var(--fs-base);color:var(--color-muted);padding:0 4px;flex-shrink:0;';
       editBtn.addEventListener('click', e => {
         e.stopPropagation();
         showBookmarkEditPopup(bm, i, sb, largeId);
@@ -143,7 +139,7 @@ export function initPopupsFacade(deps) {
     titleInput.type = 'text';
     titleInput.value = bm.title || '';
     titleInput.placeholder = i18n('bookmarkTitlePlaceholder');
-    titleInput.style.cssText = 'padding:4px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;';
+    titleInput.style.cssText = 'padding:4px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-sm);';
     titleInput.addEventListener('mousedown', e => e.stopPropagation());
 
     // URL input
@@ -151,7 +147,7 @@ export function initPopupsFacade(deps) {
     urlInput.type = 'text';
     urlInput.value = bm.url || '';
     urlInput.placeholder = i18n('bookmarkUrlPlaceholder');
-    urlInput.style.cssText = 'padding:4px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;';
+    urlInput.style.cssText = 'padding:4px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-sm);';
     urlInput.addEventListener('mousedown', e => e.stopPropagation());
 
     // Buttons
@@ -160,7 +156,7 @@ export function initPopupsFacade(deps) {
 
     const saveBtn = document.createElement('button');
     saveBtn.textContent = i18n('bookmarkSave');
-    saveBtn.style.cssText = 'padding:4px 12px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:12px;cursor:pointer;';
+    saveBtn.style.cssText = 'padding:4px 12px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:var(--fs-sm);cursor:pointer;';
     saveBtn.addEventListener('click', e => {
       e.stopPropagation();
       const normalizedUrl = normalizeBookmarkUrl(urlInput.value);
@@ -182,7 +178,7 @@ export function initPopupsFacade(deps) {
 
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = i18n('bookmarkDelete');
-    deleteBtn.style.cssText = 'padding:4px 12px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
+    deleteBtn.style.cssText = 'padding:4px 12px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-sm);cursor:pointer;color:var(--color-muted);';
     deleteBtn.addEventListener('click', e => {
       e.stopPropagation();
       // BX-DEV-111k: validate box still exists before deleting bookmark
@@ -200,7 +196,7 @@ export function initPopupsFacade(deps) {
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = i18n('confirmCancel');
-    cancelBtn.style.cssText = 'padding:4px 12px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
+    cancelBtn.style.cssText = 'padding:4px 12px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-sm);cursor:pointer;color:var(--color-muted);';
     cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); removePopupTracker(popup); });
 
     btnRow.append(saveBtn, deleteBtn, cancelBtn);
@@ -259,19 +255,19 @@ export function initPopupsFacade(deps) {
     const titleInput = document.createElement('input');
     titleInput.type = 'text';
     titleInput.placeholder = i18n('bookmarkTitlePlaceholder');
-    titleInput.style.cssText = 'padding:6px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:13px;background:var(--color-surface);color:var(--color-ink);outline:none;';
+    titleInput.style.cssText = 'padding:6px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-md);background:var(--color-surface);color:var(--color-ink);outline:none;';
 
     const urlInput = document.createElement('input');
     urlInput.type = 'text';
     urlInput.placeholder = i18n('bookmarkUrlPlaceholder');
-    urlInput.style.cssText = 'padding:6px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:13px;background:var(--color-surface);color:var(--color-ink);outline:none;';
+    urlInput.style.cssText = 'padding:6px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-md);background:var(--color-surface);color:var(--color-ink);outline:none;';
 
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:4px;justify-content:flex-end;';
 
     const addBtn = document.createElement('button');
     addBtn.textContent = i18n('addBookmarkBtn');
-    addBtn.style.cssText = 'padding:5px 14px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;';
+    addBtn.style.cssText = 'padding:5px 14px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:var(--fs-sm);font-weight:600;cursor:pointer;';
     // Ticket N-108-01 / C05 (D-005): addBookmark goes through commit(op) so the
     // write path is consistent with deleteBookmark/reorderBookmarks (ADR-0007 Q2).
     const addBmAction = () => {
@@ -302,7 +298,7 @@ export function initPopupsFacade(deps) {
 
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = i18n('confirmCancel');
-    cancelBtn.style.cssText = 'padding:5px 14px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:12px;cursor:pointer;color:var(--color-muted);';
+    cancelBtn.style.cssText = 'padding:5px 14px;background:transparent;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-sm);cursor:pointer;color:var(--color-muted);';
     cancelBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); removePopupTracker(popup); });
 
     btnRow.append(addBtn, cancelBtn);

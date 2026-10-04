@@ -37,7 +37,7 @@
 }
 
 .onboarding__step-icon {
-  font-size: 48px;
+  font-size: var(--fs-hero);
   line-height: 1;
   width: 72px;
   height: 72px;
@@ -51,7 +51,7 @@
 }
 
 .onboarding__step-num {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-muted);
@@ -60,14 +60,14 @@
 
 .onboarding__step-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--fs-2xl);
   font-weight: 650;
   color: var(--color-ink);
 }
 
 .onboarding__step-desc {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--fs-base);
   line-height: 1.6;
   color: var(--color-muted);
 }

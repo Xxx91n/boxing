@@ -7,7 +7,7 @@
 .conn-line--selected { stroke-width: 4; stroke: var(--color-accent, #5b7cfa); filter: drop-shadow(0 0 3px var(--color-accent, #5b7cfa)); cursor: pointer; }
 .conn-line--provisional { stroke-dasharray: 5,3; opacity: 0.7; vector-effect: non-scaling-stroke; }
 .box-tool-btn { background: transparent; border: 0; cursor: pointer;
-  color: var(--color-ink-soft); font-size: 12px; line-height: 1; padding: 0 4px;
+  color: var(--color-ink-soft); font-size: var(--fs-sm); line-height: 1; padding: 0 4px;
   border-radius: 4px; opacity: 0.55; transition: opacity 120ms; flex-shrink: 0; }
 .box-tool-btn:hover { opacity: 1; }
 .box-tool-btn--on { opacity: 1; color: var(--color-accent, #A08060); }

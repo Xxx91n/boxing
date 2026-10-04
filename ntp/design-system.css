@@ -105,6 +105,22 @@
   /* Base font size — adjustable via settings */
   --font-size-base: 14px;
 
+  /* --fs-* derived ladder (D-004 ADR-0019) — all calc() from --font-size-base.
+   * max(11px, ...) for decorative small text prevents sub-11px illegibility.
+   * No rem or em anchoring.
+   */
+  --fs-base: var(--font-size-base);
+  --fs-sm:   calc(var(--font-size-base) * 0.857);
+  --fs-xs:   max(11px, calc(var(--font-size-base) * 0.786));
+  --fs-xxs:  max(11px, calc(var(--font-size-base) * 0.714));
+  --fs-md:   calc(var(--font-size-base) * 0.929);
+  --fs-lg:   calc(var(--font-size-base) * 1.143);
+  --fs-xl:   calc(var(--font-size-base) * 1.214);
+  --fs-2xl:  calc(var(--font-size-base) * 1.286);
+  --fs-3xl:  calc(var(--font-size-base) * 1.429);
+  --fs-display: calc(var(--font-size-base) * 2.571);
+  --fs-hero:    calc(var(--font-size-base) * 3.429);
+
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);    /* enter: smooth decel */
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);     /* state toggle: material standard */

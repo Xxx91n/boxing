@@ -70,6 +70,25 @@ export function initRenderFacade(deps) {
     if (sel) { sel.removeAllRanges(); sel.addRange(range); }
   }
 
+  // D-003: focus-state-machine title helper — preserves BX-TITLE-SEL first-click select-all
+  // while allowing caret placement on subsequent clicks.
+  function makeTitleFocusMachine(el) {
+    if (el._titleFocusMachineAttached) return;
+    el._titleFocusMachineAttached = true;
+    let selectedThisFocus = false;
+    el.addEventListener('mousedown', e => { e.stopPropagation(); /* no preventDefault */ });
+    el.addEventListener('focus', () => {
+      if (!selectedThisFocus) { selectedThisFocus = true; selectAllTitleText(el); }
+    });
+    el.addEventListener('mouseup', () => {
+      if (selectedThisFocus) {
+        const sel = window.getSelection();
+        if (sel && sel.isCollapsed && el === document.activeElement) { selectAllTitleText(el); }
+      }
+    });
+    el.addEventListener('blur', () => { selectedThisFocus = false; });
+  }
+
 
   // ── ADR-0007 Phase 1.2: unified commit(op) (tldraw Store put/remove pattern) ──
   // Handlers mutate data only. commit() owns tombstones, DSU dirty, viewState clear,
@@ -504,7 +523,7 @@ export function initRenderFacade(deps) {
     title.spellcheck = false;
     title.textContent = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]);
     // Title: NO drag, NO click-through — only text editing
-    title.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); selectAllTitleText(title); });
+    makeTitleFocusMachine(title);
     title.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
       if (e.key === 'Escape') { title.textContent = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]); title.blur(); }
@@ -536,7 +555,7 @@ export function initRenderFacade(deps) {
     pinBtn.title = i18n('pin');
     pinBtn.textContent = '⊙';
     pinBtn.title = box.pinned ? i18n('unpin') : i18n('pin');
-    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
+    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:var(--fs-md);padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
     // Default: NOT pinned
     box.pinned = box.pinned === true;  // normalize
     pinBtn.textContent = box.pinned ? '⊙' : '○';
@@ -559,7 +578,7 @@ export function initRenderFacade(deps) {
     expandBtn.title = i18n('autoExpand');
     expandBtn.textContent = '⊟';
     expandBtn.title = box.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
-    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:13px;padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
+    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:var(--fs-md);padding:0 3px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       box.collapseHover = !box.collapseHover;
@@ -762,7 +781,7 @@ export function initRenderFacade(deps) {
     innerCrumbTitle.contentEditable = 'true';
     innerCrumbTitle.spellcheck = false;
     // Inner title: no drag allowed
-    innerCrumbTitle.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); selectAllTitleText(innerCrumbTitle); });
+    makeTitleFocusMachine(innerCrumbTitle);
     // Ticket 10 AC3: crumb rename parity with the box-title contract — Enter blurs (onblur
     // saves), Escape restores the previous name. Assigned (not addEventListener) because
     // innerCrumbTitle is a persistent element re-entered via _enterLargeBox each time.
@@ -917,7 +936,7 @@ export function initRenderFacade(deps) {
     title.contentEditable = 'true';
     title.spellcheck = false;
     title.textContent = sb.title || i18n('newSmallBox');
-    title.addEventListener('mousedown', e => { e.stopPropagation(); e.preventDefault(); selectAllTitleText(title); });
+    makeTitleFocusMachine(title);
     title.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
       if (e.key === 'Escape') { title.textContent = sb.title || i18n('newSmallBox'); title.blur(); }
@@ -944,7 +963,7 @@ export function initRenderFacade(deps) {
     pinBtn.title = i18n('pin');
     pinBtn.textContent = '⊙';
     pinBtn.title = sb.pinned ? i18n('unpin') : i18n('pin');
-    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
+    pinBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:var(--fs-xs);padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
     // Default: NOT pinned
     sb.pinned = sb.pinned === true;  // normalize
     pinBtn.textContent = sb.pinned ? '⊙' : '○';
@@ -966,7 +985,7 @@ export function initRenderFacade(deps) {
     expandBtn.title = i18n('autoExpand');
     expandBtn.textContent = '⊟';
     expandBtn.title = sb.collapseHover ? i18n('autoExpandHover') : i18n('autoExpand');
-    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:11px;padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
+    expandBtn.style.cssText = 'background:transparent;border:0;cursor:pointer;font-size:var(--fs-xs);padding:0 2px;opacity:0.4;flex-shrink:0;-webkit-appearance:none;appearance:none;outline:none;box-shadow:none;color:inherit;';
     expandBtn.addEventListener('click', e => {
       e.stopPropagation();
       sb.collapseHover = !sb.collapseHover;
@@ -1632,14 +1651,14 @@ export function initRenderFacade(deps) {
     if (document.getElementById('box-deleted-warning')) return;
     const warn = document.createElement('div');
     warn.id = 'box-deleted-warning';
-    warn.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--color-accent-ink);color:#F7F3ED;padding:var(--space-3) var(--space-5);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);font-size:14px;font-weight:600;display:flex;align-items:center;gap:var(--space-3);';
+    warn.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:var(--color-accent-ink);color:#F7F3ED;padding:var(--space-3) var(--space-5);border-radius:var(--radius-tile);box-shadow:var(--shadow-pop);font-size:var(--fs-base);font-weight:600;display:flex;align-items:center;gap:var(--space-3);';
     const message = document.createElement('span');
     message.dataset.i18n = 'boxDeletedWarning';
     message.textContent = i18n('boxDeletedWarning');
     const refresh = document.createElement('button');
     refresh.dataset.i18n = 'refreshPage';
     refresh.textContent = i18n('refreshPage');
-    refresh.style.cssText = 'background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.3);padding:4px 12px;border-radius:var(--radius-tile);cursor:pointer;font-size:13px;';
+    refresh.style.cssText = 'background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.3);padding:4px 12px;border-radius:var(--radius-tile);cursor:pointer;font-size:var(--fs-md);';
     refresh.addEventListener('click', () => window.location.reload());
     warn.append(message, refresh);
     document.body.appendChild(warn);

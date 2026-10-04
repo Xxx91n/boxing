@@ -115,7 +115,7 @@ export function initSettingsUiFacade(deps) {
         for (const e of cRows) {
           const row = document.createElement('div');
           row.className = 'data-conflict-row-item';
-          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:11px;';
+          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:var(--fs-xs);';
           const when = document.createElement('span');
           when.textContent = (e && e.ts) ? new Date(e.ts).toLocaleString() : '-';
           const reason = document.createElement('span');
@@ -127,7 +127,7 @@ export function initSettingsUiFacade(deps) {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'btn data-conflict-export-btn';
-          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:11px;';
+          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:var(--fs-xs);';
           btn.dataset.ts = String((e && e.ts) || '');
           btn.textContent = i18n('dataConflictExportBtn');
           row.append(when, reason, side, size, btn);
@@ -146,7 +146,7 @@ export function initSettingsUiFacade(deps) {
         for (const e of rows) {
           const row = document.createElement('div');
           row.className = 'data-snapshot-row';
-          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:11px;';
+          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:var(--fs-xs);';
           const when = document.createElement('span');
           when.textContent = (e && e.ts) ? new Date(e.ts).toLocaleString() : '-';
           const ver = document.createElement('span');
@@ -156,7 +156,7 @@ export function initSettingsUiFacade(deps) {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'btn data-snapshot-rollback-btn';
-          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:11px;';
+          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:var(--fs-xs);';
           btn.dataset.ts = String((e && e.ts) || '');
           btn.textContent = i18n('dataRollbackBtn');
           row.append(when, ver, size, btn);
