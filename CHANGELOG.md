@@ -32,7 +32,7 @@ Pages demo deploy is gated on post-release version freshness.
 ### Install
 - Firefox: [AMO listing](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
 - Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://xxx91n.github.io/boxing/privacy-policy.html)
+- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://boxing.xxx91n.com/privacy-policy.html)
 
 ## [2026.9.15] - 2026-09-15
 
@@ -59,7 +59,7 @@ and WebDAV sync upgraded to a three-way merge.
 - Firefox: [AMO listing](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
 - Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
 - This release no longer ships `.xpi` / `.crx` downloads — signing and updates are handled by the stores.
-- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://xxx91n.github.io/boxing/privacy-policy.html) — build locally with `npm ci && npm run build`.
+- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://boxing.xxx91n.com/privacy-policy.html) — build locally with `npm ci && npm run build`.
 - Release attachments include the store source-review package plus side-loadable Chromium/Firefox zips; verify integrity with `SHA256SUMS.txt`.
 - Release-gate background: [ADR-0017](docs/adr/0017-release-data-gate.md); the release checklist lives in the docs area.
 
@@ -87,7 +87,7 @@ User-facing notes for store listings and the GitHub Release body.
 ### Install
 - Firefox: [AMO listing](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
 - Edge / Chromium: [Edge Add-ons listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://xxx91n.github.io/boxing/privacy-policy.html)
+- Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://boxing.xxx91n.com/privacy-policy.html)
 
 ### Changed
 - Toolbar icons realigned with the curated docs/brand assets (ticket 01).

@@ -2,7 +2,7 @@
 
 Source payload for the **GitHub Pages NTP demo**: a static mirror of the
 extension new-tab page that runs standalone on
-`https://xxx91n.github.io/boxing/demo/` with no browser-extension context.
+`https://boxing.xxx91n.com/demo/` with no browser-extension context.
 
 ## How it works
 
@@ -25,7 +25,7 @@ extension new-tab page that runs standalone on
   comes out missing/empty or `docs/privacy-policy.md` is absent. It also
   renders the artifact-root `privacy-policy.html` from
   `docs/privacy-policy.md` — the store-required
-  `https://xxx91n.github.io/boxing/privacy-policy.html` URL, which Actions-mode
+  `https://boxing.xxx91n.com/privacy-policy.html` URL, which Actions-mode
   Pages only serves if it is inside the artifact. `demo-deploy.yml` runs
   `build.mjs --css-only` before assembling and re-asserts both files exist
   before upload.

@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { buildNtpCss } from "./ntp-css.mjs";
+import { SITE_URL, PRIVACY_URL, DEMO_URL } from "./site-constants.mjs";
 
 const ROOT = process.cwd();
 
@@ -148,7 +149,7 @@ const landing = [
   '  <meta charset="utf-8">',
   "  <title>Boxing</title>",
   '  <meta http-equiv="refresh" content="0; url=./demo/">',
-  '  <link rel="canonical" href="https://xxx91n.github.io/boxing/demo/">',
+  `  <link rel="canonical" href="${DEMO_URL}">`,
   "</head>",
   "<body>",
   '  <p>Boxing &mdash; <a href="./demo/">open the live preview</a> &middot; ' +
@@ -159,7 +160,7 @@ const landing = [
 fs.writeFileSync(path.join(OUT, "index.html"), landing + "\n", "utf8");
 
 // privacy-policy.html — store submissions hard-link
-// https://xxx91n.github.io/boxing/privacy-policy.html (ticket 47). Rendered
+// https://boxing.xxx91n.com/privacy-policy.html (ticket 47). Rendered
 // from docs/privacy-policy.md with a minimal Markdown subset (headings,
 // bullets, bold, inline code, links); no new npm dependencies (CRX-R-009).
 const ppHtml = renderPrivacyPolicy(fs.readFileSync(ppSrc, "utf8"));
@@ -216,6 +217,9 @@ function renderPrivacyPolicy(md) {
     "</html>",
   ].join("\n") + "\n";
 }
+
+// CNAME — triggers GitHub Pages custom domain binding (D-002)
+fs.writeFileSync(path.join(OUT, "CNAME"), "boxing.xxx91n.com\n", "utf8");
 
 console.log(JSON.stringify({
   out: path.relative(ROOT, OUT),

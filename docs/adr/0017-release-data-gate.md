@@ -21,7 +21,7 @@ Accepted（票 46 + atomcode 调研）· **修订 2026-09-13**（v2026.9.12 强�
 |---|---|---|
 | **G-A CI** | main 全量 CI 主 lane 残红**清零**，或每条残红均有**书面定谳豁免** | CI run URL + 豁免台账（见下书面豁免规则） |
 | **G-B 黄金路径** | 对发行 zip **解包产物**的人工黄金路径验收通过（Chrome + Firefox 双浏览器） | 发行检查单勾选记录（WORKFLOW §4.4 模板） |
-| **G-C Pages** | `https://xxx91n.github.io/boxing/demo/`、`/boxing/demo/ntp.css`、`/boxing/privacy-policy.html` 三 URL live HTTP 200（privacy-policy 为商店提交硬依赖） | HTTP 状态码记录（**原句保留**；2026-09-15 追加 `version.json` 新鲜度断言，见文末「修订 2026-09-15（票 109 · A-064）」） |
+| **G-C Pages** | `https://boxing.xxx91n.com/demo/`、`https://boxing.xxx91n.com/demo/ntp.css`、`https://boxing.xxx91n.com/privacy-policy.html` 三 URL live HTTP 200（privacy-policy 为商店提交硬依赖） | HTTP 状态码记录（**原句保留**；2026-09-15 追加 `version.json` 新鲜度断言，见文末「修订 2026-09-15（票 109 · A-064）」） |
 
 **数据兼容义务（Rollback 兼容，两商店官方文本共同要求）**：
 

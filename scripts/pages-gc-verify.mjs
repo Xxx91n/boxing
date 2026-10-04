@@ -20,10 +20,11 @@
 // cached 404, version.json unreadable).
 
 import assert from "node:assert/strict";
+import { SITE_URL } from "../.github/scripts/site-constants.mjs";
 
 export const GC_PATHS = ["/demo/", "/demo/ntp.css", "/privacy-policy.html"];
 export const VERSION_PATH = "/demo/version.json";
-export const DEFAULT_BASE_URL = "https://xxx91n.github.io/boxing";
+export const DEFAULT_BASE_URL = SITE_URL;
 export const DEFAULT_REPO = "Xxx91n/boxing";
 export const DEFAULT_TIMEOUT_SEC = 180;
 
