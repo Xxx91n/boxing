@@ -302,3 +302,236 @@ test.describe('Boxing DSU baseline (A9-Phase1)', () => {
     expect(Math.abs(afterB.y - beforeB.y)).toBeLessThan(10);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BX-D-007 (Wave 2026.10.11 P-18 / S-11): connection surface ownership.
+//
+// Regression class: one connId projected onto every open inner surface. The
+// resolver asked only "are both endpoints inner?" and never WHICH large box
+// they belong to, while coordinates are solved from layout data (DOM
+// independent) — so a line created inside box A reappeared as a ghost inside
+// box B at the same local position.
+//
+// These assert the RESOLVER contract and the RENDERED-DOM outcome separately:
+// a resolver-only test would still pass if the render path ignored it.
+// ═══════════════════════════════════════════════════════════════════════════
+test.describe('BX-D-007: connection lines render only in their owning surface', () => {
+  // Two large boxes, each holding two small boxes, plus one canvas-level edge.
+  async function seedTwoBoxes(page) {
+    await resetBoxing(page);
+    return await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes = [
+        { id: 'A', type: 'large', title: 'A', x: 0, y: 0, width: 400, height: 300, children: [
+          { id: 'a1', title: 'a1', x: 20, y: 20, width: 160, height: 110, bookmarks: [] },
+          { id: 'a2', title: 'a2', x: 220, y: 20, width: 160, height: 110, bookmarks: [] },
+        ] },
+        { id: 'B', type: 'large', title: 'B', x: 600, y: 0, width: 400, height: 300, children: [
+          { id: 'b1', title: 'b1', x: 20, y: 20, width: 160, height: 110, bookmarks: [] },
+          { id: 'b2', title: 'b2', x: 220, y: 20, width: 160, height: 110, bookmarks: [] },
+        ] },
+      ];
+      dbg.layout._meta = { updatedAt: Date.now() };
+      dbg.renderCanvas();
+      // a1<->a2 belongs to A's inner surface; A<->B belongs to the canvas.
+      dbg.addConnection(dbg.smallKey('A', 'a1'), dbg.smallKey('A', 'a2'));
+      dbg.addConnection(dbg.largeKey('A'), dbg.largeKey('B'));
+      dbg.renderConnections();
+      return { conns: dbg.layout.connections.length };
+    });
+  }
+
+  // Enter a large box the way the app does, so currentLargeBoxId is real.
+  async function enterBox(page, id) {
+    await page.evaluate((boxId) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.enterLargeBox(boxId);
+    }, id);
+    await expect.poll(() => page.evaluate((boxId) => {
+      const dbg = (window as any).__boxingDebug;
+      return dbg.state().currentLargeBoxId === boxId;
+    }, id), { timeout: 5000 }).toBe(true);
+  }
+
+  const lineCount = (page: any) => page.evaluate(() => {
+    const inner = document.querySelector('.inner__surface .conn-layer, .inner-surface-content .conn-layer');
+    const canvas = document.querySelector('.canvas__surface .conn-layer');
+    return {
+      inner: inner ? inner.querySelectorAll('line.conn-line').length : 0,
+      canvas: canvas ? canvas.querySelectorAll('line.conn-line').length : 0,
+      total: document.querySelectorAll('line.conn-line').length,
+    };
+  });
+
+  test('D007-1: canvas-level edge renders on the canvas and nowhere else', async ({ page }) => {
+    await seedTwoBoxes(page);
+    // Canvas is the open surface -> the large<->large edge renders exactly once.
+    const onCanvas = await lineCount(page);
+    expect(onCanvas.canvas).toBe(1);
+    expect(onCanvas.inner).toBe(0);
+    expect(onCanvas.total).toBe(1);
+  });
+
+  test('D007-2: canvas-level edge is NOT projected into an open inner surface', async ({ page }) => {
+    // Canvas-ONLY seed on purpose: seedTwoBoxes also creates an inner edge, so
+    // counting there could not tell "the canvas edge leaked in" apart from "the
+    // inner edge correctly rendered". With a single canvas edge, any line at all
+    // inside the box IS the leak.
+    await resetBoxing(page);
+    await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes = [
+        { id: 'A', type: 'large', title: 'A', x: 0, y: 0, width: 400, height: 300, children: [
+          { id: 'a1', title: 'a1', x: 20, y: 20, width: 160, height: 110, bookmarks: [] },
+        ] },
+        { id: 'B', type: 'large', title: 'B', x: 600, y: 0, width: 400, height: 300, children: [] },
+      ];
+      dbg.layout._meta = { updatedAt: Date.now() };
+      dbg.renderCanvas();
+      dbg.addConnection(dbg.largeKey('A'), dbg.largeKey('B'));
+      dbg.renderConnections();
+    });
+    // Sanity: on the canvas the edge does render.
+    expect((await lineCount(page)).total).toBe(1);
+    await enterBox(page, 'A');
+    const inA = await lineCount(page);
+    // Inside A the canvas edge belongs to the CLOSED canvas surface -> zero lines.
+    // This is the ghost-line class of bug.
+    expect(inA.inner, 'a canvas-level edge must never be drawn on an inner surface').toBe(0);
+    expect(inA.total, 'zero lines total inside A (canvas surface is closed)').toBe(0);
+  });
+
+  test('D007-3: an inner edge renders only inside ITS OWN box (B sees zero lines)', async ({ page }) => {
+    await seedTwoBoxes(page);
+    await enterBox(page, 'A');
+    const inA = await lineCount(page);
+    expect(inA.inner, "A's own inner edge must render inside A").toBe(1);
+    // Now enter B. The SAME connId must not reappear — before the fix the edge
+    // was re-projected at the same local coordinates, i.e. a ghost in B.
+    await enterBox(page, 'B');
+    const inB = await lineCount(page);
+    expect(inB.inner, "box B must show ZERO lines: the edge belongs to box A").toBe(0);
+    expect(inB.total).toBe(0);
+  });
+
+  test('D007-4: going back to A restores its edge (suppression is view-scoped, not destructive)', async ({ page }) => {
+    await seedTwoBoxes(page);
+    await enterBox(page, 'A');
+    expect((await lineCount(page)).inner).toBe(1);
+    await enterBox(page, 'B');
+    expect((await lineCount(page)).total).toBe(0);
+    await enterBox(page, 'A');
+    expect((await lineCount(page)).inner, 'returning to A must bring the line back').toBe(1);
+  });
+
+  test('D007-5: resolveConnSurface contract (canvas / inner / cross-parent / mixed)', async ({ page }) => {
+    await resetBoxing(page);
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const k = {
+        largeA: dbg.largeKey('A'), largeB: dbg.largeKey('B'),
+        a1: dbg.smallKey('A', 'a1'), a2: dbg.smallKey('A', 'a2'),
+        b1: dbg.smallKey('B', 'b1'),
+      };
+      const before = {
+        canvas: dbg.resolveConnSurface(k.largeA, k.largeB),
+        innerClosed: dbg.resolveConnSurface(k.a1, k.a2),
+        crossParent: dbg.resolveConnSurface(k.a1, k.b1),
+        mixed: dbg.resolveConnSurface(k.largeA, k.a1),
+        garbage: dbg.resolveConnSurface(null, undefined),
+      };
+      return before;
+    });
+    // Canvas open (default after reset): large<->large owns the canvas.
+    expect(r.canvas.kind).toBe('canvas');
+    // Inner surface closed -> resolvable, but not rendered here.
+    expect(r.innerClosed.kind).toBe('none');
+    expect(r.innerClosed.reason).toBe('inner-surface-closed');
+    // Cross-parent: no common surface at all.
+    expect(r.crossParent.kind).toBe('none');
+    expect(r.crossParent.crossParent).toBe(true);
+    // Mixed canvas/inner tiers share no coordinate space.
+    expect(r.mixed.kind).toBe('none');
+    expect(r.mixed.reason).toBe('mixed-tier');
+    // Unresolvable endpoints must not throw.
+    expect(r.garbage.kind).toBe('none');
+  });
+
+  test('D007-6: cross-parent inner edge keeps its DATA and logs a console debugWarn (no UI warning)', async ({ page }) => {
+    await resetBoxing(page);
+    const warns: string[] = [];
+    page.on('console', (m) => { if (m.type() === 'warning' || m.type() === 'debug') warns.push(m.text()); });
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes = [
+        { id: 'A', type: 'large', title: 'A', x: 0, y: 0, width: 400, height: 300, children: [
+          { id: 'a1', title: 'a1', x: 20, y: 20, width: 160, height: 110, bookmarks: [] },
+        ] },
+        { id: 'B', type: 'large', title: 'B', x: 600, y: 0, width: 400, height: 300, children: [
+          { id: 'b1', title: 'b1', x: 20, y: 20, width: 160, height: 110, bookmarks: [] },
+        ] },
+      ];
+      dbg.layout._meta = { updatedAt: Date.now() };
+      dbg.renderCanvas();
+      const added = dbg.addConnection(dbg.smallKey('A', 'a1'), dbg.smallKey('B', 'b1'));
+      dbg.renderConnections();
+      return {
+        added,
+        stored: dbg.layout.connections.length,
+        renderedAnywhere: document.querySelectorAll('line.conn-line').length,
+        // merge reversibility: the data must survive for a future re-merge
+        storedConn: JSON.parse(JSON.stringify(dbg.layout.connections[0] || null)),
+      };
+    });
+    expect(r.added).toBe(true);
+    // DATA RETAINED (D-007: deleting it would break merge reversibility).
+    expect(r.stored).toBe(1);
+    expect(r.storedConn.from).toBe('small:A:a1');
+    expect(r.storedConn.to).toBe('small:B:b1');
+    // NOT RENDERED anywhere.
+    expect(r.renderedAnywhere).toBe(0);
+    // Console diagnostic present (not a UI warning — no modal, no toast).
+    await expect.poll(() => warns.some((w) => /cross-surface connection/.test(w)), { timeout: 5000 }).toBe(true);
+    // No UI surface was raised by the condition.
+    expect(await page.evaluate(() => {
+      const ov = document.getElementById('onboarding-overlay');
+      return Boolean(ov && !ov.hidden);
+    })).toBe(false);
+  });
+
+  test('D007-7: deleting the source edge removes every projection (tombstone is conn-scoped)', async ({ page }) => {
+    await seedTwoBoxes(page);
+    await enterBox(page, 'A');
+    expect((await lineCount(page)).inner).toBe(1);
+    const after = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const id = dbg.layout.connections.find((c: any) => c.from === 'small:A:a1' || c.to === 'small:A:a1')?.id;
+      dbg.removeConnection(id);
+      dbg.renderConnections();
+      return { conns: dbg.layout.connections.length, removedId: id };
+    });
+    expect(after.conns).toBe(1); // only the canvas edge remains
+    expect((await lineCount(page)).total).toBe(0);
+    // Re-entering must not resurrect it.
+    await enterBox(page, 'B');
+    await enterBox(page, 'A');
+    expect((await lineCount(page)).total).toBe(0);
+  });
+
+  test('D007-8: legacy raw-id connections still render on the canvas (back-compat preserved)', async ({ page }) => {
+    await resetBoxing(page);
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes = [
+        { id: 'L1', type: 'large', title: 'L1', x: 0, y: 0, width: 320, height: 220, children: [] },
+        { id: 'L2', type: 'large', title: 'L2', x: 400, y: 0, width: 320, height: 220, children: [] },
+      ];
+      dbg.layout._meta = { updatedAt: Date.now() };
+      dbg.renderCanvas();
+      dbg.layout.connections.push({ id: 'legacy-1', from: 'L1', to: 'L2', createdAt: Date.now() });
+      dbg.renderConnections();
+      return document.querySelectorAll('line.conn-line').length;
+    });
+    expect(r).toBe(1);
+  });
+});
