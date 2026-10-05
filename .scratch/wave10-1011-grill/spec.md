@@ -129,3 +129,102 @@
 - **域名绑定**（S-02）：难逆转（301/商店元数据/单源迁移）+ 有真实取舍 → 新 ADR。
 - **全局字号阶梯+正交红线**（S-04）：~85 处迁移、token 层决策、max() 下限反直觉 → 新 ADR。
 - S-01 的 env tag-policy 坑记发布 runbook 即可（ADR-0017 G-C 已覆盖新鲜度决策）；S-03/S-05/S-06 不新立 ADR（可逆/常规）。
+
+---
+
+# Round-2（2026-10-05 追加议题：三新 bug + 遗留项收口）
+
+> 上游权威：`decision-ledger.md` D-007..D-011（全 current）。Round-1（S-01..S-06）已实施落地（49 commit 至 origin/main），本节起为本波第二轮修复契约。语义冲突时以账本为准。
+
+## S-07 bug1 连接线跨盒泄漏 — 落实 D-007 + D-011①
+
+**目标**：A 盒内两个小盒的连接只在 A 盒内页渲染；其他盒的内页/画布不出现投影线；删除该连接后各处不再出现。
+
+**归因（写死）**：同一 connId 的连接在每个打开的 inner surface 都被 `connSvgForConn` 选中——只判断"两端都是 inner"不判断父盒归属；坐标从 layout 数据解算与 DOM 无关 → 每个内页同位置投影。`removeConn`（render.js:135-144）只 tombstone 该 connId 无级联 → "删源头全灭"=同一 connId 的全部投影消失。
+
+**需求**：
+1. 新建统一 `resolveConnSurface(from, to)`：解析两端端点所属容器（分层键取父盒 id）；连接只在其公共父容器 surface 当前打开时渲染。
+2. inner-inner 连接：`parentLargeId(from)===parentLargeId(to)===currentLargeBoxId` 才画入 innerConnSvg，否则不渲染。
+3. canvas 级（大盒间）连接照旧画 canvasConnSvg；`large ↔ small` 混合端点按公共祖先语义处理（小盒端点无画布坐标→不渲染）。
+4. 跨父 small-small 连接（UI 不可创建，仅 merge/import 可产）：不渲染 + console debugWarn（非 UI 警告——用户无过错）；**数据保留不删**（merge 可逆性：日后合并/移回后连接自然变合法）。
+5. 归属判定每帧从 layout 现算，不缓存（reparent 瞬时改变归属）。
+6. 核验既有链路：单个小盒删除时其连接随 tombstone 清理（若未覆盖须补）。
+7. `__linePool` 保持全局不分池（无状态裸元素 appendChild 换父即可），复用前清 `conn-line--selected` 等残留 class。
+
+**验证**：e2e——A 盒内连线→进 B 盒断言零线→回 A 盒线在；删线后回 A 无残留；注入跨父 conn fixture 后各面均不画且 console 有 debugWarn。
+
+**负向约束**：不做持久化数据净化；不做按 surface 分注册表重构；不把跨父小盒边画上 canvasConnSvg（分层坐标下无意义——调研 A+ 建议不适用）；不向 UI 弹警告；归属不写进 conn 数据字段；不动 DSU/commit(op)/tombstone 架构。
+
+---
+
+## S-08 bug2 暗色模式收敛 — 落实 D-008 + D-011②③
+
+**归因（写死）**：①`.ntp--dark` 三写入点非对称——boot-theme.js 加在 `documentElement`（只加不删），toggle/loadSettings 只切 `#app`+`body` → boot 暗进场的会话祖先类永驻压暗，"无法切日光、新建标签页可解"；②`applyExternalLayout` incomingWins 时 settings 远端全赢且不重放视觉态/不重写镜像 → "会话内正常、刷新失效"。
+
+**需求**：
+1. `.ntp--dark` 唯一宿主=`documentElement`；CSS 前缀 `.ntp--dark X`→`:root.ntp--dark X`（语义不变）；移除 `#app`/`body` 挂点。
+2. 新建 `applyDarkMode(bool)` 单一 helper：切 html 类（对称 add/remove）+ 同步重写 boot 镜像 `boxingBootTheme.v1`。
+3. 调用点收敛：loadSettings / 设置页 toggle / 头部按钮 / `applyExternalLayout` 合并后立即重放 / `storage.onChanged` 回调体内调用。
+4. **WORKFLOW §6 红线**：`onChanged` 监听注册留在 storage.js 不搬家——回调体内调 helper（监听不拆散到多模块）。
+5. **boot 豁免条款**：boot-theme.js 是 classic blocking script（index.html:9-11 明注 NOT type=module）无法 import ESM helper → boot 保留自含最小逻辑（读镜像+切 html 类），ntp.js 启动后用 `applyDarkMode` 校准。
+6. toggle 退化为只写 `layout.settings.darkMode`+saveLayout，DOM 一律由 apply 路径渲染。
+7. 镜像缺失/损坏时 boot 回退 `matchMedia('(prefers-color-scheme: dark)')`；**回退值只用于显示，禁止写回 settings**。
+8. settings 合并维持远端全赢 LWW 不动（ADR-0016 分层不动）。
+
+**验证**：boot暗→切亮→页内即亮→刷新保持；远端合并 darkMode=false 到达→会话内立即变亮；镜像与 settings 恒一致；onChanged 空/部分触发幂等（Firefox）。
+
+**负向约束**：不引入 system-follow 三态/data-theme 属性迁移（darkMode 保持显式布尔，将来加跟随系统另立决策）；不做 settings 字段级 LWW；不动 mergeConcurrentLayout 整体语义；不把 boot-theme.js 转 module；镜像仍为首帧投影非第二权威源。
+
+---
+
+## S-09 bug3 demo 右键失效 — 落实 D-009 + D-011③
+
+**归因（写死）**：右键退回功能本身正常（线上 demo Playwright 实测：建盒→进盒→右键→exitToCanvas 全链路通）。唯一拦截=onboarding overlay：`initOnboarding` 在 demo 无 install signal（reason=null）→ 落 file:// 兜底判断（`!onboardingCompleted && boxes===0`）→ aria-modal 浮层拦截全页指针事件（实测 intercepts pointer events）→ 建不了盒/进不了盒/右键因 `currentLargeBoxId=null` 静默 no-op。conn 线右键删除模式历史已显式移除（conn-layer.js:159），无其他 contextmenu 拦截路径。
+
+**需求**：
+1. `build-demo.mjs` 在与 chrome-stub.js 同段注入 `window.__BOXING_DEMO__=true`（ntp.js 执行前就绪，不等 DOMContentLoaded；demo 仅此一条构建链，单点注入即足）。
+2. `initOnboarding` 检测 `__BOXING_DEMO__`（`runtime.id==='boxing-pages-demo'` 作防御兜底）→ return；**file:// 道不抑制**（调试入口保留）。
+3. overlay 补 Escape 键关闭：监听仅在浮层打开时挂载、优先级高于画布全局 Escape（取消选择语义）；对 demo 与真扩展同生效（WCAG 2.1.2 No Keyboard Trap，A 级）。
+4. `onContextMenu`/`onKeyDown` 主体不动。
+
+**验证**：demo build 产物含标记；首访 demo 无浮层可直接建盒/进盒/右键退回；真扩展 install 导览仍弹且 Escape 可关；file:// 空画布导览仍弹。
+
+**负向约束**：demo 不保留模态导览（违背 demo 惯例）；不做横幅问号入口（非模态 opt-in 留作后续选项）；不改 chrome-stub 的 runtime.id；不用 install-signal 伪造方案。
+
+---
+
+## S-10 范围项 — 落实 D-010
+
+**本波收**：
+1. 文档口径三项：spec §S-03 旧措辞对齐账本语义（"双击选词=回归原生放行（要）"≠"双击进入编辑心智=不引入"）；`.scratch` 文档机器绝对路径清扫；release-status §2/§5 错误块修正。
+2. README badge → workflow-backed 动态 badge（或删坏 badge——daily.dev 惯例：留坏 badge 不如删）。
+3. 重写 v2026.9.20 Release notes（`gh release edit`——外部产物改写，需用户授权后执行；GitHub immutable releases 下 notes 可编辑、tag/assets 不动）。
+4. zip 政策：`.scratch/**/*.zip` 进 .gitignore；markdown 文档保持跟踪（保护账本防丢机制）。
+5. 工程纪律：bugfix 与文档清理分开 commit。
+
+**转下波/不做**：f=已发布 release body 内历史域 URL 不改写（历史记录原则，keepachangelog 2.0）；g=issue 镜像追平（无机制支撑必再漂移，先定单向镜像/放弃镜像的机制决策）。
+
+---
+
+## S-11 测试门与发版 — 落实 D-011④ + D-010⑥
+
+**回归测试矩阵（发版 gate，断言归入现有 spec 族）**：
+- conn-dsu 族：跨盒零线 / 同盒连线正常 / 删源头全线灭 / 跨父 conn 隐藏+console debugWarn
+- settings-persist 族：boot暗→切亮→刷新保持亮 / 远端合并重放（会话内即见覆盖）/ onChanged 幂等 / 镜像缺失时 matchMedia 兜底
+- build-pipeline 族：demo 产物含 `__BOXING_DEMO__` / demo 首访无浮层可交互（建盒→进盒→右键退回）/ Escape 关闭 overlay / 真扩展 install 导览仍弹
+
+**发版 gate**：Chromium + Firefox 双项目全量过（沿用 workers=4 本地教训）→ 用户发 tag `v2026.10.11`。
+
+---
+
+## X-追加. Round-2 范围外汇总（账本负向约束 → 不做清单）
+
+| 项 | 来源 | 理由/出路 |
+|---|---|---|
+| 跨父小盒边画 canvasConnSvg（调研 A+ 建议） | D-007 | 分层坐标空间下小盒端点无画布坐标，画了=幽灵线换面复现 |
+| 持久化数据净化（B）/ 按 surface 分注册表（C） | D-007 | merge 可逆性会被毁 / 渲染细节固化进数据模型 |
+| system-follow 三态 / data-theme 迁移 / settings 字段级 LWW | D-008 | 显式布尔够用零增益；将来加跟随系统另立决策 |
+| demo 保留模态导览 / 横幅问号入口 | D-009 | 违背 demo 惯例；非模态 opt-in 形态留后续选项 |
+| 已发布 release body 历史域 URL 改写（f）/ issue 镜像追平（g） | D-010 | 历史记录原则（勘误不删除）/ 无机制支撑必再漂移 |
+| line pool 按 surface 分池 / boot-theme 转 module / onChanged 监听搬家 | D-011 | 无状态池不需分池 / classic blocking script 是故意形态 / WORKFLOW §6 红线 |
+| `.scratch` 全目录 gitignore / curl 式 10 天冷静期 | D-011 / D-010 | 破坏账本防丢机制（只 zip 不入库）/ 规模不适用 |
