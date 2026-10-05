@@ -6,22 +6,22 @@ Read the current product README, test governance, ADRs, and CONTEXT files, then 
 
 ## Required files
 
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/23-mental-model-deep-research.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round5-architecture-report.md
-- D:/Aworker/crx/boxing/README.md
-- D:/Aworker/crx/boxing/AGENTS.md
-- D:/Aworker/crx/boxing/CONTEXT.md
-- D:/Aworker/crx/boxing/docs/CONTEXT.md
-- D:/Aworker/crx/boxing/docs/adr/0016-sync-backup-engine-layering.md
-- D:/Aworker/crx/boxing/scripts/test-surface.mjs
-- D:/Aworker/crx/boxing/test/playwright.config.ts
-- D:/Aworker/crx/boxing/package.json
+- .scratch/architecture-recovery/issues/23-mental-model-deep-research.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round5-architecture-report.md
+- <repo root>/README.md
+- <repo root>/AGENTS.md
+- <repo root>/CONTEXT.md
+- <repo root>/docs/CONTEXT.md
+- <repo root>/docs/adr/0016-sync-backup-engine-layering.md
+- <repo root>/scripts/test-surface.mjs
+- <repo root>/test/playwright.config.ts
+- <repo root>/package.json
 
 ## Completion definition
 
-- `research-report-round5.md` exists at `D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round5.md`.
+- `research-report-round5.md` exists at `.scratch/architecture-recovery/research-report-round5.md`.
 - The report contains a comparison matrix, a missing-piece list, and one final recommendation with sources.
 - The report explicitly rules out unsuitable mental models for a zero-dependency native ES-module extension.
 - No source, manifest, test, or product README files changed; no parallel atomcode calls were started.

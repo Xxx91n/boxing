@@ -1,4 +1,4 @@
-You are the implementing agent for boxing (D:/Aworker/crx/boxing) ticket 01.
+You are the implementing agent for boxing (<repo root>) ticket 01.
 
 ## Must-read (in order)
 - .scratch/architecture-recovery/prompts/01-quarantine-flaky-tests.md (this file)

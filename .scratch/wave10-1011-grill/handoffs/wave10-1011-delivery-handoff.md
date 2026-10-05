@@ -1,7 +1,7 @@
 # Handoff — Wave 2026.10.11 实施交付完成交接（重修闭环 + 域名定向版）
 
 > 面向：下一轮 grill 主持 Agent / 后续运维 / 审计 Agent 及用户 · 生成：2026-10-04 · 阶段：重修闭环 + 域名定向完成 → **本轮不发版**，转入下一轮 grill（新问题）
-> 本轮权威交接：[wave10-1011-next-round-handoff.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/handoffs/wave10-1011-next-round-handoff.md)
+> 本轮权威交接：[wave10-1011-next-round-handoff.md](file:///.scratch/wave10-1011-grill/handoffs/wave10-1011-next-round-handoff.md)
 
 ## 1. 现状快照
 
@@ -23,8 +23,8 @@
   - `npx playwright test`: **14/14 用例通过**（含 4 个新增 D-003 行为级用例）。
   - `git diff --check`: 纯 LF 行尾，无空格瑕疵。`codegraph sync`: 索引同步。
 - **域名状态（本轮已达成，非发版路径）**：`boxing.xxx91n.com` 已通过 Pages API 绑定并 `verified`；新域三路径 200、旧 `xxx91n.github.io/boxing/*` 301→新域、`https_enforced=true`。
-- **详细验收报告**：[2026-10-04-report.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/reports/2026-10-04-report.md)
-- **独立审计报告**：[2026-10-04-audit.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/reports/2026-10-04-audit.md) · [2026-10-04-audit-round2.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/reports/2026-10-04-audit-round2.md)
+- **详细验收报告**：[2026-10-04-report.md](file:///.scratch/wave10-1011-grill/reports/2026-10-04-report.md)
+- **独立审计报告**：[2026-10-04-audit.md](file:///.scratch/wave10-1011-grill/reports/2026-10-04-audit.md) · [2026-10-04-audit-round2.md](file:///.scratch/wave10-1011-grill/reports/2026-10-04-audit-round2.md)
 
 ## 2. 审计重修整改结果摘要
 
@@ -37,13 +37,13 @@
 
 ## 3. 关联制品链接
 
-- **决策账本**：[.scratch/wave10-1011-grill/decision-ledger.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/decision-ledger.md)
-- **实施规格**：[.scratch/wave10-1011-grill/spec.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/spec.md)
-- **实施计划**：[.scratch/wave10-1011-grill/implementation-plan.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/implementation-plan.md)
-- **详细验收报告**：[.scratch/wave10-1011-grill/reports/2026-10-04-report.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/reports/2026-10-04-report.md)
+- **决策账本**：[.scratch/wave10-1011-grill/decision-ledger.md](file:///.scratch/wave10-1011-grill/decision-ledger.md)
+- **实施规格**：[.scratch/wave10-1011-grill/spec.md](file:///.scratch/wave10-1011-grill/spec.md)
+- **实施计划**：[.scratch/wave10-1011-grill/implementation-plan.md](file:///.scratch/wave10-1011-grill/implementation-plan.md)
+- **详细验收报告**：[.scratch/wave10-1011-grill/reports/2026-10-04-report.md](file:///.scratch/wave10-1011-grill/reports/2026-10-04-report.md)
 - **新增 ADRs**：
-  - [docs/adr/0018-custom-domain-boxing-xxx91n-com.md](file:///D:/Aworker/crx/boxing/docs/adr/0018-custom-domain-boxing-xxx91n-com.md)
-  - [docs/adr/0019-global-font-size-ladder.md](file:///D:/Aworker/crx/boxing/docs/adr/0019-global-font-size-ladder.md)
+  - [docs/adr/0018-custom-domain-boxing-xxx91n-com.md](file:///<repo root>/docs/adr/0018-custom-domain-boxing-xxx91n-com.md)
+  - [docs/adr/0019-global-font-size-ladder.md](file:///<repo root>/docs/adr/0019-global-font-size-ladder.md)
 
 ## 4. Suggested Skills
 

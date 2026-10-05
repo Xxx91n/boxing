@@ -3,15 +3,15 @@
 身份：你是 Boxing architecture-recovery 子窗口，只负责票 27 的 Firefox quarantine 收敛。
 
 必读：
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/handoffs/27-firefox-quarantine-convergence.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/27-firefox-quarantine-convergence.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round5-architecture-report.md
-- D:/Aworker/crx/boxing/README.md
-- D:/Aworker/crx/boxing/test/playwright.config.ts
-- D:/Aworker/crx/boxing/test/playwright.quarantine.config.ts
-- D:/Aworker/crx/boxing/test/tests
+- .scratch/architecture-recovery/handoffs/27-firefox-quarantine-convergence.md
+- .scratch/architecture-recovery/issues/27-firefox-quarantine-convergence.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round5-architecture-report.md
+- <repo root>/README.md
+- <repo root>/test/playwright.config.ts
+- <repo root>/test/playwright.quarantine.config.ts
+- <repo root>/test/tests
 
 本票 delta：
 - 每条失败只能修复或退役，不能自动延长到期日。
@@ -23,4 +23,4 @@
 
 开工第一句：先复述本票阻塞（23 — Mental model deep research；24 — README beautify and language entry reposition）和必读清单，再开始。
 
-收工前必须生成并落盘：D:/Aworker/crx/boxing/.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md，并返回路径与逐项验证结果。
+收工前必须生成并落盘：.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md，并返回路径与逐项验证结果。

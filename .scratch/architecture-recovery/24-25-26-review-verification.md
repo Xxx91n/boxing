@@ -1,7 +1,7 @@
 # 24/25/26 Independent Review Verification
 
 > 本文件由只读复核生成，不修改项目源码、README 或测试。
-> 复核工作区：`D:/Aworker/crx/boxing`
+> 复核工作区：`<repo root>`
 > 生成日期：2026-09-05
 
 ## 1. Final Judgments

@@ -2,7 +2,7 @@
 
 - **日期**：2026-10-04
 - **复审对象**：整改提交 `vqn` (`f9e51552`) + 文档提交 `rrp` (`e917f75b`)，分支 `wave-2026-10-11`
-- **上游**：第 1 轮审计 [2026-10-04-audit.md](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/reports/2026-10-04-audit.md)（CONDITIONAL FAIL，2 硬 + 2 中 + 5 软）
+- **上游**：第 1 轮审计 [2026-10-04-audit.md](file:///.scratch/wave10-1011-grill/reports/2026-10-04-audit.md)（CONDITIONAL FAIL，2 硬 + 2 中 + 5 软）
 - **基线**：base `32df9e9f`；现 diff = 70 files changed, 1636 insertions(+), 139 deletions(-)
 - **方法**：独立复跑硬验收 + 逐条复核整改证据 + 新守卫真伪审读 + 测试覆盖核查（不采信整改自述）
 - **职责边界**：只出报告、不改代码

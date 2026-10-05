@@ -9,7 +9,7 @@ the local workflow, ticket, or spec clauses.
 - Workflow: `.scratch/architecture-recovery/WORKFLOW.md`
 - Spec: `.scratch/architecture-recovery/spec.md`
 - Source report: `.scratch/architecture-recovery/round7-architecture-report.md`
-- `D:/Aworker/crx/boxing/docs/store-assets/screenshots/README.md`
+- `<repo root>/docs/store-assets/screenshots/README.md`
 
 ## Completion Definition
 Follow the acceptance criteria in the ticket and the repo verification contract. Do not

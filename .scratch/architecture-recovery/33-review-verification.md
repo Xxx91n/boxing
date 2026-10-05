@@ -1,7 +1,7 @@
 # 33 — Documentation and stale-branch reconciliation — Read-only review verification
 
 - 复核日期: 2026-09-06
-- 工作目录: `D:/Aworker/crx/boxing`
+- 工作目录: `<repo root>`
 - 复核方式: 只读 `git` / `but` / Node；未修改本文件外的任何文件；未 push / commit / merge；未运行 build / 全量测试
 
 ## 0. 总体结论
@@ -46,7 +46,7 @@
 
 3. **裸 git**：三个 33 相关 commit 的 committer 均为 GitButler；未发现裸 git commit / merge / rebase 写操作。报告取证使用只读 `git ls-remote/show/ls-tree/check-ignore/cherry`，非写违规。结论：未发现裸 git 写违规。
 
-4. **worktree**：`git worktree list` 仅返回 `D:/Aworker/crx/boxing 04a42bf [gitbutler/workspace]` 一个主工作区。结论：未发现 worktree 违规。
+4. **worktree**：`git worktree list` 仅返回 `<repo root> 04a42bf [gitbutler/workspace]` 一个主工作区。结论：未发现 worktree 违规。
 
 5. **删除未核实工作**：所有 stale branches 均保留且 SHA 与报告一致；`git diff --name-status 6588fed f457746` 无 `D`。工作树 `D dev-chrome` 未提交且无证据归属票 33。结论：未发现票 33 删除/改写未核实工作。
 

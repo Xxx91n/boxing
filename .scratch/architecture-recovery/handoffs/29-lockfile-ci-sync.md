@@ -6,21 +6,21 @@ Synchronize the dependency lockfile with current package metadata and make the c
 
 ## Required files
 
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/29-lockfile-ci-sync.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round6-architecture-report.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round6.md
-- D:/Aworker/crx/boxing/package.json
-- D:/Aworker/crx/boxing/package-lock.json
-- D:/Aworker/crx/boxing/.nvmrc
+- .scratch/architecture-recovery/issues/29-lockfile-ci-sync.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round6-architecture-report.md
+- .scratch/architecture-recovery/research-report-round6.md
+- <repo root>/package.json
+- <repo root>/package-lock.json
+- <repo root>/.nvmrc
 
 ## Completion definition
 
 - The lockfile is regenerated from current package metadata.
 - `npm ci --dry-run --ignore-scripts` exits zero.
 - The existing build and static guards remain green.
-- Closure report exists at `D:/Aworker/crx/boxing/.scratch/architecture-recovery/29-lockfile-ci-sync-report.md`.
+- Closure report exists at `.scratch/architecture-recovery/29-lockfile-ci-sync-report.md`.
 
 ## Suggested skills
 

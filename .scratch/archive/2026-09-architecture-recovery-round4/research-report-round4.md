@@ -134,7 +134,7 @@
 
 ## 9. 完成定义对照（handoffs/19）
 
-- [x] 报告落盘于 D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round4.md（本文件）。
+- [x] 报告落盘于 .scratch/architecture-recovery/research-report-round4.md（本文件）。
 - [x] 含对比矩阵（§2）、缺口/missing-piece 清单（§4）、唯一最终推荐 + 来源（§5/§7）、显式过度设计反模式清单（§6）。
 - [x] 现有心智模型先于外部调研记录（§1，回应 issues/19 复选框 1）。
 - [x] 恰一次串行 atomcode 调研（exit 0，25,505 字节答案已捕获并纳入 §2/§3/§5/§6/§7；无并行调用）。

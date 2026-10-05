@@ -1,7 +1,7 @@
 # 29 Review Verification
 
 > 本文件由只读复核生成，不修改项目源码、README、测试或状态表。
-> 工作区：`D:/Aworker/crx/boxing`
+> 工作区：`<repo root>`
 > 日期：2026-09-06
 
 ## 1. Overall Verdict

@@ -164,7 +164,7 @@
 | 8 | makeareadme.com | Community | README 节结构、"太长好过太短"、License 必备 |
 | 9 | github.com/tldraw/tldraw README | Official/Comparative | 定位、采用者名录、商用 license key (非纯 MIT) |
 | 10 | github.com/excalidraw/excalidraw README | Official/Comparative | MIT、绘图定位、npm 强制依赖 react |
-| 11 | 本地 AGENTS.md (D:/Aworker/crx/boxing) | 一手项目约束 | 零构建 ESM 管线、SEC 系列、storage 门面、Playwright 治理、i18n 14 语言 |
+| 11 | 本地 AGENTS.md (<repo root>) | 一手项目约束 | 零构建 ESM 管线、SEC 系列、storage 门面、Playwright 治理、i18n 14 语言 |
 | 12 | Startupik — tldraw vs Excalidraw vs Miro (2026-07) | Comparative | 三产品定位矩阵 |
 | 13 | practicalpkm — 2026 Obsidian Report Card (2026-03) | Criticism/Currency | Canvas 3.5/5 |
 | 14 | Obsidian Forum — Canvas is very laggy (2026-01) | Criticism/Community | 大画布卡顿、CPU 占用实证 |

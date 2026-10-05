@@ -17,7 +17,7 @@
 
 ## 2. 路径可解析
 
-全部必读路径在仓库根 `D:/Aworker/crx/boxing` 下 existsSync 通过（issues/handoffs/prompts/spec/43/WORKFLOW/README/AGENTS/CONTEXT/ADR-0007/render/favicon/utils）。
+全部必读路径在仓库根 `<repo root>` 下 existsSync 通过（issues/handoffs/prompts/spec/43/WORKFLOW/README/AGENTS/CONTEXT/ADR-0007/render/favicon/utils）。
 
 ## 3. Issue Blocked by → 波次
 

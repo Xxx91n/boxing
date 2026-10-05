@@ -197,7 +197,7 @@ Lockfile 修复主题: 单次调研的问题原文 (按 delta 不得改写) 未�
 | S16 | MDN: manifest.json background 键 | developer.mozilla.org | 官方 | Firefox 无 SW (bug 1573659)、双声明标准写法、Chrome 121+ 忽略 scripts |
 | S17 | Chromium Issue 40760920: dynamic import() in extension SW | issues.chromium.org | 官方/时效 | 平台方拒绝理由原文 (P2, 2026-09 读取无更新, 浏览器只读打开) |
 | S18 | Butler Flow (GitButler 官方文档) — docs.gitbutler.com | docs.gitbutler.com | 官方 | target 六原则、集成即自动清理、冲突早知 |
-| 【本地】 | ntp 模块图 (沙箱实测)、scripts/import-graph-guard.mjs、scripts/test-surface.mjs、scripts/test-mutex.mjs、test/cluster-map.json、.scratch/architecture-recovery/{README,spec,issues 28-33,handoffs 19/21/25/28/32/33}、round6-architecture-report.md、git 拓扑 | D:/Aworker/crx/boxing | 本地 | 模块边界规则、保守选择器、15+ 分支拓扑、lockfile EUSAGE 实证 |
+| 【本地】 | ntp 模块图 (沙箱实测)、scripts/import-graph-guard.mjs、scripts/test-surface.mjs、scripts/test-mutex.mjs、test/cluster-map.json、.scratch/architecture-recovery/{README,spec,issues 28-33,handoffs 19/21/25/28/32/33}、round6-architecture-report.md、git 拓扑 | <repo root> | 本地 | 模块边界规则、保守选择器、15+ 分支拓扑、lockfile EUSAGE 实证 |
 
 引擎交叉说明: S1/S17 (SW import 限制) 被三引擎独立命中; S6/S15 (merge queue) 双引擎命中; S10 (TIA) 双引擎命中; 矩阵 A 构建权衡被 Exa+AnySearch 命中。vivianvoss.net (buildless 社区文) 抓取无正文, 按未读弃用, 同一论点由 S14/S13/S12 三源覆盖。
 

@@ -3,21 +3,21 @@
 身份：你是 Boxing architecture-recovery 子窗口，只负责票 22 的文档一致性修复。
 
 必读：
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/handoffs/22-documentation-adr-consistency-sync.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/22-documentation-adr-consistency-sync.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round4-architecture-report.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round4.md
-- D:/Aworker/crx/boxing/AGENTS.md
-- D:/Aworker/crx/boxing/CONTEXT.md
-- D:/Aworker/crx/boxing/docs/CONTEXT.md
-- D:/Aworker/crx/boxing/docs/DESIGN.md
-- D:/Aworker/crx/boxing/docs/adr/0013-performance-optimization-grid-hash.md
-- D:/Aworker/crx/boxing/docs/adr/0016-sync-backup-engine-layering.md
-- D:/Aworker/crx/boxing/docs/agents/manifest-contract.md
-- D:/Aworker/crx/boxing/docs/agents/performance-anti-patterns.md
-- D:/Aworker/crx/boxing/manifest.json
+- .scratch/architecture-recovery/handoffs/22-documentation-adr-consistency-sync.md
+- .scratch/architecture-recovery/issues/22-documentation-adr-consistency-sync.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round4-architecture-report.md
+- .scratch/architecture-recovery/research-report-round4.md
+- <repo root>/AGENTS.md
+- <repo root>/CONTEXT.md
+- <repo root>/docs/CONTEXT.md
+- <repo root>/docs/DESIGN.md
+- <repo root>/docs/adr/0013-performance-optimization-grid-hash.md
+- <repo root>/docs/adr/0016-sync-backup-engine-layering.md
+- <repo root>/docs/agents/manifest-contract.md
+- <repo root>/docs/agents/performance-anti-patterns.md
+- <repo root>/manifest.json
 
 本票 delta：
 - 只更新权威文档，不改行为、不加依赖；删除或改写已失效的规则。
@@ -29,4 +29,4 @@
 
 开工第一句：先复述本票阻塞（19 — Mental model and test governance deep research；21 — Import graph guard and spec cluster mapping）和必读清单，再开始。
 
-收工前必须生成并落盘：D:/Aworker/crx/boxing/.scratch/architecture-recovery/22-documentation-adr-consistency-sync-report.md，并返回路径与逐项验证结果。
+收工前必须生成并落盘：.scratch/architecture-recovery/22-documentation-adr-consistency-sync-report.md，并返回路径与逐项验证结果。

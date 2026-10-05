@@ -1,7 +1,7 @@
 # Handoff — Wave 2026.10.11 重修闭环 · 第 2 轮审计后交接
 
 > 面向：下一轮 grill 主持 Agent / 任意接手 Agent 及用户 · 生成：2026-10-04 · 阶段：**重修闭环（第 2 轮审计）→ 本轮不发版 → 进入下一轮 grill（新问题）**
-> 仓库：`D:\Aworker\crx\boxing`（Windows；shell=bash/Git Bash；`ctx_*` 工具优先——见 AGENTS.md 顶部 BOXING-CTX-ROUTING 块）
+> 仓库：`<repo root>`（Windows；shell=bash/Git Bash；`ctx_*` 工具优先——见 AGENTS.md 顶部 BOXING-CTX-ROUTING 块）
 
 ## 1. 现状快照
 
@@ -14,7 +14,7 @@
 
 - **第 1 轮 6 类整改项全部独立复核闭环**：H1 单源机制（新增 `ntp/site-constants.js` + `scripts/guard-site-constants.mjs` 真校验并入 pretest）、H2 ADR 复核日期 `2026-11-10`、M1 rem 移除、M2 商店文案/文档旧域迁移、L1 字号字面量清除、L2 focus 状态机重构、L3/L4 favicon 去冗余/去语义矛盾。
 - **遗留 1 条规格缺口 R1（并入下一轮）**：spec S-03 / 账本 D-003 要求的新增 e2e 未落地（二次点击落 caret / 方向键折叠 / 局部拖选 / 双击选词 / 首点全选不被吞）；且整改改动了 D-003 行为却无测试覆盖。
-- 详见：[第 2 轮审计报告](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/reports/2026-10-04-audit-round2.md)、[第 1 轮审计报告](file:///D:/Aworker/crx/boxing/.scratch/wave10-1011-grill/reports/2026-10-04-audit.md)。
+- 详见：[第 2 轮审计报告](file:///.scratch/wave10-1011-grill/reports/2026-10-04-audit-round2.md)、[第 1 轮审计报告](file:///.scratch/wave10-1011-grill/reports/2026-10-04-audit.md)。
 
 ## 3. 下一轮 grill 方向指示（下一轮开场即用）
 

@@ -3,14 +3,14 @@
 身份：你是 Boxing architecture-recovery 子窗口，只负责票 31 的 focused state-sync 车道重跑与收口。
 
 必读：
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/31-review-verification.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/31-state-sync-flaky-diagnosis-report.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/31-state-sync-flaky-diagnosis.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/handoffs/31-state-sync-flaky-diagnosis.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/test/tests/boxing-state-sync.spec.ts
-- D:/Aworker/crx/boxing/test/playwright.config.ts
+- .scratch/architecture-recovery/31-review-verification.md
+- .scratch/architecture-recovery/31-state-sync-flaky-diagnosis-report.md
+- .scratch/architecture-recovery/issues/31-state-sync-flaky-diagnosis.md
+- .scratch/architecture-recovery/handoffs/31-state-sync-flaky-diagnosis.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- <repo root>/test/tests/boxing-state-sync.spec.ts
+- <repo root>/test/playwright.config.ts
 
 本票 delta：
 - 必须实际执行 focused state-sync lane，不得再用历史全量证据替代。
@@ -26,4 +26,4 @@
 
 node scripts/test-mutex.mjs playwright test --config=test/playwright.config.ts test/tests/boxing-state-sync.spec.ts --project=chromium-extension
 
-收工前必须生成并落盘：D:/Aworker/crx/boxing/.scratch/architecture-recovery/31-state-sync-focused-rerun-report.md，并返回路径与逐项验证结果。
+收工前必须生成并落盘：.scratch/architecture-recovery/31-state-sync-focused-rerun-report.md，并返回路径与逐项验证结果。

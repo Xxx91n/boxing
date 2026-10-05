@@ -53,7 +53,7 @@
 
 **改动面**：三处统一走共享实现——render.js:507（大盒标题）、:765（内层面包屑 crumb）、:920（小盒标题）；`selectAllTitleText`（render.js:65-71）单入口不拆。
 
-**负向约束**：Esc 恢复 / Enter 提交 / paste 纯文本（SEC-03）契约不动；不引入双击/F2 新心智；`user-select:none` 容器 + contenteditable `text` 豁免 CSS 结构不动（BX-SEL-01）；不放弃 stopPropagation（画布拖选防冲突）。
+**负向约束**：Esc 恢复 / Enter 提交 / paste 纯文本（SEC-03）契约不动；不引入「双击进入编辑」/F2 等**新编辑心智**（措辞校准，D-010①：双击**选词**属回归浏览器原生放行，是要的行为，与「双击进入编辑心智」是两件事，旧措辞把二者混为一谈）；`user-select:none` 容器 + contenteditable `text` 豁免 CSS 结构不动（BX-SEL-01）；不放弃 stopPropagation（画布拖选防冲突）。
 
 **验证（新增 e2e）**：二次点击落 caret；方向键折叠选区；局部拖选；双击选词；Esc 恢复；Enter 提交；首点全选不被吞（Chromium 必测，Firefox 语义对齐）。
 
