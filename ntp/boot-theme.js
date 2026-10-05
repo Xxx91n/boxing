@@ -32,16 +32,44 @@
   setTimeout(function () { root.classList.remove('boot-pending'); }, 4000);
   try {
     var raw = localStorage.getItem(KEY);
-    if (!raw) return; // fresh profile: default beige theme is already correct
+    // BX-D-008⑦: a missing/unreadable mirror previously hard-coded LIGHT, which is the
+    // one wrong answer guaranteed to be visible. Fall back to the OS preference instead.
+    // DISPLAY ONLY — this script has no chrome./browser access by design (CSP + the
+    // import-graph guard), so it structurally cannot write the value back to settings
+    // (D-008 / D-011③ "matchMedia value must never be persisted"). loadSettings()
+    // applies the authoritative layout.settings.darkMode moments later regardless.
+    if (!raw) { applySystemDarkFallback(); return; } // fresh profile: beige default stands
     var v = JSON.parse(raw);
-    if (!v || typeof v !== 'object') return;
+    if (!v || typeof v !== 'object') { applySystemDarkFallback(); return; }
     applyPack(v.theme);
-    if (v.darkMode) root.classList.add('ntp--dark');
+    // BX-D-008 (boot exemption D-008⑤ + fallback D-008⑦): this stays a classic blocking
+    // script with ZERO imports — an import would make it a module and defer it past first
+    // paint (see header) — so it cannot call persist.js applyDarkMode(). It keeps the
+    // minimal self-contained "read mirror + write the html class" logic, and ntp.js
+    // calibrates through applyDarkMode() right after loadSettings().
+    //
+    // The write is now SYMMETRIC (toggle), matching applyDarkMode. It used to only ever
+    // ADD the class, so a tab that booted dark could never return to light in that
+    // session — bug2's headline symptom ("only opening a new tab helps").
+    root.classList.toggle('ntp--dark', v.darkMode === true);
     if (typeof v.fontSize === 'number' && v.fontSize >= 11 && v.fontSize <= 20) {
       root.style.setProperty('--font-size-base', v.fontSize + 'px');
     }
   } catch (e) {
-    /* silent: mirror parse failed \u2014 loadSettings() re-applies authoritative values */
+    /* mirror parse failed: degrade to the OS preference instead of a hard-coded light,
+       then let loadSettings() correct it with the authoritative settings value. */
+    applySystemDarkFallback();
+  }
+  // BX-D-008⑦: OS-preference fallback for a missing/corrupt boot mirror. Display-only
+  // by construction: this script has no chrome./browser/localStorage-write access (CSP +
+  // import-graph guard B-6), so the value can never leak into layout.settings — that is
+  // the structural half of "matchMedia fallback must not be persisted" (D-008/D-011③).
+  // Symmetric toggle, for the same reason applyDarkMode uses one.
+  function applySystemDarkFallback() {
+    try {
+      if (!window.matchMedia) return;
+      root.classList.toggle('ntp--dark', !!window.matchMedia('(prefers-color-scheme: dark)').matches);
+    } catch (e) { /* silent: no matchMedia (very old engine) — stylesheet default stands */ }
   }
   function applyPack(themeKey) {
     // ADR-0012 five curated theme packs, inlined verbatim from persist.js THEME_PACKS.

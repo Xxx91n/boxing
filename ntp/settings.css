@@ -584,26 +584,26 @@ body.box-resizing {
    Dark Mode — comprehensive UI adaptation
    Every visible element must invert for dark theme
    ══════════════════════════════════════════════ */
-.ntp--dark body,
-.ntp--dark html {
+:root.ntp--dark body,
+:root.ntp--dark {
   background: var(--color-canvas);
 }
 
-.ntp--dark .ntp {
+:root.ntp--dark .ntp {
   background: var(--color-canvas);
 }
 
-.ntp--dark .ntp__bar {
+:root.ntp--dark .ntp__bar {
   background: var(--color-canvas);
   border-bottom-color: var(--color-hairline);
 }
 
-.ntp--dark .brand__name {
+:root.ntp--dark .brand__name {
   color: var(--color-ink);
 }
 
 
-.ntp--dark .search {
+:root.ntp--dark .search {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
@@ -612,14 +612,14 @@ body.box-resizing {
 
 
 
-.ntp--dark .btn {
+:root.ntp--dark .btn {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
   color: var(--color-ink);
 }
 
 
-.ntp--dark .btn--ghost {
+:root.ntp--dark .btn--ghost {
   color: var(--color-muted);
   background: transparent;
   border-color: transparent;
@@ -627,7 +627,7 @@ body.box-resizing {
 
 
 
-.ntp--dark .modal {
+:root.ntp--dark .modal {
   background: var(--color-surface);
   border-color: var(--color-hairline);
 }
@@ -635,7 +635,7 @@ body.box-resizing {
 
 
 
-.ntp--dark .modal__select {
+:root.ntp--dark .modal__select {
   background: var(--color-elevated);
   color: var(--color-ink);
   border-color: var(--color-hairline);
@@ -644,42 +644,42 @@ body.box-resizing {
 
 
 
-.ntp--dark .modal-overlay {
+:root.ntp--dark .modal-overlay {
   background: var(--color-surface); /* BX-DEV-140: was hardcoded rgba — now follows theme */
 }
 
-.ntp--dark .confirm-modal {
+:root.ntp--dark .confirm-modal {
   background: var(--color-surface);
 }
 
-.ntp--dark .confirm-modal .modal__title {
+:root.ntp--dark .confirm-modal .modal__title {
   color: var(--color-ink);
 }
 
-.ntp--dark .confirm-modal .modal__body {
+:root.ntp--dark .confirm-modal .modal__body {
   color: var(--color-ink);
 }
 
 
-.ntp--dark .checkbox-label input[type="checkbox"] {
+:root.ntp--dark .checkbox-label input[type="checkbox"] {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
 
 
-.ntp--dark .canvas {
+:root.ntp--dark .canvas {
   background: radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 24px 24px, var(--color-surface);
   border-color: var(--color-hairline);
 }
 
 
 
-.ntp--dark .large-box {
+:root.ntp--dark .large-box {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .large-box__bar {
+:root.ntp--dark .large-box__bar {
   background: var(--color-surface);
   border-bottom-color: var(--color-hairline);
 }
@@ -687,19 +687,19 @@ body.box-resizing {
 
 
 
-.ntp--dark .large-box__chip {
+:root.ntp--dark .large-box__chip {
   background: var(--color-surface);
   border-color: var(--color-hairline);
   color: var(--color-muted);
 }
 
-.ntp--dark .large-box__chip:hover {
+:root.ntp--dark .large-box__chip:hover {
   background: var(--color-accent-soft);
   border-color: var(--color-accent-soft-2);
   color: var(--color-accent-ink);
 }
 
-.ntp--dark .large-box__chip--more:hover {
+:root.ntp--dark .large-box__chip--more:hover {
   background: var(--color-surface);
   border-color: var(--color-hairline);
   color: var(--color-muted);
@@ -708,24 +708,24 @@ body.box-resizing {
 
 
 
-.ntp--dark .inner__canvas {
+:root.ntp--dark .inner__canvas {
   background: radial-gradient(circle at 1px 1px, var(--color-card-edge) 1px, transparent 1px) 0 0 / 16px 16px, var(--color-surface);
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .inner__canvas-head {
+:root.ntp--dark .inner__canvas-head {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
 
 
 
-.ntp--dark .small-box {
+:root.ntp--dark .small-box {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
 
-.ntp--dark .small-box__bar {
+:root.ntp--dark .small-box__bar {
   background: var(--color-surface);
   border-bottom-color: var(--color-hairline);
 }
@@ -741,7 +741,7 @@ body.box-resizing {
 
 
 
-.ntp--dark .bm-add-row .bm-add-btn {
+:root.ntp--dark .bm-add-row .bm-add-btn {
   /* ticket 13: legacy element-selector override removed — bm-add-btn is the only
      button in .bm-add-row (popups.js); explicit transparent reset beats base (0-3-0 > 0-2-0) */
   background: transparent;
@@ -753,21 +753,21 @@ body.box-resizing {
   border-color: var(--color-muted);
   color: var(--color-ink-soft);
 }
-.ntp--dark .bm-add-row .bm-add-btn:hover {
+:root.ntp--dark .bm-add-row .bm-add-btn:hover {
   background: var(--color-accent-soft);
   border-color: var(--color-accent);
   color: var(--color-accent-ink);
 }
 
 
-.ntp--dark .bm-edit-popup input {
+:root.ntp--dark .bm-edit-popup input {
   background: var(--color-surface);
   color: var(--color-ink);
   border-color: var(--color-hairline);
 }
 
 
-.ntp--dark .zoom-controls {
+:root.ntp--dark .zoom-controls {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
@@ -775,22 +775,22 @@ body.box-resizing {
 
 
 
-.ntp--dark .box-resize-handle {
+:root.ntp--dark .box-resize-handle {
   background: linear-gradient(135deg, transparent calc(50% - 1px), var(--color-muted) calc(50% - 1px), var(--color-muted) calc(50% + 1px), transparent calc(50% + 1px));
 }
 
-.ntp--dark .foot {
+:root.ntp--dark .foot {
   border-top-color: var(--color-hairline);
   color: var(--color-muted);
 }
 
-.ntp--dark .kbd {
+:root.ntp--dark .kbd {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
   color: var(--color-ink);
 }
 
-.ntp--dark .crumbs {
+:root.ntp--dark .crumbs {
   color: var(--color-ink);
 }
 
@@ -798,7 +798,7 @@ body.box-resizing {
 
 
 
-.ntp--dark #confirm-delete-btn {
+:root.ntp--dark #confirm-delete-btn {
   background: var(--color-accent-ink);
   color: var(--color-canvas);
   border-color: var(--color-accent-ink);
@@ -807,29 +807,27 @@ body.box-resizing {
 
 
 /* --- dark mode: ntp container + body background --- */
-.ntp--dark body,
-body.ntp--dark {
+:root.ntp--dark body {
   background: var(--color-canvas);
 }
 
-.ntp--dark html,
-html.ntp--dark {
+:root.ntp--dark {
   background: var(--color-canvas);
 }
 
 /* dark mode pinned header bar */
-.ntp--dark .ntp__bar {
+:root.ntp--dark .ntp__bar {
   background: var(--color-canvas);
   border-bottom-color: var(--color-hairline);
 }
 
 /* dark mode canvas surface */
-.ntp--dark .canvas__surface {
+:root.ntp--dark .canvas__surface {
   background: transparent;
 }
 
 /* dark mode inner surface */
-.ntp--dark .inner__surface {
+:root.ntp--dark .inner__surface {
   background: transparent;
 }
 
@@ -843,13 +841,13 @@ html.ntp--dark {
 
 
 /* dark mode font-size slider value */
-.ntp--dark #font-slider-value,
-.ntp--dark #zoom-slider-value {
+:root.ntp--dark #font-slider-value,
+:root.ntp--dark #zoom-slider-value {
   color: var(--color-accent-ink);
 }
 
 /* dark mode square corners checkbox label */
-.ntp--dark #square-corners-cb+.checkbox-label__text {
+:root.ntp--dark #square-corners-cb+.checkbox-label__text {
   color: var(--color-ink);
 }
 
@@ -1034,14 +1032,14 @@ html.ntp--dark {
 }
 
 /* Dark mode parity */
-.ntp--dark .theme-preset {
+:root.ntp--dark .theme-preset {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
-.ntp--dark .theme-preset:hover {
+:root.ntp--dark .theme-preset:hover {
   border-color: var(--color-card-edge);
 }
-.ntp--dark .theme-preset--active {
+:root.ntp--dark .theme-preset--active {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 2px var(--color-accent-soft-2);
 }

@@ -88,6 +88,42 @@ export function initPersistFacade(deps) {
     try { localStorage.removeItem(BOOT_THEME_KEY); } catch (e) { /* silent: localStorage clear, already gone */ }
   }
 
+  // ── BX-D-008: the single dark-mode apply path ──────────────────────────
+  // Three asymmetries used to write '.ntp--dark' (bug2, ledger D-008/D-011②):
+  //   1. boot-theme.js ADDED it to documentElement and only ever added, never
+  //      removed, so a session that booted dark kept a permanently-dark ancestor
+  //      class that the toggles (which wrote #app + body) could not clear —
+  //      "cannot switch back to light, only a new tab helps".
+  //   2. loadSettings / toggles wrote #app + body instead, so html stayed light.
+  //   3. applyExternalLayout adopted remote settings wholesale without replaying
+  //      any visual state or rewriting the mirror — "looks right in this session,
+  //      wrong after reload".
+  //
+  // Contract (D-008):
+  //   - documentElement is the ONLY host. CSS is prefixed ':root.ntp--dark'.
+  //     Industry model: the theme rides on :root so it also covers the root
+  //     scrollbar and the pre-paint background.
+  //   - The class is applied SYMMETRICALLY (add on true, remove on false) — that
+  //     symmetry is the actual bug fix, not the host move.
+  //   - The boot mirror is rewritten in the same step, so mirror and settings can
+  //     never disagree (the reload half of bug 2).
+  //   - Display only. This helper NEVER writes layout.settings: matchMedia
+  //     fallback values are for showing, not for persisting (D-008/D-011③).
+  export function applyDarkMode(on) {
+    const dark = on === true;
+    const root = document.documentElement;
+    if (root) root.classList.toggle('ntp--dark', dark);
+    // Header button glyph: ☽ = dark active, ☀ = light active. Both directions are
+    // written so the control can never disagree with the applied theme.
+    if (darkModeBtn) {
+      const span = darkModeBtn.querySelector('span');
+      if (span) span.textContent = dark ? '☽' : '☀';
+    }
+    if (typeof mirrorWriter === 'function') {
+      try { persistBootThemeMirror(mirrorWriter); } catch (e) { debugWarn('boot theme mirror write', e); }
+    }
+  }
+
   export function loadFallbackTabView() {
     try {
       const hist = JSON.parse(localStorage.getItem(TAB_VIEW_HISTORY_KEY) || '[]');
@@ -266,12 +302,12 @@ export function initPersistFacade(deps) {
       persistBootThemeMirror(mirrorWriter);
     }
 
-   // dark mode
-   if (layout.settings.darkMode) {
-     document.getElementById('app').classList.add('ntp--dark');
-     document.body.classList.add('ntp--dark');
-     if (darkModeBtn) darkModeBtn.querySelector('span').textContent = '☽';
-   }
+   // dark mode — BX-D-008: the single apply path. The old block here ADDED the class to
+   // #app + body while leaving the html class boot-theme.js had added untouched — that
+   // asymmetry is bug2's "cannot switch back to light, only a new tab helps" failure.
+   // applyDarkMode writes documentElement symmetrically and rewrites the boot mirror,
+   // so the class and the mirror can no longer disagree with settings.
+   applyDarkMode(layout.settings.darkMode === true);
     // accent theme (ADR-0012) — apply curated theme pack
     if (layout.settings.theme && layout.settings.theme !== 'beige') {
       applyTheme(layout.settings.theme);

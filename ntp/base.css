@@ -233,11 +233,11 @@ body {
   color: var(--color-muted);
   word-break: break-all;
 }
-.ntp--dark .search-results {
+:root.ntp--dark .search-results {
   background: var(--color-elevated);
   border-color: var(--color-hairline);
 }
-.ntp--dark .search-results__item:hover {
+:root.ntp--dark .search-results__item:hover {
   background: var(--color-surface);
 }
 

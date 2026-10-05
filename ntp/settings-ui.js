@@ -10,7 +10,7 @@ import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInn
 import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, readDrBodies } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
-import { applyTheme } from './persist.js';
+import { applyTheme, applyDarkMode } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
 import { PRIVACY_URL } from './site-constants.js';
@@ -425,11 +425,12 @@ export function bindSettingsUi() {
       saveLayout();
     });
 
-    // Dark mode toggle
+    // Dark mode toggle — BX-D-008: degenerated to "write the setting, then let the
+    // single apply path render the DOM" (the toggle no longer touches any class
+    // itself — that duplication is what let the three hosts drift apart).
     darkModeCB?.addEventListener('change', () => {
       layout.settings.darkMode = darkModeCB.checked;
-      appEl.classList.toggle('ntp--dark', darkModeCB.checked);
-      document.body.classList.toggle('ntp--dark', darkModeCB.checked);
+      applyDarkMode(layout.settings.darkMode);
       saveLayout();
     });
 
@@ -460,10 +461,10 @@ export function bindSettingsUi() {
     if (darkModeBtn) {
       darkModeBtn.addEventListener('click', () => {
         layout.settings.darkMode = !layout.settings.darkMode;
-        appEl.classList.toggle('ntp--dark', layout.settings.darkMode);
-        document.body.classList.toggle('ntp--dark', layout.settings.darkMode);
+        // BX-D-008: same single apply path as the settings checkbox — the header
+        // button used to duplicate the class writes and drift from them.
+        applyDarkMode(layout.settings.darkMode);
         if (darkModeCB) darkModeCB.checked = layout.settings.darkMode;
-        darkModeBtn.querySelector('span').textContent = layout.settings.darkMode ? '☽' : '☀';
         saveLayout();
       });
     }

@@ -29,11 +29,18 @@ let api = null;
 let layoutStorage = null;
 let mirrorWriter = null; // ticket 60: paint-critical boot mirror writer (persist.js facade)
 let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning;
+// BX-D-008: the single dark-mode apply path, INJECTED (not imported). storage.js is
+// a leaf module (import-graph-guard B-1 forbids sibling imports), and D-011② keeps
+// the write chain / loop guard / onChanged listener as one inseparable unit here —
+// moving the listener elsewhere to reach a helper directly would violate WORKFLOW §6.
+// Facade injection is the established pattern for exactly this constraint.
+let applyDarkMode = null;
 
 export function initStorageFacade(deps) {
   api = deps.api;
   layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   mirrorWriter = deps.mirrorWriter; // ticket 60: boot mirror writer (localStorage, sync-readable first paint)
+  applyDarkMode = deps.applyDarkMode; // BX-D-008: single dark-mode apply path (persist.js)
   debug = deps.debug;
   debugErr = deps.debugErr;
   debugWarn = deps.debugWarn;
@@ -70,6 +77,16 @@ export function registerStorageOnChanged() {
       const expectedArea = layoutStorage === api.storage.local ? 'local' : 'sync';
       if (areaName !== expectedArea || !changes.boxingLayout?.newValue) return;
       applyExternalLayout(changes.boxingLayout.newValue);
+      // BX-D-008: the listener registration deliberately stays in this module
+      // (WORKFLOW §6 / D-011② — write chain + loop guard + onChanged are one unit;
+      // splitting them across modules introduces races). The visual replay is
+      // therefore invoked from inside this callback body, through the injected
+      // single apply path. It is idempotent: classList.toggle with the same value
+      // is a no-op and the mirror rewrite is deterministic, so an empty or partial
+      // change set (the Firefox multi-key shape) can fire this repeatedly safely.
+      if (typeof applyDarkMode === 'function') {
+        try { applyDarkMode(layout.settings.darkMode === true); } catch (e) { debugWarn('onChanged applyDarkMode', e); }
+      }
     });
 }
 
@@ -917,6 +934,12 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
       if (needsReconcileWrite && incomingWins) saveLayoutDebounced();
       // BX-DEV-122 Bug3: re-sync settings DOM so modal reflects cross-tab updated urlOpenMode etc.
       try { syncSettingsDOM(); } catch (e) { debugErr("syncSettingsDOM", e); }
+      // BX-D-008: bug2's third face — remote settings won the LWW merge above but no
+      // visual state was replayed and the boot mirror was not rewritten, so the session
+      // looked right until the next reload reverted it. Replaying through the single
+      // apply path is what removes "inconsistent within the session vs. after reload".
+      // ADR-0016 layering and the remote-wins LWW semantics above are untouched (D-008⑧).
+      try { applyDarkMode(layout.settings.darkMode === true); } catch (e) { debugWarn("applyDarkMode replay", e); }
       debug('external layout applied', { revision: incomingRevision, boxes: layout.boxes.length });
       return true;
     } finally {

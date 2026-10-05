@@ -94,15 +94,15 @@
   justify-content: space-between;
 }
 
-.ntp--dark .onboarding-modal {
+:root.ntp--dark .onboarding-modal {
   background: var(--color-surface);
 }
 
-.ntp--dark .onboarding__step-icon {
+:root.ntp--dark .onboarding__step-icon {
   background: var(--color-elevated);
 }
 
-.ntp--dark .onboarding__step-title {
+:root.ntp--dark .onboarding__step-title {
   color: var(--color-ink);
 }.onboarding__lang {
   display: flex;
@@ -129,7 +129,7 @@
   opacity: 0.7;
   margin: 0;
 }
-.ntp--dark .onboarding__lang {
+:root.ntp--dark .onboarding__lang {
   border-bottom-color: rgba(255,255,255,0.12);
 }
 
