@@ -20,7 +20,41 @@ export function initOnboardingFacade(deps) {
 }
 
   // ── BX-ONBOARDING: first-run guided tour ───────────────────────────────
+  // BX-D-009 (bug3): the Pages demo is a trial surface, not a tutorial. The tour
+  // is an aria-modal overlay that wins the hit test for the WHOLE page, so on the
+  // demo — which has no install signal, so it fell through to the legacy
+  // empty-canvas judgment — the tour blocked every pointer gesture: you could not
+  // create a box, not enter one, and right-click "back" silently no-opped because
+  // currentLargeBoxId was still null. Root cause is the overlay, NOT right-click
+  // (verified: exit-to-canvas works once the overlay is gone), and conn-line
+  // right-click delete was already removed years ago (conn-layer.js comment) —
+  // there is no other contextmenu interceptor.
+  //
+  // __BOXING_DEMO__ is injected at BUILD time by build-demo.mjs as its own classic
+  // script next to chrome-stub.js — deliberately not inline, because index.html's
+  // CSP is `script-src 'self'` (SEC-15) and an inline flag would be blocked; and
+  // deliberately a classic script in <head>, so the flag is set before the
+  // deferred ntp.js module executes (no DOMContentLoaded wait, no init race).
+  //
+  // The runtime.id check is a defensive second condition only — chrome-stub.js
+  // keeps reporting its real id; the build-time flag is the single source.
+  //
+  // The file:// debug lane is deliberately NOT suppressed: it has no
+  // __BOXING_DEMO__, so the empty-canvas judgment still shows the tour there and
+  // that debugging entry point keeps working (D-009 negative constraint).
   export function initOnboarding(trigger = {}) {
+    try {
+      if (window.__BOXING_DEMO__ === true) {
+        if (typeof debug === 'function') debug('onboarding', 'suppressed for Pages demo (__BOXING_DEMO__)');
+        return;
+      }
+      const rid = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id)
+        || (typeof browser !== 'undefined' && browser.runtime && browser.runtime.id);
+      if (rid === 'boxing-pages-demo') {
+        if (typeof debug === 'function') debug('onboarding', 'suppressed for Pages demo (runtime.id)');
+        return;
+      }
+    } catch (e) { if (typeof debugErr === 'function') debugErr('onboarding demo probe', e); }
     const overlay = document.getElementById('onboarding-overlay');
     if (!overlay) return;
     // ADR-0016: trigger by the onInstalled signal (install/update distinction) instead of judging
@@ -47,6 +81,13 @@ export function initOnboardingFacade(deps) {
       }
     }
     function close(commit) {
+      // WCAG 2.1.2 No Keyboard Trap (Level A): the tour is a modal, so Escape must
+      // dismiss it. The listener is mounted ONLY while the overlay is open and torn
+      // down on close, so it can never outlive the modal or interfere with canvas
+      // Escape semantics (ntp.js onKeyDown: Escape = exit box / clear search).
+      // Capture phase + stopPropagation makes it win over that document-level
+      // bubble-phase handler when both would fire (D-009④).
+      detachOverlayKeydown();
       overlay.hidden = true;
       layout.settings.onboardingCompleted = true;
       saveLayout();
@@ -54,6 +95,18 @@ export function initOnboardingFacade(deps) {
       renderCanvas();
       updateCaption();
       debug('onboarding', commit ? 'completed' : 'skipped');
+    }
+    function onOverlayKeydown(e) {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      close(false);
+    }
+    function attachOverlayKeydown() {
+      document.addEventListener('keydown', onOverlayKeydown, true);
+    }
+    function detachOverlayKeydown() {
+      document.removeEventListener('keydown', onOverlayKeydown, true);
     }
     prevBtn?.addEventListener('click', () => { if (current > 0) { current--; render(); } });
     nextBtn?.addEventListener('click', () => {
@@ -106,5 +159,8 @@ export function initOnboardingFacade(deps) {
       }
     } catch (el) { debugErr('onboarding lang setup', el); }
     overlay.hidden = false;
+    // Mounted here, i.e. exactly when the overlay becomes visible (D-009④: mounted
+    // only while the tour is open, never permanently).
+    attachOverlayKeydown();
     render();
   }
