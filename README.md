@@ -30,7 +30,8 @@
 </p>
 
 <p>
-  <img alt="Store published as of 2026-09-14: v2026.9.15" src="https://img.shields.io/badge/store_published-v2026.9.15%20(as%20of%202026--09--14)-orange?style=flat-square" />
+  <a href="https://github.com/Xxx91n/boxing/actions/workflows/test.yml"><img alt="Test (Chromium + Firefox) — dynamic" src="https://img.shields.io/github/actions/workflow/status/Xxx91n/boxing/test.yml?branch=main&label=tests&style=for-the-badge&logo=githubactions" /></a>
+  <a href="https://github.com/Xxx91n/boxing/actions/workflows/build.yml"><img alt="Build &amp; Package — dynamic" src="https://img.shields.io/github/actions/workflow/status/Xxx91n/boxing/build.yml?branch=main&label=build&style=for-the-badge&logo=githubactions" /></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/Xxx91n/boxing?style=flat-square" /></a>
   <img alt="Manifest V3" src="https://img.shields.io/badge/Manifest-V3-orange?style=flat-square" />
   <img alt="Languages" src="https://img.shields.io/badge/i18n-14%20languages-brightgreen?style=flat-square" />
@@ -79,8 +80,9 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 > [!IMPORTANT]
 > **Install from official store pages** (recommended). GitHub Releases are a **user-facing
 > changelog** and optional source/sideload zips — they **no longer ship `.xpi` / `.crx`**.
-> **Latest published store version: 2026.9.15** (AMO + Edge, as of 2026-09-14).
-> GitHub Releases track the same user-facing changelog; install from the store links below.
+> For the current published version see [docs/release-status.md](docs/release-status.md)
+> (single source of truth — this README deliberately does not restate a version literal,
+> so it cannot go stale; the badges above are workflow-backed and always live).
 > Gate background: [ADR-0017](docs/adr/0017-release-data-gate.md). Publisher workflow:
 > [publishing guide](docs/publishing-guide.md) · [store plan](docs/store-publishing-plan.md).
 

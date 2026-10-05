@@ -1,4 +1,4 @@
-You are the implementing agent for boxing (D:/Aworker/crx/boxing) ticket 02.
+You are the implementing agent for boxing (<repo root>) ticket 02.
 
 ## Must-read (in order)
 - .scratch/architecture-recovery/handoffs/02-callgraph-scan.md
