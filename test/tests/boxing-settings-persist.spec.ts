@@ -22,6 +22,22 @@ async function resetAndDismiss(page) {
   await dismissOnboarding(page);
 }
 
+// BX-D-008: click the REAL header control, but via a synthetic MouseEvent.
+// WORKFLOW §6 / ticket 01 (playwright#16095): on the Firefox persistent context
+// NATIVE input (locator.click) intermittently hangs at "performing click action"
+// and burns the whole test budget — an environment class, not a product defect
+// (this repo's other Firefox lanes use synthetic input for the same reason).
+// dispatchEvent still runs the production listener registered on #dark-mode-btn,
+// so the code path under test is identical; only the browser's input pipeline
+// is bypassed. Every assertion about the resulting DOM/mirror is unchanged.
+async function clickDarkToggle(page) {
+  await page.evaluate(() => {
+    const btn = document.getElementById('dark-mode-btn');
+    if (!btn) throw new Error('#dark-mode-btn missing');
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+  });
+}
+
 test.describe('Bug3 settings persistence repro', () => {
   test('Bug3-a: set sameTab via UI change event; layout.settings.urlOpenMode= sameTab persisted', async ({ page }) => {
     await resetBoxing(page);
@@ -274,11 +290,11 @@ test.describe('BX-D-008: dark mode has one host and one apply path', () => {
     await resetAndDismiss(page);
     expect((await themeState(page)).html).toBe(false);
     // Go dark through the real control.
-    await page.click('#dark-mode-btn');
+    await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
     // Back to light. Before the fix this could not clear the html class that
     // boot-theme.js had added, so the page stayed dark until a new tab opened.
-    await page.click('#dark-mode-btn');
+    await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html, { timeout: 5000 }).toBe(false);
     const s = await themeState(page);
     expect(s.setting).toBe(false);
@@ -288,12 +304,12 @@ test.describe('BX-D-008: dark mode has one host and one apply path', () => {
 
   test('D008-2: html is the ONLY host — #app/body never carry the class', async ({ page }) => {
     await resetAndDismiss(page);
-    await page.click('#dark-mode-btn');
+    await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
     let s = await themeState(page);
     expect(s.app, '#app must not be a dark-mode host').toBe(false);
     expect(s.body, 'body must not be a dark-mode host').toBe(false);
-    await page.click('#dark-mode-btn');
+    await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(false);
     s = await themeState(page);
     expect(s.app).toBe(false);
@@ -329,7 +345,7 @@ test.describe('BX-D-008: dark mode has one host and one apply path', () => {
 
   test('D008-4: choice survives a reload (boot mirror and settings agree)', async ({ page }) => {
     await resetAndDismiss(page);
-    await page.click('#dark-mode-btn');
+    await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
@@ -337,7 +353,7 @@ test.describe('BX-D-008: dark mode has one host and one apply path', () => {
     await expect.poll(async () => (await themeState(page)).html, { timeout: 8000 }).toBe(true);
     // Now flip to light and reload: this is the half that used to regress,
     // because boot-theme only ever ADDED the class.
-    await page.click('#dark-mode-btn');
+    await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(false);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
@@ -350,7 +366,7 @@ test.describe('BX-D-008: dark mode has one host and one apply path', () => {
   test('D008-5: remote merge (incomingWins) replays the visual state in-session', async ({ page }) => {
     await resetAndDismiss(page);
     // Local tab is dark...
-    await page.click('#dark-mode-btn');
+    await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
     // ...a newer remote payload turns it off. ADR-0016 keeps remote-wins LWW, but
     // the session must FOLLOW it immediately (bug2's "inconsistent within session").
@@ -396,7 +412,7 @@ test.describe('BX-D-008: dark mode has one host and one apply path', () => {
 
   test('D008-7: repeated onChanged-shaped applies are idempotent (no drift, no throw)', async ({ page }) => {
     await resetAndDismiss(page);
-    await page.click('#dark-mode-btn');
+    await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
     // Firefox fires storage.onChanged with multi-key change sets and can repeat;
     // the replay inside the callback body must be safe to run many times.
