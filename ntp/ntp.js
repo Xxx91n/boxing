@@ -261,9 +261,14 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // behaviour; the returned promise lets callers await durability.
     persistView() { return saveLayout(); },
     applyExternalLayout(raw) { return applyExternalLayout(raw); },
-    // BX-D-007: surface-ownership resolver exposed for the regression suite —
+    // BX-D-008: surface-ownership resolver exposed for the regression suite —
     // the e2e asserts both the resolver contract and the rendered-DOM outcome.
     resolveConnSurface(from, to) { return resolveConnSurface(from, to); },
+    // BX-D-008: the single dark-mode apply path, exposed so specs can drive the
+    // REAL code path instead of faking the theme by poking the class onto a host
+    // (documentElement is now the only host, so hand-poked #app/body no longer
+    // selects any dark rule). Test seam only — no production caller uses it.
+    applyDarkMode(on) { applyDarkMode(on); },
     saveLayout,
     // Ticket 41R: snapshot subsystem + storage seams for Playwright assertions (spec.md D1).
     // Real chrome.storage in the extension lane; generic localStorage mock in file:// (SEC-01

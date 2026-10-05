@@ -265,7 +265,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
   });
 
   // Ticket 13: in dark mode .bm-add-btn must keep the transparent ghost style.
-  // Regression guard: .ntp--dark .bm-add-row button (0-2-1) used to beat
+  // Regression guard: :root.ntp--dark .bm-add-row button (0-3-1) used to beat
   // .bm-add-row .bm-add-btn (0-2-0) and painted the accent background.
   test('Bug5-dark: bm-add-btn stays transparent in dark mode', async ({ page }) => {
     await resetBoxing(page);
@@ -274,8 +274,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     await createSmallBox(page);
     // apply the same dark markers the app uses (#app + body, see persist.js)
     await page.evaluate(() => {
-      document.getElementById('app')?.classList.add('ntp--dark');
-      document.body.classList.add('ntp--dark');
+      // BX-D-008: html is the only dark-mode host; drive the real apply path.
+      (window as any).__boxingDebug.applyDarkMode(true);
     });
     const bg = await page.evaluate(() => {
       const btn = document.querySelector('.bm-add-btn');
@@ -320,8 +320,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     await enterLargebox(page, lbId);
     await createSmallBox(page);
     await page.evaluate(() => {
-      document.getElementById('app')?.classList.add('ntp--dark');
-      document.body.classList.add('ntp--dark');
+      // BX-D-008: html is the only dark-mode host; drive the real apply path.
+      (window as any).__boxingDebug.applyDarkMode(true);
     });
 
     // Contrast is derived from the real computed styles: the glyph colour and the dashed border,
@@ -395,7 +395,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
 
     // Precondition: this lane must really be the light theme, otherwise a dark-mode pass could
     // masquerade as a light-mode pass.
-    await expect.poll(() => page.evaluate(() => !document.body.classList.contains('ntp--dark'))).toBe(true);
+    // BX-D-008: the light-mode precondition reads the one remaining host.
+    await expect.poll(() => page.evaluate(() => !document.documentElement.classList.contains('ntp--dark'))).toBe(true);
 
     const measure = () => page.evaluate(() => {
       const btn = document.querySelector('.bm-add-btn') as HTMLElement | null;
@@ -506,8 +507,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
   test('Bug5-dark contrast: empty-state action buttons keep legible labels in dark mode', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
-      document.getElementById('app')?.classList.add('ntp--dark');
-      document.body.classList.add('ntp--dark');
+      // BX-D-008: html is the only dark-mode host; drive the real apply path.
+      (window as any).__boxingDebug.applyDarkMode(true);
     });
     // These labels are transitioned over --dur-fast; poll for the settled ratio (ticket 72 convention).
     await expect.poll(() => emptyStateTextContrast(page, '.canvas__empty-action')).not.toBeNull();
