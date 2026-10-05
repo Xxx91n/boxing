@@ -3,16 +3,16 @@
 身份：你是 Boxing architecture-recovery 子窗口，只负责票 16 的深度调研，不修改代码。
 
 必读：
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/handoffs/16-mental-model-deep-research.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/16-mental-model-deep-research.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round3-architecture-report.md
-- D:/Aworker/crx/boxing/docs/CONTEXT.md
-- D:/Aworker/crx/boxing/CONTEXT.md
-- D:/Aworker/crx/boxing/docs/adr/0007-architecture-refactor-decisions.md
-- D:/Aworker/crx/boxing/docs/adr/0010-user-customizable-accent-theme.md
-- D:/Aworker/crx/boxing/docs/adr/0016-sync-backup-engine-layering.md
+- .scratch/architecture-recovery/handoffs/16-mental-model-deep-research.md
+- .scratch/architecture-recovery/issues/16-mental-model-deep-research.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round3-architecture-report.md
+- <repo root>/docs/CONTEXT.md
+- <repo root>/CONTEXT.md
+- <repo root>/docs/adr/0007-architecture-refactor-decisions.md
+- <repo root>/docs/adr/0010-user-customizable-accent-theme.md
+- <repo root>/docs/adr/0016-sync-backup-engine-layering.md
 
 本票 delta：
 - 调用 $atomcode-research；同会话一次只允许一个调研在途，先串行完成再报告。
@@ -24,4 +24,4 @@
 
 开工第一句：先复述本票阻塞（None）和必读清单，再开始。
 
-收工前必须生成并落盘：D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round3.md，并返回路径与最终推荐。
+收工前必须生成并落盘：.scratch/architecture-recovery/research-report-round3.md，并返回路径与最终推荐。

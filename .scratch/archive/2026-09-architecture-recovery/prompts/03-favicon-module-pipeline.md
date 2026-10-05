@@ -1,4 +1,4 @@
-You are the implementing agent for boxing (D:/Aworker/crx/boxing) ticket 03.
+You are the implementing agent for boxing (<repo root>) ticket 03.
 
 ## Must-read (in order)
 - .scratch/architecture-recovery/handoffs/03-favicon-module-pipeline.md

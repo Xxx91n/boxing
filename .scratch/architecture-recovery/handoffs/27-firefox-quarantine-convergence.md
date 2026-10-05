@@ -6,14 +6,14 @@ Repair or retire the remaining Firefox quarantine entries before their due date,
 
 ## Required files
 
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/27-firefox-quarantine-convergence.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round5-architecture-report.md
-- D:/Aworker/crx/boxing/README.md
-- D:/Aworker/crx/boxing/test/playwright.config.ts
-- D:/Aworker/crx/boxing/test/playwright.quarantine.config.ts
-- D:/Aworker/crx/boxing/test/tests
+- .scratch/architecture-recovery/issues/27-firefox-quarantine-convergence.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round5-architecture-report.md
+- <repo root>/README.md
+- <repo root>/test/playwright.config.ts
+- <repo root>/test/playwright.quarantine.config.ts
+- <repo root>/test/tests
 
 ## Completion definition
 
@@ -21,7 +21,7 @@ Repair or retire the remaining Firefox quarantine entries before their due date,
 - Every entry is repaired or retired with a recorded decision; no entry auto-extends.
 - The README quarantine table reflects the new Chromium and Firefox counts.
 - The Firefox lane and quarantine lane are verified after the change.
-- Closure report exists at `D:/Aworker/crx/boxing/.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md`.
+- Closure report exists at `.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md`.
 
 ## Suggested skills
 

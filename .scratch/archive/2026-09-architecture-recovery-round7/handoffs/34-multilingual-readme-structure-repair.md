@@ -9,8 +9,8 @@ the local workflow, ticket, or spec clauses.
 - Workflow: `.scratch/architecture-recovery/WORKFLOW.md`
 - Spec: `.scratch/architecture-recovery/spec.md`
 - Source report: `.scratch/architecture-recovery/round7-architecture-report.md`
-- English baseline: `D:/Aworker/crx/boxing/README.md`
-- Locale directory: `D:/Aworker/crx/boxing/docs/i18n/`
+- English baseline: `<repo root>/README.md`
+- Locale directory: `<repo root>/docs/i18n/`
 
 ## Completion Definition
 Follow the acceptance criteria in the ticket and the repo verification contract. Do not

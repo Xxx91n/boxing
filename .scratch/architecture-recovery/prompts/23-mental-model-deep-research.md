@@ -3,19 +3,19 @@
 身份：你是 Boxing architecture-recovery 子窗口，只负责票 23 的深度调研，不修改源码、manifest、测试或产品 README。
 
 必读：
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/handoffs/23-mental-model-deep-research.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/23-mental-model-deep-research.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round5-architecture-report.md
-- D:/Aworker/crx/boxing/README.md
-- D:/Aworker/crx/boxing/AGENTS.md
-- D:/Aworker/crx/boxing/CONTEXT.md
-- D:/Aworker/crx/boxing/docs/CONTEXT.md
-- D:/Aworker/crx/boxing/docs/adr/0016-sync-backup-engine-layering.md
-- D:/Aworker/crx/boxing/scripts/test-surface.mjs
-- D:/Aworker/crx/boxing/test/playwright.config.ts
-- D:/Aworker/crx/boxing/package.json
+- .scratch/architecture-recovery/handoffs/23-mental-model-deep-research.md
+- .scratch/architecture-recovery/issues/23-mental-model-deep-research.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round5-architecture-report.md
+- <repo root>/README.md
+- <repo root>/AGENTS.md
+- <repo root>/CONTEXT.md
+- <repo root>/docs/CONTEXT.md
+- <repo root>/docs/adr/0016-sync-backup-engine-layering.md
+- <repo root>/scripts/test-surface.mjs
+- <repo root>/test/playwright.config.ts
+- <repo root>/package.json
 
 本票 delta：
 - 先记录当前 README 信息架构和本地测试进程模型，再拿外部证据比较。
@@ -27,4 +27,4 @@
 
 开工第一句：先复述本票阻塞（None）和必读清单，再开始。
 
-收工前必须生成并落盘：D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round5.md，并返回路径与最终推荐。
+收工前必须生成并落盘：.scratch/architecture-recovery/research-report-round5.md，并返回路径与最终推荐。

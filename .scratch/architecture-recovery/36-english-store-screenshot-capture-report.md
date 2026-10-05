@@ -23,7 +23,7 @@ PNG;像素与语义双重验证通过;截图脚本提交至测试工具;本票�
   Screenshot 3 (connections): captured, lines = 2
   Screenshot 4 (settings): captured (appearance tab)
   Screenshot 5 (bookmarks): captured, edit popup open
-  All 5 screenshots captured to D:\Aworker\crx\boxing\docs\store-assets\screenshots
+  All 5 screenshots captured to <repo root>\docs\store-assets\screenshots
   ```
 - 输出文件名与 `docs/store-assets/screenshots/README.md` 规定逐一对应:
   screenshot-1-canvas / 2-boxes / 3-connections / 4-settings / 5-bookmarks (.png)

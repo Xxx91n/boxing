@@ -1,7 +1,7 @@
 # ntp.js 调用图扫描报告 (ticket 02)
 
 - 生成: `node tools/callgraph-scan.mjs` (无头可重跑, 零依赖)
-- 源文件: `D:\Aworker\crx\boxing\ntp\ntp.js` — 6056 行, 309023 bytes
+- 源文件: `<repo root>\ntp\ntp.js` — 6056 行, 309023 bytes
 - 方法: 正则 + 行级 strip (注释/字符串) + 花括号深度; 顶层符号 = IIFE 内 depth-2 声明 + IIFE 外 depth-0 声明。不做完整 AST (handoff 02 明示允许)。
 - 上游: research-report.md 结论 1 — 拆分前先扫描, 否则机械搬移炸 ReferenceError。
 

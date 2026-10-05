@@ -3,13 +3,13 @@
 身份：你是 Boxing architecture-recovery 子窗口，只负责票 28 的 Round 6 治理调研，不实施代码改动。
 
 必读：
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/handoffs/28-release-merge-governance-research.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/28-release-merge-governance-research.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round6-architecture-report.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round5.md
-- D:/Aworker/crx/boxing/docs/adr/0016-sync-backup-engine-layering.md
+- .scratch/architecture-recovery/handoffs/28-release-merge-governance-research.md
+- .scratch/architecture-recovery/issues/28-release-merge-governance-research.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round6-architecture-report.md
+- .scratch/architecture-recovery/research-report-round5.md
+- <repo root>/docs/adr/0016-sync-backup-engine-layering.md
 
 本票 delta：
 - 只允许一次串行 atomcode 调研，完成前不得发起第二次。
@@ -25,4 +25,4 @@ atomcode 调研命令（通过 ctx 包裹，串行）：
 
 atomcode -p "全景调研零依赖浏览器扩展大型新标签页代码库的工业级成熟架构心智模型：原生 ES Module 模块边界、测试选择与 Git 多分支归并主分支的最佳实践，先给对比矩阵，再给落地模板。"
 
-收工前必须生成并落盘：D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round6.md，并返回路径与逐项验证结果。
+收工前必须生成并落盘：.scratch/architecture-recovery/research-report-round6.md，并返回路径与逐项验证结果。

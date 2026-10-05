@@ -6,14 +6,14 @@ Improve the product README information architecture and visuals using the existi
 
 ## Required files
 
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/24-readme-beautify-language-entry.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round5-architecture-report.md
-- D:/Aworker/crx/boxing/README.md
-- D:/Aworker/crx/boxing/docs/store-assets/screenshots
-- D:/Aworker/crx/boxing/scripts/gen-i18n-readme.js
-- D:/Aworker/crx/boxing/docs/i18n
+- .scratch/architecture-recovery/issues/24-readme-beautify-language-entry.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round5-architecture-report.md
+- <repo root>/README.md
+- <repo root>/docs/store-assets/screenshots
+- <repo root>/scripts/gen-i18n-readme.js
+- <repo root>/docs/i18n
 
 ## Completion definition
 
@@ -21,7 +21,7 @@ Improve the product README information architecture and visuals using the existi
 - Existing screenshots replace placeholder notes and all local image links resolve.
 - Install, usage, privacy, and development commands remain true to `package.json`.
 - Localized README generation remains compatible or is explicitly verified after the change.
-- `git diff --check` is clean and closure report exists at `D:/Aworker/crx/boxing/.scratch/architecture-recovery/24-readme-beautify-language-entry-report.md`.
+- `git diff --check` is clean and closure report exists at `.scratch/architecture-recovery/24-readme-beautify-language-entry-report.md`.
 
 ## Suggested skills
 

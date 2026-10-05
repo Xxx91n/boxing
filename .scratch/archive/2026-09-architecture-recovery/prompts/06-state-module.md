@@ -1,4 +1,4 @@
-你是 boxing 仓库 (D:/Aworker/crx/boxing) 中一张实施票的独立执行窗口, 只对票 06 负责。
+你是 boxing 仓库 (<repo root>) 中一张实施票的独立执行窗口, 只对票 06 负责。
 
 ## 必读清单 (动手前读完)
 - .scratch/architecture-recovery/handoffs/06-state-module.md

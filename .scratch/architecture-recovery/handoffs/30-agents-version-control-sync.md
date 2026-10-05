@@ -6,14 +6,14 @@ Reconcile project agent rules so version control has one GitButler-only authorit
 
 ## Required files
 
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/issues/30-agents-version-control-sync.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/spec.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/WORKFLOW.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/round6-architecture-report.md
-- D:/Aworker/crx/boxing/.scratch/architecture-recovery/research-report-round6.md
-- D:/Aworker/crx/boxing/AGENTS.md
-- D:/Aworker/crx/boxing/docs/agents/critical-lessons.md
-- D:/Aworker/crx/boxing/docs/agents/manifest-contract.md
+- .scratch/architecture-recovery/issues/30-agents-version-control-sync.md
+- .scratch/architecture-recovery/spec.md
+- .scratch/architecture-recovery/WORKFLOW.md
+- .scratch/architecture-recovery/round6-architecture-report.md
+- .scratch/architecture-recovery/research-report-round6.md
+- <repo root>/AGENTS.md
+- <repo root>/docs/agents/critical-lessons.md
+- <repo root>/docs/agents/manifest-contract.md
 
 ## Completion definition
 
@@ -21,7 +21,7 @@ Reconcile project agent rules so version control has one GitButler-only authorit
 - Loss-avoidance intent is preserved through the GitButler workflow.
 - Every referenced authority path resolves.
 - Repository formatting guard is clean.
-- Closure report exists at `D:/Aworker/crx/boxing/.scratch/architecture-recovery/30-agents-version-control-sync-report.md`.
+- Closure report exists at `.scratch/architecture-recovery/30-agents-version-control-sync-report.md`.
 
 ## Suggested skills
 
