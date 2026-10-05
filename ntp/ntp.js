@@ -486,7 +486,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   initCredentialsFacade({ debugErr, credKeyStore: { get: credKeyGet, set: credKeySet } });
   initSyncEngineFacade({ debug, debugErr, debugWarn, syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput });
   initSettingsUiFacade({ debug, debugErr, debugWarn, updateCaption, settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect });
-  initOnboardingFacade({ debug, debugErr, updateCaption, langSelect });
+  initOnboardingFacade({ debug, debugErr, updateCaption, langSelect, demoRuntimeId: () => (api && api.runtime && api.runtime.id) || null });
 
   // ── Header Pin: two-position strategy (v3.7.2) ──────────────────────────
   // Pinned (default): button lives in header bar, header visible.

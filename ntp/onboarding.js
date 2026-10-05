@@ -13,10 +13,15 @@ import { renderCanvas, updateAutohideUI } from './render.js';
 import { openSettingsModal } from './settings-ui.js';
 
 let debug, debugErr, updateCaption, langSelect;
+// BX-D-009: injected runtime-id probe (defensive demo detection). ntp.js holds the
+// only sanctioned browser-API handle; this module reads through the facade so the
+// import-graph-guard B-6 whitelist stays intact.
+let demoRuntimeId;
 
 // Ticket 10: inject ntp.js-scope deps (loggers + caption updater + shared langSelect ref).
 export function initOnboardingFacade(deps) {
   debug = deps.debug; debugErr = deps.debugErr; updateCaption = deps.updateCaption; langSelect = deps.langSelect;
+  demoRuntimeId = deps.demoRuntimeId;
 }
 
   // ── BX-ONBOARDING: first-run guided tour ───────────────────────────────
@@ -48,9 +53,12 @@ export function initOnboardingFacade(deps) {
         if (typeof debug === 'function') debug('onboarding', 'suppressed for Pages demo (__BOXING_DEMO__)');
         return;
       }
-      const rid = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id)
-        || (typeof browser !== 'undefined' && browser.runtime && browser.runtime.id);
-      if (rid === 'boxing-pages-demo') {
+      // Defensive second condition (D-009). Read through the INJECTED runtime id,
+      // never `chrome.*` directly: import-graph-guard B-6 forbids browser API
+      // access outside its whitelist, and ntp.js is the module allowed to hold it.
+      // The build-time flag above remains the single source; this only catches the
+      // case where a future demo build forgets to inject it.
+      if (typeof demoRuntimeId === 'function' && demoRuntimeId() === 'boxing-pages-demo') {
         if (typeof debug === 'function') debug('onboarding', 'suppressed for Pages demo (runtime.id)');
         return;
       }
