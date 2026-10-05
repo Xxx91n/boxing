@@ -48,11 +48,26 @@ function checkLocale(name, text) {
 
 function checkEnglish(text, published) {
   const out = [];
-  const badge = text.match(/store_published-v(20\d{2}\.\d{1,2}\.\d{1,2})/);
-  if (!badge) {
-    out.push(['BX-LOCALE-006', 'README.md: store_published badge literal not found']);
-  } else if (published && badge[1] !== published) {
-    out.push(['BX-LOCALE-006', 'README.md store_published ' + badge[1] + ' != docs/release-status.md published ' + published]);
+  // BX-LOCALE-006 (repointed by D-010③, Wave 2026.10.11): the store_published badge
+  // was a HARD-CODED "store_published-v<calver> (as of <date>)" literal, so it went
+  // stale the moment a release shipped without a README edit (it still claimed
+  // 2026.9.15 while 2026.9.20 was live). A badge that lies is worse than no badge
+  // (daily.dev convention), and there is no badge service that can read this repo's
+  // release status — so the literal badge was DELETED and replaced with
+  // workflow-backed dynamic badges (tests / build) that cannot drift.
+  //
+  // The invariant is therefore now inverted: README.md must NOT restate a store
+  // version literal at all. The single source for "what is published" is
+  // docs/release-status.md; localized READMEs link, they never restate (this is
+  // the same discipline BX-LOCALE-002 already enforces on the locales).
+  const literal = text.match(/store_published-v(20\d{2}\.\d{1,2}\.\d{1,2})/);
+  if (literal) {
+    out.push(['BX-LOCALE-006', 'README.md: stale store_published badge literal (' + literal[1] + ') — release status is dynamic now; the literal must be removed']);
+  }
+  // The replacement must actually be present, or "we deleted the drifting badge"
+  // would degrade into "no CI signal at all".
+  if (!/actions\/workflow\/status\/Xxx91n\/boxing\/test\.yml/.test(text)) {
+    out.push(['BX-LOCALE-006', 'README.md: dynamic tests badge missing (workflow-backed CI signal)']);
   }
   return out;
 }

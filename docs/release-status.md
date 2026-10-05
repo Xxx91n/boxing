@@ -18,10 +18,11 @@
 
 | 面 | 值 | 证据 |
 |---|---|---|
-| 目标发行版本 | 2026.9.15 | `manifest.json` 与 `package.json` version 均为 2026.9.15；`docs/release-notes/2026.9.15.md` |
-| 版本面一致性 | 通过 | `scripts/calver-guard.mjs` 接入 pretest（票 100 / A-054） |
+| 目标发行版本 | 2026.10.11 | 待发（Wave 2026.10.11 三 bug 修复 + 文档类）。发版前须复核 calver 日期（账本内嵌约定，实际发版日晚于 10.11 则改） |
+| 当前已发布版本（现役） | 2026.9.20 | `manifest.json` / `package.json` version 均为 2026.9.20；`docs/release-notes/2026.9.20.md`；tag `v2026.9.20` |
+| 版本面一致性 | 通过 | `scripts/calver-guard.mjs` 接入 pretest（票 100 / A-054）；8 面一致 |
 | 上一已发布版本（可回滚目标） | 2026.9.15 | AMO + Edge 同日已过审上线（用户声明 2026-09-14）；再上一版 2026.9.12 仍在架，但为事故版 —— 连续两次回滚会回到它 |
-| 当前 tip | `8a8798c9` | 发行 G-A 证据提交；现役 tag `v2026.9.15` target = `cc30edcc`（`8a8798c9` 为其祖先）。原记 `41fcf1e4` 系 GitButler 工作区临时提交，不在 HEAD 血缘内，票 113 按 git 血缘修正 |
+| 当前 tip | 见 §三 发行终谳 | 本页不硬编码 tip sha：GitButler 工作区提交不进 HEAD 血缘（票 113 教训），故 tip 一律以 §三 / 发行 G-A run 为准 |
 
 回滚口径：CWS = 以新版本号重发上一版（注意连续两次回滚会回到事故版）；AMO = 回退至上一已批准版本，且限退一版、按 24h 更新窗口生效。
 
@@ -117,6 +118,22 @@
 
 A-058 的具名 F：`no-mirror` e2e chromium 启动超时（环境性），源码契约测试绿。
 
+Wave 2026.10.11 追加欠账（Round-2 grill 收口，实施见 `.scratch/wave10-1011-grill/`）：
+
+| 条目 | 内容 | 票 | 状态 |
+|---|---|---|---|
+| A-062 | bug1 连接线跨面泄漏 → `resolveConnSurface` 公共祖先面域过滤 | D-007 / P-13 | implemented（8 断言绿） |
+| A-063 | bug2 暗色三写入点不收敛 → `applyDarkMode` 单一路径 + `:root` 唯一宿主 | D-008 / P-14 | implemented（8 断言绿） |
+| A-064b | bug3 demo 右键被 onboarding overlay 拦截 → 构建期 `__BOXING_DEMO__` + Escape 关闭 | D-009 / P-15 | implemented（11 断言绿） |
+| A-065 | 回归测试矩阵（发版 gate）双浏览器全量 | D-011 / P-18 | Chromium 351 绿 · Firefox 349 绿（残留 2 条 pre-existing i18n locator，见下） |
+| A-066 | 文档口径三项 + zip 政策 + README badge 动态化 | D-010 / P-16 / P-17 | implemented |
+
+> **pre-existing 残红（不属本波，须单独处置）**：`boxing-i18n-module` 2 条因
+> `page.locator('[data-i18n="brandName"]')` 严格模式命中 2 个元素（header `span` 与
+> About tab `strong`，后者由 D-006 引入）而失败。已核实该 spec 与 `index.html`
+> 在本波前后**逐字节未变**，非本波回归；按 WORKFLOW §4.4 G-A 需书面豁免或另立票修复，
+> 不可在本波静默放过。
+
 ## 六、如何更新本页（防过时契约）
 
 **单一状态块（页内硬契约）**：本页**有且只有一个现役状态块** = §三（三门状态 + 发行终谳）。§一 只投影 §三 的结论，**不得**另设状态表或独立陈述门状态；§四 / §五 只承载证据与欠账。更新结论必须**同一次编辑同时**改 §三 与 §一 投影句——只改其一 = 非法中间态。新增结论前必须先把旧结论块标 **Superseded**（保留不删，审计链不断裂）。
@@ -147,3 +164,4 @@ A-058 的具名 F：`no-mirror` e2e chromium 启动超时（环境性），源�
 | 2026-09-15 | 票 107–116 land origin/main tip `2f167ca7`；版本面 2026.9.20；**G-B 用户声明「测试通过」2026.9.20**（zip 黄金路径）；G-A CI / G-C Pages 待发行动作 |
 | 2026-09-22 | **2026.9.20 三门齐 + 发行**：G-A 35694278677 · G-B Xxx91n · G-C PASS（version.json=2026.9.20）· tag/Release v2026.9.20 · 商店已上架（用户「已经稳定」）· AMO lint 清零（去 data_collection_permissions + innerHTML→textContent）· 多余 zip/crx 清理（15→2） |
 | 2026-09-15 | 票 113 / A-068：收敛单一现役状态块 —— 删/降级 §一 矛盾表（改为 §三 投影句）；§三 发行终谳填 2026-09-14 实测；三条旧 G-A run 标 **Superseded**；新增「有且只有一个状态块」页内硬契约（§三 / §六）；按 git 血缘把 tip `41fcf1e4` 修正为 `8a8798c9`（现役 tag `v2026.9.15` @ `cc30edcc`）；录具名 F-113-01（demo 渲染 v2026.9.12） |
+| 2026-10-05 | Wave 2026.10.11（Round-2）：**修正 §2 错误块**（此前仍把 2026.9.15 写作「目标发行版本」并硬编码 tip sha，与 §一/§三 的 2026.9.20 现役结论自相矛盾 —— 违反 §6 单一状态块契约）；改为「目标 2026.10.11（待发）+ 现役 2026.9.20」并取消 tip 硬编码（GitButler 工作区提交不进 HEAD 血缘，票 113 教训）。§五 追加 A-062..A-066 与 pre-existing 残红登记。§三 历史证据（`8a8798c9` 等）按「保留不删」原样留存 |

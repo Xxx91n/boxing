@@ -11,6 +11,13 @@ pages-artifact/
 .zip
 package/*.crx
 package/*.zip
+
+# Wave 2026.10.11 / D-010: .scratch archives (zip) must never be committed —
+# they are release/hand-off BULK, and every zip in git history is a merge-conflict
+# and review-noise source. The MARKDOWN under .scratch stays tracked on purpose:
+# it is the decision ledger / spec / plan that protects the work from being lost,
+# so gitignoring the whole directory (the tempting shortcut) is forbidden.
+.scratch/**/*.zip
 package/*.xpi
 *.xpi
 
