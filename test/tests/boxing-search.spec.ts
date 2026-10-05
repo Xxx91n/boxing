@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
+import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
@@ -74,12 +75,25 @@ test.describe('Boxing bookmark search (BX-DEV-SEARCH)', () => {
 
   test('Escape clears search', async ({ page }) => {
     await resetBoxing(page);
+    // BX-D-009: the tour is a modal that now consumes Escape (WCAG 2.1.2), and
+    // this case is specifically about the SEARCH field's own Escape handling.
+    // Without dismissing the tour first, the modal would legitimately take the
+    // key and the assertion would be testing the wrong owner. The other two
+    // cases in this file use fill()/class assertions, which the overlay does not
+    // intercept, so they need no dismissal — same reasoning as ticket 101.
+    await dismissOnboarding(page);
     const searchInput = page.locator('#q');
     await searchInput.fill('test');
     await searchInput.press('Escape');
     // Ticket 101: Escape clears the input synchronously; a retrying value
     // assertion replaces the fixed 200ms/100ms sleeps that raced it.
     await expect(searchInput).toHaveValue('');
+    // The tour must stay closed: dismissing it is one-shot, and a second Escape
+    // belongs to the page (here: no-op), never to a resurrected modal.
+    expect(await page.evaluate(() => {
+      const ov = document.getElementById('onboarding-overlay');
+      return Boolean(ov && ov.hidden);
+    })).toBe(true);
   });
 
   test('favicon uses Promise.any parallel race (no serial waterfall)', async ({ page }) => {

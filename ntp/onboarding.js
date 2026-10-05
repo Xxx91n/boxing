@@ -98,6 +98,14 @@ export function initOnboardingFacade(deps) {
     }
     function onOverlayKeydown(e) {
       if (e.key !== 'Escape') return;
+      // Self-heal: the overlay can be hidden WITHOUT going through close() —
+      // the __boxingDebug.skipOnboarding() hook sets .hidden directly, and any
+      // future caller may do the same. A capture-phase listener that outlived a
+      // hidden overlay would swallow EVERY Escape in the app (title-restore,
+      // search-clear, exit-box), because stopPropagation at capture runs before
+      // all of those bubble-phase handlers. So: if the modal is already closed,
+      // detach and let the event through untouched.
+      if (overlay.hidden) { detachOverlayKeydown(); return; }
       e.preventDefault();
       e.stopPropagation();
       close(false);
