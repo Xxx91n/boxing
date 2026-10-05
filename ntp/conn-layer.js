@@ -12,7 +12,7 @@ import {
   boxGroupId, groupMembers, groupStar,
   canvasConnSvg, innerConnSvg, connectMode, provisionalLine, provisionalGhost, selectedConnId,
   setCanvasConnSvg, setInnerConnSvg, setConnectMode, setProvisionalLine, setProvisionalGhost, setSelectedConnId,
-  canvasZoom, innerZoom, canvasPanX, canvasPanY, innerPanX, innerPanY,
+  canvasZoom, innerZoom, canvasPanX, canvasPanY, innerPanX, innerPanY, currentLargeBoxId,
 } from './state.js';
 import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, SMALL_DEF_H, SMALL_DEF_W, buildSpatialGrid, elasticSnap, largeKey, smallKey, snapCanvas, snapInner } from './utils.js';
 import { saveLayout, saveLayoutDebounced } from './storage.js';
@@ -28,11 +28,11 @@ function setConnRefreshRAF(v) { __connRefreshRAF = v; }
 
 // Injected render.js/ntp.js-scope deps (set once at boot, before any runtime call).
 let commit, getLargeBox, getSmallBox, getInnerSurfaceContent, rebuildBoxMaps,
-    debug, debugSampled, canvasSurface, canvasContainer, innerCanvas, innerSurface;
+    debug, debugSampled, debugWarn, canvasSurface, canvasContainer, innerCanvas, innerSurface;
 export function initConnFacade(deps) {
   commit = deps.commit; getLargeBox = deps.getLargeBox; getSmallBox = deps.getSmallBox;
   getInnerSurfaceContent = deps.getInnerSurfaceContent; rebuildBoxMaps = deps.rebuildBoxMaps;
-  debug = deps.debug; debugSampled = deps.debugSampled;
+  debug = deps.debug; debugSampled = deps.debugSampled; debugWarn = deps.debugWarn;
   canvasSurface = deps.canvasSurface; canvasContainer = deps.canvasContainer;
   innerCanvas = deps.innerCanvas; innerSurface = deps.innerSurface;
 }
@@ -46,9 +46,20 @@ export function initConnFacade(deps) {
   // BX-142: SVG-based connection layer — replaces LeaderLine.
   // SVG overlay lives INSIDE the transform surface, so line coords = box logical coords.
   // No BCR reads, no transform-commit timing issues, lines clipped by surface overflow.
+  // ADR-0013 BX-PERF-002: the pool is GLOBAL and stateless (bare <line> elements —
+  // appendChild reparents them, so no per-surface split; D-011 negative). The cost
+  // of a global pool is that a recycled element can carry residue from its previous
+  // life, so strip it HERE at acquire time as well as at recycle time: acquire is
+  // the single choke point every consumer goes through, so this is the one place
+  // that can guarantee a clean element no matter who recycled it (D-011③).
   export function acquireLineEl() {
     const el = __linePool.pop();
-    if (el) return el;
+    if (el) {
+      el.classList.remove('conn-line--selected', 'conn-line--provisional');
+      el.removeAttribute('data-conn-id');
+      el.style.display = '';
+      return el;
+    }
     return document.createElementNS('http://www.w3.org/2000/svg', 'line');
   }
   export function recycleLineEl(el) {
@@ -283,14 +294,92 @@ export function initConnFacade(deps) {
     return { x: x + w / 2, y: anchorY, surface: 'canvas' };
   }
 
-  // Pick the SVG layer for a connection based on which surface both boxes share.
-  // large-large = canvas SVG, small-small = inner SVG, cross-level = canvas (parent view).
+  // ── BX-D-007: connection surface ownership (公共祖先面域过滤) ────────────
+  // A connection belongs to exactly ONE surface, and that surface must be the
+  // one currently open. Endpoints are tiered keys:
+  //   'large:<id>'                → canvas surface (the large box itself)
+  //   'small:<largeId>:<smallId>' → inner surface of <largeId>
+  //   <raw legacy id>             → canvas surface (Round 1 back-compat)
+  //
+  // Previously connSvgForConn only asked "are BOTH endpoints inner?" — never
+  // WHICH large box they belong to. Coordinates are solved from layout data
+  // (DOM-independent), so the same connId was projected onto every open inner
+  // surface at the same local position: a line created inside box A reappeared
+  // as a ghost inside box B. Fix = resolve the common-ancestor surface and
+  // render only when that surface is the open one.
+  //
+  // Rules (ledger D-007, spec S-07):
+  //   - large ↔ large                      → canvas SVG (canvas must be open)
+  //   - small ↔ small, same parent, parent open → that box's inner SVG
+  //   - small ↔ small, same parent, NOT open → no render (its surface is closed)
+  //   - small ↔ small, DIFFERENT parents    → no render + console debugWarn.
+  //     Not creatable through the UI (connect mode is single-surface); only
+  //     merge/import can produce it. DATA IS KEPT — deleting it would break
+  //     merge reversibility (re-merging the parents makes the edge legal again).
+  //     No UI warning: the user did nothing wrong.
+  //   - large ↔ small (mixed tiers)         → the common ancestor is the canvas,
+  //     but a small-box endpoint has no canvas coordinate (layered coordinate
+  //     spaces, not one tldraw space) → no render. Same keep-the-data rule.
+  //
+  // Ownership is recomputed from live layout on every call — never cached —
+  // because reparenting a small box changes its connection's owning surface
+  // instantly (D-007 requirement).
+  const __surfaceWarned = new Set(); // one debugWarn per connId, never per frame
+  export function resolveConnSurface(from, to) {
+    const a = endpointTier(from);
+    const b = endpointTier(to);
+    if (!a || !b) return { kind: 'none', reason: 'unresolvable-endpoint' };
+    if (a.tier === 'canvas' && b.tier === 'canvas') {
+      return currentLargeBoxId === null
+        ? { kind: 'canvas' }
+        : { kind: 'none', reason: 'canvas-conn-inner-surface-open' };
+    }
+    if (a.tier === 'inner' && b.tier === 'inner') {
+      if (a.largeId !== b.largeId) {
+        return { kind: 'none', reason: 'cross-parent-inner', crossParent: true };
+      }
+      return a.largeId === currentLargeBoxId
+        ? { kind: 'inner', largeId: a.largeId }
+        : { kind: 'none', reason: 'inner-surface-closed' };
+    }
+    // Mixed canvas/inner tiers: no shared coordinate space (see comment above).
+    return { kind: 'none', reason: 'mixed-tier', crossParent: true };
+  }
+
+  // Split a tiered endpoint key into { tier: 'canvas'|'inner', largeId }.
+  // Mirrors boxMidPoint's key grammar exactly (incl. legacy raw-id back-compat)
+  // so the two can never disagree about what an endpoint is.
+  function endpointTier(key) {
+    if (!key || typeof key !== 'string') return null;
+    if (key.startsWith('large:')) return { tier: 'canvas', largeId: key.slice(6) };
+    if (key.startsWith('small:')) {
+      const parts = key.split(':');
+      if (parts.length < 3) return null;
+      return { tier: 'inner', largeId: parts[1], smallId: parts.slice(2).join(':') };
+    }
+    // legacy raw id (Round 1 format) — a canvas-level large box
+    return { tier: 'canvas', largeId: key };
+  }
+
+  // Pick the SVG layer for a connection based on its resolved owning surface.
+  // Returns null when the connection must not be rendered in the current view.
   export function connSvgForConn(c) {
-    const a = boxMidPoint(c.from);
-    const b = boxMidPoint(c.to);
-    if (!a || !b) return null;
-    if (a.surface === 'inner' && b.surface === 'inner') {
-      const _isc = getInnerSurfaceContent(); return innerConnSvg ? innerConnSvg : (_isc ? getConnSvg(_isc, innerConnSvg) : null);
+    const r = resolveConnSurface(c.from, c.to);
+    if (r.kind === 'none') {
+      // console-only diagnostic (D-007: no UI warning). Deduplicated per connId so
+      // a per-frame render loop cannot turn this into log spam.
+      if (r.crossParent && c.id && !__surfaceWarned.has(c.id)) {
+        __surfaceWarned.add(c.id);
+        debugWarn('conn surface: cross-surface connection not rendered here', {
+          connId: c.id, from: c.from, to: c.to, reason: r.reason,
+          currentLargeBoxId, dataKept: true,
+        });
+      }
+      return null;
+    }
+    if (r.kind === 'inner') {
+      const _isc = getInnerSurfaceContent();
+      return innerConnSvg ? innerConnSvg : (_isc ? getConnSvg(_isc, innerConnSvg) : null);
     }
     return canvasConnSvg ? canvasConnSvg : (canvasSurface ? getConnSvg(canvasSurface, canvasConnSvg) : null);
   }
@@ -380,6 +469,22 @@ export function initConnFacade(deps) {
       } else {
         // ADR-0006: ensure visual selection reflects current mode — strip stale highlight when not selecting.
         if (id !== selectedConnId) line.classList.remove('conn-line--selected');
+        // BX-D-007: a live line also carries an ownership claim. If this conn's owning
+        // surface is no longer the one hosting the element (you entered/exited a box
+        // without the disposeAllConns wipe, or a merge reparented an endpoint), the
+        // element is a stale projection — drop it so the pending pass below rebuilds it
+        // in the right surface, or not at all when it has no surface here. Without this
+        // the ghost-line class of bug returns through a path disposeAllConns misses.
+        const conn = connById.get(id);
+        if (conn) {
+          const owner = resolveConnSurface(conn.from, conn.to);
+          const host = owner.kind === 'inner' ? innerConnSvg : canvasConnSvg;
+          if (owner.kind === 'none' || !host || line.parentNode !== host) {
+            try { line.remove(); recycleLineEl(line); } catch (e) { /* silent: already detached */ }
+            connLines.delete(id);
+            dirtyConns.delete(id);
+          }
+        }
       }
     }
     // Create new SVG <line> elements for pending connections.

@@ -37,11 +37,11 @@ import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS 
 // onChanged listener moved verbatim to ./storage.js; all chrome.storage writes go through it.
 import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, credKeyGet, credKeySet, directSetBoxingLayout, ensurePreUpdateSnapshot, gcTombstones, initStorageFacade, listSnapshots, loadLayout, markDeleted, registerStorageOnChanged, restoreFromSnapshot, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
 // Ticket 08 (architecture-recovery): layout/view-state persistence + theme packs + loadSettings moved verbatim to ./persist.js on top of the storage facade.
-import { BOOT_THEME_KEY, LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyTheme, clearBootThemeMirror, initPersistFacade, loadFallbackTabView, loadSettings, persistBootThemeMirror, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
+import { BOOT_THEME_KEY, LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyDarkMode, applyTheme, clearBootThemeMirror, initPersistFacade, loadFallbackTabView, loadSettings, persistBootThemeMirror, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
 // Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool, ADR-0004),
 // DSU groups, pan/zoom transforms, drag handlers, canvas render + box CRUD + bookmark UI. Diffs = export prefixes only.
 import { _execDeleteLargeBox, _execDeleteSmallBox, addLargeBox, addLargeBoxAt, addPopupTracker, addSmallBox, addSmallBoxAt, applyCanvasTransform, applyInnerTransform, clampCanvasPan, clampInnerPan, commit, enterLargeBox, exitToCanvas, getLargeBox, getSmallBox, initRenderFacade, initSizeObserver, innerSurfaceContent, isWithinCreateCooldown, markCreate, onBoxDragEnd, onCanvasPanEnd, onCanvasPanStart, onCanvasWheel, onInnerPanEnd, onInnerPanStart, onInnerWheel, refreshContainerSizes, removePopupTracker, renderCanvas, renderCrumbs, renderInnerSurface, showBoxDeletedWarning, updateAutohideUI, zoomStep } from './render.js';
-import { addConnection, addMember, allValidKeys, applyConnDeleteKeydoc, deleteConnById, disposeAllConns, dsuRebuildFromConnections, ensureConnArrays, ensureGroups, enterConnectMode, exitConnectMode, getConnDeleteTrigger, getGroupByParent, initConnFacade, markDsuDirty, moveGroupTogether, pruneConnArrays, refreshAllConns, removeConnection, renderConnections, resolveBoxEl, setConnDeleteAction, toggleStarMark } from './conn-layer.js';
+import { addConnection, addMember, allValidKeys, applyConnDeleteKeydoc, deleteConnById, disposeAllConns, dsuRebuildFromConnections, ensureConnArrays, ensureGroups, enterConnectMode, exitConnectMode, getConnDeleteTrigger, getGroupByParent, initConnFacade, markDsuDirty, moveGroupTogether, pruneConnArrays, refreshAllConns, removeConnection, renderConnections, resolveBoxEl, resolveConnSurface, setConnDeleteAction, toggleStarMark } from './conn-layer.js';
 import { initPopupsFacade } from './popups.js';
 
 import { initCredentialsFacade } from './credentials.js';
@@ -136,7 +136,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   // Ticket 07 (architecture-recovery): inject ntp.js-scope deps into the storage write facade
   // (./storage.js) — write chain + loop guard + onChanged listener moved there verbatim.
-  initStorageFacade({ api, debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning, mirrorWriter: () => { persistBootThemeMirror((mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } }); } });
+  initStorageFacade({ api, debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning, mirrorWriter: () => { persistBootThemeMirror((mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } }); }, applyDarkMode });
 
   // ── constants ──────────────────────────────────────────
   const DEBUG = true;
@@ -261,6 +261,9 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // behaviour; the returned promise lets callers await durability.
     persistView() { return saveLayout(); },
     applyExternalLayout(raw) { return applyExternalLayout(raw); },
+    // BX-D-007: surface-ownership resolver exposed for the regression suite —
+    // the e2e asserts both the resolver contract and the rendered-DOM outcome.
+    resolveConnSurface(from, to) { return resolveConnSurface(from, to); },
     saveLayout,
     // Ticket 41R: snapshot subsystem + storage seams for Playwright assertions (spec.md D1).
     // Real chrome.storage in the extension lane; generic localStorage mock in file:// (SEC-01
@@ -473,7 +476,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const headerBar = $('.ntp__bar');
   // Ticket 08: inject ntp.js-scope deps into the render module (./render.js)
   initRenderFacade({ addLargeBtn, api, appEl, backBtn, canvasContainer, canvasEmpty, canvasSurface, canvasZoomCtrl, canvasZoomVal, debug, debugErr, debugSampled, debugWarn, enterAndLocateSmallBox, headerBar, headerPinBtn, innerCanvas, innerCrumbTitle, innerSurface, innerWrapper, innerZoomCtrl, innerZoomVal, makeId, openConfirmModal, rebuildBoxMaps, updateCaption, zoomSlider, zoomSliderVal });
-  initConnFacade({ commit, getLargeBox, getSmallBox, getInnerSurfaceContent: () => innerSurfaceContent, rebuildBoxMaps, debug, debugSampled, canvasSurface, canvasContainer, innerCanvas, innerSurface });
+  initConnFacade({ commit, getLargeBox, getSmallBox, getInnerSurfaceContent: () => innerSurfaceContent, rebuildBoxMaps, debug, debugSampled, debugWarn, canvasSurface, canvasContainer, innerCanvas, innerSurface });
   initPopupsFacade({ getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker, makeId, api, debug, debugWarn, commit });
   // Ticket 10 (architecture-recovery): inject ntp.js-scope deps into the four settings/init-domain
   // modules (ADR-0016). Must stay after every DOM const it reads (ticket-08 TDZ lesson).
