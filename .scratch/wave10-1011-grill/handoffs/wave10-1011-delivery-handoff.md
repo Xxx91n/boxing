@@ -3,6 +3,8 @@
 > 面向：下一轮 grill 主持 Agent / 后续运维 / 审计 Agent 及用户 · 生成：2026-10-04 · 阶段：重修闭环 + 域名定向完成 → **本轮不发版**，转入下一轮 grill（新问题）
 > 本轮权威交接：[wave10-1011-next-round-handoff.md](file:///.scratch/wave10-1011-grill/handoffs/wave10-1011-next-round-handoff.md)
 
+> **Historical snapshot:** This handoff predates the Round-2 final gate. The current source of truth is `.scratch/wave10-1011-grill/handoffs/audit-round2-pass-handoff.md` and the Round-3 task book `.scratch/wave10-1011-grill/handoffs/next-round.md`.
+
 ## 1. 现状快照
 
 - **分支状态**：`wave-2026-10-11` 与 `audit-wave10-1011` 已 `but land` 并入 `origin/main`（tip `d1c985ae`）并推送；工作区干净、无剩余分支。

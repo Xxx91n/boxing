@@ -2,7 +2,9 @@
 
 > 面向：下一轮 grill 主持 Agent / 任意接手 Agent 及用户
 > 生成：2026-10-04 · 阶段：**重修闭环 + 域名定向完成 → 本轮不发版 → 下一轮 grill 处理新问题**
-> 仓库：`D:\Aworker\crx\boxing`（Windows；shell=bash/Git Bash；`ctx_*` 工具优先——见 AGENTS.md 顶部 BOXING-CTX-ROUTING 块）
+> 仓库：`<repo root>`（Windows；shell=bash/Git Bash；`ctx_*` 工具优先——见 AGENTS.md 顶部 BOXING-CTX-ROUTING 块）
+
+> **Historical snapshot:** This handoff predates the Round-2 final gate. The current source of truth is `.scratch/wave10-1011-grill/handoffs/audit-round2-pass-handoff.md` and the Round-3 task book `.scratch/wave10-1011-grill/handoffs/next-round.md`.
 
 ## 0. 一句话现状
 

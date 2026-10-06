@@ -3,6 +3,8 @@
 > 面向：下一轮 grill 主持 Agent / 任意接手 Agent 及用户 · 生成：2026-10-04 · 阶段：**重修闭环（第 2 轮审计）→ 本轮不发版 → 进入下一轮 grill（新问题）**
 > 仓库：`<repo root>`（Windows；shell=bash/Git Bash；`ctx_*` 工具优先——见 AGENTS.md 顶部 BOXING-CTX-ROUTING 块）
 
+> **Historical snapshot:** This handoff predates the Round-2 final gate. The current source of truth is `.scratch/wave10-1011-grill/handoffs/audit-round2-pass-handoff.md` and the Round-3 task book `.scratch/wave10-1011-grill/handoffs/next-round.md`.
+
 ## 1. 现状快照
 
 - **分支**：GitButler 分支 `wave-2026-10-11`（审计报告在并行分支 `audit-wave10-1011`，互不影响）；工作区干净（`zz [uncommitted] (no changes)`）。
