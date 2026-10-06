@@ -3,6 +3,7 @@
 > From: 审计 Agent (Auditor) · Date: 2026-10-06 · To: 用户 (User) / 发版 Agent
 > Repo: <repo root> · Branch: wave-2026-10-11-round2-fixes (commit 897d0c4f / Change-ID: qnu)
 > Baseline Commit: 06e51fdb (common base) -> HEAD (897d0c4f, 15 commits, GitButler managed)
+> Post-merge: fixes/docs landed on `origin/main` at `2051b146`; the two Round-2 wave branches were then safely removed by GitButler.
 > Audit Reports:
 >   - Rework Implementation: commit 897d0c4f
 >   - First-round Audit Findings: .scratch/wave10-1011-grill/handoffs/audit-2026-10-06-handoff.md

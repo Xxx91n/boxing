@@ -15,7 +15,7 @@
 
 ## 1. Round-2 现状快照（已关闭）
 
-- `but status`：Round-2 两个工作分支待合并；合并后删除已确认落地的 wave 分支，保留 `main` 历史。
+- `but status`：Round-2 fixes/docs 两个工作分支已合并并推送到 `origin/main`（tip `2051b146`）；已确认落地的 wave 分支已由 GitButler 安全清理，保留 `main` 历史。
 - 线上 demo 仍 `v2026.9.20`（2026-09-22 dispatch）——三 bug 修复随 10.11 发版上线。
 - 三 bug 归因已写死（D-011，见 spec 各节"归因"段）：connId 多面投影泄漏 / 暗色双缺陷（html 类泄漏 + 远端合并不收敛）/ onboarding overlay 拦截。
 - atomcode 深调 4 次结论已入 ctx 索引（`ctx_search` 可召回），账本已吸收。
