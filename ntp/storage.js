@@ -77,16 +77,6 @@ export function registerStorageOnChanged() {
       const expectedArea = layoutStorage === api.storage.local ? 'local' : 'sync';
       if (areaName !== expectedArea || !changes.boxingLayout?.newValue) return;
       applyExternalLayout(changes.boxingLayout.newValue);
-      // BX-D-008: the listener registration deliberately stays in this module
-      // (WORKFLOW §6 / D-011② — write chain + loop guard + onChanged are one unit;
-      // splitting them across modules introduces races). The visual replay is
-      // therefore invoked from inside this callback body, through the injected
-      // single apply path. It is idempotent: classList.toggle with the same value
-      // is a no-op and the mirror rewrite is deterministic, so an empty or partial
-      // change set (the Firefox multi-key shape) can fire this repeatedly safely.
-      if (typeof applyDarkMode === 'function') {
-        try { applyDarkMode(layout.settings.darkMode === true); } catch (e) { debugWarn('onChanged applyDarkMode', e); }
-      }
     });
 }
 
@@ -780,6 +770,10 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
         // remembered theme. Mirror is derived-only (never a second layout source, D-002);
         // failure here is fail-soft — the boot script falls back to default theme once.
         try { if (typeof mirrorWriter === 'function') mirrorWriter(); } catch (_mw) { /* non-fatal */ }
+        // Settings controls only mutate the persisted value and call saveLayout;
+        // replay the visual state here after durability succeeds so every toggle
+        // still uses the single applyDarkMode path.
+        try { if (typeof applyDarkMode === 'function') applyDarkMode(layout.settings.darkMode === true); } catch (_dm) { debugWarn('saveLayout applyDarkMode', _dm); }
       } catch (e) {
         debugErr('saveLayout: set failed (quota?) — writing fallback snapshot', e);
         try {

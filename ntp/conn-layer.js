@@ -66,7 +66,7 @@ export function initConnFacade(deps) {
     if (!el || __linePool.length >= LINE_POOL_CAP) return;
     // Strip attributes so reused element starts clean
     el.removeAttribute('data-conn-id');
-    el.classList.remove('conn-line--selected');
+    el.classList.remove('conn-line--selected', 'conn-line--provisional');
     el.style.display = '';
     __linePool.push(el);
   }
@@ -267,6 +267,17 @@ export function initConnFacade(deps) {
   // consistent visible title bar area. collapseHover=false means box is expanded → full center.
   export const TITLE_BAR_H = 40; // matches .small-box__bar min-height + .large-box__bar padding
 
+  // Resolve a small box from the current layout tree instead of trusting the
+  // parent encoded in a connection key. Reparenting is a live layout mutation;
+  // connection ownership must follow the object in its current children array.
+  function liveSmallBoxById(smallId) {
+    for (const large of (layout.boxes || [])) {
+      const box = (large.children || []).find(child => child && child.id === smallId);
+      if (box) return { largeId: large.id, smallId, box };
+    }
+    return null;
+  }
+
   export function boxMidPoint(key) {
     if (!key || typeof key !== 'string') return null;
     if (key.startsWith('large:')) {
@@ -278,10 +289,9 @@ export function initConnFacade(deps) {
       return { x: x + w / 2, y: anchorY, surface: 'canvas' };
     }
     if (key.startsWith('small:')) {
-      const parts = key.split(':');
-      if (parts.length < 3) return null;
-      const sb = getSmallBox(parts[1], parts.slice(2).join(':'));
-      if (!sb) return null;
+      const endpoint = endpointTier(key);
+      if (!endpoint || endpoint.tier !== 'inner') return null;
+      const sb = endpoint.box;
       const x = sb.x, y = sb.y, w = sb.width || SMALL_DEF_W, h = sb.height || SMALL_DEF_H;
       const anchorY = (sb.collapseHover === true) ? y + TITLE_BAR_H / 2 : y + h / 2;
       return { x: x + w / 2, y: anchorY, surface: 'inner' };
@@ -355,7 +365,10 @@ export function initConnFacade(deps) {
     if (key.startsWith('small:')) {
       const parts = key.split(':');
       if (parts.length < 3) return null;
-      return { tier: 'inner', largeId: parts[1], smallId: parts.slice(2).join(':') };
+      const smallId = parts.slice(2).join(':');
+      const live = liveSmallBoxById(smallId);
+      if (!live) return null;
+      return { tier: 'inner', largeId: live.largeId, smallId, box: live.box };
     }
     // legacy raw id (Round 1 format) — a canvas-level large box
     return { tier: 'canvas', largeId: key };

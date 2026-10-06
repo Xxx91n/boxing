@@ -42,11 +42,17 @@ async function resetBoxing(page) {
 async function openSyncTab(page) {
   await page.evaluate(() => document.getElementById('settings-btn')?.click());
   await expect(page.locator('#settings-modal')).toBeVisible();
-  await page.locator('.settings-nav__item[data-tab="sync"]').click();
+  // Firefox persistent contexts can hang on native locator.click (Playwright
+  // #16095); tab switching is an application click handler, so dispatch the
+  // same trusted-enough DOM activation used by the other Firefox-safe lanes.
+  await page.evaluate(() => (document.querySelector('.settings-nav__item[data-tab="sync"]') as HTMLElement | null)?.click());
   await expect(page.locator('#tab-sync')).toBeVisible();
 }
 
 test.describe('Boxing Sync UI grouping (T-39 / 04-sync-ui)', () => {
+  // Firefox headed startup/reload can exceed the default 30s budget on this
+  // host under a full gate; the UI assertions themselves remain unchanged.
+  test.setTimeout(120_000);
 
   // Acceptance #1 (visual grouping): three titled cards exist — Shared,
   // WebDAV, Gist. Counts are DOM-based so they hold even before a provider is

@@ -74,11 +74,11 @@ export function initPersistFacade(deps) {
   // the authoritative values stay in boxingLayout and loadSettings() re-applies them.
   // Written via the mirror-writer injected by ntp.js (the storage facade's success path)
   // so the mirror can never drift ahead of a persisted layout.
-  export function persistBootThemeMirror(mirrorWriter) {
+  export function persistBootThemeMirror(mirrorWriter, darkMode = layout.settings.darkMode === true) {
     try {
       mirrorWriter({
         theme: layout.settings.theme || 'beige',
-        darkMode: layout.settings.darkMode === true,
+        darkMode: darkMode === true,
         fontSize: typeof layout.settings.fontSize === 'number' ? layout.settings.fontSize : 14
       });
     } catch (e) { debugWarn('boot theme mirror write', e); }
@@ -120,7 +120,7 @@ export function initPersistFacade(deps) {
       if (span) span.textContent = dark ? '☽' : '☀';
     }
     if (typeof mirrorWriter === 'function') {
-      try { persistBootThemeMirror(mirrorWriter); } catch (e) { debugWarn('boot theme mirror write', e); }
+      try { persistBootThemeMirror(mirrorWriter, dark); } catch (e) { debugWarn('boot theme mirror write', e); }
     }
   }
 

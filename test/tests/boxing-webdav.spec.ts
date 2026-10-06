@@ -48,7 +48,7 @@ test.describe('Boxing WebDAV backup', () => {
     await resetBoxing(page);
     await page.evaluate(() => document.getElementById('settings-btn')?.click());
     await expect(page.locator('#settings-modal')).toBeVisible();
-    await page.locator('.settings-nav__item[data-tab="sync"]').click();
+    await page.evaluate(() => (document.querySelector('.settings-nav__item[data-tab="sync"]') as HTMLElement | null)?.click());
     await page.locator('#sync-provider').selectOption('webdav');
     await expect(page.locator('#webdav-url')).toBeVisible();
     await expect(page.locator('#webdav-user')).toBeVisible();
@@ -63,7 +63,7 @@ test.describe('Boxing WebDAV backup', () => {
     await resetBoxing(page);
     await page.evaluate(() => document.getElementById('settings-btn')?.click());
     await expect(page.locator('#settings-modal')).toBeVisible();
-    await page.locator('.settings-nav__item[data-tab="sync"]').click();
+    await page.evaluate(() => (document.querySelector('.settings-nav__item[data-tab="sync"]') as HTMLElement | null)?.click());
     await page.locator('#sync-provider').selectOption('webdav');
     await page.locator('#webdav-url').fill(WEBDAV_URL);
     await page.locator('#webdav-user').fill('test@example.com');
@@ -116,7 +116,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(boxCount).toBeGreaterThanOrEqual(1);
     await page.evaluate(() => document.getElementById('settings-btn')?.click());
     await expect(page.locator('#settings-modal')).toBeVisible();
-    await page.locator('.settings-nav__item[data-tab="sync"]').click();
+    await page.evaluate(() => (document.querySelector('.settings-nav__item[data-tab="sync"]') as HTMLElement | null)?.click());
     await page.locator('#sync-provider').selectOption('webdav');
     await page.locator('#webdav-url').fill(WEBDAV_URL);
     await page.locator('#webdav-user').fill('test@example.com');
@@ -161,7 +161,7 @@ test.describe('Boxing WebDAV backup', () => {
     expect(initialBoxes).toBe(0);
     await page.evaluate(() => document.getElementById('settings-btn')?.click());
     await expect(page.locator('#settings-modal')).toBeVisible();
-    await page.locator('.settings-nav__item[data-tab="sync"]').click();
+    await page.evaluate(() => (document.querySelector('.settings-nav__item[data-tab="sync"]') as HTMLElement | null)?.click());
     await page.locator('#sync-provider').selectOption('webdav');
     await page.locator('#webdav-url').fill(WEBDAV_URL);
     await page.locator('#webdav-user').fill('test@example.com');

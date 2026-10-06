@@ -69,7 +69,7 @@ test.describe('i18n module extraction (ticket 04)', () => {
     // catch branch resets currentLang to 'en' and swaps the store to the en fallback dict.
     await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().lang)).toBe('en');
     // applyI18n rendered the English fallback strings into the DOM.
-    expect(await page.locator('[data-i18n="brandName"]').textContent()).toBe('Boxing');
+    expect(await page.locator('.brand__name[data-i18n="brandName"]').textContent()).toBe('Boxing');
     expect(await page.locator('[data-i18n="emptyCanvasTitle"]').textContent()).toBe('No large boxes yet');
     expect((await page.locator('[data-i18n="footerHint"]').textContent()) || '').toContain('Ctrl+scroll to zoom');
   });
@@ -93,18 +93,18 @@ test.describe('i18n module extraction (ticket 04)', () => {
     await resetFreshKeepOnboarding(page);
     // en boot (initial load) — brandName falls back to English.
     await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().lang)).toBe('en');
-    expect(await page.locator('[data-i18n="brandName"]').textContent()).toBe('Boxing');
+    expect(await page.locator('.brand__name[data-i18n="brandName"]').textContent()).toBe('Boxing');
     // Switch to ja: store = subset → brandName from subset, missing keys per-key fallback.
     await page.evaluate(() => (window as any).__boxingDebug.setOnboardingLangInUI('ja'));
     await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().lang)).toBe('ja');
-    expect(await page.locator('[data-i18n="brandName"]').textContent()).toBe('ボクシングJa');
+    expect(await page.locator('.brand__name[data-i18n="brandName"]').textContent()).toBe('ボクシングJa');
     // 'emptyCanvasTitle' is NOT in the ja subset → I18N_FALLBACK English (per-key fallback).
     expect(await page.locator('[data-i18n="emptyCanvasTitle"]').textContent()).toBe('No large boxes yet');
     // state().lang observed 'ja' proves the export-let live binding (no second copy).
     // Switch to de (string-form subset entry) — text changes again, binding follows.
     await page.evaluate(() => (window as any).__boxingDebug.setOnboardingLangInUI('de'));
     await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().lang)).toBe('de');
-    expect(await page.locator('[data-i18n="brandName"]').textContent()).toBe('DeutscheWoerter');
+    expect(await page.locator('.brand__name[data-i18n="brandName"]').textContent()).toBe('DeutscheWoerter');
     expect(await page.locator('[data-i18n="emptyCanvasTitle"]').textContent()).toBe('No large boxes yet');
   });
 

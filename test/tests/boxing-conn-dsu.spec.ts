@@ -428,6 +428,15 @@ test.describe('BX-D-007: connection lines render only in their owning surface', 
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes = [
+        { id: 'A', type: 'large', title: 'A', x: 0, y: 0, width: 400, height: 300, children: [
+          { id: 'a1', title: 'a1', x: 20, y: 20, width: 160, height: 110, bookmarks: [] },
+          { id: 'a2', title: 'a2', x: 220, y: 20, width: 160, height: 110, bookmarks: [] },
+        ] },
+        { id: 'B', type: 'large', title: 'B', x: 600, y: 0, width: 400, height: 300, children: [
+          { id: 'b1', title: 'b1', x: 20, y: 20, width: 160, height: 110, bookmarks: [] },
+        ] },
+      ];
       const k = {
         largeA: dbg.largeKey('A'), largeB: dbg.largeKey('B'),
         a1: dbg.smallKey('A', 'a1'), a2: dbg.smallKey('A', 'a2'),
@@ -455,6 +464,26 @@ test.describe('BX-D-007: connection lines render only in their owning surface', 
     expect(r.mixed.reason).toBe('mixed-tier');
     // Unresolvable endpoints must not throw.
     expect(r.garbage.kind).toBe('none');
+  });
+
+  test('D007-5a: inner ownership follows the live layout after reparenting', async ({ page }) => {
+    await resetBoxing(page);
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const a1 = { id: 'a1', title: 'a1', x: 20, y: 20, width: 160, height: 110, bookmarks: [] };
+      const a2 = { id: 'a2', title: 'a2', x: 220, y: 20, width: 160, height: 110, bookmarks: [] };
+      dbg.layout.boxes = [
+        { id: 'A', type: 'large', title: 'A', x: 0, y: 0, width: 400, height: 300, children: [a1, a2] },
+        { id: 'B', type: 'large', title: 'B', x: 600, y: 0, width: 400, height: 300, children: [] },
+      ];
+      // The persisted connection key still names A, but both endpoint objects
+      // are moved under B before ownership is resolved.
+      const a = dbg.layout.boxes[0];
+      const b = dbg.layout.boxes[1];
+      b.children.push(...a.children.splice(0));
+      return dbg.resolveConnSurface(dbg.smallKey('A', 'a1'), dbg.smallKey('A', 'a2'));
+    });
+    expect(r).toEqual({ kind: 'none', reason: 'inner-surface-closed' });
   });
 
   test('D007-6: cross-parent inner edge keeps its DATA and logs a console debugWarn (no UI warning)', async ({ page }) => {
