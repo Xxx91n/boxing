@@ -3,7 +3,7 @@
 > From: 审计 Agent (Auditor) · Date: 2026-10-06 · To: 用户 (User) / 发版 Agent
 > Repo: <repo root> · Branch: wave-2026-10-11-round2-fixes (commit 897d0c4f / Change-ID: qnu)
 > Baseline Commit: 06e51fdb (common base) -> HEAD (897d0c4f, 15 commits, GitButler managed)
-> Post-merge: fixes/docs landed on `origin/main` at `2051b146`; the two Round-2 wave branches were then safely removed by GitButler.
+> Post-merge: fixes/docs and the subsequent handoff corrections landed on `origin/main` at `7fd485ac`; the Round-2 and Round-3 wave branches were then safely removed by GitButler.
 > Audit Reports:
 >   - Rework Implementation: commit 897d0c4f
 >   - First-round Audit Findings: .scratch/wave10-1011-grill/handoffs/audit-2026-10-06-handoff.md
@@ -33,7 +33,7 @@ Per ADR-0017 ("Multi-browser release gate"), all hard criteria have been met:
   - Note: External product mutation; reserved for human execution.
 - **P-20 (User Tag Issuance & Release)**:
   - Tag: `v2026.10.11`
-  - Target: Tip of `wave-2026-10-11-round2-fixes` (commit `897d0c4f`).
+-   - Target: Current `main` tip (`7fd485ac`), which contains the verified Round-2 fixes and documentation handoff.
   - Action: User creates git tag `v2026.10.11` and triggers Release dispatch.
 
 ## 3. Next Grill Directions (下一轮 Grill 方向指示)

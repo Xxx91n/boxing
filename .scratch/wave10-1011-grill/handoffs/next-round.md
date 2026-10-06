@@ -1,6 +1,6 @@
-# Handoff — Wave 2026.10.11 Round-3 Grill（Round-2 技术收口后的新问题）
+# 任务书 — Wave 2026.10.11 Round-3（Round-2 技术收口后的新问题）
 
-> 面向：任意接手 Agent · 生成：2026-10-05 · 阶段：Round-2 grill 已收口 → 实施
+> 面向：任意接手 Agent · 生成：2026-10-05 · 阶段：Round-2 技术收口 → Round-3 开工
 > 仓库：<repo root>（Windows；shell=bash/Git Bash；ctx_* 工具优先——见 AGENTS.md BOXING-CTX-ROUTING；写文件用 node）
 > 历史：Round-1（S-01..S-06）已实施并 `but land` 至 origin/main（49 commit，tip 06e51fdb），未发版。本文件取代已归档的 `handoffs/round1-executed-next-round.md`。
 > 当前口径：Round-2 P-13..P-18 已完成，Chromium 356/0 失败，Firefox 351/0 失败（5 个已登记 skip）；技术 gate PASS。P-19/P-20 仍需用户授权/外部发布。
@@ -15,21 +15,21 @@
 
 ## 1. Round-2 现状快照（已关闭）
 
-- `but status`：Round-2 fixes/docs 两个工作分支已合并并推送到 `origin/main`（tip `2051b146`）；已确认落地的 wave 分支已由 GitButler 安全清理，保留 `main` 历史。
+- `but status`：Round-2 fixes/docs 两个工作分支及本任务书修订已合并并推送到 `origin/main`（tip `7fd485ac`）；已确认落地的 wave 分支已由 GitButler 安全清理，保留 `main` 历史。
 - 线上 demo 仍 `v2026.9.20`（2026-09-22 dispatch）——三 bug 修复随 10.11 发版上线。
 - 三 bug 归因已写死（D-011，见 spec 各节"归因"段）：connId 多面投影泄漏 / 暗色双缺陷（html 类泄漏 + 远端合并不收敛）/ onboarding overlay 拦截。
 - atomcode 深调 4 次结论已入 ctx 索引（`ctx_search` 可召回），账本已吸收。
 
-## 1.1 Round-3 新测试问题（下一轮 grill 输入）
+## 1.1 Round-3 开工输入（新测试问题清单）
 
-这些是最终测试门暴露的测试基础设施/覆盖问题，不是已关闭的 Round-2 产品回归：
+这些是最终测试门暴露的测试基础设施/覆盖问题，作为下一轮开工时的调查输入；它们不是已关闭的 Round-2 产品回归：
 
 1. **Firefox native mouse drag 限制**：最终 Firefox 全量有 5 个已登记 skip，根因与 Playwright #16095 的原生输入挂起相关；需要决定替代行为覆盖、专用 lane 或继续 waiver。
 2. **并行负载 flake 防控**：此前 Chromium `conflict-copy-readout` 在并行负载下出现过 flake，隔离与重复运行通过；下一轮需用固定 worker/重复矩阵确认是否存在资源争用。
 3. **双浏览器运行策略**：评估 Firefox headed/headless 与 extension persistent context 的 CI/本地分层，目标是减少耗时但不削弱真实启动和 `__boxingDebug` 活体覆盖。
 4. **证据口径自动化**：为最终报告自动收集 pass/fail/skip、waiver ledger、浏览器项目与 commit，避免历史报告与最终复跑口径漂移。
 
-## 1.2 Round-3 进入规则
+## 1.2 Round-3 开工规则
 
 - 先复现、分类（产品 / 测试 / 浏览器环境）、登记，再决定是否改源码。
 - 每个新问题必须带：浏览器/项目、测试标题、复现次数、最小日志、是否隔离后消失、建议 owner。
@@ -77,4 +77,4 @@
 
 ## 6. 接手第一步
 
-`but` 建 Round-3 grill 分支 → 先复跑并登记 §1.1 三类测试问题 → 再由用户逐条确认是否进入 decision-ledger/spec → 实施与双浏览器验证 → 最后再评估 P-19/P-20。
+`but` 建 Round-3 实施分支 → 先复跑并登记 §1.1 三类测试问题 → 再由用户逐条确认是否进入 decision-ledger/spec → 实施与双浏览器验证 → 最后再评估 P-19/P-20。
