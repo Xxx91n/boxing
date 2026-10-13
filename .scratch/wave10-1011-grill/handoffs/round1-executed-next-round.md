@@ -3,7 +3,7 @@
 # Handoff — Wave 2026.10.11 实施轮
 
 > 面向：任意接手 Agent · 生成：2026-10-04 · 阶段：grill 已收口 → 实施
-> 仓库：D:\Aworker\crx\boxing（Windows；shell=bash/Git Bash；ctx_* 工具可用且优先——见 AGENTS.md 顶部 BOXING-CTX-ROUTING 块）
+> 仓库：<repo root>（Windows；shell=bash/Git Bash；ctx_* 工具可用且优先——见 AGENTS.md 顶部 BOXING-CTX-ROUTING 块）
 
 ## 0. 必读制品（按序）
 
