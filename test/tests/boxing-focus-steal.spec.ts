@@ -162,8 +162,9 @@ test.describe('dblclick — REAL native input + text selection', () => {
 
 // Ticket 27 (quarantine convergence): the synthetic twin of the native block —
 // BX-SEL-01's app-level contract (renderCanvas clears residual selection; focus is
-// not stolen by canvas dblclick; .canvas keeps user-select:none) — exercised on the
-// firefox main lane where native input is unavailable (playwright#16095 class).
+// not stolen by canvas dblclick; .canvas keeps user-select:none). D-012 flipped
+// the firefox lane headless so native input runs there again — this synthetic
+// block remains on BOTH lanes as the app-level guard contract.
 // Seeding a real Selection makes the clear-guard assertion behavioral, not vacuous.
 test.describe('dblclick — BX-SEL-01 selection guard via synthetic input', () => {
   // Empty canvas: dblclick at center creates a box → renderCanvas runs → the
