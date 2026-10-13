@@ -243,10 +243,10 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     expect('Alpha'.includes(partial.text)).toBe(true);
   });
 
-  test('D-003: mouse drag makes a partial selection (native)', async ({ page, browserName }) => {
+  test('D-003: mouse drag makes a partial selection (native)', async ({ page }) => {
     test.setTimeout(30000);
-    test.skip(browserName === 'firefox',
-      'native mouse.move stalls on the Firefox headed lane (playwright#16095 class); Chromium keeps native coverage');
+    // D-012 (2026-10-13): firefox lane is headless now — the headed-lane
+    // native-input wedge (playwright#16095 class) does not apply there.
     await boot(page);
     await seedTitles(page);
 

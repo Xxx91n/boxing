@@ -33,16 +33,19 @@ export default defineConfig({
   projects: [
     {
       name: 'firefox-extension',
-      // @quarantine: retired in ticket 27 (architecture-recovery convergence pass,
-      // 2026-09-05). All 14 tagged tests were repaired — 11 by synthetic-input
-      // conversion, 3 (the boxing-focus-steal native block) by chromium-scoping the
-      // native tests with a synthetic twin covering firefox — and rejoined the
-      // firefox lane, so the firefox lane now runs the full suite. History: the
-      // tag excluded firefox from specs whose native-input dispatch stalled on the
-      // firefox persistent context (playwright#16095 class, ticket 01).
+      // D-012 (wave-2026.10.11 Round-3, 2026-10-13): firefox lane runs HEADLESS.
+      // The headed persistent-context native-input pipe wedges (playwright#16095
+      // class — page.mouse.* progressively stalls, probe-verified 3/3 rounds on
+      // .scratch/wave10-1011-grill/probes/ff-native-input-probe.mjs); headless is
+      // clean (0/3). One headless lane restores the 4 native-input tests in place
+      // and is faster — no parallel third project needed. Chromium stays headed
+      // (carries --load-extension real-extension liveness + native baseline).
+      // History: ticket 27 retired @quarantine; the last 4 native-input skips
+      // lived here until this flip.
       use: {
         ...devices['Desktop Firefox'],
         browserName: 'firefox',
+        headless: true,
         launchOptions: {
           args: ['-no-remote'],
         },

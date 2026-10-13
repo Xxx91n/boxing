@@ -72,14 +72,13 @@ async function seedSelectionOver(page: Page, selector: string) {
 }
 
 test.describe('dblclick — REAL native input + text selection', () => {
-  // Ticket 27 (quarantine convergence): the @quarantine tag is retired. Native-input
-  // realness IS this block's purpose — the browser must not select text under a real
-  // dblclick (BX-SEL-01 end-to-end proof, chrome-origin bug) — so the tests are NOT
-  // converted to synthetic dispatch. Firefox native input stalls on this lane
-  // (playwright#16095 class), so the native block is explicitly chromium-scoped and
-  // the app-level guard contract keeps firefox coverage via the synthetic block below.
-  test.skip(({ browserName }) => browserName === 'firefox',
-    'native dblclick stalls on the firefox headed lane (playwright#16095 class); chromium keeps the native coverage, firefox uses the synthetic BX-SEL-01 block below');
+  // Native-input realness IS this block's purpose — the browser must not select
+  // text under a real dblclick (BX-SEL-01 end-to-end proof, chrome-origin bug) —
+  // so the tests are NOT converted to synthetic dispatch. Firefox coverage runs
+  // natively again: D-012 (2026-10-13) flipped the firefox lane headless — the
+  // headed persistent-context input pipe wedges (playwright#16095 class, probe-
+  // verified) while headless is clean. The synthetic block below remains as the
+  // app-level guard contract on both lanes.
 
   test('native dblclick on empty canvas center does not select text or steal focus', async ({ page }) => {
     await boot(page);
