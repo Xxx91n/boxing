@@ -48,7 +48,7 @@ function sh(cmd, args, opts) {
 }
 
 function gitInfo() {
-  const head = sh("git", ["rev-parse", "--short", "HEAD"]);
+  const head = sh("git", ["rev-parse", "HEAD"]);
   const dirty = sh("git", ["status", "--porcelain"]);
   return {
     head: head.status === 0 ? head.stdout.trim() : "unknown",
@@ -58,21 +58,26 @@ function gitInfo() {
 
 // Per-project headed state: read the config text rather than re-deriving it —
 // the config is the source of truth (firefox went headless in D-012).
+// `//` comments are stripped first so prose like "// headless: true …" cannot
+// false-positive a project; project bodies slice between `name:` marks so a
+// missed `}]` terminator can't bleed one project's flags into the next.
 function headedStates() {
   try {
-    const text = fs.readFileSync(path.join(ROOT, CONFIG_REL), "utf8");
+    const raw = fs.readFileSync(path.join(ROOT, CONFIG_REL), "utf8");
+    const text = raw.split("\n").map((l) => l.replace(/\/\/.*$/, "")).join("\n");
     const out = {};
     // Global `use:` default applies to projects that don't set headless.
     const gm = /^\s*use:\s*\{([\s\S]*?)\n\s*\}/m.exec(text);
     const globalHeadless = gm && /headless:\s*true/.test(gm[1]) ? "headless" : "headed";
-    const re = /name:\s*'([^']+)'([\s\S]*?)(?=name:\s*'|\}\s*\]|$)/g;
+    const marks = [];
+    const re = /name:\s*['"]([^'"]+)['"]/g;
     let m;
-    while ((m = re.exec(text)) !== null) {
-      const proj = m[1];
-      const body = m[2];
-      if (/headless:\s*true/.test(body)) out[proj] = "headless";
-      else if (/headless:\s*false/.test(body)) out[proj] = "headed";
-      else out[proj] = globalHeadless + " (default)";
+    while ((m = re.exec(text)) !== null) marks.push({ proj: m[1], at: m.index + m[0].length });
+    for (let i = 0; i < marks.length; i++) {
+      const body = text.slice(marks[i].at, i + 1 < marks.length ? marks[i + 1].at : text.length);
+      if (/headless:\s*true/.test(body)) out[marks[i].proj] = "headless";
+      else if (/headless:\s*false/.test(body)) out[marks[i].proj] = "headed";
+      else out[marks[i].proj] = globalHeadless + " (default)";
     }
     return out;
   } catch (e) {
@@ -92,7 +97,6 @@ function walkSpecs(suite, project, acc) {
         a.skipNames.push(spec.title);
       } else if (statuses.length > 1 && last === "passed") {
         a.flaky++;
-        a.passed++;
       } else if (last === "passed") {
         a.passed++;
       } else {
@@ -110,7 +114,13 @@ function waiverInfo() {
   let active = 0;
   try {
     const text = fs.readFileSync(path.join(ROOT, WORKFLOW_REL), "utf8");
-    active = (text.match(/^\|\s*active\s*\|/gm) || []).length;
+    // Count active rows inside the ledger section only (same slicing as
+    // waiver-ledger-check.mjs) — a whole-file scan would miscount any other
+    // table that happens to carry an `| active |` cell.
+    const start = text.indexOf("### G-A 残红书面豁免台账");
+    const end = start >= 0 ? text.indexOf("\n## ", start) : -1;
+    const section = start >= 0 ? text.slice(start, end > -1 ? end : text.length) : "";
+    active = (section.match(/^\|\s*active\s*\|/gm) || []).length;
   } catch (e) {
     active = -1;
   }
@@ -130,6 +140,13 @@ function main() {
     env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut },
   });
   const exitCode = run.status === null ? 1 : run.status;
+
+  // Workers label: reflect a --workers passthrough when present, else the
+  // config policy (CI?2:4) — the block must not contradict the args echo.
+  const wIdx = extra.findIndex((a) => a === "--workers" || a.startsWith("--workers="));
+  const workersLabel = wIdx >= 0
+    ? (extra[wIdx].includes("=") ? extra[wIdx].split("=")[1] : extra[wIdx + 1] || "?") + " (arg)"
+    : process.env.CI ? "2 (CI)" : "4 (local)";
 
   if (!fs.existsSync(jsonOut)) {
     console.error("[test-evidence] playwright json report missing — run failed before reporting (exit " + exitCode + ")");
@@ -151,7 +168,7 @@ function main() {
   lines.push("| git HEAD | `" + git.head + (git.dirty ? " (dirty)" : "") + "` |");
   lines.push("| playwright args | `" + (extra.join(" ") || "(full suite)") + "` |");
   lines.push("| duration | " + durationMin + " min |");
-  lines.push("| workers | " + (process.env.CI ? "2 (CI)" : "4 (local)") + " |");
+  lines.push("| workers | " + workersLabel + " |");
   lines.push("| waiver-ledger-check | exit " + waiver.checkExit + ", active rows " + waiver.activeRows + " |");
   lines.push("");
   lines.push("| project | headed | passed | failed | skipped | flaky |");
