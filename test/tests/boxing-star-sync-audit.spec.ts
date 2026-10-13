@@ -79,6 +79,7 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
   });
 
   test('Scenario 3: unstar on tab A, tab B stale isParent cleared by tombstone', async ({ browser }: { browser: Browser }) => {
+    test.setTimeout(90000);
     const ctx = await browser.newContext();
     const a = await ctx.newPage();
     const b = await ctx.newPage();
@@ -100,12 +101,17 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
     await a.waitForTimeout(400);
 
-    // Wait for tab B to receive the star
-    await b.waitForTimeout(600);
-    const starB_before = await b.evaluate((id) => {
-      const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
-      return lb ? lb.isParent : null;
-    }, idA);
+    // Wait for tab B to receive the star — expect.poll (same convention as
+    // Scenario 1) replaces fixed sleeps; under parallel load the propagation
+    // window exceeds the old 600ms budget (audit B-01 flake, 2026-10-14).
+    let starB_before: boolean | null = null;
+    await expect.poll(async () => {
+      starB_before = await b.evaluate((id) => {
+        const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
+        return lb ? lb.isParent : null;
+      }, idA);
+      return starB_before;
+    }, { timeout: 30000 }).toBe(true);
     console.log('Scenario 3: starB_before unstar =', starB_before);
 
     // Unstar on tab A
@@ -116,14 +122,16 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
     await a.waitForTimeout(400);
 
-    // Wait for tab B to receive the unstar
-    await b.waitForTimeout(800);
-
-    // Check if tab B's isParent was cleared
-    const starB_after = await b.evaluate((id) => {
-      const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
-      return lb ? lb.isParent : null;
-    }, idA);
+    // Wait for tab B to receive the unstar — polling also proves the tombstone
+    // actually cleared isParent (a one-shot read could catch a stale true).
+    let starB_after: boolean | null = null;
+    await expect.poll(async () => {
+      starB_after = await b.evaluate((id) => {
+        const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
+        return lb ? lb.isParent : null;
+      }, idA);
+      return starB_after;
+    }, { timeout: 30000 }).toBe(false);
     console.log('Scenario 3: starB_after unstar =', starB_after);
 
     // This is the key assertion: does tombstone propagation clear the stale star?
@@ -133,6 +141,7 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
   });
 
   test('Scenario 2: star set on tab A, existing tab B (already has box) adopts star', async ({ browser }: { browser: Browser }) => {
+    test.setTimeout(60000);
     const ctx = await browser.newContext();
     const a = await ctx.newPage();
     const b = await ctx.newPage();
@@ -147,13 +156,12 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
     await a.waitForTimeout(400);
 
-    // Wait for tab B to receive the box
-    await b.waitForTimeout(600);
-    const hasBoxB = await b.evaluate((id) => {
+    // Wait for tab B to receive the box — expect.poll over a fixed sleep so
+    // slow/parallel runs cannot read before propagation (audit B-01 class).
+    await expect.poll(async () => b.evaluate((id) => {
       const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);
       return !!lb;
-    }, idA);
-    expect(hasBoxB).toBe(true);
+    }, idA), { timeout: 30000 }).toBe(true);
 
     // Star it on tab A (box already exists on tab B with isParent=false/undefined)
     await a.evaluate((id) => {

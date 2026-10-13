@@ -68,3 +68,20 @@
 
 1. P-19：`gh release edit` 授权（或由用户自行重写 notes）
 2. P-20：本人发布 tag v2026.10.11 的 Release
+
+---
+
+## Round-3 计划表（2026-10-13 登记→裁决；账本 D-012..D-014）
+
+| # | 任务 | D-xxx | owner | 前置 | 出口/验证 |
+|---|---|---|---|---|---|
+| P-21 | firefox 车道 `use.headless=true` + 解 4 条原生 skip（focus-steal×3 + title-select-all×1） | D-012 | agent | — | `--project=firefox-extension` 全量绿：passed +4、skipped 收至 1（data-golden 无条件） |
+| P-22 | `scripts/test-evidence.mjs` + npm `test:evidence` | D-014 | agent | — | 子集跑产出正确计数/skip 名单/HEAD/耗时/waiver 出口码；exit 透传 |
+| P-23 | Round-3 验证门：firefox headless 全量 + chromium 全量 + evidence 脚本端到端 + `git diff --check` | D-012..D-014 | agent | P-21/P-22 | 双车道闭环绿 + evidence 块正确 |
+| P-24 | 报告 + handoff + 收尾 commit（测试改动与 docs 分开） | 全部 | agent | P-23 | `reports/2026-10-13-report.md` 更新 |
+
+## Round-3 纪律
+
+- P-21 的 firefox skip 解除与 P-22 的 evidence 脚本分开 commit；docs（账本/spec/plan/register 更新）再分开（D-010⑦ 惯例沿用）。
+- R3-02（D-013）为观察项零动作：不入 waiver、不退役用例、不加 nightly 矩阵。
+- 若 headless FF 全量出现非输入类新红 → 回评（账本负向：不得静默豁免）。

@@ -228,3 +228,55 @@
 | 已发布 release body 历史域 URL 改写（f）/ issue 镜像追平（g） | D-010 | 历史记录原则（勘误不删除）/ 无机制支撑必再漂移 |
 | line pool 按 surface 分池 / boot-theme 转 module / onChanged 监听搬家 | D-011 | 无状态池不需分池 / classic blocking script 是故意形态 / WORKFLOW §6 红线 |
 | `.scratch` 全目录 gitignore / curl 式 10 天冷静期 | D-011 / D-010 | 破坏账本防丢机制（只 zip 不入库）/ 规模不适用 |
+
+---
+
+# Round-3（2026-10-13 登记→裁决：测试基建四项）
+
+> 上游权威：`decision-ledger.md` D-012..D-014（全 current）。登记证据见 `round3-register.md` 与 `probes/`。语义冲突时以账本为准。
+
+## S-12 Firefox 车道转 headless + 恢复原生输入覆盖 — 落实 D-012
+
+**目标**：firefox-extension project 从 headed 转 headless；4 条 #16095 类 skip 就地解除，原生输入断言在 headless FF 下全绿。
+
+**事实锚点**（本轮探针实证）：headed FF persistent ctx 上 `page.mouse.*` 渐进劣化 STALL（3/3 轮）；headless 全净（0/3）；`locator.click/dblclick` 在 headed 亦幸存但拖拽序列无等价物。
+
+**需求**：
+1. `test/playwright.config.ts`：firefox-extension project `use` 内加 `headless: true`（覆盖全局 `headless:false`）；chromium project 保持 headed 不动。
+2. 解除 skip：
+   - `boxing-focus-steal.spec.ts` describe `dblclick — REAL native input + text selection` 的 `test.skip(browserName==='firefox')` 移除，注释更新为「headed 车道才 wedge（#16095）；firefox 车道现为 headless，原生覆盖恢复」；
+   - `boxing-title-select-all.spec.ts` `D-003: mouse drag makes a partial selection (native)` 的 `test.skip(browserName==='firefox')` 移除同理；`browserName` 形参若无他用一并清理。
+3. CI 零改动：ubuntu xvfb-run 保留（chromium headed 仍需显示栈）；`-no-remote` 保留。
+
+**验证**：`--project=firefox-extension` 全量绿且 4 条原生断言恢复执行（passed 数应 +4，skipped 减至 1=data-golden 无条件）；chromium 全量不回归。
+
+**负向约束**：chromium 主 lane 禁转 headless；不引第三 project；quarantine config 本波不动；data-golden `test.skip(true)` 不解。
+
+---
+
+## S-13 证据口径自动化 — 落实 D-014
+
+**目标**：`scripts/test-evidence.mjs` 产出标准化 markdown evidence 块，杜绝报告口径手抄漂移。
+
+**需求**：
+1. 经 `node scripts/test-mutex.mjs playwright test --config=test/playwright.config.ts --reporter=json` 运行（互斥纪律不破），捕获 JSON。
+2. 解析并渲染 evidence 块：每 project passed/failed/skipped/flaky、skipped 用例名清单、git `rev-parse HEAD`（+脏树标记）、时间戳、耗时、workers/headed、目标 spec 过滤回显。
+3. 附带 `node scripts/waiver-ledger-check.mjs` 出口码 + active 行数。
+4. 输出落 `test-results/evidence-<ts>.md`（test-results 已 gitignore），同时 stdout 回显块本体。
+5. `package.json` 加 `test:evidence` script；参数透传（`-- --project=firefox-extension <spec>` 等）。
+
+**验证**：`npm run test:evidence -- --project=firefox-extension <3-spec 子集>` 产出正确计数与 skip 名单；exit 码随 playwright 结果（红=非 0）。
+
+**负向约束**：不改主 config reporter；不替代 waiver-ledger-check（只采集出口码）；不做 CI 自动回写。
+
+---
+
+## X-Round3. Round-3 范围外（账本负向约束 → 不做清单）
+
+| 项 | 来源 | 理由/出路 |
+|---|---|---|
+| chromium 主 lane 转 headless | D-012 | 承载 `--load-extension` 真扩展活体覆盖，不可削弱 |
+| 第三并列 firefox-headless project | D-012 | 双 FF lane 增耗时；单 headless 车道一解二 |
+| conflict-copy 入 waiver 台账 / 退役用例 | D-013 | 零复现无豁免对象；不裸奔 |
+| CI nightly 重复矩阵 | D-013 | 零复现证据不支持成本 |
+| 解 data-golden `test.skip(true)` | D-012 | 非 #16095；MV3 fetch 无 undici 面的架构性 skip |

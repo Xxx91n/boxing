@@ -239,7 +239,7 @@ test.describe('Data Recovery & Export/Import', () => {
       expect(layoutDoc.settings.rememberLastPos).toBeDefined();
 
       // Save export for manual inspection
-      const outPath = path.join(EXTENSION_PATH, '..', 'test-results', 'roundtrip-export.json');
+      const outPath = path.join(EXTENSION_PATH, 'test-results', 'roundtrip-export.json');
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       fs.writeFileSync(outPath, exported, 'utf8');
       console.log('Saved export to', outPath);

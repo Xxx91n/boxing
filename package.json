@@ -26,7 +26,8 @@
     "test:quarantine": "node scripts/test-mutex.mjs playwright test --config=test/playwright.quarantine.config.ts --grep=@quarantine --pass-with-no-tests",
     "test:debug": "node scripts/test-mutex.mjs full --project=chromium-extension --debug",
     "postinstall": "node -e \"console.warn('[boxing] Playwright browsers not installed. Run: npx playwright install firefox chromium')\"",
-    "verify:pages-gc": "node scripts/pages-gc-verify.mjs"
+    "verify:pages-gc": "node scripts/pages-gc-verify.mjs",
+    "test:evidence": "node scripts/test-evidence.mjs"
   },
   "devDependencies": {
     "web-ext": "^8.10.0",
