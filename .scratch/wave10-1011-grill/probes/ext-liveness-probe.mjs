@@ -3,6 +3,8 @@
 // opens the extension's NTP page (chrome-extension://), asserts __boxingDebug
 // is live and captures console errors. This is the "启动并测活" evidence for
 // the chromium lane that the file:// mock lane cannot provide.
+// NOTE: manual probe — launches a headed browser directly, NOT through
+// scripts/test-mutex.mjs. Do not run while a playwright lane is in-flight.
 import { chromium } from 'playwright';
 import path from 'path';
 import os from 'os';

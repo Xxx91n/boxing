@@ -6,6 +6,8 @@
 // events land on the canvas, not the tour overlay.
 // Each op wrapped in a hard Promise.race timeout; each op repeated ROUNDS times
 // per mode to expose the racy stall pattern.
+// NOTE: manual probe — launches headed/headless browsers directly, NOT through
+// scripts/test-mutex.mjs. Do not run while a playwright lane is in-flight.
 import { firefox } from 'playwright';
 import { pathToFileURL } from 'url';
 import path from 'path';
