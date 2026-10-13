@@ -1,5 +1,6 @@
 # Round-3 测试基建问题登记 — 2026-10-13
 
+> **裁决已落（2026-10-13，用户"那就无头吧，采纳你推荐的就行"）**：R3-01+R3-03→D-012（firefox 车道整体转 headless + 解 4 条 skip）；R3-02→D-013（观察项零动作）；R3-04→D-014（实施 test-evidence.mjs）。实施契约见 spec.md S-12/S-13。
 > 上游：handoffs/next-round.md §1.1（4 项开工输入）+ §1.2（登记格式）+ §6（流程：登记→用户逐条确认入账→实施）。
 > 本文件 = 登记载体。每项含：浏览器/项目、测试标题、复现次数、最小日志、隔离后是否消失、建议 owner + 处置选项。
 > 复跑环境：Windows 本机、Playwright 1.62.1、chromium-1243 / firefox-1538、tip `8e3c853f`（but branch wave-1011-round3）。
