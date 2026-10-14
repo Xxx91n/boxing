@@ -4,7 +4,7 @@
 > 本页是**状态页**，不是门禁定义：与 [ADR-0017](adr/0017-release-data-gate.md) 冲突时以 ADR-0017 为准，并在此记 `revised`。
 > 豁免台账全表见 [testing-governance.md](testing-governance.md)「G-A 残红书面豁免台账」节；发行检查单模板见 [publishing-guide.md](publishing-guide.md) 附录。`.scratch/` 工作日志层为本地 untracked 证据。
 
-**最后核验（Last verified）：2026-09-22** · 现役 tag **`v2026.9.20`** · 现役发行版本 **2026.9.20（已发布）** · GitHub Release 已发布 · 商店 **2026.9.20 已上架（用户声明「已经稳定」）** · G-C version.json=`2026.9.20`
+**最后核验（Last verified）：2026-10-14** · 现役 tag **`v2026.9.20`** · 现役发行版本 **2026.9.20（已发布）** · GitHub Release 已发布 · 商店 **2026.9.20 已上架（用户声明「已经稳定」）** · G-C version.json=`2026.9.20`
 
 ## 一、结论（§三 的投影，非独立状态块）
 
@@ -106,14 +106,14 @@
 | A-050 | AI Docs Governance 死链灭红 | 96 | implemented |
 | A-051 | docs 层 live Release status（本页） | 97 | implemented |
 | A-052 | 锐评8：`ntp.js` / `i18n.js` 冻结注释 | 98 | implemented |
-| A-053 | B63 locale README 与 Release status 版本口径对齐 | 99 | 进行中 |
+| A-053 | B63 locale README 与 Release status 版本口径对齐 | 99 | implemented（票 96–106 区间落地；2026-10-14 治理轮销账） |
 | A-054 | B64 calver 一致性门禁 | 100 | implemented |
-| A-055 | B65 fire-and-forget 测试族 deflake | 101 | 进行中 |
+| A-055 | B65 fire-and-forget 测试族 deflake | 101 | implemented（票 96–106 区间落地；台账 C01 处置引用票101 修绿证据；2026-10-14 治理轮销账） |
 | A-056 | B66 亮色 bm-add-btn 对比度 | 102 | implemented |
 | A-057 | B67 DESIGN.md hairline 语义 | 103 | implemented |
 | A-058 | B68 boot-theme 早退 failsafe | 104 | done-with-named-F |
 | A-059 | B69 撤账判据写入规则 | 105 | implemented |
-| A-060 | B70 innerclip firefox 本地 flaky（CI 复现则修，否则书面结案） | 106 | 进行中 |
+| A-060 | B70 innerclip firefox 本地 flaky（CI 复现则修，否则书面结案） | 106 | closed（观察行已由票 111 / A-066 预防性修复关闭 2026-09-15，见 testing-governance.md 本地观察表；2026-10-14 治理轮销账） |
 | A-061 | 发行终谳 G-A 绑最终 tip 四 job 全绿 + 等 G-B | 无票（执行） | implemented（票 113 / 2026-09-15 回填：终谳见 §三「发行终谳（2026-09-14 实测）」） |
 
 A-058 的具名 F：`no-mirror` e2e chromium 启动超时（环境性），源码契约测试绿。
@@ -163,5 +163,6 @@ Wave 2026.10.11 追加欠账（Round-2 grill 收口，实施见 `.scratch/wave10
 | 2026-09-14 | 票 105 / A-059：撤账判据（≥2 连续 main 全绿 + N/B/F 约束）写入 WORKFLOW §4.4 与 testing-governance.md；waiver-ledger-check 扩展为机器校验（closed 行须 ≥2 run 撤账证据） |
 | 2026-09-15 | 票 107–116 land origin/main tip `2f167ca7`；版本面 2026.9.20；**G-B 用户声明「测试通过」2026.9.20**（zip 黄金路径）；G-A CI / G-C Pages 待发行动作 |
 | 2026-09-22 | **2026.9.20 三门齐 + 发行**：G-A 35694278677 · G-B Xxx91n · G-C PASS（version.json=2026.9.20）· tag/Release v2026.9.20 · 商店已上架（用户「已经稳定」）· AMO lint 清零（去 data_collection_permissions + innerHTML→textContent）· 多余 zip/crx 清理（15→2） |
+| 2026-10-14 | 治理轮落地 main（`0dd21d5f`/`4a481ed5`/`48244706`）：ADR-0020/0021 建立（连接面域 + 暗色单宿主）、豁免台账迁入 testing-governance.md、AGENTS.md 瘦身、`.scratch` 解除追踪（本地保留）；A-053/055/060 销账；i18n brandName 残红复核 4/4 绿销账 |
 | 2026-09-15 | 票 113 / A-068：收敛单一现役状态块 —— 删/降级 §一 矛盾表（改为 §三 投影句）；§三 发行终谳填 2026-09-14 实测；三条旧 G-A run 标 **Superseded**；新增「有且只有一个状态块」页内硬契约（§三 / §六）；按 git 血缘把 tip `41fcf1e4` 修正为 `8a8798c9`（现役 tag `v2026.9.15` @ `cc30edcc`）；录具名 F-113-01（demo 渲染 v2026.9.12） |
 | 2026-10-05 | Wave 2026.10.11（Round-2）：**修正 §2 错误块**（此前仍把 2026.9.15 写作「目标发行版本」并硬编码 tip sha，与 §一/§三 的 2026.9.20 现役结论自相矛盾 —— 违反 §6 单一状态块契约）；改为「目标 2026.10.11（待发）+ 现役 2026.9.20」并取消 tip 硬编码（GitButler 工作区提交不进 HEAD 血缘，票 113 教训）。§五 追加 A-062..A-066 与 pre-existing 残红登记。§三 历史证据（`8a8798c9` 等）按「保留不删」原样留存 |
