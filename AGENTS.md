@@ -26,7 +26,7 @@ Boxing is a vanilla-JS Manifest V3 browser extension (Chrome + Firefox) that org
 | --- | --- |
 | Install | `npm install` (repo root) |
 | Build | `npm run build` → `dist/boxing-chrome/` + `dist/boxing-firefox/` (`.github/scripts/build.mjs`) |
-| Dev load | `npm run dev:chrome` / `npm run dev:firefox` — builds, then web-ext auto-launches (`dev:chrome:no-build` variants skip the rebuild) |
+| Dev load | `npm run dev:chrome` / `npm run dev:firefox` — builds, then web-ext auto-launches (`dev:chrome:no-build` variants skip the rebuild). BX-MANIFEST-004b: dev scripts MUST chain build before run; `build.mjs` emits `[STALE_DIST]` when `dist/` is stale vs git HEAD |
 | Syntax check | `node --check ntp/ntp.js && node --check background.js` |
 | Full tests | `npm test` — Playwright suite, mutex-guarded; `pretest` runs import-graph + migration-golden + css-balance guards |
 | Bounded tests | `npm run test:changed`; single spec: `npx playwright test --config=test/playwright.config.ts test/tests/<spec>.spec.ts --project=chromium` |
