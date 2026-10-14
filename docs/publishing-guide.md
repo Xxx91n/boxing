@@ -119,3 +119,36 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 - [ ] 截图非透明占位（若商店要求实图）
 - [ ] GitHub Release 无 xpi/crx，安装链到商店
 - [ ] 你知道 G-B 为强制豁免、G-A 以 CI 为准
+
+## 附录 — 发行检查单模板（原 WORKFLOW §4.4）
+
+> 每次发行复制一份到该发行票的报告逐项勾选。门禁定义与三门合取见 ADR-0017。
+
+```
+发行检查单 — <版本号>
+G-A CI
+- [ ] main 全量 test.yml run URL: __________ → 全绿
+- [ ] 残红豁免逐行 (用例名 | 基线 run | 失败签名 | 归属票 | 到期条件):
+      - [ ] ________________________________
+- [ ] node scripts/waiver-ledger-check.mjs exit 0, 且逐行将台账失败签名与最新基线 run 日志复核一致 (票48 机制)
+G-B 人工 zip 黄金路径 (Chrome 与 Firefox 各一遍, 用解包产物)
+- [ ] 全新安装 → 引导可走完 (Skip/Next), 关闭后主界面可点击, 零 console 错误
+- [ ] 建盒/改名/拖拽/缩放 → 重开后数据完整
+- [ ] 旧备份导入 → 合并或冲突副本可查, 无静默覆盖
+- [ ] 升级安装 (上一发行版 → 新 zip): 首开前 pre-update 快照存在; 迁移后数据完整、无冻结
+- [ ] 回滚演练: 新版代码写入后的数据, 用上一版代码读回无损失 (含 v2 单程路径样例 — ADR-0017 具名项)
+- [ ] 至少 1 名具发布权限者确认已知风险与回滚预案 (禁止无人复核发布)
+G-C Pages (200 + 新鲜度, 2026-09-15 升格)
+- [ ] https://boxing.xxx91n.com/demo/ → 200 且有主题渲染
+- [ ] https://boxing.xxx91n.com/demo/ntp.css → 200 text/css
+- [ ] https://boxing.xxx91n.com/privacy-policy.html → 200 含政策正文与 Last updated
+- [ ] npm run verify:pages-gc → exit 0 (version.json 带 cache-buster 的 version == 最新 release tag)
+- [ ] demo 渲染版本与 version.json 一致 (data-boxing-version / meta boxing-version)
+- [ ] 失败两态具名: MISMATCH = 部署链路未落地 / UNREACHABLE = 存活-读取问题
+渠道与商店
+- [ ] 可回滚目标版本已记录 (CWS: 上一发布版 / AMO: 上一批准版且无已知问题)
+- [ ] 商店文案/截图/权限声明/隐私政策与本次产物一致; 版本号与 manifest 一致
+结论
+- [ ] 三条件齐备 → 允许 tag 与可发行宣称
+- [ ] 未齐备 → 记录缺项, 状态保持「不可发行」
+```

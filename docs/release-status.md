@@ -2,7 +2,7 @@
 
 > 面向：发布者（用户）、维护者、审计者。只读本页即可知当前版本、三门状态、在效豁免与在办欠账。
 > 本页是**状态页**，不是门禁定义：与 [ADR-0017](adr/0017-release-data-gate.md) 冲突时以 ADR-0017 为准，并在此记 `revised`。
-> 检查单模板与豁免台账全表见仓库内 `.scratch/architecture-recovery/WORKFLOW.md` §4.4（工作日志层，仅作证据引用）。
+> 豁免台账全表见 [testing-governance.md](testing-governance.md)「G-A 残红书面豁免台账」节；发行检查单模板见 [publishing-guide.md](publishing-guide.md) 附录。`.scratch/` 工作日志层为本地 untracked 证据。
 
 **最后核验（Last verified）：2026-09-22** · 现役 tag **`v2026.9.20`** · 现役发行版本 **2026.9.20（已发布）** · GitHub Release 已发布 · 商店 **2026.9.20 已上架（用户声明「已经稳定」）** · G-C version.json=`2026.9.20`
 
@@ -97,7 +97,7 @@
 - **撤账判据（票 105 / B69）**：`closed` 行须满足「**≥2 连续 main 全绿 run 且签名零出现，其中 ≥1 次须为同码 corroboration run**」——单 run 零出现**不构成**撤账（票 74 撤账过早事故：`boxing-zoom-dblclick` 单 run 撤账后于下一 run 复发）；**仅 F 可撤账**，**B 无撤账路径**（只能修或书面退役），**N 永不入账/永不撤账**；**复发即重新入账**；撤账 ≠ 豁免成立 ≠ G-A 达成。
 - 到期未修 → 主 lane 禁用或删除并回填处置记录；禁止无动作续期（棘轮：豁免文件只许缩小）。
 - 逐行失败签名与最新基线 run 的人工比对，是每次发行 G-A 步骤的必做项。
-- 台账全表与签名正文见 `.scratch/architecture-recovery/WORKFLOW.md` §4.4（工作日志层证据）。
+- 台账全表与签名正文见 `docs/testing-governance.md`「G-A 残红书面豁免台账」节。
 
 ## 五、在办欠账（A 账本 A-050..A-061）
 
@@ -125,14 +125,14 @@ Wave 2026.10.11 追加欠账（Round-2 grill 收口，实施见 `.scratch/wave10
 | A-062 | bug1 连接线跨面泄漏 → `resolveConnSurface` 公共祖先面域过滤 | D-007 / P-13 | implemented（8 断言绿） |
 | A-063 | bug2 暗色三写入点不收敛 → `applyDarkMode` 单一路径 + `:root` 唯一宿主 | D-008 / P-14 | implemented（8 断言绿） |
 | A-064b | bug3 demo 右键被 onboarding overlay 拦截 → 构建期 `__BOXING_DEMO__` + Escape 关闭 | D-009 / P-15 | implemented（11 断言绿） |
-| A-065 | 回归测试矩阵（发版 gate）双浏览器全量 | D-011 / P-18 | Chromium 351 绿 · Firefox 349 绿（残留 2 条 pre-existing i18n locator，见下） |
+| A-065 | 回归测试矩阵（发版 gate）双浏览器全量 | D-011 / P-18 | Chromium 351 绿 · Firefox 349 绿（i18n 残红已销，见下） |
 | A-066 | 文档口径三项 + zip 政策 + README badge 动态化 | D-010 / P-16 / P-17 | implemented |
 
-> **pre-existing 残红（不属本波，须单独处置）**：`boxing-i18n-module` 2 条因
+> **pre-existing 残红 → 已销账（2026-10-14 治理轮复核）**：`boxing-i18n-module` 曾 2 条因
 > `page.locator('[data-i18n="brandName"]')` 严格模式命中 2 个元素（header `span` 与
-> About tab `strong`，后者由 D-006 引入）而失败。已核实该 spec 与 `index.html`
-> 在本波前后**逐字节未变**，非本波回归；按 WORKFLOW §4.4 G-A 需书面豁免或另立票修复，
-> 不可在本波静默放过。
+> About tab `strong`，后者由 D-006 引入）而失败。后续审计修复已将定位器收窄为
+> `.brand__name[data-i18n="brandName"]`（897d0c4f）；2026-10-14 本地复跑
+> `--project=chromium-extension` **4/4 绿**。残红不再存在，无需豁免。
 
 ## 六、如何更新本页（防过时契约）
 
@@ -152,7 +152,7 @@ Wave 2026.10.11 追加欠账（Round-2 grill 收口，实施见 `.scratch/wave10
 - 门禁定义：[ADR-0017 Release Data Gate](adr/0017-release-data-gate.md)
 - 发布路径：[发行指南](publishing-guide.md) · [上架计划](store-publishing-plan.md)
 - 测试治理（隔离登记 / 事故登记）：[testing-governance.md](testing-governance.md)
-- 检查单模板与豁免台账全表：`.scratch/architecture-recovery/WORKFLOW.md` §4.4（工作日志层）
+- 豁免台账全表：[testing-governance.md](testing-governance.md)；发行检查单模板：[publishing-guide.md](publishing-guide.md) 附录（原 `.scratch/architecture-recovery/WORKFLOW.md` §4.4，现为本地 untracked 工作日志）
 - 本页由票 97（A-051）建立，报告：`.scratch/architecture-recovery/reports/97-report.md`；票 113（A-068）收敛单一现役状态块，报告：`.scratch/architecture-recovery/reports/113-report.md`
 
 ## 变更记录
