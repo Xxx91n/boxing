@@ -4,7 +4,8 @@
 // row must prove the two-run revocation criterion, and the criteria rule text
 // itself must still be present in the ledger.
 // Parses the 「G-A 残红书面豁免台账 (Waiver Ledger」 table in
-// .scratch/architecture-recovery/WORKFLOW.md and enforces the ticket-48 / spec
+// docs/testing-governance.md (migrated from .scratch/architecture-recovery/WORKFLOW.md
+// §4.4 in the 2026-10-14 governance pass) and enforces the ticket-48 / spec
 // W6-D3 / ADR-0017 rules mechanically:
 //   1. every active entry carries all 5 fields (用例名 | 基线 run | 失败签名 | 归属票 | 到期);
 //   2. no active entry may be past its expiry (到期未修 → 禁用或删除并记录, not renew);
@@ -21,7 +22,7 @@
 
 import fs from 'node:fs';
 
-const LEDGER_FILE = new URL('../.scratch/architecture-recovery/WORKFLOW.md', import.meta.url);
+const LEDGER_FILE = new URL('../docs/testing-governance.md', import.meta.url);
 const NEVER_QUARANTINE = /data-golden|migration-golden|update-cow|snapshot-rotation|state-sync|data-recovery|import-merge|webdav|sync-ui|boxing-sync/i;
 const REVOCATION_RULE = '撤账判据';
 const REVOCATION_MIN_RUNS = 2;
@@ -39,7 +40,7 @@ let section = '';
   const text = fs.readFileSync(LEDGER_FILE, 'utf8');
   const start = text.indexOf('### G-A 残红书面豁免台账');
   if (start < 0) {
-    console.error('waiver-ledger: WORKFLOW.md has no 「G-A 残红书面豁免台账」 section — ledger missing is itself a gate failure (ticket 48).');
+    console.error('waiver-ledger: docs/testing-governance.md has no 「G-A 残红书面豁免台账」 section — ledger missing is itself a gate failure (ticket 48).');
     process.exit(1);
   }
   section = text.slice(start, text.indexOf('\n## ', start) > -1 ? text.indexOf('\n## ', start) : text.length);

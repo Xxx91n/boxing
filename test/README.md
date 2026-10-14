@@ -42,7 +42,8 @@ npm run test:debug
 - Config: `test/playwright.config.ts`
 - Specs: `test/tests/boxing-*.spec.ts`
 - Extension path: resolved from config via `__dirname/..` (repo root)
-- Projects: `firefox-extension` and `chromium-extension` only
+- Projects: `firefox-extension` and `chromium-extension` only; the Firefox lane runs
+  headless (wave-2026.10.11 / D-012) — native-input realness specs stay chromium-scoped.
 
 ## CI
 
@@ -95,8 +96,8 @@ selector is the local/agent fast path.
 
 The G-A residual-red waiver ledger and its revocation criteria (≥2 consecutive green main runs with
 zero recurrence of the recorded signature, at least one a same-commit corroboration run; only F is
-revocable, B has no revocation path, N is never revoked) live in `docs/testing-governance.md` and
-`.scratch/architecture-recovery/WORKFLOW.md` §4.4;
+revocable, B has no revocation path, N is never revoked) live in `docs/testing-governance.md`
+(「G-A 残红书面豁免台账」 section);
 `scripts/waiver-ledger-check.mjs` enforces them.
 
 **Hot-file single-agent convention**

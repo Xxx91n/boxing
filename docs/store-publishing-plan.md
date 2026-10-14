@@ -12,8 +12,8 @@
 | **Edge Add-ons** | **2026.9.15 已过审上线** — [Edge listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
 | Chrome Web Store | 可选；历史上 Edge 优先 |
 | GitHub Releases | **[v2026.9.15](https://github.com/Xxx91n/boxing/releases/tag/v2026.9.15) 已发布**（chrome/firefox/source/SHA256SUMS）；**不发 .xpi / .crx**；正式安装以商店为准 |
-| 三门 | 2026.9.15 已达成（G-A run 34857433215 绿 · G-B 用户声明「通过」· G-C 三 URL 200）；2026.9.20 未启动，待 ADR-0017 三门合取 |
-| 版本 | 目标 **2026.9.20**（未发行）；上一已发行 **2026.9.15** 已上架 + Release 已发布 |
+| 三门 | 2026.9.15 已达成（G-A run 34857433215 绿 · G-B 用户声明「通过」· G-C 三 URL 200）；2026.9.20 已发行（G-B 用户声明 pass 2026-09-15；G-C version.json 实测 = 2026.9.20） |
+| 版本 | 当前已发行 **v2026.9.20**（GitHub Release 2026-09-22）；商店在架版本仍为 **2026.9.15**（AMO + Edge）；下一开发周期 2026.10.11 进行中 |
 
 ## Grill Decisions（历史裁定，仍有效）
 

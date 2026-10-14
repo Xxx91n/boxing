@@ -37,3 +37,5 @@ or manifest build rule.
 - critical-lessons.md — past design traps and mutation-path footguns (TDZ, tombstone contract, derived-index liabilities, DSU/CSS invariants)
 - performance-anti-patterns.md — rejected optimizations permanently documented so a new model does not re-investigate them (BX-PERF-A1..A5, ADR-0013)
 - manifest-contract.md — HARD CONSTRAINT dual-declaration manifest rules (BX-MANIFEST-001..005): source manifest Firefox-tailored, Chrome must load dist/
+- security-rules.md — SEC-series MUST rules (paste sanitization, import size cap, save debounce, URL protocol allowlist, CSP meta)
+- engineering-invariants.md — i18n hard rules (BX-I18N), NTP module map, code-exploration/codegraph discipline (BX-EXPLORE-001..004), CSS dual-write pointer

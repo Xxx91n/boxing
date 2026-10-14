@@ -98,7 +98,7 @@ gh workflow run build.yml -f version=<VER> -f make_release=true -f amo_sign=true
 | 部署 | `demo-deploy.yml` deploy job 尾部 `node scripts/pages-gc-verify.mjs --mode=deploy-tail --timeout=180`（≤180s 不收敛即红） |
 | 发行人工检查 | `npm run verify:pages-gc`（默认比对最新 release tag）；失败按两态处置：`MISMATCH` = 部署链路未落地（重跑 demo-deploy / 查 environment 放行 tag）；`UNREACHABLE` = 存活-读取问题 |
 
-**已知阻塞（需人工放行，非 agent 范围）**：`github-pages` environment 当前**未放行 tag**，release 触发的 deploy job 会被保护规则拦截（run [34860199679](https://github.com/Xxx91n/boxing/actions/runs/34860199679) 的 deploy job 0 step、2 秒内失败），因此 Pages 仍停在 2026-09-13 的 dispatch 产物（`version=2026.9.12`）。放行路径：Settings → Environments → github-pages → Deployment branches and tags 增加 `v*`。Pages 构建源已确认为 **GitHub Actions 单一模式**（`build_type: workflow`），无需变更。
+**历史阻塞（已解除）**：`github-pages` environment 曾未放行 tag，release 触发的 deploy job 被保护规则拦截（run [34860199679](https://github.com/Xxx91n/boxing/actions/runs/34860199679)）；已解决 —— 2026-09-22 deploy 后 `GET demo/version.json` 实测 `version = 2026.9.20`。放行配置：Settings → Environments → github-pages → Deployment branches and tags 含 `v*`。Pages 构建源为 **GitHub Actions 单一模式**（`build_type: workflow`）。
 
 ## Part 6 — 本地验证（不烧号）
 

@@ -33,7 +33,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const NL = String.fromCharCode(10);
 const CONFIG_REL = "test/playwright.config.ts";
-const WORKFLOW_REL = ".scratch/architecture-recovery/WORKFLOW.md";
+const LEDGER_REL = "docs/testing-governance.md";
 
 function sh(cmd, args, opts) {
   const o = opts || {};
@@ -113,7 +113,7 @@ function waiverInfo() {
   const check = sh("node", ["scripts/waiver-ledger-check.mjs"]);
   let active = 0;
   try {
-    const text = fs.readFileSync(path.join(ROOT, WORKFLOW_REL), "utf8");
+    const text = fs.readFileSync(path.join(ROOT, LEDGER_REL), "utf8");
     // Count active rows inside the ledger section only (same slicing as
     // waiver-ledger-check.mjs) — a whole-file scan would miscount any other
     // table that happens to carry an `| active |` cell.

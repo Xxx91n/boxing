@@ -8,9 +8,9 @@ This page exists because the repository carries three different kinds of documen
 |---|---|---|---|
 | **Product docs** | `README.md`, `docs/index.md`, `docs/i18n/` | users, store reviewers | every release |
 | **Project and architecture docs** | `CONTRIBUTING.md`, `CONTEXT.md`, `docs/CONTEXT.md`, `docs/adr/`, `docs/DESIGN.md` | contributors, maintainers | decisions (ADR) |
-| **Agent work logs** | `.scratch/` | agents and auditors only | every agent session |
+| **Agent work logs** | `.scratch/` (local, untracked) | agents and auditors only | every agent session |
 
-`.scratch/` is a **work-log layer, not documentation**: it holds per-ticket handoffs, issues, prompts and reports. It is cited as evidence, never used as a reading path, and nothing in it is a product claim.
+`.scratch/` is a **work-log layer, not documentation**: it holds per-ticket handoffs, issues, prompts and reports. It is cited as evidence, never used as a reading path, and nothing in it is a product claim. It is local-only (untracked since the 2026-10-14 governance pass); fresh clones will not have it.
 
 ## 1. I want to use Boxing
 
@@ -49,4 +49,4 @@ Then the domain and design decisions:
 ## Rules of thumb
 
 - Product claims live only in `README.md` and `docs/index.md`. A release is published only when the gate in ADR-0017 is satisfied - do not infer release state from a build number, a package, or a CI run.
-- Anything under `.scratch/` is session evidence: cite it, do not read it as a guide, and never delete it - several reports are the only surviving record of a decision.
+- Anything under `.scratch/` is local session evidence (untracked): cite it, do not read it as a guide.
