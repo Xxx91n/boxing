@@ -4,11 +4,11 @@
 > 本页是**状态页**，不是门禁定义：与 [ADR-0017](adr/0017-release-data-gate.md) 冲突时以 ADR-0017 为准，并在此记 `revised`。
 > 豁免台账全表见 [testing-governance.md](testing-governance.md)「G-A 残红书面豁免台账」节；发行检查单模板见 [publishing-guide.md](publishing-guide.md) 附录。`.scratch/` 工作日志层为本地 untracked 证据。
 
-**最后核验（Last verified）：2026-10-14** · 目标 tag **`v2026.10.15`** · 发行状态 **待发布**（发布后以 §三 为准） · 商店 **待用户上传** · G-C 待发布后复核
+**最后核验（Last verified）：2026-10-14** · 现役 tag **`v2026.10.15`** · 现役发行版本 **2026.10.15（已发布）** · GitHub Release 已发布 · 商店 **待用户上传** · G-C version.json=`2026.10.15`
 
 ## 一、结论（§三 的投影，非独立状态块）
 
-**现役结论：2026.10.15 待发布。** 发布前需取证：G-A（新 main tip 的 Test 全绿）、G-B（版本号变化，须用户重新声明）、G-C（`verify:pages-gc` 为 expected=2026.10.15）。商店上传由用户手动完成。
+**现役结论：2026.10.15 已发布，G-A 与 G-C 已取证；G-B 待用户对新产物重新声明。** tag `v2026.10.15` 已打；GitHub Release 已发布（chrome / firefox / source zip + SHA256SUMS）；商店上传由用户手动完成。
 
 > 本节只把 §三「发行终谳（2026-09-14 实测）」的结论投影到首屏；**本节不设状态表、不独立陈述门状态**。页内唯一现役状态块是 §三。
 
@@ -18,7 +18,7 @@
 
 | 面 | 值 | 证据 |
 |---|---|---|
-| 目标发行版本 | 2026.10.15 | 待发布。三 bug 修复 + 文档类 |
+| 目标发行版本 | 2026.10.15 | 已发布（2026-10-14）。三 bug 修复 + 文档类 |
 | 当前已发布版本（现役） | 2026.9.20 | `manifest.json` / `package.json` version 均为 2026.9.20；`docs/release-notes/2026.9.20.md`；tag `v2026.9.20` |
 | 版本面一致性 | 通过 | `scripts/calver-guard.mjs` 接入 pretest（票 100 / A-054）；8 面一致 |
 | 上一已发布版本（可回滚目标） | 2026.9.15 | AMO + Edge 同日已过审上线（用户声明 2026-09-14）；再上一版 2026.9.12 仍在架，但为事故版 —— 连续两次回滚会回到它 |
@@ -32,10 +32,10 @@
 
 | 门 | 状态 | 证据 | 说明 |
 |---|---|---|---|
-| **G-A CI** | **待复核** | 发布前在新 main tip 上 Test 须四 job 全绿 | 发布前复核 |
-| **G-B 人工黄金路径** | **待重新声明** | 版本号变化，旧声明不适用于 2026.10.15 产物 | 禁止 agent 代签 |
-| **G-C Pages** | **待发布后复核** | 发布后 `npm run verify:pages-gc` 应为 expected=2026.10.15 | — |
-| tag / Release | v2026.10.15 待发布 | — | 商店上传由用户手动完成 |
+| **G-A CI** | **达成** | main Test run [38534398966](https://github.com/Xxx91n/boxing/actions/runs/38534398966)（tip `ecf71d21`）四 job 全 success | 2026-10-14 终谳 |
+| **G-B 人工黄金路径** | **待重新声明** | 2.10.15 产物须用户重新声明（旧声明不适用于新版本号的产物）；demo 右键项待复测 | 禁止 agent 代签 |
+| **G-C Pages** | **达成（升格口径）** | `npm run verify:pages-gc` **G-C PASS** expected=**2026.10.15** · version.json=`2026.10.15` deployedAt=2026-10-14T08:35:57Z · 三 URL 200 | demo-deploy run [38536226842](https://github.com/Xxx91n/boxing/actions/runs/38536226842)（由 build.yml 发布后自动派发） |
+| tag / Release | v2026.10.15 已发布 | build run [38536192194](https://github.com/Xxx91n/boxing/actions/runs/38536192194) · chrome/firefox/source zip + SHA256SUMS | 商店上传由用户手动完成 |
 
 ### G-C 实测锚点（2026-09-14）
 
