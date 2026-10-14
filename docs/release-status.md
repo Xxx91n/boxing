@@ -4,11 +4,11 @@
 > 本页是**状态页**，不是门禁定义：与 [ADR-0017](adr/0017-release-data-gate.md) 冲突时以 ADR-0017 为准，并在此记 `revised`。
 > 豁免台账全表见 [testing-governance.md](testing-governance.md)「G-A 残红书面豁免台账」节；发行检查单模板见 [publishing-guide.md](publishing-guide.md) 附录。`.scratch/` 工作日志层为本地 untracked 证据。
 
-**最后核验（Last verified）：2026-10-14** · 现役 tag **`v2026.9.20`** · 现役发行版本 **2026.9.20（已发布）** · GitHub Release 已发布 · 商店 **2026.9.20 已上架（用户声明「已经稳定」）** · G-C version.json=`2026.9.20`
+**最后核验（Last verified）：2026-10-14** · 目标 tag **`v2026.10.15`** · 发行状态 **待发布**（发布后以 §三 为准） · 商店 **待用户上传** · G-C 待发布后复核
 
 ## 一、结论（§三 的投影，非独立状态块）
 
-**现役结论：2026.9.20 三门合取达成 · v2026.9.20 已发布。** tag `v2026.9.20` 已打；GitHub Release 已发布（chrome / firefox / source zip + SHA256SUMS）；商店 **2026.9.20 已上架（用户声明 2026-09-22「已经稳定」）**；G-C `verify:pages-gc` **PASS**（version.json=`2026.9.20`）。9.15 历史不回溯改判。
+**现役结论：2026.10.15 待发布。** 发布前需取证：G-A（新 main tip 的 Test 全绿）、G-B（版本号变化，须用户重新声明）、G-C（`verify:pages-gc` 为 expected=2026.10.15）。商店上传由用户手动完成。
 
 > 本节只把 §三「发行终谳（2026-09-14 实测）」的结论投影到首屏；**本节不设状态表、不独立陈述门状态**。页内唯一现役状态块是 §三。
 
@@ -18,7 +18,7 @@
 
 | 面 | 值 | 证据 |
 |---|---|---|
-| 目标发行版本 | 2026.10.11 | 待发（Wave 2026.10.11 三 bug 修复 + 文档类）。发版前须复核 calver 日期（账本内嵌约定，实际发版日晚于 10.11 则改） |
+| 目标发行版本 | 2026.10.15 | 待发布。三 bug 修复 + 文档类 |
 | 当前已发布版本（现役） | 2026.9.20 | `manifest.json` / `package.json` version 均为 2026.9.20；`docs/release-notes/2026.9.20.md`；tag `v2026.9.20` |
 | 版本面一致性 | 通过 | `scripts/calver-guard.mjs` 接入 pretest（票 100 / A-054）；8 面一致 |
 | 上一已发布版本（可回滚目标） | 2026.9.15 | AMO + Edge 同日已过审上线（用户声明 2026-09-14）；再上一版 2026.9.12 仍在架，但为事故版 —— 连续两次回滚会回到它 |
@@ -32,9 +32,10 @@
 
 | 门 | 状态 | 证据 | 说明 |
 |---|---|---|---|
-| **G-A CI** | **达成** | run [35694278677](https://github.com/Xxx91n/boxing/actions/runs/35694278677) 四 job 全 success | 2026-09-22 终谳 |
-| **G-B 人工黄金路径** | **达成（用户声明）** | 2026-09-22 用户声明「人工已经声明通过，执行人 **Xxx91n**」2026.9.20 | 禁止 agent 代签 |
-| **G-C Pages** | **达成（升格口径）** | `npm run verify:pages-gc` **G-C PASS** expected=**2026.9.20** · version.json=`2026.9.20` deployedAt=2026-09-22T08:23:10Z · 三 URL 200 | deploy run [35704498181](https://github.com/Xxx91n/boxing/actions/runs/35704498181) + deploy-tail 收敛 |
+| **G-A CI** | **待复核** | 发布前在新 main tip 上 Test 须四 job 全绿 | 发布前复核 |
+| **G-B 人工黄金路径** | **待重新声明** | 版本号变化，旧声明不适用于 2026.10.15 产物 | 禁止 agent 代签 |
+| **G-C Pages** | **待发布后复核** | 发布后 `npm run verify:pages-gc` 应为 expected=2026.10.15 | — |
+| tag / Release | v2026.10.15 待发布 | — | 商店上传由用户手动完成 |
 
 ### G-C 实测锚点（2026-09-14）
 
@@ -163,6 +164,7 @@ Wave 2026.10.11 追加欠账（Round-2 grill 收口，实施见 `.scratch/wave10
 | 2026-09-14 | 票 105 / A-059：撤账判据（≥2 连续 main 全绿 + N/B/F 约束）写入 WORKFLOW §4.4 与 testing-governance.md；waiver-ledger-check 扩展为机器校验（closed 行须 ≥2 run 撤账证据） |
 | 2026-09-15 | 票 107–116 land origin/main tip `2f167ca7`；版本面 2026.9.20；**G-B 用户声明「测试通过」2026.9.20**（zip 黄金路径）；G-A CI / G-C Pages 待发行动作 |
 | 2026-09-22 | **2026.9.20 三门齐 + 发行**：G-A 35694278677 · G-B Xxx91n · G-C PASS（version.json=2026.9.20）· tag/Release v2026.9.20 · 商店已上架（用户「已经稳定」）· AMO lint 清零（去 data_collection_permissions + innerHTML→textContent）· 多余 zip/crx 清理（15→2） |
+| 2026-10-14 | **2026.10.15 版本推进**：D-003 native 拖选用例修复；CI 双语发行说明检查与 Pages 发布后自动派发；`amo_sign` 默认 `true`；发布指南新增发版强制规程 |
 | 2026-10-14 | 治理轮落地 main（`0dd21d5f`/`4a481ed5`/`48244706`）：ADR-0020/0021 建立（连接面域 + 暗色单宿主）、豁免台账迁入 testing-governance.md、AGENTS.md 瘦身、`.scratch` 解除追踪（本地保留）；A-053/055/060 销账；i18n brandName 残红复核 4/4 绿销账 |
 | 2026-09-15 | 票 113 / A-068：收敛单一现役状态块 —— 删/降级 §一 矛盾表（改为 §三 投影句）；§三 发行终谳填 2026-09-14 实测；三条旧 G-A run 标 **Superseded**；新增「有且只有一个状态块」页内硬契约（§三 / §六）；按 git 血缘把 tip `41fcf1e4` 修正为 `8a8798c9`（现役 tag `v2026.9.15` @ `cc30edcc`）；录具名 F-113-01（demo 渲染 v2026.9.12） |
 | 2026-10-05 | Wave 2026.10.11（Round-2）：**修正 §2 错误块**（此前仍把 2026.9.15 写作「目标发行版本」并硬编码 tip sha，与 §一/§三 的 2026.9.20 现役结论自相矛盾 —— 违反 §6 单一状态块契约）；改为「目标 2026.10.11（待发）+ 现役 2026.9.20」并取消 tip 硬编码（GitButler 工作区提交不进 HEAD 血缘，票 113 教训）。§五 追加 A-062..A-066 与 pre-existing 残红登记。§三 历史证据（`8a8798c9` 等）按「保留不删」原样留存 |

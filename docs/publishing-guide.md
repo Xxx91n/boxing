@@ -98,6 +98,8 @@ gh workflow run build.yml -f version=<VER> -f make_release=true -f amo_sign=true
 | 部署 | `demo-deploy.yml` deploy job 尾部 `node scripts/pages-gc-verify.mjs --mode=deploy-tail --timeout=180`（≤180s 不收敛即红） |
 | 发行人工检查 | `npm run verify:pages-gc`（默认比对最新 release tag）；失败按两态处置：`MISMATCH` = 部署链路未落地（重跑 demo-deploy / 查 environment 放行 tag）；`UNREACHABLE` = 存活-读取问题 |
 
+**发版后必须手动补跑 demo 部署（2026-10-14 实测）**：`demo-deploy.yml` 的 `release: published` 触发器不会被 `build.yml` 发布 Release 时触发，因为 Release 由 `GITHUB_TOKEN` 创建，GitHub 不会因此级联触发其他工作流。发版后执行：`gh workflow run demo-deploy.yml --ref v<version> -f version=<version>`，再跑 `npm run verify:pages-gc` 确认 PASS。
+
 **历史阻塞（已解除）**：`github-pages` environment 曾未放行 tag，release 触发的 deploy job 被保护规则拦截（run [34860199679](https://github.com/Xxx91n/boxing/actions/runs/34860199679)）；已解决 —— 2026-09-22 deploy 后 `GET demo/version.json` 实测 `version = 2026.9.20`。放行配置：Settings → Environments → github-pages → Deployment branches and tags 含 `v*`。Pages 构建源为 **GitHub Actions 单一模式**（`build_type: workflow`）。
 
 ## Part 6 — 本地验证（不烧号）
@@ -119,6 +121,18 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 - [ ] 截图非透明占位（若商店要求实图）
 - [ ] GitHub Release 无 xpi/crx，安装链到商店
 - [ ] 你知道 G-B 为强制豁免、G-A 以 CI 为准
+
+## 发版强制规程（2026-10-14 起，必须遵守）
+
+1. **版本号只能用一次（AMO 硬限制）**：Firefox AMO 上的版本号一旦上传（含 unlisted 签名、被删除、被禁用），永久不可复用。历史上曾有一个版本号因误选 unlisted 被永久占用，商店版本因此另起新号。发版前确认新版本号从未在 AMO 上出现过。
+2. **触发构建必须传 `amo_sign=true`**（工作流默认值已改为 `true`）：`false` 会让 CI 用 unlisted 渠道提交签名并永久占用版本号。需要公开上架时，由你在 AMO 后台以 **listed** 渠道上传 `boxing-firefox-<ver>.zip`。
+3. **发行说明必须双语**：`docs/release-notes/<ver>.md` 必须包含 `## English` 章节。构建工作流会在发布前检查，缺失则直接失败。
+4. **Pages demo 随发行自动部署**：`build.yml` 在发布 Release 后会自动派发 `demo-deploy.yml`（ref 为该 tag）。发版后仍需跑 `npm run verify:pages-gc` 确认 PASS。
+5. **标准发版命令**：
+   ```bash
+   gh workflow run build.yml --ref main -f make_release=true -f release_tag=v<ver> -f amo_sign=true
+   ```
+6. **G-B 声明**：构建产物变化（包括仅版本号变化）后，旧的 G-B 声明对新产物失效，需要重新声明。
 
 ## 附录 — 发行检查单模板（原 WORKFLOW §4.4）
 

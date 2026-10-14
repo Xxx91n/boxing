@@ -24,13 +24,14 @@ on:
         required: false
         default: ""
       amo_sign:
-        description: "Skip AMO signing (set true when the version is reserved for the LISTED-channel upload on AMO — signing here would burn it on unlisted)."
+        description: "true (default): skip CI AMO signing, leave the version free for a LISTED upload you do manually on AMO. false: CI signs unlisted and PERMANENTLY burns the version number on AMO — only if you intend that."
         required: false
-        default: "false"
+        default: "true"
         type: boolean
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
@@ -195,6 +196,16 @@ jobs:
             > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
+      - name: Check bilingual release notes
+        if: matrix.os == 'ubuntu-latest' && github.event.inputs.make_release == 'true'
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          f="docs/release-notes/${VER}.md"
+          test -f "$f" || { echo "::error::missing $f"; exit 1; }
+          grep -q '^## English' "$f" || { echo "::error::$f has no '## English' section — bilingual release notes are required"; exit 1; }
+
       - name: Publish GitHub Release (store zips only)
         if: matrix.os == 'ubuntu-latest' && github.event.inputs.make_release == 'true'
         uses: softprops/action-gh-release@v2
@@ -211,3 +222,14 @@ jobs:
           # Curated user-facing notes only. Never invent a template body here —
           # that overwrites the published changelog. Require docs/release-notes/<ver>.md.
           body_path: docs/release-notes/${{ steps.ver.outputs.version }}.md
+
+      # GITHUB_TOKEN-created releases do not trigger demo-deploy's `release` event, so dispatch it
+      # explicitly. workflow_dispatch is the one event GITHUB_TOKEN may trigger.
+      - name: Deploy Pages demo for this release
+        if: matrix.os == 'ubuntu-latest' && github.event.inputs.make_release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.inputs.release_tag != '' && github.event.inputs.release_tag || format('v{0}', steps.ver.outputs.version) }}
+          VER: ${{ steps.ver.outputs.version }}
+        run: gh workflow run demo-deploy.yml --ref "$TAG" -f version="$VER"

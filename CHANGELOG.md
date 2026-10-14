@@ -12,6 +12,19 @@ uploads and GitHub tags still follow the release gate. Install from official sto
 (see [publishing guide](docs/publishing-guide.md)); GitHub Releases are changelog-first
 and no longer ship `.xpi` / `.crx`.
 
+## [2026.10.15] - 2026-10-14
+
+User-facing notes for store listings and the GitHub Release body.
+
+### Fixed
+- **Connection lines no longer leak into other boxes** — a line between two small boxes in the same large box now shows only on that box's page, and deleting the source line no longer leaves copies behind. Lines between small boxes in different large boxes are kept in your data but not drawn (a console warning is logged).
+- **Dark mode switches back reliably** — switching from dark back to light no longer needs a new tab, and dark mode survives a refresh or a sync.
+- **Demo right-click returns to the box page** — the demo no longer shows the first-run tour overlay that blocked clicks; the overlay can also be closed with Esc.
+
+### Internal
+- New ADRs: ADR-0020 (connection surface resolution), ADR-0021 (single dark-mode host).
+- Governance: waiver ledger consolidated into `docs/testing-governance.md`; `.scratch/` work logs are local-only (untracked).
+
 ## [2026.9.20] - 2026-09-20
 
 User-facing notes for store listings and the GitHub Release body.
