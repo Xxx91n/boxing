@@ -24,9 +24,9 @@ because native input on the Firefox persistent context stalls (the
 [playwright#16095](https://github.com/microsoft/playwright/issues/16095) class). The history:
 tags were introduced in architecture-recovery ticket 01, governed since ticket 14, first five
 entries repaired at the ticket 18 expiry pass
-([.scratch/architecture-recovery/18-quarantine-expiry-report.md](../.scratch/architecture-recovery/18-quarantine-expiry-report.md)),
+(`.scratch/architecture-recovery/18-quarantine-expiry-report.md`),
 final 14 at ticket 27
-([.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md](../.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md)).
+(`.scratch/architecture-recovery/27-firefox-quarantine-convergence-report.md`).
 
 | Test (spec › title) | Chromium | Firefox | Registered | Due (30d) |
 | --- | --- | --- | --- | --- |
@@ -50,7 +50,7 @@ Tests that failed from host-load browser instability — not app defects — are
 with a CI re-verification due date instead of a `@quarantine` tag: they pass and stay in every
 lane, and the repair-or-retire default of tagged quarantine does not fit a host incident.
 Classification protocol and evidence: ticket 31
-([.scratch/architecture-recovery/31-state-sync-flaky-diagnosis-report.md](../.scratch/architecture-recovery/31-state-sync-flaky-diagnosis-report.md)).
+(`.scratch/architecture-recovery/31-state-sync-flaky-diagnosis-report.md`).
 
 | Test (spec › title) | Incident | Classification | Registered | Due (30d) |
 | --- | --- | --- | --- | --- |
