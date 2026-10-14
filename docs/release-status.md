@@ -8,7 +8,7 @@
 
 ## 一、结论（§三 的投影，非独立状态块）
 
-**现役结论：2026.10.15 已发布，G-A 与 G-C 已取证；G-B 待用户对新产物重新声明。** tag `v2026.10.15` 已打；GitHub Release 已发布（chrome / firefox / source zip + SHA256SUMS）；商店上传由用户手动完成。
+**现役结论：2026.10.15 已发布；G-A、G-B、G-C 三门均已达成。** tag `v2026.10.15` 已打；GitHub Release 已发布（chrome / firefox / source zip + SHA256SUMS）；商店上传由用户手动完成。
 
 > 本节只把 §三「发行终谳（2026-09-14 实测）」的结论投影到首屏；**本节不设状态表、不独立陈述门状态**。页内唯一现役状态块是 §三。
 
@@ -33,7 +33,7 @@
 | 门 | 状态 | 证据 | 说明 |
 |---|---|---|---|
 | **G-A CI** | **达成** | main Test run [38534398966](https://github.com/Xxx91n/boxing/actions/runs/38534398966)（tip `ecf71d21`）四 job 全 success | 2026-10-14 终谳 |
-| **G-B 人工黄金路径** | **待重新声明** | 2.10.15 产物须用户重新声明（旧声明不适用于新版本号的产物）；demo 右键项待复测 | 禁止 agent 代签 |
+| **G-B 人工黄金路径** | **达成（用户声明）** | 2026-10-14 用户声明「OK」，版本 2026.10.15，执行人 **xxx91n**；demo 右键项未由 agent 复测 | 禁止 agent 代签 |
 | **G-C Pages** | **达成（升格口径）** | `npm run verify:pages-gc` **G-C PASS** expected=**2026.10.15** · version.json=`2026.10.15` deployedAt=2026-10-14T08:35:57Z · 三 URL 200 | demo-deploy run [38536226842](https://github.com/Xxx91n/boxing/actions/runs/38536226842)（由 build.yml 发布后自动派发） |
 | tag / Release | v2026.10.15 已发布 | build run [38536192194](https://github.com/Xxx91n/boxing/actions/runs/38536192194) · chrome/firefox/source zip + SHA256SUMS | 商店上传由用户手动完成 |
 
@@ -165,6 +165,7 @@ Wave 2026.10.11 追加欠账（Round-2 grill 收口，实施见 `.scratch/wave10
 | 2026-09-15 | 票 107–116 land origin/main tip `2f167ca7`；版本面 2026.9.20；**G-B 用户声明「测试通过」2026.9.20**（zip 黄金路径）；G-A CI / G-C Pages 待发行动作 |
 | 2026-09-22 | **2026.9.20 三门齐 + 发行**：G-A 35694278677 · G-B Xxx91n · G-C PASS（version.json=2026.9.20）· tag/Release v2026.9.20 · 商店已上架（用户「已经稳定」）· AMO lint 清零（去 data_collection_permissions + innerHTML→textContent）· 多余 zip/crx 清理（15→2） |
 | 2026-10-14 | **2026.10.15 版本推进**：D-003 native 拖选用例修复；CI 双语发行说明检查与 Pages 发布后自动派发；`amo_sign` 默认 `true`；发布指南新增发版强制规程 |
+| 2026-10-14 | 2026.10.15 发行：Firefox 中文/英文发行说明已在 CI 检查通过；AMO 以 listed 渠道上传 `boxing-firefox-2026.10.15.zip`；G-B 用户声明通过（xxx91n） |
 | 2026-10-14 | 治理轮落地 main（`0dd21d5f`/`4a481ed5`/`48244706`）：ADR-0020/0021 建立（连接面域 + 暗色单宿主）、豁免台账迁入 testing-governance.md、AGENTS.md 瘦身、`.scratch` 解除追踪（本地保留）；A-053/055/060 销账；i18n brandName 残红复核 4/4 绿销账 |
 | 2026-09-15 | 票 113 / A-068：收敛单一现役状态块 —— 删/降级 §一 矛盾表（改为 §三 投影句）；§三 发行终谳填 2026-09-14 实测；三条旧 G-A run 标 **Superseded**；新增「有且只有一个状态块」页内硬契约（§三 / §六）；按 git 血缘把 tip `41fcf1e4` 修正为 `8a8798c9`（现役 tag `v2026.9.15` @ `cc30edcc`）；录具名 F-113-01（demo 渲染 v2026.9.12） |
 | 2026-10-05 | Wave 2026.10.11（Round-2）：**修正 §2 错误块**（此前仍把 2026.9.15 写作「目标发行版本」并硬编码 tip sha，与 §一/§三 的 2026.9.20 现役结论自相矛盾 —— 违反 §6 单一状态块契约）；改为「目标 2026.10.11（待发）+ 现役 2026.9.20」并取消 tip 硬编码（GitButler 工作区提交不进 HEAD 血缘，票 113 教训）。§五 追加 A-062..A-066 与 pre-existing 残红登记。§三 历史证据（`8a8798c9` 等）按「保留不删」原样留存 |
