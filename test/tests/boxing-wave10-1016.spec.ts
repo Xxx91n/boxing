@@ -102,6 +102,10 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     // facade (clearAutoBackupDue), never direct chrome.storage writes.
     expect(syncSrc).not.toContain('chrome.storage.local.remove');
     expect(syncSrc).toContain('clearAutoBackupDue');
+    // Catch-up requires the extension env (SW alarm hub exists only there);
+    // file:// lanes / demo stub must never trigger a boot backup.
+    expect(syncSrc).toContain('chrome.alarms');
+    expect(syncSrc).toContain('checkAutoBackupCatchUp');
   });
 
   // ── S-03 / D-003: Title selection focus machine ────────────────────────────
