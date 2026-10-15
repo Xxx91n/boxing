@@ -825,6 +825,14 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       lastRightExitAt = Date.now();
     }
   }
+  function onRightButtonDown(e) {
+    // LibreWolf/FF-family: the contextmenu event is the mousedown default
+    // action — on forks where that event never reaches the page, its
+    // preventDefault can never run and the native menu shows anyway.
+    // preventDefault on the right-button mousedown kills the menu upstream,
+    // before dispatch. Exit itself happens on release/contextmenu as before.
+    if (e.button === 2 && currentLargeBoxId) e.preventDefault();
+  }
 
   // ── keyboard ───────────────────────────────────────────
   function onKeyDown(e) {
@@ -1008,6 +1016,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // a no-op for the same gesture.
     document.addEventListener('mouseup', onRightButtonRelease);
     document.addEventListener('pointerup', onRightButtonRelease);
+    document.addEventListener('mousedown', onRightButtonDown);
     // BX-DEV-137++++: connect mode is now drag-based: mousedown on edge anchor
     // starts connect mode, user drags to target box, mouseup connects to nearest midpoint.
     // BX-142: update provisional SVG line endpoint via rAF throttle.

@@ -417,6 +417,8 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(ntpSrc).toContain('function onRightButtonRelease');
     expect(ntpSrc).toContain("document.addEventListener('mouseup', onRightButtonRelease)");
     expect(ntpSrc).toContain("document.addEventListener('pointerup', onRightButtonRelease)");
+    expect(ntpSrc).toContain('function onRightButtonDown');
+    expect(ntpSrc).toContain("document.addEventListener('mousedown', onRightButtonDown)");
     expect(ntpSrc).toContain('lastRightExitAt');
 
     // Behavioral: seed L1, enter it.
@@ -437,6 +439,22 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
       return (document.getElementById('inner') as HTMLElement).hidden;
     });
     expect(exitedByRelease).toBe(true);
+
+    // Upstream suppression: right-mousedown inside the box is preventDefaulted
+    // (kills the native menu in FF-family where contextmenu is the mousedown
+    // default action and may never reach the page — the LibreWolf failure mode).
+    await page.evaluate(() => {
+      document.querySelector('.large-box[data-id="L1"]')?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    });
+    await expect.poll(() => page.evaluate(() => !(document.getElementById('inner') as HTMLElement).hidden), { timeout: 5000 }).toBe(true);
+    const downPrevented = await page.evaluate(() => {
+      const ev = new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 2 });
+      return !document.dispatchEvent(ev);
+    });
+    expect(downPrevented).toBe(true);
+    await page.evaluate(() => {
+      document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 2 }));
+    });
 
     // The same gesture's trailing contextmenu (Chrome order) stays suppressed.
     const menuSuppressed = await page.evaluate(() => {
