@@ -4,11 +4,11 @@
 > 本页是**状态页**，不是门禁定义：与 [ADR-0017](adr/0017-release-data-gate.md) 冲突时以 ADR-0017 为准，并在此记 `revised`。
 > 豁免台账全表见 [testing-governance.md](testing-governance.md)「G-A 残红书面豁免台账」节；发行检查单模板见 [publishing-guide.md](publishing-guide.md) 附录。`.scratch/` 工作日志层为本地 untracked 证据。
 
-**最后核验（Last verified）：2026-10-14** · 现役 tag **`v2026.10.15`** · 现役发行版本 **2026.10.15（已发布）** · GitHub Release 已发布 · 商店 **待用户上传** · G-C version.json=`2026.10.15`
+**最后核验（Last verified）：2026-10-15** · 现役 tag **`v2026.10.16`** · 现役发行版本 **2026.10.16（已发布）** · GitHub Release 已发布 · 商店 **待用户上传** · G-C version.json=`2026.10.16` · G-B **待用户声明**
 
 ## 一、结论（§三 的投影，非独立状态块）
 
-**现役结论：2026.10.15 已发布；G-A、G-B、G-C 三门均已达成。** tag `v2026.10.15` 已打；GitHub Release 已发布（chrome / firefox / source zip + SHA256SUMS）；商店上传由用户手动完成。
+**现役结论：2026.10.16 已发 tag + Release；G-A、G-C 已达成；G-B 待用户声明。** tag `v2026.10.16` 已打（tip `62cf3ed6`）；GitHub Release 已发布（chrome / firefox / source zip + SHA256SUMS）；商店上传由用户手动完成；G-B 待用户黄金路径验收（含 LibreWolf demo 右键退回复验），声明后 §一/§三 同步更新。
 
 > 本节只把 §三「发行终谳（2026-09-14 实测）」的结论投影到首屏；**本节不设状态表、不独立陈述门状态**。页内唯一现役状态块是 §三。
 
@@ -18,10 +18,10 @@
 
 | 面 | 值 | 证据 |
 |---|---|---|
-| 目标发行版本 | 2026.10.15 | 已发布（2026-10-14）。三 bug 修复 + 文档类 |
-| 当前已发布版本（现役） | 2026.9.20 | `manifest.json` / `package.json` version 均为 2026.9.20；`docs/release-notes/2026.9.20.md`；tag `v2026.9.20` |
+| 目标发行版本 | 2026.10.16 | 已发布（2026-10-15）。S-01~S-05 + 复核轮 D-004 右键加固 + S-02 门面/catch-up 回归修复 |
+| 当前已发布版本（现役） | 2026.10.16 | `manifest.json` / `package.json` version 均为 2026.10.16；`docs/release-notes/2026.10.16.md`；tag `v2026.10.16` @ `62cf3ed6` |
 | 版本面一致性 | 通过 | `scripts/calver-guard.mjs` 接入 pretest（票 100 / A-054）；8 面一致 |
-| 上一已发布版本（可回滚目标） | 2026.9.15 | AMO + Edge 同日已过审上线（用户声明 2026-09-14）；再上一版 2026.9.12 仍在架，但为事故版 —— 连续两次回滚会回到它 |
+| 上一已发布版本（可回滚目标） | 2026.10.15 | tag `v2026.10.15`；AMO + Edge 已上架（用户声明 2026-10-14）；更早 2026.9.12 为事故版 —— 连续多次回滚会回到它 |
 | 当前 tip | 见 §三 发行终谳 | 本页不硬编码 tip sha：GitButler 工作区提交不进 HEAD 血缘（票 113 教训），故 tip 一律以 §三 / 发行 G-A run 为准 |
 
 回滚口径：CWS = 以新版本号重发上一版（注意连续两次回滚会回到事故版）；AMO = 回退至上一已批准版本，且限退一版、按 24h 更新窗口生效。
@@ -32,10 +32,10 @@
 
 | 门 | 状态 | 证据 | 说明 |
 |---|---|---|---|
-| **G-A CI** | **达成** | main Test run [38534398966](https://github.com/Xxx91n/boxing/actions/runs/38534398966)（tip `ecf71d21`）四 job 全 success | 2026-10-14 终谳 |
-| **G-B 人工黄金路径** | **达成（用户声明）** | 2026-10-14 用户声明「OK」，版本 2026.10.15，执行人 **xxx91n**；demo 右键项未由 agent 复测 | 禁止 agent 代签 |
-| **G-C Pages** | **达成（升格口径）** | `npm run verify:pages-gc` **G-C PASS** expected=**2026.10.15** · version.json=`2026.10.15` deployedAt=2026-10-14T08:35:57Z · 三 URL 200 | demo-deploy run [38536226842](https://github.com/Xxx91n/boxing/actions/runs/38536226842)（由 build.yml 发布后自动派发） |
-| tag / Release | v2026.10.15 已发布 | build run [38536192194](https://github.com/Xxx91n/boxing/actions/runs/38536192194) · chrome/firefox/source zip + SHA256SUMS | 商店上传由用户手动完成 |
+| **G-A CI** | **达成** | main Test run [38747294321](https://github.com/Xxx91n/boxing/actions/runs/38747294321)（tip `62cf3ed6`）四 job 全 success | 2026-10-15 终谳 |
+| **G-B 人工黄金路径** | **待用户声明** | 发版先行（复核轮 D-007 明令）；声明须含版本号 + 日期；须含 LibreWolf demo 右键退回复验项 | 禁止 agent 代签 |
+| **G-C Pages** | **达成（升格口径）** | version.json=`2026.10.16` deployedAt=2026-10-15T14:09:29Z | demo-deploy run [38748865821](https://github.com/Xxx91n/boxing/actions/runs/38748865821)（由 build.yml 发布重发后自动派发） |
+| tag / Release | v2026.10.16 已发布 @ `62cf3ed6` | build run [38748814081](https://github.com/Xxx91n/boxing/actions/runs/38748814081) · chrome/firefox/source zip + SHA256SUMS | 商店上传由用户手动完成 |
 
 ### G-C 实测锚点（2026-09-14）
 
@@ -129,6 +129,19 @@ Wave 2026.10.11 追加欠账（Round-2 grill 收口，实施见 `.scratch/wave10
 | A-065 | 回归测试矩阵（发版 gate）双浏览器全量 | D-011 / P-18 | Chromium 351 绿 · Firefox 349 绿（i18n 残红已销，见下） |
 | A-066 | 文档口径三项 + zip 政策 + README badge 动态化 | D-010 / P-16 / P-17 | implemented |
 
+Wave 2026.10.16（复核轮收口，spec 见 `.scratch/wave10-1016-grill/spec.md`，账本 `.scratch/wave10-1016-audit/`）：
+
+| 条目 | 内容 | 票 | 状态 |
+|---|---|---|---|
+| A-067 | S-01 favicon 冷路径：空 src 假错误消除 + display 恢复 | spec S-01 | implemented |
+| A-068 | S-02 备份 = SW 闹钟枢纽 + due-flag + NTP 补跑（ADR-0022）；含门面回归（PR #28）与 catch-up 环境门控（PR #29） | spec S-02 | implemented |
+| A-069 | S-03 标题首击全选：一次性无条件 mouseup preventDefault + FF caret 兜底 | spec S-03 | implemented |
+| A-070 | S-04 About 版本检查：version.json 主 + GH API 备 + 24h 缓存 | spec S-04 | implemented |
+| A-071 | S-05 URL 自动标题规则引擎（ADR-0023：match-pattern 子集 + 8 预设 + 精简多段后缀表） | spec S-05 | implemented |
+| A-072 | 复核轮 D-004 右键退回加固：锚点 button 门控 + button-2 release 兜底 + 尾随抑制 | 复核轮 D-004 | implemented（G-B 待验 LibreWolf） |
+| A-073 | favicon-fixture 确定性 e2e 车道（本地 mock favicon 源） | GH [#26](https://github.com/Xxx91n/boxing/issues/26) | deferred |
+| A-074 | 标题迁 input + 备份 SW 全权化（专属大重构轮） | GH [#25](https://github.com/Xxx91n/boxing/issues/25) | deferred |
+
 > **pre-existing 残红 → 已销账（2026-10-14 治理轮复核）**：`boxing-i18n-module` 曾 2 条因
 > `page.locator('[data-i18n="brandName"]')` 严格模式命中 2 个元素（header `span` 与
 > About tab `strong`，后者由 D-006 引入）而失败。后续审计修复已将定位器收窄为
@@ -169,3 +182,4 @@ Wave 2026.10.11 追加欠账（Round-2 grill 收口，实施见 `.scratch/wave10
 | 2026-10-14 | 治理轮落地 main（`0dd21d5f`/`4a481ed5`/`48244706`）：ADR-0020/0021 建立（连接面域 + 暗色单宿主）、豁免台账迁入 testing-governance.md、AGENTS.md 瘦身、`.scratch` 解除追踪（本地保留）；A-053/055/060 销账；i18n brandName 残红复核 4/4 绿销账 |
 | 2026-09-15 | 票 113 / A-068：收敛单一现役状态块 —— 删/降级 §一 矛盾表（改为 §三 投影句）；§三 发行终谳填 2026-09-14 实测；三条旧 G-A run 标 **Superseded**；新增「有且只有一个状态块」页内硬契约（§三 / §六）；按 git 血缘把 tip `41fcf1e4` 修正为 `8a8798c9`（现役 tag `v2026.9.15` @ `cc30edcc`）；录具名 F-113-01（demo 渲染 v2026.9.12） |
 | 2026-10-05 | Wave 2026.10.11（Round-2）：**修正 §2 错误块**（此前仍把 2026.9.15 写作「目标发行版本」并硬编码 tip sha，与 §一/§三 的 2026.9.20 现役结论自相矛盾 —— 违反 §6 单一状态块契约）；改为「目标 2026.10.11（待发）+ 现役 2026.9.20」并取消 tip 硬编码（GitButler 工作区提交不进 HEAD 血缘，票 113 教训）。§五 追加 A-062..A-066 与 pre-existing 残红登记。§三 历史证据（`8a8798c9` 等）按「保留不删」原样留存 |
+| 2026-10-15 | **2026.10.16 发行**：PR #27 合入 S-01~S-05 + 复核轮 D-004；CI 在合并 tip `6c6e702b` 抓两个 S-02 回归（data-golden gate2 门面直写 / catch-up 无环境门控污染 file:// 车道），经 PR #28/#29 修复，G-A run 38747294321 于 `62cf3ed6` 四 job 全绿；v2026.10.16 首次发在 `6c6e702b`（红 tip）已撤，release+tag 重发至 `62cf3ed6`；三端同步；demo 自动部署 version.json=2026.10.16。G-B 待用户声明。§五 追加 A-067..A-074 |
