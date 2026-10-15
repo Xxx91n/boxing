@@ -4,7 +4,7 @@
 > 保留心智模型：Chrome/Firefox 权限拆分、隐私页走 Pages、AMO 版号烧录教训、ADR-0017 门禁。
 > 已废除：「以 GitHub `.xpi`/`.crx` 为官方安装源」的旧叙述。
 
-## 当前发行口径（2026.9.20）
+## 当前发行口径（2026.10.16）
 
 | 渠道 | 角色 |
 |---|---|
@@ -32,9 +32,9 @@
 ## Part 1 — Firefox AMO 新版本
 
 1. [Developer Hub](https://addons.mozilla.org/developers/) → 你的 listing → **Upload New Version**
-2. 上传 **未签名** `boxing-firefox-2026.9.20.zip`（商店负责签名）
-3. 版本说明：用 `CHANGELOG.md` 中 **2026.9.20** 用户向条目（勿贴 git log）
-4. 若要求源码：上传 `boxing-source-2026.9.20.zip`，说明：Vanilla JS、无混淆、`npm ci && npm run build`
+2. 上传 **未签名** `boxing-firefox-2026.10.16.zip`（商店负责签名）
+3. 版本说明：用 `CHANGELOG.md` 中 **2026.10.16** 用户向条目（勿贴 git log）
+4. 若要求源码：上传 `boxing-source-2026.10.16.zip`，说明：Vanilla JS、无混淆、`npm ci && npm run build`
 5. 隐私政策 URL：https://boxing.xxx91n.com/privacy-policy.html
 6. Submit
 
@@ -43,7 +43,7 @@
 ## Part 2 — Edge Add-ons 新版本
 
 1. [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge/) → Boxing → 新提交/新包
-2. 上传 `boxing-chrome-2026.9.20.zip`
+2. 上传 `boxing-chrome-2026.10.16.zip`
 3. 文案与截图：`docs/store-assets/`
 4. 隐私政策 URL 同上
 5. Submit
