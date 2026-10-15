@@ -947,5 +947,53 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "Nova versão disponível: "
+  },
+  "autoTitleEnabled": {
+    "message": "Gerar título do favorito automaticamente"
+  },
+  "autoTitleHint": {
+    "message": "Derivar o título do favorito a partir da estrutura da URL usando regras"
+  },
+  "ruleColPattern": {
+    "message": "Padrão"
+  },
+  "ruleColType": {
+    "message": "Tipo de extração"
+  },
+  "ruleColActions": {
+    "message": "Ações"
+  },
+  "btnAddRule": {
+    "message": "+ Adicionar regra"
+  },
+  "btnResetRules": {
+    "message": "Restaurar padrões"
+  },
+  "ruleTypeDomainMain": {
+    "message": "Nome principal do domínio"
+  },
+  "ruleTypeFullHost": {
+    "message": "Nome de host completo"
+  },
+  "ruleTypeSubdomain": {
+    "message": "Subdomínio (ou domínio principal)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "Primeiro segmento do caminho"
+  },
+  "ruleTypeLastPath": {
+    "message": "Último segmento do caminho (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "Dois primeiros segmentos do caminho"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "Domínio + primeiro segmento"
+  },
+  "ruleTypeFullUrl": {
+    "message": "URL completa"
   }
 }

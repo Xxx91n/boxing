@@ -947,5 +947,53 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "Nouvelle version disponible : "
+  },
+  "autoTitleEnabled": {
+    "message": "Dériver automatiquement le titre du signet"
+  },
+  "autoTitleHint": {
+    "message": "Dériver le titre du signet à partir de la structure d’URL à l’aide de règles"
+  },
+  "ruleColPattern": {
+    "message": "Motif"
+  },
+  "ruleColType": {
+    "message": "Type d’extraction"
+  },
+  "ruleColActions": {
+    "message": "Actions"
+  },
+  "btnAddRule": {
+    "message": "+ Ajouter une règle"
+  },
+  "btnResetRules": {
+    "message": "Réinitialiser"
+  },
+  "ruleTypeDomainMain": {
+    "message": "Nom principal du domaine"
+  },
+  "ruleTypeFullHost": {
+    "message": "Nom d’hôte complet"
+  },
+  "ruleTypeSubdomain": {
+    "message": "Sous-domaine (repli sur domaine)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "Premier segment du chemin"
+  },
+  "ruleTypeLastPath": {
+    "message": "Dernier segment du chemin (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "Deux premiers segments du chemin"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "Domaine + premier segment"
+  },
+  "ruleTypeFullUrl": {
+    "message": "URL complète"
   }
 }

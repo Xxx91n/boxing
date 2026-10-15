@@ -947,5 +947,53 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "يتوفر إصدار جديد: "
+  },
+  "autoTitleEnabled": {
+    "message": "اشتقاق عنوان الإشارة المرجعية تلقائيًا"
+  },
+  "autoTitleHint": {
+    "message": "اشتقاق عنوان الإشارة المرجعية من بنية الرابط باستخدام القواعد"
+  },
+  "ruleColPattern": {
+    "message": "نمط المطابقة"
+  },
+  "ruleColType": {
+    "message": "نوع الاستخراج"
+  },
+  "ruleColActions": {
+    "message": "الإجراءات"
+  },
+  "btnAddRule": {
+    "message": "+ إضافة قاعدة"
+  },
+  "btnResetRules": {
+    "message": "إعادة التعيين إلى الافتراضي"
+  },
+  "ruleTypeDomainMain": {
+    "message": "اسم النطاق الرئيسي"
+  },
+  "ruleTypeFullHost": {
+    "message": "اسم المضيف الكامل"
+  },
+  "ruleTypeSubdomain": {
+    "message": "النطاق الفرعي (أو النطاق الرئيسي)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "الجزء الأول من المسار"
+  },
+  "ruleTypeLastPath": {
+    "message": "الجزء الأخير من المسار (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "أول جزأين من المسار"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "النطاق + الجزء الأول من المسار"
+  },
+  "ruleTypeFullUrl": {
+    "message": "الرابط الكامل"
   }
 }

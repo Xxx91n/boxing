@@ -947,5 +947,53 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "नया संस्करण उपलब्ध है: "
+  },
+  "autoTitleEnabled": {
+    "message": "बुकमार्क शीर्षक स्वचालित रूप से प्राप्त करें"
+  },
+  "autoTitleHint": {
+    "message": "नियमों का उपयोग करके URL संरचना से बुकमार्क शीर्षक प्राप्त करें"
+  },
+  "ruleColPattern": {
+    "message": "पैटर्न"
+  },
+  "ruleColType": {
+    "message": "निष्कर्षण प्रकार"
+  },
+  "ruleColActions": {
+    "message": "कार्रवाई"
+  },
+  "btnAddRule": {
+    "message": "+ नियम जोड़ें"
+  },
+  "btnResetRules": {
+    "message": "डिफ़ॉल्ट पर रीसेट करें"
+  },
+  "ruleTypeDomainMain": {
+    "message": "डोमेन मुख्य नाम"
+  },
+  "ruleTypeFullHost": {
+    "message": "पूर्ण होस्टनाम"
+  },
+  "ruleTypeSubdomain": {
+    "message": "सबडोमेन (अन्यथा मुख्य डोमेन)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "पहला पथ खंड"
+  },
+  "ruleTypeLastPath": {
+    "message": "अंतिम पथ खंड (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "पहले दो पथ खंड"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "डोमेन + पहला पथ खंड"
+  },
+  "ruleTypeFullUrl": {
+    "message": "पूर्ण URL"
   }
 }

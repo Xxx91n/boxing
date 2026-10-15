@@ -947,5 +947,53 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "Neue Version verfügbar: "
+  },
+  "autoTitleEnabled": {
+    "message": "Lesezeichentitel automatisch ableiten"
+  },
+  "autoTitleHint": {
+    "message": "Lesezeichentitel anhand von Regeln aus der URL-Struktur ableiten"
+  },
+  "ruleColPattern": {
+    "message": "Muster"
+  },
+  "ruleColType": {
+    "message": "Extraktionstyp"
+  },
+  "ruleColActions": {
+    "message": "Aktionen"
+  },
+  "btnAddRule": {
+    "message": "+ Regel hinzufügen"
+  },
+  "btnResetRules": {
+    "message": "Auf Standard zurücksetzen"
+  },
+  "ruleTypeDomainMain": {
+    "message": "Hauptdomäne"
+  },
+  "ruleTypeFullHost": {
+    "message": "Vollständiger Hostname"
+  },
+  "ruleTypeSubdomain": {
+    "message": "Subdomain (Fallback auf Hauptdomäne)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "Erstes Pfadsegment"
+  },
+  "ruleTypeLastPath": {
+    "message": "Letztes Pfadsegment (Slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "Erste zwei Pfadsegmente"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "Domäne + erstes Pfadsegment"
+  },
+  "ruleTypeFullUrl": {
+    "message": "Vollständige URL"
   }
 }

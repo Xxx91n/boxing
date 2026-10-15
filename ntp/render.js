@@ -97,10 +97,29 @@ export function initRenderFacade(deps) {
     el.addEventListener('mouseup', e => {
       if (guardFirstMouseUp) {
         guardFirstMouseUp = false;
+        e.preventDefault();
+        selectAllTitleText(el);
+      } else if (document.activeElement === el) {
+        // Second click on focused title: allow native caret placement,
+        // with Firefox caretPositionFromPoint ?? caretRangeFromPoint fallback if selection is still not collapsed
         const sel = window.getSelection();
-        if (sel && sel.isCollapsed && el === document.activeElement) {
-          e.preventDefault();
-          selectAllTitleText(el);
+        if (sel && !sel.isCollapsed) {
+          if (document.caretPositionFromPoint) {
+            const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
+            if (pos && pos.offsetNode && el.contains(pos.offsetNode)) {
+              const range = document.createRange();
+              range.setStart(pos.offsetNode, pos.offset);
+              range.collapse(true);
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+          } else if (document.caretRangeFromPoint) {
+            const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+            if (range && el.contains(range.startContainer)) {
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+          }
         }
       }
     });

@@ -692,38 +692,21 @@ export function initSyncEngineFacade(deps) {
 
     // ── Auto-backup scheduler ──────────────────────
     let autoBackupTimer = null;
-    let lastAutoBackupTs = 0;
 
-    // ADR-0009: chrome.alarms replaces setInterval — survives NTP page close + SW eviction.
-    // Listener registered ONCE at module scope; setupAutoBackup only creates/refreshes the alarm.
-    // Avoids leaking duplicate listeners on every settings change.
-    let __autoBackupAlarmListenerRegistered = false;
-    function ensureAutoBackupAlarmListener() {
-      if (__autoBackupAlarmListenerRegistered) return;
-      __autoBackupAlarmListenerRegistered = true;
-      try {
-        if (typeof chrome !== 'undefined' && chrome.alarms && chrome.alarms.onAlarm) {
-          chrome.alarms.onAlarm.addListener(function alarmHandler(alarm) {
-            if (alarm.name !== 'boxing-auto-backup') return;
-            const sec = layout.settings.autoBackupInterval || 0;
-            if (sec < 3600) return;
-            const now = Date.now();
-            if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
-            lastAutoBackupTs = now;
-            performBackup().then(() => debug('Auto-backup (alarm) done')).catch(e => debugErr('Auto-backup (alarm) err', e));
-          });
-        }
-      } catch (e) { debugWarn('chrome.alarms.onAlarm unavailable', e); }
-    }
-
-        // ADR-0009: chrome.alarms replaces setInterval — survives NTP page close + SW eviction
+    // ADR-0022: chrome.alarms hub in background SW; NTP page creates/ensures alarm.
+    // Duplicate onAlarm listener in NTP page removed to prevent double execution.
     function setupAutoBackup(sec) {
       if (autoBackupTimer) { clearInterval(autoBackupTimer); autoBackupTimer = null; }
-      if (!sec || sec < 3600) return;  // minimum 1 hour
-      // Try chrome.alarms first (works even when NTP page is closed)
+      if (!sec || sec < 3600) {
+        try {
+          if (typeof chrome !== 'undefined' && chrome.alarms) {
+            chrome.alarms.clear('boxing-auto-backup');
+          }
+        } catch (_) {}
+        return;
+      }
       try {
         if (typeof chrome !== 'undefined' && chrome.alarms) {
-          ensureAutoBackupAlarmListener();
           chrome.alarms.create('boxing-auto-backup', { periodInMinutes: Math.ceil(sec / 60) });
           debug('Auto-backup via chrome.alarms, period=' + Math.ceil(sec / 60) + 'min');
           return;
@@ -732,10 +715,47 @@ export function initSyncEngineFacade(deps) {
       // Fallback: setInterval (only works while NTP page is open)
       autoBackupTimer = setInterval(async () => {
         const now = Date.now();
-        if (lastAutoBackupTs && (now - lastAutoBackupTs) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
-        lastAutoBackupTs = now;
+        const last = layout.settings.lastBackupAt || 0;
+        if (last && (now - last) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
         try { await performBackup(); debug('Auto-backup done'); } catch (e) { debugErr('Auto-backup err', e); }
       }, sec * 1000);
+    }
+
+    async function checkAutoBackupCatchUp() {
+      const sec = layout.settings.autoBackupInterval || 0;
+      if (sec < 3600) return;
+      // Idempotently ensure alarm exists in SW (fixes Firefox alarms not persisting across sessions)
+      setupAutoBackup(sec);
+
+      let due = false;
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          const res = await new Promise((resolve) => {
+            chrome.storage.local.get(['autoBackupDue'], resolve);
+          });
+          if (res && res.autoBackupDue) due = true;
+        }
+      } catch (_) {}
+
+      const now = Date.now();
+      const last = layout.settings.lastBackupAt || 0;
+      const overdue = !last || (now - last) >= sec * 1000;
+
+      if (due || overdue) {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.remove('autoBackupDue');
+        }
+        if (last && (now - last) < sec * 900) {
+          debug('Auto-backup catch-up skipped: too close to last');
+          return;
+        }
+        try {
+          await performBackup();
+          debug('Auto-backup catch-up done');
+        } catch (e) {
+          debugErr('Auto-backup catch-up failed', e);
+        }
+      }
     }
 
 // Init-time wiring, called from ntp.js init() at the exact positions these statements
@@ -897,17 +917,30 @@ export function bindSyncBackupUi() {
       }
     });
     backupNowBtn?.addEventListener('click', () => performBackup());
-    // ADR-0009: listen for background SW auto-backup trigger
+    // ADR-0022: listen for background SW auto-backup trigger
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
         if (msg && msg.type === 'boxing-auto-backup-trigger') {
           debug('Auto-backup triggered by background alarm');
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.remove('autoBackupDue');
+          }
+          const sec = layout.settings.autoBackupInterval || 0;
+          const now = Date.now();
+          const last = layout.settings.lastBackupAt || 0;
+          if (sec >= 3600 && last && (now - last) < sec * 900) {
+            debug('Auto-backup skipped: too close to last');
+            sendResponse({ ok: true, skipped: true });
+            return;
+          }
           performBackup().then(() => sendResponse({ ok: true })).catch(e => sendResponse({ ok: false, error: e.message }));
           return true; // async response
         }
       });
     }
-    if (layout.settings.autoBackupInterval >= 3600) setupAutoBackup(layout.settings.autoBackupInterval);
+    if (layout.settings.autoBackupInterval >= 3600) {
+      checkAutoBackupCatchUp();
+    }
 
     const autoBackupSelect = document.getElementById('auto-backup-interval');
     autoBackupSelect?.addEventListener('change', () => {

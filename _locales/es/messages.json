@@ -947,5 +947,53 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "Nueva versión disponible: "
+  },
+  "autoTitleEnabled": {
+    "message": "Generar automáticamente el título del marcador"
+  },
+  "autoTitleHint": {
+    "message": "Derivar el título del marcador a partir de la estructura de la URL mediante reglas"
+  },
+  "ruleColPattern": {
+    "message": "Patrón"
+  },
+  "ruleColType": {
+    "message": "Tipo de extracción"
+  },
+  "ruleColActions": {
+    "message": "Acciones"
+  },
+  "btnAddRule": {
+    "message": "+ Añadir regla"
+  },
+  "btnResetRules": {
+    "message": "Restablecer"
+  },
+  "ruleTypeDomainMain": {
+    "message": "Nombre principal del dominio"
+  },
+  "ruleTypeFullHost": {
+    "message": "Nombre de host completo"
+  },
+  "ruleTypeSubdomain": {
+    "message": "Subdominio (con reserva a dominio)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "Primer segmento de ruta"
+  },
+  "ruleTypeLastPath": {
+    "message": "Último segmento de ruta (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "Primeros dos segmentos de ruta"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "Dominio + primer segmento"
+  },
+  "ruleTypeFullUrl": {
+    "message": "URL completa"
   }
 }

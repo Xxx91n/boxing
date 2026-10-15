@@ -14,6 +14,7 @@ import { applyTheme } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
 import { PRIVACY_URL } from './site-constants.js';
+import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
 
 let debug, debugErr, debugWarn, updateCaption;
 let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
@@ -32,6 +33,8 @@ export function initSettingsUiFacade(deps) {
 
   export function syncSettingsDOM() {
     initAboutTab();
+    initAutoTitleSettings();
+    if (layout.settings.lastSettingsTab === 'about') checkVersionUpdate();
     if (typeof langSelect !== 'undefined' && langSelect) langSelect.value = layout.settings.selectedLanguage || 'en';
     if (typeof rememberCheck !== 'undefined' && rememberCheck) rememberCheck.checked = layout.settings.rememberLastPos !== false;
     if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'sameTab';
@@ -309,6 +312,104 @@ export function initSettingsUiFacade(deps) {
     } catch (e) { debugErr('exportConflictCopy', e); }
   }
 
+function openLink(url) {
+  try {
+    const cr = globalThis.chrome || globalThis.browser;
+    if (cr?.tabs?.create) {
+      cr.tabs.create({ url, active: true });
+    } else { window.open(url, '_blank', 'noopener'); }
+  } catch (_) { window.open(url, '_blank', 'noopener'); }
+}
+
+function compareVersions(v1, v2) {
+  const p1 = String(v1).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  const p2 = String(v2).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const a = p1[i] || 0;
+    const b = p2[i] || 0;
+    if (a > b) return 1;
+    if (a < b) return -1;
+  }
+  return 0;
+}
+
+export async function checkVersionUpdate() {
+  const hintEl = document.getElementById('about-update-hint');
+  if (!hintEl) return;
+  const versionValEl = document.getElementById('about-version-value');
+  const currentVer = (versionValEl?.textContent || '').trim().replace(/^v/i, '');
+  if (!currentVer || currentVer === '–') return;
+
+  const cr = globalThis.chrome || globalThis.browser;
+  const CACHE_KEY = 'boxingVersionCache';
+  const TTL = 24 * 60 * 60 * 1000;
+
+  try {
+    let cached = null;
+    if (cr?.storage?.local) {
+      const res = await new Promise(r => cr.storage.local.get([CACHE_KEY], r));
+      cached = res?.[CACHE_KEY];
+    }
+    const now = Date.now();
+    let latest = cached?.latest;
+    let releaseUrl = cached?.url || 'https://github.com/Xxx91n/boxing/releases';
+
+    if (!latest || (now - (cached?.ts || 0)) >= TTL) {
+      let fetched = null;
+      try {
+        const res = await fetch('https://boxing.xxx91n.com/version.json', { cache: 'no-cache' });
+        if (res.ok) {
+          const data = await res.json();
+          fetched = {
+            latest: (data.version || data.tag_name || data.latest || '').trim(),
+            url: data.url || 'https://github.com/Xxx91n/boxing/releases'
+          };
+        }
+      } catch (_) {
+        try {
+          const ghRes = await fetch('https://api.github.com/repos/Xxx91n/boxing/releases/latest', { cache: 'no-cache' });
+          if (ghRes.ok) {
+            const ghData = await ghRes.json();
+            fetched = {
+              latest: (ghData.tag_name || ghData.name || '').trim(),
+              url: ghData.html_url || 'https://github.com/Xxx91n/boxing/releases'
+            };
+          }
+        } catch (_) {}
+      }
+
+      if (fetched && fetched.latest) {
+        latest = fetched.latest;
+        releaseUrl = fetched.url;
+        if (cr?.storage?.local) {
+          cr.storage.local.set({ [CACHE_KEY]: { ts: now, latest, url: releaseUrl } });
+        }
+      }
+    }
+
+    if (latest && compareVersions(currentVer, latest) < 0) {
+      hintEl.hidden = false;
+      hintEl.innerHTML = '';
+      const prefix = document.createTextNode((i18n('aboutUpdateAvailable') || 'New version available: ') + ' ');
+      const link = document.createElement('a');
+      link.href = releaseUrl;
+      link.textContent = 'v' + latest.replace(/^v/i, '');
+      link.style.cssText = 'color:var(--color-accent);text-decoration:underline;cursor:pointer;';
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        openLink(releaseUrl);
+      });
+      hintEl.append(prefix, link);
+    } else {
+      hintEl.hidden = true;
+      hintEl.textContent = '';
+    }
+  } catch (_) {
+    hintEl.hidden = true;
+    hintEl.textContent = '';
+  }
+}
+
 let _aboutTabInited = false;
 export function initAboutTab() {
   const versionEl = document.getElementById('about-version-value');
@@ -321,14 +422,6 @@ export function initAboutTab() {
   }
   if (_aboutTabInited) return;
   _aboutTabInited = true;
-  function openLink(url) {
-    try {
-      const cr = globalThis.chrome || globalThis.browser;
-      if (cr?.tabs?.create) {
-        cr.tabs.create({ url, active: true });
-      } else { window.open(url, '_blank', 'noopener'); }
-    } catch (_) { window.open(url, '_blank', 'noopener'); }
-  }
   const links = {
     'about-link-repo': 'https://github.com/Xxx91n/boxing',
     'about-link-issues': 'https://github.com/Xxx91n/boxing/issues',
@@ -339,6 +432,142 @@ export function initAboutTab() {
     const btn = document.getElementById(id);
     if (btn) btn.addEventListener('click', () => openLink(url));
   }
+}
+
+function initAutoTitleSettings() {
+  const enabledCb = document.getElementById('auto-title-enabled');
+  const container = document.getElementById('auto-title-rules-container');
+  const tbody = document.getElementById('auto-title-rules-tbody');
+  const addBtn = document.getElementById('btn-add-rule');
+  const resetBtn = document.getElementById('btn-reset-rules');
+  if (!enabledCb || !tbody) return;
+
+  const isEnabled = layout.settings.autoTitleEnabled !== false;
+  enabledCb.checked = isEnabled;
+  if (container) container.style.display = isEnabled ? '' : 'none';
+
+  enabledCb.addEventListener('change', () => {
+    layout.settings.autoTitleEnabled = enabledCb.checked;
+    if (container) container.style.display = enabledCb.checked ? '' : 'none';
+    saveLayout();
+  });
+
+  if (!Array.isArray(layout.settings.autoTitleRules) || layout.settings.autoTitleRules.length === 0) {
+    layout.settings.autoTitleRules = DEFAULT_AUTO_TITLE_RULES.map(r => ({ ...r }));
+  }
+
+  function renderRows() {
+    tbody.innerHTML = '';
+    const rules = layout.settings.autoTitleRules || [];
+    rules.forEach((rule, idx) => {
+      const tr = document.createElement('tr');
+      tr.style.cssText = 'border-bottom:1px solid var(--color-hairline);';
+
+      const tdPattern = document.createElement('td');
+      tdPattern.style.cssText = 'padding:4px;';
+      const patInput = document.createElement('input');
+      patInput.type = 'text';
+      patInput.value = rule.pattern || '';
+      patInput.style.cssText = 'width:100%;padding:2px 4px;font-size:var(--fs-xs);border:1px solid var(--color-hairline);border-radius:3px;background:var(--color-surface);color:var(--color-ink);';
+      patInput.addEventListener('change', () => {
+        rule.pattern = patInput.value.trim();
+        saveLayout();
+      });
+      tdPattern.appendChild(patInput);
+
+      const tdType = document.createElement('td');
+      tdType.style.cssText = 'padding:4px;';
+      const typeSelect = document.createElement('select');
+      typeSelect.style.cssText = 'width:100%;padding:2px 4px;font-size:var(--fs-xs);border:1px solid var(--color-hairline);border-radius:3px;background:var(--color-surface);color:var(--color-ink);';
+      const typeKeyMap = {
+        'domain-main': 'ruleTypeDomainMain',
+        'full-host': 'ruleTypeFullHost',
+        'subdomain': 'ruleTypeSubdomain',
+        'first-path': 'ruleTypeFirstPath',
+        'last-path': 'ruleTypeLastPath',
+        'first-two-paths': 'ruleTypeFirstTwoPaths',
+        'domain-first-path': 'ruleTypeDomainFirstPath',
+        'full-url': 'ruleTypeFullUrl',
+      };
+      EXTRACTION_TYPES.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = i18n(typeKeyMap[t]) || t;
+        if (t === rule.type) opt.selected = true;
+        typeSelect.appendChild(opt);
+      });
+      typeSelect.addEventListener('change', () => {
+        rule.type = typeSelect.value;
+        saveLayout();
+      });
+      tdType.appendChild(typeSelect);
+
+      const tdActions = document.createElement('td');
+      tdActions.style.cssText = 'padding:4px;text-align:right;white-space:nowrap;';
+
+      const upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.textContent = '↑';
+      upBtn.title = 'Move Up';
+      upBtn.disabled = idx === 0;
+      upBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
+      upBtn.addEventListener('click', () => {
+        if (idx > 0) {
+          const tmp = rules[idx - 1];
+          rules[idx - 1] = rules[idx];
+          rules[idx] = tmp;
+          saveLayout();
+          renderRows();
+        }
+      });
+
+      const downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.textContent = '↓';
+      downBtn.title = 'Move Down';
+      downBtn.disabled = idx === rules.length - 1;
+      downBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
+      downBtn.addEventListener('click', () => {
+        if (idx < rules.length - 1) {
+          const tmp = rules[idx + 1];
+          rules[idx + 1] = rules[idx];
+          rules[idx] = tmp;
+          saveLayout();
+          renderRows();
+        }
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.textContent = '×';
+      delBtn.title = 'Delete';
+      delBtn.style.cssText = 'padding:1px 5px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;color:red;';
+      delBtn.addEventListener('click', () => {
+        rules.splice(idx, 1);
+        saveLayout();
+        renderRows();
+      });
+
+      tdActions.append(upBtn, downBtn, delBtn);
+      tr.append(tdPattern, tdType, tdActions);
+      tbody.appendChild(tr);
+    });
+  }
+
+  renderRows();
+
+  addBtn?.addEventListener('click', () => {
+    layout.settings.autoTitleRules = layout.settings.autoTitleRules || [];
+    layout.settings.autoTitleRules.push({ pattern: 'https://*/*', type: 'domain-main' });
+    saveLayout();
+    renderRows();
+  });
+
+  resetBtn?.addEventListener('click', () => {
+    layout.settings.autoTitleRules = DEFAULT_AUTO_TITLE_RULES.map(r => ({ ...r }));
+    saveLayout();
+    renderRows();
+  });
 }
 
 // Init-time wiring, called from ntp.js init() at the position of the original statement blocks.
@@ -365,6 +594,7 @@ export function bindSettingsUi() {
         document.querySelectorAll('.settings-tab').forEach(t => t.hidden = true);
         const tab = document.getElementById('tab-' + tabId);
         if (tab) tab.hidden = false;
+        if (tabId === 'about') checkVersionUpdate();
         document.querySelector('.settings-content')?.scrollTo({ top: 0 });
       });
     });

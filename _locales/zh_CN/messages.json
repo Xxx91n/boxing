@@ -950,5 +950,53 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "发现新版本："
+  },
+  "autoTitleEnabled": {
+    "message": "书签自动标题"
+  },
+  "autoTitleHint": {
+    "message": "根据 URL 结构与规则自动填充书签标题"
+  },
+  "ruleColPattern": {
+    "message": "匹配模式"
+  },
+  "ruleColType": {
+    "message": "提取类型"
+  },
+  "ruleColActions": {
+    "message": "操作"
+  },
+  "btnAddRule": {
+    "message": "+ 添加规则"
+  },
+  "btnResetRules": {
+    "message": "恢复出厂规则"
+  },
+  "ruleTypeDomainMain": {
+    "message": "域名主体"
+  },
+  "ruleTypeFullHost": {
+    "message": "完整主机名"
+  },
+  "ruleTypeSubdomain": {
+    "message": "子域名（无则回落域名主体）"
+  },
+  "ruleTypeFirstPath": {
+    "message": "路径首段"
+  },
+  "ruleTypeLastPath": {
+    "message": "路径末段（slug 清洗）"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "路径前两段"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "域名主体 + 路径首段"
+  },
+  "ruleTypeFullUrl": {
+    "message": "完整 URL"
   }
 }
