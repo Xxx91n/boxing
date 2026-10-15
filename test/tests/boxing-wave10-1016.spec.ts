@@ -174,4 +174,119 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     await page.locator('#btn-reset-rules').click();
     await expect(rows).toHaveCount(2);
   });
+
+  // ── B-1 / B-2 Regression Tests (Audit Round-1 Blockers) ───────────────────
+  test('B-1 regression: reopening settings modal does not accumulate listeners; add rule adds exactly 1 row', async ({ page }) => {
+    await boot(page);
+
+    // Open settings modal first time
+    await page.locator('#settings-btn').click();
+    await expect(page.locator('#settings-modal')).toBeVisible();
+
+    // Close settings modal
+    await page.locator('#settings-modal .modal__close').click();
+    await expect(page.locator('#settings-modal')).toBeHidden();
+
+    // Reopen settings modal second time
+    await page.locator('#settings-btn').click();
+    await expect(page.locator('#settings-modal')).toBeVisible();
+
+    // Also trigger applyExternalLayout to ensure sync does not accumulate listeners
+    await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      if (dbg && dbg.layout) {
+        dbg.applyExternalLayout(JSON.parse(JSON.stringify(dbg.layout)));
+      }
+    });
+
+    const rows = page.locator('#auto-title-rules-tbody tr');
+    const initialCount = await rows.count();
+
+    // Click Add Rule button once
+    await page.locator('#btn-add-rule').click();
+
+    // Exactly 1 row must be added
+    await expect(rows).toHaveCount(initialCount + 1);
+  });
+
+  test('B-2 regression: applyExternalLayout does not trigger version check fetch; only About tab triggers it', async ({ page }) => {
+    await boot(page);
+
+    let versionFetchCount = 0;
+    await page.route('**/version.json*', route => {
+      versionFetchCount++;
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ version: '2026.10.17', url: 'https://github.com/Xxx91n/boxing' })
+      });
+    });
+
+    // 1. Simulate external sync adopting lastSettingsTab: 'about' while modal is closed
+    const applied = await page.evaluate(async () => {
+      // Mock chrome.runtime.getManifest and chrome.storage.local for file:// test environment
+      (window as any).chrome = (window as any).chrome || {};
+      (window as any).chrome.runtime = (window as any).chrome.runtime || {};
+      (window as any).chrome.runtime.getManifest = () => ({ version: '2026.10.15' });
+
+      const mockStore: Record<string, any> = {};
+      (window as any).chrome.storage = {
+        local: {
+          get: (keys: string[], cb: any) => {
+            const res: Record<string, any> = {};
+            keys.forEach(k => { res[k] = mockStore[k]; });
+            if (typeof cb === 'function') cb(res);
+            return Promise.resolve(res);
+          },
+          set: (items: Record<string, any>, cb: any) => {
+            Object.assign(mockStore, items);
+            if (typeof cb === 'function') cb();
+            return Promise.resolve();
+          },
+          remove: (keys: string[], cb: any) => {
+            keys.forEach(k => { delete mockStore[k]; });
+            if (typeof cb === 'function') cb();
+            return Promise.resolve();
+          }
+        }
+      };
+
+      const verEl = document.getElementById('about-version-value');
+      if (verEl) verEl.textContent = '2026.10.15';
+
+      const dbg = (window as any).__boxingDebug;
+      if (dbg && dbg.layout) {
+        const snap = JSON.parse(JSON.stringify(dbg.layout));
+        snap.settings = snap.settings || {};
+        snap.settings.lastSettingsTab = 'about';
+        snap._meta = {
+          writerId: 'remote-test-peer',
+          revision: (Number(dbg.layout._meta?.revision) || 0) + 1,
+          updatedAt: Date.now() + 1000
+        };
+        return dbg.applyExternalLayout(snap);
+      }
+      return false;
+    });
+
+    expect(applied).toBe(true);
+
+    // Wait 300ms — assert NO fetch happened while modal is closed
+    await page.waitForTimeout(300);
+    expect(versionFetchCount, 'applyExternalLayout must not trigger version.json fetch').toBe(0);
+
+    // 2. Open Settings modal — it restores lastSettingsTab ('about') and SHOULD trigger checkVersionUpdate
+    await page.locator('#settings-btn').click();
+    await expect(page.locator('#settings-modal')).toBeVisible();
+
+    // About tab is now active, version.json fetch must trigger
+    await expect.poll(() => versionFetchCount, { timeout: 5000 }).toBe(1);
+    await expect(page.locator('#about-update-hint')).toBeVisible();
+
+    // 3. Re-navigating to About within 24h uses cache
+    await page.locator('.settings-nav__item[data-tab="general"]').click();
+    await page.locator('.settings-nav__item[data-tab="about"]').click();
+    await page.waitForTimeout(200);
+    expect(versionFetchCount, 'Within 24h TTL, version check uses cache').toBe(1);
+  });
 });

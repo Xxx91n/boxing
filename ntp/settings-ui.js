@@ -33,8 +33,7 @@ export function initSettingsUiFacade(deps) {
 
   export function syncSettingsDOM() {
     initAboutTab();
-    initAutoTitleSettings();
-    if (layout.settings.lastSettingsTab === 'about') checkVersionUpdate();
+    syncAutoTitleDOM();
     if (typeof langSelect !== 'undefined' && langSelect) langSelect.value = layout.settings.selectedLanguage || 'en';
     if (typeof rememberCheck !== 'undefined' && rememberCheck) rememberCheck.checked = layout.settings.rememberLastPos !== false;
     if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'sameTab';
@@ -186,6 +185,7 @@ export function initSettingsUiFacade(deps) {
       document.querySelectorAll('.settings-nav__item').forEach(b => b.classList.toggle('settings-nav__item--active', b === tabToClick));
       document.querySelectorAll('.settings-tab').forEach(t => { t.hidden = t.id !== 'tab-' + tabToClick.dataset.tab; });
       document.querySelector('.settings-content')?.scrollTo({ top: 0 });
+      if (tabToClick.dataset.tab === 'about') checkVersionUpdate();
     }
   }
 
@@ -434,145 +434,162 @@ export function initAboutTab() {
   }
 }
 
-function initAutoTitleSettings() {
+let _autoTitleInited = false;
+
+function renderAutoTitleRows() {
+  const tbody = document.getElementById('auto-title-rules-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const rules = layout.settings.autoTitleRules || [];
+  rules.forEach((rule, idx) => {
+    const tr = document.createElement('tr');
+    tr.style.cssText = 'border-bottom:1px solid var(--color-hairline);';
+
+    const tdPattern = document.createElement('td');
+    tdPattern.style.cssText = 'padding:4px;';
+    const patInput = document.createElement('input');
+    patInput.type = 'text';
+    patInput.value = rule.pattern || '';
+    patInput.style.cssText = 'width:100%;padding:2px 4px;font-size:var(--fs-xs);border:1px solid var(--color-hairline);border-radius:3px;background:var(--color-surface);color:var(--color-ink);';
+    patInput.addEventListener('change', () => {
+      rule.pattern = patInput.value.trim();
+      saveLayout();
+    });
+    tdPattern.appendChild(patInput);
+
+    const tdType = document.createElement('td');
+    tdType.style.cssText = 'padding:4px;';
+    const typeSelect = document.createElement('select');
+    typeSelect.style.cssText = 'width:100%;padding:2px 4px;font-size:var(--fs-xs);border:1px solid var(--color-hairline);border-radius:3px;background:var(--color-surface);color:var(--color-ink);';
+    const typeKeyMap = {
+      'domain-main': 'ruleTypeDomainMain',
+      'full-host': 'ruleTypeFullHost',
+      'subdomain': 'ruleTypeSubdomain',
+      'first-path': 'ruleTypeFirstPath',
+      'last-path': 'ruleTypeLastPath',
+      'first-two-paths': 'ruleTypeFirstTwoPaths',
+      'domain-first-path': 'ruleTypeDomainFirstPath',
+      'full-url': 'ruleTypeFullUrl',
+    };
+    EXTRACTION_TYPES.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = i18n(typeKeyMap[t]) || t;
+      if (t === rule.type) opt.selected = true;
+      typeSelect.appendChild(opt);
+    });
+    typeSelect.addEventListener('change', () => {
+      rule.type = typeSelect.value;
+      saveLayout();
+    });
+    tdType.appendChild(typeSelect);
+
+    const tdActions = document.createElement('td');
+    tdActions.style.cssText = 'padding:4px;text-align:right;white-space:nowrap;';
+
+    const upBtn = document.createElement('button');
+    upBtn.type = 'button';
+    upBtn.textContent = '↑';
+    upBtn.title = 'Move Up';
+    upBtn.disabled = idx === 0;
+    upBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
+    upBtn.addEventListener('click', () => {
+      if (idx > 0) {
+        const tmp = rules[idx - 1];
+        rules[idx - 1] = rules[idx];
+        rules[idx] = tmp;
+        saveLayout();
+        renderAutoTitleRows();
+      }
+    });
+
+    const downBtn = document.createElement('button');
+    downBtn.type = 'button';
+    downBtn.textContent = '↓';
+    downBtn.title = 'Move Down';
+    downBtn.disabled = idx === rules.length - 1;
+    downBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
+    downBtn.addEventListener('click', () => {
+      if (idx < rules.length - 1) {
+        const tmp = rules[idx + 1];
+        rules[idx + 1] = rules[idx];
+        rules[idx] = tmp;
+        saveLayout();
+        renderAutoTitleRows();
+      }
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.textContent = '×';
+    delBtn.title = 'Delete';
+    delBtn.style.cssText = 'padding:1px 5px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;color:red;';
+    delBtn.addEventListener('click', () => {
+      rules.splice(idx, 1);
+      saveLayout();
+      renderAutoTitleRows();
+    });
+
+    tdActions.append(upBtn, downBtn, delBtn);
+    tr.append(tdPattern, tdType, tdActions);
+    tbody.appendChild(tr);
+  });
+}
+
+export function syncAutoTitleDOM() {
   const enabledCb = document.getElementById('auto-title-enabled');
   const container = document.getElementById('auto-title-rules-container');
   const tbody = document.getElementById('auto-title-rules-tbody');
-  const addBtn = document.getElementById('btn-add-rule');
-  const resetBtn = document.getElementById('btn-reset-rules');
   if (!enabledCb || !tbody) return;
 
   const isEnabled = layout.settings.autoTitleEnabled !== false;
   enabledCb.checked = isEnabled;
   if (container) container.style.display = isEnabled ? '' : 'none';
 
-  enabledCb.addEventListener('change', () => {
-    layout.settings.autoTitleEnabled = enabledCb.checked;
-    if (container) container.style.display = enabledCb.checked ? '' : 'none';
-    saveLayout();
-  });
-
   if (!Array.isArray(layout.settings.autoTitleRules) || layout.settings.autoTitleRules.length === 0) {
     layout.settings.autoTitleRules = DEFAULT_AUTO_TITLE_RULES.map(r => ({ ...r }));
   }
 
-  function renderRows() {
-    tbody.innerHTML = '';
-    const rules = layout.settings.autoTitleRules || [];
-    rules.forEach((rule, idx) => {
-      const tr = document.createElement('tr');
-      tr.style.cssText = 'border-bottom:1px solid var(--color-hairline);';
+  renderAutoTitleRows();
+}
 
-      const tdPattern = document.createElement('td');
-      tdPattern.style.cssText = 'padding:4px;';
-      const patInput = document.createElement('input');
-      patInput.type = 'text';
-      patInput.value = rule.pattern || '';
-      patInput.style.cssText = 'width:100%;padding:2px 4px;font-size:var(--fs-xs);border:1px solid var(--color-hairline);border-radius:3px;background:var(--color-surface);color:var(--color-ink);';
-      patInput.addEventListener('change', () => {
-        rule.pattern = patInput.value.trim();
-        saveLayout();
-      });
-      tdPattern.appendChild(patInput);
+export function initAutoTitleSettings() {
+  const enabledCb = document.getElementById('auto-title-enabled');
+  const container = document.getElementById('auto-title-rules-container');
+  const addBtn = document.getElementById('btn-add-rule');
+  const resetBtn = document.getElementById('btn-reset-rules');
+  if (!enabledCb) return;
 
-      const tdType = document.createElement('td');
-      tdType.style.cssText = 'padding:4px;';
-      const typeSelect = document.createElement('select');
-      typeSelect.style.cssText = 'width:100%;padding:2px 4px;font-size:var(--fs-xs);border:1px solid var(--color-hairline);border-radius:3px;background:var(--color-surface);color:var(--color-ink);';
-      const typeKeyMap = {
-        'domain-main': 'ruleTypeDomainMain',
-        'full-host': 'ruleTypeFullHost',
-        'subdomain': 'ruleTypeSubdomain',
-        'first-path': 'ruleTypeFirstPath',
-        'last-path': 'ruleTypeLastPath',
-        'first-two-paths': 'ruleTypeFirstTwoPaths',
-        'domain-first-path': 'ruleTypeDomainFirstPath',
-        'full-url': 'ruleTypeFullUrl',
-      };
-      EXTRACTION_TYPES.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t;
-        opt.textContent = i18n(typeKeyMap[t]) || t;
-        if (t === rule.type) opt.selected = true;
-        typeSelect.appendChild(opt);
-      });
-      typeSelect.addEventListener('change', () => {
-        rule.type = typeSelect.value;
-        saveLayout();
-      });
-      tdType.appendChild(typeSelect);
+  if (!_autoTitleInited) {
+    _autoTitleInited = true;
 
-      const tdActions = document.createElement('td');
-      tdActions.style.cssText = 'padding:4px;text-align:right;white-space:nowrap;';
+    enabledCb.addEventListener('change', () => {
+      layout.settings.autoTitleEnabled = enabledCb.checked;
+      if (container) container.style.display = enabledCb.checked ? '' : 'none';
+      saveLayout();
+    });
 
-      const upBtn = document.createElement('button');
-      upBtn.type = 'button';
-      upBtn.textContent = '↑';
-      upBtn.title = 'Move Up';
-      upBtn.disabled = idx === 0;
-      upBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
-      upBtn.addEventListener('click', () => {
-        if (idx > 0) {
-          const tmp = rules[idx - 1];
-          rules[idx - 1] = rules[idx];
-          rules[idx] = tmp;
-          saveLayout();
-          renderRows();
-        }
-      });
+    addBtn?.addEventListener('click', () => {
+      layout.settings.autoTitleRules = layout.settings.autoTitleRules || [];
+      layout.settings.autoTitleRules.push({ pattern: 'https://*/*', type: 'domain-main' });
+      saveLayout();
+      renderAutoTitleRows();
+    });
 
-      const downBtn = document.createElement('button');
-      downBtn.type = 'button';
-      downBtn.textContent = '↓';
-      downBtn.title = 'Move Down';
-      downBtn.disabled = idx === rules.length - 1;
-      downBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
-      downBtn.addEventListener('click', () => {
-        if (idx < rules.length - 1) {
-          const tmp = rules[idx + 1];
-          rules[idx + 1] = rules[idx];
-          rules[idx] = tmp;
-          saveLayout();
-          renderRows();
-        }
-      });
-
-      const delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.textContent = '×';
-      delBtn.title = 'Delete';
-      delBtn.style.cssText = 'padding:1px 5px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;color:red;';
-      delBtn.addEventListener('click', () => {
-        rules.splice(idx, 1);
-        saveLayout();
-        renderRows();
-      });
-
-      tdActions.append(upBtn, downBtn, delBtn);
-      tr.append(tdPattern, tdType, tdActions);
-      tbody.appendChild(tr);
+    resetBtn?.addEventListener('click', () => {
+      layout.settings.autoTitleRules = DEFAULT_AUTO_TITLE_RULES.map(r => ({ ...r }));
+      saveLayout();
+      renderAutoTitleRows();
     });
   }
 
-  renderRows();
-
-  addBtn?.addEventListener('click', () => {
-    layout.settings.autoTitleRules = layout.settings.autoTitleRules || [];
-    layout.settings.autoTitleRules.push({ pattern: 'https://*/*', type: 'domain-main' });
-    saveLayout();
-    renderRows();
-  });
-
-  resetBtn?.addEventListener('click', () => {
-    layout.settings.autoTitleRules = DEFAULT_AUTO_TITLE_RULES.map(r => ({ ...r }));
-    saveLayout();
-    renderRows();
-  });
+  syncAutoTitleDOM();
 }
 
 // Init-time wiring, called from ntp.js init() at the position of the original statement blocks.
 export function bindSettingsUi() {
     initAboutTab();
+    initAutoTitleSettings();
     // Ticket 08 (2026.9.12): footer version reflects the manifest version_name at runtime so it
     // can never drift again; static markup stays the fallback for the file:// mock lane
     // (no extension chrome API there — SEC-01: read-only, never defines globals).
