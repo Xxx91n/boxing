@@ -394,4 +394,58 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     await clickPopupPrimary(page, 'Save');
     await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].bookmarks[0].title)).toBe('other.io');
   });
+
+  // ── D-004: right-click return hardening (FF/LibreWolf) ───────────────────
+  test('D-004: edge anchor ignores non-left buttons; button-2 release exits box even if contextmenu is swallowed', async ({ page }) => {
+    const connSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/conn-layer.js'), 'utf8');
+    const ntpSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/ntp.js'), 'utf8');
+
+    // Anchor mousedown gates on the left button — a right-button preventDefault
+    // there would swallow contextmenu in FF-family and wrongly enter connect mode.
+    const anchorBlock = connSrc.slice(connSrc.indexOf("a.addEventListener('mousedown'"), connSrc.indexOf('el.appendChild(a)'));
+    expect(anchorBlock).toContain('e.button !== 0');
+
+    // Release-fallback + trailing-menu suppression contracts.
+    expect(ntpSrc).toContain('function onRightButtonRelease');
+    expect(ntpSrc).toContain("document.addEventListener('mouseup', onRightButtonRelease)");
+    expect(ntpSrc).toContain("document.addEventListener('pointerup', onRightButtonRelease)");
+    expect(ntpSrc).toContain('lastRightExitAt');
+
+    // Behavioral: seed L1, enter it.
+    await page.addInitScript((seed) => {
+      if (!localStorage.getItem('boxingLayout')) localStorage.setItem('boxingLayout', JSON.stringify(seed));
+    }, seedPopupLayout());
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+    await dismissOnboarding(page);
+    await page.evaluate(() => {
+      document.querySelector('.large-box[data-id="L1"]')?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    });
+    await expect.poll(() => page.evaluate(() => !(document.getElementById('inner') as HTMLElement).hidden), { timeout: 5000 }).toBe(true);
+
+    // Path A: contextmenu never dispatched — button-2 release alone exits.
+    const exitedByRelease = await page.evaluate(() => {
+      document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 2 }));
+      return (document.getElementById('inner') as HTMLElement).hidden;
+    });
+    expect(exitedByRelease).toBe(true);
+
+    // The same gesture's trailing contextmenu (Chrome order) stays suppressed.
+    const menuSuppressed = await page.evaluate(() => {
+      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 });
+      return !document.dispatchEvent(ev);
+    });
+    expect(menuSuppressed).toBe(true);
+
+    // Path B: re-enter, contextmenu alone still exits (original contract intact).
+    await page.evaluate(() => {
+      document.querySelector('.large-box[data-id="L1"]')?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    });
+    await expect.poll(() => page.evaluate(() => !(document.getElementById('inner') as HTMLElement).hidden), { timeout: 5000 }).toBe(true);
+    const exitedByMenu = await page.evaluate(() => {
+      document.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
+      return (document.getElementById('inner') as HTMLElement).hidden;
+    });
+    expect(exitedByMenu).toBe(true);
+  });
 });
