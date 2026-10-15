@@ -24,7 +24,7 @@ Accepted - wave 2026.10.16 grill 决策 D-005/D-006/D-007/D-008（atomcode 行�
 ## Consequences
 
 - 正面: 规则列表 schema 清晰可扩展（追加预设类型不改结构）；match-pattern 子集与用户自举的语法直觉一致；零依赖；8 类提取覆盖 GitHub owner/repo 等高频场景。
-- 负面/妥协: 精简后缀表非全量——冷门多段公共后缀上的域名主体会取错段（可后续补表）；match-pattern 子集不支持 path 中段 `*`、query 匹配，表达力低于完整规范。
+- 负面/妥协: 精简后缀表非全量——冷门多段公共后缀上的域名主体会取错段（可后续补表）；match-pattern 子集不支持 query 匹配与正则/捕获组（实现实际支持 path 任意位置 `*` 与 `<all_urls>`），表达力仍低于完整规范。
 - 中性/约束: `layout.settings` 新增规则存储形态（有序列表 `{pattern, type}` + 开关），属于持久 schema 契约——改形态须 expand/contract；提取类型枚举只允许"追加"不允许改语义；用户侧永不出现正则语法。
 
 ## Review
