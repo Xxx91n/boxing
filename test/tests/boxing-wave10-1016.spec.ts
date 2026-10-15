@@ -98,6 +98,10 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(syncSrc).toContain('autoBackupDue');
     // Deprecated lastAutoBackupTs
     expect(syncSrc).not.toContain('let lastAutoBackupTs');
+    // ADR-0016 single write path: due-flag consumption goes through the storage.js
+    // facade (clearAutoBackupDue), never direct chrome.storage writes.
+    expect(syncSrc).not.toContain('chrome.storage.local.remove');
+    expect(syncSrc).toContain('clearAutoBackupDue');
   });
 
   // ── S-03 / D-003: Title selection focus machine ────────────────────────────

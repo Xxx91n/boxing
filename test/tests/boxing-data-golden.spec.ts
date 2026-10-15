@@ -161,12 +161,14 @@ test.describe('Data-layer golden gates (ticket 45) @data-golden', () => {
 
     // Shape tripwire on the SW write sites: every storage.local.set must target a
     // documented key class — the two non-layout small keys (bgErrLog,
-    // boxingInstallSignal) or the t42 snapshot keys resolving to snap.v1.*.
+    // boxingInstallSignal), the ADR-0022 autoBackupDue coordination flag (SW
+    // writes, NTP consumes via the storage.js facade), or the t42 snapshot keys
+    // resolving to snap.v1.*.
     const bgWrites = bgSrc.split(/\r?\n/).filter((l) => /\.storage\.local\.set\(/.test(l));
     expect(bgWrites.length, 'background must keep its storage writes').toBeGreaterThan(0);
     for (const line of bgWrites) {
       expect(line, 'un-recognized background storage write key').toMatch(
-        /bgErrLog|boxingInstallSignal|SW_SNAP_KEY_PREFIX|SW_SNAP_INDEX_KEY|'snap\.v1\./,
+        /bgErrLog|boxingInstallSignal|autoBackupDue|SW_SNAP_KEY_PREFIX|SW_SNAP_INDEX_KEY|'snap\.v1\./,
       );
     }
   });

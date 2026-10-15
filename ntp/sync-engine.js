@@ -8,7 +8,7 @@
 // `export` prefixes, facade glue, and the bindSyncBackupUi() wrapper around the init-time wiring).
 
 import { layout, setLayout, writerId } from './state.js';
-import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase } from './storage.js';
+import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, clearAutoBackupDue } from './storage.js';
 import { migrateLayout, mergeLayoutThreeWay } from './utils.js';
 import { i18n } from './i18n.js';
 import { renderCanvas } from './render.js';
@@ -742,9 +742,7 @@ export function initSyncEngineFacade(deps) {
       const overdue = !last || (now - last) >= sec * 1000;
 
       if (due || overdue) {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.remove('autoBackupDue');
-        }
+        try { clearAutoBackupDue(); } catch (_) { /* facade not ready — flag stays, retried next boot */ }
         if (last && (now - last) < sec * 900) {
           debug('Auto-backup catch-up skipped: too close to last');
           return;
@@ -922,9 +920,7 @@ export function bindSyncBackupUi() {
       chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
         if (msg && msg.type === 'boxing-auto-backup-trigger') {
           debug('Auto-backup triggered by background alarm');
-          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.remove('autoBackupDue');
-          }
+          try { clearAutoBackupDue(); } catch (_) { /* facade not ready — flag stays, retried next boot */ }
           const sec = layout.settings.autoBackupInterval || 0;
           const now = Date.now();
           const last = layout.settings.lastBackupAt || 0;
