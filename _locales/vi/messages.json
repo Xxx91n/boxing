@@ -947,5 +947,59 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "Có phiên bản mới: "
+  },
+  "autoTitleEnabled": {
+    "message": "Tự động tạo tiêu đề dấu trang"
+  },
+  "autoTitleHint": {
+    "message": "Tạo tiêu đề dấu trang từ cấu trúc URL bằng quy tắc"
+  },
+  "ruleColPattern": {
+    "message": "Mẫu khớp"
+  },
+  "ruleColType": {
+    "message": "Loại trích xuất"
+  },
+  "ruleColActions": {
+    "message": "Hành động"
+  },
+  "btnAddRule": {
+    "message": "+ Thêm quy tắc"
+  },
+  "btnResetRules": {
+    "message": "Đặt lại về mặc định"
+  },
+  "ruleTypeDomainMain": {
+    "message": "Tên miền chính"
+  },
+  "ruleTypeFullHost": {
+    "message": "Tên máy chủ đầy đủ"
+  },
+  "ruleTypeSubdomain": {
+    "message": "Tên miền phụ (hoặc miền chính)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "Phân đoạn đường dẫn đầu tiên"
+  },
+  "ruleTypeLastPath": {
+    "message": "Phân đoạn đường dẫn cuối cùng (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "Hai phân đoạn đường dẫn đầu tiên"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "Miền + phân đoạn đầu tiên"
+  },
+  "ruleTypeFullUrl": {
+    "message": "URL đầy đủ"
+  },
+  "ruleBtnMoveUp": {
+    "message": "Di chuyển lên"
+  },
+  "ruleBtnMoveDown": {
+    "message": "Di chuyển xuống"
   }
 }

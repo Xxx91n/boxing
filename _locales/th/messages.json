@@ -947,5 +947,59 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "มีเวอร์ชันใหม่: "
+  },
+  "autoTitleEnabled": {
+    "message": "สร้างชื่อบุ๊กมาร์กโดยอัตโนมัติ"
+  },
+  "autoTitleHint": {
+    "message": "สร้างชื่อบุ๊กมาร์กจากโครงสร้าง URL โดยใช้กฎ"
+  },
+  "ruleColPattern": {
+    "message": "รูปแบบการจับคู่"
+  },
+  "ruleColType": {
+    "message": "ประเภทการแยก"
+  },
+  "ruleColActions": {
+    "message": "การดำเนินการ"
+  },
+  "btnAddRule": {
+    "message": "+ เพิ่มกฎ"
+  },
+  "btnResetRules": {
+    "message": "รีเซ็ตเป็นค่าเริ่มต้น"
+  },
+  "ruleTypeDomainMain": {
+    "message": "ชื่อหลักของโดเมน"
+  },
+  "ruleTypeFullHost": {
+    "message": "ชื่อโฮสต์แบบเต็ม"
+  },
+  "ruleTypeSubdomain": {
+    "message": "โดเมนย่อย (มิฉะนั้นใช้ชื่อหลัก)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "ส่วนแรกของเส้นทาง"
+  },
+  "ruleTypeLastPath": {
+    "message": "ส่วนสุดท้ายของเส้นทาง (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "สองส่วนแรกของเส้นทาง"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "โดเมน + ส่วนแรกของเส้นทาง"
+  },
+  "ruleTypeFullUrl": {
+    "message": "URL แบบเต็ม"
+  },
+  "ruleBtnMoveUp": {
+    "message": "เลื่อนขึ้น"
+  },
+  "ruleBtnMoveDown": {
+    "message": "เลื่อนลง"
   }
 }

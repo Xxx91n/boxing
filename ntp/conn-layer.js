@@ -225,6 +225,11 @@ export function initConnFacade(deps) {
       a.dataset.boxKey = boxKey;
       a.dataset.side = side;
       a.addEventListener('mousedown', e => {
+        // D-004: left button only. A right-button preventDefault here suppresses
+        // the contextmenu event in Firefox-family browsers (contextmenu is part
+        // of the mousedown default action there) and would also wrongly enter
+        // connect mode on a right-press.
+        if (e.button !== 0) return;
         e.stopPropagation(); e.preventDefault();
         enterConnectMode(boxKey, el, e.clientX, e.clientY);
       });

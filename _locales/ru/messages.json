@@ -947,5 +947,59 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "Доступна новая версия: "
+  },
+  "autoTitleEnabled": {
+    "message": "Автозаполнение названия закладки"
+  },
+  "autoTitleHint": {
+    "message": "Формировать название закладки из структуры URL по правилам"
+  },
+  "ruleColPattern": {
+    "message": "Шаблон"
+  },
+  "ruleColType": {
+    "message": "Тип извлечения"
+  },
+  "ruleColActions": {
+    "message": "Действия"
+  },
+  "btnAddRule": {
+    "message": "+ Добавить правило"
+  },
+  "btnResetRules": {
+    "message": "Сбросить по умолчанию"
+  },
+  "ruleTypeDomainMain": {
+    "message": "Основное имя домена"
+  },
+  "ruleTypeFullHost": {
+    "message": "Полное имя хоста"
+  },
+  "ruleTypeSubdomain": {
+    "message": "Поддомен (или основной домен)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "Первый сегмент пути"
+  },
+  "ruleTypeLastPath": {
+    "message": "Последний сегмент пути (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "Первые два сегмента пути"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "Домен + первый сегмент"
+  },
+  "ruleTypeFullUrl": {
+    "message": "Полный URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "Переместить вверх"
+  },
+  "ruleBtnMoveDown": {
+    "message": "Переместить вниз"
   }
 }

@@ -947,5 +947,59 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "새 버전 사용 가능: "
+  },
+  "autoTitleEnabled": {
+    "message": "북마크 제목 자동 생성"
+  },
+  "autoTitleHint": {
+    "message": "규칙에 따라 URL 구조에서 북마크 제목을 유도합니다"
+  },
+  "ruleColPattern": {
+    "message": "일치 패턴"
+  },
+  "ruleColType": {
+    "message": "추출 유형"
+  },
+  "ruleColActions": {
+    "message": "작업"
+  },
+  "btnAddRule": {
+    "message": "+ 규칙 추가"
+  },
+  "btnResetRules": {
+    "message": "기본값으로 재설정"
+  },
+  "ruleTypeDomainMain": {
+    "message": "도메인 메인 이름"
+  },
+  "ruleTypeFullHost": {
+    "message": "전체 호스트 이름"
+  },
+  "ruleTypeSubdomain": {
+    "message": "서브도메인 (없으면 도메인 메인)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "첫 번째 경로 세그먼트"
+  },
+  "ruleTypeLastPath": {
+    "message": "마지막 경로 세그먼트 (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "처음 두 경로 세그먼트"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "도메인 + 첫 번째 경로"
+  },
+  "ruleTypeFullUrl": {
+    "message": "전체 URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "위로 이동"
+  },
+  "ruleBtnMoveDown": {
+    "message": "아래로 이동"
   }
 }

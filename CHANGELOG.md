@@ -12,6 +12,23 @@ uploads and GitHub tags still follow the release gate. Install from official sto
 (see [publishing guide](docs/publishing-guide.md)); GitHub Releases are changelog-first
 and no longer ship `.xpi` / `.crx`.
 
+## [2026.10.16] - 2026-10-16
+
+User-facing notes for store listings and the GitHub Release body.
+
+### Added
+- **URL auto-title rule engine** — Derives bookmark title from URL structure using 8 preset extraction types and Chrome-style match patterns; configurable via General settings with manual-edit override protection (ADR-0023).
+- **About tab version check** — Quietly checks for new releases with 24h local caching, showing an update link when available (D-004).
+- **Auto-backup catch-up** — Service Worker alarm hub records due status and performs catch-up backups on NTP open, fixing cross-session alarm loss (ADR-0022).
+
+### Fixed
+- **Favicon cold-path display** — Fixed favicons remaining hidden on first entry into small boxes due to false error event (D-001).
+- **Title select-all & caret placement** — Unconditional mouseup normalization guard guarantees whole-name selection on first click and native caret placement on second click (D-003).
+
+### Internal
+- New ADRs: ADR-0022 (auto-backup alarm hub), ADR-0023 (URL auto-title rule engine).
+- Complete 14-locale coverage for all new UI strings.
+
 ## [2026.10.15] - 2026-10-14
 
 User-facing notes for store listings and the GitHub Release body.

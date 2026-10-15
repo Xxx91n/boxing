@@ -133,7 +133,7 @@
   function defaultLayout() {
    return {
       version: 3.5, schemaVersion: 1, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'sameTab', connDeleteAction: 'alt+click', theme: 'beige', webdavAllowPrivateHost: false }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, headerPinned: true, syncProvider: 'local', urlOpenMode: 'sameTab', connDeleteAction: 'alt+click', theme: 'beige', webdavAllowPrivateHost: false, autoTitleEnabled: true, autoTitleRules: [ { pattern: 'https://github.com/*/*', type: 'first-two-paths' }, { pattern: 'https://*/*', type: 'domain-main' } ] }
     };
   }
 
@@ -325,7 +325,20 @@ function unwrapExportEnvelope(data) {
   return null;
 }
 
-export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
+// Numeric dot-separated version compare (v-prefix tolerated): -1/0/1.
+function compareVersions(v1, v2) {
+  const p1 = String(v1).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  const p2 = String(v2).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const a = p1[i] || 0;
+    const b = p2[i] || 0;
+    if (a > b) return 1;
+    if (a < b) return -1;
+  }
+  return 0;
+}
+
+export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, compareVersions, normalizeBookmarkUrl, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
 
 // ─── Ticket 91 (Wave9 A-045 · B55): id-level three-way layout merge ──────────
 // Implements the ticket-80 recommended plan (three-way with base, degrading to the

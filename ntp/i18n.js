@@ -270,6 +270,26 @@ I18N_FALLBACK.rollbackFailed = 'Rollback failed - your current data was kept unc
 // Ticket 51 (spec W6-D2): export envelope + optional full DR package UI strings (BX-I18N-005 fallback).
 I18N_FALLBACK.exportFullPackage = 'Full DR package';
 I18N_FALLBACK.exportFullOverflow = 'The full DR package still exceeds the 5MB restore limit after trimming snapshot bodies. A standard envelope export was downloaded instead.';
+
+// Wave 2026.10.16 keys (D-004, D-005, D-006, D-007)
+I18N_FALLBACK.aboutUpdateAvailable = 'New version available: ';
+I18N_FALLBACK.autoTitleEnabled = 'Auto-derive bookmark title';
+I18N_FALLBACK.autoTitleHint = 'Derive bookmark title from URL structure using rules';
+I18N_FALLBACK.ruleColPattern = 'Match Pattern';
+I18N_FALLBACK.ruleColType = 'Extract Type';
+I18N_FALLBACK.ruleColActions = 'Actions';
+I18N_FALLBACK.btnAddRule = '+ Add Rule';
+I18N_FALLBACK.btnResetRules = 'Reset to Defaults';
+I18N_FALLBACK.ruleTypeDomainMain = 'Domain main name';
+I18N_FALLBACK.ruleTypeFullHost = 'Full hostname';
+I18N_FALLBACK.ruleTypeSubdomain = 'Subdomain (fallback to domain)';
+I18N_FALLBACK.ruleTypeFirstPath = 'First path segment';
+I18N_FALLBACK.ruleTypeLastPath = 'Last path segment (slug)';
+I18N_FALLBACK.ruleTypeFirstTwoPaths = 'First two path segments';
+I18N_FALLBACK.ruleTypeDomainFirstPath = 'Domain + first path segment';
+I18N_FALLBACK.ruleTypeFullUrl = 'Full URL';
+I18N_FALLBACK.ruleBtnMoveUp = 'Move up';
+I18N_FALLBACK.ruleBtnMoveDown = 'Move down';
 export let currentLang = 'en';
 // BX-i18n-LOC: To add a new language, append the code here + update ONB_LANG_LABELS below + create _locales/<code>/messages.json.
 export const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi', 'zh_TW'];

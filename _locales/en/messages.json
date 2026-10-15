@@ -959,5 +959,59 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "New version available: "
+  },
+  "autoTitleEnabled": {
+    "message": "Auto-derive bookmark title"
+  },
+  "autoTitleHint": {
+    "message": "Derive bookmark title from URL structure using rules"
+  },
+  "ruleColPattern": {
+    "message": "Match Pattern"
+  },
+  "ruleColType": {
+    "message": "Extract Type"
+  },
+  "ruleColActions": {
+    "message": "Actions"
+  },
+  "btnAddRule": {
+    "message": "+ Add Rule"
+  },
+  "btnResetRules": {
+    "message": "Reset to Defaults"
+  },
+  "ruleTypeDomainMain": {
+    "message": "Domain main name"
+  },
+  "ruleTypeFullHost": {
+    "message": "Full hostname"
+  },
+  "ruleTypeSubdomain": {
+    "message": "Subdomain (fallback to domain)"
+  },
+  "ruleTypeFirstPath": {
+    "message": "First path segment"
+  },
+  "ruleTypeLastPath": {
+    "message": "Last path segment (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "First two path segments"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "Domain + first path segment"
+  },
+  "ruleTypeFullUrl": {
+    "message": "Full URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "Move up"
+  },
+  "ruleBtnMoveDown": {
+    "message": "Move down"
   }
 }

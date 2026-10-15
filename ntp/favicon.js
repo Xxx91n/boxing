@@ -129,6 +129,7 @@ function applyDecodedFavicon(img, host, src) {
   probe.src = src;
   probe.decode().then(() => {
     img.src = probe.src;
+    img.style.display = '';
     img.classList.remove('is-loading');
     img.classList.add('is-cached');
     _faviconHotPool.set(host, probe);
@@ -163,6 +164,7 @@ async function loadFavicon(img, url, opts) {
         const pooled = _faviconHotPool.get(host);
         if (pooled && pooled.complete) {
           img.src = pooled.src;
+          img.style.display = '';
           img.classList.remove('is-loading');
           img.classList.add('is-cached');
         } else {

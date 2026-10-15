@@ -947,5 +947,59 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "新しいバージョンが利用可能です："
+  },
+  "autoTitleEnabled": {
+    "message": "ブックマークタイトルの自動生成"
+  },
+  "autoTitleHint": {
+    "message": "ルールに従って URL 構造からタイトルを自動生成します"
+  },
+  "ruleColPattern": {
+    "message": "パターン"
+  },
+  "ruleColType": {
+    "message": "抽出タイプ"
+  },
+  "ruleColActions": {
+    "message": "操作"
+  },
+  "btnAddRule": {
+    "message": "+ ルールを追加"
+  },
+  "btnResetRules": {
+    "message": "デフォルトに戻す"
+  },
+  "ruleTypeDomainMain": {
+    "message": "ドメイン主体"
+  },
+  "ruleTypeFullHost": {
+    "message": "完全なホスト名"
+  },
+  "ruleTypeSubdomain": {
+    "message": "サブドメイン（無ければドメイン）"
+  },
+  "ruleTypeFirstPath": {
+    "message": "パスの最初のセグメント"
+  },
+  "ruleTypeLastPath": {
+    "message": "パスの最後のセグメント (slug)"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "パスの最初の2セグメント"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "ドメイン + パス先頭"
+  },
+  "ruleTypeFullUrl": {
+    "message": "完全な URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "上へ移動"
+  },
+  "ruleBtnMoveDown": {
+    "message": "下へ移動"
   }
 }

@@ -950,5 +950,59 @@
   },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+  },
+  "aboutUpdateAvailable": {
+    "message": "發現新版本："
+  },
+  "autoTitleEnabled": {
+    "message": "書籤自動標題"
+  },
+  "autoTitleHint": {
+    "message": "根據 URL 結構與規則自動填充書籤標題"
+  },
+  "ruleColPattern": {
+    "message": "匹配模式"
+  },
+  "ruleColType": {
+    "message": "提取類型"
+  },
+  "ruleColActions": {
+    "message": "操作"
+  },
+  "btnAddRule": {
+    "message": "+ 新增規則"
+  },
+  "btnResetRules": {
+    "message": "恢復出廠規則"
+  },
+  "ruleTypeDomainMain": {
+    "message": "網域主體"
+  },
+  "ruleTypeFullHost": {
+    "message": "完整主機名"
+  },
+  "ruleTypeSubdomain": {
+    "message": "子網域（無則回退網域主體）"
+  },
+  "ruleTypeFirstPath": {
+    "message": "路徑首段"
+  },
+  "ruleTypeLastPath": {
+    "message": "路徑末段（slug 清洗）"
+  },
+  "ruleTypeFirstTwoPaths": {
+    "message": "路徑前兩段"
+  },
+  "ruleTypeDomainFirstPath": {
+    "message": "網域主體 + 路徑首段"
+  },
+  "ruleTypeFullUrl": {
+    "message": "完整 URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "上移"
+  },
+  "ruleBtnMoveDown": {
+    "message": "下移"
   }
 }

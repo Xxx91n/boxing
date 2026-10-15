@@ -12,6 +12,7 @@ import { i18n } from './i18n.js';
 import { normalizeBookmarkUrl } from './utils.js';
 import { saveLayout } from './storage.js';
 import { loadFavicon } from './favicon.js';
+import { attachAutoTitleHelper, deriveTitleOrHostname } from './url-title.js';
 
 // Injected render.js/ntp.js-scope deps (set once at boot, before any runtime call).
 let getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker,
@@ -77,10 +78,9 @@ export function initPopupsFacade(deps) {
 
       const fav = document.createElement('img');
       fav.className = 'bm-row__favicon is-loading';
-      fav.src = '';
       fav.width = 16; fav.height = 16;
       fav.style.flexShrink = '0';
-      fav.onerror = () => { fav.style.display = 'none'; };
+      fav.onerror = () => { if (fav.src) fav.style.display = 'none'; };
       loadFavicon(fav, bm.url);
 
       const tEl = document.createElement('span');
@@ -150,6 +150,8 @@ export function initPopupsFacade(deps) {
     urlInput.style.cssText = 'padding:4px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-sm);';
     urlInput.addEventListener('mousedown', e => e.stopPropagation());
 
+    attachAutoTitleHelper(urlInput, titleInput, () => layout.settings);
+
     // Buttons
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:4px;justify-content:flex-end;';
@@ -163,7 +165,9 @@ export function initPopupsFacade(deps) {
       if (!normalizedUrl) { urlInput.style.borderColor = 'red'; return; }
       // BX-DEV-111k: validate box still exists before saving edited bookmark
       if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
-      bm.title = titleInput.value.trim() || normalizedUrl;
+      let title = titleInput.value.trim();
+      if (!title) title = deriveTitleOrHostname(normalizedUrl, layout.settings);
+      bm.title = title;
       bm.url = normalizedUrl;
       saveLayout();
       const lb = getLargeBox(largeId);
@@ -262,6 +266,8 @@ export function initPopupsFacade(deps) {
     urlInput.placeholder = i18n('bookmarkUrlPlaceholder');
     urlInput.style.cssText = 'padding:6px 8px;border:1px solid var(--color-hairline);border-radius:4px;font-size:var(--fs-md);background:var(--color-surface);color:var(--color-ink);outline:none;';
 
+    attachAutoTitleHelper(urlInput, titleInput, () => layout.settings);
+
     const btnRow = document.createElement('div');
     btnRow.style.cssText = 'display:flex;gap:4px;justify-content:flex-end;';
 
@@ -280,7 +286,9 @@ export function initPopupsFacade(deps) {
       if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       sb.bookmarks = sb.bookmarks || [];
       if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
-      const entry = { id: makeId('bm'), title: title || new URL(normalizedUrl).hostname, url: normalizedUrl };
+      let finalTitle = title;
+      if (!finalTitle) finalTitle = deriveTitleOrHostname(normalizedUrl, layout.settings);
+      const entry = { id: makeId('bm'), title: finalTitle, url: normalizedUrl };
       commit("addBookmark", { largeId, smallId: sb.id, bookmark: entry }, { save: true });
       const lb = getLargeBox(largeId);
       if (lb) renderInnerSurface(lb);

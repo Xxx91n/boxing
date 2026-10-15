@@ -803,10 +803,26 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   }
 
   // ── context menu (right-click → back) ──────────────────
+  // D-004: contextmenu alone is fragile in Firefox-family browsers — they
+  // dispatch it as part of the mousedown default action, so an ancestor
+  // preventDefault (or a fork's input pipeline, e.g. LibreWolf) can swallow it.
+  // The button-2 release listener exits the box independently of contextmenu
+  // dispatch. lastRightExitAt lets onContextMenu still suppress the native menu
+  // for the same gesture (Chrome order: mouseup → contextmenu).
+  let lastRightExitAt = 0;
   function onContextMenu(e) {
     if (currentLargeBoxId) {
       e.preventDefault();
       exitToCanvas();
+      lastRightExitAt = Date.now();
+    } else if (Date.now() - lastRightExitAt < 600) {
+      e.preventDefault();
+    }
+  }
+  function onRightButtonRelease(e) {
+    if (e.button === 2 && currentLargeBoxId) {
+      exitToCanvas();
+      lastRightExitAt = Date.now();
     }
   }
 
@@ -986,6 +1002,12 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     debug('settingsBtn listener attached, settingsBtn=', !!settingsBtn);
 
     document.addEventListener('contextmenu', onContextMenu);
+    // D-004: button-2 release fallback — exits even when contextmenu never
+    // dispatches. First exit clears currentLargeBoxId, so double registration
+    // (mouseup + pointerup cover different swallow classes, cf. BX-DEV-128) is
+    // a no-op for the same gesture.
+    document.addEventListener('mouseup', onRightButtonRelease);
+    document.addEventListener('pointerup', onRightButtonRelease);
     // BX-DEV-137++++: connect mode is now drag-based: mousedown on edge anchor
     // starts connect mode, user drags to target box, mouseup connects to nearest midpoint.
     // BX-142: update provisional SVG line endpoint via rAF throttle.

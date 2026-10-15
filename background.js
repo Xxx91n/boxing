@@ -33,14 +33,19 @@ try {
     typeof globalThis !== "undefined" ? globalThis : null);
   if (!root) return;
 
-  // ── ADR-0009: chrome.alarms for auto-backup (survives NTP page close) ──
-  // The NTP page creates the alarm; the background SW listens and sends a message
-  // back to any open NTP tab to trigger performBackup. If no NTP tab is open, the
-  // backup is deferred until the next NTP open.
+  // ── ADR-0022: chrome.alarms hub for auto-backup ──
+  // The NTP page creates/ensures the alarm; the background SW acts as the alarm hub,
+  // recording autoBackupDue: true in chrome.storage.local and notifying any open NTP tabs.
+  // If no NTP tab is open, the due mark ensures the backup is performed upon next NTP open.
   if (typeof chrome !== 'undefined' && chrome.alarms && chrome.alarms.onAlarm) {
     chrome.alarms.onAlarm.addListener(function(alarm) {
       if (alarm.name !== 'boxing-auto-backup') return;
       bgLog('Auto-backup alarm fired');
+      try {
+        if (chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ autoBackupDue: true });
+        }
+      } catch (e) { bgErr('Failed to set autoBackupDue flag', e); }
       // Try to send message to any open NTP tab to trigger backup
       try {
         chrome.tabs.query({}, function(tabs) {
