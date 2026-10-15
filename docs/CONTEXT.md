@@ -75,6 +75,8 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 ### Settings
 - **layout.settings** — persisted settings object inside `layout`. Spread-merged on cross-tab sync: `{ ...remote.settings, ...local.settings }`.
 - Fields: `selectedLanguage`, `rememberLastPos`, `zoomLevel`, `darkMode`, `fontSize`, `squareCorners`, `autoBackupInterval`, `headerPinned`, `syncProvider`, `urlOpenMode`, `connDeleteAction`, `theme`.
+- **auto-title rule（自动标题规则）** — ordered list `{ match-pattern subset, preset extraction type }` in settings; first match wins, trailing built-in default; shipped presets include a github.com owner/repo rule and a domain-body fallback (ADR-0023).
+- **extraction type（提取类型）** — one of 8 internal presets deriving a bookmark title from URL structure (domain body / full hostname / subdomain / first path segment / last path segment / first two path segments / domain+first segment / full URL). Users never write regex (ADR-0023).
 
 ### Theme Pack System (ADR-0012)
 - **THEME_PACKS** — static object in `ntp/persist.js` (moved out of ntp.js in the module split) with 5 curated themes: `beige` (default), `graphite`, `coastal`, `forest`, `pure`. Each stores complete warm bg ramp (9 tiers) + accent ramp (3 tiers) for light + dark.
@@ -115,6 +117,7 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 - **release gate** — "releasable" is the conjunction G-A (main-lane CI reds cleared or per-item written waiver) + G-B (manual zip golden path on unpacked artifacts, both browsers) + G-C (Pages three URLs live 200); before all hold, tagging and any releasable claim are forbidden. Normative terms + postmortem template: ADR-0017; the waiver ledger lives in `docs/testing-governance.md`, and the checklist template lives in the local untracked work-log (`.scratch/architecture-recovery/WORKFLOW.md` §4.4).
 
 - **release status page** — the live per-release status board (current version, G-A/G-B/G-C state, active waivers, open A-ledger debt) lives in [release-status.md](release-status.md); ADR-0017 remains the normative gate definition.
+- **autoBackupDue** — `storage.local` flag written by the service-worker `onAlarm` (sole alarm listener, top-level); NTP open checks the flag (plus persisted `settings.lastBackupAt`) and runs `performBackup`, then clears it. Semantics: backup executes on schedule while an NTP is open and catches up at next NTP open when missed (ADR-0022).
 
 ## Architectural Invariants (BX-EXPLORE-005..009)
 - **BX-EXPLORE-005**: Box dragging uses `left`/`top` only — NEVER `translate3d()` (causes 2x position flash).
