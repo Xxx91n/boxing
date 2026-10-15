@@ -722,6 +722,12 @@ export function initSyncEngineFacade(deps) {
     }
 
     async function checkAutoBackupCatchUp() {
+      // Requires a real extension environment: file:// lanes and the demo stub
+      // have no service worker, so no alarm hub exists and no due flag can ever
+      // be set. Without this gate, seeded test layouts (autoBackupInterval set,
+      // lastBackupAt absent) treat every boot as overdue -> an extra snapshot
+      // and a backupToLocal() download per boot.
+      if (typeof chrome === 'undefined' || !chrome.alarms) return;
       const sec = layout.settings.autoBackupInterval || 0;
       if (sec < 3600) return;
       // Idempotently ensure alarm exists in SW (fixes Firefox alarms not persisting across sessions)
