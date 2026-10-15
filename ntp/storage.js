@@ -68,6 +68,14 @@ export function directSetBoxingLayout(persisted) {
   return layoutStorage.set({ boxingLayout: persisted });
 }
 
+// ADR-0022: autoBackupDue is a storage.local coordination flag written by the
+// service worker and consumed by the NTP. It is not boxingLayout state, but the
+// write path still routes through this facade (data-golden gate 2, single write
+// path — direct chrome.storage.* writes outside storage.js are violations).
+export function clearAutoBackupDue() {
+  return layoutStorage.remove('autoBackupDue');
+}
+
 // storage.onChanged listener registration — moved verbatim from ntp.js init() (same
 // registration point in the boot sequence). External boxingLayout changes feed
 // applyExternalLayout, whose applyingExternalLayout guard below prevents
