@@ -8,7 +8,7 @@
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
 import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, readDrBodies } from './storage.js';
-import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope } from './utils.js';
+import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
@@ -321,18 +321,6 @@ function openLink(url) {
   } catch (_) { window.open(url, '_blank', 'noopener'); }
 }
 
-function compareVersions(v1, v2) {
-  const p1 = String(v1).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
-  const p2 = String(v2).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
-  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
-    const a = p1[i] || 0;
-    const b = p2[i] || 0;
-    if (a > b) return 1;
-    if (a < b) return -1;
-  }
-  return 0;
-}
-
 export async function checkVersionUpdate() {
   const hintEl = document.getElementById('about-update-hint');
   if (!hintEl) return;
@@ -365,7 +353,8 @@ export async function checkVersionUpdate() {
             url: data.url || 'https://github.com/Xxx91n/boxing/releases'
           };
         }
-      } catch (_) {
+      } catch (_) {}
+      if (!fetched) {
         try {
           const ghRes = await fetch('https://api.github.com/repos/Xxx91n/boxing/releases/latest', { cache: 'no-cache' });
           if (ghRes.ok) {
@@ -490,7 +479,7 @@ function renderAutoTitleRows() {
     const upBtn = document.createElement('button');
     upBtn.type = 'button';
     upBtn.textContent = '↑';
-    upBtn.title = 'Move Up';
+    upBtn.title = i18n('ruleBtnMoveUp');
     upBtn.disabled = idx === 0;
     upBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
     upBtn.addEventListener('click', () => {
@@ -506,7 +495,7 @@ function renderAutoTitleRows() {
     const downBtn = document.createElement('button');
     downBtn.type = 'button';
     downBtn.textContent = '↓';
-    downBtn.title = 'Move Down';
+    downBtn.title = i18n('ruleBtnMoveDown');
     downBtn.disabled = idx === rules.length - 1;
     downBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
     downBtn.addEventListener('click', () => {
@@ -522,7 +511,7 @@ function renderAutoTitleRows() {
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.textContent = '×';
-    delBtn.title = 'Delete';
+    delBtn.title = i18n('bookmarkDelete');
     delBtn.style.cssText = 'padding:1px 5px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;color:red;';
     delBtn.addEventListener('click', () => {
       rules.splice(idx, 1);

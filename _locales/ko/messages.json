@@ -995,5 +995,11 @@
   },
   "ruleTypeFullUrl": {
     "message": "전체 URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "위로 이동"
+  },
+  "ruleBtnMoveDown": {
+    "message": "아래로 이동"
   }
 }

@@ -16,6 +16,57 @@ async function boot(page: Page) {
   await page.waitForTimeout(200);
 }
 
+// D-008 behavioral lane: L1 -> S1 seed so the real add/edit popups can be driven
+// (t44/t91 discipline — seed before first navigation, synthetic dblclick for the
+// firefox headed lane, same pattern as boxing-sync-bookmark-delete-tombstone).
+function seedPopupLayout() {
+  return {
+    version: 3.5, schemaVersion: 1, nextLargeIndex: 2,
+    boxes: [{
+      id: 'L1', type: 'large', title: 'WaveRoot', x: 40, y: 40, width: 320, height: 220,
+      nextSmallIndex: 2,
+      children: [{ id: 'S1', title: 'WaveSmall', x: 0, y: 0, width: 260, height: 190, pinned: true, bookmarks: [] }],
+    }],
+    connections: [], groups: [],
+    settings: { selectedLanguage: 'en', autoTitleEnabled: true },
+    _meta: { revision: 3, updatedAt: Date.now() - 5000, writerId: 'spec-seed-popup' },
+  };
+}
+
+async function bootIntoAddPopup(page: Page) {
+  await page.addInitScript((seed) => {
+    if (!localStorage.getItem('boxingLayout')) localStorage.setItem('boxingLayout', JSON.stringify(seed));
+  }, seedPopupLayout());
+  await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+  await dismissOnboarding(page);
+  await page.evaluate(() => {
+    document.querySelector('.large-box[data-id="L1"]')?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+  });
+  await expect.poll(() => page.evaluate(() => Boolean(document.querySelector('.small-box[data-id="S1"]'))), { timeout: 5000 }).toBe(true);
+  await page.evaluate(() => {
+    (document.querySelector('.small-box[data-id="S1"] .bm-add-btn') as HTMLElement)?.click();
+  });
+  await expect.poll(() => page.evaluate(() => Boolean(document.querySelector('.bm-edit-popup'))), { timeout: 5000 }).toBe(true);
+}
+
+// inputs[0] = title, inputs[1] = url in both add and edit popups.
+async function typeIntoPopupInput(page: Page, index: number, value: string) {
+  await page.evaluate(({ i, v }) => {
+    const ins = document.querySelectorAll('.bm-edit-popup input');
+    (ins[i] as HTMLInputElement).value = v;
+    ins[i].dispatchEvent(new Event('input', { bubbles: true }));
+  }, { i: index, v: value });
+}
+
+async function clickPopupPrimary(page: Page, label: string) {
+  await page.evaluate((lbl) => {
+    const popup = document.querySelector('.bm-edit-popup');
+    const btn = Array.from(popup!.querySelectorAll('button')).find((b) => b.textContent!.trim() === lbl);
+    (btn as HTMLElement).click();
+  }, label);
+}
+
 test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
   test.setTimeout(30000);
 
@@ -288,5 +339,59 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     await page.locator('.settings-nav__item[data-tab="about"]').click();
     await page.waitForTimeout(200);
     expect(versionFetchCount, 'Within 24h TTL, version check uses cache').toBe(1);
+  });
+
+  // ── S-05 / D-008 behavioral: real add/edit popups (fill, guard, fallback, persist) ──
+  test('S-05 / D-008 behavioral: add popup auto-fills title; manual edit protected; rules persist', async ({ page }) => {
+    await bootIntoAddPopup(page);
+    // URL input -> 300ms debounced fill; github.com/*/* rule -> first-two-paths
+    await typeIntoPopupInput(page, 1, 'https://github.com/foo/bar');
+    await expect.poll(() => page.evaluate(() => (document.querySelector('.bm-edit-popup input') as HTMLInputElement)?.value), { timeout: 5000 }).toBe('foo/bar');
+    // Manual title -> later URL change must NOT overwrite (anti-overwrite guard)
+    await typeIntoPopupInput(page, 0, 'My Repo');
+    await typeIntoPopupInput(page, 1, 'https://example.com/x/y');
+    await page.waitForTimeout(500);
+    await expect.poll(() => page.evaluate(() => (document.querySelector('.bm-edit-popup input') as HTMLInputElement)?.value)).toBe('My Repo');
+    // Save -> bookmark keeps manual title; rules live in persisted settings
+    await clickPopupPrimary(page, 'Add');
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].bookmarks?.length || 0), { timeout: 5000 }).toBe(1);
+    const saved = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].bookmarks[0]);
+    expect(saved.title).toBe('My Repo');
+    expect(saved.url).toBe('https://example.com/x/y');
+    const rules = await page.evaluate(() => (window as any).__boxingDebug.layout.settings.autoTitleRules);
+    expect(rules?.length).toBe(2);
+    // Empty-title submit: save path itself must derive (deriveTitleOrHostname at submit)
+    await page.evaluate(() => {
+      (document.querySelector('.small-box[data-id="S1"] .bm-add-btn') as HTMLElement)?.click();
+    });
+    await expect.poll(() => page.evaluate(() => Boolean(document.querySelector('.bm-edit-popup'))), { timeout: 5000 }).toBe(true);
+    await typeIntoPopupInput(page, 1, 'https://gitlab.com/grp/proj');
+    await page.waitForTimeout(500);
+    await typeIntoPopupInput(page, 0, ''); // clear auto-fill -> submit derives fresh
+    await clickPopupPrimary(page, 'Add');
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].bookmarks?.length || 0), { timeout: 5000 }).toBe(2);
+    const saved2 = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].bookmarks[1]);
+    expect(saved2.title).toBe('gitlab');
+  });
+
+  test('S-05 / D-008 behavioral: rules disabled -> hostname fallback; edit popup shares helper guard', async ({ page }) => {
+    await bootIntoAddPopup(page);
+    await page.evaluate(() => { (window as any).__boxingDebug.layout.settings.autoTitleEnabled = false; });
+    await typeIntoPopupInput(page, 1, 'https://github.com/foo/bar');
+    await expect.poll(() => page.evaluate(() => (document.querySelector('.bm-edit-popup input') as HTMLInputElement)?.value), { timeout: 5000 }).toBe('github.com');
+    await clickPopupPrimary(page, 'Add');
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].bookmarks?.length || 0), { timeout: 5000 }).toBe(1);
+    // Edit popup: existing title is 'manual' to the helper -> URL change must not overwrite
+    await page.evaluate(() => {
+      (document.querySelector('.small-box[data-id="S1"] .bm-row__edit-btn') as HTMLElement)?.click();
+    });
+    await expect.poll(() => page.evaluate(() => Boolean(document.querySelector('.bm-edit-popup'))), { timeout: 5000 }).toBe(true);
+    await typeIntoPopupInput(page, 1, 'https://other.io/a');
+    await page.waitForTimeout(500);
+    await expect.poll(() => page.evaluate(() => (document.querySelector('.bm-edit-popup input') as HTMLInputElement)?.value)).toBe('github.com');
+    // Edit-submit with cleared title derives via shared helper (rules disabled -> hostname)
+    await typeIntoPopupInput(page, 0, '');
+    await clickPopupPrimary(page, 'Save');
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].bookmarks[0].title)).toBe('other.io');
   });
 });

@@ -995,5 +995,11 @@
   },
   "ruleTypeFullUrl": {
     "message": "पूर्ण URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "ऊपर ले जाएँ"
+  },
+  "ruleBtnMoveDown": {
+    "message": "नीचे ले जाएँ"
   }
 }

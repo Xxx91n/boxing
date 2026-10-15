@@ -995,5 +995,11 @@
   },
   "ruleTypeFullUrl": {
     "message": "Vollständige URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "Nach oben verschieben"
+  },
+  "ruleBtnMoveDown": {
+    "message": "Nach unten verschieben"
   }
 }

@@ -185,7 +185,7 @@ export function attachAutoTitleHelper(urlInput, titleInput, getSettings) {
   function updateTitle() {
     const rawUrl = urlInput.value.trim();
     if (!rawUrl) return;
-    const settings = typeof getSettings === 'function' ? getSettings() : (globalThis.layout?.settings || {});
+    const settings = typeof getSettings === 'function' ? (getSettings() || {}) : {};
     const enabled = settings.autoTitleEnabled !== false;
     const rules = settings.autoTitleRules;
 
@@ -208,4 +208,15 @@ export function attachAutoTitleHelper(urlInput, titleInput, getSettings) {
     clearTimeout(debounceTimer);
     updateTitle();
   });
+}
+// Submit-time / shared call-site helper: derived title, else hostname, else raw string.
+export function deriveTitleOrHostname(urlStr, settings) {
+  const s = settings || {};
+  try {
+    return deriveTitleFromUrl(urlStr, s.autoTitleRules, s.autoTitleEnabled !== false) || safeHostname(urlStr) || urlStr;
+  } catch (_) { return safeHostname(urlStr) || urlStr; }
+}
+
+function safeHostname(urlStr) {
+  try { return new URL(urlStr).hostname; } catch (_) { return ''; }
 }

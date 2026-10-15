@@ -288,6 +288,8 @@ I18N_FALLBACK.ruleTypeLastPath = 'Last path segment (slug)';
 I18N_FALLBACK.ruleTypeFirstTwoPaths = 'First two path segments';
 I18N_FALLBACK.ruleTypeDomainFirstPath = 'Domain + first path segment';
 I18N_FALLBACK.ruleTypeFullUrl = 'Full URL';
+I18N_FALLBACK.ruleBtnMoveUp = 'Move up';
+I18N_FALLBACK.ruleBtnMoveDown = 'Move down';
 export let currentLang = 'en';
 // BX-i18n-LOC: To add a new language, append the code here + update ONB_LANG_LABELS below + create _locales/<code>/messages.json.
 export const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi', 'zh_TW'];

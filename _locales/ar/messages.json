@@ -995,5 +995,11 @@
   },
   "ruleTypeFullUrl": {
     "message": "الرابط الكامل"
+  },
+  "ruleBtnMoveUp": {
+    "message": "نقل لأعلى"
+  },
+  "ruleBtnMoveDown": {
+    "message": "نقل لأسفل"
   }
 }

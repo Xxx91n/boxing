@@ -12,7 +12,7 @@ import { i18n } from './i18n.js';
 import { normalizeBookmarkUrl } from './utils.js';
 import { saveLayout } from './storage.js';
 import { loadFavicon } from './favicon.js';
-import { attachAutoTitleHelper, deriveTitleFromUrl } from './url-title.js';
+import { attachAutoTitleHelper, deriveTitleOrHostname } from './url-title.js';
 
 // Injected render.js/ntp.js-scope deps (set once at boot, before any runtime call).
 let getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker,
@@ -166,11 +166,7 @@ export function initPopupsFacade(deps) {
       // BX-DEV-111k: validate box still exists before saving edited bookmark
       if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
       let title = titleInput.value.trim();
-      if (!title) {
-        try {
-          title = deriveTitleFromUrl(normalizedUrl, layout.settings?.autoTitleRules, layout.settings?.autoTitleEnabled !== false) || new URL(normalizedUrl).hostname;
-        } catch (_) { title = normalizedUrl; }
-      }
+      if (!title) title = deriveTitleOrHostname(normalizedUrl, layout.settings);
       bm.title = title;
       bm.url = normalizedUrl;
       saveLayout();
@@ -291,11 +287,7 @@ export function initPopupsFacade(deps) {
       sb.bookmarks = sb.bookmarks || [];
       if (sb.bookmarks.length >= MAX_BOOKMARKS) { debug('max bookmarks'); return; }
       let finalTitle = title;
-      if (!finalTitle) {
-        try {
-          finalTitle = deriveTitleFromUrl(normalizedUrl, layout.settings?.autoTitleRules, layout.settings?.autoTitleEnabled !== false) || new URL(normalizedUrl).hostname;
-        } catch (_) { finalTitle = new URL(normalizedUrl).hostname; }
-      }
+      if (!finalTitle) finalTitle = deriveTitleOrHostname(normalizedUrl, layout.settings);
       const entry = { id: makeId('bm'), title: finalTitle, url: normalizedUrl };
       commit("addBookmark", { largeId, smallId: sb.id, bookmark: entry }, { save: true });
       const lb = getLargeBox(largeId);

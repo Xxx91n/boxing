@@ -998,5 +998,11 @@
   },
   "ruleTypeFullUrl": {
     "message": "完整 URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "上移"
+  },
+  "ruleBtnMoveDown": {
+    "message": "下移"
   }
 }

@@ -995,5 +995,11 @@
   },
   "ruleTypeFullUrl": {
     "message": "URL แบบเต็ม"
+  },
+  "ruleBtnMoveUp": {
+    "message": "เลื่อนขึ้น"
+  },
+  "ruleBtnMoveDown": {
+    "message": "เลื่อนลง"
   }
 }

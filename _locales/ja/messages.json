@@ -995,5 +995,11 @@
   },
   "ruleTypeFullUrl": {
     "message": "完全な URL"
+  },
+  "ruleBtnMoveUp": {
+    "message": "上へ移動"
+  },
+  "ruleBtnMoveDown": {
+    "message": "下へ移動"
   }
 }
