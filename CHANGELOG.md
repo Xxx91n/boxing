@@ -7,6 +7,22 @@ and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) st
 
 ## [Unreleased]
 
+## [2026.10.17] - 2026-10-17
+
+User-facing notes for store listings and the GitHub Release body.
+
+### Added
+- **Quiet local auto-backups** — Local mode scheduled backups save silent internal snapshots by default without intrusive file download dialogs on new tabs (ADR-0024).
+- **Direct version check** — About tab checks GitHub Releases API directly as primary authority with Pages mirror fallback and 2-hour cache (D-002).
+- **Snapshot count hard ceiling** — Enforces MAX_SNAPSHOT_COUNT = 30 with GFS-tiered rotation, physical key pruning, and RAW_KEEP_FLOOR = 10 safety (ADR-0024).
+
+### Fixed
+- **Design token normalization** — Rule action buttons fully tokenized with --color-danger, --color-hover, and --radius-sm, restoring danger red and 3px radius in light and dark modes (D-003).
+
+### Internal
+- Architecture decision: ADR-0024 (local auto-backup convergence & snapshot cap).
+- Contrast guard and snapshot rotation tests expanded.
+
 Internal work after 2026.9.20. Per [ADR-0017](docs/adr/0017-release-data-gate.md) store
 uploads and GitHub tags still follow the release gate. Install from official store pages
 (see [publishing guide](docs/publishing-guide.md)); GitHub Releases are changelog-first
