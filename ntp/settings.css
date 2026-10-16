@@ -1119,3 +1119,59 @@ body.box-resizing {
   color: var(--color-muted);
   text-align: center;
 }
+
+.about-check-update-btn {
+  margin-left: var(--space-2);
+  padding: 1px 6px;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  vertical-align: middle;
+}
+
+.about-check-update-btn:hover {
+  background: var(--color-hover);
+  color: var(--color-ink);
+}
+
+.rule-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  padding: 0;
+  margin-right: 2px;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  vertical-align: middle;
+}
+
+.rule-action-btn:hover {
+  background: var(--color-hover);
+  color: var(--color-ink);
+}
+
+.rule-action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.rule-action-btn--delete {
+  color: var(--color-danger);
+}
+
+.rule-action-btn--delete:hover {
+  background: var(--color-danger-hover);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}

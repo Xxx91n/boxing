@@ -838,7 +838,7 @@
     "message": "Corrupted layout archived"
   },
   "dataHealthHint": {
-    "message": "Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot."
+    "message": "Boxing keeps up to 30 time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot."
   },
   "importMergeTitle": {
     "message": "Restore from backup",
@@ -1013,5 +1013,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "Move down"
+  },
+  "aboutCheckUpdate": {
+    "message": "Check for updates"
+  },
+  "aboutUpdateChecking": {
+    "message": "Checking for updates..."
+  },
+  "aboutUpdateLatest": {
+    "message": "Up to date"
+  },
+  "aboutUpdateFailed": {
+    "message": "Check failed"
+  },
+  "aboutViewReleases": {
+    "message": "View Releases"
   }
 }

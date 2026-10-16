@@ -13,7 +13,7 @@ import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyTheme } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
-import { PRIVACY_URL } from './site-constants.js';
+import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
 import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
 
 let debug, debugErr, debugWarn, updateCaption;
@@ -321,7 +321,7 @@ function openLink(url) {
   } catch (_) { window.open(url, '_blank', 'noopener'); }
 }
 
-export async function checkVersionUpdate() {
+export async function checkVersionUpdate(forceRefresh = false) {
   const hintEl = document.getElementById('about-update-hint');
   if (!hintEl) return;
   const versionValEl = document.getElementById('about-version-value');
@@ -330,11 +330,14 @@ export async function checkVersionUpdate() {
 
   const cr = globalThis.chrome || globalThis.browser;
   const CACHE_KEY = 'boxingVersionCache';
-  const TTL = 24 * 60 * 60 * 1000;
+  const TTL = 2 * 60 * 60 * 1000; // 2 hours TTL (D-002 / S-02)
+
+  hintEl.hidden = false;
+  hintEl.textContent = i18n('aboutUpdateChecking') || 'Checking for updates...';
 
   try {
     let cached = null;
-    if (cr?.storage?.local) {
+    if (!forceRefresh && cr?.storage?.local) {
       const res = await new Promise(r => cr.storage.local.get([CACHE_KEY], r));
       cached = res?.[CACHE_KEY];
     }
@@ -342,26 +345,29 @@ export async function checkVersionUpdate() {
     let latest = cached?.latest;
     let releaseUrl = cached?.url || 'https://github.com/Xxx91n/boxing/releases';
 
-    if (!latest || (now - (cached?.ts || 0)) >= TTL) {
+    if (forceRefresh || !latest || (now - (cached?.ts || 0)) >= TTL) {
       let fetched = null;
+      // 1. Primary authority: GitHub Releases API (D-002 / S-02)
       try {
-        const res = await fetch('https://boxing.xxx91n.com/version.json', { cache: 'no-cache' });
-        if (res.ok) {
-          const data = await res.json();
+        const ghRes = await fetch('https://api.github.com/repos/Xxx91n/boxing/releases/latest', { cache: 'no-cache' });
+        if (ghRes.ok) {
+          const ghData = await ghRes.json();
           fetched = {
-            latest: (data.version || data.tag_name || data.latest || '').trim(),
-            url: data.url || 'https://github.com/Xxx91n/boxing/releases'
+            latest: (ghData.tag_name || ghData.name || '').trim(),
+            url: ghData.html_url || 'https://github.com/Xxx91n/boxing/releases'
           };
         }
       } catch (_) {}
+
+      // 2. Fallback: Pages mirror demo/version.json if GitHub API failed or rate-limited
       if (!fetched) {
         try {
-          const ghRes = await fetch('https://api.github.com/repos/Xxx91n/boxing/releases/latest', { cache: 'no-cache' });
-          if (ghRes.ok) {
-            const ghData = await ghRes.json();
+          const res = await fetch(`${DEMO_URL}version.json`, { cache: 'no-cache' });
+          if (res.ok) {
+            const data = await res.json();
             fetched = {
-              latest: (ghData.tag_name || ghData.name || '').trim(),
-              url: ghData.html_url || 'https://github.com/Xxx91n/boxing/releases'
+              latest: (data.version || data.tag_name || data.latest || '').trim(),
+              url: data.url || 'https://github.com/Xxx91n/boxing/releases'
             };
           }
         } catch (_) {}
@@ -389,13 +395,26 @@ export async function checkVersionUpdate() {
         openLink(releaseUrl);
       });
       hintEl.append(prefix, link);
+    } else if (latest) {
+      hintEl.hidden = false;
+      hintEl.textContent = i18n('aboutUpdateLatest') || 'Up to date';
     } else {
-      hintEl.hidden = true;
-      hintEl.textContent = '';
+      hintEl.hidden = false;
+      hintEl.innerHTML = '';
+      const failText = document.createTextNode((i18n('aboutUpdateFailed') || 'Check failed') + ' ');
+      const relLink = document.createElement('a');
+      relLink.href = 'https://github.com/Xxx91n/boxing/releases';
+      relLink.textContent = '[' + (i18n('aboutViewReleases') || 'View Releases') + ']';
+      relLink.style.cssText = 'color:var(--color-muted);text-decoration:underline;cursor:pointer;';
+      relLink.addEventListener('click', e => {
+        e.preventDefault();
+        openLink('https://github.com/Xxx91n/boxing/releases');
+      });
+      hintEl.append(failText, relLink);
     }
   } catch (_) {
-    hintEl.hidden = true;
-    hintEl.textContent = '';
+    hintEl.hidden = false;
+    hintEl.textContent = i18n('aboutUpdateFailed') || 'Check failed';
   }
 }
 
@@ -417,6 +436,10 @@ export function initAboutTab() {
     'about-link-pulls': 'https://github.com/Xxx91n/boxing/pulls',
     'about-link-privacy': PRIVACY_URL,
   };
+  const checkUpdateBtn = document.getElementById('about-check-update-btn');
+  checkUpdateBtn?.addEventListener('click', () => {
+    checkVersionUpdate(true);
+  });
   for (const [id, url] of Object.entries(links)) {
     const btn = document.getElementById(id);
     if (btn) btn.addEventListener('click', () => openLink(url));
@@ -478,10 +501,11 @@ function renderAutoTitleRows() {
 
     const upBtn = document.createElement('button');
     upBtn.type = 'button';
+    upBtn.className = 'rule-action-btn';
     upBtn.textContent = '↑';
     upBtn.title = i18n('ruleBtnMoveUp');
+    upBtn.setAttribute('aria-label', i18n('ruleBtnMoveUp') || 'Move up');
     upBtn.disabled = idx === 0;
-    upBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
     upBtn.addEventListener('click', () => {
       if (idx > 0) {
         const tmp = rules[idx - 1];
@@ -494,10 +518,11 @@ function renderAutoTitleRows() {
 
     const downBtn = document.createElement('button');
     downBtn.type = 'button';
+    downBtn.className = 'rule-action-btn';
     downBtn.textContent = '↓';
     downBtn.title = i18n('ruleBtnMoveDown');
+    downBtn.setAttribute('aria-label', i18n('ruleBtnMoveDown') || 'Move down');
     downBtn.disabled = idx === rules.length - 1;
-    downBtn.style.cssText = 'padding:1px 5px;margin-right:2px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;';
     downBtn.addEventListener('click', () => {
       if (idx < rules.length - 1) {
         const tmp = rules[idx + 1];
@@ -510,9 +535,10 @@ function renderAutoTitleRows() {
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
+    delBtn.className = 'rule-action-btn rule-action-btn--delete';
     delBtn.textContent = '×';
     delBtn.title = i18n('bookmarkDelete');
-    delBtn.style.cssText = 'padding:1px 5px;font-size:var(--fs-xs);cursor:pointer;background:transparent;border:1px solid var(--color-hairline);border-radius:3px;color:red;';
+    delBtn.setAttribute('aria-label', i18n('bookmarkDelete') || 'Delete');
     delBtn.addEventListener('click', () => {
       rules.splice(idx, 1);
       saveLayout();

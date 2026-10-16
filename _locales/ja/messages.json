@@ -826,7 +826,7 @@
     "message": "破損したレイアウトをアーカイブしました"
   },
   "dataHealthHint": {
-    "message": "Boxing はレイアウトのスナップショットを時間階層で保持します。メインストレージが破損した場合、静かに上書きせずアーカイブしてから、最新の正常なスナップショットから再構築します。"
+    "message": "Boxing はレイアウトのスナップショットを時間階層別に最大30個保持します。メインストレージが破損した場合は、上書きせずにアーカイブした上で、最新の正常なスナップショットから再構築します。"
   },
   "importMergeTitle": {
     "message": "バックアップから復元",
@@ -1001,5 +1001,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "下へ移動"
+  },
+  "aboutCheckUpdate": {
+    "message": "更新を確認"
+  },
+  "aboutUpdateChecking": {
+    "message": "更新を確認中..."
+  },
+  "aboutUpdateLatest": {
+    "message": "最新版です"
+  },
+  "aboutUpdateFailed": {
+    "message": "確認に失敗しました"
+  },
+  "aboutViewReleases": {
+    "message": "リリース一覧を見る"
   }
 }

@@ -826,7 +826,7 @@
     "message": "Diseño dañado archivado"
   },
   "dataHealthHint": {
-    "message": "Boxing conserva instantáneas de tu diseño por capas temporales. Si el almacenamiento principal se daña, se archiva (nunca se sobrescribe en silencio) y se reconstruye desde la última instantánea correcta."
+    "message": "Boxing conserva hasta 30 instantáneas organizadas por tiempo de su diseño. Si el almacenamiento principal se daña, se archiva (nunca se sobrescribe silenciosamente) y se reconstruye a partir de la instantánea en buen estado más reciente."
   },
   "importMergeTitle": {
     "message": "Restaurar desde copia de seguridad",
@@ -1001,5 +1001,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "Mover hacia abajo"
+  },
+  "aboutCheckUpdate": {
+    "message": "Buscar actualizaciones"
+  },
+  "aboutUpdateChecking": {
+    "message": "Buscando actualizaciones..."
+  },
+  "aboutUpdateLatest": {
+    "message": "Está actualizado"
+  },
+  "aboutUpdateFailed": {
+    "message": "Error al comprobar"
+  },
+  "aboutViewReleases": {
+    "message": "Ver lanzamientos"
   }
 }

@@ -35,6 +35,10 @@
   --color-accent-600: #6E5540;
   --accent-500-rgb: 160, 128, 96;  /* for rgba() derivation */
 
+  /* --- Danger ramp (light) --- */
+  --color-danger-500: #991B1B;
+  --danger-500-rgb: 153, 27, 27;  /* for rgba() derivation */
+
   /* --- Dark warm neutral ramp --- */
   --color-warm-dark-50: #1E1C1A;
   --color-warm-dark-100: #252320;
@@ -52,6 +56,10 @@
   --color-accent-dark-500: #C4A882;
   --color-accent-dark-600: #D4B88C;
   --accent-dark-500-rgb: 196, 168, 130;
+
+  /* --- Dark danger ramp --- */
+  --color-danger-dark-500: #FCA5A5;
+  --danger-dark-500-rgb: 252, 165, 165;  /* for rgba() derivation */
 
   /* ═══════════════════════════════════════════════
    * Layer 2 — Semantic Tokens (light mode defaults)
@@ -82,7 +90,13 @@
   --color-accent-soft-2: rgba(var(--accent-500-rgb), 0.18);
   --color-focus: var(--color-accent-300);
 
+  /* Interactive states & feedback (ADR-0008) */
+  --color-hover: rgba(var(--warm-900-rgb), 0.05);
+  --color-danger: var(--color-danger-500);
+  --color-danger-hover: rgba(var(--danger-500-rgb), 0.10);
+
   /* Radii / spacing */
+  --radius-sm: 3px;
   --radius-card: 18px;
   --radius-tile: 12px;
   --radius-pill: 999px;
@@ -177,6 +191,11 @@
   --color-accent-soft: rgba(var(--accent-dark-500-rgb), 0.12);
   --color-accent-soft-2: rgba(var(--accent-dark-500-rgb), 0.20);
   --color-focus: var(--color-accent-dark-300);
+
+  /* Interactive states & feedback */
+  --color-hover: rgba(255, 255, 255, 0.08);
+  --color-danger: var(--color-danger-dark-500);
+  --color-danger-hover: rgba(var(--danger-dark-500-rgb), 0.15);
 
   /* Shadow — black-based dark mode calibrated (Phase 6: Shadow-C) */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 1px rgba(0, 0, 0, 0.12);

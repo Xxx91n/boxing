@@ -826,7 +826,7 @@
     "message": "Beschädigtes Layout archiviert"
   },
   "dataHealthHint": {
-    "message": "Boxing bewahrt zeitlich gestaffelte Snapshots Ihres Layouts auf. Wird der Hauptspeicher beschädigt, wird er archiviert (niemals still überschrieben) und aus dem letzten gesunden Snapshot wiederhergestellt."
+    "message": "Boxing behält bis zu 30 zeitlich gestaffelte Schnappschüsse Ihres Layouts. Sollte der Hauptspeicher beschädigt werden, wird er archiviert (nie stillschweigend überschrieben) und aus dem neuesten intakten Schnappschuss wiederhergestellt."
   },
   "importMergeTitle": {
     "message": "Aus Sicherung wiederherstellen",
@@ -1001,5 +1001,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "Nach unten verschieben"
+  },
+  "aboutCheckUpdate": {
+    "message": "Nach Updates suchen"
+  },
+  "aboutUpdateChecking": {
+    "message": "Suche nach Updates..."
+  },
+  "aboutUpdateLatest": {
+    "message": "Auf dem neuesten Stand"
+  },
+  "aboutUpdateFailed": {
+    "message": "Prüfung fehlgeschlagen"
+  },
+  "aboutViewReleases": {
+    "message": "Releases anzeigen"
   }
 }

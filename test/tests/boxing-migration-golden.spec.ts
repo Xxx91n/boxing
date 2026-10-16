@@ -64,6 +64,12 @@ test.describe('Migration golden fixtures (ticket 45)', () => {
       const pageResult = await page.evaluate((json) => {
         return (window as any).__boxingDebug.migrateLayout(JSON.parse(json));
       }, JSON.stringify(raw));
+      if (!raw.settings || raw.settings.lastBackupAt === undefined) {
+        expect(typeof pageResult.settings.lastBackupAt).toBe('number');
+        expect(typeof nodeResult.settings.lastBackupAt).toBe('number');
+        expect(Math.abs(pageResult.settings.lastBackupAt - nodeResult.settings.lastBackupAt)).toBeLessThan(10000);
+        pageResult.settings.lastBackupAt = nodeResult.settings.lastBackupAt;
+      }
       expect(pageResult, 'parity mismatch for fixture ' + name).toEqual(nodeResult);
     }
   });
