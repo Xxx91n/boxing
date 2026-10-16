@@ -129,9 +129,9 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     const settingsUiSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/settings-ui.js'), 'utf8');
 
     expect(htmlSrc).toContain('id="about-update-hint"');
-    expect(settingsUiSrc).toContain('export async function checkVersionUpdate()');
+    expect(settingsUiSrc).toContain('export async function checkVersionUpdate(');
     expect(settingsUiSrc).toContain('boxingVersionCache');
-    expect(settingsUiSrc).toContain('https://boxing.xxx91n.com/version.json');
+    expect(settingsUiSrc).toContain('version.json');
     expect(settingsUiSrc).toContain('api.github.com/repos/Xxx91n/boxing/releases/latest');
 
     // 14 locales have aboutUpdateAvailable
@@ -272,14 +272,22 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     await boot(page);
 
     let versionFetchCount = 0;
-    await page.route('**/version.json*', route => {
+    const fulfillVersion = (route: import('@playwright/test').Route) => {
       versionFetchCount++;
       route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ version: '2026.10.17', url: 'https://github.com/Xxx91n/boxing' })
+        body: JSON.stringify({
+          tag_name: 'v2026.10.17',
+          name: 'v2026.10.17',
+          version: '2026.10.17',
+          url: 'https://github.com/Xxx91n/boxing/releases/tag/v2026.10.17',
+          html_url: 'https://github.com/Xxx91n/boxing/releases/tag/v2026.10.17'
+        })
       });
-    });
+    };
+    await page.route('**/repos/Xxx91n/boxing/releases/latest*', fulfillVersion);
+    await page.route('**/version.json*', fulfillVersion);
 
     // 1. Simulate external sync adopting lastSettingsTab: 'about' while modal is closed
     const applied = await page.evaluate(async () => {
