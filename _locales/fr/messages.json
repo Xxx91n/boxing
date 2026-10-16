@@ -826,7 +826,7 @@
     "message": "Mise en page corrompue archivée"
   },
   "dataHealthHint": {
-    "message": "Boxing conserve des captures de votre mise en page par paliers temporels. Si le stockage principal est endommagé, il est archivé (jamais écrasé silencieusement) puis reconstruit à partir de la dernière capture saine."
+    "message": "Boxing conserve jusqu'à 30 instantanés échelonnés dans le temps de votre disposition. Si le stockage principal est endommagé, il est archivé (jamais écrasé silencieusement) et reconstruit à partir du dernier instantané intègre."
   },
   "importMergeTitle": {
     "message": "Restaurer depuis une sauvegarde",
@@ -1001,5 +1001,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "Déplacer vers le bas"
+  },
+  "aboutCheckUpdate": {
+    "message": "Vérifier les mises à jour"
+  },
+  "aboutUpdateChecking": {
+    "message": "Vérification des mises à jour..."
+  },
+  "aboutUpdateLatest": {
+    "message": "À jour"
+  },
+  "aboutUpdateFailed": {
+    "message": "Échec de la vérification"
+  },
+  "aboutViewReleases": {
+    "message": "Voir les versions"
   }
 }

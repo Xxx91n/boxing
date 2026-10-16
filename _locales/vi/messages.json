@@ -826,7 +826,7 @@
     "message": "Bố cục hỏng đã được lưu trữ"
   },
   "dataHealthHint": {
-    "message": "Boxing giữ các ảnh chụp nhanh bố cục theo tầng thời gian. Nếu bộ lưu trữ chính bị hỏng, nó sẽ được lưu trữ (không bao giờ ghi đè im lặng) và dựng lại từ ảnh chụp nhanh lành lặn mới nhất."
+    "message": "Boxing lưu giữ tối đa 30 ảnh chụp nhanh theo thời gian cho bố cục của bạn. Nếu bộ nhớ chính bị hỏng, nó sẽ được lưu trữ (không bao giờ bị ghi đè âm thầm) và xây dựng lại từ ảnh chụp nhanh tốt gần nhất."
   },
   "importMergeTitle": {
     "message": "Khôi phục từ bản sao lưu",
@@ -1001,5 +1001,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "Di chuyển xuống"
+  },
+  "aboutCheckUpdate": {
+    "message": "Kiểm tra cập nhật"
+  },
+  "aboutUpdateChecking": {
+    "message": "Đang kiểm tra cập nhật..."
+  },
+  "aboutUpdateLatest": {
+    "message": "Đã là phiên bản mới nhất"
+  },
+  "aboutUpdateFailed": {
+    "message": "Kiểm tra thất bại"
+  },
+  "aboutViewReleases": {
+    "message": "Xem bản phát hành"
   }
 }

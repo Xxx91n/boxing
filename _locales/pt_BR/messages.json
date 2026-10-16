@@ -826,7 +826,7 @@
     "message": "Layout corrompido arquivado"
   },
   "dataHealthHint": {
-    "message": "O Boxing mantém instantâneos do seu layout em camadas de tempo. Se o armazenamento principal for danificado, ele é arquivado (nunca substituído silenciosamente) e reconstruído a partir do instantâneo íntegro mais recente."
+    "message": "O Boxing mantém até 30 instantâneos temporais do seu layout. Se o armazenamento principal for corrompido, ele será arquivado (nunca sobrescrito silenciosamente) e reconstruído a partir do instantâneo saudável mais recente."
   },
   "importMergeTitle": {
     "message": "Restaurar do backup",
@@ -1001,5 +1001,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "Mover para baixo"
+  },
+  "aboutCheckUpdate": {
+    "message": "Verificar atualizações"
+  },
+  "aboutUpdateChecking": {
+    "message": "Verificando atualizações..."
+  },
+  "aboutUpdateLatest": {
+    "message": "Atualizado"
+  },
+  "aboutUpdateFailed": {
+    "message": "Falha na verificação"
+  },
+  "aboutViewReleases": {
+    "message": "Ver lançamentos"
   }
 }

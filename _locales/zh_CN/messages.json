@@ -829,7 +829,7 @@
     "message": "已归档损坏布局"
   },
   "dataHealthHint": {
-    "message": "Boxing 按时间分层保留布局快照。若主存储损坏，会先归档（绝不静默覆盖）再从最近健康快照重建。"
+    "message": "Boxing 按时间分层保留最多 30 个布局快照。若主存储损坏，会先归档（绝不静默覆盖）再从最近健康快照重建。"
   },
   "importMergeTitle": {
     "message": "从备份恢复",
@@ -1004,5 +1004,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "下移"
+  },
+  "aboutCheckUpdate": {
+    "message": "检查更新"
+  },
+  "aboutUpdateChecking": {
+    "message": "正在检查更新..."
+  },
+  "aboutUpdateLatest": {
+    "message": "已是最新版本"
+  },
+  "aboutUpdateFailed": {
+    "message": "检查失败"
+  },
+  "aboutViewReleases": {
+    "message": "查看发布页面"
   }
 }

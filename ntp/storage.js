@@ -169,6 +169,7 @@ export function registerStorageOnChanged() {
   // tier dedup applies beyond the floor, so saveSnapshot + restoreFromSnapshot within one
   // hour still finds every entry (strict same-hour dedup silently pruned pre-update copies).
   const RAW_KEEP_FLOOR = 10;
+  export const MAX_SNAPSHOT_COUNT = 30;
 
   const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);
   const dailyBucket = (ts) => Math.floor(ts / DAY_MS);
@@ -262,6 +263,11 @@ export function registerStorageOnChanged() {
       ...floor,
     ];
     kept.sort((a, b) => a.ts - b.ts);
+    // Absolute count cap (ADR-0024 / D-004): drop oldest until at or under MAX_SNAPSHOT_COUNT (30)
+    while (kept.length > MAX_SNAPSHOT_COUNT) {
+      const removed = kept.shift();
+      try { await layoutStorage.remove(SNAP_KEY_PREFIX + removed.ts); } catch (_) { /* non-fatal */ }
+    }
     // Total byte cap: drop oldest until under budget (keep at least 1)
     let totalBytes = kept.reduce((s, e) => s + (e.size || 0), 0);
     while (kept.length > 1 && totalBytes > MAX_SNAPSHOTS_TOTAL_BYTES) {

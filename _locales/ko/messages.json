@@ -826,7 +826,7 @@
     "message": "손상된 레이아웃이 보관됨"
   },
   "dataHealthHint": {
-    "message": "Boxing은 레이아웃 스냅샷을 시간 계층으로 유지합니다. 기본 저장소가 손상되면 조용히 덮어쓰지 않고 보관한 뒤 최근 정상 스냅샷에서 재구축합니다."
+    "message": "Boxing은 레이아웃 스냅샷을 시간별로 최대 30개까지 보관합니다. 주 저장소가 손상된 경우 덮어쓰지 않고 아카이브한 후 가장 최근의 정상 스냅샷에서 다시 복원합니다。"
   },
   "importMergeTitle": {
     "message": "백업에서 복원",
@@ -1001,5 +1001,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "아래로 이동"
+  },
+  "aboutCheckUpdate": {
+    "message": "업데이트 확인"
+  },
+  "aboutUpdateChecking": {
+    "message": "업데이트 확인 중..."
+  },
+  "aboutUpdateLatest": {
+    "message": "최신 버전입니다"
+  },
+  "aboutUpdateFailed": {
+    "message": "확인 실패"
+  },
+  "aboutViewReleases": {
+    "message": "릴리스 보기"
   }
 }

@@ -829,7 +829,7 @@
     "message": "已封存損壞版面"
   },
   "dataHealthHint": {
-    "message": "Boxing 會按時間分層保留版面快照。若主儲存損壞，會先封存（絕不靜默覆寫）再從最近健康快照重建。"
+    "message": "Boxing 按時間分層保留最多 30 個佈局快照。若主儲存損壞，會先歸檔（絕不無聲覆蓋）再從最近健康快照重建。"
   },
   "importMergeTitle": {
     "message": "從備份恢復",
@@ -1004,5 +1004,20 @@
   },
   "ruleBtnMoveDown": {
     "message": "下移"
+  },
+  "aboutCheckUpdate": {
+    "message": "檢查更新"
+  },
+  "aboutUpdateChecking": {
+    "message": "正在檢查更新..."
+  },
+  "aboutUpdateLatest": {
+    "message": "已是最新版本"
+  },
+  "aboutUpdateFailed": {
+    "message": "檢查失敗"
+  },
+  "aboutViewReleases": {
+    "message": "查看發布頁面"
   }
 }

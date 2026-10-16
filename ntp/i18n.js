@@ -157,7 +157,7 @@ onboardingLangDesc: 'Pick a language for the interface',
   dataSnapshotCount: 'Snapshot count',
   dataLastSnapshotTime: 'Latest snapshot',
   dataCorruptArchived: 'Corrupted layout archived',
-  dataHealthHint: 'Boxing keeps time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot.',
+  dataHealthHint: 'Boxing keeps up to 30 time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never silently overwritten) and rebuilt from the latest healthy snapshot.',
 };
 // Add new v3.6 keys to I18N_FALLBACK
 I18N_FALLBACK.syncLocalOnly = 'Local Only';
@@ -290,6 +290,11 @@ I18N_FALLBACK.ruleTypeDomainFirstPath = 'Domain + first path segment';
 I18N_FALLBACK.ruleTypeFullUrl = 'Full URL';
 I18N_FALLBACK.ruleBtnMoveUp = 'Move up';
 I18N_FALLBACK.ruleBtnMoveDown = 'Move down';
+I18N_FALLBACK.aboutCheckUpdate = 'Check for updates';
+I18N_FALLBACK.aboutUpdateChecking = 'Checking for updates...';
+I18N_FALLBACK.aboutUpdateLatest = 'Up to date';
+I18N_FALLBACK.aboutUpdateFailed = 'Check failed';
+I18N_FALLBACK.aboutViewReleases = 'View Releases';
 export let currentLang = 'en';
 // BX-i18n-LOC: To add a new language, append the code here + update ONB_LANG_LABELS below + create _locales/<code>/messages.json.
 export const SUPPORTED_LANGS = ['en', 'zh_CN', 'ja', 'ko', 'fr', 'de', 'es', 'pt_BR', 'ru', 'ar', 'hi', 'th', 'vi', 'zh_TW'];

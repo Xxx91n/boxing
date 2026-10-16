@@ -657,6 +657,8 @@ export function initSyncEngineFacade(deps) {
     }
     window.__bxSync = window.__bxSync || {};
     window.__bxSync.backupToGist = backupToGist;
+    window.__bxSync.backupToLocal = backupToLocal;
+    window.__bxSync.performBackup = performBackup;
 
     function backupToLocal() {
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -683,11 +685,11 @@ export function initSyncEngineFacade(deps) {
         }
         else if (p === 'gist') { await backupToGist(); debug('Gist backup ok'); }
         await saveSnapshot(); // ADR-0009: always save versioned snapshot
-        if (p === 'local') backupToLocal();
+        // ADR-0024 / D-001: Local mode auto-backup strictly converges to silent snapshot, never calls backupToLocal()
         layout.settings.lastBackupAt = Date.now();
         updateLastBackupDisplay();
         saveLayout();
-      } catch (e) { debugErr('Backup failed', e); if (p !== 'local') backupToLocal(); }
+      } catch (e) { debugErr('Backup failed', e); }
     }
 
     // ── Auto-backup scheduler ──────────────────────
@@ -696,6 +698,7 @@ export function initSyncEngineFacade(deps) {
     // ADR-0022: chrome.alarms hub in background SW; NTP page creates/ensures alarm.
     // Duplicate onAlarm listener in NTP page removed to prevent double execution.
     function setupAutoBackup(sec) {
+      if (typeof window !== 'undefined' && window.__BOXING_DEMO__) return;
       if (autoBackupTimer) { clearInterval(autoBackupTimer); autoBackupTimer = null; }
       if (!sec || sec < 3600) {
         try {
@@ -722,6 +725,7 @@ export function initSyncEngineFacade(deps) {
     }
 
     async function checkAutoBackupCatchUp() {
+      if (typeof window !== 'undefined' && window.__BOXING_DEMO__) return;
       // Requires a real extension environment: file:// lanes and the demo stub
       // have no service worker, so no alarm hub exists and no due flag can ever
       // be set. Without this gate, seeded test layouts (autoBackupInterval set,
@@ -920,7 +924,13 @@ export function bindSyncBackupUi() {
         setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 4000);
       }
     });
-    backupNowBtn?.addEventListener('click', () => performBackup());
+    backupNowBtn?.addEventListener('click', async () => {
+      const p = syncProviderSelect?.value || 'local';
+      if (p === 'local') {
+        backupToLocal();
+      }
+      await performBackup();
+    });
     // ADR-0022: listen for background SW auto-backup trigger
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
