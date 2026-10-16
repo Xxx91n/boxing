@@ -1171,7 +1171,7 @@ body.box-resizing {
 }
 
 .rule-action-btn--delete:hover {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--color-danger-hover);
   color: var(--color-danger);
   border-color: var(--color-danger);
 }

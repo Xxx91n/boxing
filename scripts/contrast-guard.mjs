@@ -1,22 +1,25 @@
 #!/usr/bin/env node
-// Ticket 102 (architecture-recovery) - A-056 / B66: 亮色 bm-add-btn 对比度门禁。
+// Ticket 102 (architecture-recovery) - A-056 / B66 / Wave 11 D-003: 对比度与 Token 配对门禁。
 //
 // 为什么是"构建期 token 配对断言"而不是只靠浏览器测试:
 //   axe-core 的 color-contrast 规则只覆盖 SC 1.4.3 文本, 且对渐变/伪元素/opacity 标记
 //   incomplete; 目前没有任何主流自动化工具原生检查 SC 1.4.11 的非文本(边框)对比度。
 //   工业界(Carbon #2729 / design-system-generator / Primer)把这道门放在 TOKEN 层:
 //   对前景/背景配对离线跑 WCAG 相对亮度, 不达标即构建失败。本脚本是本仓第一道门,
-//   与 test/tests/boxing-empty-state-buttons.spec.ts 的运行时 DOM 断言(第三道门)互补。
+//   与 test/tests/boxing-empty-state-buttons.spec.ts 及 boxing-wave11-1017.spec.ts 的
+//   运行时 DOM 断言(第三道门)互补。
 //
-// 被检契约(从 CSS 源文件读出, 不硬编码颜色 —— 改回 hairline 会立刻红):
+// 被检契约(从 CSS 源文件读出, 不硬编码颜色):
 //   1. ntp/base.css      .bm-add-row .bm-add-btn             亮色 rest
 //   2. ntp/base.css      .bm-add-row .bm-add-btn:hover       亮色 hover
 //   3. ntp/settings.css  .ntp--dark .bm-add-row .bm-add-btn        暗色 rest
 //   4. ntp/settings.css  .ntp--dark .bm-add-row .bm-add-btn:hover  暗色 hover
+//   5. ntp/settings.css  .rule-action-btn (含 --delete 变体) normal / hover / disabled 亮/暗态
 //
 // 判定面: 三种 surface(canvas / canvas-2 / elevated)全部达标才算过, 报告取最坏值。
-//   文本 >= 4.5:1 (SC 1.4.3; 本按钮 13px/500 属常规文本)
-//   边界 >= 3.0:1 (SC 1.4.11; W3C 细线抗锯齿 Note 要求留余量, 故额外打印 margin)
+//   文本 >= 4.5:1 (SC 1.4.3; 常规文本)
+//   边界 >= 3.0:1 (SC 1.4.11; 非文本边界)
+//   禁用态: SC 1.4.3 明确豁免 (inactive controls exempt, 报告标注并审计透明度)
 //
 // 接入: package.json 的 pretest(与 import-graph-guard / migration-golden-guard /
 //   css-balance-guard / calver-guard 同一阻断纪律)。
@@ -57,18 +60,26 @@ function stripComments(css) {
 }
 
 function blockBody(css, selector) {
-  const idx = css.indexOf(selector);
-  if (idx < 0) return null;
-  let open = -1;
-  for (let i = idx + selector.length; i < css.length; i++) {
-    if (css.charAt(i) === "{") { open = i; break; }
-    if (css.charAt(i) === ";") return null;
-  }
-  if (open < 0) return null;
-  let depth = 0;
-  for (let i = open; i < css.length; i++) {
-    if (css.charAt(i) === "{") depth++;
-    else if (css.charAt(i) === "}") { depth--; if (depth === 0) return css.slice(open + 1, i); }
+  let pos = 0;
+  while (pos < css.length) {
+    const idx = css.indexOf(selector, pos);
+    if (idx < 0) return null;
+    const nextChar = css.charAt(idx + selector.length);
+    if (nextChar === ' ' || nextChar === '\n' || nextChar === '\r' || nextChar === '\t' || nextChar === '{' || nextChar === ',') {
+      let open = -1;
+      for (let i = idx + selector.length; i < css.length; i++) {
+        if (css.charAt(i) === "{") { open = i; break; }
+        if (css.charAt(i) === ";") break;
+      }
+      if (open >= 0) {
+        let depth = 0;
+        for (let i = open; i < css.length; i++) {
+          if (css.charAt(i) === "{") depth++;
+          else if (css.charAt(i) === "}") { depth--; if (depth === 0) return css.slice(open + 1, i); }
+        }
+      }
+    }
+    pos = idx + 1;
   }
   return null;
 }
@@ -89,6 +100,7 @@ function parseTokens(css, selector) {
 }
 
 function decl(body, prop) {
+  if (!body) return null;
   for (const raw of body.split(NL)) {
     const line = raw.trim();
     if (line.indexOf(prop + ":") !== 0) continue;
@@ -101,6 +113,7 @@ function decl(body, prop) {
 
 // border 用的是 shorthand "1px dashed var(--x)" -> 抽出其中的 var()
 function borderColor(body) {
+  if (!body) return null;
   const b = decl(body, "border");
   if (b) {
     const i = b.indexOf("var(");
@@ -167,6 +180,23 @@ function over(fg, bg) {
 }
 function fmt(n) { return n.toFixed(2); }
 
+function checkReferencedTokens(body, tokens, blockName, failures) {
+  if (!body) return;
+  const matches = body.matchAll(/var\((--[a-zA-Z0-9_-]+)/g);
+  for (const m of matches) {
+    const tokenName = m[1];
+    if (tokens[tokenName] === undefined) {
+      failures.push({
+        row: blockName + " missing token " + tokenName,
+        surface: "N/A",
+        value: 0,
+        min: 1,
+        message: "Referenced token " + tokenName + " is undefined in design-system.css",
+      });
+    }
+  }
+}
+
 function main() {
   const ds = stripComments(read(DS_REL));
   const base = stripComments(read(BASE_REL));
@@ -191,6 +221,18 @@ function main() {
     if (r.body == null) { console.error("[contrast-guard] rule not found: " + r.name); process.exit(1); }
   }
 
+  // Wave 11 / D-003: .rule-action-btn blocks
+  const ruleBtnBlocks = {
+    btn: blockBody(settings, ".rule-action-btn"),
+    btnHover: blockBody(settings, ".rule-action-btn:hover"),
+    btnDisabled: blockBody(settings, ".rule-action-btn:disabled"),
+    btnDel: blockBody(settings, ".rule-action-btn--delete"),
+    btnDelHover: blockBody(settings, ".rule-action-btn--delete:hover"),
+  };
+  for (const [k, v] of Object.entries(ruleBtnBlocks)) {
+    if (v == null) { console.error("[contrast-guard] rule-action-btn block not found: " + k); process.exit(1); }
+  }
+
   const SURFACES = ["--color-canvas", "--color-canvas-2", "--color-elevated"];
   const themes = [
     { name: "light", tokens: light, rest: rules[0].body, hover: rules[1].body },
@@ -200,6 +242,7 @@ function main() {
   const rows = [];
   const failures = [];
 
+  // Section 1: bm-add-btn checks
   for (const theme of themes) {
     const t = theme.tokens;
     const glyph = resolve(decl(theme.rest, "color"), t);
@@ -211,12 +254,64 @@ function main() {
       const surface = resolve("var(" + sName + ")", t);
       const fill = over(hoverBg, surface);
       const checks = [
-        { row: theme.name + " rest glyph", surface: sName, value: ratio(over(glyph, surface), surface), min: TEXT_MIN },
-        { row: theme.name + " rest border", surface: sName, value: ratio(over(border, surface), surface), min: BOUNDARY_MIN },
-        { row: theme.name + " hover glyph", surface: sName, value: ratio(over(hoverGlyph, fill), fill), min: TEXT_MIN },
-        { row: theme.name + " hover border", surface: sName, value: ratio(over(hoverBorder, fill), fill), min: BOUNDARY_MIN },
+        { section: "bm-add-btn", row: theme.name + " rest glyph", surface: sName, value: ratio(over(glyph, surface), surface), min: TEXT_MIN },
+        { section: "bm-add-btn", row: theme.name + " rest border", surface: sName, value: ratio(over(border, surface), surface), min: BOUNDARY_MIN },
+        { section: "bm-add-btn", row: theme.name + " hover glyph", surface: sName, value: ratio(over(hoverGlyph, fill), fill), min: TEXT_MIN },
+        { section: "bm-add-btn", row: theme.name + " hover border", surface: sName, value: ratio(over(hoverBorder, fill), fill), min: BOUNDARY_MIN },
       ];
       for (const c of checks) {
+        rows.push(c);
+        if (c.value < c.min) failures.push(c);
+      }
+    }
+  }
+
+  // Section 2: Wave 11 D-003 .rule-action-btn & --delete variant (normal / hover / disabled × light / dark)
+  for (const theme of themes) {
+    const t = theme.tokens;
+
+    // Check token definition existence for all referenced var(--x) (B-13 a)
+    checkReferencedTokens(ruleBtnBlocks.btn, t, ".rule-action-btn", failures);
+    checkReferencedTokens(ruleBtnBlocks.btnHover, t, ".rule-action-btn:hover", failures);
+    checkReferencedTokens(ruleBtnBlocks.btnDisabled, t, ".rule-action-btn:disabled", failures);
+    checkReferencedTokens(ruleBtnBlocks.btnDel, t, ".rule-action-btn--delete", failures);
+    checkReferencedTokens(ruleBtnBlocks.btnDelHover, t, ".rule-action-btn--delete:hover", failures);
+
+    // Resolved colors
+    const ink = resolve(decl(ruleBtnBlocks.btn, "color"), t);
+    const hoverBg = resolve(decl(ruleBtnBlocks.btnHover, "background"), t);
+    const disabledOpacity = parseFloat(decl(ruleBtnBlocks.btnDisabled, "opacity") || "0.35");
+    const danger = resolve(decl(ruleBtnBlocks.btnDel, "color"), t);
+    const dangerHoverBg = resolve(decl(ruleBtnBlocks.btnDelHover, "background"), t);
+
+    for (const sName of SURFACES) {
+      const surface = resolve("var(" + sName + ")", t);
+      const hoverFill = over(hoverBg, surface);
+      const dangerHoverFill = over(dangerHoverBg, surface);
+
+      // Normal button
+      const inkRestVal = ratio(over(ink, surface), surface);
+      const inkHoverVal = ratio(over(ink, hoverFill), hoverFill);
+      const inkDisabledVal = ratio(over({ ...ink, a: disabledOpacity }, surface), surface);
+
+      // Delete button
+      const dangerRestVal = ratio(over(danger, surface), surface);
+      const dangerHoverVal = ratio(over(danger, dangerHoverFill), dangerHoverFill);
+      const dangerHoverBorderVal = ratio(over(danger, dangerHoverFill), dangerHoverFill);
+      const dangerDisabledVal = ratio(over({ ...danger, a: disabledOpacity }, surface), surface);
+
+      const btnChecks = [
+        { section: "rule-action-btn", row: theme.name + " rule-btn rest", surface: sName, value: inkRestVal, min: TEXT_MIN },
+        { section: "rule-action-btn", row: theme.name + " rule-btn hover", surface: sName, value: inkHoverVal, min: TEXT_MIN },
+        // Disabled: SC 1.4.3 exempts inactive controls; min: 0 ensures non-failing audit reporting
+        { section: "rule-action-btn", row: theme.name + " rule-btn disabled", surface: sName, value: inkDisabledVal, min: 0, exempt: true },
+        { section: "rule-action-btn", row: theme.name + " del-btn rest", surface: sName, value: dangerRestVal, min: TEXT_MIN },
+        { section: "rule-action-btn", row: theme.name + " del-btn hover", surface: sName, value: dangerHoverVal, min: TEXT_MIN },
+        { section: "rule-action-btn", row: theme.name + " del-btn hover border", surface: sName, value: dangerHoverBorderVal, min: BOUNDARY_MIN },
+        { section: "rule-action-btn", row: theme.name + " del-btn disabled", surface: sName, value: dangerDisabledVal, min: 0, exempt: true },
+      ];
+
+      for (const c of btnChecks) {
         rows.push(c);
         if (c.value < c.min) failures.push(c);
       }
@@ -228,23 +323,37 @@ function main() {
     process.exit(failures.length ? 1 : 0);
   }
 
+  // Print Summary
   const worst = {};
   const order = [];
   for (const r of rows) {
     if (worst[r.row] === undefined) { order.push(r.row); worst[r.row] = r; }
     else if (r.value < worst[r.row].value) worst[r.row] = r;
   }
-  console.log("[contrast-guard] bm-add-btn token pairing (worst of canvas / canvas-2 / elevated)");
-  for (const k of order) {
+
+  console.log("[contrast-guard] Token pairing contrast report (worst of canvas / canvas-2 / elevated):");
+  console.log("--- 1. bm-add-btn ---");
+  for (const k of order.filter(k => k.includes("glyph") || k.includes("border") && !k.includes("del-btn"))) {
     const w = worst[k];
     const ok = w.value >= w.min ? "PASS" : "FAIL";
     let pad = k;
-    while (pad.length < 20) pad += " ";
+    while (pad.length < 28) pad += " ";
     console.log("  " + ok + "  " + pad + " " + fmt(w.value) + ":1  (min " + w.min + ":1, worst surface " + w.surface + ")");
   }
+
+  console.log("--- 2. rule-action-btn & --delete (normal / hover / disabled) ---");
+  for (const k of order.filter(k => k.includes("rule-btn") || k.includes("del-btn"))) {
+    const w = worst[k];
+    const ok = w.value >= w.min ? "PASS" : "FAIL";
+    let pad = k;
+    while (pad.length < 28) pad += " ";
+    const note = w.exempt ? " (SC 1.4.3 exempt inactive, worst " + w.surface + ")" : " (min " + w.min + ":1, worst surface " + w.surface + ")";
+    console.log("  " + ok + "  " + pad + " " + fmt(w.value) + ":1 " + note);
+  }
+
   if (failures.length) {
     console.error(NL + "[contrast-guard] FAILED " + failures.length + " pairing(s):");
-    for (const f of failures) console.error("  - " + f.row + " on " + f.surface + ": " + fmt(f.value) + ":1 < " + f.min + ":1");
+    for (const f of failures) console.error("  - " + f.row + " on " + f.surface + ": " + (f.message || (fmt(f.value) + ":1 < " + f.min + ":1")));
     console.error(NL + "Fix the token pairing in ntp/base.css / ntp/settings.css / ntp/design-system.css.");
   } else {
     console.log("[contrast-guard] OK - SC 1.4.3 (>=4.5:1) and SC 1.4.11 (>=3:1) satisfied in both themes.");

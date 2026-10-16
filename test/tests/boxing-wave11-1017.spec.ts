@@ -11,7 +11,9 @@ const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html')).href;
 
 async function boot(page: Page) {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 15000 });
-  await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+  await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 10000 }).toBe(true);
   await dismissOnboarding(page);
   await page.waitForTimeout(200);
 }
@@ -164,40 +166,76 @@ test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
   });
 
   // ── S-03 / D-003: Auto-title rule buttons dark mode & token normalization ───
-  test('S-03 / D-003: rule action buttons use CSS classes and design tokens; no inline color styles', async ({ page }) => {
-    // 1. Static CSS verification
-    const cssSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/settings.css'), 'utf8');
-    expect(cssSrc).toContain('.rule-action-btn');
-    expect(cssSrc).toContain('.rule-action-btn--delete');
-    expect(cssSrc).toContain('var(--color-surface)');
-    expect(cssSrc).toContain('var(--color-danger)');
+  test('S-03 / D-003: rule action buttons use CSS classes and design tokens; getComputedStyle runtime verified', async ({ page }) => {
+    // 1. Static CSS verification: design-system definitions & settings.css token bindings
+    const dsSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/design-system.css'), 'utf8');
+    const settingsSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/settings.css'), 'utf8');
 
-    // 2. Browser DOM verification
+    // Token definitions in design-system.css
+    expect(dsSrc).toContain('--color-danger:');
+    expect(dsSrc).toContain('--color-danger-hover:');
+    expect(dsSrc).toContain('--color-hover:');
+    expect(dsSrc).toContain('--radius-sm:');
+
+    // Component bindings in settings.css
+    expect(settingsSrc).toContain('.rule-action-btn');
+    expect(settingsSrc).toContain('.rule-action-btn--delete');
+    expect(settingsSrc).toContain('var(--color-surface)');
+    expect(settingsSrc).toContain('var(--color-danger)');
+    expect(settingsSrc).toContain('var(--color-danger-hover)');
+    expect(settingsSrc).not.toContain('rgba(239, 68, 68, 0.15)'); // Bare color banned
+
+    // 2. Browser DOM & getComputedStyle runtime contract
     await boot(page);
 
-    const r = await page.evaluate(() => {
-      // Open settings modal and navigate to General tab
-      const settingsBtn = document.getElementById('btn-settings') as HTMLButtonElement;
-      settingsBtn?.click();
+    // Open settings modal and navigate to General tab
+    await page.locator('#settings-btn').click();
+    await expect(page.locator('#settings-modal')).toBeVisible();
 
-      // Ensure auto-title rules are rendered
+    // Verify token values and element computed styles in Light Mode
+    const lightCheck = await page.evaluate(() => {
+      const rootCs = window.getComputedStyle(document.documentElement);
+      const tokenDanger = rootCs.getPropertyValue('--color-danger').trim();
+      const tokenHover = rootCs.getPropertyValue('--color-hover').trim();
+      const tokenRadiusSm = rootCs.getPropertyValue('--radius-sm').trim();
+      const tokenDangerHover = rootCs.getPropertyValue('--color-danger-hover').trim();
+
       const rows = document.querySelectorAll('#auto-title-rules-tbody tr');
+      if (!rows.length) return { rowsCount: 0 };
+
       const firstRow = rows[0];
       const lastRow = rows[rows.length - 1];
-
-      if (!firstRow) return { rowsCount: 0 };
 
       const upBtns = document.querySelectorAll('#auto-title-rules-tbody .rule-action-btn');
       const delBtns = document.querySelectorAll('#auto-title-rules-tbody .rule-action-btn--delete');
 
       const firstUp = firstRow.querySelector('.rule-action-btn') as HTMLButtonElement;
+      const firstDown = firstRow.querySelectorAll('.rule-action-btn')[1] as HTMLButtonElement;
       const lastDown = lastRow.querySelectorAll('.rule-action-btn')[1] as HTMLButtonElement;
       const firstDel = firstRow.querySelector('.rule-action-btn--delete') as HTMLButtonElement;
+      const checkUpdateBtn = document.getElementById('about-check-update-btn') as HTMLButtonElement;
+
+      const upCs = window.getComputedStyle(firstUp);
+      const downCs = window.getComputedStyle(firstDown);
+      const delCs = window.getComputedStyle(firstDel);
+      const checkUpdateCs = checkUpdateBtn ? window.getComputedStyle(checkUpdateBtn) : null;
 
       return {
         rowsCount: rows.length,
         btnClassCount: upBtns.length,
         delClassCount: delBtns.length,
+        tokenDanger,
+        tokenHover,
+        tokenRadiusSm,
+        tokenDangerHover,
+        upColor: upCs.color,
+        upRadius: upCs.borderRadius,
+        upBg: upCs.backgroundColor,
+        downColor: downCs.color,
+        delColor: delCs.color,
+        delRadius: delCs.borderRadius,
+        delBg: delCs.backgroundColor,
+        checkUpdateRadius: checkUpdateCs?.borderRadius,
         firstUpDisabled: firstUp?.disabled,
         lastDownDisabled: lastDown?.disabled,
         firstUpAriaLabel: firstUp?.getAttribute('aria-label'),
@@ -207,15 +245,85 @@ test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
       };
     });
 
-    expect(r.rowsCount).toBeGreaterThan(0);
-    expect(r.btnClassCount).toBeGreaterThanOrEqual(6);
-    expect(r.delClassCount).toBeGreaterThanOrEqual(2);
-    expect(r.firstUpDisabled).toBe(true);
-    expect(r.lastDownDisabled).toBe(true);
-    expect(r.firstUpAriaLabel).toBeTruthy();
-    expect(r.firstDelAriaLabel).toBeTruthy();
-    expect(r.firstUpHasNoInlineColor).toBe(true);
-    expect(r.firstDelHasNoInlineColor).toBe(true);
+    expect(lightCheck.rowsCount).toBeGreaterThan(0);
+    expect(lightCheck.btnClassCount).toBeGreaterThanOrEqual(6);
+    expect(lightCheck.delClassCount).toBeGreaterThanOrEqual(2);
+
+    // Tokens defined and non-empty
+    expect(lightCheck.tokenDanger).toBeTruthy();
+    expect(lightCheck.tokenHover).toBeTruthy();
+    expect(lightCheck.tokenRadiusSm).toBe('3px');
+    expect(lightCheck.tokenDangerHover).toBeTruthy();
+
+    // Computed styles: border-radius restored to 3px (not 0px)
+    expect(lightCheck.upRadius).toBe('3px');
+    expect(lightCheck.delRadius).toBe('3px');
+    if (lightCheck.checkUpdateRadius) expect(lightCheck.checkUpdateRadius).toBe('3px');
+
+    // Delete color is danger (rgb(153, 27, 27)), NOT ink (rgb(42, 37, 32))
+    expect(lightCheck.delColor).not.toBe(lightCheck.upColor);
+    expect(lightCheck.delColor).toBe('rgb(153, 27, 27)');
+
+    // Disabled states & a11y labels
+    expect(lightCheck.firstUpDisabled).toBe(true);
+    expect(lightCheck.lastDownDisabled).toBe(true);
+    expect(lightCheck.firstUpAriaLabel).toBeTruthy();
+    expect(lightCheck.firstDelAriaLabel).toBeTruthy();
+    expect(lightCheck.firstUpHasNoInlineColor).toBe(true);
+    expect(lightCheck.firstDelHasNoInlineColor).toBe(true);
+
+    // 3. Hover state visual feedback verification (Ticket 72 / 102: poll for transition 0.15s to settle)
+    // Hover on delete button changes background color to --color-danger-hover
+    const delBtnLocator = page.locator('#auto-title-rules-tbody .rule-action-btn--delete').first();
+    await delBtnLocator.hover();
+    await expect.poll(() => page.evaluate(() => {
+      const btn = document.querySelector('#auto-title-rules-tbody .rule-action-btn--delete') as HTMLElement;
+      return window.getComputedStyle(btn).backgroundColor;
+    }), { timeout: 3000 }).not.toBe(lightCheck.delBg);
+
+    // Hover on second button (enabled down arrow) changes background color to --color-hover
+    const downBtnLocator = page.locator('#auto-title-rules-tbody tr:first-child .rule-action-btn').nth(1);
+    await downBtnLocator.hover();
+    await expect.poll(() => page.evaluate(() => {
+      const btn = document.querySelector('#auto-title-rules-tbody tr:first-child .rule-action-btn:nth-child(2)') as HTMLElement;
+      return window.getComputedStyle(btn).backgroundColor;
+    }), { timeout: 3000 }).not.toBe(lightCheck.upBg);
+
+    // 4. Dark mode runtime verification (poll for 0.15s color transition to settle)
+    await page.evaluate(() => {
+      document.documentElement.classList.add('ntp--dark');
+    });
+
+    // Dark mode danger color is #FCA5A5 -> rgb(252, 165, 165)
+    await expect.poll(() => page.evaluate(() => {
+      const btn = document.querySelector('#auto-title-rules-tbody .rule-action-btn--delete') as HTMLElement;
+      return window.getComputedStyle(btn).color;
+    }), { timeout: 3000 }).toBe('rgb(252, 165, 165)');
+
+    const darkCheck = await page.evaluate(() => {
+      const rootCs = window.getComputedStyle(document.documentElement);
+      const firstRow = document.querySelector('#auto-title-rules-tbody tr') as HTMLElement;
+      const firstDown = firstRow?.querySelectorAll('.rule-action-btn')[1] as HTMLButtonElement;
+      const firstDel = firstRow?.querySelector('.rule-action-btn--delete') as HTMLButtonElement;
+
+      const downCs = window.getComputedStyle(firstDown);
+      const delCs = window.getComputedStyle(firstDel);
+
+      const res = {
+        tokenDanger: rootCs.getPropertyValue('--color-danger').trim(),
+        tokenHover: rootCs.getPropertyValue('--color-hover').trim(),
+        downColor: downCs.color,
+        delColor: delCs.color,
+        delRadius: delCs.borderRadius,
+      };
+      // Reset dark mode
+      document.documentElement.classList.remove('ntp--dark');
+      return res;
+    });
+
+    expect(darkCheck.delRadius).toBe('3px');
+    expect(darkCheck.delColor).not.toBe(darkCheck.downColor);
+    expect(darkCheck.delColor).toBe('rgb(252, 165, 165)');
   });
 
   // ── S-04 / D-004: Snapshot count cap (MAX_SNAPSHOT_COUNT = 30) & FIFO truncation ──
@@ -229,20 +337,24 @@ test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
     expect(enLocale.dataHealthHint.message).toContain('30');
     expect(zhLocale.dataHealthHint.message).toContain('30');
 
-    // 2. Browser runtime rotation test
+    // 2. Browser runtime rotation test: week-spaced seed ensures GFS keeps > 30 entries
+    // so that the MAX_SNAPSHOT_COUNT = 30 cap loop actually executes and prunes surplus entries.
     await boot(page);
 
     const r = await page.evaluate(async () => {
       const dbg = (window as any).__boxingDebug;
       const prefix = 'snap.v1.';
       const indexKey = 'snap.v1.index';
+      const DAY_MS = 86400000;
 
-      // Seed 35 snapshots spaced across hours
+      // Seed 36 snapshots spaced 8 days apart:
+      // Spacing 8 days apart ensures every entry falls into a distinct weekly bucket
+      // under GFS rotation (weeklyBucket = Math.floor(ts / (7 * DAY_MS))), preventing
+      // pre-cap deduplication from shrinking the list below 30.
       const now = Date.now();
       const tsList: number[] = [];
-      // 35 entries across 35 different hour buckets in the past
-      for (let i = 35; i >= 1; i--) {
-        tsList.push(now - i * 3600_000);
+      for (let i = 36; i >= 1; i--) {
+        tsList.push(now - i * 8 * DAY_MS);
       }
 
       const mkBody = (ts: number) => ({
@@ -257,28 +369,43 @@ test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
 
       await dbg.storageSet(seed);
 
-      // Now save a new snapshot, which triggers rotation
+      // Now save a new snapshot at 'now', which appends the 37th entry and triggers rotation
       await dbg.saveSnapshot();
 
       const list = await dbg.listSnapshots();
       const all = await dbg.storageGet(null);
       const bodyKeys = Object.keys(all).filter(k => k.startsWith(prefix) && k !== indexKey);
 
-      // Verify oldest are pruned
-      const oldestSeeded = tsList[0];
-      const oldestBodyExists = bodyKeys.includes(prefix + oldestSeeded);
+      // Verify oldest 7 entries (tsList[0] to tsList[6]) are pruned from storage
+      const prunedTsList = tsList.slice(0, 7);
+      const prunedKeysExist = prunedTsList.map(ts => bodyKeys.includes(prefix + ts));
+
+      // Verify the RAW_KEEP_FLOOR (newest 10 entries) remain intact
+      const floorTsList = tsList.slice(tsList.length - 9); // 9 newest seeded + 1 newly saved
+      const floorRetained = floorTsList.every(ts => list.some((e: any) => e.ts === ts));
 
       return {
         count: list.length,
         bodyCount: bodyKeys.length,
-        oldestPruned: !oldestBodyExists,
+        prunedKeysExist,
+        floorRetained,
         bodiesMatchIndex: bodyKeys.length === list.length && bodyKeys.every(k => list.some((e: any) => prefix + e.ts === k)),
       };
     });
 
-    expect(r.count).toBeLessThanOrEqual(30);
-    expect(r.bodyCount).toBeLessThanOrEqual(30);
-    expect(r.oldestPruned).toBe(true);
+    // Exact count verification (37 items -> cap to exactly 30)
+    expect(r.count).toBe(30);
+    expect(r.bodyCount).toBe(30);
+
+    // Oldest 7 entries pruned from storage: physical keys must not exist
+    for (let i = 0; i < 7; i++) {
+      expect(r.prunedKeysExist[i]).toBe(false);
+    }
+
+    // RAW_KEEP_FLOOR = 10 intact
+    expect(r.floorRetained).toBe(true);
+
+    // Every body key in storage corresponds to an entry in snap.v1.index
     expect(r.bodiesMatchIndex).toBe(true);
   });
 });
