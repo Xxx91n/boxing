@@ -258,7 +258,7 @@ test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
     // Computed styles: border-radius restored to 3px (not 0px)
     expect(lightCheck.upRadius).toBe('3px');
     expect(lightCheck.delRadius).toBe('3px');
-    if (lightCheck.checkUpdateRadius) expect(lightCheck.checkUpdateRadius).toBe('3px');
+    expect(lightCheck.checkUpdateRadius).toBe('3px');
 
     // Delete color is danger (rgb(153, 27, 27)), NOT ink (rgb(42, 37, 32))
     expect(lightCheck.delColor).not.toBe(lightCheck.upColor);
