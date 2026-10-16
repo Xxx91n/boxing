@@ -118,6 +118,8 @@ Boxing is a vanilla-JS browser extension (Chrome + Firefox) that organizes bookm
 
 - **release status page** — the live per-release status board (current version, G-A/G-B/G-C state, active waivers, open A-ledger debt) lives in [release-status.md](release-status.md); ADR-0017 remains the normative gate definition.
 - **autoBackupDue** — `storage.local` flag written by the service-worker `onAlarm` (sole alarm listener, top-level); NTP open checks the flag (plus persisted `settings.lastBackupAt`) and runs `performBackup`, then clears it. Semantics: backup executes on schedule while an NTP is open and catches up at next NTP open when missed (ADR-0022).
+- **Auto-Backup (Local Mode)** (ADR-0024) — 在 `syncProvider === "local"` 下，自动备份收敛为仅静默生成内部轻量快照（`saveSnapshot`），绝不调用 `backupToLocal` 隐式触发浏览器下载弹窗；文件导出严格收敛为用户在设置中显式点击“立即备份”。
+- **Snapshot Count Cap (MAX_SNAPSHOT_COUNT)** (ADR-0024) — 快照绝对数量硬上限（30 条）。在现有 GFS 时间分层（10条无损 + 小时/天/周）去重后，若仍超过 30 条则由远及近淘汰最旧快照并物理删除散列键，杜绝孤儿键。
 
 ## Architectural Invariants (BX-EXPLORE-005..009)
 - **BX-EXPLORE-005**: Box dragging uses `left`/`top` only — NEVER `translate3d()` (causes 2x position flash).
