@@ -44,11 +44,11 @@ async function dispatchClickAt(page: Page, cx: number, cy: number, opts: { dblcl
 }
 
 
-// BX-DEV-112A: User reports a stable reproducer — after holddown Ctrl + scroll-wheel
+// User reports a stable reproducer — after holddown Ctrl + scroll-wheel
 // to zoom out, releasing and then dblclick on the inner canvas fails to add a small box.
 // Regression: cursor/hit-test state leak. Verify dblclick AFTER a zoom-out cycle still
 // triggers addSmallBoxAt.
-test.describe('BX-DEV-112A — inner zoom-out then dblclick regression', () => {
+test.describe('inner zoom-out then dblclick regression', () => {
   test('ctrl+wheel zoom-out then dblclick on inner canvas still adds a small box', async ({ page }: { page: Page }) => {
     test.setTimeout(60000);
     await boot(page);
@@ -115,11 +115,11 @@ test.describe('BX-DEV-112A — inner zoom-out then dblclick regression', () => {
 });
 
 
-// BX-DEV-112C: Double-clicking a large box to enter must NOT also create a
+// Double-clicking a large box to enter must NOT also create a
 // stray small box. Before the fix, the click that triggered enterLargeBox
 // sometimes synthesized into a follow-on dblclick on the just-revealed inner
 // surface, which would then call addSmallBoxAt unconditionally.
-test.describe('BX-DEV-112C — dblclick large box enters without creating small box', () => {
+test.describe('dblclick large box enters without creating small box', () => {
   test('double-click on a large box body enters inner view and adds zero small boxes', async ({ page }: { page: Page }) => {
     test.setTimeout(60000);
     await boot(page);
@@ -150,9 +150,9 @@ test.describe('BX-DEV-112C — dblclick large box enters without creating small 
 });
 
 
-// BX-DEV-112C-extra: Single-click enter large box, wait > 350ms, then dblclick inner
+// extra: Single-click enter large box, wait > 350ms, then dblclick inner
 // should still create a small box (suppress should not linger).
-test.describe('BX-DEV-112C extra — click enter then dblclick inner after delay', () => {
+test.describe('extra — click enter then dblclick inner after delay', () => {
   test('single click enters; later dblclick inner creates exactly one small box', async ({ page }: { page: Page }) => {
     test.setTimeout(60000);
     await boot(page);
@@ -164,7 +164,7 @@ test.describe('BX-DEV-112C extra — click enter then dblclick inner after delay
     // 1. Single click to enter large box (suppress guard is set)
     await dispatchClickAt(page, bb.x + bb.width / 2, bb.y + bb.height / 2);
     // 2. Wait deterministically for the enter transition to finish, then past the
-    //    350ms BX-DEV-112D cooldown window (fixed 150+420ms sleeps flaked when the
+    //    350ms cooldown window (fixed 150+420ms sleeps flaked when the
     //    enter transition ran long under full-suite load).
     // 48 (wave4 residual zoom-dblclick, windows-firefox-only): the poll kept its
     // default 5s budget while the enter transition ran longer on the slowest CI
@@ -193,7 +193,7 @@ test.describe('BX-DEV-112C extra — click enter then dblclick inner after delay
   });
 });
 
-// BX-DEV-112G (ticket 110 / N-101-06): deterministic regression for the stale hit-test
+// (ticket 110 / N-101-06): deterministic regression for the stale hit-test
 // window. Creating a large box and clicking it INSIDE THE SAME page.evaluate keeps the hit
 // test resolving to the box ROOT (.large-box) instead of .large-box__body for the rest of
 // the frame; before the fix that click never reached the child-scoped enter listener, so the
@@ -201,7 +201,7 @@ test.describe('BX-DEV-112C extra — click enter then dblclick inner after delay
 // un-hides and the 15s enter poll times out. Doing both steps in one evaluate pins that
 // window open, so this test fails deterministically without the fix (measured 39/39 on the
 // firefox lane) instead of on ~4% of runs.
-test.describe('BX-DEV-112G — box created and clicked in the same frame still enters', () => {
+test.describe('box created and clicked in the same frame still enters', () => {
   test('create + click in one evaluate still enters the large box', async ({ page }: { page: Page }) => {
     test.setTimeout(60000);
     await boot(page);

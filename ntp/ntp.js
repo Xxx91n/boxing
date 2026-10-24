@@ -1,11 +1,11 @@
 /** Boxing — NTP core: Obsidian-style infinite canvas, manual drag (real-time), title-only edit zone, elastic snap, bookmark CRUD, i18n store, settings modal, debug */
 
-// Ticket 65 (A-019): this file carries no literal version number. The single user-visible version
+// Ticket 65: this file carries no literal version number. The single user-visible version
 // is the manifest calver (manifest.version_name || manifest.version), stamped by build.mjs and read
 // at runtime through __boxingVersion() below. A hardcoded literal here drifts on the next calver
-// stamp, and users paste these strings into bug reports (ADR-0017 postmortem requires an accurate
+// stamp, and users paste these strings into bug reports (postmortem discipline requires an accurate
 // version). Section comments may still cite historical SemVer markers (v3.6.5+, v3.7.2) as feature
-// provenance; they are not the extension version. History: docs/history/boxing-changelog.md.
+// provenance; they are not the extension version.
 'use strict';
 // Ticket 03 (architecture-recovery): favicon cache block extracted verbatim to ./favicon.js — first ES module of the zero-build pipeline (spec.md).
 import { loadFavicon } from './favicon.js';
@@ -38,7 +38,7 @@ import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS 
 import { TOMBSTONE_TTL_MS, applyExternalLayout, consumeInstallSignal, credKeyGet, credKeySet, directSetBoxingLayout, ensurePreUpdateSnapshot, gcTombstones, initStorageFacade, listSnapshots, loadLayout, markDeleted, registerStorageOnChanged, restoreFromSnapshot, saveLayout, saveLayoutDebounced, saveSnapshot, stripGroupsForPersist } from './storage.js';
 // Ticket 08 (architecture-recovery): layout/view-state persistence + theme packs + loadSettings moved verbatim to ./persist.js on top of the storage facade.
 import { BOOT_THEME_KEY, LAST_ACTIVE_VIEW_KEY, TAB_VIEW_KEY, applyDarkMode, applyTheme, clearBootThemeMirror, initPersistFacade, loadFallbackTabView, loadSettings, persistBootThemeMirror, persistViewState, saveLargeBoxViewState, scheduleLargeBoxViewStatePersist } from './persist.js';
-// Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool, ADR-0004),
+// Ticket 08 (architecture-recovery): render pipeline moved verbatim to ./render.js — conn SVG layer (culling/LOD/pool),
 // DSU groups, pan/zoom transforms, drag handlers, canvas render + box CRUD + bookmark UI. Diffs = export prefixes only.
 import { _execDeleteLargeBox, _execDeleteSmallBox, addLargeBox, addLargeBoxAt, addPopupTracker, addSmallBox, addSmallBoxAt, applyCanvasTransform, applyInnerTransform, clampCanvasPan, clampInnerPan, commit, enterLargeBox, exitToCanvas, getLargeBox, getSmallBox, initRenderFacade, initSizeObserver, innerSurfaceContent, isWithinCreateCooldown, markCreate, onBoxDragEnd, onCanvasPanEnd, onCanvasPanStart, onCanvasWheel, onInnerPanEnd, onInnerPanStart, onInnerWheel, refreshContainerSizes, removePopupTracker, renderCanvas, renderCrumbs, renderInnerSurface, showBoxDeletedWarning, updateAutohideUI, zoomStep } from './render.js';
 import { addConnection, addMember, allValidKeys, applyConnDeleteKeydoc, deleteConnById, disposeAllConns, dsuRebuildFromConnections, ensureConnArrays, ensureGroups, enterConnectMode, exitConnectMode, getConnDeleteTrigger, getGroupByParent, initConnFacade, markDsuDirty, moveGroupTogether, pruneConnArrays, refreshAllConns, removeConnection, renderConnections, resolveBoxEl, resolveConnSurface, setConnDeleteAction, toggleStarMark } from './conn-layer.js';
@@ -156,7 +156,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   // Default level = WARN in production (records errors + warnings), elevate to DEBUG with ?debug=verbose.
   let __logLevel = LOG_WARN;
   const __logRing = [];
-  // BX-DEV-115C: background error log cache - synced from chrome.storage.local.bgErrLog
+  // background error log cache - synced from chrome.storage.local.bgErrLog
   let __bgErrLogCache = [];
   try {
     chrome.storage && chrome.storage.local && chrome.storage.local.get && chrome.storage.local.get({ bgErrLog: [] }, function(r){ if (r && Array.isArray(r.bgErrLog)) __bgErrLogCache = r.bgErrLog.slice(-50); });
@@ -208,7 +208,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   function debugWarn(...args) { __logPush(LOG_WARN, args); }
   function debugInfo(...args) { __logPush(LOG_INFO, args); }
 
-  // -- Ticket 65 (A-019): single source of truth for user-visible version strings ---------------
+  // -- Ticket 65: single source of truth for user-visible version strings ---------------
   // Version is the manifest calver ONLY: manifest.version_name || manifest.version. Alignment
   // strategy (no fifth version source): manifest.json is the sole writer; build.mjs restamps both
   // version and version_name from BOXING_BUILD_VERSION (ticket 08); ntp/index.html keeps a static
@@ -248,12 +248,12 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     getLargeBox, renderCanvas,
     pruneConnArrays, renderConnections, disposeAllConns, enterLargeBox,
     connCount: () => connLines.size,
-    searchRunCount: () => searchRunCount, // A-033 (ticket 83): query-execution counter for debounce assertions
-    get layout() { return layout; }, // BX-DEV-111k: live ref to layout for Playwright testing
+    searchRunCount: () => searchRunCount, // (ticket 83): query-execution counter for debounce assertions
+    get layout() { return layout; }, // live ref to layout for Playwright testing
     state() { return { boxes: layout.boxes.length, currentLargeBoxId, canvasZoom, innerZoom, headerPinned, darkMode: layout.settings.darkMode, lang: currentLang, fontSize: layout.settings.fontSize }; },
     dumpLayout() { console.table(layout.boxes.map(b => ({ id: b.id, title: b.title, x: b.x, y: b.y, w: b.width, h: b.height, children: b.children?.length || 0 }))); },
     dumpStorage() { layoutStorage?.get?.(null).then(d => console.log('[Boxing] storage:', d)).catch(e => console.error('[Boxing] storage read:', e)); },
-    // Ticket 72 (Wave8 G-A B-bucket): the debug persistence seam must actually persist.
+    // Ticket 72: the debug persistence seam must actually persist.
     // persistViewState() only writes view state (session/localStorage), never boxingLayout,
     // so anything seeded through __boxingDebug.layout was lost on the next reload. Ticket 59
     // had been masking that by saving the layout on every unload (42R root cause). saveLayout()
@@ -261,10 +261,10 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // behaviour; the returned promise lets callers await durability.
     persistView() { return saveLayout(); },
     applyExternalLayout(raw) { return applyExternalLayout(raw); },
-    // BX-D-008: surface-ownership resolver exposed for the regression suite —
+    // surface-ownership resolver exposed for the regression suite —
     // the e2e asserts both the resolver contract and the rendered-DOM outcome.
     resolveConnSurface(from, to) { return resolveConnSurface(from, to); },
-    // BX-D-008: the single dark-mode apply path, exposed so specs can drive the
+    // the single dark-mode apply path, exposed so specs can drive the
     // REAL code path instead of faking the theme by poking the class onto a host
     // (documentElement is now the only host, so hand-poked #app/body no longer
     // selects any dark rule). Test seam only — no production caller uses it.
@@ -280,10 +280,10 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     storageSet: (obj) => layoutStorage.set(obj),
     storageRemove: (keys) => layoutStorage.remove ? layoutStorage.remove(keys) : Promise.resolve(),
     normalizeBookmarkUrl(value) { return normalizeBookmarkUrl(value); },
-    // Ticket 11: expose openBookmarkUrl for Playwright open-path assertions (precedent: loadFavicon, BX-DEV-126).
+    // Ticket 11: expose openBookmarkUrl for Playwright open-path assertions (precedent: loadFavicon).
     openBookmarkUrl,
     triggerGC() { if (typeof gc === 'function') gc(); else console.log('[Boxing] gc not available (not in --js-flags=--expose-gc mode)'); },
-    // BX-DEV-114: WebDAV config for Playwright tests
+    // WebDAV config for Playwright tests
     setWebDAVConfig(url, user, pass) {
       layout.settings.webdavUrl = url;
       layout.settings.webdavUser = user;
@@ -295,7 +295,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       if (urlInput) urlInput.value = url || '';
       if (userInput) userInput.value = user || '';
       if (passInput) passInput.value = pass || '';
-      // Ticket 71 (Wave8 G-A, N3): this is connection config, not layout data —
+      // Ticket 71 (N3): this is connection config, not layout data —
       // persist it without advancing `_meta.updatedAt`, or the next sync sees a
       // phantom local change and merges where it should pull (dr-export AC4).
       return saveLayout({ preserveUpdatedAt: true });
@@ -310,7 +310,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       if (layout.settings) layout.settings.onboardingCompleted = true;
       return saveLayout();
     },
-    // BX-DEV-111M/N/L: test hooks for credential flush + per-box viewState + LRU history
+    // test hooks for credential flush + per-box viewState + LRU history
     flushCredentials: () => window.__boxingFlushCredentials && window.__boxingFlushCredentials(),
     saveLargeBoxViewState: (id) => window.__boxingSaveLargeBoxViewState && window.__boxingSaveLargeBoxViewState(id),
     clearTabViewHistory: () => window.__boxingClearTabViewHistory && window.__boxingClearTabViewHistory(),
@@ -327,15 +327,15 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     },
     clearLog: () => { __logRing.length = 0; return true; },
     LOG_LEVELS: { ERROR: 1, WARN: 2, INFO: 3, DEBUG: 4 },
-    // BX-DEV-122: expose sync payload helpers for Playwright tests
+    // expose sync payload helpers for Playwright tests
     get buildSyncPayload() { if (window.__bxSync) return window.__bxSync.buildSyncPayload; debugWarn("buildSyncPayload: __bxSync not ready"); return () => undefined; },
     get resolveWebDAVFileUrl() { if (window.__bxSync) return window.__bxSync.resolveWebDAVFileUrl; debugWarn("resolveWebDAVFileUrl: __bxSync not ready"); return () => undefined; },
     get backupToGist() { if (window.__bxSync) return window.__bxSync.backupToGist; debugWarn("backupToGist: __bxSync not ready"); return () => undefined; },
-    // BX-DEV-126: expose loadFavicon for Playwright tests verifying parallel CDN race.
+    // expose loadFavicon for Playwright tests verifying parallel CDN race.
     loadFavicon,
     get groupStar() { return groupStar; },
     get connById() { return connById; },
-    // ADR-0007 acceptance hooks (Playwright)
+    // Architecture acceptance hooks (Playwright)
     stripGroupsForPersist,
     migrateLayout,
     gcTombstones,
@@ -369,7 +369,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const $$ = (sel, ctx = document) => ctx.querySelectorAll(sel);
 
   const canvasContainer = $('#canvas');
-  canvasContainer.tabIndex = -1; // BX-DEV-140c: focus sink — Chrome dblclick focus-steal prevention
+  canvasContainer.tabIndex = -1; // focus sink — Chrome dblclick focus-steal prevention
   const canvasSurface = $('#canvas-surface');
   const canvasEmpty = $('#canvas-empty');
   const canvasZoomOut = $('#canvas-zoom [data-zoom="out"]');
@@ -377,14 +377,14 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const canvasZoomVal = $('#canvas-zoom-value');
   const canvasZoomCtrl = $('#canvas-zoom');
   const innerSurface = $('#inner-surface');
-  innerSurface.tabIndex = -1; // BX-DEV-140c: focus sink for inner canvas
+  innerSurface.tabIndex = -1; // focus sink for inner canvas
   const innerZoomOut = $('#inner-zoom [data-zoom="out"]');
   const innerZoomIn = $('#inner-zoom [data-zoom="in"]');
   const innerZoomVal = $('#inner-zoom-value');
   const innerZoomCtrl = $('#inner-zoom');
   const innerWrapper = $('#inner');
   const innerCanvas = $('#inner-canvas');
-  // BX-DEV-134 (B2 perf): ResizeObserver-fed geometry cache. clampCanvasPan/clampInnerPan
+  // (B2 perf): ResizeObserver-fed geometry cache. clampCanvasPan/clampInnerPan
   // and onBoxDragEnd worldMaxX/Y read these instead of clientWidth/Height, eliminating
   // the per-mousemove forced layout that 60-120Hz pan/drag caused. Updated by the RO below.
   const innerCrumbTitle = $('#inner-crumb-title');
@@ -400,9 +400,9 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const modalClose = $('#settings-modal .modal__close');
   const langSelect = $('#lang-select');
   const rememberCheck = $('#remember-last-pos');
-  // BX-DEV-120 + ticket 11: urlOpenMode select — bookmarks open in sameTab (default) or newTab.
+  // + ticket 11: urlOpenMode select — bookmarks open in sameTab (default) or newTab.
   const urlOpenModeSelect = $('#url-open-mode-select');
-  // ADR-0006: conn-delete-action select — configurable gesture for deleting connection lines.
+  // Conn-delete-action select — configurable gesture for deleting connection lines.
   const connDeleteActionSelect = $('#conn-delete-action-select');
   const fontSlider = $('#font-slider');
   const fontSliderVal = $('#font-slider-value');
@@ -440,7 +440,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     const webdavPassInput = document.getElementById('webdav-pass');
     const gistTokenInput = document.getElementById('gist-token');
     const gistIdInput = document.getElementById('gist-id');
-    // BX-DEV-121 (Bug16): provider-agnostic Sync Level + Sync File Name
+    // (Bug16): provider-agnostic Sync Level + Sync File Name
     const syncLevelSelect = document.getElementById('sync-level-select');
     const syncFilenameInput = document.getElementById('sync-filename-input');
     const backupNowBtn = document.getElementById('backup-now-btn');
@@ -449,10 +449,10 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     const webdavTestBtn = document.getElementById('webdav-test-btn');
     const webdavAllowPrivateInput = document.getElementById('webdav-allow-private');
   // Ticket 08: inject ntp.js-scope deps into the persistence module (./persist.js)
-  // Ticket 60 (Wave7 zero-flash): inject the paint-critical mirror writer — writes the
+  // Ticket 60 (zero-flash): inject the paint-critical mirror writer — writes the
   // boot mirror (theme/darkMode/fontSize) to localStorage so the next new tab's classic
   // blocking boot script (ntp/boot-theme.js) paints the remembered theme before first
-  // frame. localStorage here is the sync-readable first-paint cache (Wave7 D-002);
+  // frame. localStorage here is the sync-readable first-paint cache ;
   // boxingLayout stays the only authoritative layout source.
   initPersistFacade({ debugWarn, darkModeBtn, getLargeBox, mirrorWriter: (mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } } });
 
@@ -484,8 +484,8 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   initConnFacade({ commit, getLargeBox, getSmallBox, getInnerSurfaceContent: () => innerSurfaceContent, rebuildBoxMaps, debug, debugSampled, debugWarn, canvasSurface, canvasContainer, innerCanvas, innerSurface });
   initPopupsFacade({ getLargeBox, renderInnerSurface, showBoxDeletedWarning, addPopupTracker, removePopupTracker, makeId, api, debug, debugWarn, commit });
   // Ticket 10 (architecture-recovery): inject ntp.js-scope deps into the four settings/init-domain
-  // modules (ADR-0016). Must stay after every DOM const it reads (ticket-08 TDZ lesson).
-  // Ticket 81R2 (A-031): PIK storage access goes through the storage.js narrow port
+  // modules. Must stay after every DOM const it reads (ticket-08 TDZ lesson).
+  // Ticket 81R2: PIK storage access goes through the storage.js narrow port
   // (boxingCredKey.* prefix-pinned) — credentials.js keeps zero direct chrome.storage calls
   // (gate2 single-write-path) and stays a pure crypto leaf.
   initCredentialsFacade({ debugErr, credKeyStore: { get: credKeyGet, set: credKeySet } });
@@ -508,7 +508,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       if (currentLargeBoxId) updateCaption(); else updateCaption();
       saveLayout();
     });
-    // ADR-0015.updated: default headerPinned=true → tooltip shows action "Unpin header".
+    // Default headerPinned=true → tooltip shows action "Unpin header".
     headerPinBtn.title = i18n('headerPinOff');
     updateAutohideUI();  // button stays in header bar by default
   }
@@ -518,9 +518,9 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   window._boxingOpenSettings = openSettingsModal;
   window._boxingAddLargeBox = addLargeBox;
   window._boxingAddSmallBox = addSmallBox;
-  window._boxingEnterLargeBox = enterLargeBox; // BX-DEV-111k: exposed for test
-  window._boxingExitToCanvas = exitToCanvas; // BX-DEV-020: exposed for hidden-override regression test (pair with _boxingEnterLargeBox)
-  window._boxingDeleteLargeBox = _execDeleteLargeBox; // BX-DEV-111k: exposed for cross-tab delete test
+  window._boxingEnterLargeBox = enterLargeBox; // exposed for test
+  window._boxingExitToCanvas = exitToCanvas; // exposed for hidden-override regression test (pair with _boxingEnterLargeBox)
+  window._boxingDeleteLargeBox = _execDeleteLargeBox; // exposed for cross-tab delete test
 
 
   // ── search / caption ───────────────────────────────────
@@ -533,7 +533,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     }
   }
 
-  // A-033 (ticket 83): search debounce — trailing edge, cancelable + flushable.
+  // (ticket 83): search debounce — trailing edge, cancelable + flushable.
   // Shape mirrors the lodash “_.debounce” contract (trailing default + cancel/flush):
   // a keystroke only re-arms the timer, the query runs once typing pauses.
   // 120ms sits inside the usual 100–300ms typeahead band and under the ~200ms
@@ -571,7 +571,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     else captionEl.textContent = i18n('searchPlaceholder');
   }
 
-  // BX-DEV-121 (Bug9 search): live search across large boxes, small boxes, bookmarks.
+  // (Bug9 search): live search across large boxes, small boxes, bookmarks.
   // returns up to 50 hits sorted by container depth (large>small>bookmark).
   function runSearch(q) {
     const hits = [];
@@ -583,14 +583,14 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       if (lt.includes(q)) pushHit('large', lb.id, lb.title || i18n('untitledBox'), null, null, null);
       for (const sb of (lb.children || [])) {
         const st = (sb.title || '').toLowerCase();
-        // FROZEN by ticket 83 — do NOT tidy this expression. See
-        // .scratch/architecture-recovery/reports/83-report.md §7 (发现但未修) and issues/83-search-debounce.md.
+        // FROZEN by ticket 83 — do NOT tidy this expression. The search-debounce ticket
+        // records it as found but not fixed.
         // `['']?.[0] || ''` evaluates to '' — an intentionally preserved placeholder hack: it keeps the
         // two-arg `i18n('newLargeBox', substitution)` call shape (newLargeBox = "Box $count$", $1 = count).
         // Removal consequence: dropping the 2nd arg leaves `$count$` unresolved and changes the rendered
         // fallback title of a nameless small box in search results — a contract-byte change, not a cleanup.
         // Unfreeze when: a dedicated ticket re-derives this fallback (e.g. from i18n('untitledBox') or a real
-        // count). Ceiling: this is the only surviving occurrence; a second copy is not acceptable. Owner: ticket 83 / A-033.
+        // count). Ceiling: this is the only surviving occurrence; a second copy is not acceptable. Owner: ticket 83 .
         if (st.includes(q)) pushHit('small', lb.id, lb.title || i18n('untitledBox'), sb.id, sb.title || i18n('newLargeBox', ['']?.[0] || ''), null);
         for (const bm of (sb.bookmarks || [])) {
           const bt = (bm.title || '').toLowerCase();
@@ -656,7 +656,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   }
 
   function hideSearchResults() {
-    // A-033 (ticket 83): every clear path (open hit / Escape / emptying the box /
+    // (ticket 83): every clear path (open hit / Escape / emptying the box /
     // deferred blur hide) must also drop an armed query, or it would fire after
     // the clear and resurrect stale results.
     cancelPendingSearch();
@@ -689,7 +689,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       if (!container) return;
       const lid = container.dataset.largeId || '';
       const key = sid + '@'+ lid;
-      // BX-DEV-133 (B1): old || matchIds.size>0 lit every small box when any large title matched
+      // (B1): old || matchIds.size>0 lit every small box when any large title matched
       if (smallMatchIds.has(key)) {
         el.classList.add('small-box--search-match');
       } else if (smallMatchIds.size > 0 && matchIds.has(lid)) {
@@ -720,7 +720,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
         if (sb) {
           const sw = innerSurface.clientWidth || innerCanvas.clientWidth || 600;
           const sh = innerSurface.clientHeight || (innerCanvas.clientHeight - 40) || 400;
-          // ADR-0015: center-align + clamp (unified with enterAndLocateSmallBox pan formula)
+          // Center-align + clamp (unified with enterAndLocateSmallBox pan formula)
           var bw = (sb.width || 200) * innerZoom;
           var bh = (sb.height || 160) * innerZoom;
           setInnerPanX(Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + (sw - bw) / 2)));
@@ -747,21 +747,21 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
    saveLargeBoxViewState(currentLargeBoxId);
    if (currentLargeBoxId && currentLargeBoxId !== largeId) { exitToCanvas(); }
    if (currentLargeBoxId !== largeId) enterLargeBox(largeId, true);
-    // ADR-0015: rAF guard — ensure DOM and innerZoom settled after enterLargeBox
+    // rAF guard — ensure DOM and innerZoom settled after enterLargeBox
     requestAnimationFrame(function () {
       try {
         const sb = getSmallBox(largeId, smallId);
         if (sb) {
           const sw = innerSurface.clientWidth || innerCanvas.clientWidth || 600;
           const sh = innerSurface.clientHeight || (innerCanvas.clientHeight - 40) || 400;
-          // ADR-0015: center-align + clamp (unified with openSearchHit pan formula)
+          // Center-align + clamp (unified with openSearchHit pan formula)
           var bw = (sb.width || 200) * innerZoom;
           var bh = (sb.height || 160) * innerZoom;
           setInnerPanX(Math.max(sw * (1.0 - innerZoom / 0.3), Math.min(0, -sb.x * innerZoom + (sw - bw) / 2)));
           setInnerPanY(Math.max(sh * (1.0 - innerZoom / 0.3), Math.min(0, -sb.y * innerZoom + (sh - bh) / 2)));
           applyInnerTransform();
           if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
-          // ADR-0015: highlight pulse via outline (escapes contain:layout clipping)
+          // Highlight pulse via outline (escapes contain:layout clipping)
           var targetEl = innerSurface.querySelector('[data-id="' + smallId + '"]') || innerCanvas.querySelector('[data-id="' + smallId + '"]');
           if (targetEl) {
             targetEl.classList.add('small-box--located');
@@ -841,7 +841,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     }
     if (e.key === 'Escape') {
       if (!settingsModal.hidden) { closeSettingsModal(); return; }
-      if (searchInput.value) { searchInput.value = ''; cancelPendingSearch(); } /* A-033 (ticket 83): no stale re-query after the value is cleared outside the input */
+      if (searchInput.value) { searchInput.value = ''; cancelPendingSearch(); } /* (ticket 83): no stale re-query after the value is cleared outside the input */
       else if (currentLargeBoxId) { exitToCanvas(); }
     }
     // Ctrl+ / Ctrl- zoom
@@ -892,14 +892,14 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     const targetBox = e.target.closest('.large-box');
     if (targetBox) {
       debug('onCanvasDblClick on existing box, entering', targetBox.dataset.id);
-      // BX-DEV-112C: suppress stray inner dblclick that synthesizes from the entry click.
+      // suppress stray inner dblclick that synthesizes from the entry click.
       setLastEnterLargeBoxAt(Date.now());
       setSuppressInnerDblClickOnce(true);
       enterLargeBox(targetBox.dataset.id);
       return;
     }
     debug('onCanvasDblClick on empty area, calling addLargeBoxAt');
-    e.preventDefault(); // BX-DEV-140c: prevent Chrome dblclick focus-steal
+    e.preventDefault(); // prevent Chrome dblclick focus-steal
     addLargeBoxAt(e.clientX, e.clientY);
   }
 
@@ -911,7 +911,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   }
 
   function onInnerDblClick(e) {
-    // BX-DEV-112C: If this dblclick is a continuation of the click that
+    // If this dblclick is a continuation of the click that
     // triggered enterLargeBox (within 350ms), do NOT create a small box.
     // After 350ms the one-shot flag is auto-cleared so user-initiated
     // dblclicks outside this window still create boxes normally.
@@ -932,7 +932,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     }
     const targetBox = e.target.closest('.small-box');
     if (targetBox) return;
-    e.preventDefault(); // BX-DEV-140c: prevent Chrome dblclick focus-steal
+    e.preventDefault(); // prevent Chrome dblclick focus-steal
     addSmallBoxAt(e.clientX, e.clientY);
   }
 
@@ -961,13 +961,13 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     await loadSettings();
     initSizeObserver();
 
-    // BX-DEV-111: Now that layout is loaded, restore headerPinned from persisted state
+    // Now that layout is loaded, restore headerPinned from persisted state
     setHeaderPinned(layout.settings.headerPinned !== false);  // true if not explicitly set to false
 
     // events
     searchInput.addEventListener('input', e => {
-      // BX-DEV-121 (Bug9 search): full live search across large boxes, small boxes, bookmarks.
-      // A-033 (ticket 83): re-query only after typing pauses. Emptying the box stays
+      // (Bug9 search): full live search across large boxes, small boxes, bookmarks.
+      // (ticket 83): re-query only after typing pauses. Emptying the box stays
       // immediate (no debounce) so the canvas un-dims without any perceived lag.
       const q = e.target.value.trim().toLowerCase();
       if (!q) { hideSearchResults(); updateCaption(); return; } /* hideSearchResults now calls clearSearchHighlight */
@@ -983,7 +983,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     searchInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        flushPendingSearch(); // A-033 (ticket 83): Enter must act on the latest query, never a stale list.
+        flushPendingSearch(); // (ticket 83): Enter must act on the latest query, never a stale list.
         const list = searchResultsEl.querySelectorAll('.search-results__item');
         if (list.length) list[0].click();
       } else if (e.key === 'Escape') {
@@ -994,7 +994,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       }
     });
     searchInput.addEventListener('blur', e => {
-      // A-033 (ticket 83): drop an armed query on blur, otherwise it fires after the
+      // (ticket 83): drop an armed query on blur, otherwise it fires after the
       // deferred hide and the results panel pops back up on an unfocused box.
       cancelPendingSearch();
       // Defer hide so item click (mousedown happens AFTER blur in some browsers) can fire.
@@ -1012,12 +1012,12 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     document.addEventListener('contextmenu', onContextMenu);
     // D-004: button-2 release fallback — exits even when contextmenu never
     // dispatches. First exit clears currentLargeBoxId, so double registration
-    // (mouseup + pointerup cover different swallow classes, cf. BX-DEV-128) is
+    // (mouseup + pointerup cover different swallow classes, cf. ) is
     // a no-op for the same gesture.
     document.addEventListener('mouseup', onRightButtonRelease);
     document.addEventListener('pointerup', onRightButtonRelease);
     document.addEventListener('mousedown', onRightButtonDown);
-    // BX-DEV-137++++: connect mode is now drag-based: mousedown on edge anchor
+    // connect mode is now drag-based: mousedown on edge anchor
     // starts connect mode, user drags to target box, mouseup connects to nearest midpoint.
     // BX-142: update provisional SVG line endpoint via rAF throttle.
     // Convert screen coords to surface logical coords: logical = (clientXY - rect.left - panXY) / zoom.
@@ -1066,17 +1066,17 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       canvasEmptyBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         e.preventDefault();
-        // BX-DEV-112D: bridge the physical dblclick — click2 and the follow-on
+        // bridge the physical dblclick — click2 and the follow-on
         // dblclick (→ onCanvasDblClick → addLargeBoxAt) must not double-create.
         // Toolbar #add-box stays unguarded so rapid multi-add keeps working.
         if (isWithinCreateCooldown(e.clientX, e.clientY)) { debug('canvas CTA suppressed: create cooldown'); return; }
         markCreate(e.clientX, e.clientY);
         if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes (empty-state btn)'); return; }
-        // BX-DEV-140c: prevent Chrome click focus-steal (mirror onCanvasDblClick).
+        // prevent Chrome click focus-steal (mirror onCanvasDblClick).
         addLargeBox(e);
       });
     }
-    // BX-DEV-116: capture-phase wheel on canvas for reliable ctrl+wheel zoom
+    // capture-phase wheel on canvas for reliable ctrl+wheel zoom
     canvasContainer.addEventListener('wheel', (e) => {
       if (e.ctrlKey) { e.preventDefault(); onCanvasWheel(e); }
     }, { capture: true, passive: false });
@@ -1086,7 +1086,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     innerSurface.addEventListener('click', onInnerClick);
     innerSurface.addEventListener('dblclick', onInnerDblClick);
     innerCanvas.addEventListener('mousedown', onInnerPanStart);
-    // BX-DEV-116: capture-phase ctrl+wheel on inner canvas ensures zoom works even
+    // capture-phase ctrl+wheel on inner canvas ensures zoom works even
     // when mouse is over a scrollable small-box__body that would normally consume the event.
     // Use capture phase so the event is intercepted before reaching scrollable children.
     innerCanvas.addEventListener('wheel', (e) => {
@@ -1126,7 +1126,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // Window resize
     window.addEventListener('resize', onWindowResize);
 
-    // Ticket 72 (Wave8 G-A B-bucket): unload flush for the PENDING debounced layout write.
+    // Ticket 72: unload flush for the PENDING debounced layout write.
     // saveLayoutDebounced() defers the boxingLayout write by 120ms (pan/zoom/drag/conn-delete
     // paths), so a tab closed or reloaded inside that window loses the change. Ticket 59 removed
     // the unconditional unload saveLayout() (the 42R redundant-write root cause) which had been
@@ -1143,10 +1143,10 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
 
     // Per-tab session state survives reload but is isolated from every other tab.
     window.addEventListener('pagehide', () => { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } persistViewState(false); try { flushPendingLayoutSave(); } catch (e) { /* silent: flush helper may not exist */ } try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } });
-    // BX-DEV-111M: flush credentials on tab switch / window hide / beforeunload —
+    // flush credentials on tab switch / window hide / beforeunload —
     // fixes the 'close browser loses WebDAV password' bug (blur never fires in those paths).
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { try { const __fvf = window.__boxingFlushPendingViewStatePersist; if (typeof __fvf === "function") __fvf(); } catch (e) { /* silent: flush helper may not exist */ } persistViewState(false); try { flushPendingLayoutSave(); } catch (e) { /* silent: flush helper may not exist */ } try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { /* silent: flush helper may not exist */ } } });
-    // BX-DEV-120 (Bug8 return freeze): when returning to the Boxing tab after
+    // (Bug8 return freeze): when returning to the Boxing tab after
     // opening a bookmark in a new tab, any lingering dragState/panState + a
     // stalled async storage-write chain could leave the UI trapped. On visibility
     // == visible we proactive release any stuck interaction state and let the
@@ -1155,7 +1155,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         try {
-          // BX-DEV-135 (B8): tab-hide may have deferred RO; refresh geometry cache so
+          // (B8): tab-hide may have deferred RO; refresh geometry cache so
           // the re-applied transform does not use a stale container/surface size
           try { if (typeof refreshContainerSizes === 'function') refreshContainerSizes(); } catch (e) { /* silent: container sizes refresh, non-critical */ }
           if (panState && typeof onCanvasPanEnd === 'function') onCanvasPanEnd({ type: 'visibilitychange' });
@@ -1179,7 +1179,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     try {
       const key = navigationType === 'reload' ? TAB_VIEW_KEY : LAST_ACTIVE_VIEW_KEY;
       view = JSON.parse((navigationType === 'reload' ? sessionStorage : localStorage).getItem(key) || 'null');
-      // BX-DEV-111L: when sessionStorage is gone (fresh browser launch), fall back to permanent LRU history.
+      // when sessionStorage is gone (fresh browser launch), fall back to permanent LRU history.
       if (!view) { view = loadFallbackTabView(); debug('view restore: using permanent history fallback', !!view); }
     } catch (e) { debugWarn('view restore', e); }
 
@@ -1200,8 +1200,8 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
       renderCanvas();
       applyCanvasTransform();
     }
-    // BX-ONBOARDING: first-run guided tour — trigger from the onInstalled install/update signal
-    // (ADR-0016). installReason was consumed before loadLayout (ticket 42) so the update path
+    // BX-ONBOARDING: first-run guided tour — trigger from the onInstalled install/update signal.
+    // installReason was consumed before loadLayout (ticket 42) so the update path
     // could snapshot first; the file:// mock lane has no signal and falls back to the legacy
     // empty-canvas judgment inside initOnboarding (ticket-03 lesson).
     try { initOnboarding({ reason: installReason }); } catch (e) { debugErr('onboarding init', e); }
@@ -1211,6 +1211,6 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
 
 
   await init();
-  // ADR-0006: install global keydown listener if select+delete mode is active at startup
+  // Install the global keydown listener if select+delete mode is active at startup
   try { applyConnDeleteKeydoc(); } catch (e) { /* silent: conn delete keydoc init, feature may be absent */ }
 })();

@@ -10,7 +10,7 @@
   "clusters": {
     "ntp/ntp.js": [
       "boxing-accent-theme.spec.ts",
-      "boxing-adr-0007-acceptance.spec.ts",
+      "boxing-architecture-acceptance.spec.ts",
       "boxing-audit.spec.ts",
       "boxing-auto-expand.spec.ts",
       "boxing-build-pipeline.spec.ts",
@@ -96,7 +96,7 @@
       "boxing-wave10-1016.spec.ts"
     ],
     "ntp/storage.js": [
-      "boxing-adr-0007-acceptance.spec.ts",
+      "boxing-architecture-acceptance.spec.ts",
       "boxing-audit.spec.ts",
       "boxing-data-golden.spec.ts",
       "boxing-import-merge.spec.ts",
@@ -172,7 +172,7 @@
       "boxing-time-machine-rollback.spec.ts"
     ],
     "ntp/state.js": [
-      "boxing-adr-0007-acceptance.spec.ts",
+      "boxing-architecture-acceptance.spec.ts",
       "boxing-debug.spec.ts",
       "boxing-memory.spec.ts",
       "boxing-state-sync.spec.ts",
@@ -180,7 +180,7 @@
       "boxing-viewstate-sync.spec.ts"
     ],
     "ntp/utils.js": [
-      "boxing-adr-0007-acceptance.spec.ts",
+      "boxing-architecture-acceptance.spec.ts",
       "boxing-audit.spec.ts",
       "boxing-conn-dsu.spec.ts",
       "boxing-connections.spec.ts",

@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
 const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html')).href;
 
-// BX-DEV-111j: Full data recovery test — export/import cycle with structural verification
+// Full data recovery test — export/import cycle with structural verification
 // Note: file:// protocol blocks CORS for i18n JSON fetch, so i18n fallback (en) is used.
 test.describe('Data Recovery & Export/Import', () => {
 
@@ -58,7 +58,7 @@ test.describe('Data Recovery & Export/Import', () => {
 
     if (exported) {
       const parsed = JSON.parse(exported);
-      // Ticket 51 (W6-D2): default export is now an envelope — layout + meta index,
+      // Ticket 51 (ticket 51): default export is now an envelope — layout + meta index,
       // bodies stay out; the bare layout fields live under parsed.layout.
       expect(parsed.meta).toBeTruthy();
       expect(parsed.meta.snapshots).toBeInstanceOf(Array);
@@ -208,7 +208,7 @@ test.describe('Data Recovery & Export/Import', () => {
 
     if (exported) {
       const parsed = JSON.parse(exported);
-      // Ticket 51 (W6-D2): envelope export — the round-trip payload now rides in
+      // Ticket 51 (ticket 51): envelope export — the round-trip payload now rides in
       // parsed.layout, with the meta index beside it and no bodies.
       const layoutDoc = parsed.layout || parsed;
       expect(parsed.meta).toBeTruthy();

@@ -19,9 +19,9 @@ extension new-tab page that runs standalone on
   its own `file://` mock; the stub makes the http-hosted lane explicit and
   key-faithful (the file mock `get()` answers only `boxingLayout`).
 - Ticket 47: the mirror needs `ntp.css`, a gitignored build artifact
-  (ADR-0011). `build-demo.mjs` regenerates it through the shared
+  `build-demo.mjs` regenerates it through the shared
   `.github/scripts/ntp-css.mjs` concatenation (the single logic, shared with
-  `build.mjs`, per BX-XPLAT-001) and **fails closed** (exit 1) if `ntp.css`
+  `build.mjs` as the single build entry) and **fails closed** (exit 1) if `ntp.css`
   comes out missing/empty or `docs/privacy-policy.md` is absent. It also
   renders the artifact-root `privacy-policy.html` from
   `docs/privacy-policy.md` — the store-required

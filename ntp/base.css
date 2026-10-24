@@ -4,7 +4,7 @@
 }
 
 /* ═══════════════════════════════════════════════
- * Entry Choreography — @keyframes (ADR-0008 Phase: Motion-B)
+ * Entry Choreography — @keyframes (design-system motion layer)
  * Motion tokens: --dur-fast 140ms (hover), --dur-base 220ms (panel),
  *   --dur-slow 360ms (layout). Curves: --ease-out (enter), --ease-default (toggle).
  * Usage: .fadeInUp etc. applied via class toggle or [data-anim] attributes.
@@ -35,7 +35,7 @@ body {
   font-family: var(--font-stack-ui);
   font-size: var(--font-size-base);
   line-height: 1.5;
-  /* BX-DEV-135 (B3 font crispness): preserve the design-system font stack's
+  /* (B3 font crispness): preserve the design-system font stack's
      smoothing + features here — ntp.css loads AFTER design-system.css so its
      body block silently dropped -moz-osx-font-smoothing / ligatures / kern,
      which was the actual root of the “字体发虚不清晰” symptom (Firefox lost
@@ -366,7 +366,7 @@ body {
   user-select: text;
 }
 
-/* BX-DEV-020: CSS `display:flex` overrides HTML `hidden` attribute (MDN:
+/* CSS `display:flex` overrides HTML `hidden` attribute (MDN:
    "changing the value of the CSS display property on a hidden element will
    override the hidden state"). Without this fallback, a container carrying
    `<div class="canvas" hidden>` stays visible despite the attribute. */
@@ -414,7 +414,7 @@ body {
   display: none;
 }
 
-/* Phase 5: Canvas Empty State Action Button (ADR-0008 Motion-B)
+/* Phase 5: Canvas Empty State Action Button (design-system motion layer)
    Mirrors .inner__empty-action / .large-box__empty-action language for
    a single visual shared across all three empty-state entry points. */
 .canvas__empty-action {
@@ -638,13 +638,13 @@ body {
   box-shadow: 0 0 0 2px var(--color-accent, #A08060), 0 2px 8px rgba(160, 128, 96, 0.15);
 }
 
-/* Auto-expand: true drawer pull-down from under title bar (BX-DEV-111)
+/* Auto-expand: true drawer pull-down from under title bar
    Uses pure max-height transition on the __body panel itself.
    When collapsed, body has max-height:0 + overflow:hidden — entire panel,
    including background, borders, and content, is hidden cleanly under the title bar.
    On hover, body slides down with its full measured height.
    No scaleY — that squishes content; this pulls the entire panel out like a tissue drawer. */
-/* BX-DEV-111 v2: Real tissue-pull drawer.
+/* v2: Real tissue-pull drawer.
    Strategy: collapsed = box shrinks to bar-only height via max-height on the BOX itself.
    Body & resize-handle hidden. On hover: box max-height expands, body fades in.
    The whole box panel (including background/border) grows/shrinks — true drawer. */
@@ -657,7 +657,7 @@ body {
   /* bar + padding, tightly clipped */
   overflow: hidden;
   border-radius: var(--radius-card);
-  /* BX-DEV-111i: preserve rounded corners when collapsed clips body */
+  /* preserve rounded corners when collapsed clips body */
   transition: max-height var(--dur-base) var(--ease-default);
   /* Material deceleration — smooth collapse */
 }
@@ -671,7 +671,7 @@ body {
 
 .box--hover-expand.box--collapsed .box-resize-handle {
   display: none;
-  /* BX-DEV-111g: instantly gone while collapsed, no flash during animation */
+  /* instantly gone while collapsed, no flash during animation */
 }
 
 /* Hover: tissue-pull expand — box grows to measured height, body fades in */
@@ -680,7 +680,7 @@ body {
   /* JS-measured exact content height, avoids empty-range animation */
   overflow: visible;
   border-radius: var(--radius-card) !important;
-  /* BX-DEV-111i: keep rounded during expand */
+  /* keep rounded during expand */
   transition: max-height var(--dur-slow) var(--ease-default);
   /* Material acceleration — crisp expand */
 }
@@ -712,7 +712,7 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dur-base) var(--ease-out) var(--dur-slow);
-  /* BX-DEV-111g: fade in after drawer fully expanded */
+  /* fade in after drawer fully expanded */
 }
 
 .large-box__body {
@@ -780,12 +780,12 @@ body {
 }
 
 @keyframes locate-pulse {
-  /* ADR-0015: outline (not box-shadow) escapes contain:layout clipping */
+  /* Use outline, not box-shadow: outline escapes contain:layout clipping */
   0%   { outline: 0 solid var(--color-accent); outline-offset: 0; }
   30%  { outline: 4px solid var(--color-accent); outline-offset: 4px; }
   100% { outline: 0 solid transparent; outline-offset: 0; }
 }
-/* Phase 5: Empty State Action Button (ADR-0008 Motion-B) */
+/* Phase 5: Empty State Action Button (design-system motion layer) */
 .large-box__empty-action {
   pointer-events: auto;
   display: inline-flex;
@@ -810,7 +810,7 @@ body {
   transform: scale(1.02);
 }
 
-/* Phase 5: Inner Canvas Empty State (ADR-0008 Motion-B) */
+/* Phase 5: Inner Canvas Empty State (design-system motion layer) */
 .inner__empty-state {
   position: absolute;
   inset: 0;
@@ -862,7 +862,7 @@ body {
   min-height: 0;
 }
 
-/* BX-DEV-020: CSS `display:flex` overrides HTML `hidden` attribute (MDN:
+/* CSS `display:flex` overrides HTML `hidden` attribute (MDN:
    "changing the value of the CSS display property on a hidden element will
    override the hidden state"). Without this fallback, a container carrying
    `<div class="inner" hidden>` stays visible despite the attribute. */
@@ -884,7 +884,7 @@ body {
   user-select: none;
 }
 
-/* BX-DEV-111Pv2: mirror large .canvas / .canvas:active pan cursor for inner canvas (fix 5 cursor-shadowing bug) */
+/* mirror large .canvas / .canvas:active pan cursor for inner canvas (fix 5 cursor-shadowing bug) */
 
 /* inner__canvas-head: lightweight bar inside canvas (v3.7.3 - replaced inner__head) */
 .inner__canvas-head {
@@ -1205,7 +1205,7 @@ body {
 /* Bug5: Bookmark add (+) button — design-token styled, matches empty state button language.
    Uses same border-radius, transition, hover behavior as .inner__empty-action / .large-box__empty-action.
 
-   Ticket 102 (A-056 / B66) — light-theme contrast contract, measured on the small-box backdrop
+   Ticket 102 — light-theme contrast contract, measured on the small-box backdrop
    (--color-elevated #EBE5DB; 3.81:1 is the worst case, canvas 4.12:1 / canvas-2 3.91:1):
      before: color --color-muted  #7B7167 = 3.81:1  -> BELOW SC 1.4.3 4.5:1 for 13px/500 text.
              border --color-hairline rgba(42,37,32,.06) = 1.12:1 -> far below SC 1.4.11 3:1.
@@ -1257,7 +1257,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════
- * Ticket 60 (Wave7 zero-flash): boot content mask
+ * Ticket 60 (zero-flash): boot content mask
  * html.boot-pending is set by ntp/boot-theme.js (classic blocking head script) and
  * removed by render.js renderCanvas/_enterLargeBox once the remembered state is
  * rendered. Canvas content stays invisible while the page background (already the

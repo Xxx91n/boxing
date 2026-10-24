@@ -1,4 +1,4 @@
-// Boxing — ticket 50 (spec W6-D1 / A-003, A-011): Time Machine one-click rollback UI +
+// Boxing — ticket 50 (ticket 50): Time Machine one-click rollback UI +
 // pre-restore safety snapshot. AC: (1) the settings data tab lists snapshots with
 // ts/schemaVersion/size and a per-row rollback button, (2) rollback runs behind a secondary
 // confirm and replaces the canvas via restoreFromSnapshot (a full replace, NOT the
@@ -100,7 +100,7 @@ test.describe('Ticket 50 — Time Machine rollback UI + pre-restore safety snaps
     await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.boxes.map((b) => b.title)), { timeout: 5000 }).toEqual(['A']);
     const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('boxingLayout') || 'null'));
     expect(stored.boxes.map((b) => b.title)).toEqual(['A']);
-    // A full-replace without a safety snapshot is forbidden (W6-D1): exactly one more snapshot,
+    // A full-replace without a safety snapshot is forbidden (ticket 50): exactly one more snapshot,
     // and the newest body holds the PRE-rollback state A+B with reason 'pre-restore'.
     const snaps = await page.evaluate(async () => {
       const dbg = (window as any).__boxingDebug;

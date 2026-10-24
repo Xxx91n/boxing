@@ -304,7 +304,7 @@ test.describe('Boxing DSU baseline (A9-Phase1)', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BX-D-007 (Wave 2026.10.11 P-18 / S-11): connection surface ownership.
+// (Wave 2026.10.11 P-18 / S-11): connection surface ownership.
 //
 // Regression class: one connId projected onto every open inner surface. The
 // resolver asked only "are both endpoints inner?" and never WHICH large box
@@ -315,7 +315,7 @@ test.describe('Boxing DSU baseline (A9-Phase1)', () => {
 // These assert the RESOLVER contract and the RENDERED-DOM outcome separately:
 // a resolver-only test would still pass if the render path ignored it.
 // ═══════════════════════════════════════════════════════════════════════════
-test.describe('BX-D-007: connection lines render only in their owning surface', () => {
+test.describe('connection lines render only in their owning surface', () => {
   // Two large boxes, each holding two small boxes, plus one canvas-level edge.
   async function seedTwoBoxes(page) {
     await resetBoxing(page);

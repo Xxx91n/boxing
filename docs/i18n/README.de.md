@@ -61,7 +61,7 @@ Helle und dunkle Logos, Erweiterungs-Icons, Favicons, Store-Kacheln und die Vari
 ## Installation
 
 > [!IMPORTANT]
-> **Installieren Sie über die offiziellen Store-Seiten** (empfohlen). Maßgeblich für die Installationsschritte und die aktuell veröffentlichte Store-Version sind das [englische README — Install](../../README.md#install) und die [Release-Statusseite](../../docs/release-status.md).
+> **Installieren Sie über die offiziellen Store-Seiten** (empfohlen). Maßgeblich für die Installationsschritte und die aktuell veröffentlichte Store-Version sind das [englische README — Install](../../README.md#install).
 > GitHub Releases sind ein **Änderungsprotokoll für Nutzer**: [neueste Release](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (offizielle Installation)

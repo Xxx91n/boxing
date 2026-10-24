@@ -10,7 +10,7 @@
 //     WebDAV data-loss-restore / first-pull / newer-cloud-pull flows (call sites keep
 //     their "Direct write" comments).
 //   - loadLayout() legacy migration + saveSnapshot() — facade-internal writes.
-// Storage area selection untouched: storage.local per ADR-0002/A6.
+// Storage area selection untouched: chrome.storage.local is deliberate.
 // Cross-scope ntp.js functions (log trio + render pipeline) are injected once via
 // initStorageFacade(); moved bodies stay byte-identical to their origin (WORKFLOW §6
 // byte-exact rule). State variables remain state.js singletons — after this ticket the
@@ -29,7 +29,7 @@ let api = null;
 let layoutStorage = null;
 let mirrorWriter = null; // ticket 60: paint-critical boot mirror writer (persist.js facade)
 let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning;
-// BX-D-008: the single dark-mode apply path, INJECTED (not imported). storage.js is
+// the single dark-mode apply path, INJECTED (not imported). storage.js is
 // a leaf module (import-graph-guard B-1 forbids sibling imports), and D-011② keeps
 // the write chain / loop guard / onChanged listener as one inseparable unit here —
 // moving the listener elsewhere to reach a helper directly would violate WORKFLOW §6.
@@ -40,7 +40,7 @@ export function initStorageFacade(deps) {
   api = deps.api;
   layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   mirrorWriter = deps.mirrorWriter; // ticket 60: boot mirror writer (localStorage, sync-readable first paint)
-  applyDarkMode = deps.applyDarkMode; // BX-D-008: single dark-mode apply path (persist.js)
+  applyDarkMode = deps.applyDarkMode; // single dark-mode apply path (persist.js)
   debug = deps.debug;
   debugErr = deps.debugErr;
   debugWarn = deps.debugWarn;
@@ -68,7 +68,7 @@ export function directSetBoxingLayout(persisted) {
   return layoutStorage.set({ boxingLayout: persisted });
 }
 
-// ADR-0022: autoBackupDue is a storage.local coordination flag written by the
+// autoBackupDue is a storage.local coordination flag written by the
 // service worker and consumed by the NTP. It is not boxingLayout state, but the
 // write path still routes through this facade (data-golden gate 2, single write
 // path — direct chrome.storage.* writes outside storage.js are violations).
@@ -147,7 +147,7 @@ export function registerStorageOnChanged() {
     // upgraded profile splits its boxingSnapshots[] even if no snapshot API is ever called.
     try { await _migrateSnapshots(); } catch (e) { debugErr('loadLayout snapshot migrate', e); }
     rebuildBoxMaps();
-    markDsuDirty(); // ADR-0007 Q4b: layout replaced — DSU must rebuild on first use
+    markDsuDirty(); // layout replaced — DSU must rebuild on first use
     try { ensureGroups(); } catch (e) { debugErr("ensureGroups after load", e); } // runtime groups mirror after load
   }
 
@@ -156,7 +156,7 @@ export function registerStorageOnChanged() {
   //   snap.v1.<ts>  — per-snapshot body key (max 2MB each)
   //   snap.v1.index  — lightweight index: [{ts, schemaVersion, size}]
   // Rotation (spec D1): last 24h hourly, 24h–30d daily, >30d weekly; total byte cap LRU fallback.
-  // Compatible with ADR-0009 schemaVersion field; sync transport unchanged.
+  // Compatible with the schemaVersion field; sync transport unchanged.
   const SNAP_KEY_PREFIX = 'snap.v1.';
   const SNAP_INDEX_KEY = 'snap.v1.index';
   const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;
@@ -165,7 +165,7 @@ export function registerStorageOnChanged() {
   const DAY_MS = 86400000;
   const HOURLY_WINDOW_MS = 24 * HOUR_MS;
   const DAILY_WINDOW_MS = 30 * DAY_MS;
-  // ADR-0009 compatibility contract (41R): the newest N snapshots are always kept verbatim —
+  // Compatibility contract (41R): the newest N snapshots are always kept verbatim —
   // tier dedup applies beyond the floor, so saveSnapshot + restoreFromSnapshot within one
   // hour still finds every entry (strict same-hour dedup silently pruned pre-update copies).
   const RAW_KEEP_FLOOR = 10;
@@ -232,7 +232,7 @@ export function registerStorageOnChanged() {
     await layoutStorage.set({ [SNAP_INDEX_KEY]: index });
   }
 
-  // Rotation: newest RAW_KEEP_FLOOR entries pass through verbatim (ADR-0009); older
+  // Rotation: newest RAW_KEEP_FLOOR entries pass through verbatim; older
   // entries are tier-deduped (hourly / daily / weekly), then total-byte LRU.
   async function _rotateAndWriteIndex(index) {
     const now = Date.now();
@@ -263,7 +263,7 @@ export function registerStorageOnChanged() {
       ...floor,
     ];
     kept.sort((a, b) => a.ts - b.ts);
-    // Absolute count cap (ADR-0024 / D-004): drop oldest until at or under MAX_SNAPSHOT_COUNT (30)
+    // Absolute count cap: drop oldest until at or under MAX_SNAPSHOT_COUNT (30)
     while (kept.length > MAX_SNAPSHOT_COUNT) {
       const removed = kept.shift();
       try { await layoutStorage.remove(SNAP_KEY_PREFIX + removed.ts); } catch (_) { /* non-fatal */ }
@@ -286,10 +286,10 @@ export function registerStorageOnChanged() {
     return kept;
   }
 
-  // Ticket 50 (spec W6-D1): saveSnapshot(reason) — the optional label (e.g. 'pre-restore') is
+  // Ticket 50 (spec ticket 50): saveSnapshot(reason) — the optional label (e.g. 'pre-restore') is
   // written on the snapshot BODY only; snap.v1.index stays metadata-only {ts,schemaVersion,size}
   // (41R pin). Returns snap.ts on success, null when skipped (over-cap) or on storage error —
-  // callers fail closed: W6-D1 forbids a full-replacement restore without a safety snapshot
+  // callers fail closed: ticket 50 forbids a full-replacement restore without a safety snapshot
   // (atomcode: claudette #47 fail-closed semantics). Monotonic ts guard (precedent: t44
   // _lastConflictTs): two snapshots in one millisecond must not share a body key.
   let _lastSnapTs = 0;
@@ -366,7 +366,7 @@ export function registerStorageOnChanged() {
     }
   }
 
-  // Ticket 50 (spec W6-D1): the full-replacement write leg of a restore (Time Machine rollback).
+  // Ticket 50 (spec ticket 50): the full-replacement write leg of a restore (Time Machine rollback).
   // Deliberately bypasses mergeConcurrentLayout — a cross-tab merge would resurrect the
   // replaced-away boxes from storage and break rollback ("restore to point" must be exact).
   // Keeps the two write-path invariants that still matter:
@@ -390,7 +390,7 @@ export function registerStorageOnChanged() {
     await layoutStorage.set({ boxingLayout: persisted });
     setLayout(persisted);
     rebuildBoxMaps();
-    markDsuDirty(); // ADR-0007 Q4b: layout replaced — DSU must rebuild on first use
+    markDsuDirty(); // layout replaced — DSU must rebuild on first use
     try { ensureGroups(); } catch (e) { debugErr('ensureGroups after restore', e); }
     return persisted;
   }
@@ -514,7 +514,7 @@ export function registerStorageOnChanged() {
     catch (e) { debugErr('listConflictArchives', e); return []; }
   }
 
-  // ── Ticket 79 (spec Wave8 A-029): conflict-copy readout ─────────────────────
+  // ── Ticket 79 (spec): conflict-copy readout ─────────────────────
   // Read-only single-entry getter for the settings conflict list export button.
   // Returns the verbatim archived entry (raw payload + meta) or null when the
   // body was pruned by rotation or the ts is unknown. Never writes: archive
@@ -528,7 +528,7 @@ export function registerStorageOnChanged() {
     } catch (e) { debugErr('getConflictArchive', e); return null; }
   }
 
-  // ── Ticket 91 (Wave9 A-045 / B55): sync base slot ───────────────────────────────
+  // ── Ticket 91 (B55): sync base slot ───────────────────────────────
   // Client-local record of the last state BOTH sides agreed on — the common
   // ancestor the sync-engine three-way merge (utils.mergeLayoutThreeWay) diffs
   // against. Written only after a clean pull/merge/push lands and NEVER uploaded
@@ -552,7 +552,7 @@ export function registerStorageOnChanged() {
     } catch (e) { debugWarn('setSyncBase failed \u2014 base stays stale; next merge degrades to two-way', e); return false; }
   }
 
-  // ── Ticket 51 (spec W6-D2): full DR package bodies ───────────────────────────
+  // ── Ticket 51 (spec ticket 51): full DR package bodies ───────────────────────────
   // The optional "full disaster-recovery package" export needs the VERBATIM bodies
   // behind the three index keys (snap.v1.*, boxingLayout.corrupt.*, boxingLayout.
   // conflict.*). The default envelope export never calls this — snapshot payloads
@@ -627,7 +627,7 @@ export function registerStorageOnChanged() {
       }
     }
     const trimmedDeleted = Object.fromEntries(Object.entries(deleted).sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, MAX_TOMBSTONES));
-    // BX-DEV-137++: explicit merge of connections/groups — spread alone lets
+    // explicit merge of connections/groups — spread alone lets
     // localValue.connections=undefined (new tab, not yet initialized) overwrite
     // remoteValue.connections, silently dropping all lines cross-tab.
     const mergeByIdUnion = (localArr, remoteArr, keyField = 'id') => {
@@ -651,8 +651,8 @@ export function registerStorageOnChanged() {
     };
   }
 
-  // ADR-0007: persist helper — groups are computed-only (Q1).
-  // 66/A-020: also the single sanitize boundary for runtime-only diagnostics. Keys
+  // Persist helper — groups are computed-only, never persisted.
+  // 66/also the single sanitize boundary for runtime-only diagnostics. Keys
   // prefixed "__" are in-memory flags, never part of the user's persisted settings;
   // they are dropped from the deep clone so src (the live layout) stays untouched.
   export const RUNTIME_ONLY_SETTING_RE = /^__/;
@@ -668,8 +668,8 @@ export function registerStorageOnChanged() {
     return cloned;
   }
 
-  // ADR-0007 Q4a: drop tombstones older than 24h (Excalidraw soft-delete GC pattern).
-  // ── Ticket 81R2 (A-031): per-install credential-key (PIK) narrow storage port ──────────
+  // Drop tombstones older than 24h (Excalidraw soft-delete GC pattern).
+  // ── Ticket 81R2: per-install credential-key (PIK) narrow storage port ──────────
 // credentials.js must not touch chrome.storage directly (gate2 single-write-path scan;
 // WORKFLOW §6 write-chain discipline). The PIK (boxingCredKey.v1) is a NON-layout key —
 // it is deliberately outside boxingLayout so it never rides exports/sync payloads/snapshots
@@ -716,7 +716,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
     layout._meta = { ...(layout._meta || {}), deleted };
   }
 
-  // Ticket 71 (Wave8 G-A, N3 dr-export AC4): `saveLayout(opts)` — when
+  // Ticket 71 (N3 dr-export AC4): `saveLayout(opts)` — when
   // `opts.preserveUpdatedAt` is set, the write keeps the existing `_meta.updatedAt`
   // instead of re-stamping it to now.
   //
@@ -749,7 +749,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
           remote = migrateLayout(stored.boxingLayout);
         }
       }
-      // Ticket 71 (Wave8 G-A, N2 state-sync): a save-time merge can bring in boxes this
+      // Ticket 71 (N2 state-sync): a save-time merge can bring in boxes this
       // tab has never rendered — e.g. a box created concurrently in another tab and
       // discovered here only when saveLayout() merges the stored side. Memory and DOM
       // must not diverge, so re-render when the merge actually changed the box set.
@@ -774,12 +774,12 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
       // BX-AUD-04: explicit chrome.storage.local quota failure handling — sets a user-visible flag
       // and writes a emergency localStorage snapshot so data is never silently lost.
       try {
-        // ADR-0007 Q1: groups is runtime-only — never persist.
+        // groups is runtime-only — never persist.
         const persisted = stripGroupsForPersist(layout);
         await layoutStorage.set({ boxingLayout: persisted });
         try { gcTombstones(layout); } catch (_gc) { /* non-fatal */ }
         if (layout.settings && layout.settings.__lastSaveError) { layout.settings.__lastSaveError = null; }
-        // Ticket 60 (Wave7 zero-flash): mirror paint-critical settings AFTER a successful
+        // Ticket 60 (zero-flash): mirror paint-critical settings AFTER a successful
         // boxingLayout persist so the first paint of the next new tab is already the
         // remembered theme. Mirror is derived-only (never a second layout source, D-002);
         // failure here is fail-soft — the boot script falls back to default theme once.
@@ -810,7 +810,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
    }, 120));
  }
 
-  // ── Ticket 71 (Wave8 G-A, N1 data-golden gate4) ───────────────────────────
+  // ── Ticket 71 (N1 data-golden gate4) ───────────────────────────
   // Canonical, order-insensitive projection of the REPLICATED USER DATA. Used for
   // one decision only: after adopting an external layout, does this tab still hold
   // anything of its own that the incoming payload does not already carry?
@@ -823,7 +823,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
   //       different from an incoming payload that (legitimately) has no tombstones;
   //   (b) key order — the merged object is built by spread, so its key order is the
   //       local object's, not the incoming's;
-  //   (c) computed-only state — `groups` (ADR-0007 Q1: runtime-only, never persisted)
+  //   (c) computed-only state — `groups` (runtime-only, never persisted)
   //       can never appear in an incoming payload.
   // Consequence: every tab echoed exactly one extra revision the first time it
   // received a cross-tab update. That is write amplification, and it is what turned
@@ -852,10 +852,10 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
     let clone;
     try { clone = JSON.parse(JSON.stringify(src || {})); } catch (_) { return ''; }
     if (!clone || typeof clone !== 'object') return '';
-    delete clone.groups; // ADR-0007 Q1: computed-only, never part of the replicated state
+    delete clone.groups; // computed-only, never part of the replicated state
     if (clone.settings && typeof clone.settings === 'object') {
       for (const k of Object.keys(clone.settings)) {
-        if (RUNTIME_ONLY_SETTING_RE.test(k)) delete clone.settings[k]; // 66/A-020 diagnostics
+        if (RUNTIME_ONLY_SETTING_RE.test(k)) delete clone.settings[k]; // 66/diagnostics
       }
     }
     const deleted = (clone._meta && clone._meta.deleted) || {};
@@ -879,7 +879,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
         && String(incoming._meta?.writerId || '') > String(layout._meta?.writerId || ''));
 
     setApplyingExternalLayout(true);
-    // 48 hardening (BX-EXPLORE-014 class): the guard used to be released only by the
+    // Hardening: the guard used to be released only by the
     // render-block finally at the bottom, so any throw in merge/DSU/rebuild ABOVE that
     // try would stick applyingExternalLayout at true for the page's lifetime — a
     // permanently deaf tab that rejects every future cross-tab sync. The whole
@@ -906,14 +906,14 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
       } else if (currentLargeBoxId) {
         const lb = getLargeBox(currentLargeBoxId);
         if (lb) {
-          // BX-DEV-111N+ : if the incoming writer is another tab and it produced a newer
+          // +: if the incoming writer is another tab and it produced a newer
           // viewState for the currently-open large box, and the user is not actively panning,
           // pull inner zoom/pan from lb.viewState so the current tab reflects the remote edit
           // immediately. Active pan (panState !== null) wins: never interrupt a live drag.
           try {
             if (panState === null && lb.viewState && typeof lb.viewState.innerZoom === 'number') {
               const remoteTs = Number(lb.viewState.updatedAt) || 0;
-              // BX-DEV-111N+v2: compare against THIS tab's own last write to lb.viewState,
+              // +v2: compare against THIS tab's own last write to lb.viewState,
               // NOT layout._meta.updatedAt (mergeConcurrentLayout already overwrote
               // it with the incoming _meta, making remoteTs>localTs always false and
               // cross-tab adopt dead). 100ms tolerance absorbs wall-clock drift between
@@ -933,20 +933,20 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
           renderCrumbs(lb);
           updateCaption();
           applyInnerTransform();
-          // BX-DEV-137++: re-render connections on cross-tab sync into inner-surface view
+          // re-render connections on cross-tab sync into inner-surface view
           renderConnections();
         }
       } else {
         renderCanvas();
       }
       if (needsReconcileWrite && incomingWins) saveLayoutDebounced();
-      // BX-DEV-122 Bug3: re-sync settings DOM so modal reflects cross-tab updated urlOpenMode etc.
+      // Bug3: re-sync settings DOM so modal reflects cross-tab updated urlOpenMode etc.
       try { syncSettingsDOM(); } catch (e) { debugErr("syncSettingsDOM", e); }
-      // BX-D-008: bug2's third face — remote settings won the LWW merge above but no
+      // bug2's third face — remote settings won the LWW merge above but no
       // visual state was replayed and the boot mirror was not rewritten, so the session
       // looked right until the next reload reverted it. Replaying through the single
       // apply path is what removes "inconsistent within the session vs. after reload".
-      // ADR-0016 layering and the remote-wins LWW semantics above are untouched (D-008⑧).
+      // Engine layering and the remote-wins LWW semantics above are untouched (D-008⑧).
       try { applyDarkMode(layout.settings.darkMode === true); } catch (e) { debugWarn("applyDarkMode replay", e); }
       debug('external layout applied', { revision: incomingRevision, boxes: layout.boxes.length });
       return true;
@@ -955,7 +955,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
     }
   }
 
-// Ticket 10 / ADR-0016: onInstalled install/update signal — read once and consume (remove).
+// Ticket 10: onInstalled install/update signal — read once and consume (remove).
 // The signal key is written by the background SW (bg onInstalled), NOT by the layout write
 // chain; keeping the read+remove here preserves the "storage touches live in the facade"
 // invariant (checkpoint 1 of issues/10).
@@ -984,7 +984,7 @@ export async function ensurePreUpdateSnapshot() {
   } catch (e) { debugErr('ensurePreUpdateSnapshot', e); return false; }
 }
 
-// ADR-0007/0009 heuristics: true when migrateLayout would rewrite the stored layout
+// Migration heuristics: true when migrateLayout would rewrite the stored layout
 // (migrateLayout is version-ungated and mutates box objects in place, so a JSON diff
 // against the same object reference cannot detect "pending" — white-list the shapes).
 function needsMigration(raw) {
@@ -992,10 +992,10 @@ function needsMigration(raw) {
   if (!(Number(raw.version) >= 3)) return true;                     // pre-3 legacy shapes
   if (!Array.isArray(raw.boxes)) return true;
   if (!raw.settings || typeof raw.settings !== 'object') return true;
-  if (Array.isArray(raw.groups) && raw.groups.length > 0) return true; // ADR-0007 Q1 pending
-  if (!raw._meta || !raw._meta.__groupsMigrated) return true;          // ADR-0007 Q1 flag not yet stamped
+  if (Array.isArray(raw.groups) && raw.groups.length > 0) return true; // groups still persisted, migration pending
+  if (!raw._meta || !raw._meta.__groupsMigrated) return true;          // groups-migration flag not yet stamped
   if (Array.isArray(raw.connections)) {
-    for (const c of raw.connections) if (c && typeof c === 'object' && c.props == null) return true; // ADR-0007 Q4c
+    for (const c of raw.connections) if (c && typeof c === 'object' && c.props == null) return true; // connection props backfill pending
   }
   return false;
 }

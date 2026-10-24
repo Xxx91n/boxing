@@ -1,4 +1,4 @@
-// Boxing — ticket 91 (Wave9 A-045 / B55): child-box/id-level three-way WebDAV merge.
+// Boxing — ticket 91 (B55): child-box/id-level three-way WebDAV merge.
 // AC coverage (issues/91-merge-three-way-b55.md):
 //   AC1 子盒/id 级合并落地 + e2e 双端加子盒 → pull → 双方可见:
 //       both ends add a DIFFERENT small box under the SAME large box, then sync →
@@ -23,7 +23,7 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
-// Ticket 91R (A-045 rework): NO real credentials in source. This file-lane's
+// Ticket 91R (rework): NO real credentials in source. This file-lane's
 // transport is fully stubbed by the runtime.sendMessage mock above, so the config
 // only needs to pass checkUrlValid (https, non-private host, no embedded auth).
 // A private staging account can be injected via BOXING_SPEC_WEBDAV_* env vars.

@@ -42,7 +42,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      - name: Generate ntp.css (ticket 47, single build entry per BX-XPLAT-001)
+      - name: Generate ntp.css (ticket 47, single build entry)
         run: node .github/scripts/build.mjs --css-only
       - name: Assemble demo artifact
         env:
@@ -73,7 +73,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      # Ticket 109 (A-064): a green deploy is not proof that Pages serves the new
+      # Ticket 109: a green deploy is not proof that Pages serves the new
       # build. Poll demo/version.json with a cache-buster until it reports the
       # version we just deployed; not converged inside 180s = red.
       - name: Checkout (verify script lives in the repo)

@@ -12,12 +12,12 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 }
 
-// BX-DEV-020 regression guard:
+// regression guard:
 // CSS `display:flex` on `.inner` / `.canvas` MUST NOT override the HTML `hidden`
 // attribute. Before the fix, `.inner { display:flex }` lacked a `.inner[hidden]`
 // fallback, so <div id="inner" class="inner" hidden> rendered despite `hidden`,
 // surfacing the inner (small-box) canvas below the large-box canvas.
-test.describe('BX-DEV-020: hidden override pairing (.inner / .canvas)', () => {
+test.describe('hidden override pairing (.inner / .canvas)', () => {
   test('#inner is computed display:none on initial load', async ({ page }) => {
     await resetBoxing(page);
     const innerDisplay = await page.evaluate(() => {
@@ -52,7 +52,7 @@ test.describe('BX-DEV-020: hidden override pairing (.inner / .canvas)', () => {
     expect(result.ok).toBe(true);
     // CRITICAL invariant: when hidden=true, computed display MUST be 'none'.
     // If this fails, someone added a display:flex/block/grid rule to `.inner`
-    // without the `.inner[hidden] { display:none }` fallback (BX-DEV-020).
+    // without the `.inner[hidden] { display:none }` fallback .
     expect(result.displayHidden).toBe('none');
   });
 

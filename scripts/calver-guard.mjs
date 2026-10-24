@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Ticket 100 (architecture-recovery) - A-054 / B64: calver 版本面一致性门禁。
+// Ticket 100 (architecture-recovery) - B64: calver 版本面一致性门禁。
 //
 // 被检面(任一不一致即 exit 1):
 //   1. manifest.json version            2. manifest.json version_name
@@ -189,7 +189,7 @@ export function checkVersionSurface(root, tags) {
     fail("BX-CALVER-013", FOOTER_REL + " 缺少静态版本脚注 " + FOOTER_PREFIX + version);
   }
 
-  // 8. 单调性: 不得回退/重发已发行版本号 (ADR-0017: 2026.9.12 持有不热修)
+  // 8. 单调性: 不得回退/重发已发行版本号 (2026.9.12 持有不热修)
   if (Array.isArray(tags)) {
     const released = tags
       .map((t) => (t.charAt(0) === "v" ? t.slice(1) : null))

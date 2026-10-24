@@ -6,7 +6,7 @@ import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
-// Ticket 95 (A-049): no real account in source — the user field only needs a
+// Ticket 95: no real account in source — the user field only needs a
 // placeholder shape; BOXING_SPEC_WEBDAV_USER env overrides (91R pattern).
 const WEBDAV_USER = process.env.BOXING_SPEC_WEBDAV_USER || 'spec-user';
 

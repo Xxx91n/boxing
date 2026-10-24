@@ -1,7 +1,7 @@
 # Publishing Guide — Boxing（2026-09-15 修订）
 
 > 面向：**发布者（用户）**。商店上传由你完成；本指南给路径、材料与红线。
-> 保留心智模型：Chrome/Firefox 权限拆分、隐私页走 Pages、AMO 版号烧录教训、ADR-0017 门禁。
+> 保留心智模型：Chrome/Firefox 权限拆分、隐私页走 Pages、AMO 版号烧录教训、发行门禁。
 > 已废除：「以 GitHub `.xpi`/`.crx` 为官方安装源」的旧叙述。
 
 ## 当前发行口径（2026.10.17）
@@ -90,7 +90,7 @@ gh workflow run build.yml -f version=<VER> -f make_release=true -f amo_sign=true
 
 **运维备注（2026-09-13，2026-09-15 更新）：** 偶发 `release` 触发的 **deploy** job 失败时，可先 `gh workflow run demo-deploy.yml`（checkout main）重部，或 `gh run rerun <id> --failed`。**验收口径已升级**：不再以 `/demo/` 与 privacy URL 200 为准，而以 `npm run verify:pages-gc`（三 URL 200 **且** `demo/version.json` 的 `version` == 最新 release tag）为准 —— 200 无法发现「过时但 200」。
 
-### G-C 升格：Pages 新鲜度断言（2026-09-15 · 票 109 / A-064）
+### Pages 新鲜度断言升格（2026-09-15 · 票 109）
 
 | 环节 | 机制 |
 |---|---|
@@ -120,7 +120,7 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 - [ ] 隐私政策 URL 可打开
 - [ ] 截图非透明占位（若商店要求实图）
 - [ ] GitHub Release 无 xpi/crx，安装链到商店
-- [ ] 你知道 G-B 为强制豁免、G-A 以 CI 为准
+- [ ] 你知道人工黄金路径为强制豁免、CI 门禁以流水线为准
 
 ## 发版强制规程（2026-10-14 起，必须遵守）
 
@@ -132,27 +132,27 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
    ```bash
    gh workflow run build.yml --ref main -f make_release=true -f release_tag=v<ver> -f amo_sign=true
    ```
-6. **G-B 声明**：构建产物变化（包括仅版本号变化）后，旧的 G-B 声明对新产物失效，需要重新声明。
+6. **人工黄金路径声明**：构建产物变化（包括仅版本号变化）后，旧的声明对新产物失效，需要重新声明。
 
 ## 附录 — 发行检查单模板（原 WORKFLOW §4.4）
 
-> 每次发行复制一份到该发行票的报告逐项勾选。门禁定义与三门合取见 ADR-0017。
+> 每次发行复制一份到该发行票的报告逐项勾选。可发行 = G-A（CI）∧ G-B（手工商店黄金路径）∧ G-C（Pages）三条件合取。
 
 ```
 发行检查单 — <版本号>
-G-A CI
+CI 门禁
 - [ ] main 全量 test.yml run URL: __________ → 全绿
 - [ ] 残红豁免逐行 (用例名 | 基线 run | 失败签名 | 归属票 | 到期条件):
       - [ ] ________________________________
 - [ ] node scripts/waiver-ledger-check.mjs exit 0, 且逐行将台账失败签名与最新基线 run 日志复核一致 (票48 机制)
-G-B 人工 zip 黄金路径 (Chrome 与 Firefox 各一遍, 用解包产物)
+人工 zip 黄金路径 (Chrome 与 Firefox 各一遍, 用解包产物)
 - [ ] 全新安装 → 引导可走完 (Skip/Next), 关闭后主界面可点击, 零 console 错误
 - [ ] 建盒/改名/拖拽/缩放 → 重开后数据完整
 - [ ] 旧备份导入 → 合并或冲突副本可查, 无静默覆盖
 - [ ] 升级安装 (上一发行版 → 新 zip): 首开前 pre-update 快照存在; 迁移后数据完整、无冻结
-- [ ] 回滚演练: 新版代码写入后的数据, 用上一版代码读回无损失 (含 v2 单程路径样例 — ADR-0017 具名项)
+- [ ] 回滚演练: 新版代码写入后的数据, 用上一版代码读回无损失 (含 v2 单程路径样例 — 门禁具名项)
 - [ ] 至少 1 名具发布权限者确认已知风险与回滚预案 (禁止无人复核发布)
-G-C Pages (200 + 新鲜度, 2026-09-15 升格)
+Pages (200 + 新鲜度, 2026-09-15 升格)
 - [ ] https://boxing.xxx91n.com/demo/ → 200 且有主题渲染
 - [ ] https://boxing.xxx91n.com/demo/ntp.css → 200 text/css
 - [ ] https://boxing.xxx91n.com/privacy-policy.html → 200 含政策正文与 Last updated

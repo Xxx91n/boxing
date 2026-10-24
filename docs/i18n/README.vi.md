@@ -61,7 +61,7 @@ Logo sáng/tối, biểu tượng phần mở rộng, favicon, ô ảnh cửa h�
 ## Cài đặt
 
 > [!IMPORTANT]
-> **Cài đặt từ trang cửa hàng chính thức** (khuyến nghị). Các bước cài đặt và phiên bản đã phát hành trên cửa hàng được quy định tại [README tiếng Anh — Install](../../README.md#install) và [trang trạng thái phát hành](../../docs/release-status.md).
+> **Cài đặt từ trang cửa hàng chính thức** (khuyến nghị). Các bước cài đặt và phiên bản đã phát hành trên cửa hàng được quy định tại [README tiếng Anh — Install](../../README.md#install).
 > GitHub Releases là **nhật ký thay đổi dành cho người dùng**: [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (cài đặt chính thức)

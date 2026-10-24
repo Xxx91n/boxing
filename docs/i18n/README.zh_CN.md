@@ -61,7 +61,7 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 ## 安装
 
 > [!IMPORTANT]
-> **请通过官方商店页面安装**（推荐）。权威安装步骤与当前已发布的商店版本维护在 [英文 README — Install](../../README.md#install) 与 [发行状态页](../../docs/release-status.md)。
+> **请通过官方商店页面安装**（推荐）。权威安装步骤与当前已发布的商店版本维护在 [英文 README — Install](../../README.md#install)。
 > GitHub Releases 仅作为**面向用户的更新日志**：[最新版本](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox（正式安装）

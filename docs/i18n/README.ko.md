@@ -61,7 +61,7 @@ Boxing은 브라우저 새 탭 페이지를 시각적 북마크 워크스페이�
 ## 설치
 
 > [!IMPORTANT]
-> **공식 스토어 페이지에서 설치하세요** (권장). 설치 절차와 현재 게시된 스토어 버전의 기준 정보는 [영문 README — Install](../../README.md#install) 및 [릴리스 상태 페이지](../../docs/release-status.md)에 있습니다.
+> **공식 스토어 페이지에서 설치하세요** (권장). 설치 절차와 현재 게시된 스토어 버전의 기준 정보는 [영문 README — Install](../../README.md#install)에 있습니다.
 > GitHub Releases는 **사용자용 변경 로그**입니다: [최신 릴리스](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (공식 설치)

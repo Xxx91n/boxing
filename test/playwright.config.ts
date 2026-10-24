@@ -17,7 +17,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // Worker policy (ticket 20, architecture-recovery; research-report-round4 §5):
+  // Worker policy (ticket 20, architecture-recovery):
   // - Local cap 4: default (all cores) launches 8 headed browsers on this
   //   8-thread host and starves them — random 30s setup/timeout failures with
   //   different victims each run (ticket 01 gate evidence).
@@ -35,8 +35,7 @@ export default defineConfig({
       name: 'firefox-extension',
       // D-012 (wave-2026.10.11 Round-3, 2026-10-13): firefox lane runs HEADLESS.
       // The headed persistent-context native-input pipe wedges (playwright#16095
-      // class — page.mouse.* progressively stalls, probe-verified 3/3 rounds on
-      // .scratch/wave10-1011-grill/probes/ff-native-input-probe.mjs); headless is
+      // class — page.mouse.* progressively stalls, probe-verified 3/3 rounds); headless is
       // clean (0/3). One headless lane restores the 4 native-input tests in place
       // and is faster — no parallel third project needed. Chromium stays headed
       // (carries --load-extension real-extension liveness + native baseline).

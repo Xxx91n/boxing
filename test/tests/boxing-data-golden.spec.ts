@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { dismissOnboarding } from '../helpers/onboarding';
 
 // Ticket 45 (architecture-recovery) — CI data-layer golden gates.
-// Five gates over the single-writer storage chain (see docs/adr/0009, ADR-0016,
+// Five gates over the single-writer storage chain (see the 3-2-1 resilience and engine-layering contracts,
 // ntp/storage.js header contract):
 //   1. roundtrip: 50 writes -> storage dump -> reload -> storage/DOM still match;
 //      a stale snapshot must never overwrite the newest revision.
@@ -47,7 +47,7 @@ async function readStoredLayout(page: import('@playwright/test').Page) {
 // 45R write-path scanner for the SW (background.js). The invariant is
 // "background must never WRITE the boxingLayout key" — NOT "must never mention
 // it": ticket-42's pre-update COW legally READS boxingLayout (storage.local.get)
-// and writes only snap.v1.* split-key snapshots (ADR-0009 shape). Substring bans
+// and writes only snap.v1.* split-key snapshots. Substring bans
 // (expect(bg).not.toContain('boxingLayout')) are BANNED as write-path gating —
 // they collide with that legal read (W2 brain review, ticket 45 P1 finding).
 // Strips comments, normalizes quotes and flattens whitespace so multi-line
@@ -161,7 +161,7 @@ test.describe('Data-layer golden gates (ticket 45) @data-golden', () => {
 
     // Shape tripwire on the SW write sites: every storage.local.set must target a
     // documented key class — the two non-layout small keys (bgErrLog,
-    // boxingInstallSignal), the ADR-0022 autoBackupDue coordination flag (SW
+    // boxingInstallSignal), the autoBackupDue coordination flag (SW
     // writes, NTP consumes via the storage.js facade), or the t42 snapshot keys
     // resolving to snap.v1.*.
     const bgWrites = bgSrc.split(/\r?\n/).filter((l) => /\.storage\.local\.set\(/.test(l));
@@ -195,7 +195,7 @@ test.describe('Data-layer golden gates (ticket 45) @data-golden', () => {
   test('gate 3: undici keep-alive reuse across two syncs', async () => {
     // Explicit skip with reason (ticket-45 acceptance allows skip(reason)): the WebDAV
     // and Gist transports run as page/service-worker fetch inside the browser network
-    // stack (ADR-0016), not through Node undici — there is no parent-process connection
+    // stack (sync/backup engine), not through Node undici — there is no parent-process connection
     // surface for Playwright to observe reuse, and Chrome does not expose connection
     // pooling via Resource Timing. Revisit if a Node-side sync harness lands upstream.
     test.skip(true, 'transport is browser-side fetch (MV3 network stack); no undici surface to assert');

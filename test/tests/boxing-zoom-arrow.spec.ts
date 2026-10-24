@@ -12,12 +12,12 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 }
 
-// Regression for BX-DEV-124: Chrome culled zero-size border-triangle arrows.
-// BX-DEV-135/136: the fix is a pure CSS border triangle via ::before with no
+// Regression for Chrome culled zero-size border-triangle arrows.
+// the fix is a pure CSS border triangle via::before with no
 // text content (font-size:0 hides the legacy Unicode literal that was removed
 // from HTML to avoid ungood-chromium glyph-fallback invisibility). Assert the
 // triangle renders with non-zero box size and that the ::before pseudo exists.
-test.describe('Boxing zoom-arrow visibility (BX-DEV-ZOOMARROW)', () => {
+test.describe('Boxing zoom-arrow visibility ', () => {
   test('canvas zoom arrows render with non-zero size on chrome', async ({ page }) => {
     await resetBoxing(page);
     // Only check canvas-zoom arrows (inner-zoom is hidden until a large box is entered).

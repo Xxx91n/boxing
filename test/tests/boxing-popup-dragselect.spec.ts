@@ -12,9 +12,9 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 }
 
-// BX-DEV-127 (B7): drag-select text inside the edit popup must NOT dismiss the popup
+// (B7): drag-select text inside the edit popup must NOT dismiss the popup
 // even when the selection ends outside the popup bounds.
-test.describe('Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT)', () => {
+test.describe('Boxing popup drag-select (DRAGSELECT)', () => {
   test('edit popup stays open when text drag-selection ends outside popup', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
@@ -52,7 +52,7 @@ test.describe('Boxing popup drag-select (BX-DEV-POPUP-DRAGSELECT)', () => {
     await urlInput.fill('https://www.baidu.cn/some-very-long-text-to-select-here');
     await urlInput.selectText();
     // press inside the input, drag past the popup edge, release outside — synthetic
-    // pointer/mouse sequence. The BX-DEV-127 guard keys on the mousedown origin only
+    // pointer/mouse sequence. The guard keys on the mousedown origin only
     // (document-capture mousedown inside the popup → no dismiss), so the synthetic
     // sequence exercises the same decision the real drag feeds it.
     const box = await popup.boundingBox();

@@ -90,7 +90,7 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
 
     // background.js sets autoBackupDue on alarm
     expect(bgSrc).toContain('autoBackupDue: true');
-    expect(bgSrc).toContain('ADR-0022: chrome.alarms hub for auto-backup');
+    expect(bgSrc).toContain('Auto-backup: chrome.alarms hub in the service worker');
 
     // ntp/sync-engine.js must NOT have chrome.alarms.onAlarm listener
     expect(syncSrc).not.toContain('chrome.alarms.onAlarm.addListener');
@@ -98,7 +98,7 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(syncSrc).toContain('autoBackupDue');
     // Deprecated lastAutoBackupTs
     expect(syncSrc).not.toContain('let lastAutoBackupTs');
-    // ADR-0016 single write path: due-flag consumption goes through the storage.js
+    // Single write path: due-flag consumption goes through the storage.js
     // facade (clearAutoBackupDue), never direct chrome.storage writes.
     expect(syncSrc).not.toContain('chrome.storage.local.remove');
     expect(syncSrc).toContain('clearAutoBackupDue');

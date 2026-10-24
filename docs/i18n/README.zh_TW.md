@@ -61,7 +61,7 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
 ## 安裝
 
 > [!IMPORTANT]
-> **請透過官方商店頁面安裝**（推薦）。權威安裝步驟與目前已發布的商店版本維護於 [英文 README — Install](../../README.md#install) 與 [發行狀態頁](../../docs/release-status.md)。
+> **請透過官方商店頁面安裝**（推薦）。權威安裝步驟與目前已發布的商店版本維護於 [英文 README — Install](../../README.md#install)。
 > GitHub Releases 僅作為**面向使用者的更新日誌**：[最新版本](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox（正式安裝）

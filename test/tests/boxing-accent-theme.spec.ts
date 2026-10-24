@@ -12,7 +12,7 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 10000 }).toBe(true);
 }
 
-test.describe('ADR-0012: Curated Theme Pack System', () => {
+test.describe('Curated Theme Pack System', () => {
   test('theme button click applies CSS variables', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug, undefined, { timeout: 8000 });

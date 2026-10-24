@@ -14,7 +14,7 @@ async function resetBoxing(page) {
   await dismissOnboarding(page);
 }
 
-test.describe('Boxing sync-level + file-name modularity (BX-DEV-SYNC-MOD)', () => {
+test.describe('Boxing sync-level + file-name modularity (MOD)', () => {
   test('makeSyncBody: full level preserves settings + boxes', async ({ page }) => {
     await resetBoxing(page);
     const result = await page.evaluate(() => {
@@ -129,7 +129,7 @@ test.describe('Boxing sync-level + file-name modularity (BX-DEV-SYNC-MOD)', () =
   });
 
 
-  // BX-DEV-127: both default-rounded and square modes must keep corners stable
+  // both default-rounded and square modes must keep corners stable
   // across collapsed, hover-expanded, and non-collapsed (auto-expand default-open) states.
   test('CSS corners stay stable across hover-expand lifecycle (square + default)', async ({ page }) => {
     await resetBoxing(page);

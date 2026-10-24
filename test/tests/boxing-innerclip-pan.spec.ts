@@ -12,12 +12,12 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 }
 
-// BX-DEV-CLIP-PAN: regression for the "small-box at top is covered by head, worse at
+// PAN: regression for the "small-box at top is covered by head, worse at
 // smaller zoom" report. This is the user's actual reproduction: pan the inner surface
 // so a small box at world y=0 ends up at the top of the visible surface; the surface
 // overflow:hidden must clip it at the surface top edge, NOT let it intrude into the
 // inner__canvas-head's solid background band. Verifies surface.top >= head.bottom.
-test.describe('Boxing inner surface clip under pan (BX-DEV-CLIP-PAN)', () => {
+test.describe('Boxing inner surface clip under pan (PAN)', () => {
   // Ticket 111 / B72 / N-106-01: same cold-start budget as boxing-innerclip.spec.ts -- the
   // first test in the file carries the Firefox headed cold-start cost and the 30s default
   // budget dies in the shared resetBoxing fixture under host contention (ticket 106).
@@ -90,7 +90,7 @@ test.describe('Boxing inner surface clip under pan (BX-DEV-CLIP-PAN)', () => {
       const sr = surface.getBoundingClientRect();
       const br = bx.getBoundingClientRect();
       const st = (window as any).__boxingDebug?.state?.();
-      // BX-DEV-CLIP-PAN: rect.top after transform reports the box's logical position
+      // PAN: rect.top after transform reports the box's logical position
       // but does NOT reflect overflow:hidden clipping. Use elementFromPoint at the box's
       // horizontal center, sampling INSIDE the head's solid band (just below head top).
       // If the head is drawn over the (clipped) box, this point returns head/canvas,

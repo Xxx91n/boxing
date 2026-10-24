@@ -12,19 +12,19 @@ and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) st
 User-facing notes for store listings and the GitHub Release body.
 
 ### Added
-- **Quiet local auto-backups** — Local mode scheduled backups save silent internal snapshots by default without intrusive file download dialogs on new tabs (ADR-0024).
+- **Quiet local auto-backups** — Local mode scheduled backups save silent internal snapshots by default without intrusive file download dialogs on new tabs.
 - **Direct version check** — About tab checks GitHub Releases API directly as primary authority with Pages mirror fallback and 2-hour cache (D-002).
-- **Snapshot count hard ceiling** — Enforces MAX_SNAPSHOT_COUNT = 30 with GFS-tiered rotation, physical key pruning, and RAW_KEEP_FLOOR = 10 safety (ADR-0024).
+- **Snapshot count hard ceiling** — Enforces MAX_SNAPSHOT_COUNT = 30 with GFS-tiered rotation, physical key pruning, and RAW_KEEP_FLOOR = 10 safety.
 
 ### Fixed
 - **Design token normalization** — Rule action buttons fully tokenized with --color-danger, --color-hover, and --radius-sm, restoring danger red and 3px radius in light and dark modes (D-003).
 
 ### Internal
-- Architecture decision: ADR-0024 (local auto-backup convergence & snapshot cap).
+- Architecture decision: local auto-backup convergence & snapshot cap.
 - Contrast guard and snapshot rotation tests expanded.
 
-Internal work after 2026.9.20. Per [ADR-0017](docs/adr/0017-release-data-gate.md) store
-uploads and GitHub tags still follow the release gate. Install from official store pages
+Internal work after 2026.9.20. Store uploads and GitHub tags follow the release gate
+(CI gate ∧ manual store check ∧ Pages check). Install from official store pages
 (see [publishing guide](docs/publishing-guide.md)); GitHub Releases are changelog-first
 and no longer ship `.xpi` / `.crx`.
 
@@ -33,16 +33,16 @@ and no longer ship `.xpi` / `.crx`.
 User-facing notes for store listings and the GitHub Release body.
 
 ### Added
-- **URL auto-title rule engine** — Derives bookmark title from URL structure using 8 preset extraction types and Chrome-style match patterns; configurable via General settings with manual-edit override protection (ADR-0023).
+- **URL auto-title rule engine** — Derives bookmark title from URL structure using 8 preset extraction types and Chrome-style match patterns; configurable via General settings with manual-edit override protection.
 - **About tab version check** — Quietly checks for new releases with 24h local caching, showing an update link when available (D-004).
-- **Auto-backup catch-up** — Service Worker alarm hub records due status and performs catch-up backups on NTP open, fixing cross-session alarm loss (ADR-0022).
+- **Auto-backup catch-up** — Service Worker alarm hub records due status and performs catch-up backups on NTP open, fixing cross-session alarm loss.
 
 ### Fixed
 - **Favicon cold-path display** — Fixed favicons remaining hidden on first entry into small boxes due to false error event (D-001).
 - **Title select-all & caret placement** — Unconditional mouseup normalization guard guarantees whole-name selection on first click and native caret placement on second click (D-003).
 
 ### Internal
-- New ADRs: ADR-0022 (auto-backup alarm hub), ADR-0023 (URL auto-title rule engine).
+- Architecture decisions: auto-backup alarm hub; URL auto-title rule engine.
 - Complete 14-locale coverage for all new UI strings.
 
 ## [2026.10.15] - 2026-10-14
@@ -55,8 +55,8 @@ User-facing notes for store listings and the GitHub Release body.
 - **Demo right-click returns to the box page** — the demo no longer shows the first-run tour overlay that blocked clicks; the overlay can also be closed with Esc.
 
 ### Internal
-- New ADRs: ADR-0020 (connection surface resolution), ADR-0021 (single dark-mode host).
-- Governance: waiver ledger consolidated into `docs/testing-governance.md`; `.scratch/` work logs are local-only (untracked).
+- Architecture decisions: connection surface resolution; single dark-mode host.
+- Governance: waiver ledger removed; local work logs are untracked.
 
 ## [2026.9.20] - 2026-09-20
 
@@ -107,7 +107,7 @@ and WebDAV sync upgraded to a three-way merge.
 - This release no longer ships `.xpi` / `.crx` downloads — signing and updates are handled by the stores.
 - Source: [GitHub](https://github.com/Xxx91n/boxing) · Privacy: [policy](https://boxing.xxx91n.com/privacy-policy.html) — build locally with `npm ci && npm run build`.
 - Release attachments include the store source-review package plus side-loadable Chromium/Firefox zips; verify integrity with `SHA256SUMS.txt`.
-- Release-gate background: [ADR-0017](docs/adr/0017-release-data-gate.md); the release checklist lives in the docs area.
+- Release-gate background: CI gate ∧ manual store golden path ∧ Pages check; the release checklist lives in the docs area.
 
 ## [2026.9.12] - 2026-09-13
 
@@ -190,7 +190,7 @@ dist manifest version 2026.9.11 via `BOXING_BUILD_VERSION` injection, CI run 343
 - Added manifest.json version_name field for store display
 - Added .github/workflows/mirror.yml: push-to-main mirror to GitLab + Codeberg
 - Updated screenshots: 5 real Playwright-captured 1280x800 PNG (was placeholders)
-- docs governance: hard boundaries to docs/agents/, process to docs/history/
+- docs governance: hard boundaries to docs/agents/
 
 ## [3.7.0] - 2026-07-26
 

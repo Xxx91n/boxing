@@ -61,7 +61,7 @@ Logotipos claro/escuro, ícones da extensão, favicons, blocos da loja e a galer
 ## Instalacao
 
 > [!IMPORTANT]
-> **Instale pelas páginas oficiais das lojas** (recomendado). As etapas de instalação e a versão publicada nas lojas estão no [README em inglês — Install](../../README.md#install) e na [página de status de release](../../docs/release-status.md).
+> **Instale pelas páginas oficiais das lojas** (recomendado). As etapas de instalação e a versão publicada nas lojas estão no [README em inglês — Install](../../README.md#install).
 > As GitHub Releases são um **registro de mudanças para usuários**: [última release](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (instalação oficial)

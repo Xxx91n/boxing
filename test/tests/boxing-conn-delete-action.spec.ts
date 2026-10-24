@@ -28,7 +28,7 @@ async function seedBoxes(page, coords) {
 }
 
 async function setConnDeleteAction(page, mode) {
-  // ADR-0006: simulate the UI change-handler path — disposeAllConns + recreate
+  // Simulate the UI change-handler path — disposeAllConns + recreate
   // so that mode-specific listeners (dblclick/contextmenu/mousedown) attach fresh.
   await page.evaluate((m) => {
     const dbg = (window as any).__boxingDebug;
@@ -54,7 +54,7 @@ async function setupConnected(page) {
   return ids;
 }
 
-test.describe('Boxing conn delete action (ADR-0006)', () => {
+test.describe('Boxing conn delete action', () => {
   test('default connDeleteAction is alt+click', async ({ page }) => {
     await resetBoxing(page);
     const mode = await page.evaluate(() => (window as any).__boxingDebug.layout.settings.connDeleteAction);

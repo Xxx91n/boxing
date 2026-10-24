@@ -1,4 +1,4 @@
-// Boxing — ticket 51 (spec W6-D2): export envelope + full DR package +
+// Boxing — ticket 51 (spec ticket 51): export envelope + full DR package +
 // copy-before-overwrite + envelope import restores the layout.
 // AC coverage:
 //   AC1 default export = { _exportedAt, meta:{schemaVersion, snapshots[], corrupt[],
@@ -17,7 +17,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
 const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp', 'index.html')).href;
-// Ticket 95 (A-049 credential sweep): NO real credentials in source. This spec's
+// Ticket 95 (credential sweep): NO real credentials in source. This spec's
 // WebDAV transport is fully stubbed by the runtime.sendMessage mock, so the config
 // only needs to pass checkUrlValid (https, non-private host, no embedded auth).
 // A staging account can be injected via BOXING_SPEC_WEBDAV_* env vars (91R pattern).
@@ -39,7 +39,7 @@ function bareLayout(title) {
 // file:// mock storage: layoutStorage maps every non-main key through the
 // 'bxstore:' localStorage prefix (ntp.js mock). Index entries are {ts,
 // schemaVersion, size} — NO data field; the body key holds {ts, schemaVersion, data}.
-// Ticket 71 (Wave8 G-A, N4): `ts` MUST ride in on the serialized `seed` argument.
+// Ticket 71 (N4): `ts` MUST ride in on the serialized `seed` argument.
 // Playwright serializes an init script with fn.toString() and evaluates it in the
 // page, so a module-scope constant like SNAP_TS is a FREE VARIABLE there — reading
 // it throws ReferenceError and aborts the remainder of the script. That seeded
@@ -122,7 +122,7 @@ test.describe('Ticket 51 — export envelope + full DR package + copy-before-ove
 
     expect(cap.name).toMatch(/^boxing-backup-\d{8}\.json$/);
     const env = JSON.parse(cap.text);
-    // envelope shape (W6-D2): layout + meta index, _exportedAt stamp
+    // envelope shape (ticket 51): layout + meta index, _exportedAt stamp
     expect(env._exportedAt).toBeTruthy();
     expect(env.meta).toBeTruthy();
     expect(env.meta.schemaVersion).toBe(3);

@@ -45,7 +45,7 @@ async function seedSmallBoxes(page, largeId, coords) {
   }, [largeId, coords]);
 }
 
-test.describe('Boxing box-connections / star-mark (BX-DEV-137)', () => {
+test.describe('Boxing box-connections / star-mark ', () => {
   test('BX-142: SVG connection layer exposes connection API (leader-line removed)', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => ({
@@ -185,7 +185,7 @@ test.describe('Boxing box-connections / star-mark (BX-DEV-137)', () => {
     expect(Math.abs(r.afterY - r.beforeY - 50)).toBeLessThanOrEqual(24);
   });
 
-  // ── Cross-level connection tests (BX-DEV-137+ Round 2) ──
+  // ── Cross-level connection tests (+ Round 2) ──
 
   test('large-to-small connection persists and renders', async ({ page }) => {
     await resetBoxing(page);
@@ -330,7 +330,7 @@ test.describe('Boxing box-connections / star-mark (BX-DEV-137)', () => {
     expect(r.lineCount).toBe(1);
   });
 
-  // BX-DEV-137++++: edge-midpoint hotspot tests
+  // edge-midpoint hotspot tests
   test('addEdgeAnchors creates 4 edge hotspots per large box', async ({ page }) => {
     await resetBoxing(page);
     const ids = await seedBoxes(page, [[0, 0]]);
@@ -892,7 +892,7 @@ test.describe('Boxing BX-144: cross-tab star-mark + conn refresh regression', ()
       const beforeStar = !!dbg.getGroupByParent(dbg.largeKey(ids[0]));
       const remotePayload = JSON.parse(JSON.stringify(dbg.layout));
       const aKey = dbg.largeKey(ids[0]);
-      // ADR-0007: star truth is box.isParent (groups are runtime-only, not a sync source)
+      // Star truth is box.isParent (groups are runtime-only, not a sync source)
       const remoteBox = (remotePayload.boxes || []).find((b) => b.id === ids[0]);
       if (remoteBox) remoteBox.isParent = true;
       remotePayload._meta = { ...(remotePayload._meta || {}), revision: (remotePayload._meta?.revision || 0) + 1, updatedAt: Date.now() + 1, writerId: 'test-remote-star' };
@@ -1029,7 +1029,7 @@ test.describe('Boxing BX-144: cross-tab star-mark + conn refresh regression', ()
       const beforeStar = !!dbg.getGroupByParent(dbg.smallKey(lgId, smIds[0]));
       const remotePayload = JSON.parse(JSON.stringify(dbg.layout));
       const aKey = dbg.smallKey(lgId, smIds[0]);
-      // ADR-0007: star truth is box.isParent on the small box object
+      // Star truth is box.isParent on the small box object
       const remoteLarge = (remotePayload.boxes || []).find((b) => b.id === lgId);
       const remoteSmall = remoteLarge && (remoteLarge.children || []).find((c) => c.id === smIds[0]);
       if (remoteSmall) remoteSmall.isParent = true;

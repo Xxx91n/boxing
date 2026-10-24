@@ -6,7 +6,7 @@
   <title>Boxing</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <!-- Ticket 60 (Wave7 zero-flash): classic blocking boot script — NOT type=module.
+  <!-- Ticket 60 (zero-flash): classic blocking boot script — NOT type=module.
        Must stay BEFORE the stylesheets so theme vars + ntp--dark apply before first paint. -->
   <script src="boot-theme.js"></script>
   <link rel="stylesheet" href="design-system.css">
@@ -262,7 +262,7 @@
                 <input type="file" id="import-file-input" accept=".json" hidden>
               </div>
             </section>
-            <!-- Ticket 43 (spec D3 / ADR-0009 3-2-1): data-health surface — snapshot count +
+            <!-- Ticket 43 (spec D3): data-health surface — snapshot count +
                  latest snapshot time so users can tell resilience is working; corrupt-archive
                  entry row appears only when crash-rescue forked a damaged main key (ABP-style
                  persistent entry point, never a startup popup). -->
@@ -284,7 +284,7 @@
                   id="data-conflict-count">0</span>
                 · <span id="data-conflict-time">–</span>
               </p>
-              <!-- Ticket 79 (spec Wave8 A-029): conflict-copy readout list — one row per
+              <!-- Ticket 79 (spec): conflict-copy readout list — one row per
                    archived conflict copy (ts / reason / side / size) with a per-row
                    verbatim JSON export. Read-only: rows never mutate archive semantics. -->
               <div id="data-conflict-list-wrap" hidden>
@@ -294,7 +294,7 @@
               <p class="modal__hint" data-i18n="dataHealthHint" style="margin:2px 0 0;font-size:11px;">Boxing keeps
                 time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never
                 silently overwritten) and rebuilt from the latest healthy snapshot.</p>
-              <!-- Ticket 50 (spec W6-D1): Time Machine — every retained snapshot (ts /
+              <!-- Ticket 50 (spec ticket 50): Time Machine — every retained snapshot (ts /
                    schemaVersion / size) with a per-row rollback behind a secondary confirm.
                    Rollback is itself undoable: a pre-restore safety snapshot is captured
                    first, so this row is never a one-way door. -->
@@ -348,7 +348,7 @@
               <!-- T-39/04-sync-ui: visual grouping — Shared (provider-agnostic) vs WebDAV vs Gist cards -->
               <div class="sync-group">
                 <h4 class="sync-group__title" data-i18n="syncGroupShared">Shared settings</h4>
-                <!-- BX-DEV-121 (Bug16): provider-agnostic Sync Level + File Name — modular across all backup providers -->
+                <!-- (Bug16): provider-agnostic Sync Level + File Name — modular across all backup providers -->
                 <section class="modal__section">
                   <label class="modal__label" for="sync-level-select" data-i18n="syncLevelLabel">Sync Level</label>
                   <select id="sync-level-select" class="modal__select">
@@ -474,7 +474,7 @@
         <button class="btn btn--ghost" id="onboarding-skip-btn" tabindex="-1" aria-label="Skip tour"
           data-i18n="onboardingSkipTour" data-i18n-title="onboardingSkipTour">Skip</button>
       </div>
-      <!-- BX-DEV-111O: new-user language picker — first-run onboarding, mirrors Settings > Language -->
+      <!-- new-user language picker — first-run onboarding, mirrors Settings > Language -->
       <div class="onboarding__lang" id="onboarding-lang-wrap">
         <label class="onboarding__lang-label" data-i18n="onboardingLangTitle">Choose your language</label>
         <select id="onboarding-lang-select" class="modal__select onboarding__lang-select"></select>

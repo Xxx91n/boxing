@@ -1,21 +1,21 @@
 #!/usr/bin/env node
-// Wave 2026.10.11 Round-3 / D-014: standardized test-evidence block generator.
+// Standardized test-evidence block generator.
 //
-// Why this exists: final reports historically transcribed pass/fail/skip counts
-// by hand from the line reporter — the Round-3 baseline rerun proved that drifts
-// ("356 passed" vs the reproducible "355 passed + 1 skipped" on the same tree,
-// because an unconditional test.skip was never counted). This script makes the
-// evidence machine-generated instead: playwright's json reporter (written to a
-// temp file via PLAYWRIGHT_JSON_OUTPUT_FILE so test console.log noise cannot
-// corrupt the payload) -> per-project aggregation -> one markdown block a report
-// can quote verbatim.
+// Why this exists: final reports transcribe pass/fail/skip counts by hand from
+// the line reporter, and hand-transcription drifts — a full-suite run on one
+// tree has been reported as "356 passed" when the reproducible result was
+// "355 passed + 1 skipped", because an unconditional test.skip was never
+// counted. This script makes the evidence machine-generated instead:
+// playwright's json reporter (written to a temp file via
+// PLAYWRIGHT_JSON_OUTPUT_FILE so test console.log noise cannot corrupt the
+// payload) -> per-project aggregation -> one markdown block a report can quote
+// verbatim.
 //
-// What it captures (per next-round.md §1.1-4):
+// What it captures:
 //   - per-project passed/failed/skipped/flaky counts
 //   - skipped AND failed spec titles (identity, not just counts)
 //   - git HEAD (+ dirty-tree marker), timestamp, duration
 //   - per-project headed state (read from playwright.config.ts text)
-//   - waiver-ledger-check.mjs exit code + active waiver row count
 //
 // Usage: node scripts/test-evidence.mjs [-- <playwright args>]
 //   e.g. node scripts/test-evidence.mjs -- --project=firefox-extension
@@ -33,7 +33,6 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const NL = String.fromCharCode(10);
 const CONFIG_REL = "test/playwright.config.ts";
-const LEDGER_REL = "docs/testing-governance.md";
 
 function sh(cmd, args, opts) {
   const o = opts || {};
@@ -109,24 +108,6 @@ function walkSpecs(suite, project, acc) {
   return acc;
 }
 
-function waiverInfo() {
-  const check = sh("node", ["scripts/waiver-ledger-check.mjs"]);
-  let active = 0;
-  try {
-    const text = fs.readFileSync(path.join(ROOT, LEDGER_REL), "utf8");
-    // Count active rows inside the ledger section only (same slicing as
-    // waiver-ledger-check.mjs) — a whole-file scan would miscount any other
-    // table that happens to carry an `| active |` cell.
-    const start = text.indexOf("### G-A 残红书面豁免台账");
-    const end = start >= 0 ? text.indexOf("\n## ", start) : -1;
-    const section = start >= 0 ? text.slice(start, end > -1 ? end : text.length) : "";
-    active = (section.match(/^\|\s*active\s*\|/gm) || []).length;
-  } catch (e) {
-    active = -1;
-  }
-  return { checkExit: check.status === null ? "n/a" : check.status, activeRows: active };
-}
-
 function main() {
   const sep = process.argv.indexOf("--");
   const extra = sep >= 0 ? process.argv.slice(sep + 1) : process.argv.slice(2);
@@ -157,7 +138,6 @@ function main() {
 
   const acc = walkSpecs({ specs: [], suites: report.suites || [] }, null, {});
   const stats = report.stats || {};
-  const waiver = waiverInfo();
   const durationMin = stats.duration ? (stats.duration / 60000).toFixed(1) : "n/a";
 
   const lines = [];
@@ -169,7 +149,6 @@ function main() {
   lines.push("| playwright args | `" + (extra.join(" ") || "(full suite)") + "` |");
   lines.push("| duration | " + durationMin + " min |");
   lines.push("| workers | " + workersLabel + " |");
-  lines.push("| waiver-ledger-check | exit " + waiver.checkExit + ", active rows " + waiver.activeRows + " |");
   lines.push("");
   lines.push("| project | headed | passed | failed | skipped | flaky |");
   lines.push("|---|---|---|---|---|---|");

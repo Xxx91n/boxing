@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// Boxing - Pages G-C freshness gate + deploy-tail verify (ticket 109 / A-064).
+// Boxing - Pages freshness gate + deploy-tail verify (ticket 109).
 //
-// G-C used to mean three URLs answering 200. That cannot see stale-but-200: on
+// The Pages check used to mean three URLs answering 200. That cannot see stale-but-200: on
 // 2026-09-15 the live site still served version 2026.9.12 while the latest
 // release tag was v2026.9.15. The gate now adds the freshness assertion:
 //   three URLs 200 AND GET <base>/demo/version.json?<cache-buster> whose
 //   version equals the expected one (default: latest release tag).
 //
 // Modes:
-//   gate         (default) one-shot G-C check (release gate / human run)
+//   gate         (default) one-shot Pages freshness check (release gate / human run)
 //   deploy-tail  poll until version.json converges, budget --timeout seconds
 //   self-test    offline checks of the pure logic (no network)
 //
@@ -320,7 +320,7 @@ export async function selfTestAsync() {
   });
   assert.equal(down.ok, false);
   assert.equal(down.failure, "UNREACHABLE");
-  checks.push("gate fails with UNREACHABLE when a G-C URL is down");
+  checks.push("gate fails with UNREACHABLE when a Pages URL is down");
 
   const missing = await runGate({
     baseUrl: "https://x.test/boxing",
@@ -433,7 +433,7 @@ function emit(result, asJson) {
     );
   }
   console.log(
-    (result.ok ? "G-C PASS" : "G-C FAIL " + (last.failure || "")) +
+    (result.ok ? "PAGES PASS" : "PAGES FAIL " + (last.failure || "")) +
       "  expected=" +
       (last.expected || "?"),
   );

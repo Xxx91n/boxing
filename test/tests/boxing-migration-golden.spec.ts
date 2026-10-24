@@ -11,8 +11,8 @@ import { dismissOnboarding } from '../helpers/onboarding';
 // guard validated, for every golden fixture in test/fixtures/schema/.
 //
 // Fixtures: v1.json (current schemaVersion golden), legacy-groups.json (pre
-// ADR-0007 Q1: persisted groups + no schemaVersion + conns without props),
-// legacy-v2.json (BX-DEV-085 v2 shape). Golden contract per issues/45: old data ->
+// persisted groups + no schemaVersion + conns without props),
+// legacy-v2.json (v2 shape). Golden contract per issues/45: old data ->
 // new code loses no bookmarks; new data stays readable by the previous reader
 // (expand/contract rollback safety).
 

@@ -1,28 +1,27 @@
 #!/usr/bin/env node
 /**
- * docs-link-guard.mjs - agent/history layer reference resolvability guard.
+ * docs-link-guard.mjs - entry-point reference resolvability guard.
  *
- * Ticket 96 (covers A-050). Replaces the inline bash step that reported 8 false
- * dead links on main (AI Docs Governance run 34808079960): the previous token
- * class excluded only space, both quote characters, close-paren and greater-than,
- * so markdown delimiters were absorbed into the path and every real reference
- * was reported as a dead link.
+ * Replaces an inline bash step that reported 8 false dead links: the previous
+ * token class excluded only space, both quote characters, close-paren and
+ * greater-than, so markdown delimiters were absorbed into the path and every
+ * real reference was reported as a dead link.
  *
- * Design (atomcode research 2026-09-14, session 0d02f171):
+ * Design:
  *   1. path tokens come from a path-safe ALLOWLIST whose last character must be
  *      alnum / underscore / hyphen, so no markdown punctuation can be swallowed;
  *   2. markdown link targets are additionally resolved relative to the source
- *      document, covering the [label](agents/ui-audit.md) reference style;
+ *      document, covering the [label](agents/foo.md) reference style;
  *   3. a self-test runs first on positive / negative / adversarial fixtures so a
  *      future tokenizer change that re-introduces delimiter swallowing fails
  *      loudly instead of silently going green;
- *   4. scope is unchanged from the original step: AGENTS.md + docs/CONTEXT.md,
- *      docs/agents/** and docs/history/** only. AGENTS/CONTEXT keep their
- *      agent/history reference capability (A-050 AC-3).
+ *   4. scope is the agent-facing entry points: AGENTS.md, GLOSSARY.md and the
+ *      docs/agents/ layer. Tokens naming docs/history/ are still extracted and
+ *      reported DEAD on purpose - that directory was removed, so any surviving
+ *      reference to it is exactly what this guard exists to catch.
  *
- * Not wired into pretest on purpose: pretest is the test.yml / G-A surface and
- * ticket 96 must not mix with G-A (issue note). CI-only, run by
- * .github/workflows/ai-docs-governance.yml.
+ * Run by .github/workflows/docs-links.yml and by `npm run guard:docs-links`.
+ * Kept out of `pretest` so it does not mix with the browser-test surface.
  *
  * Usage: node scripts/docs-link-guard.mjs
  * Exit:  0 = self-test passed and every reference resolves; 1 otherwise.
@@ -34,7 +33,11 @@ import { fileURLToPath } from 'node:url';
 const BT = String.fromCharCode(96);
 const DQ = String.fromCharCode(34);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SOURCES = ['AGENTS.md', 'docs/CONTEXT.md'];
+const SOURCES = ['AGENTS.md', 'GLOSSARY.md', 'docs/DESIGN.md'];
+// The rule "must carry a reference" belongs to the agent entry point only: its
+// job is to point at the docs/agents layer. A glossary or a design-system
+// reference legitimately carries no such pointer.
+const MUST_REFERENCE = new Set(['AGENTS.md']);
 const LAYER_DIRS = ['docs/agents/', 'docs/history/'];
 const TOKEN_SOURCE = 'docs/(?:agents|history)/[A-Za-z0-9._/-]*[A-Za-z0-9_-]';
 const FORBIDDEN = [' ', ']', '[', '(', ')', BT, DQ, "'", '>', '*', '|', '<'];
@@ -170,8 +173,12 @@ for (const rel of SOURCES) {
   }
   const refs = collectRefs(rel);
   if (refs.length === 0) {
-    console.log('  ' + rel + ': 0 agent/history reference found - reference capability lost?');
-    dead++;
+    if (MUST_REFERENCE.has(rel)) {
+      console.log('  ' + rel + ': 0 layer reference found - reference capability lost?');
+      dead++;
+    } else {
+      console.log('  ' + rel + ': 0 layer reference (none expected)');
+    }
     continue;
   }
   for (const r of refs) {

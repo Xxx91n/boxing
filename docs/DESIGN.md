@@ -1,10 +1,10 @@
 # DESIGN.md — Boxing Visual Design System
 
 > Source of truth for CSS token architecture, color palette, typography, component state specs,
-> and dark mode strategy. Maintained alongside ADRs under docs/adr/.
-> Reference: ADR-0008 (token architecture), docs/css-dual-write-convention.md (dual-write rules).
+> and dark mode strategy. Maintained in-tree.
+> Reference: docs/css-dual-write-convention.md (dual-write rules).
 
-## Token Architecture (ADR-0008)
+## Token Architecture
 
 Boxing uses a three-layer CSS custom property system:
 
@@ -20,7 +20,7 @@ Layer 3: Component (component-specific — defined per-component below, applied 
   component CSS — always go through Layer 2 semantic tokens.
 - **Layer 2** lives in `design-system.css :root` (light mode) and `.ntp--dark` (dark mode overrides).
   Components reference only Layer 2.
-- **Layer 3** is applied in `ntp.css` (or its split source files after ADR-0008 Phase 2). Each
+- **Layer 3** is applied in `ntp.css` (or its split source files after the CSS split). Each
   component may override a semantic token for its specific surface (e.g. `--button-bg: var(--color-accent)`).
 
 ### Color Palette
@@ -49,7 +49,7 @@ Layer 3: Component (component-specific — defined per-component below, applied 
 Same ramp structure (`--color-warm-dark-*`, `--color-accent-dark-*`) with inverted lightness.
 Dark mode overrides only Layer 2 semantic tokens to reference dark primitives — component CSS unchanged.
 
-### Hairline 与控件边界的语义契约（revised 2026-09-14 · ticket 103 / A-057 / B67）
+### Hairline 与控件边界的语义契约（revised 2026-09-14 · ticket 103 B67）
 
 `--color-hairline` / `--color-hairline-strong` 的语义是**弱分隔线（decorative divider）**：
 只负责在视觉上分组与收边，本身不承担任何可访问性义务。二者由 ink 基色经 rgba 派生
@@ -66,7 +66,7 @@ Dark mode overrides only Layer 2 semantic tokens to reference dark primitives �
 细线受抗锯齿侵蚀，实际渲染对比度低于声明值，故取 3.81:1 而非压线值（相对 3:1 约留 27% 余量）。
 
 **已按此契约修正的实现**（本文档据此同步）：
-- `.bm-add-row .bm-add-btn`（透明填充 ghost）：暗色由 ticket 88（A-042）、亮色由 ticket 102（A-056）
+- `.bm-add-row .bm-add-btn`（透明填充 ghost）：暗色由 ticket 88（）、亮色由 ticket 102（）
   统一改为 `--color-muted` 边界 + `--color-ink-soft` 字形；两主题使用同一 token 配对，不再漂移。
 - 门禁：`scripts/contrast-guard.mjs`（ticket 102）从 CSS 源文件读取真实契约，任何改回 hairline 的提交立即非零退出。
 
@@ -80,7 +80,7 @@ Dark mode overrides only Layer 2 semantic tokens to reference dark primitives �
 
 **Font smoothing** (set on `html, body` in ntp.css):
 `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-feature-settings: "kern" 1, "liga" 1, "calt" 1; font-synthesis: weight style;`
-(BX-DEV-135 — root cause of Firefox font blur was ntp.css overwriting design-system.css font features)
+(root cause of Firefox font blur was ntp.css overwriting design-system.css font features)
 
 ### Spacing Scale
 `--space-1` (4px) through `--space-16` (64px). Linear progression: 4/8/12/16/20/24/32/40/48/64.
@@ -114,7 +114,7 @@ Dark mode overrides only Layer 2 semantic tokens to reference dark primitives �
 `prefers-reduced-motion: reduce` globally sets all `transition-duration` and `animation-duration` to `0.01ms` (WCAG 2.2 compliance). See `design-system.css` L178.
 
 ### Shadows
-5-level elevation gradient (ADR-0008 Phase: Shadow-B). Light mode uses `--warm-900-rgb` for warm shadows; dark mode uses pure black with calibrated opacity.
+5-level elevation gradient (Shadow-B tier). Light mode uses `--warm-900-rgb` for warm shadows; dark mode uses pure black with calibrated opacity.
 | Token | Light | Dark | Usage |
 |-------|-------|------|-------|
 | `--shadow-xs` | warm-900 5% | black 20% | Subtle elevation |
@@ -141,8 +141,8 @@ implement these exact mappings.
 | z-index | 1 | (same) | 5 | — |
 | border-radius | `var(--radius-card)` | (same) | (same, no regression BX-145) | — |
 
-> 偏差收口（N-103-01 → closed 2026-09-15 · ticket 114 / A-069 / B74）：本表已按 `ntp/base.css`
-> 代码现实校正（ADR-0008 Phase 4 对齐原则）——default 描边 `1px solid var(--color-hairline)`、
+> 偏差收口（N-103-01 → closed 2026-09-15 · ticket 114 B74）：本表已按 `ntp/base.css`
+> 代码现实校正（词表对齐原则）——default 描边 `1px solid var(--color-hairline)`、
 > hover 才切 `--color-card-edge`、拖拽切 `--color-accent`；`border-radius` 实为 `--radius-card`；
 > default 无 box-shadow、hover 无 z-index 变化；代码无 disabled 态，列名按 §3/§5 惯例改写。
 > hairline 在此是**填充容器上的装饰收边/附加描边**（`--color-elevated` 填充 + 标题/栏头辨识），
@@ -158,7 +158,7 @@ implement these exact mappings.
 | cursor | pointer | pointer | pointer | not-allowed |
 | opacity | 1 | 1 | 0.9 | 0.5 |
 
-> **hairline 适用性（ticket 103 / A-057）**：`.btn` 是**填充**按钮（背景 `--color-elevated`、
+> **hairline 适用性（ticket 103 ）**：`.btn` 是**填充**按钮（背景 `--color-elevated`、
 > 文字 `--color-ink` = 12.11:1 ≥ 4.5:1），命中 SC 1.4.11 的「控件已有其他区分指示」豁免，
 > 因此 hairline 作为**附加**描边成立，本表保留。该豁免**不适用于**透明填充的 ghost 按钮 —— 见 §2b。
 
@@ -212,7 +212,7 @@ implement these exact mappings.
 | button color | `var(--color-ink-soft)` | `var(--color-ink)` | — | — |
 | button border | none (`border: 0`) | (same) | — | — |
 
-> 偏差收口（N-103-02 → closed 2026-09-15 · ticket 114 / A-069 / B74）：本表已按 `ntp/settings.css`
+> 偏差收口（N-103-02 → closed 2026-09-15 · ticket 114 B74）：本表已按 `ntp/settings.css`
 > 代码现实校正——`.zoom-btn` 为 `border: 0`、无 `:active` 规则，hover 仅改 background/color；
 > 原表的 hairline/accent 描边实际位于容器 `.zoom-controls`（填充面板的装饰收边，§Hairline 契约
 > 允许），已补为「border (container)」行。透明 `.zoom-btn` 的示能由图标字形承担
@@ -254,7 +254,7 @@ Dark mode works by overriding Layer 2 semantic tokens in `.ntp--dark`:
 - Dark mode: `--color-canvas: var(--color-warm-dark-50)` → #1E1C1A
 
 Component CSS (`ntp.css`) references `var(--color-canvas)` and automatically gets the right value.
-After ADR-0008 Phase 3, the ~100 redundant `.ntp--dark .xxx` per-component overrides in ntp.css
+After the dark-mode consolidation, the ~100 redundant `.ntp--dark .xxx` per-component overrides in ntp.css
 are deleted. Only ~5 structural exceptions remain (opacity, layout), marked with
 `/* DARK-EXCEPTION: <reason> */`.
 
@@ -266,7 +266,7 @@ Based on PWM research (W3C DTCG spec 2025.10, Vercel Geist, Linear, Stripe, Appl
 - **Warm earth accent** — distinct from Linear's blue or Stripe's purple; matches Boxing's
   beige minimalist identity
 - **Dark mode via token override** — industry standard; per-component overrides are an anti-pattern
-- **Divider 与 control boundary 分家**（ticket 103 / A-057 调研，2026-09-14）：ttoss 把 `border.divider`
+- **Divider 与 control boundary 分家**（ticket 103 调研，2026-09-14）：ttoss 把 `border.divider`
   的契约写成 “purely structural; low emphasis”、`border.outline.control` 写成 “defines control boundary”；
   Carbon 用 `$border-subtle`（分隔）/ `$border-strong`（控件边界）并逐组件分列；Polaris 在 v11 迁移里
   把复合的 `--p-border-divider` 拆解废弃，只保留颜色 alias + Divider 组件。三者结论一致：**弱分隔线
@@ -274,17 +274,16 @@ Based on PWM research (W3C DTCG spec 2025.10, Vercel Geist, Linear, Stripe, Appl
   （Carbon issue #14597 即为 `$border-subtle` 在暗色下与背景同值、边界隐形的真实事故）。
 
 ## Related
-- [ADR-0008](adr/0008-design-system-three-layer-tokens.md) — token architecture decision
 - [css-dual-write-convention.md](css-dual-write-convention.md) — large-box/small-box CSS parity rule
-- [CONTEXT.md](CONTEXT.md) — domain glossary (no CSS implementation details)
-- AGENTS.md CSS development rules (BX-DEV series, see docs/history/boxing-changelog.md)
+- [GLOSSARY.md](../GLOSSARY.md) — domain glossary (no CSS implementation details)
+- AGENTS.md CSS development rules (BX-DEV series)
 
-## Accent Theme System (ADR-0012)
+## Accent Theme System
 
 Users can customize the overall color scheme via Settings → Appearance → Theme.
 The system uses **curated theme packs** — designer-selected complete color palettes.
 No free hue slider; users select from fixed, aesthetically coherent theme presets.
-This supersedes ADR-0010 (hue slider + HSL derivation) which was replaced for simpler UX and guaranteed visual quality.
+This supersedes the earlier hue slider + HSL derivation model, which was replaced for simpler UX and guaranteed visual quality.
 
 ### Theme Packs
 
@@ -332,7 +331,6 @@ CSS variables are always set regardless of current mode, so toggling is instanta
 
 ### Related
 
-- [ADR-0008](adr/0008-design-system-three-layer-tokens.md) — token architecture decision
 - [css-dual-write-convention.md](css-dual-write-convention.md) — large-box/small-box CSS parity rule
-- [CONTEXT.md](CONTEXT.md) — domain glossary (no CSS implementation details)
-- AGENTS.md BX-DEV-013/014/135 — CSS development rules
+- [GLOSSARY.md](../GLOSSARY.md) — domain glossary (no CSS implementation details)
+- AGENTS.md CSS development rules

@@ -2,7 +2,7 @@
 /**
  * Ticket 20 (architecture-recovery): changed-surface test selection.
  *
- * Minimal model approved by ticket 19 research (research-report-round4.md §5):
+ * Minimal model approved by ticket 19 research:
  * file-level spec-cluster mapping + native Playwright filtering, with the full
  * suite as the conservative fallback. Zero new dependencies.
  *

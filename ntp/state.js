@@ -1,10 +1,10 @@
 // Boxing — shared mutable state module (ticket 06, architecture-recovery).
-// Single holder of the ticket-02 callgraph §5 "state 模块 (票06)" bucket plus the
-// handoff-named suppression-flag family (lastClick*/lastDrag*/lastEnter*/suppress*).
+// Single holder of the state bucket from the ticket-02 callgraph §5, plus the
+// suppression-flag family (lastClick*/lastDrag*/lastEnter*/suppress*).
 //
-// Decision (issues/06 item 2): (b) state module singleton via ESM live bindings — NOT (a) injection. Reasons:
+// Decision: (b) state module singleton via ESM live bindings — NOT (a) injection. Reasons:
 //   1. ~55 symbols × 700+ read sites: injection rewrites reads too; live bindings leave every read site untouched.
-//   2. Module graph evaluates once — exactly one copy exists (research-report.md: 两模块各持副本 = 各活各的 is the forbidden mode).
+//   2. Module graph evaluates once — exactly one copy exists (two modules each holding a copy, each living in its own world, is the forbidden mode).
 //   3. Imports initialize before the entry body runs — no init-order hazard for handlers.
 //   4. Leaf module (zero imports): no cycles; tickets 07/08 import these same singletons.
 // Writes must go through the set*() functions (imported bindings are read-only in ESM).
@@ -44,13 +44,13 @@
   // double-click detection
   export let lastClickTime = 0;
   export let lastClickTarget = null;
-  export let lastDragEndTime = 0;  // skip click if within 60ms of drag end (BX-DEV-065)
-export let lastEnterLargeBoxAt = 0;  // BX-DEV-112C: time of last enterLargeBox via click/dblclick — used to suppress stray inner dblclick
-export let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by enterLargeBox to swallow the next inner dblclick
-  export let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click (BX-DEV-077)
+  export let lastDragEndTime = 0;  // skip click if within 60ms of drag end
+export let lastEnterLargeBoxAt = 0;  // time of last enterLargeBox via click/dblclick — used to suppress stray inner dblclick
+export let suppressInnerDblClickOnce = false;  // one-shot flag set by enterLargeBox to swallow the next inner dblclick
+  export let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click
 
   // header auto-hide state (must be declared before functions that reference it)
-  export let headerPinned = true;  // BX-DEV-111: set after loadLayout reads persisted value
+  export let headerPinned = true;  // set after loadLayout reads persisted value
   export let scrollTimeout;
 
   export const writerId = crypto.randomUUID ? crypto.randomUUID() : `page-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -65,7 +65,7 @@ export let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set
   export const __viewStatePersistTimers = new Map();
   export const __selfLastWriteTs = new Map();
 
-  // -- box index maps (ADR-0007 Phase 1.3: O(1) lookups) --
+  // -- box index maps (O(1) lookups) --
   export const boxById = new Map();       // largeBoxId -> box object
   export const smallBoxById = new Map();  // smallKey ("largeId:smallId") -> small box object
 

@@ -47,7 +47,7 @@ for (const file of files) {
     if (raw.includes('/*')) { blockComment = !raw.includes('*/'); return; }
     if (!['storage.js', 'ntp.js'].includes(file) && /\b(?:layoutStorage|chrome\.storage\.(?:local|sync))\b/.test(raw) && !/^\s*(?:\/\/|\*|\/\*)/.test(raw)) add('B-5', `ntp/${file}`, index + 1, 'storage must be accessed through storage.js facade');
     if (/\b(?:chrome|browser)\./.test(raw)) {
-      // credentials.js (ticket 81 / A-031, rework 81R): the per-install credential key (PIK) is
+      // credentials.js (ticket 81 , rework 81R): the per-install credential key (PIK) is
       // persisted under an independent chrome.storage.local key (boxingCredKey.v1) OUTSIDE the
       // layout, so it never enters buildSyncPayload/buildExportEnvelope/snapshots (offline-copy
       // attack surface closed). Conditional whitelist: ONLY the cross-browser storage probe idiom
@@ -108,7 +108,7 @@ for (const [file, targets] of edges) {
     if (featureLeaves.has(file) || file === entryModule) continue;
     if (featureLeaves.has(target) || target === entryModule) continue;
     const key = `${file}->${target}`;
-    if (!acceptedFeatureSiblingEdges.has(key)) add('B-9', `ntp/${file}`, 0, `unaccepted feature-to-feature sibling import: ${target} (whitelist ADR-0016 §errata-26)`);
+    if (!acceptedFeatureSiblingEdges.has(key)) add('B-9', `ntp/${file}`, 0, `unaccepted feature-to-feature sibling import: ${target} (feature-sibling import whitelist)`);
   }
 }
 for (const [file, names] of Object.entries({ 'sync-engine.js': ['__boxingIsSafeExtUrl', '__boxingTestWebDAV', '__boxingBackupWebDAV', '__boxingSyncWebDAV', '__bxSync', '__boxingFlushCredentials'], 'credentials.js': ['__boxingEncryptCredential', '__boxingDecryptCredential'] })) {

@@ -90,8 +90,8 @@
     let { x, y } = pos;
     let maxIter = 50;
     let movedThisPass = true;
-    // ADR-0007 Q3b: build spatial once per snap call when N large; fall back to full list below threshold.
-    // ADR-0013 BX-PERF-001: accept pre-built spatial grid as 7th arg to avoid O(n) rebuild per member in moveGroupTogether.
+    // Build the spatial grid once per snap call when N is large; fall back to the full list below threshold.
+    // Accept a pre-built spatial grid as the 7th arg to avoid O(n) rebuild per member in moveGroupTogether.
     const spatial = arguments.length > 6 ? arguments[6] : buildSpatialGrid(others);
     while (movedThisPass && maxIter-- > 0) {
       movedThisPass = false;
@@ -139,20 +139,20 @@
 
   function migrateLayout(raw) {
     if (!raw) return defaultLayout();
-    // BX-DEV-085: Data integrity — version >= 3 returns as-is; no data loss on downgrade.
+    // Data integrity — version >= 3 returns as-is; no data loss on downgrade.
     // Unknown future versions (>= 4) are still accepted to prevent upgrade-then-downgrade data loss.
     if (raw.version >= 3) {
       const defaults = defaultLayout();
       const result = {
         ...defaults,
         ...raw,
-        schemaVersion: raw.schemaVersion || 1, // ADR-0009: schema versioning for crash rescue
+        schemaVersion: raw.schemaVersion || 1, // schema versioning for crash rescue
         boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
         connections: Array.isArray(raw.connections) ? raw.connections : [],
-        groups: [], // ADR-0007 Q1: groups no longer persisted
+        groups: [], // groups are no longer persisted
         settings: { ...defaults.settings, ...(raw.settings || {}) }
       };
-    // ADR-0007 Q1: one-time migration — restore box.isParent from old layout.groups, then discard
+    // One-time migration — restore box.isParent from old layout.groups, then discard
     if (!raw._meta || !raw._meta.__groupsMigrated) {
       if (Array.isArray(raw.groups) && raw.groups.length > 0) {
         for (const g of raw.groups) {
@@ -168,7 +168,7 @@
       }
       result._meta = result._meta || {}; result._meta.__groupsMigrated = true;
     }
-    // ADR-0007 Q4c: backfill connection.props for older layouts
+    // Backfill connection.props for older layouts
     for (const c of result.connections) { if (c && c.props == null) c.props = {}; }
     return result;
     }
@@ -309,9 +309,9 @@
     return { zoom: newZoom, panX: newPanX, panY: newPanY };
   }
 
-// Ticket 51 (spec W6-D2): export envelope unwrap. The default export is
+// Ticket 51 (spec ticket 51): export envelope unwrap. The default export is
 // { _exportedAt, meta:{ schemaVersion, fullPackage, snapshots[], corrupt[], conflicts[] }, layout }
-// (W6-D2 envelope); the full DR package additionally carries _bodies. Pure function: given a
+// (ticket 51 envelope); the full DR package additionally carries _bodies. Pure function: given a
 // parsed export document, return the BARE layout payload the import pipeline understands —
 // envelopes are unwrapped, legacy bare dumps pass through untouched, anything else returns null.
 // Shared by the settings-ui import handler (live) and by pinned unit tests.
@@ -340,7 +340,7 @@ function compareVersions(v1, v2) {
 
 export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, compareVersions, normalizeBookmarkUrl, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
 
-// ─── Ticket 91 (Wave9 A-045 · B55): id-level three-way layout merge ──────────
+// ─── Ticket 91 (B55): id-level three-way layout merge ──────────
 // Implements the ticket-80 recommended plan (three-way with base, degrading to the
 // two-way additive merge when no base). Industrial baseline: Joplin sync_items.base_*
 // client-local common-ancestor + refresh-on-clean-sync, Syncthing/Dropbox conflict-
@@ -514,7 +514,7 @@ function mergeLayoutThreeWay(cloud, local, base) {
     ...local,
     boxes: Array.from(byId.values()),
     connections: mergedConns,
-    groups: [], // ADR-0007 Q1: runtime mirror only
+    groups: [], // runtime mirror only
     schemaVersion: Math.max(cloud.schemaVersion || 1, local.schemaVersion || 1),
     nextLargeIndex: maxIdx(cloud.nextLargeIndex, local.nextLargeIndex),
     settings: { ...cloud.settings, ...local.settings },

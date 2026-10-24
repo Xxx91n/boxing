@@ -5,7 +5,7 @@ import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
-// Ticket 95 (A-049 credential sweep): NO real credentials in source; the lane's
+// Ticket 95 (credential sweep): NO real credentials in source; the lane's
 // sendMessage mock fully answers webdav-*, so the URL only needs to pass
 // checkUrlValid (https, non-private, no embedded auth). Staging account via
 // BOXING_SPEC_WEBDAV_URL env (91R pattern).
@@ -203,13 +203,13 @@ test.describe('Boxing WebDAV backup', () => {
   });
 });
 
-// Ticket 90 (A-044): the WebDAV private-host opt-in must reach BOTH the export
+// Ticket 90: the WebDAV private-host opt-in must reach BOTH the export
 // (backup) and pull (sync) paths, and .local / .internal / IPv6-loopback hosts must
 // be refused by default on both. Ticket 82 only pinned the isSafeExtUrl seam; the
 // pull path ran through checkUrlValid, which matched the raw hostname - so it kept
 // the IPv6 brackets ("[::1]" never matched the "::1$" alternative) and had no
 // .local/.internal suffix rule, letting the default deny leak on that path only.
-test.describe('WebDAV private-host opt-in propagation (ticket 90 / A-044)', () => {
+test.describe('WebDAV private-host opt-in propagation (ticket 90)', () => {
   const PRIVATE_HOSTS = ['https://nas.local/dav/', 'https://host.internal/dav/', 'https://[::1]/dav/'];
 
   async function bootAndSeed(page: Page, url: string, optedIn: boolean) {

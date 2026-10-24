@@ -1,4 +1,4 @@
-/* design-system.css — Boxing Design System (ADR-0008 three-layer token architecture)
+/* design-system.css — Boxing Design System (three-layer token architecture)
  *
  * Layer 1: Primitive (raw values — the source palette, never referenced directly in components)
  * Layer 2: Semantic (purpose aliases — components reference these; dark mode overrides this layer)
@@ -8,7 +8,7 @@
  *   - Changing the palette hue/saturation range → edit Layer 1 primitive values
  *   - Adding a new semantic role → edit Layer 2
  *   - Tweaking a specific component's color → edit Layer 3 in ntp.css (after Q2/D split)
- * Reference: docs/DESIGN.md, ADR-0008, W3C DTCG spec (designtokens.org)
+ * Reference: docs/DESIGN.md, W3C DTCG spec (designtokens.org)
  */
 
 /* ═══════════════════════════════════════════════
@@ -90,7 +90,7 @@
   --color-accent-soft-2: rgba(var(--accent-500-rgb), 0.18);
   --color-focus: var(--color-accent-300);
 
-  /* Interactive states & feedback (ADR-0008) */
+  /* Interactive states & feedback */
   --color-hover: rgba(var(--warm-900-rgb), 0.05);
   --color-danger: var(--color-danger-500);
   --color-danger-hover: rgba(var(--danger-500-rgb), 0.10);
@@ -119,7 +119,7 @@
   /* Base font size — adjustable via settings */
   --font-size-base: 14px;
 
-  /* --fs-* derived ladder (D-004 ADR-0019) — all calc() from --font-size-base.
+  /* --fs-* derived ladder — all calc() from --font-size-base.
    * max(11px, ...) for decorative small text prevents sub-11px illegibility.
    * No rem or em anchoring.
    */
@@ -143,7 +143,7 @@
   --dur-base: 220ms;
   --dur-slow: 360ms;
 
-  /* Shadow — 5-level elevation gradient (ADR-0008 Phase: Shadow-B)
+  /* Shadow — 5-level elevation gradient (design-system shadow layer)
    * Each level uses 3-4 stacked layers for physical depth (Linear/Vercel pattern).
    * Near layer = sharp edge, mid = soft body, far = ambient ground, bottom = contact.
    * --shadow-1/2/pop are aliases for backward compat (zero ref changes needed). */
@@ -157,7 +157,7 @@
   --shadow-2: var(--shadow-md);
   --shadow-pop: var(--shadow-lg);
 
-  /* Scrollbar (ADR-0014) — thin overlay style, cross-browser standardized */
+  /* Scrollbar — thin overlay style, cross-browser standardized */
   --scrollbar-thumb: var(--color-warm-700);
   --scrollbar-track: var(--color-warm-100);
 }
@@ -208,7 +208,7 @@
   --shadow-2: var(--shadow-md);
   --shadow-pop: var(--shadow-lg);
 
-  /* Scrollbar dark override (ADR-0014) */
+  /* Scrollbar dark override */
   --scrollbar-thumb: var(--color-warm-dark-700);
   --scrollbar-track: var(--color-warm-dark-100);
 }
@@ -224,7 +224,7 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
-  /* Ticket 05 (ADR-0014 v3): reduced-motion users get a static overlay.
+  /* Ticket 05: reduced-motion users get a static overlay.
      backdrop-filter:blur is a decorative effect (Chrome Developers / web.dev);
      under reduce it is disabled per the additive graceful-degradation model.
      Defensive: if backdrop-filter is reintroduced on .modal-overlay, this

@@ -10,7 +10,7 @@
 //   2. Negative self-check: feed the scanner deliberately broken CSS and
 //      assert each failure mode is detected — plus the incident-shaped
 //      positive control (top-level [hidden] fallback pairs must NOT fire,
-//      BX-DEV-020 convention). A guard blind to its own contract is a
+//      convention). A guard blind to its own contract is a
 //      build failure (exit 1).
 // Zero disk writes, zero build artifacts.
 import path from "node:path";

@@ -94,10 +94,9 @@ selector is the local/agent fast path.
 
 **Waiver revocation criteria**
 
-The G-A residual-red waiver ledger and its revocation criteria (≥2 consecutive green main runs with
-zero recurrence of the recorded signature, at least one a same-commit corroboration run; only F is
-revocable, B has no revocation path, N is never revoked) live in `docs/testing-governance.md`
-(「G-A 残红书面豁免台账」 section);
+A residual-red waiver is revoked only after ≥2 consecutive green main runs with zero recurrence of
+the recorded signature, at least one a same-commit corroboration run; only F is revocable, B has no
+revocation path, N is never revoked.
 `scripts/waiver-ledger-check.mjs` enforces them.
 
 **Hot-file single-agent convention**

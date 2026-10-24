@@ -1,0 +1,38 @@
+name: Docs links
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'GLOSSARY.md'
+      - 'docs/**'
+      - 'scripts/docs-link-guard.mjs'
+      - '.github/workflows/docs-links.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - 'AGENTS.md'
+      - 'GLOSSARY.md'
+      - 'docs/**'
+      - 'scripts/docs-link-guard.mjs'
+      - '.github/workflows/docs-links.yml'
+
+# A stale push should not queue behind itself.
+concurrency:
+  group: docs-links-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Entry-point reference resolvability
+        run: node scripts/docs-link-guard.mjs

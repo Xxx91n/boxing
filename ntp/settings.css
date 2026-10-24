@@ -5,14 +5,14 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--color-surface); /* BX-DEV-140: was hardcoded rgba — now follows theme */
+  background: var(--color-surface); /* was hardcoded rgba — now follows theme */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
-  /* Ticket 05 (ADR-0014 v3): backdrop-filter removed — see block comment. */
+  /* Ticket 05: backdrop-filter removed — see block comment. */
   /*
-   * Root cause: BX-DEV-140 changed background from rgba (semi-transparent) to
+   * Root cause: changed background from rgba (semi-transparent) to
    * var(--color-surface) (opaque #EEE9E1 light / #2A2724 dark). With an opaque
    * background the blur is visually invisible (background fully covers the
    * filtered backdrop) yet Firefox still rasterizes it every frame — a pure
@@ -81,10 +81,10 @@
    Settings-panel-only selectors — NOT subject to BX-CSS-DUAL-WRITE pairing
    (no .large-box / .small-box surface is touched).
    .sync-group sets a layout display value -> the [hidden] fallback pair is
-   MANDATORY (BX-DEV-020): without it display:flex overrides the HTML hidden
+   MANDATORY: without it display:flex overrides the HTML hidden
    attribute, and the provider mutex driven by sync-engine.js toggling
    #webdav-config / #gist-config [hidden] would visually leak both configs at
-   once. Supersedes the old #remote-backup-zone sibling-margin rule (BX-DEV-133):
+   once. Supersedes the old #remote-backup-zone sibling-margin rule:
    inter-section spacing now flows from .sync-group gap. */
 .sync-group {
   display: flex;
@@ -96,7 +96,7 @@
   background: var(--color-elevated);
 }
 .sync-group[hidden] {
-  display: none; /* BX-DEV-020: hidden fallback pair — keeps provider mutex visually exclusive */
+  display: none; /* hidden fallback pair — keeps provider mutex visually exclusive */
 }
 .sync-group + .sync-group {
   margin-top: var(--space-5);
@@ -169,7 +169,7 @@
   cursor: pointer;
 }
 
-/* BX-DEV-136: Chrome/Chromium requires explicit background on thumb after
+/* Chrome/Chromium requires explicit background on thumb after
    -webkit-appearance:none, otherwise thumb is transparent/invisible (Chrome 49+, Chromium 149).
    Firefox needs ::-moz-range-thumb + ::-moz-range-track for cross-browser parity. */
 .modal__row input[type="range"]::-webkit-slider-runnable-track {
@@ -279,7 +279,7 @@
   border: 1px solid var(--color-hairline);
   padding: 2px 4px;
   z-index: 2;
-  /* BX-DEV-112F: own layout context + compositor layer so children do not collapse to 0 on
+  /* own layout context + compositor layer so children do not collapse to 0 on
      parent hidden=>visible transitions in Chrome (mirrors the standard pattern used by
      side-panel / sidebar extensions to keep small abs-pos controls reliably visible). */
   contain: layout;
@@ -295,7 +295,7 @@
   border-radius: 4px;
   cursor: pointer;
   line-height: 1;
-  /* BX-DEV-112E: inline-flex + min size ensures Chrome renders the button
+  /* inline-flex + min size ensures Chrome renders the button
      consistently (was block with no min-size; Chrome kept 0x0 after parent
      unhide in some extension load contexts). Firefox auto-reflows fine. */
   display: inline-flex;
@@ -305,7 +305,7 @@
   min-height: 24px;
 }
 
-/* BX-DEV-135 (B6): pure CSS border triangle — zero font/Unicode glyph dependency,
+/* (B6): pure CSS border triangle — zero font/Unicode glyph dependency,
    so ungood-chromium/other-UAs without a good ‹› fallback glyph still see the arrows.
    The Unicode literal kept in HTML is hidden via font-size:0; ::before paints the triangle. */
 .zoom-arrow {
@@ -377,7 +377,7 @@
   opacity: 0.7;
 }
 
-/* BX-DEV-111g: When box is hover-expand and NOT collapsed (fully open), handle visible normally */
+/* When box is hover-expand and NOT collapsed (fully open), handle visible normally */
 .box--hover-expand:not(.box--collapsed) .box-resize-handle {
   display: block;
   opacity: 0.4;
@@ -546,7 +546,7 @@ body.box-resizing {
   cursor: grab;
 }
 
-.canvas { cursor: grab; } /* BX-DEV-124B (Bug3): JS sets grabbing after threshold to avoid :active stuck */
+.canvas { cursor: grab; } /* (Bug3): JS sets grabbing after threshold to avoid:active stuck */
 
 /* === CONFIRM MODAL === */
 .confirm-modal {
@@ -645,7 +645,7 @@ body.box-resizing {
 
 
 :root.ntp--dark .modal-overlay {
-  background: var(--color-surface); /* BX-DEV-140: was hardcoded rgba — now follows theme */
+  background: var(--color-surface); /* was hardcoded rgba — now follows theme */
 }
 
 :root.ntp--dark .confirm-modal {
@@ -745,7 +745,7 @@ body.box-resizing {
   /* ticket 13: legacy element-selector override removed — bm-add-btn is the only
      button in .bm-add-row (popups.js); explicit transparent reset beats base (0-3-0 > 0-2-0) */
   background: transparent;
-  /* ticket 88 (A-042): dark ghost affordance. --color-hairline in dark resolves to
+  /* ticket 88: dark ghost affordance. --color-hairline in dark resolves to
      rgba(255,255,255,0.06) = 1.20:1 against --color-elevated (#302D29); with a
      transparent fill that hairline was the only boundary cue. --color-muted (#9A9285)
      measures 4.45:1 and --color-ink-soft (#C8C2B6) 7.72:1 — both clear the 3:1
@@ -859,7 +859,7 @@ body.box-resizing {
   gap: 0;
   padding: 0 !important;
   overflow: hidden;
-  /* BX-DEV-111k-v4: removed contain:layout style (caused scroll jank); overflow:hidden alone prevents resize */
+  /* v4: removed contain:layout style (caused scroll jank); overflow:hidden alone prevents resize */
 }
 
 .settings-nav {
@@ -889,7 +889,7 @@ body.box-resizing {
   color: var(--color-ink);
 }
 
-/* BX-DEV-111f: Active tab retains its own background on hover — only text intensifies */
+/* Active tab retains its own background on hover — only text intensifies */
 .settings-nav__item--active:hover {
   background: var(--color-accent-soft);
   color: var(--color-accent-ink);
@@ -908,7 +908,7 @@ body.box-resizing {
   padding: var(--space-5);
   overflow-y: auto;
  overscroll-behavior: contain;
-  /* ADR-0014.updated: overflow-anchor:none prevents Firefox from auto-scrolling
+  /* overflow-anchor:none prevents Firefox from auto-scrolling
      to keep content in view when DOM changes above the fold — eliminates a
      source of scroll-position jitter when the sync/backup panels mutate. */
   overflow-anchor: none;
@@ -916,7 +916,7 @@ body.box-resizing {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   -webkit-overflow-scrolling: touch;
-  /* ADR-0014.updated: will-change: scroll-position promotes the scroll container to
+  /* will-change: scroll-position promotes the scroll container to
      its own compositor layer so Firefox's general.smoothScroll animation runs on
      the GPU instead of main-thread layout/paint per frame — eliminates the user-visible
      "一抽一抽的" jank when FF smooth scrolling is enabled.
@@ -982,13 +982,13 @@ body.box-resizing {
 
 
 .inner__canvas .header-pin--floating {
-  /* BX-DEV-136: inner-canvas-head was de-coupled from the canvas and floated
+  /* inner-canvas-head was de-coupled from the canvas and floated
      at the app-title-bar level above it, so the pin no longer needs to clear
      an in-canvas head strip. Small offset keeps it off the canvas top edge. */
   top: var(--space-2) !important;
 }
 /* ══════════════════════════════════════════════
-   Curated Theme Pack System (ADR-0012)
+   Curated Theme Pack System
    Curated theme presets — user picks a complete theme, no free hue slider
    ══════════════════════════════════════════════ */
 .theme-presets {

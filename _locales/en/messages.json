@@ -756,11 +756,11 @@
   },
   "connStarParent": {
     "message": "Star-mark as group parent",
-    "description": "BX-DEV-137 box connections / star-mark"
+    "description": "box connections / star-mark"
   },
   "connStart": {
     "message": "Start a connection to another box",
-    "description": "BX-DEV-137 box connections / star-mark"
+    "description": "box connections / star-mark"
   },
   "connDeleteActionLabel": {
     "message": "Delete connection by",

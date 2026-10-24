@@ -27,7 +27,7 @@ async function seedBoxes(page, coords) {
   }, coords);
 }
 
-test.describe('Boxing conn persistence/sync (BX-DEV-137++++)', () => {
+test.describe('Boxing conn persistence/sync ', () => {
   test('connections survive saveLayout + reload', async ({ page }) => {
     await resetBoxing(page);
     const ids = await seedBoxes(page, [[0, 0], [400, 0]]);

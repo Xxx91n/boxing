@@ -1,7 +1,7 @@
-// Boxing — credential envelope at rest (ticket 10, architecture-recovery; relabel: ticket 63 / A-017;
-// per-install key: ticket 81 / A-031).
+// Boxing — credential envelope at rest (ticket 10, architecture-recovery; relabel: ticket 63;
+// per-install key: ticket 81).
 //
-// HONEST LABEL (ticket 63, A-017) — THIS IS OBFUSCATION-GRADE PROTECTION, NOT USER-KEYED ENCRYPTION.
+// HONEST LABEL (ticket 63) — THIS IS OBFUSCATION-GRADE PROTECTION, NOT USER-KEYED ENCRYPTION.
 // The AES-GCM key is derived (PBKDF2) from a PER-INSTALL RANDOM secret plus a per-record salt.
 // The secret never ships with the extension and never leaves the browser profile through layout,
 // exports, WebDAV/Gist backups, or snapshots. Anyone holding a copy of a Boxing JSON export or a
@@ -22,15 +22,15 @@
 //
 // Pure crypto module: no DOM, no layout reads, no direct chrome.storage access (81R2) —
 // persistence is left entirely to callers via the injected credKeyStore narrow port.
-// ADR-0016: envelope layer of the four-layer sync/backup model.
+// Envelope layer of the four-layer sync/backup model.
 // Moved verbatim from ntp.js (byte-exact except `export` prefixes + debugErr facade).
 // Checkpoint 2: only envelope objects leave this module — plaintext never enters logs.
 //
-// Field-name compatibility (ADR-0017 data-compatibility obligation): callers persist these
+// Field-name compatibility obligation: callers persist these
 // envelopes as settings._encWebdavPass / settings._encGistToken. The `_enc` prefix is a LEGACY
 // NAME retained so already-installed profiles, exports and older builds still read back; here it
 // means 'obfuscated envelope', not strong encryption. Renaming is a schema change and must never
-// happen in a single release (expand/contract) — see .scratch/architecture-recovery/reports/63-report.md.
+// happen in a single release (expand/contract): the legacy name must be read back by older builds.
 //
 // Envelope version history (AWS FORBID_ENCRYPT_ALLOW_DECRYPT migration shape, ticket 81):
 //   v1 {k, iv, d}  — legacy: raw key bundled with ciphertext (decrypt-only bridge).
@@ -46,7 +46,7 @@ let debugErr = () => {};
 let credKeyStore = null; // { get(key), set(key, value) } — storage.js narrow port (81R2)
 
 // Ticket 10: inject ntp.js-scope deps (logger) into the credentials module.
-// Ticket 81R2 (A-031): credKeyStore — the storage.js narrow port for the per-install
+// Ticket 81R2: credKeyStore — the storage.js narrow port for the per-install
 // key (boxingCredKey.*, prefix-pinned; structurally cannot write boxingLayout). Injected
 // from ntp.js init() — persistence stays with callers, leaf purity of this module restored.
 // Without the store (unit probes / pre-injection calls) the module falls back to a
@@ -62,7 +62,7 @@ const ENC_ALGO = 'AES-GCM'; const ENC_KEY_LEN = 256;
 // would orphan every v2 envelope in already-installed profiles, exports and backups that has
 // not been rewritten to v3 yet. Never removed in a single release (expand/contract).
 const CRED_OBFUSCATION_SECRET = 'boxing-sync-cred-v2-app-secret-2024';
-// Ticket 81 (A-031): per-install key material. Stored OUTSIDE the layout object (independent
+// Ticket 81: per-install key material. Stored OUTSIDE the layout object (independent
 // chrome.storage.local key, reached through the storage.js cred-key narrow port — 81R2) so
 // it never enters buildSyncPayload, buildExportEnvelope or snapshots. Without an injected
 // store (file:// pre-init probes) the module falls back to a per-page random session key so
