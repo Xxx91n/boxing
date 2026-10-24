@@ -34,10 +34,10 @@ test.describe('Boxing bookmark search ', () => {
     const searchInput = page.locator('#q');
     await searchInput.fill('GitHub');
 
-    // Ticket 101 (B65, ledger face boxing-search): the historic form was
+    // Ticket 101 (this spec's historic flake face): the form was
     // fill -> fixed 200ms sleep -> read the class. Search is debounced (120ms,
     // ticket 83), so on a slow runner the class had not been applied yet and the
-    // read raced the debounce (ledger signature: Expected true / Received false,
+    // read raced the debounce (signature: Expected true / Received false,
     // macos-latest firefox only). A web-first assertion retries instead of
     // guessing a delay — and it is the only form that cannot pass vacuously.
     const matchBox = page.locator('.large-box[data-id="search-test-1"]');

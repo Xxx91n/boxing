@@ -12,8 +12,8 @@
 //   AC2 popups delete button goes through commit('deleteBookmark', ...); bare splice gone
 //   AC3 never-quarantine regression: add -> delete -> stale remote merge / reload ->
 //       the bookmark does NOT come back + layout._meta.deleted contains the bm id
-//   AC4 never-quarantine: this file name lands inside the waiver-ledger
-//       NEVER_QUARANTINE family (boxing-sync), so no waiver row can ever be filed for it.
+//   AC4 never-quarantine: this spec must never carry the @quarantine tag, so a
+//       regression here can never be shelved instead of fixed.
 //
 // Harness discipline (t44/t91 file:// mock lane): seed BEFORE the first navigation via
 // addInitScript (no reload race). The stale remote is injected through

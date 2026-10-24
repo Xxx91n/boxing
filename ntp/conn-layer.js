@@ -323,7 +323,7 @@ export function initConnFacade(deps) {
   // as a ghost inside box B. Fix = resolve the common-ancestor surface and
   // render only when that surface is the open one.
   //
-  // Rules (ledger D-007, spec S-07):
+  // Rules:
   //   - large ↔ large                      → canvas SVG (canvas must be open)
   //   - small ↔ small, same parent, parent open → that box's inner SVG
   //   - small ↔ small, same parent, NOT open → no render (its surface is closed)

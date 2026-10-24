@@ -1,10 +1,10 @@
 // Boxing — shared mutable state module (ticket 06, architecture-recovery).
-// Single holder of the ticket-02 callgraph §5 "state 模块 (票06)" bucket plus the
-// handoff-named suppression-flag family (lastClick*/lastDrag*/lastEnter*/suppress*).
+// Single holder of the state bucket from the ticket-02 callgraph §5, plus the
+// suppression-flag family (lastClick*/lastDrag*/lastEnter*/suppress*).
 //
-// Decision (issues/06 item 2): (b) state module singleton via ESM live bindings — NOT (a) injection. Reasons:
+// Decision: (b) state module singleton via ESM live bindings — NOT (a) injection. Reasons:
 //   1. ~55 symbols × 700+ read sites: injection rewrites reads too; live bindings leave every read site untouched.
-//   2. Module graph evaluates once — exactly one copy exists (research-report.md: 两模块各持副本 = 各活各的 is the forbidden mode).
+//   2. Module graph evaluates once — exactly one copy exists (two modules each holding a copy, each living in its own world, is the forbidden mode).
 //   3. Imports initialize before the entry body runs — no init-order hazard for handlers.
 //   4. Leaf module (zero imports): no cycles; tickets 07/08 import these same singletons.
 // Writes must go through the set*() functions (imported bindings are read-only in ESM).

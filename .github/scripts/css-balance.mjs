@@ -1,4 +1,4 @@
-// Boxing — build-time CSS balance gate (ticket 53, spec D6, ledger ).
+// Boxing — build-time CSS balance gate (ticket 53).
 // Deterministic, zero-dep scanner for the two failure modes behind the
 // 2026-09-12 freeze incident: a missing closing
 // brace made CSS Nesting swallow every following top-level rule, and a

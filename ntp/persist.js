@@ -89,7 +89,7 @@ export function initPersistFacade(deps) {
   }
 
   // ── the single dark-mode apply path ──────────────────────────
-  // Three asymmetries used to write '.ntp--dark' (bug2, ledger D-008/D-011②):
+  // Three asymmetries used to write '.ntp--dark':
   //   1. boot-theme.js ADDED it to documentElement and only ever added, never
   //      removed, so a session that booted dark kept a permanently-dark ancestor
   //      class that the toggles (which wrote #app + body) could not clear —

@@ -292,7 +292,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
       el.remove();
       return bg;
     });
-    // Ticket 101 (B65, ledger face boxing-empty-state-buttons Bug5-dark): the tour
+    // Ticket 101 (this spec's Bug5-dark face): the tour
     // overlay (.modal-overlay, position:fixed; inset:0; z-index:100) wins the hit test
     // and the hover below never reaches the button. resetBoxing now proves the overlay
     // hidden, and this guard names the blocker if it ever reappears.

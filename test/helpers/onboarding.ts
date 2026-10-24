@@ -16,7 +16,7 @@
 // If that ran before init() had settled its onboarding decision, loadLayout()
 // replaced layout.settings (reverting onboardingCompleted) and initOnboarding()
 // re-showed the overlay AFTER the dismissal; the overlay then intercepted the next
-// real pointer action. Observed signature (ledger, ticket 93):
+// real pointer action. Observed signature (ticket 93):
 //   boxing-empty-state-buttons Bug5-dark — expect.poll 5000ms:
 //   Expected "rgba(196, 168, 130, 0.12)" / Received "rgba(0, 0, 0, 0)"
 // (the :hover never applied because page.hover('.bm-add-btn') hit the overlay).

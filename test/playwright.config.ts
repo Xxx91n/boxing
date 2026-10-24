@@ -17,7 +17,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // Worker policy (ticket 20, architecture-recovery; research-report-round4 §5):
+  // Worker policy (ticket 20, architecture-recovery):
   // - Local cap 4: default (all cores) launches 8 headed browsers on this
   //   8-thread host and starves them — random 30s setup/timeout failures with
   //   different victims each run (ticket 01 gate evidence).
