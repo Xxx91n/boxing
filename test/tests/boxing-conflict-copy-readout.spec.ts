@@ -1,4 +1,4 @@
-// Boxing — ticket 79 (spec Wave8 A-029): conflict-copy readout in the settings data tab.
+// Boxing — ticket 79 (spec): conflict-copy readout in the settings data tab.
 // AC coverage:
 //   AC1 list visible: the data tab shows one row per archived conflict copy
 //       (ts / reason / side / size) with a per-row Export button — UI non-empty when

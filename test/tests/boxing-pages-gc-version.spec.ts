@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..', '..');
 
 /**
- * BX-PAGES-GC (ticket 109 / A-064): G-C is no longer "three URLs answer 200".
+ * BX-PAGES-GC (ticket 109): the Pages check is no longer "three URLs answer 200".
  * A stale site answers 200 on all three, so the gate now also asserts that the
  * deployed demo/version.json reports the version we just released.
  *
@@ -30,7 +30,7 @@ test.describe('BX-PAGES-GC: Pages version freshness gate', () => {
     expect(out).toContain('self-test:');
     // the blind spot this ticket exists for: stale + 200 must be red, not green
     expect(out).toContain('gate fails with MISMATCH when Pages serves a stale version that still answers 200');
-    expect(out).toContain('gate fails with UNREACHABLE when a G-C URL is down');
+    expect(out).toContain('gate fails with UNREACHABLE when a Pages URL is down');
     expect(out).toContain('deploy-tail gives up inside the 180s budget and reports MISMATCH');
   });
 

@@ -133,7 +133,7 @@
   border-bottom-color: rgba(255,255,255,0.12);
 }
 
-/* BX-DEV-123: Performance — content-visibility for engineering-scale canvas (1000+ boxes).
+/* Performance — content-visibility for engineering-scale canvas (1000+ boxes).
    Browser auto-skips layout/paint of offscreen boxes; 7x render boost per web.dev/MDN.
    Must pair with contain-intrinsic-size to prevent scrollbar jumping.
    Exclude dragging/hover-expand/dragged states to keep interaction smooth. */
@@ -156,7 +156,7 @@
   contain-intrinsic-size: auto 300px auto 340px;
 }
 
-/* BX-DEV-SEARCH (B9): search highlight — match boxes glow, non-match dim */
+/* (B9): search highlight — match boxes glow, non-match dim */
 /* BX-CSS-DUAL-WRITE-SHARED: --search-match — both in one rule, safe */
 .large-box--search-match, .small-box--search-match {
   box-shadow: 0 0 0 2px var(--color-accent, #5b8def), var(--shadow-2);
@@ -169,5 +169,5 @@
 }
 
 
-/* BX-DEV-137: box-connections / star-mark UI (leader-line draws the actual SVG)
+/* box-connections / star-mark UI (leader-line draws the actual SVG)
    color uses --color-ink so it adapts to dark mode automatically. */

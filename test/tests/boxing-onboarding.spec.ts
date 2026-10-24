@@ -86,7 +86,7 @@ test.describe('Onboarding (first-run guided tour)', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BX-D-009 (Wave 2026.10.11 P-18 / S-11): tour suppression + Escape, live.
+// (Wave 2026.10.11 P-18 / S-11): tour suppression + Escape, live.
 //
 // The static artifact contracts live in boxing-build-pipeline.spec.ts. This block
 // proves the RUNTIME consequences, which are what the user actually felt:
@@ -95,7 +95,7 @@ test.describe('Onboarding (first-run guided tour)', () => {
 //   - the real-extension install tour still appears, and the file:// debug lane
 //     still shows it — i.e. the suppression is scoped, not a global kill switch.
 // ═══════════════════════════════════════════════════════════════════════════
-test.describe('BX-D-009: tour suppression scope + Escape dismissal (live)', () => {
+test.describe('tour suppression scope + Escape dismissal (live)', () => {
   test('D009-r1: with __BOXING_DEMO__ set, no overlay blocks the page', async ({ page }) => {
     await page.addInitScript(() => {
       // Same mechanism the demo build uses (a classic script running before the

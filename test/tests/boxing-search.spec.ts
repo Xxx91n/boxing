@@ -13,7 +13,7 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 }
 
-test.describe('Boxing bookmark search (BX-DEV-SEARCH)', () => {
+test.describe('Boxing bookmark search ', () => {
   test('search filters large boxes by title on main canvas', async ({ page }) => {
     await resetBoxing(page);
     // Create two large boxes with different titles
@@ -75,7 +75,7 @@ test.describe('Boxing bookmark search (BX-DEV-SEARCH)', () => {
 
   test('Escape clears search', async ({ page }) => {
     await resetBoxing(page);
-    // BX-D-009: the tour is a modal that now consumes Escape (WCAG 2.1.2), and
+    // the tour is a modal that now consumes Escape (WCAG 2.1.2), and
     // this case is specifically about the SEARCH field's own Escape handling.
     // Without dismissing the tour first, the modal would legitimately take the
     // key and the assertion would be testing the wrong owner. The other two
@@ -98,7 +98,7 @@ test.describe('Boxing bookmark search (BX-DEV-SEARCH)', () => {
 
   test('favicon uses Promise.any parallel race (no serial waterfall)', async ({ page }) => {
     await resetBoxing(page);
-    // BX-DEV-126: loadFavicon now exposed via __boxingDebug.loadFavicon
+    // loadFavicon now exposed via __boxingDebug.loadFavicon
     const usesPromiseAny = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       if (!dbg || typeof dbg.loadFavicon !== 'function') return false;
@@ -107,7 +107,7 @@ test.describe('Boxing bookmark search (BX-DEV-SEARCH)', () => {
     expect(usesPromiseAny).toBe(true);
   });
 
-  // A-033 (ticket 83): the two specs above seed via push -> persistView -> reload, and the seeded
+  // (ticket 83): the two specs above seed via push -> persistView -> reload, and the seeded
   // boxes do not survive that reload in the file:// lane -- that is the pre-existing B3 breakage
   // (ticket 72 surface; root-cause evidence in reports/83-report.md §5). The debounce specs below
   // therefore seed and renderCanvas() in-page: no reload, no persistence dependency.

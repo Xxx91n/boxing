@@ -12,7 +12,7 @@
 | **Edge Add-ons** | **2026.9.15 已过审上线** — [Edge listing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) |
 | Chrome Web Store | 可选；历史上 Edge 优先 |
 | GitHub Releases | **[v2026.9.15](https://github.com/Xxx91n/boxing/releases/tag/v2026.9.15) 已发布**（chrome/firefox/source/SHA256SUMS）；**不发 .xpi / .crx**；正式安装以商店为准 |
-| 三门 | 2026.9.15 已达成（G-A run 34857433215 绿 · G-B 用户声明「通过」· G-C 三 URL 200）；2026.9.20 已发行（G-B 用户声明 pass 2026-09-15；G-C version.json 实测 = 2026.9.20） |
+| 三门 | 2026.9.15 已达成（CI run 34857433215 绿 · 用户声明「通过」· Pages 三 URL 200）；2026.9.20 已发行（用户声明 pass 2026-09-15；version.json 实测 = 2026.9.20） |
 | 版本 | 当前已发行 **v2026.9.20**（GitHub Release 2026-09-22）；商店在架版本仍为 **2026.9.15**（AMO + Edge）；下一开发周期 2026.10.15 进行中 |
 
 ## Grill Decisions（历史裁定，仍有效）
@@ -24,9 +24,9 @@
 | Q3 | (A) GitHub Pages hosts privacy policy | https://boxing.xxx91n.com/privacy-policy.html |
 | Q4 | (A) 5 transparent 1280x800 PNG placeholders + README | Human overwrites same filenames later |
 | Q5 | CRX pem + AMO API key deferred to daytime interactive setup | Involves user account identity, needs hands-on guidance |
-| 发行门禁 (ADR-0017) | 可发行 = G-A ∧ G-B ∧ G-C | 数据事故驱动；程序性门禁，非流水线硬拦 |
-| Wave8 D-002 | 发行号 2026.9.12 含零闪现 | 用户痛点；新 build，非覆盖旧包 |
-| Wave8 D-009 | G-B 用户强制通过（无产物） | 发布权限方裁定；**非**可审计 G-B |
+| 发行门禁 | 可发行 = CI 门禁 ∧ 人工黄金路径 ∧ Pages 检查 | 数据事故驱动；程序性门禁，非流水线硬拦 |
+| 发行号零闪现 | 发行号 2026.9.12 含零闪现 | 用户痛点；新 build，非覆盖旧包 |
+| 人工黄金路径强制通过 | 用户强制通过（无产物） | 发布权限方裁定；**非**可审计 |
 | 2026-09-13 发版 | GitHub **不再发 xpi/crx**；安装走官方商店 | 避免双源与未签名包；商店为唯一正式安装真源 |
 
 ## 2026.9.20 材料包（从哪拿）
@@ -85,7 +85,7 @@ CI 在 ubuntu 腿自动生成并 Publish：`chrome.zip` `firefox.zip` `source.zi
 
 | 风险/红线 | 说明 |
 |---|---|
-| ADR-0017 合取 | tag/宣称可发行仍看 G-A∧G-B∧G-C；本波 G-B 为强制豁免（D-009） |
+| 发行门禁合取 | tag/宣称可发行仍看 CI ∧ 人工黄金路径 ∧ Pages；本波人工黄金路径为强制豁免（D-009） |
 | CRX key 丢失 | 新 ID 重上架（若仍走 CWS 自签；商店包不依赖本地 crx） |
 | AMO 版号烧录 | `web-ext sign` 真密钥会占用版号；商店网页上传 zip 不烧本仓 CI 号 |
 | 双安装源 | **禁止**再引导用户从 GitHub 下 xpi/crx 当正式安装 |

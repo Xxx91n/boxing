@@ -2,7 +2,7 @@
 // Settings modal open/close + DOM binding for the general/appearance/data tabs: tab switching,
 // language / remember-last-pos / url-open-mode / conn-delete-action / zoom / font / dark-mode /
 // square-corners / theme-pack controls, JSON export+import (SEC-06 caps), diagnostics surface,
-// confirm-modal events. ADR-0016: presentation layer — persistence only via the ./storage.js
+// confirm-modal events. Presentation layer — persistence only via the ./storage.js
 // facade (saveLayout/saveLayoutDebounced), never chrome.storage directly. Moved verbatim from
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
@@ -45,7 +45,7 @@ export function initSettingsUiFacade(deps) {
     if (typeof fontSliderVal !== 'undefined' && fontSliderVal) fontSliderVal.textContent = (layout.settings.fontSize || 14) + 'px';
     const squareCB = document.getElementById('square-corners-cb');
    if (squareCB) squareCB.checked = layout.settings.squareCorners === true;
-    // ADR-0012: curated theme pack UI sync
+    // Curated theme pack UI sync
     const currentTheme = layout.settings.theme || 'beige';
     document.querySelectorAll('.theme-preset').forEach(btn => {
       btn.classList.toggle('theme-preset--active', btn.dataset.theme === currentTheme);
@@ -53,7 +53,7 @@ export function initSettingsUiFacade(deps) {
 
  }
 
-  // ── Ticket 50 (spec W6-D1): Time Machine helpers ───────
+  // ── Ticket 50 (spec ticket 50): Time Machine helpers ───────
   const SNAPSHOT_LIST_MAX = 20; // newest-first cap; rotation retains far more, the UI stays scannable
   function formatSnapshotSize(bytes) {
     const n = Number(bytes) || 0;
@@ -106,7 +106,7 @@ export function initSettingsUiFacade(deps) {
           conflictRow.hidden = true;
         }
       }
-      // Ticket 79 (spec Wave8 A-029): conflict-copy readout list — one row per archived
+      // Ticket 79 (spec): conflict-copy readout list — one row per archived
       // conflict copy (ts / reason / side / size, newest first, same SNAPSHOT_LIST_MAX cap)
       // with a per-row verbatim JSON export. Rows are rebuilt on every modal open alongside
       // the Time Machine list (refreshDataHealth is the single seam); read-only, no
@@ -139,7 +139,7 @@ export function initSettingsUiFacade(deps) {
         }
         cWrapEl.hidden = cRows.length === 0;
       }
-      // Ticket 50 (spec W6-D1): Time Machine list — one row per stored snapshot (ts /
+      // Ticket 50 (spec ticket 50): Time Machine list — one row per stored snapshot (ts /
       // schemaVersion / size, newest first, last SNAPSHOT_LIST_MAX) with a per-row rollback
       // button. Rows are rebuilt on every modal open (refreshDataHealth is the single seam).
       const tmEl = document.getElementById('data-snapshot-timemachine');
@@ -190,7 +190,7 @@ export function initSettingsUiFacade(deps) {
   }
 
   export function closeSettingsModal() {
-    // BX-DEV-111M: flush via the globally-exposed helper — flushUnsavedCredentials is defined inside loadSettings()'s
+    // flush via the globally-exposed helper — flushUnsavedCredentials is defined inside loadSettings()'s
     // closure so the top-level closeSettingsModal cannot reference it directly. window.__boxingFlushCredentials is set
     // during loadSettings() and may be undefined on the very first open before that runs.
     try { const fn = window.__boxingFlushCredentials; if (typeof fn === 'function') fn(); } catch (e) { debugWarn('credential flush on close', e); }
@@ -243,11 +243,11 @@ export function initSettingsUiFacade(deps) {
   }
 
 
-  // ── Ticket 50 (spec W6-D1): Time Machine one-click rollback ──────────────────
+  // ── Ticket 50 (spec ticket 50): Time Machine one-click rollback ──────────────────
   // Row button -> secondary confirm (askConfirmModal, same in-page surface as ticket 44) ->
   // saveSnapshot('pre-restore') safety copy -> full-replacement apply through the storage
   // facade. The safety snapshot is FAIL-CLOSED: rollback aborts when the copy cannot be
-  // captured (W6-D1 forbids an un-snapshotted full replace; atomcode negative cases: Gemini
+  // captured (ticket 50 forbids an un-snapshotted full replace; atomcode negative cases: Gemini
   // "confirm said undo, did delete" + story-spark #5529 silent discard — the confirm copy
   // names both the target point and the safety copy so wording matches the executed action).
   async function performSnapshotRollback(ts) {
@@ -289,7 +289,7 @@ export function initSettingsUiFacade(deps) {
     openSettingsModal(); // back on the data tab; refreshDataHealth now shows the safety copy
   }
 
-  // Ticket 79 (spec Wave8 A-029): single conflict-copy verbatim export. Fetches the
+  // Ticket 79 (spec): single conflict-copy verbatim export. Fetches the
   // archived entry via the read-only storage facade (getConflictArchive) and downloads
   // it as boxing-conflict-<ts>.json. Read-only — the archive entry is never mutated
   // and archiveConflictLayouts write semantics stay untouched (issue 79 AC3).
@@ -622,7 +622,7 @@ export function bindSettingsUi() {
         document.querySelectorAll('.settings-nav__item').forEach(b => b.classList.remove('settings-nav__item--active'));
         btn.classList.add('settings-nav__item--active');
         const tabId = btn.dataset.tab;
-        layout.settings.lastSettingsTab = tabId;  // BX-DEV-111k: remember last active tab
+        layout.settings.lastSettingsTab = tabId;  // remember last active tab
         document.querySelectorAll('.settings-tab').forEach(t => t.hidden = true);
         const tab = document.getElementById('tab-' + tabId);
         if (tab) tab.hidden = false;
@@ -642,7 +642,7 @@ export function bindSettingsUi() {
       } else { renderCanvas(); }
      applyI18n();
      applyCanvasTransform();
-     // ADR-0015: re-apply pin tooltip after i18n reset (applyI18n overwrites data-i18n-title)
+     // Re-apply pin tooltip after i18n reset (applyI18n overwrites data-i18n-title)
      updateAutohideUI();
      applyInnerTransform();
     });
@@ -650,7 +650,7 @@ export function bindSettingsUi() {
       layout.settings.rememberLastPos = rememberCheck.checked;
       saveLayout();
     });
-    // BX-DEV-120 + ticket 11: urlOpenMode — default 'sameTab' so bookmarks open in the current tab unless the user explicitly picks New Tab.
+    // + ticket 11: urlOpenMode — default 'sameTab' so bookmarks open in the current tab unless the user explicitly picks New Tab.
     urlOpenModeSelect?.addEventListener('change', () => {
       layout.settings.urlOpenMode = urlOpenModeSelect.value === 'sameTab' ? 'sameTab' : 'newTab';
       saveLayout();
@@ -658,7 +658,7 @@ export function bindSettingsUi() {
 
     connDeleteActionSelect?.addEventListener('change', () => {
       layout.settings.connDeleteAction = connDeleteActionSelect.value || 'alt+click';
-      // ADR-0006: force full re-create so new-mode listeners (dblclick/contextmenu/keydoc) attach to fresh <line> elements.
+      // Force full re-create so new-mode listeners (dblclick/contextmenu/keydoc) attach to fresh <line> elements.
       // renderConnections only registers listeners on pending (new) lines — existing connLines stay with stale mode listeners.
       setSelectedConnId(null);
       disposeAllConns();
@@ -687,7 +687,7 @@ export function bindSettingsUi() {
       saveLayout();
     });
 
-    // Dark mode toggle — BX-D-008: degenerated to "write the setting, then let the
+    // Dark mode toggle — degenerated to "write the setting, then let the
     // single apply path render the DOM" (the toggle no longer touches any class
     // itself — that duplication is what let the three hosts drift apart).
     darkModeCB?.addEventListener('change', () => {
@@ -707,7 +707,7 @@ export function bindSettingsUi() {
      appEl.classList.add('ntp--square-corners');
    }
 
-    // ADR-0012: Curated theme pack — theme button click handlers
+    // Curated theme pack — theme button click handlers
     document.querySelectorAll('.theme-preset').forEach(btn => {
       btn.addEventListener('click', () => {
         const themeKey = btn.dataset.theme;
@@ -726,7 +726,7 @@ export function bindSettingsUi() {
       });
     }
     // Export / Import
-    // Ticket 51 (spec W6-D2 / D-006 hybrid strategy): the DEFAULT export is a clean
+    // Ticket 51 (spec ticket 51 / D-006 hybrid strategy): the DEFAULT export is a clean
     // envelope — current main layout + lightweight meta index (snap.v1 / corrupt /
     // conflict entries, NO bodies; pg_dump-vs-WAL separation per the 2026-09-12
     // atomcode export research). The optional second button exports the FULL DR
@@ -804,14 +804,14 @@ export function bindSettingsUi() {
       if (!importPending) return; importPending = false;
       const file = importFile.files[0];
       if (!file) return;
-      // BX-DEV-111f: File size sanity check — reject imports > 5MB
+      // File size sanity check — reject imports > 5MB
       if (file.size > 5 * 1024 * 1024) { try { alert(i18n('importTooLarge')); } catch (e) { /* silent: alert may be blocked */ } importFile.value = ''; return; }
       try {
         const text = await file.text();
-        // BX-DEV-111f: Strip UTF-8 BOM if present
+        // Strip UTF-8 BOM if present
         const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
         let data = JSON.parse(cleanText);
-        // Ticket 51 (spec W6-D2): unwrap the export envelope — { _exportedAt, meta,
+        // Ticket 51 (spec ticket 51): unwrap the export envelope — { _exportedAt, meta,
         // layout[, _bodies] } lands as the bare layout, so a default-envelope or
         // full-DR-package export round-trips back through the unchanged merge /
         // overwrite pipeline below (AC: envelope import restores the current
@@ -820,7 +820,7 @@ export function bindSettingsUi() {
         // cap applies to the LAYOUT payload (what reaches storage), not the index.
         const unwrapped = unwrapExportEnvelope(data);
         if (unwrapped) data = unwrapped;
-        // BX-DEV-111f: Validate structure — must have boxes array, version field
+        // Validate structure — must have boxes array, version field
         // SEC-06: Reject excessively large JSON payloads to prevent OOM/stack overflow
         if (JSON.stringify(data).length > 2_000_000) throw new Error('too large');
         if (!data || !Array.isArray(data.boxes)) throw new Error('invalid');
@@ -848,7 +848,7 @@ export function bindSettingsUi() {
             }
           }
         }
-        // BX-DEV-111f: Sanitize settings — prevent NaN/Infinity injection
+        // Sanitize settings — prevent NaN/Infinity injection
         if (data.settings) {
           const s = data.settings;
           if (s.zoomLevel && !isFinite(s.zoomLevel)) s.zoomLevel = 1.0;
@@ -866,7 +866,7 @@ export function bindSettingsUi() {
         const savedConns = Array.isArray(layout.connections) ? layout.connections : [];
         if (localBoxCount === 0) {
           // A5: savedGroups guard removed (groups derived from box.isParent)
-          await saveSnapshot('pre-restore'); // Ticket 50 (W6-D1): an empty-canvas replace is a full replace too — safety copy first
+          await saveSnapshot('pre-restore'); // Ticket 50 (ticket 50): an empty-canvas replace is a full replace too — safety copy first
           setLayout(incoming);
           // AUD-SEC: preserve local connections if the import file lacks them
           // (older backups predate the connections system; full replace would lose user lines).
@@ -883,7 +883,7 @@ export function bindSettingsUi() {
             i18n('importBtnMerge')
           );
           if (mergeDecision === 'action') {
-            await saveSnapshot('pre-restore'); // Ticket 50 (W6-D1): every restore entry snapshots before applying
+            await saveSnapshot('pre-restore'); // Ticket 50 (ticket 50): every restore entry snapshots before applying
             if (mergePlan.conflicts.length) {
               await archiveConflictLayouts({ boxes: mergePlan.conflicts }, { reason: 'import-merge', side: 'incoming' });
             }
@@ -896,7 +896,7 @@ export function bindSettingsUi() {
             );
             if (overwriteDecision !== 'action') { debug('Import aborted by user — silent replace is no longer a default'); importFile.value = ''; return; }
             importMode = 'overwrite-confirmed';
-            await saveSnapshot('pre-restore'); // Ticket 50 (W6-D1): COW before destructive replace (ADR-0009 / atomcode 4.1-1)
+            await saveSnapshot('pre-restore'); // Ticket 50 (ticket 50): copy-before-overwrite before destructive replace
             setLayout(incoming);
             // layout-bypass-allow: import-overwrite-preserve-conns - same restore on confirmed overwrite path (expires:2027-03-31; ticket:108)
             if (!Array.isArray(layout.connections) || layout.connections.length === 0) layout.connections = savedConns;
@@ -960,7 +960,7 @@ export function bindSettingsUi() {
       if (Number.isFinite(ts) && ts > 0) performSnapshotRollback(ts);
     });
 
-    // Ticket 79 (A-029): delegated export click for the rebuilt conflict-copy rows
+    // Ticket 79: delegated export click for the rebuilt conflict-copy rows
     const conflictListEl = document.getElementById('data-conflict-list');
     conflictListEl?.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('.data-conflict-export-btn') : null;

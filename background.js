@@ -7,7 +7,7 @@ let BG_DEBUG_ENABLED = false;
 function bgLog(...a) { if (BG_DEBUG_ENABLED) console.log(BG_LOG_PREFIX, ...a); }
 function bgErr(...a) {
   console.error(BG_LOG_PREFIX, ...a); // errors always log
-  // BX-DEV-115C: persist bg errors to storage.local so NTP diagnostics panel can surface them
+  // persist bg errors to storage.local so NTP diagnostics panel can surface them
   try {
     const entry = { ts: Date.now(), prefix: '[Boxing:BG]', text: a.map(function(x){ return x instanceof Error ? x.message : String(x); }).join(' ') };
     chrome.storage && chrome.storage.local && chrome.storage.local.get && chrome.storage.local.get({ bgErrLog: [] }, function(r) {
@@ -33,7 +33,7 @@ try {
     typeof globalThis !== "undefined" ? globalThis : null);
   if (!root) return;
 
-  // ── ADR-0022: chrome.alarms hub for auto-backup ──
+  // ── Auto-backup: chrome.alarms hub in the service worker ──
   // The NTP page creates/ensures the alarm; the background SW acts as the alarm hub,
   // recording autoBackupDue: true in chrome.storage.local and notifying any open NTP tabs.
   // If no NTP tab is open, the due mark ensures the backup is performed upon next NTP open.
@@ -66,7 +66,7 @@ try {
   // ── WebDAV message proxy ────────────────────────────────────
   // The background service worker bypasses page-level CSP and CORS
   // restrictions that block cross-origin fetch from extension pages.
-  // BX-DEV-115: Route WebDAV test/backup through background to fix
+  // Route WebDAV test/backup through background to fix
   // "NetworkError when attempting to fetch resource" in Firefox MV3.
 
   // SECURITY (BX-AUD-01/02/03) — v3.7.10: harden the background WebDAV proxy against abuse.
@@ -75,7 +75,7 @@ try {
   // BX-AUD-01: refuse hostnames that resolve to private / loopback / link-local addresses.
   const BG_PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fe80:|fc00:|fd00:)/i;
 
-  // Ticket 82 (A-032): the private-network refusal is an explicit opt-in, forwarded by the NTP caller
+  // Ticket 82: the private-network refusal is an explicit opt-in, forwarded by the NTP caller
   // on every webdav-* message. Absent or non-boolean means deny - unchanged for anything not opted in.
   function isSafeWebDAVUrl(urlStr, allowPrivateHost) {
     if (typeof urlStr !== 'string' || urlStr.length > BG_MAX_URL) return false;
@@ -83,7 +83,7 @@ try {
     try { u = new URL(urlStr); } catch (_) { return false; }
     if (u.protocol !== 'https:') return false;          // BX-AUD-01: scheme lock
     if (u.username || u.password) return false;           // no embedded credentials
-    // Ticket 90 (A-044): strip the IPv6 literal brackets so "::1$" / "fe80:" / "fc00:" match
+    // Ticket 90: strip the IPv6 literal brackets so "::1$" / "fe80:" / "fc00:" match
     // here exactly as they do in the NTP guard (URL.hostname keeps "[::1]").
     const host = (u.hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
     if (allowPrivateHost !== true) {
@@ -209,7 +209,7 @@ try {
     return { status: resp.status, ok: resp.ok };
   }
 
-  // BX-DEV-SYNC: GET cloud backup file for sync comparison. Returns status + body text on success.
+  // GET cloud backup file for sync comparison. Returns status + body text on success.
   async function handleWebDAVGet(msg) {
     const { url, user, pass } = msg;
     bgLog('WebDAV GET via BG:', { url });
@@ -267,7 +267,7 @@ try {
     }
   }
 
-  // BX-DEV-115: Cross-browser message listener.
+  // Cross-browser message listener.
   // Returns a Promise on Firefox/browser.* native API (Promise resolves → frame receives it).
   // On Chrome chrome.* API, where the listener must return true and use sendResponse,
   // we also call sendResponse so the callback path keeps working.
@@ -290,12 +290,12 @@ try {
   // Firefox) so it cannot import the NTP ESM storage facade. This is the SW-side
   // self-contained copy-on-write: it snapshots the current boxingLayout into the same
   // split-key shape the NTP facade reads (snap.v1.<ts> body + snap.v1.index directory,
-  // ADR-0009 / ticket 41), BEFORE any update-time migration can touch the data.
+  // ticket 41), BEFORE any update-time migration can touch the data.
   // Migration itself runs later in the NTP facade on first open; this copy preserves
   // the exact pre-update bytes as a rollback point.
   const SW_SNAP_KEY_PREFIX = 'snap.v1.';
   const SW_SNAP_INDEX_KEY = 'snap.v1.index';
-  const SW_SNAP_MAX_BYTES = 2 * 1024 * 1024; // ADR-0009 single-snapshot cap
+  const SW_SNAP_MAX_BYTES = 2 * 1024 * 1024; // single-snapshot size cap (2MB)
   const SW_SNAP_INDEX_CAP = 40;              // SW-side bounded directory; NTP owns full rotation
 
   async function takePreUpdateSnapshot() {
@@ -304,7 +304,7 @@ try {
       if (!boxingLayout) return; // no data yet (fresh install) — nothing to protect
       const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: JSON.parse(JSON.stringify(boxingLayout)) };
       if (snap.data && typeof snap.data === 'object' && Object.prototype.hasOwnProperty.call(snap.data, 'groups')) {
-        delete snap.data.groups; // ADR-0007 Q1: groups is runtime-only, never persisted
+        delete snap.data.groups; // groups are runtime-only, never persisted
       }
       const json = JSON.stringify(snap);
       if (json.length > SW_SNAP_MAX_BYTES) { bgErr('pre-update snapshot skipped: ' + json.length + 'B exceeds 2MB single cap'); return; }
@@ -331,7 +331,7 @@ try {
         // order here — costly snapshot before even writing the signal — is deliberate.
         await takePreUpdateSnapshot();
       }
-      // Ticket 10 / ADR-0016: persist the install signal so NTP onboarding triggers on install
+      // Persist the install signal so NTP onboarding triggers on install
       // (and can distinguish update) instead of judging fresh-install on every init.
       if ((details?.reason === "install" || details?.reason === "update") && api.storage?.local?.set) {
         await api.storage.local.set({ boxingInstallSignal: { reason: details.reason, at: Date.now() } });

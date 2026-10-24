@@ -76,15 +76,15 @@ const I18N_FALLBACK = {
  exportData: 'Export Data', importData: 'Import Data',
   importSuccess: 'Data imported successfully', importFailed: 'Import failed: invalid data format',
   importTooLarge: 'Import failed: file too large (max 5MB)',
-  // FROZEN by ticket 66 — do NOT de-duplicate the block below. See
-  // .scratch/architecture-recovery/reports/66-report.md §2 (未触碰) / §5 and issues/66-visible-debt-markers-merge.md.
+  // FROZEN by ticket 66 — do NOT de-duplicate the block below. The ticket's visible-debt
+  // notes record the duplicates as accepted, and the repeated values are byte-identical.
   // The block repeats 10 keys already defined ~22 lines above: dblclickCreateHint, bookmarkSave,
   // bookmarkDelete, bookmarkEditTitle, backupNow, backupNowHint, autoBackupInterval, syncProvider,
   // squareCorners, squareCornersHint. ES2015+ object literals resolve duplicate keys last-wins and the
   // repeated values are byte-identical, so rendered output is stable today.
   // Removal consequence: de-dup rewrites the I18N_FALLBACK en table key set/order — a contract-byte
   // change that ticket 66 AC4 explicitly forbade. Unfreeze when: a dedicated ticket diffs the rendered
-  // fallback strings before/after. Ceiling: 10 duplicated keys, no new ones. Owner: ticket 66 / A-020.
+  // fallback strings before/after. Ceiling: 10 duplicated keys, no new ones. Owner: ticket 66 .
   // (The module header block above records the same debt without a machine-greppable ticket pointer.)
   dblclickCreateHint: 'Double-click to create',
   bookmarkSave: 'Save', bookmarkDelete: 'Delete',
@@ -92,7 +92,7 @@ const I18N_FALLBACK = {
   backupNow: 'Backup Now', backupNowHint: 'Create a timestamped backup of all layout data',
   autoBackupInterval: 'Auto-Backup Interval', syncProvider: 'Sync Provider',
   squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded',
-  // BX-DEV-111P-v2:补齐 en 字面 fallback 全覆盖 (fix-7)
+  // v2:补齐 en 字面 fallback 全覆盖 (fix-7)
   accessibilityLabel: 'Keyboard accessible · Screen reader friendly',
   addBoxShortcut: 'Double-click empty area',
   allLanguages: 'All 13 languages translated',
@@ -220,7 +220,7 @@ I18N_FALLBACK.themeCoastal = 'Coastal';
 I18N_FALLBACK.themeForest = 'Forest';
 I18N_FALLBACK.themePure = 'Pure White';
 
-// BX-DEV-SYNC: WebDAV sync i18n keys
+// WebDAV sync i18n keys
 I18N_FALLBACK.syncNow = 'Sync Now';
 I18N_FALLBACK.syncInProgress = 'Syncing...';
 I18N_FALLBACK.syncOk = 'Sync completed';
@@ -255,10 +255,10 @@ I18N_FALLBACK.importOverwriteBody = 'Overwrite replaces your entire canvas with 
 I18N_FALLBACK.importBtnMerge = 'Merge & import';
 I18N_FALLBACK.importBtnOverwrite = 'Overwrite restore';
 I18N_FALLBACK.dataConflictArchived = 'Conflict copies archived';
-// Ticket 79 (spec Wave8 A-029): conflict-copy readout list + single export (BX-I18N-005)
+// Ticket 79 (spec): conflict-copy readout list + single export (BX-I18N-005)
 I18N_FALLBACK.dataConflictList = 'Conflict copies';
 I18N_FALLBACK.dataConflictExportBtn = 'Export';
-// Ticket 50 (spec W6-D1): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
+// Ticket 50 (spec ticket 50): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
 I18N_FALLBACK.dataTimeMachine = 'Time Machine';
 I18N_FALLBACK.dataRollbackBtn = 'Roll back';
 I18N_FALLBACK.rollbackConfirmTitle = 'Roll back to this snapshot?';
@@ -267,7 +267,7 @@ I18N_FALLBACK.rollbackConfirmAction = 'Roll back now';
 I18N_FALLBACK.rollbackNoSafety = 'A safety snapshot of your current data could not be saved, so the rollback was cancelled. Nothing was changed.';
 I18N_FALLBACK.rollbackSnapshotMissing = 'That snapshot is no longer available. Nothing was changed.';
 I18N_FALLBACK.rollbackFailed = 'Rollback failed - your current data was kept unchanged.';
-// Ticket 51 (spec W6-D2): export envelope + optional full DR package UI strings (BX-I18N-005 fallback).
+// Ticket 51 (spec ticket 51): export envelope + optional full DR package UI strings (BX-I18N-005 fallback).
 I18N_FALLBACK.exportFullPackage = 'Full DR package';
 I18N_FALLBACK.exportFullOverflow = 'The full DR package still exceeds the 5MB restore limit after trimming snapshot bodies. A standard envelope export was downloaded instead.';
 

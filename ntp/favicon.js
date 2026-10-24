@@ -1,4 +1,4 @@
-// BX-DEV-111 v2: Fastest-CDN race — probe all sources on first request, lock winner for session
+// v2: Fastest-CDN race — probe all sources on first request, lock winner for session
 const FAVICON_SOURCES = [
   { name: 'bytecook', url: (h) => `https://ico.bytecook.io/${h}` },
   { name: 'duckduckgo', url: (h) => `https://icons.duckduckgo.com/ip3/${h}.ico` },
@@ -16,7 +16,7 @@ function getFaviconUrl(url) {
   return `https://icons.duckduckgo.com/ip3/${host}.ico`;
 }
 
-// BX-DEV-111 v2: Race all CDNs on first favicon request, pick fastest
+// v2: Race all CDNs on first favicon request, pick fastest
 async function raceCDN(testHost) {
   if (cdnRaceDone) return;
   cdnRaceDone = true;
@@ -43,7 +43,7 @@ async function raceCDN(testHost) {
   if (window.__BOXING_DEBUG__) console.debug('[Boxing] CDN race winner:', fastestCDN?.name || 'none', Number.isFinite(bestTime) ? bestTime.toFixed(0) + 'ms' : 'n/a');
 }
 
-// BX-DEV-111 v2: Validate URL before favicon fetch — skip intranet / non-http / raw IP
+// v2: Validate URL before favicon fetch — skip intranet / non-http / raw IP
 function isValidPublicUrl(url) {
   try {
     const u = new URL(url);
@@ -65,7 +65,7 @@ function isValidPublicUrl(url) {
 
 const faviconCache = new Map(); // volatile: cleared on browser restart (session-scoped)
 const _faviconHotPool = new Map(); // host -> HTMLImageElement
-// BX-DEV-121 (Bug12): persistent favicon URL cache in localStorage with TTLs.
+// (Bug12): persistent favicon URL cache in localStorage with TTLs.
 //   hit  (url != null) → 7-day TTL
 //   miss (url == null) → 90-day TTL (avoid re-racing 404 sites)
 // BX ticket 12: expired entries stay usable as stale within the SWR ceilings below.
@@ -121,7 +121,7 @@ function persistFaviconCacheDebounced() {
   __favPersistPending = true;
   setTimeout(() => { __favPersistPending = false; persistFaviconCacheNow(); }, 400);
 }
-// BX-DEV-121: hydrate the mem cache on first script load.
+// hydrate the mem cache on first script load.
 try { loadFaviconCacheFromStorage(); } catch (e) { /* silent: favicon cache hydration, regenerates on demand */ }
 
 function applyDecodedFavicon(img, host, src) {
@@ -140,7 +140,7 @@ function applyDecodedFavicon(img, host, src) {
 }
 
 async function loadFavicon(img, url, opts) {
-  // BX-DEV-126 (B10): parallel CDN race via Promise.any — fastest token wins, no serial waterfall.
+  // (B10): parallel CDN race via Promise.any — fastest token wins, no serial waterfall.
   // BX ticket 12 (single-flight + SWR): concurrent same-host loads share ONE in-flight probe
   // (Map<host, Promise>, forgotten on settle so a failed probe never parks later callers). A
   // stale-but-usable hydrate hit paints first, then triggers exactly one background

@@ -13,16 +13,16 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 }
 
-// BX-D-008: the dark-mode cases drive the REAL header button, and the first-run
+// the dark-mode cases drive the REAL header button, and the first-run
 // tour is a full-viewport aria-modal overlay that wins the hit test — without
 // this, page.click('#dark-mode-btn') lands on the overlay and every case fails
-// for a reason that has nothing to do with dark mode (ticket 101 / A-055 / B65).
+// for a reason that has nothing to do with dark mode (ticket 101 B65).
 async function resetAndDismiss(page) {
   await resetBoxing(page);
   await dismissOnboarding(page);
 }
 
-// BX-D-008: click the REAL header control, but via a synthetic MouseEvent.
+// click the REAL header control, but via a synthetic MouseEvent.
 // WORKFLOW §6 / ticket 01 (playwright#16095): on the Firefox persistent context
 // NATIVE input (locator.click) intermittently hangs at "performing click action"
 // and burns the whole test budget — an environment class, not a product defect
@@ -74,7 +74,7 @@ test.describe('Bug3 settings persistence repro', () => {
       return { applied, settingsVal: dbg.layout.settings.urlOpenMode, domVal: select ? select.value : null };
     }, ids);
     console.log('Bug3-b:', JSON.stringify(r));
-    // The actual settings should be updated; the DOM is re-synced by applyExternalLayout (BX-DEV-122 Bug3).
+    // The actual settings should be updated; the DOM is re-synced by applyExternalLayout (Bug3).
     expect(r.settingsVal).toBe('sameTab');
   });
 
@@ -84,7 +84,7 @@ test.describe('Bug3 settings persistence repro', () => {
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       delete dbg.layout.settings.urlOpenMode;
-      // Exercise the real cross-tab sync path (BX-DEV-122 Bug3): remote with the key
+      // Exercise the real cross-tab sync path (Bug3): remote with the key
       // missing on both sides must leave the select on the sameTab fallback, not newTab.
       const remote = JSON.parse(JSON.stringify(dbg.layout));
       remote._meta = { ...(remote._meta || {}), revision: (remote._meta?.revision || 0) + 1, updatedAt: Date.now() + 1, writerId: 'other-tab' };
@@ -157,7 +157,7 @@ test.describe('Ticket 11 — urlOpenMode defaults to sameTab (bookmarks open in 
 });
 
 // ═════════════════════════ Ticket 52 — 新装/重置默认 sameTab（以实机为准） ═════════════════════════
-test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT tab (A-004/A-005)', () => {
+test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT tab ', () => {
   test('T52-a: empty-storage fresh install — model default sameTab, no persisted newTab', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
@@ -252,7 +252,7 @@ test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT 
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BX-D-008 (Wave 2026.10.11 P-18 / S-11): dark-mode convergence.
+// (Wave 2026.10.11 P-18 / S-11): dark-mode convergence.
 //
 // Regression class: three writers of '.ntp--dark' that disagreed.
 //   1. boot-theme.js ADDED the class to <html> and only ever added it, while
@@ -266,7 +266,7 @@ test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT 
 // Every assertion below checks the html class as the SINGLE host: if any of
 // these pass while #app/body still carry the class, the bug is back.
 // ═══════════════════════════════════════════════════════════════════════════
-test.describe('BX-D-008: dark mode has one host and one apply path', () => {
+test.describe('dark mode has one host and one apply path', () => {
   const BOOT_MIRROR_KEY = 'boxingBootTheme.v1';
 
   // Read every place the class could be, so an assertion can never pass by
@@ -368,7 +368,7 @@ test.describe('BX-D-008: dark mode has one host and one apply path', () => {
     // Local tab is dark...
     await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
-    // ...a newer remote payload turns it off. ADR-0016 keeps remote-wins LWW, but
+    // ...a newer remote payload turns it off. Engine layering keeps remote-wins LWW, but
     // the session must FOLLOW it immediately (bug2's "inconsistent within session").
     const applied = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;

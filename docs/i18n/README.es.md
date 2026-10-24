@@ -61,7 +61,7 @@ Los logotipos claro/oscuro, iconos de extensión, faviconos, mosaicos de tienda 
 ## Instalacion
 
 > [!IMPORTANT]
-> **Instala desde las páginas oficiales de las tiendas** (recomendado). Los pasos de instalación y la versión publicada en las tiendas están en el [README en inglés — Install](../../README.md#install) y en la [página de estado de release](../../docs/release-status.md).
+> **Instala desde las páginas oficiales de las tiendas** (recomendado). Los pasos de instalación y la versión publicada en las tiendas están en el [README en inglés — Install](../../README.md#install).
 > Las GitHub Releases son un **registro de cambios para usuarios**: [última release](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (instalación oficial)

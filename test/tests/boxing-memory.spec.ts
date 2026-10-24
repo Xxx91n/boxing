@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 
-// Ticket 95 (A-049 credential sweep): NO real credentials in source. This test only
+// Ticket 95 (credential sweep): NO real credentials in source. This test only
 // types values into the settings inputs and asserts the flush round-trip, so the
 // placeholders never hit the network; a staging account can be injected via
 // BOXING_SPEC_WEBDAV_* env vars (91R pattern).
@@ -14,7 +14,7 @@ const WEBDAV_URL = process.env.BOXING_SPEC_WEBDAV_URL || 'https://webdav.invalid
 const WEBDAV_USER = process.env.BOXING_SPEC_WEBDAV_USER || 'spec-user';
 const WEBDAV_PASS = process.env.BOXING_SPEC_WEBDAV_PASS || 'spec-pass';
 
-// BX-DEV-111M/N/L regression: permanent memory + per-box viewState + credential flush.
+// regression: permanent memory + per-box viewState + credential flush.
 // Covers: (1) closing-tab loses credential bug fix via flushUnsavedCredentials,
 //         (2) each large box persists its own inner zoom/pan -> cross-tab + browser restart,
 //         (3) tab view state has permanent LRU history fallback instead of cache-only sessionStorage.
@@ -34,7 +34,7 @@ async function resetFreshKeepOnboarding(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 }
 
-test.describe('Permanent memory + per-box viewState (BX-DEV-111M/N/L)', () => {
+test.describe('Permanent memory + per-box viewState ', () => {
   test('saveLargeBoxViewState writes lb.viewState on the matched large box only', async ({ page }) => {
     await resetFreshSkipOnboarding(page);
     // Two large boxes.
@@ -144,7 +144,7 @@ test.describe('Permanent memory + per-box viewState (BX-DEV-111M/N/L)', () => {
   });
 });
 
-test.describe('Onboarding language picker (BX-DEV-111O)', () => {
+test.describe('Onboarding language picker ', () => {
   test('language picker <select> is present in onboarding overlay on fresh install', async ({ page }) => {
     await resetFreshKeepOnboarding(page);
     const present = await page.evaluate(() => {

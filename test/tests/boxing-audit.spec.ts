@@ -43,7 +43,7 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     expect(await isSafe('not-a-url')).toBe(false);
   });
 
-  test('private-network opt-in: opt-in admits LAN hosts, denies nothing else (A-032)', async ({ page }) => {
+  test('private-network opt-in: opt-in admits LAN hosts, denies nothing else ', async ({ page }) => {
     await bootFresh(page);
     const isSafe = (u: string, allow?: boolean) =>
       page.evaluate(({ x, flag }) => (window as any).__boxingIsSafeExtUrl(x, flag), { x: u, flag: allow });
@@ -62,7 +62,7 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
     expect(await isSafe('https://dav.example.net/dav/webdav/', true)).toBe(true);
   });
 
-  test('private-network opt-in defaults to off and follows the persisted setting (A-032)', async ({ page }) => {
+  test('private-network opt-in defaults to off and follows the persisted setting ', async ({ page }) => {
     await bootFresh(page);
 
     // The settings checkbox ships unchecked and the setting is not opted in.

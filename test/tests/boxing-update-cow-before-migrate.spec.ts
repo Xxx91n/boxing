@@ -30,7 +30,7 @@ function modernLayout() {
 }
 
 // A legacy-shape layout that migrateLayout would rewrite: missing settings, persisted groups
-// (ADR-0007 Q1 pending), connection without props (Q4c pending), no __groupsMigrated flag.
+// (groups migration pending), connection without props (props backfill pending), no __groupsMigrated flag.
 function legacyLayout() {
   return {
     version: 3.5,
@@ -97,12 +97,12 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
     console.log('T42-1:', JSON.stringify(r));
     expect(r.snapCount).toBeGreaterThanOrEqual(1); // acceptance 3: pre-update snapshot exists
     expect(r.snapKeepsLegacyShape).toBe(true);     // it preserves the PRE-update schema shape
-    expect(r.snapSchemaVersion).toBe(1);           // ADR-0009 schemaVersion preserved on the copy
+    expect(r.snapSchemaVersion).toBe(1);           // schemaVersion preserved on the copy
     expect(r.hasMigratedSettings).toBe(true);      // main key migrated (defaults merged in)
-    expect(r.groupsMigrated).toBe(true);           // ADR-0007 Q1 flag stamped by migration
-    expect(r.connPropsBackfilled).toBe(true);      // ADR-0007 Q4c backfilled
+    expect(r.groupsMigrated).toBe(true);           // groups-migration flag stamped by migration
+    expect(r.connPropsBackfilled).toBe(true);      // connection props backfilled
     expect(r.starBackfilled).toBe(true);           // groups→isParent backfill ran
-    expect(r.signalConsumed).toBe(true);           // signal read+removed once (ADR-0016)
+    expect(r.signalConsumed).toBe(true);           // signal read+removed once (engine layering)
   });
 
   test('update signal with an already-migrated layout takes no redundant snapshot', async ({ page }) => {

@@ -274,7 +274,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     await createSmallBox(page);
     // apply the same dark markers the app uses (#app + body, see persist.js)
     await page.evaluate(() => {
-      // BX-D-008: html is the only dark-mode host; drive the real apply path.
+      // html is the only dark-mode host; drive the real apply path.
       (window as any).__boxingDebug.applyDarkMode(true);
     });
     const bg = await page.evaluate(() => {
@@ -298,7 +298,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     // hidden, and this guard names the blocker if it ever reappears.
     await assertPointerReaches(page, '.bm-add-btn');
     await page.hover('.bm-add-btn');
-    // Ticket 72 (Wave8 G-A B-bucket): .bm-add-btn transitions `background` over --dur-fast
+    // Ticket 72: .bm-add-btn transitions `background` over --dur-fast
     // (140ms), so reading the computed style in the same turn as the hover sampled the START of
     // the transition (rgba(0,0,0,0)) and red. Poll for the settled value instead — the assertion
     // itself is unchanged: dark :hover must still paint --color-accent-soft. Not a waiver: the
@@ -307,7 +307,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
       getComputedStyle(document.querySelector('.bm-add-btn')!).backgroundColor)).toBe(probeBg);
   });
 
-  // Ticket 88 (A-042): the dark bm-add-btn is a transparent ghost by design (ticket 13), so its
+  // Ticket 88: the dark bm-add-btn is a transparent ghost by design (ticket 13), so its
   // perceivability rests entirely on the glyph colour and the dashed boundary. Measured on the
   // small-box backdrop (--color-elevated #302D29) before this ticket: glyph 4.45:1 (below WCAG 2.1
   // SC 1.4.3's 4.5:1 for 13px/500 text) and hairline border 1.20:1 (far below the 3:1 line SC
@@ -320,7 +320,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     await enterLargebox(page, lbId);
     await createSmallBox(page);
     await page.evaluate(() => {
-      // BX-D-008: html is the only dark-mode host; drive the real apply path.
+      // html is the only dark-mode host; drive the real apply path.
       (window as any).__boxingDebug.applyDarkMode(true);
     });
 
@@ -377,7 +377,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
   });
 
 
-  // Ticket 102 (A-056 / B66): the LIGHT bm-add-btn carried the mirror image of the dark defect
+  // Ticket 102 (/ B66): the LIGHT bm-add-btn carried the mirror image of the dark defect
   // fixed by ticket 88. Measured on the small-box backdrop (--color-elevated #EBE5DB) before this
   // ticket: glyph --color-muted #7B7167 = 3.81:1 (below SC 1.4.3 4.5:1 for 13px/500 text) and the
   // dashed border --color-hairline = 1.11:1 (far below the 3:1 line SC 1.4.11 sets for non-text).
@@ -395,7 +395,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
 
     // Precondition: this lane must really be the light theme, otherwise a dark-mode pass could
     // masquerade as a light-mode pass.
-    // BX-D-008: the light-mode precondition reads the one remaining host.
+    // the light-mode precondition reads the one remaining host.
     await expect.poll(() => page.evaluate(() => !document.documentElement.classList.contains('ntp--dark'))).toBe(true);
 
     const measure = () => page.evaluate(() => {
@@ -450,7 +450,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
       Boolean(document.querySelector('.bm-edit-popup')))).toBe(true);
   });
 
-  // Ticket 88 (A-042) — the AC says "空态添加按钮", which is a FAMILY, not just .bm-add-btn.
+  // Ticket 88  — the AC says "空态添加按钮", which is a FAMILY, not just .bm-add-btn.
   // Measured in dark: .canvas__empty-action / .large-box__empty-action / .inner__empty-action all
   // paint a filled (--color-accent-soft) button whose label measures 5.75–6.22:1 — above SC 1.4.3.
   // Their borders measure ~1.8:1, which is NOT a 1.4.11 failure: Understanding "Boundaries"
@@ -507,7 +507,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
   test('Bug5-dark contrast: empty-state action buttons keep legible labels in dark mode', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
-      // BX-D-008: html is the only dark-mode host; drive the real apply path.
+      // html is the only dark-mode host; drive the real apply path.
       (window as any).__boxingDebug.applyDarkMode(true);
     });
     // These labels are transitioned over --dur-fast; poll for the settled ratio (ticket 72 convention).

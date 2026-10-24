@@ -1,10 +1,10 @@
-/** Boxing \u2014 boot theme (ticket 60, Wave7 zero-flash: A-013/A-014).
+/** Boxing \u2014 boot theme (ticket 60, zero-flash).
  * Classic blocking script (NOT type=module): runs synchronously in head, before any body
  * content can paint. Reads the paint-critical mirror key (boxingBootTheme.v1) written by
  * persist.js on the successful boxingLayout persist path, and applies theme variables +
  * dark-mode class + base font size BEFORE the first visible frame \u2014 the FART fix
  * (CSS-Tricks blocking-boot pattern; chrome.storage is always async, localStorage is the
- * sync-readable first-paint cache, Wave7 D-002 paint-critical boot mirror).
+ * sync-readable first-paint cache, paint-critical boot mirror).
  * Constraints (spec D-002 negatives):
  *   - NOT a second layout source: only theme/darkMode/fontSize are mirrored from
  *     boxingLayout; loadSettings() re-applies authoritative values after load. The
@@ -32,7 +32,7 @@
   setTimeout(function () { root.classList.remove('boot-pending'); }, 4000);
   try {
     var raw = localStorage.getItem(KEY);
-    // BX-D-008⑦: a missing/unreadable mirror previously hard-coded LIGHT, which is the
+    // a missing/unreadable mirror previously hard-coded LIGHT, which is the
     // one wrong answer guaranteed to be visible. Fall back to the OS preference instead.
     // DISPLAY ONLY — this script has no chrome./browser access by design (CSP + the
     // import-graph guard), so it structurally cannot write the value back to settings
@@ -42,7 +42,7 @@
     var v = JSON.parse(raw);
     if (!v || typeof v !== 'object') { applySystemDarkFallback(); return; }
     applyPack(v.theme);
-    // BX-D-008 (boot exemption D-008⑤ + fallback D-008⑦): this stays a classic blocking
+    // (boot exemption D-008⑤ + fallback D-008⑦): this stays a classic blocking
     // script with ZERO imports — an import would make it a module and defer it past first
     // paint (see header) — so it cannot call persist.js applyDarkMode(). It keeps the
     // minimal self-contained "read mirror + write the html class" logic, and ntp.js
@@ -60,7 +60,7 @@
        then let loadSettings() correct it with the authoritative settings value. */
     applySystemDarkFallback();
   }
-  // BX-D-008⑦: OS-preference fallback for a missing/corrupt boot mirror. Display-only
+  // OS-preference fallback for a missing/corrupt boot mirror. Display-only
   // by construction: this script has no chrome./browser/localStorage-write access (CSP +
   // import-graph guard B-6), so the value can never leak into layout.settings — that is
   // the structural half of "matchMedia fallback must not be persisted" (D-008/D-011③).
@@ -72,7 +72,7 @@
     } catch (e) { /* silent: no matchMedia (very old engine) — stylesheet default stands */ }
   }
   function applyPack(themeKey) {
-    // ADR-0012 five curated theme packs, inlined verbatim from persist.js THEME_PACKS.
+    // Five curated theme packs, inlined verbatim from persist.js THEME_PACKS.
     // Keep in sync with ntp/persist.js THEME_PACKS \u2014 edit both together.
     var PACKS = {
       beige: {

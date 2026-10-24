@@ -1,4 +1,4 @@
-// Boxing — URL auto-title extraction & rule engine (ADR-0023, D-005/6/7/8).
+// Boxing — URL auto-title extraction & rule engine (D-005/6/7/8).
 // Zero-dependency pure module: parses URLs, applies Chrome match-pattern subset,
 // extracts 8 preset title types with eTLD+1 awareness.
 

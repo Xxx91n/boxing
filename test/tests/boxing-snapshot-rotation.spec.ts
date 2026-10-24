@@ -58,7 +58,7 @@ test.describe('Snapshot split-key storage + rotation (Ticket 41R)', () => {
     }, { prefix: SNAP_KEY_PREFIX, indexKey: SNAP_INDEX_KEY });
     console.log('T41R-1:', JSON.stringify(r));
     expect(r.beforeCount).toBe(0);            // fresh profile starts empty
-    expect(r.afterCount).toBeGreaterThanOrEqual(2); // ADR-0009 floor keeps same-hour entries
+    expect(r.afterCount).toBeGreaterThanOrEqual(2); // raw keep floor keeps same-hour entries
     expect(r.bodyKeys.length).toBeGreaterThanOrEqual(2); // one key per snapshot
     expect(r.indexFields).toEqual(['schemaVersion', 'size', 'ts']); // index is metadata-only
     expect(r.indexHasPayload).toBe(false);

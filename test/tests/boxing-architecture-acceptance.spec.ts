@@ -14,7 +14,7 @@ async function resetBoxing(page) {
   await dismissOnboarding(page);
 }
 
-test.describe('ADR-0007 acceptance gates', () => {
+test.describe('Architecture acceptance gates', () => {
   test('Q1 migration: old layout.groups restores isParent then discards groups + sets __groupsMigrated', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
@@ -110,7 +110,7 @@ test.describe('ADR-0007 acceptance gates', () => {
     expect(r.keys).toEqual(['fresh']);
   });
 
-  test('Q3b spatial index: threshold 32, builds grid at N>=32 and null below', async ({ page }) => {
+  test('spatial index: threshold 32, builds grid at N>=32 and null below', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -145,7 +145,7 @@ test.describe('ADR-0007 acceptance gates', () => {
     expect(r.ms).toBeLessThan(500); // sanity upper bound on CI
   });
 
-  test('Q4c/Q4d: conn props backfill + deleteLarge clears viewState path via commit', async ({ page }) => {
+  test('conn props backfill + deleteLarge clears viewState path via commit', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;

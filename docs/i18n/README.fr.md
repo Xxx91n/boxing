@@ -61,7 +61,7 @@ Les logos clair/sombre, icônes d'extension, favicons, vignettes de boutique et 
 ## Installation
 
 > [!IMPORTANT]
-> **Installez depuis les pages officielles des stores** (recommandé). Les étapes d’installation et la version de store publiée font foi dans le [README anglais — Install](../../README.md#install) et la [page de statut de release](../../docs/release-status.md).
+> **Installez depuis les pages officielles des stores** (recommandé). Les étapes d’installation et la version de store publiée font foi dans le [README anglais — Install](../../README.md#install).
 > Les GitHub Releases sont un **journal des modifications pour les utilisateurs** : [dernière release](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (installation officielle)

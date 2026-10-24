@@ -1,7 +1,7 @@
 /** Boxing — connection-line layer module (ticket 12, architecture-recovery).
  * Extracted verbatim from render.js (ticket 08): line pool (acquireLineEl/recycleLineEl),
- * SVG overlay + connection render/refresh, viewport culling + LOD stroke (ADR-0004),
- * DSU groups + star-mark group drag with grid-hash elastic snap (ADR-0013), connect-mode drag.
+ * SVG overlay + connection render/refresh, viewport culling + LOD stroke,
+ * DSU groups + star-mark group drag with grid-hash elastic snap, connect-mode drag.
  * Scheduling state (__linePool/__connRefreshRAF/__dsuDirty + LINE_POOL_CAP/MAX_CONNECTIONS) moved
  * here from state.js and kept MODULE-PRIVATE — not shared cross-module (ticket 12 delta).
  * Cross-scope deps (render.js commit/getLargeBox/getSmallBox/getInnerSurfaceContent + ntp.js
@@ -20,8 +20,8 @@ import { saveLayout, saveLayoutDebounced } from './storage.js';
 // Scheduling state — moved from state.js (ticket 12). Module-private, NOT exported.
 const MAX_CONNECTIONS = 5000; // ponytail: bounded; upgrade to pagination past 5k
 const LINE_POOL_CAP = 64; // ponytail: cap prevents unbounded growth; 64 is generous for typical layouts.
-const __linePool = []; // ADR-0013 BX-PERF-002: SVG <line> element pool
-let __dsuDirty = true; // ADR-0007 Q4b: rebuild DSU only when dirty
+const __linePool = []; // SVG <line> element pool reused across frames
+let __dsuDirty = true; // rebuild DSU only when this flag is dirty
 let __connRefreshRAF = 0; // rAF id for scheduleConnRefresh batching
 function setDsuDirty(v) { __dsuDirty = v; }
 function setConnRefreshRAF(v) { __connRefreshRAF = v; }
@@ -37,7 +37,7 @@ export function initConnFacade(deps) {
   innerCanvas = deps.innerCanvas; innerSurface = deps.innerSurface;
 }
 
-  // ── Box Connections / Groups (BX-DEV-137) ────────────────────────────
+  // ── Box Connections / Groups  ────────────────────────────
   // leader-line draws mid-edge SVG between two DOM elements; we vendored
   // vendor/leader-line.min.js (MIT, zero-deps) into ntp/index.html. The lib's
   // `socket: 'auto'` picks the nearest edge midpoint; active-connect mode lets
@@ -46,7 +46,7 @@ export function initConnFacade(deps) {
   // BX-142: SVG-based connection layer — replaces LeaderLine.
   // SVG overlay lives INSIDE the transform surface, so line coords = box logical coords.
   // No BCR reads, no transform-commit timing issues, lines clipped by surface overflow.
-  // ADR-0013 BX-PERF-002: the pool is GLOBAL and stateless (bare <line> elements —
+  // The pool is GLOBAL and stateless (bare <line> elements —
   // appendChild reparents them, so no per-surface split; D-011 negative). The cost
   // of a global pool is that a recycled element can carry residue from its previous
   // life, so strip it HERE at acquire time as well as at recycle time: acquire is
@@ -116,7 +116,7 @@ export function initConnFacade(deps) {
     debug("removeConnection " + connId + ", conns=" + layout.connections.length);
   }
 
-  // ADR-0006: Configurable connection delete action (tldraw Actions pattern, vanilla JS).
+  // Configurable connection delete action (tldraw Actions pattern, vanilla JS).
 
   export function getConnDeleteTrigger() { return (layout.settings && layout.settings.connDeleteAction) || 'alt+click'; }
 
@@ -129,10 +129,10 @@ export function initConnFacade(deps) {
     debug('deleteConnById ' + connId + ' mode=' + getConnDeleteTrigger());
   }
 
-  // ADR-0006: convenience API for tests/debug — sets connDeleteAction in one call.
+  // Convenience API for tests/debug — sets connDeleteAction in one call.
   export function setConnDeleteAction(mode) { layout.settings.connDeleteAction = mode || 'alt+click'; }
 
-  // BX-EXPLORE-008++: unified primary detector for click-family modes.
+  // Unified primary detector for click-family modes.
   // Listener attached in renderConnections; CSS pointer-events:stroke enables hit-test on line only.
   export function onConnLinePointerDown(e) {
     const mode = getConnDeleteTrigger();
@@ -181,7 +181,7 @@ export function initConnFacade(deps) {
     deleteConnById(selectedConnId);
   }
 
-  // ADR-0006: idempotent global keydown installer for select+delete mode.
+  // Idempotent global keydown installer for select+delete mode.
   export let __connKeydocInstalled = false;
   export function applyConnDeleteKeydoc() {
     if (__connKeydocInstalled) return;
@@ -215,7 +215,7 @@ export function initConnFacade(deps) {
     if (innerConnSvg) { while (innerConnSvg.firstChild) innerConnSvg.removeChild(innerConnSvg.firstChild); }
   }
 
-  // BX-DEV-137++++: edge-midpoint connection hotspots — 4 anchors per box for initiating connections.
+  // edge-midpoint connection hotspots — 4 anchors per box for initiating connections.
   export function addEdgeAnchors(el, boxKey) {
     if (!el || el.querySelector('.box-edge-anchor')) return;  // already has anchors
     const sides = ['top', 'bottom', 'left', 'right'];
@@ -266,7 +266,7 @@ export function initConnFacade(deps) {
 
   // Compute the mid-point of a box edge in logical (untransformed) coords.
   // Since SVG is inside the transform surface, we use raw box x/y/w/h.
-  // BX-DEV-137+++++: title bar center anchor for auto-expand boxes.
+  // title bar center anchor for auto-expand boxes.
   // For collapseHover=true (auto-expand mode active, box is collapsed to title bar), use
   // title bar center (TITLE_BAR_H/2 from box top) — keeps connection lines anchored to the
   // consistent visible title bar area. collapseHover=false means box is expanded → full center.
@@ -309,7 +309,7 @@ export function initConnFacade(deps) {
     return { x: x + w / 2, y: anchorY, surface: 'canvas' };
   }
 
-  // ── BX-D-007: connection surface ownership (公共祖先面域过滤) ────────────
+  // ── connection surface ownership (公共祖先面域过滤) ────────────
   // A connection belongs to exactly ONE surface, and that surface must be the
   // one currently open. Endpoints are tiered keys:
   //   'large:<id>'                → canvas surface (the large box itself)
@@ -485,9 +485,9 @@ export function initConnFacade(deps) {
         connLines.delete(id);
         dirtyConns.delete(id);
       } else {
-        // ADR-0006: ensure visual selection reflects current mode — strip stale highlight when not selecting.
+        // Ensure visual selection reflects current mode — strip stale highlight when not selecting.
         if (id !== selectedConnId) line.classList.remove('conn-line--selected');
-        // BX-D-007: a live line also carries an ownership claim. If this conn's owning
+        // a live line also carries an ownership claim. If this conn's owning
         // surface is no longer the one hosting the element (you entered/exited a box
         // without the disposeAllConns wipe, or a merge reparented an endpoint), the
         // element is a stale projection — drop it so the pending pass below rebuilds it
@@ -516,7 +516,7 @@ export function initConnFacade(deps) {
       line.setAttribute('stroke-width', '1.5');
       line.setAttribute('shape-rendering', 'geometricPrecision');
       line.setAttribute('data-conn-id', c.id);
-      // ADR-0006: register delete-action listeners based on layout.settings.connDeleteAction
+      // Register delete-action listeners based on layout.settings.connDeleteAction
       {
         const mode = getConnDeleteTrigger();
         // mousedown is the detector for the three click-family modes; select+delete uses mousedown for selection.
@@ -535,7 +535,7 @@ export function initConnFacade(deps) {
   export function scheduleConnRefresh(connIds) {
     if (!connIds || !connIds.length) return;
     for (const id of connIds) dirtyConns.add(id);
-    // BX-DEV-PERF: rAF-batch to avoid sync layout thrash on Firefox during drag
+    // rAF-batch to avoid sync layout thrash on Firefox during drag
     if (__connRefreshRAF) return;
     setConnRefreshRAF(requestAnimationFrame(() => {
       setConnRefreshRAF(0);
@@ -559,7 +559,7 @@ export function initConnFacade(deps) {
     }
   }
 
-  // BX-DEV-145: sync variant used during active drag to remove the 1-frame rAF
+  // sync variant used during active drag to remove the 1-frame rAF
   // lag between box DOM movement and SVG line endpoint update — without this,
   // the line endpoint trails behind the box for one frame, making a portion of
   // the line visible in the area the box just vacated ("线条显现").
@@ -617,12 +617,12 @@ export function initConnFacade(deps) {
   
   export function dsuReset() {
     boxGroupId.clear(); groupMembers.clear(); groupStar.clear();
-    // ADR-0007 Q4b: dirty flag is owned by markDsuDirty/dsuRebuild — not reset here
+    // Dirty flag is owned by markDsuDirty/dsuRebuild — not reset here
   }
   export function markDsuDirty() { setDsuDirty(true); }
   
   export function dsuRebuildFromConnections() {
-    if (!__dsuDirty) return; // ADR-0007 Q4b: skip full rebuild when clean
+    if (!__dsuDirty) return; // skip full rebuild when clean
     dsuReset();
     // Rebuild DSU from layout.connections — each connection unions two boxes
     for (const c of layout.connections) {
@@ -645,7 +645,7 @@ export function initConnFacade(deps) {
     if (b.isParent) {
       const pk = largeKey(b.id);
       groupStar.add(pk);
-      // ADR-0007 / BX-144: starred parent is a valid group even with zero connections.
+      // A starred parent is a valid group even with zero connections.
       // Without dsuMake, getGroupByParent() would fail (dsuGroupMembers null) after remote star adopt.
       dsuMake(pk);
     }
@@ -688,13 +688,13 @@ export function ensureGroups() {
       }
     }
   }
-  // ADR-0007 Q1: runtime mirror only — stripGroupsForPersist removes groups on save.
-  // layout-bypass-allow: runtime-groups-mirror - ADR-0007 Q1 layout.groups is a runtime mirror never persisted (expires:2027-03-31; ticket:108)
+  // Runtime mirror only — stripGroupsForPersist removes groups on save.
+  // layout-bypass-allow: runtime-groups-mirror - layout.groups is a runtime mirror, never persisted (expires:2027-03-31; ticket:108)
   layout.groups = gs;
   return gs;
 }
 
-  // ── Tiered keys for cross-level connections (BX-DEV-137+) ──────────
+  // ── Tiered keys for cross-level connections (+) ──────────
   // large:boxId  |  small:largeId:smallId  — addresses any box at any nesting.
   // Connections store these tiered keys, so a line can link large-to-large,
   // large-to-small, small-to-small regardless of inner-canvas nesting.
@@ -759,11 +759,11 @@ export function ensureGroups() {
   }
   // During parent drag we apply the same delta to every member. Members collide
   // against OUT-of-group boxes only; intra-group siblings move as a rigid set.
-  // BX-DEV-137+: group drag now performs a continuous elastic sweep against
+  // Group drag now performs a continuous elastic sweep against
   // OUT-of-group large boxes, not just a rigid delta translate. Each member
   // is resolved via elasticSnap with siblings (group + parent) excluded, so the
  // whole group visits new positions as a rigid set, then collisions push back.
-  // ADR-0013 BX-PERF-001: build spatial grid ONCE per moveGroupTogether call, pass to elasticSnap for all members.
+  // Build the spatial grid ONCE per moveGroupTogether call, pass it to elasticSnap for all members.
   // Old: O(m*n) — elasticSnap rebuilt grid per member per frame. New: grid built once, O(m*k) where k = neighbors.
   export function moveGroupTogether(parentId, deltaX, deltaY, origins) {
     // BX-DSU: use DSU to find ALL group members (multi-level, not just direct children)
@@ -790,7 +790,7 @@ export function ensureGroups() {
       }
       if (isLarge) { const parentRawId = parentId.slice(6); groupBoxIds.add(parentRawId); }
       const others = layout.boxes.filter(b => !groupBoxIds.has(b.id));
-      // ADR-0013 BX-PERF-001: build spatial grid once for this call — reuse across all large members.
+      // Build the spatial grid once for this call — reuse across all large members.
       const largeSpatial = buildSpatialGrid(others);
       for (const mId of largeMembers) {
         const rawId = (typeof mId === 'string' && mId.startsWith('large:')) ? mId.slice(6) : mId;
@@ -824,7 +824,7 @@ export function ensureGroups() {
         if (mp.length >= 3 && mp[1] === parentLargeId) memberSmallIds.add(mp.slice(2).join(':'));
       }
       const others = (lb.children || []).filter(s => !memberSmallIds.has(s.id) && (!isLarge || s.id !== parentId.split(':').slice(2).join(':')));
-      // ADR-0013 BX-PERF-001: build spatial grid once for this call — reuse across all small members.
+      // Build the spatial grid once for this call — reuse across all small members.
       const smallSpatial = buildSpatialGrid(others);
       for (const mId of smallMembers) {
         const mp = mId.split(':');
@@ -901,7 +901,7 @@ export function ensureGroups() {
     if (cm && commitToId && cm.fromId && cm.fromId !== commitToId) {
       if (addConnection(cm.fromId, commitToId)) {
         saveLayout();
-        // BX-DEV-137++: defer renderConnections to next rAF — avoids blocking the
+        // defer renderConnections to next rAF — avoids blocking the
         // mousedown event that triggered the connect. Synchronous LeaderLine ctor
         // on boxes×N pairs stalls the event loop on large layouts.
         renderConnections();

@@ -65,7 +65,7 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 ## Install
 
 > [!IMPORTANT]
-> **ऑफिशियल स्टोर पेज से इंस्टॉल करें** (अनुशंसित). इंस्टॉल चरण और वर्तमान में प्रकाशित स्टोर वर्शन का प्रामाणिक स्रोत [अंग्रेज़ी README — Install](../../README.md#install) और [रिलीज़ स्टेटस पेज](../../docs/release-status.md) है।
+> **ऑफिशियल स्टोर पेज से इंस्टॉल करें** (अनुशंसित). इंस्टॉल चरण और वर्तमान में प्रकाशित स्टोर वर्शन का प्रामाणिक स्रोत [अंग्रेज़ी README — Install](../../README.md#install) है।
 > GitHub Releases एक **यूज़र-फेसिंग चेंजलॉग** है: [नवीनतम रिलीज़](https://github.com/Xxx91n/boxing/releases/latest)।
 
 ### Firefox (ऑफिशियल इंस्टॉल)

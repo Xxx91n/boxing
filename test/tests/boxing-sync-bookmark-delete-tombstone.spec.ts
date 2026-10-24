@@ -1,5 +1,5 @@
-// Boxing — ticket 107 (Wave9.20 A-062): P0 single-bookmark delete writes a tombstone and
-// routes through the ADR-0007 unified commit entry.
+// Boxing — ticket 107 : P0 single-bookmark delete writes a tombstone and
+// routes through the unified commit entry.
 //
 // ROOT CAUSE (Q2 research + local evidence): popups.js deleted a bookmark with a bare
 // `sb.bookmarks.splice(index, 1); saveLayout();` — no markDeleted, no commit. The

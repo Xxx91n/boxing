@@ -1,8 +1,8 @@
 // Boxing — sync/backup engine (ticket 10, architecture-recovery).
-// WebDAV/Gist transport + two-way sync with ADR-0009 outbox-style field-level merge +
+// WebDAV/Gist transport + two-way sync with outbox-style field-level merge +
 // chrome.alarms auto-backup + BX-AUD-01/03 front-end URL guard + the sync/backup config UI
 // bindings (inputs, credential flush, test/backup buttons, auto-backup select).
-// ADR-0016: engine layer — persistence only through the ./storage.js facade
+// Engine layer — persistence only through the ./storage.js facade
 // (saveLayout / directSetBoxingLayout / saveSnapshot / stripGroupsForPersist); shared state
 // via ./state.js singletons (live bindings). Moved verbatim from ntp.js (byte-exact except
 // `export` prefixes, facade glue, and the bindSyncBackupUi() wrapper around the init-time wiring).
@@ -31,9 +31,9 @@ export function initSyncEngineFacade(deps) {
 
   // BX-AUD-01/03 — front-end WebDAV URL guard (mirrors the stricter guard in background.js).
   // Rejects private / host-only hostnames and oversized URLs so users never silently target a local network.
-  // Ticket 82 (A-032): that private-network refusal is now an explicit opt-in. It stays the default;
+  // Ticket 82: that private-network refusal is now an explicit opt-in. It stays the default;
   // only a boolean true relaxes it, and the SSRF rationale is unchanged (see README Privacy).
-  // Ticket 90 (A-044): one hostname normaliser + one private-host predicate are shared by every
+  // Ticket 90: one hostname normaliser + one private-host predicate are shared by every
   // WebDAV entry point (test / export / pull). The pull path used to inline this regex and missed
   // both the IPv6 bracket strip and the .local/.internal suffix rule, so the default deny leaked
   // there only. OWASP SSRF guidance: a guard applied inconsistently across request paths is
@@ -80,16 +80,16 @@ export function initSyncEngineFacade(deps) {
       if (gistConfig) gistConfig.hidden = p !== 'gist';
     }
 
-    // BX-DEV-115: Route WebDAV through background service worker to bypass CORS.
+    // Route WebDAV through background service worker to bypass CORS.
     // In Firefox MV3, extension page fetch to external HTTPS is blocked even with
     // host_permissions — "NetworkError when attempting to fetch resource".
     // Background SW runs in extension origin, not subject to page CSP/CORS.
     function sendToBackground(msg) {
-      // BX-DEV-115: Cross-browser message passing.
+      // Cross-browser message passing.
       // Firefox browser.* returns a Promise from sendMessage without callback.
       // Chrome chrome.* supports callback-style. Try Promise first, fall back to callback.
       debug('sendToBackground:', msg.type);
-      // Ticket 82 (A-032): single injection point - every webdav-* message carries the opt-in to the
+      // Ticket 82: single injection point - every webdav-* message carries the opt-in to the
       // background guard so both enforcement layers agree. Absent means deny on that side too.
       if (msg && typeof msg.type === 'string' && msg.type.indexOf('webdav-') === 0) {
         msg.allowPrivateHost = layout.settings.webdavAllowPrivateHost === true;
@@ -204,11 +204,11 @@ export function initSyncEngineFacade(deps) {
       }
     }
 
-    // BX-DEV-121 (Bug16): apply layout.settings.syncLevel — what to push to remote.
+    // (Bug16): apply layout.settings.syncLevel — what to push to remote.
     function buildSyncPayload() {
-      // 66/A-020: every sync/export payload goes through the same sanitize boundary as
+      // 66/every sync/export payload goes through the same sanitize boundary as
       // persistence, so runtime-only diagnostics (__lastSaveError) and computed data
-      // (groups, ADR-0007 Q1) never leave the browser.
+      // (groups, runtime-only state) never leave the browser.
       const lvl = layout.settings.syncLevel || 'full';
       if (lvl === 'settingsOnly') return stripGroupsForPersist(Object.assign({}, layout, { boxes: [], connections: [], groups: [] }));
       if (lvl === 'boxesOnly') return stripGroupsForPersist(Object.assign({}, layout, { settings: null }));
@@ -280,11 +280,11 @@ export function initSyncEngineFacade(deps) {
         throw new Error(i18n('webdavErrNetwork'));
       }
     }
-    // BX-DEV-114: expose for __boxingDebug (which runs in outer scope)
+    // expose for __boxingDebug (which runs in outer scope)
     window.__boxingTestWebDAV = testWebDAVConnection;
     window.__boxingBackupWebDAV = backupToWebDAV;
 
-    // ── BX-DEV-SYNC: WebDAV two-way sync (replaces blind backup) ───────────
+    // ── WebDAV two-way sync (replaces blind backup) ───────────
     // First sync (lastSyncAt === 0) + cloud exists → pull cloud over local.
     // Otherwise: compare layout._meta.updatedAt vs cloud._meta.updatedAt — newer wins.
     // Data-loss guard runs BEFORE any destructive upload: if currentLocalBoxCount
@@ -376,7 +376,7 @@ export function initSyncEngineFacade(deps) {
       const target = new URL(url);
       let basePath = target.href;
       if (!basePath.endsWith('/')) basePath += '/';
-      // BX-DEV-121 (Bug16): honor user-set sync filename; default boxing-backup.json.
+      // (Bug16): honor user-set sync filename; default boxing-backup.json.
       const customName = (layout.settings.syncFileName || '').trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
       const BACKUP_FILENAME = customName || 'boxing-backup.json';
       let fileUrl = basePath.endsWith(BACKUP_FILENAME) ? basePath : basePath + BACKUP_FILENAME;
@@ -387,8 +387,8 @@ export function initSyncEngineFacade(deps) {
     window.__bxSync.resolveWebDAVFileUrl = resolveWebDAVFileUrl;
 
     // Two-way sync. Returns { direction: 'pull'|'push'|'merge'|'none', cloudBoxes, localBoxes }.
-    // ADR-0009: Outbox-style merge for concurrent WebDAV changes.
-    // Ticket 91 (Wave9 A-045 / B55): the big-box field heuristic is upgraded to an
+    // Outbox-style merge for concurrent WebDAV changes.
+    // Ticket 91 (B55): the big-box field heuristic is upgraded to an
     // id-level three-way merge in utils.mergeLayoutThreeWay. baseData = the client-
     // local syncBase slot (last state both sides agreed on; storage.getSyncBase) or
     // null -> additive two-way fallback. Children (small boxes) now ALWAYS merge per
@@ -433,7 +433,7 @@ export function initSyncEngineFacade(deps) {
             // Ticket 44: explicit user-confirmed overwrite — newer-wins is allowed HERE,
             // but the discarded local side is archived as a conflict copy first (never silent).
             await archiveConflictLayouts(stripGroupsForPersist(layout), { reason: 'webdav-data-loss-restore', side: 'local' });
-            // Ticket 51 (spec W6-D2): copy-before-overwrite unified — the conflict
+            // Ticket 51 (spec ticket 51): copy-before-overwrite unified — the conflict
             // archive keeps the payload verbatim, but the snapshot makes it a
             // one-click Time Machine point like every other overwrite entry.
             if (computeBoxCount(layout).total > 0) await saveSnapshot();
@@ -505,9 +505,9 @@ export function initSyncEngineFacade(deps) {
         return { direction: 'pull', cloudBoxes: layout.boxes.length, localBoxes: layout.boxes.length, firstSync: true };
       }
 
-      // ADR-0009: Outbox conflict detection — if both sides changed since last sync, merge fields.
+      // Outbox conflict detection — if both sides changed since last sync, merge fields.
       if (cloud && Array.isArray(cloud.boxes)) {
-        // ADR-0009: concurrent change detection — both changed since lastSyncAt
+        // Concurrent change detection — both changed since lastSyncAt
         const cloudChangedAfterSync = cloudUpdatedAt > lastSyncAt;
         const localChangedAfterSync = localUpdatedAt > lastSyncAt;
         if (cloudChangedAfterSync && localChangedAfterSync && cloud?._meta?.writerId !== writerId) {
@@ -553,16 +553,16 @@ export function initSyncEngineFacade(deps) {
             await archiveConflictLayouts({ boxes: (cloud.boxes || []) }, { reason: 'webdav-merge-failed', side: 'cloud' });
           }
         }
-        // ADR-0009: original newer-wins logic
+        // Original newer-wins logic
         if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {
           // Cloud is newer or equal-but-different-writer → pull.
-          // Ticket 51 (spec W6-D2 / D-006): 覆盖必先本地副本 — this pull fully
+          // Ticket 51 (spec ticket 51 / D-006): 覆盖必先本地副本 — this pull fully
           // replaces the main key, so snapshot the discarded local side FIRST
-          // (ADR-0009 COW discipline; the import-side twin lives in settings-ui's
+          // (copy-before-overwrite discipline; the import-side twin lives in settings-ui's
           // overwrite-confirmed branch, and the data-loss / merge-failure paths
           // already keep a verbatim conflict copy).
           if (computeBoxCount(layout).total > 0) await saveSnapshot();
-          // BX-DEV-138: preserve local connections/groups when cloud payload lacks them
+          // preserve local connections/groups when cloud payload lacks them
           // (settingsOnly sync mode strips connections/groups from the uploaded payload).
           const savedSettings = layout.settings;
           const savedMeta = layout._meta;
@@ -616,7 +616,7 @@ export function initSyncEngineFacade(deps) {
       const target = new URL(urlStr);
       if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
       if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
-      // Ticket 90 (A-044): share the exact predicate isSafeExtUrl uses, so the pull path denies
+      // Ticket 90: share the exact predicate isSafeExtUrl uses, so the pull path denies
       // the same hosts the export/test paths deny. The old inline regex tested the raw hostname
       // (keeping the IPv6 brackets) and had no .local/.internal suffix rule.
       if (isPrivateHost(normalizeHostname(target), layout.settings.webdavAllowPrivateHost === true)) throw new Error(i18n('webdavErrBlockedHost'));
@@ -631,7 +631,7 @@ export function initSyncEngineFacade(deps) {
       const gistId = layout.settings.gistId || gistIdInput?.value?.trim();
       if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw new Error('Invalid Gist ID');
       const content = JSON.stringify(buildSyncPayload(), null, 2);
-      // BX-DEV-121 (Bug16): honor custom sync filename; default boxing-backup.json.
+      // (Bug16): honor custom sync filename; default boxing-backup.json.
       const _rawName = (layout.settings.syncFileName || '').trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
       const GIST_FILENAME = _rawName || 'boxing-backup.json';
       const h = new Headers({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' });
@@ -678,14 +678,14 @@ export function initSyncEngineFacade(deps) {
         if (p === 'webdav') {
           const res = await syncWithWebDAV();
           debug('WebDAV sync ok', res && res.direction ? { direction: res.direction, conflicts: res.conflicts || 0 } : undefined);
-          // Ticket 91 (A-045): box-level AND child-level conflict copies land in the
+          // Ticket 91: box-level AND child-level conflict copies land in the
           // ticket-79 Settings > Data readout automatically (same archive key
           // family) — surface the pointer instead of leaving the count invisible.
           if (res && res.conflicts) debugWarn('WebDAV sync archived ' + res.conflicts + ' conflict copy(ies) - review under Settings > Data > Conflict copies');
         }
         else if (p === 'gist') { await backupToGist(); debug('Gist backup ok'); }
-        await saveSnapshot(); // ADR-0009: always save versioned snapshot
-        // ADR-0024 / D-001: Local mode auto-backup strictly converges to silent snapshot, never calls backupToLocal()
+        await saveSnapshot(); // always save a versioned snapshot
+        // Local mode auto-backup strictly converges to a silent snapshot, never calls backupToLocal()
         layout.settings.lastBackupAt = Date.now();
         updateLastBackupDisplay();
         saveLayout();
@@ -695,7 +695,7 @@ export function initSyncEngineFacade(deps) {
     // ── Auto-backup scheduler ──────────────────────
     let autoBackupTimer = null;
 
-    // ADR-0022: chrome.alarms hub in background SW; NTP page creates/ensures alarm.
+    // Auto-backup uses a chrome.alarms hub in the background SW; the NTP page creates/ensures the alarm.
     // Duplicate onAlarm listener in NTP page removed to prevent double execution.
     function setupAutoBackup(sec) {
       if (typeof window !== 'undefined' && window.__BOXING_DEMO__) return;
@@ -775,19 +775,19 @@ export function bindSyncBackupUi() {
     if (layout.settings.webdavUrl && webdavUrlInput) webdavUrlInput.value = layout.settings.webdavUrl;
     if (layout.settings.webdavUser && webdavUserInput) webdavUserInput.value = layout.settings.webdavUser;
     if (layout.settings.gistId && gistIdInput) gistIdInput.value = layout.settings.gistId;
-    // Ticket 82 (A-032): private-network opt-in - off unless explicitly persisted as true.
+    // Ticket 82: private-network opt-in - off unless explicitly persisted as true.
     if (webdavAllowPrivateInput) webdavAllowPrivateInput.checked = layout.settings.webdavAllowPrivateHost === true;
-    // BX-DEV-121 (Bug16): sync level + filename (shared across all remote providers)
+    // (Bug16): sync level + filename (shared across all remote providers)
     if (syncLevelSelect) syncLevelSelect.value = layout.settings.syncLevel || 'full';
     if (syncFilenameInput) syncFilenameInput.value = layout.settings.syncFileName || '';
     // Decrypt and fill sensitive fields — awaited so test button waits for password
-    if (webdavTestBtn) webdavTestBtn.disabled = true; // BX-DEV-114: disable until password is ready
+    if (webdavTestBtn) webdavTestBtn.disabled = true; // disable until password is ready
     (async () => {
       try {
         let migrated = false;
         if (layout.settings._encWebdavPass && webdavPassInput) {
           webdavPassInput.value = await decryptCredential(layout.settings._encWebdavPass);
-          // Ticket 81 (A-031) lazy migration: rewrite legacy v1/v2/string envelopes as v3
+          // Ticket 81  lazy migration: rewrite legacy v1/v2/string envelopes as v3
           // (per-install key) so stored records converge without a one-shot pass.
           if (webdavPassInput.value) {
             const upgraded = await encryptCredential(webdavPassInput.value);
@@ -814,7 +814,7 @@ export function bindSyncBackupUi() {
 
     updateSyncConfigVisibility();
 
-    // BX-DEV-121 (Bug16): sync level + filename persist on change
+    // (Bug16): sync level + filename persist on change
     syncLevelSelect?.addEventListener('change', () => {
       layout.settings.syncLevel = syncLevelSelect.value === 'settingsOnly' || syncLevelSelect.value === 'boxesOnly' ? syncLevelSelect.value : 'full';
       saveLayout();
@@ -848,7 +848,7 @@ export function bindSyncBackupUi() {
       if (userChanged) layout.settings.webdavUser = webdavUserInput.value.trim();
       saveLayout();
     }));
-    // BX-DEV-111M: debounced input listeners — survive close without blur (browser close, tab close).
+    // debounced input listeners — survive close without blur (browser close, tab close).
     let __credDebounceTimer = null;
     function __scheduleCredFlush() {
       if (__credDebounceTimer) clearTimeout(__credDebounceTimer);
@@ -865,7 +865,7 @@ export function bindSyncBackupUi() {
     // Keep blur for immediate commit on tabbing away.
     webdavPassInput?.addEventListener('blur', () => { if (__credDebounceTimer) { clearTimeout(__credDebounceTimer); __credDebounceTimer = null; } flushUnsavedCredentials(); });
     gistTokenInput?.addEventListener('blur', () => { if (__credDebounceTimer) { clearTimeout(__credDebounceTimer); __credDebounceTimer = null; } flushUnsavedCredentials(); });
-    // BX-DEV-111M: flush helper — encrypts current input values into layout.settings then saveLayout.
+    // flush helper — encrypts current input values into layout.settings then saveLayout.
     // Safe-no-op when called from contexts without settings inputs (early startup, etc.).
     let __credFlushInFlight = false;
     async function flushUnsavedCredentials() {
@@ -931,7 +931,7 @@ export function bindSyncBackupUi() {
       }
       await performBackup();
     });
-    // ADR-0022: listen for background SW auto-backup trigger
+    // Listen for the background SW auto-backup trigger
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
         if (msg && msg.type === 'boxing-auto-backup-trigger') {

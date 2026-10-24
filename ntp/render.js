@@ -1,7 +1,7 @@
 /** Boxing — NTP render module (ticket 08, architecture-recovery).
  * Render cohesive core extracted verbatim from ntp.js (zero-build strangler-fig).
- * Ticket 12 (architecture-recovery): the conn SVG layer (viewport culling + LOD stroke ADR-0004,
- * line pool + grid hash ADR-0013, DSU groups, star-mark group drag, connect-mode) was extracted
+ * Ticket 12 (architecture-recovery): the conn SVG layer (viewport culling + LOD stroke,
+ * line pool + grid hash, DSU groups, star-mark group drag, connect-mode) was extracted
  * verbatim to ./conn-layer.js; render.js now consumes it via ESM imports.
  * Remaining: pan/zoom transforms, manual drag, canvas render pipeline, box CRUD, bookmark rows/popups.
  * (The conn SVG layer previously lived here — see conn-layer.js.)
@@ -131,7 +131,7 @@ export function initRenderFacade(deps) {
   }
 
 
-  // ── ADR-0007 Phase 1.2: unified commit(op) (tldraw Store put/remove pattern) ──
+  // ── Unified commit(op) mutation entry (tldraw Store put/remove pattern) ──
   // Handlers mutate data only. commit() owns tombstones, DSU dirty, viewState clear,
   // optional save/render. Public wrappers keep call-site behavior stable.
   export function getBoxByTieredKey(key) {
@@ -176,7 +176,7 @@ export function initRenderFacade(deps) {
     deleteLargeBox(state, { id }) {
       const removed = getLargeBox(id);
       if (!removed) return { skipped: true };
-      // ADR-0007 Q4d: clear viewState while object still reachable
+      // Clear viewState while the object is still reachable
       try { delete removed.viewState; } catch (e) { debugErr("delete removed.viewState", e); }
       const tomb = [id, largeKey(id)];
       for (const child of (removed.children || [])) {
@@ -223,7 +223,7 @@ export function initRenderFacade(deps) {
         parentLargeId: largeId
       };
     },
-    // Ticket 107 (A-062): single-bookmark delete is a first-class mutation op. The old
+    // Ticket 107: single-bookmark delete is a first-class mutation op. The old
     // popups.js path spliced the array and fire-and-forgot saveLayout, so no tombstone was
     // written; a stale remote copy then re-adopted the bookmark through the cross-tab merge
     // (mergeConcurrentLayout -> mergeById) — the P0 "deleted bookmark comes back" bug.
@@ -250,12 +250,12 @@ export function initRenderFacade(deps) {
         parentLargeId: largeId
       };
     },
-    // Ticket 108 (A-063): drag-to-reorder is a layout mutation too. It used to
+    // Ticket 108: drag-to-reorder is a layout mutation too. It used to
     // splice sb.bookmarks directly in popups.js - the last deletion-class bypass
     // outside this table, and the reason the layout-bypass gate exists. The op is
     // net-neutral (remove + re-insert, no tombstone), so no tombstoneIds are
     // returned: commit() only persists (opts.save) and popups.js keeps its own
-    // targeted re-render (BX-DEV-111k: never rebuild the whole surface).
+    // targeted re-render (never rebuild the whole surface).
     reorderBookmarks(state, { largeId, smallId, from, to }) {
       const lb = getLargeBox(largeId);
       if (!lb) return { skipped: true };
@@ -311,7 +311,7 @@ export function initRenderFacade(deps) {
       }
     }
 
-    // ADR-0007 Q4d: clear per-box viewState on delete
+    // Clear per-box viewState on delete
     if (result.viewStateClear) {
       for (const id of result.viewStateClear) {
         const lb = boxById.get(id) || (layout.boxes || []).find(b => b.id === id);
@@ -330,14 +330,14 @@ export function initRenderFacade(deps) {
 
     if (result.forceMaps) rebuildBoxMaps();
 
-    // DSU dirty + rebuild (Q4b). External/load paths also force dirty.
+    // DSU dirty + rebuild . External/load paths also force dirty.
     if (result.connChanged || result.starChanged || result.isExternal || opts.forceDsu) {
       markDsuDirty();
       if (opts.skipDsuRebuild) {
         /* caller will rebuild */
       } else {
         dsuRebuildFromConnections();
-        // ADR-0007 Q1: keep runtime layout.groups mirror in sync for tests/debug/getters.
+        // Keep the runtime layout.groups mirror in sync for tests/debug/getters.
         try { ensureGroups(); } catch (e) { debugErr("ensureGroups after render", e); }
       }
     }
@@ -360,7 +360,7 @@ export function initRenderFacade(deps) {
 
   // Canvas pan boundary: at 10% zoom, max pan range = 10x screen size
   export function clampCanvasPan(panX, panY, zoom) {
-    // BX-DEV-134 (B2 perf): read cached geometry — no per-mousemove forced layout.
+    // (B2 perf): read cached geometry — no per-mousemove forced layout.
     const w = canvasContainerSize.w || canvasContainer.clientWidth;
     const h = canvasContainerSize.h || canvasContainer.clientHeight;
     // Virtual world: [0, containerW/0.3]. Screen = world*zoom + pan.
@@ -390,8 +390,8 @@ export function initRenderFacade(deps) {
     };
   }
 
-  // Elastic snap: iterative while-loop to resolve all overlaps (BX-DEV-013)
-  // ADR-0007 Q3b: GDevelop-style spatial hash for elasticSnap when N >= 32.
+  // Elastic snap: iterative while-loop to resolve all overlaps
+  // GDevelop-style spatial hash for elasticSnap when N >= 32.
 
   // ── Obsidian-style zoom & pan ──────────────────────────
   export function applyCanvasTransform() {
@@ -400,7 +400,7 @@ export function initRenderFacade(deps) {
     canvasZoomVal.textContent = Math.round(canvasZoom * 100) + '%';
     zoomSlider.value = Math.round(canvasZoom * 100);
     zoomSliderVal.textContent = Math.round(canvasZoom * 100) + '%';
-    // BX-DEV-145: lines live inside canvasSurface, so CSS transform moves them
+    // lines live inside canvasSurface, so CSS transform moves them
     // automatically on pan/zoom — no per-tick recalculation needed.
   }
 
@@ -411,7 +411,7 @@ export function initRenderFacade(deps) {
     innerZoomVal.textContent = Math.round(innerZoom * 100) + '%';
     zoomSlider.value = Math.round(innerZoom * 100);
     zoomSliderVal.textContent = Math.round(innerZoom * 100) + '%';
-    // BX-DEV-145: inner surface transform carries conn-lines too.
+    // inner surface transform carries conn-lines too.
     // No per-tick recalculation — CSS transform handles line position.
   }
 
@@ -450,7 +450,7 @@ export function initRenderFacade(deps) {
     if (headerPinBtn) {
       const span = headerPinBtn.querySelector('span');
       if (span) span.textContent = headerPinned ? '⊙' : '○';
-      // ADR-0015.updated: tooltip shows the ACTION clicking will perform (standard toggle UX).
+      // Tooltip shows the ACTION clicking will perform (standard toggle UX).
       // Pinned → "Unpin header" (headerPinOff), Unpinned → "Pin header" (headerPin).
       headerPinBtn.title = headerPinned ? i18n('headerPinOff') : i18n('headerPin');
       headerPinBtn.classList.toggle('header-pin--floating', !headerPinned);
@@ -462,14 +462,14 @@ export function initRenderFacade(deps) {
     innerWrapper.hidden = true;
     canvasContainer.hidden = false;
     backBtn.dataset.show = '0';
-    updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
+    updateAutohideUI(); // always reposition pin to active canvas
 
     const hasBoxes = layout.boxes.length > 0;
-    // BX-DEV-111: hide empty placeholder BEFORE clearing surface to avoid flash
+    // hide empty placeholder BEFORE clearing surface to avoid flash
     canvasEmpty.hidden = true;
    // Bug2: clear DOM synchronously then rebuild in same tick — no flash
-    // BX-DEV-140b/d: blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
-    // BX-DEV-140d: also blur if activeElement is a contenteditable inside canvasSurface
+    // blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
+    // also blur if activeElement is a contenteditable inside canvasSurface
     // or a toolbar button that Chrome will redirect to after the wipe.
     const _ae1 = document.activeElement;
     // BX-SEL-01: clear residual text selection before DOM wipe — Chrome native dblclick
@@ -481,7 +481,7 @@ export function initRenderFacade(deps) {
     disposeAllConns(); // clear stale connLines Map after DOM wipe
     // Then re-show empty state only if truly empty
     canvasEmpty.hidden = hasBoxes;
-    // BX-DEV-111f: Ensure i18n is applied to empty state elements (may have been cleared in HTML)
+    // Ensure i18n is applied to empty state elements (may have been cleared in HTML)
     if (!hasBoxes) {
       document.querySelectorAll('#canvas-empty [data-i18n]').forEach(el => { if (!el.textContent) el.textContent = i18n(el.dataset.i18n); });
     }
@@ -495,19 +495,19 @@ export function initRenderFacade(deps) {
     }
     canvasSurface.appendChild(frag);
     ensureConnArrays(); debug('renderCanvas done, surface children=' + canvasSurface.children.length);
-    // BX-DEV-111 v2: measure each collapsed box for precise expand animation
+    // v2: measure each collapsed box for precise expand animation
     canvasSurface.querySelectorAll('.large-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
     // Bug2: render connections synchronously — no flash with deferred dispose
     renderConnections(); // Bug2: sync render — same JS tick, no flash
     applyCanvasTransform();
     updateCaption();
-    // Ticket 60 (Wave7 zero-flash): render complete — unmask content. The boot theme
+    // Ticket 60 (zero-flash): render complete — unmask content. The boot theme
     // script masked the canvas until the remembered state was confirmed applied; the
     // theme background was already correct, so this unmask never reveals a wrong UI.
     try { document.documentElement.classList.remove('boot-pending'); } catch (e) { debugWarn('boot unmask', e); }
   }
 
-  // BX-DEV-105: measure body scrollHeight and set CSS --body-max-height for precise drawer animation
+  // measure body scrollHeight and set CSS --body-max-height for precise drawer animation
   export function setBodyExpandHeight(el) {
     const body = el.querySelector('.large-box__body') || el.querySelector('.small-box__body');
     if (!body) return;
@@ -515,7 +515,7 @@ export function initRenderFacade(deps) {
       // BX-EXP-REGR: must measure NATURAL content height, not the max-height-clamped value.
       // Temporarily remove max-height so scrollHeight reflects the full content the drawer
       // needs to expand to. Restore before the frame paints to avoid any visible flash.
-      // (This is the BX-DEV-105 pattern that BX-DEV-140d removed by mistake; 140d kept the
+      // (This is the pattern that removed by mistake; 140d kept the
       // debug referencing the deleted savedMaxH/wasCollapsed locals, masking the regression
       // with a ReferenceError that prevented setProperty from running at all.)
       const savedMaxH = el.style.maxHeight;
@@ -528,7 +528,7 @@ export function initRenderFacade(deps) {
       // Also keep --body-max-height for compatibility
       const bh = body.scrollHeight;
       if (bh > 0) body.style.setProperty('--body-max-height', bh + 'px');
-      // BX-DEV-137++: after layout settles, refresh lines — box height may have changed.
+      // after layout settles, refresh lines — box height may have changed.
       if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
     });
   }
@@ -629,12 +629,12 @@ export function initRenderFacade(deps) {
       el.classList.toggle('box--hover-expand', box.collapseHover);
       if (box.collapseHover) {
         el.classList.add('box--collapsed');
-        setBodyExpandHeight(el);  // BX-DEV-111: measure after collapsing
+        setBodyExpandHeight(el);  // measure after collapsing
       } else {
         el.classList.remove('box--collapsed');
       }
       saveLayout();
-      // BX-DEV-137++: refresh connections after expand/collapse — box height changed,
+      // refresh connections after expand/collapse — box height changed,
       // leader-line cached stale position. rAF-coalesced via refreshAllConns.
       if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
     });
@@ -645,8 +645,8 @@ export function initRenderFacade(deps) {
     const body = document.createElement('div');
     body.className = 'large-box__body';
 
-    // Track actual drag distance to prevent click-from-drag entering (BX-DEV-048)
-    // Track mousedown position on bar; compare click distance to detect drag (BX-DEV-048 v2)
+    // Track actual drag distance to prevent click-from-drag entering
+    // Track mousedown position on bar; compare click distance to detect drag (v2)
     let barDownX = 0, barDownY = 0, barDownWasDragZone = false;
     bar.addEventListener('mousedown', e => {
       barDownX = e.clientX; barDownY = e.clientY;
@@ -655,11 +655,11 @@ export function initRenderFacade(deps) {
         && !tgt.closest('.box-pin-btn') && !tgt.closest('.box-expand-btn')
         && !tgt.closest('.box-resize-handle');
     }, true); // capture: fires before onBoxDragStart
-    // BX-DEV-112G (ticket 110 / N-101-06): the enter decision is shared by two bindings —
+    // (ticket 110 / N-101-06): the enter decision is shared by two bindings —
     // see the root binding below for why a second entry point is required.
     const onBoxEnterClick = (ev) => {
       if (ev.target.closest('.box-resize-handle') || ev.target.closest('.large-box__delete')) return;
-      // BX-DEV-077: clear stale drag state FIRST before any other checks
+      // clear stale drag state FIRST before any other checks
       if (lastDragEndId === box.id) { setLastDragEndId(null); barDownWasDragZone = false; barDownX = 0; barDownY = 0; }
       // If mousedown was on drag zone and click moved >3px, treat as drag
       if (barDownWasDragZone) {
@@ -668,16 +668,16 @@ export function initRenderFacade(deps) {
         barDownWasDragZone = false;
         if (dx > 3 || dy > 3) return;
       }
-      // Skip click if drag just ended within 60ms (BX-DEV-065)
+      // Skip click if drag just ended within 60ms
       if (Date.now() - lastDragEndTime < 60) { debug('skip click: drag just ended'); return; }
-      // BX-DEV-112C: this click enters — set suppress guard so any follow-on
+      // this click enters — set suppress guard so any follow-on
       // inner dblclick from the same physical click/dblclick does NOT create a stray small box.
       setLastEnterLargeBoxAt(Date.now());
       setSuppressInnerDblClickOnce(true);
       enterLargeBox(box.id);
     };
     body.addEventListener('click', onBoxEnterClick);
-    // BX-DEV-112G (ticket 110 / N-101-06): enter must ALSO fire when the click hit-tests to
+    // (ticket 110 / N-101-06): enter must ALSO fire when the click hit-tests to
     // the box ROOT. Measured, not inferred: right after renderCanvas() inserts a box,
     // document.elementFromPoint(boxCenter) resolves to the .large-box element itself for the
     // rest of the frame even though the subtree is attached (kids=7, bodyH=172); it only
@@ -728,7 +728,7 @@ export function initRenderFacade(deps) {
       body.appendChild(actionBtn);
     }
 
-    // BX-DEV-137: star-mark (parent) + connect-mode toggle buttons. Cheap per-box UI;
+    // star-mark (parent) + connect-mode toggle buttons. Cheap per-box UI;
     // theme uses currentColor so it adapts to dark/light automatically.
     const starBtn = document.createElement('button');
     starBtn.type = 'button';
@@ -749,10 +749,10 @@ export function initRenderFacade(deps) {
     resizeHandle.className = 'box-resize-handle';
     resizeHandle.addEventListener('mousedown', e => onResizeStart(e, 'large', box.id, el));
 
-    // BX-DEV-111: restore persisted pinned & auto-expand state
+    // restore persisted pinned & auto-expand state
     el.classList.toggle('box--pinned', box.pinned === true);
     if (box.collapseHover) { el.classList.add('box--hover-expand'); el.classList.add('box--collapsed'); }
-    // BX-DEV-137++++: refresh connections on hover-expand transition — leader-line
+    // refresh connections on hover-expand transition — leader-line
     // must re-read bounding rect AFTER CSS max-height transition completes.
     if (box.collapseHover) {
       el.addEventListener('mouseenter', () => {
@@ -780,13 +780,13 @@ export function initRenderFacade(deps) {
     _enterLargeBox(id, arguments[1] === true);
   }
   export function _enterLargeBox(id, skipPosRestore) {
-    // BX-DEV-111N: stash the previous large box inner view state into its own record before switching.
+    // stash the previous large box inner view state into its own record before switching.
     if (currentLargeBoxId && currentLargeBoxId !== id) { saveLargeBoxViewState(currentLargeBoxId); }
     setCurrentLargeBoxId(id);
     const lb = getLargeBox(id);
     if (!lb) { exitToCanvas(); return; }
     persistViewState(true);
-    // BX-DEV-111N: restore per-box inner view state (zoom/pan) saved earlier, unless caller asked to skip.
+    // restore per-box inner view state (zoom/pan) saved earlier, unless caller asked to skip.
     if (!skipPosRestore && lb.viewState && typeof lb.viewState.innerZoom === 'number') {
       setInnerZoom(lb.viewState.innerZoom);
       setInnerPanX(Number(lb.viewState.innerPanX) || 0);
@@ -800,7 +800,7 @@ export function initRenderFacade(deps) {
 
     canvasContainer.hidden = true;
     innerWrapper.hidden = false;
-    // BX-DEV-112F: reliable cross-browser zoom-btn reveal — Chrome defers abs-pos child layout
+    // reliable cross-browser zoom-btn reveal — Chrome defers abs-pos child layout
     // when parent transitions hidden=>visible; sync offsetWidth alone is unreliable (chromium
     // bug 41117621). Push to next rAF (post-recalc/paint) and force a true layout there.
     requestAnimationFrame(() => {
@@ -814,8 +814,8 @@ export function initRenderFacade(deps) {
       } catch (_) { /* fail-soft; next render will correct anyway */ }
     });
     backBtn.dataset.show = '1';
-    if (addLargeBtn) addLargeBtn.style.display = 'none';  // BX-DEV-101: inner view hides header + button
-    updateAutohideUI(); // always reposition pin to active canvas (BX-DEV-078)
+    if (addLargeBtn) addLargeBtn.style.display = 'none';  // inner view hides header + button
+    updateAutohideUI(); // always reposition pin to active canvas
 
     renderCrumbs(lb);
     innerCrumbTitle.textContent = lb.title || i18n('untitledBox');
@@ -837,39 +837,39 @@ export function initRenderFacade(deps) {
       if (t !== lb.title) { lb.title = t; saveLayout(); renderCrumbs(lb); }
     };
 
-    disposeAllConns(); // BX-DEV-137+++: clear canvas-view lines before inner surface re-renders them
+    disposeAllConns(); // clear canvas-view lines before inner surface re-renders them
     renderInnerSurface(lb);
     updateInnerCaption(lb);
     applyInnerTransform();
     updateCaption();
-    // BX-DEV-137++: re-render cross-level connections after entering large box —
+    // re-render cross-level connections after entering large box —
     // small-box DOM elements are now live so leader-line can resolve tiered keys.
     renderConnections();
-    // Ticket 60 (Wave7 zero-flash): inner render complete — unmask content (boot path).
+    // Ticket 60 (zero-flash): inner render complete — unmask content (boot path).
     try { document.documentElement.classList.remove('boot-pending'); } catch (e) { debugWarn('boot unmask', e); }
   }
 
   export function exitToCanvas() {
     debug(`exitToCanvas: leaving box, back to canvas`);
-    // BX-DEV-111N: stash inner view before resetting — preserves per-box view across exits.
+    // stash inner view before resetting — preserves per-box view across exits.
     saveLargeBoxViewState(currentLargeBoxId);
     setCurrentLargeBoxId(null);
     setInnerPanX(0); setInnerPanY(0); setInnerZoom(1.0);
     persistViewState(true);
-    if (addLargeBtn) addLargeBtn.style.display = '';  // BX-DEV-101: restore + button
-    disposeAllConns(); // BX-DEV-137+++: clear inner-view lines before canvas re-renders them
+    if (addLargeBtn) addLargeBtn.style.display = '';  // restore + button
+    disposeAllConns(); // clear inner-view lines before canvas re-renders them
     renderCanvas();
   }
 
   export function renderCrumbs(lb) {
-    // BX-DEV-136: inner-canvas-head de-coupled from canvas and floated at top
+    // inner-canvas-head de-coupled from canvas and floated at top
     // title bar level; the "画布/" breadcrumb is no longer rendered (mirrors the
     // large-canvas architecture where the canvas is a pure infinite surface).
     // The box title + add button live inside #inner-canvas-head directly; the
     // exit-to-canvas action is reachable via the Esc / back gesture.
   }
 
-  // BX-DEV-132 (B1 real fix): inner surface uses an inner content layer as the
+  // (B1 real fix): inner surface uses an inner content layer as the
   // transform target. Previously the transform was applied to innerSurface itself, so
   // pan lifted the surface's overflow:hidden clip box above the inner__canvas-head
   // and small-box titles slipped under the head's solid background ("小盒子上面的标题
@@ -895,7 +895,7 @@ export function initRenderFacade(deps) {
     // orphans innerConnSvg + all connLines SVG elements. Without this, renderConnections
     // skips creating new lines because connLines.has(c.id) returns true for stale refs.
    disposeAllConns();
-    // BX-DEV-140b/d: blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
+    // blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
     const _ae2 = document.activeElement;
     if (_ae2 && _ae2 !== document.body) _ae2.blur();
    content.innerHTML = '';
@@ -924,7 +924,7 @@ export function initRenderFacade(deps) {
      actionBtn.addEventListener('click', function (e) {
        e.stopPropagation();
        e.preventDefault();
-       // BX-DEV-112D: bridge the physical dblclick — click2 and the follow-on
+       // bridge the physical dblclick — click2 and the follow-on
        // dblclick (→ onInnerDblClick → addSmallBoxAt) must not double-create.
        if (isWithinCreateCooldown(e.clientX, e.clientY)) { debug('inner CTA suppressed: create cooldown'); return; }
        markCreate(e.clientX, e.clientY);
@@ -934,9 +934,9 @@ export function initRenderFacade(deps) {
      innerSurface.appendChild(emptyWrap); // Bug1: viewport parent, not transformed content
    }
    content.appendChild(frag);
-   // BX-DEV-133 (B1 search): stamp largeId on inner surface so applySearchHighlight key matches
+   // (B1 search): stamp largeId on inner surface so applySearchHighlight key matches
    innerSurface.dataset.largeId = lb.id;
-    // BX-DEV-111 v2: measure each collapsed small box for precise expand animation
+    // v2: measure each collapsed small box for precise expand animation
     content.querySelectorAll('.small-box.box--hover-expand.box--collapsed').forEach(setBodyExpandHeight);
     // BX-143: re-render connections AFTER disposeAllConns cleared them.
     // Without this call, any caller of renderInnerSurface strips all lines
@@ -966,7 +966,7 @@ export function initRenderFacade(deps) {
     bar.className = 'small-box__bar';
     bar.addEventListener('mousedown', e => {
       if (!e.target.closest('.small-box__title') && !e.target.closest('.small-box__delete') && !e.target.closest('.box-star-btn')) {
-        // BX-DEV-111j: validate box still exists before allowing drag
+        // validate box still exists before allowing drag
         if (!getLargeBox(largeId)) { showBoxDeletedWarning(largeId); return; }
         onBoxDragStart(e, 'small', { largeId, smallId: sb.id }, el);
       }
@@ -1036,19 +1036,19 @@ export function initRenderFacade(deps) {
       el.classList.toggle('box--hover-expand', sb.collapseHover);
       if (sb.collapseHover) {
         el.classList.add('box--collapsed');
-        setBodyExpandHeight(el);  // BX-DEV-111: measure after collapsing small box
+        setBodyExpandHeight(el);  // measure after collapsing small box
       } else {
         el.classList.remove('box--collapsed');
       }
       saveLayout();
-      // BX-DEV-137++: refresh connections after small-box expand/collapse.
+      // refresh connections after small-box expand/collapse.
       if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
     });
 
-        // BX-DEV-137+: connect button (↗) for cross-level lines. Star-mark stays
+        // +: connect button (↗) for cross-level lines. Star-mark stays
     // large-only per user confirmation — small-box star would need moveGroupTogether
     // override to lookup small-box parent context; not worth the complexity now.
-    // BX-DEV-137++++: small-box star button (replaces ↗ connect button per user request).
+    // small-box star button (replaces ↗ connect button per user request).
     // Connection initiation now happens from box edge midpoints (mouse cursor +).
     const sbStarBtn = document.createElement('button');
     sbStarBtn.type = 'button';
@@ -1075,10 +1075,10 @@ export function initRenderFacade(deps) {
     resizeHandle.addEventListener('mousedown', e => onResizeStart(e, 'small', { largeId, smallId: sb.id }, el));
     el.appendChild(resizeHandle);
 
-    // BX-DEV-111: restore persisted pinned & auto-expand state for small boxes
+    // restore persisted pinned & auto-expand state for small boxes
     el.classList.toggle('box--pinned', sb.pinned === true);
     if (sb.collapseHover) { el.classList.add('box--hover-expand'); el.classList.add('box--collapsed'); }
-    // BX-DEV-137++++: refresh connections on hover-expand transition for small boxes.
+    // refresh connections on hover-expand transition for small boxes.
     if (sb.collapseHover) {
       el.addEventListener('mouseenter', () => {
         const tidy = setTimeout(() => { if (connLines.size) refreshAllConns(); }, 360);
@@ -1097,7 +1097,7 @@ export function initRenderFacade(deps) {
     return el;
   }
 
-  // BX-DEV-122 (Bug12 popup-followf-box): maintain a live tracker of open bookmark edit/add
+  // (Bug12 popup-followf-box): maintain a live tracker of open bookmark edit/add
   export function addPopupTracker(popupEl, repositionFn) {
     if (!popupEl || typeof repositionFn !== 'function') return;
     __popupTrackers.set(popupEl, repositionFn);
@@ -1162,7 +1162,7 @@ export function initRenderFacade(deps) {
       zoom, panX, panY,
       container,
       memberOrigins,
-      hasMoved: false // BX-DEV-137+++++: track actual drag movement to suppress accidental button click
+      hasMoved: false // track actual drag movement to suppress accidental button click
     });
 
     el.classList.add(type === 'large' ? 'large-box--dragging' : 'small-box--dragging');
@@ -1170,10 +1170,10 @@ export function initRenderFacade(deps) {
 
     document.addEventListener('mousemove', onBoxDragMove);
     document.addEventListener('mouseup', onBoxDragEnd);
-    // BX-DEV-121: release a drag if focus leaves the window mid-drag (matches pan safety nets).
+    // release a drag if focus leaves the window mid-drag (matches pan safety nets).
     window.addEventListener('blur', onBoxDragEnd);
     document.addEventListener('visibilitychange', onBoxDragVisHide);
-    // BX-DEV-134 (B2): pointerup/pointercancel cover mouseup-swallow (iframe/popup/chrome)
+    // (B2): pointerup/pointercancel cover mouseup-swallow (iframe/popup/chrome)
     // cases that previously left dragState stuck with '-box--dragging' class + zIndex=10
     // permanently applied — a visible cause of intermittent 'cannot drag the box again'.
     document.addEventListener('pointerup', onBoxDragEnd);
@@ -1185,9 +1185,9 @@ export function initRenderFacade(deps) {
     if (!dragState) return;
     const dx = e.clientX - dragState.startMouseX;
     const dy = e.clientY - dragState.startMouseY;
-    // BX-DEV-137+++++: Mark as moved if mouse traveled more than threshold — suppresses accidental button click after drag
+    // Mark as moved if mouse traveled more than threshold — suppresses accidental button click after drag
     if (!dragState.hasMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) dragState.hasMoved = true;
-    // BX-DEV-121: read LIVE zoom — innerZoom/canvasZoom can change mid-drag via Ctrl+wheel.
+    // read LIVE zoom — innerZoom/canvasZoom can change mid-drag via Ctrl+wheel.
     // Dividing by the stale start-of-drag snapshot made the box lag/jump behind the cursor.
     const liveZoom = dragState.type === 'large' ? canvasZoom : innerZoom;
     const worldDx = dx / liveZoom;
@@ -1198,7 +1198,7 @@ export function initRenderFacade(deps) {
 
     dragState.el.style.left = newX + 'px';
     dragState.el.style.top = newY + 'px';
-    // BX-DEV-PERF: only reposition popups if any exist — skip getBoundingClientRect on hot path
+    // only reposition popups if any exist — skip getBoundingClientRect on hot path
     if (__popupTrackers.size > 0) { try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ } }
     if (dragState.type === 'large') {
       // Real-time data model update so boxMidPoint reads live coords during drag
@@ -1212,7 +1212,7 @@ export function initRenderFacade(deps) {
         moveGroupTogether(largeKey(dragState.id), dX, dY, dragState.memberOrigins);
       }
     }
-    // BX-DEV-137+: small-box drag also refreshes cross-level lines
+    // +: small-box drag also refreshes cross-level lines
     if (dragState.type === 'small' && dragState.id && dragState.id.largeId && dragState.id.smallId) {
       // Real-time data model update so boxMidPoint reads live coords during drag
       const sb = getSmallBox(dragState.id.largeId, dragState.id.smallId);
@@ -1235,7 +1235,7 @@ export function initRenderFacade(deps) {
     document.removeEventListener('visibilitychange', onBoxDragVisHide);
     document.removeEventListener('pointerup', onBoxDragEnd);
     document.removeEventListener('pointercancel', onBoxDragEnd);
-    // BX-DEV-137+++++: if a real drag happened, suppress the next click on toolbar buttons
+    // if a real drag happened, suppress the next click on toolbar buttons
     // to prevent accidental activation when drag started on a button area.
     if (dragState && dragState.hasMoved) {
       const suppressClick = (ev) => {
@@ -1297,7 +1297,7 @@ export function initRenderFacade(deps) {
       sb.y = Math.max(0, Math.min(snapped.y, worldMaxY2));
       el.style.left = sb.x + 'px';
       el.style.top = sb.y + 'px';
-      // BX-DEV-137+: refresh cross-level lines connected to this small box
+      // +: refresh cross-level lines connected to this small box
       const sKey = smallKey(id.largeId, id.smallId);
       refreshConnsForBox(sKey);
       // BX-143: small-box parent — final group move with snap at drag end
@@ -1311,8 +1311,8 @@ export function initRenderFacade(deps) {
 
     saveLayout();
     setDragState(null);
-    setLastDragEndTime(Date.now());  // prevent click-from-drag (BX-DEV-065)
-    if (type === "large") setLastDragEndId(id);  // signal large box to clear barDownWasDragZone on next click (BX-DEV-077)
+    setLastDragEndTime(Date.now());  // prevent click-from-drag
+    if (type === "large") setLastDragEndId(id);  // signal large box to clear barDownWasDragZone on next click
   }
 
   // ── Canvas Pan (left-drag empty area) ────────────────
@@ -1331,18 +1331,18 @@ export function initRenderFacade(deps) {
     });
     document.addEventListener('mousemove', onCanvasPanMove);
     document.addEventListener('mouseup', onCanvasPanEnd);
-    // BX-DEV-120A: window-blur safety net — if the user alt-tabs/releases the
+    // window-blur safety net — if the user alt-tabs/releases the
     // mouse outside the document, document.mouseup can be missed, leaving
     // panState stuck and cursor=grabbing forever ("爬取键一直生效" bug).
     window.addEventListener('blur', onCanvasPanEnd);
     document.addEventListener('visibilitychange', onCanvasPanVisHide);
-    // BX-DEV-128 (B3): pointerup/pointercancel cover the cases where mouseup is
+    // (B3): pointerup/pointercancel cover the cases where mouseup is
     // swallowed by an iframe, cross-origin popup, or browser chrome (the recurring
     // "爬取键一直生效" intermittent). pointer events also fire for mouse and are
     // not blocked when the cursor leaves the document while the button is held.
     document.addEventListener('pointerup', onCanvasPanEnd);
     document.addEventListener('pointercancel', onCanvasPanEnd);
-    // BX-DEV-112B: do not preventDefault on mousedown — allow dblclick synthesis.
+    // do not preventDefault on mousedown — allow dblclick synthesis.
   }
 
   export function onCanvasPanMove(e) {
@@ -1361,7 +1361,7 @@ export function initRenderFacade(deps) {
     applyCanvasTransform();
     e.preventDefault();
     try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ }
-    // BX-DEV-145/EXPLORE-008: CSS transform moves SVG coords automatically,
+    // 008: CSS transform moves SVG coords automatically,
     // but viewport culling (display:none) must be re-evaluated on pan —
     // previously-culled lines may re-enter the visible window. scheduleConnRefresh
     // is rAF-coalesced → at most once per frame, not per mousemove event.
@@ -1382,12 +1382,12 @@ export function initRenderFacade(deps) {
   }
 
   export function onCanvasPanVisHide() {
-    // BX-DEV-120A: tab-hide during pan — release grabbing immediately.
+    // tab-hide during pan — release grabbing immediately.
     if (panState) onCanvasPanEnd({ type: 'visibilitychange' });
   }
 
   // Inner canvas pan
-  // BX-DEV-112B: mousedown must NOT prematurely set cursor=grabbing. Only after
+  // mousedown must NOT prematurely set cursor=grabbing. Only after
   // a real drag (>= 3px movement) do we switch to grabbing. This keeps the
   // dblclick mousedown/mouseup sequence from flashing cursor between grab and
   // grabbing, and keeps dblclick event synthesis intact (no preventDefault on bare mousedown).
@@ -1407,10 +1407,10 @@ export function initRenderFacade(deps) {
     // Cursor switch deferred to first onInnerPanMove beyond threshold.
     document.addEventListener('mousemove', onInnerPanMove);
     document.addEventListener('mouseup', onInnerPanEnd);
-    // BX-DEV-120A: window-blur + tab-hide safety net for inner canvas too.
+    // window-blur + tab-hide safety net for inner canvas too.
     window.addEventListener('blur', onInnerPanEnd);
     document.addEventListener('visibilitychange', onInnerPanVisHide);
-    // BX-DEV-128 (B3): pointerup/pointercancel mirror the canvas-pan fix; covers
+    // (B3): pointerup/pointercancel mirror the canvas-pan fix; covers
     // iframe/popup/chrome swallow cases that leave the inner grab cursor stuck.
     document.addEventListener('pointerup', onInnerPanEnd);
     document.addEventListener('pointercancel', onInnerPanEnd);
@@ -1433,10 +1433,10 @@ export function initRenderFacade(deps) {
     setInnerPanY(clamped.y);
     applyInnerTransform();
     e.preventDefault();
-    // BX-DEV-111N+ : propagate live inner pan to other tabs within ~25ms (throttled).
+    // +: propagate live inner pan to other tabs within ~25ms (throttled).
     if (currentLargeBoxId) scheduleLargeBoxViewStatePersist(currentLargeBoxId);
     try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ }
-    // BX-DEV-145/EXPLORE-008: re-evaluate viewport culling on inner pan too.
+    // 008: re-evaluate viewport culling on inner pan too.
     if (connLines.size) scheduleConnRefresh(Array.from(connLines.keys()));
   }
 
@@ -1453,12 +1453,12 @@ export function initRenderFacade(deps) {
     }
     setPanState(null);
     persistViewState(true);
-    // BX-DEV-111N: persist inner pan into the current large box record.
+    // persist inner pan into the current large box record.
     if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
   }
 
   export function onInnerPanVisHide() {
-    // BX-DEV-120A: tab-hide during pan — release grabbing immediately.
+    // tab-hide during pan — release grabbing immediately.
     if (panState) onInnerPanEnd({ type: 'visibilitychange' });
   }
   // ── Ctrl+scroll zoom ────────────────────────────────────
@@ -1468,7 +1468,7 @@ export function initRenderFacade(deps) {
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
       const result = zoomAtPoint(canvasContainer, canvasZoom, canvasPanX, canvasPanY, e.clientX, e.clientY, factor);
       setCanvasZoom(result.zoom);
-      // Clamp pan immediately to prevent flash-back on next move (BX-DEV-049)
+      // Clamp pan immediately to prevent flash-back on next move
       const clampedZoomPan = clampCanvasPan(result.panX, result.panY, canvasZoom);
       setCanvasPanX(clampedZoomPan.x);
       setCanvasPanY(clampedZoomPan.y);
@@ -1494,7 +1494,7 @@ export function initRenderFacade(deps) {
       // A4: refresh inner conn lines after zoom so LOD/culling reacts.
       if (typeof refreshAllConns === 'function' && connLines.size) refreshAllConns();
       try { repositionAllPopups(); } catch (e) { /* silent: popup reposition, DOM may be mid-render */ }
-      // BX-DEV-111N+v2 : single saveLayout path per wheel event via the throttled
+      // +v2: single saveLayout path per wheel event via the throttled
       // schedulePersist (Map-based, 80ms). Previously this block called saveLayout()
       // AND saveLargeBoxViewState() AND schedulePersist() — three storage writes per
       // wheel tick, fully capable of blow-through chrome.storage.sync's
@@ -1553,7 +1553,7 @@ export function initRenderFacade(deps) {
         if (sb) { sb.width = nw; sb.height = nh; }
       }
       saveLayout();
-      // BX-DEV-137++: refresh connections after resize — box dimensions changed,
+      // refresh connections after resize — box dimensions changed,
       // leader-line cached stale bounding rect. rAF-coalesced via refreshAllConns.
       if (connLines.size) refreshAllConns();
       setResizeState(null);
@@ -1564,7 +1564,7 @@ export function initRenderFacade(deps) {
   }
 
   // ── create / delete ────────────────────────────────────
-  // ── BX-DEV-112D: physical-double-click idempotency for creation entries ──
+  // ── physical-double-click idempotency for creation entries ──
   // One physical double-click dispatches click(detail=1) → click(detail=2) → dblclick
   // (W3C UI Events). When the two clicks land on different elements (canvas, then a
   // just-revealed empty-state CTA), dblclick targets the nearest common ancestor, so
@@ -1589,7 +1589,7 @@ export function initRenderFacade(deps) {
   }
 
   export async function addLargeBoxAt(clientX, clientY) {
-    // BX-DEV-112D: cooldown bridges the empty-state CTA click path and this dblclick path
+    // cooldown bridges the empty-state CTA click path and this dblclick path
     if (isWithinCreateCooldown(clientX, clientY)) { debug('addLargeBoxAt suppressed: create cooldown'); return; }
     markCreate(clientX, clientY);
     debug('addLargeBoxAt called', { clientX, clientY, boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex });
@@ -1607,7 +1607,7 @@ export function initRenderFacade(deps) {
       width: LARGE_DEF_W, height: LARGE_DEF_H,
       nextSmallIndex: 1, children: []
     };
-    // BX-DEV-106: elastic-snap to avoid overlapping existing boxes
+    // elastic-snap to avoid overlapping existing boxes
     const others = layout.boxes.map(b => ({ x: b.x, y: b.y, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H }));
     const unsnapped = elasticSnap({ x: snapped.x, y: snapped.y }, LARGE_DEF_W, LARGE_DEF_H, others, CANVAS_GRID, snapCanvas);
     newBox.x = Math.max(0, unsnapped.x); newBox.y = Math.max(0, unsnapped.y);
@@ -1618,7 +1618,7 @@ export function initRenderFacade(deps) {
     // fire-and-forget the write chain. Awaiting saveLayout here serialized dblclick
     // feedback behind storageWriteChain — wave4 P1 "double-click lost, boxes batch-appear".
     renderCanvas();
-    // BX-DEV-140d: after DOM rebuild, Chrome redirects focus to the first
+    // after DOM rebuild, Chrome redirects focus to the first
     // focusable element in DOM order (contenteditable title / toolbar button).
     // Explicitly park focus on our tabindex=-1 sink to prevent the steal.
     canvasContainer.focus({ preventScroll: true });
@@ -1627,14 +1627,14 @@ export function initRenderFacade(deps) {
   }
 
   export async function addLargeBox(e) {
-    if (e && e.preventDefault) e.preventDefault(); // BX-DEV-140c: prevent Chrome click focus-steal
+    if (e && e.preventDefault) e.preventDefault(); // prevent Chrome click focus-steal
 
     debug('addLargeBox (button) called', { boxCount: layout.boxes.length, nextIndex: layout.nextLargeIndex });
     if (layout.boxes.length >= MAX_LARGE_BOXES) { debug('max large boxes'); return; }
     const index = layout.nextLargeIndex++;
     debug('addLargeBox index', index);
     const others = layout.boxes.map(b => ({ x: b.x, y: b.y, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H }));
-    // BX-DEV-112: start at current viewport's top-left in world coords, not canvas origin
+    // start at current viewport's top-left in world coords, not canvas origin
     const cvsRect = canvasContainer.getBoundingClientRect();
     const vpWorld = screenToWorld(cvsRect.left, cvsRect.top, canvasContainer, canvasPanX, canvasPanY, canvasZoom);
     let candidate = { x: vpWorld.x + 20, y: vpWorld.y + 20 };
@@ -1653,7 +1653,7 @@ export function initRenderFacade(deps) {
     debug('addLargeBox pushed, count=' + layout.boxes.length);
     // Ticket 09: render first, persist async (see addLargeBoxAt note).
     renderCanvas();
-    canvasContainer.focus({ preventScroll: true }); // BX-DEV-140d: prevent Chrome focus-steal
+    canvasContainer.focus({ preventScroll: true }); // prevent Chrome focus-steal
     void saveLayout();
     debug('addLargeBox done, surface children=' + canvasSurface.children.length);
   }
@@ -1668,12 +1668,12 @@ export function initRenderFacade(deps) {
   export function _execDeleteLargeBox(id) {
     const result = commit("deleteLargeBox", { id }, { save: true });
     if (result && result.skipped) return;
-    // ADR-0007 Q4d: viewState cleared inside commit; box already removed from maps
+    // viewState is cleared inside commit; box already removed from maps
     if (currentLargeBoxId === id) exitToCanvas();
     renderCanvas();
   }
 
-  // BX-DEV-111j: Cross-tab delete protection — validate currentLargeBoxId still exists before any inner operation.
+  // Cross-tab delete protection — validate currentLargeBoxId still exists before any inner operation.
   export function validateCurrentBox() {
     if (!currentLargeBoxId) return false;
     const lb = getLargeBox(currentLargeBoxId);
@@ -1708,14 +1708,14 @@ export function initRenderFacade(deps) {
   }
 
   export function addSmallBox(e) {
-    if (e && e.preventDefault) e.preventDefault(); // BX-DEV-140c: prevent Chrome click focus-steal
+    if (e && e.preventDefault) e.preventDefault(); // prevent Chrome click focus-steal
     const lb = validateCurrentBox();
     if (!lb) return;
     if ((lb.children?.length || 0) >= MAX_SMALL_BOXES) { debug('max small boxes'); return; }
 
     lb.children = lb.children || [];
     const others = lb.children.map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
-    // BX-DEV-112: start at current viewport's top-left in world coords, not inner origin
+    // start at current viewport's top-left in world coords, not inner origin
     const innerRect = innerCanvas.getBoundingClientRect();
     const vpWorld = screenToWorld(innerRect.left, innerRect.top, innerCanvas, innerPanX, innerPanY, innerZoom);
     let candidate = { x: vpWorld.x + 20, y: vpWorld.y + 20 };
@@ -1736,7 +1736,7 @@ export function initRenderFacade(deps) {
   }
 
   export function addSmallBoxAt(clientX, clientY) {
-    // BX-DEV-112D: cooldown bridges the empty-state CTA click path and this dblclick path
+    // cooldown bridges the empty-state CTA click path and this dblclick path
     if (isWithinCreateCooldown(clientX, clientY)) { debug('addSmallBoxAt suppressed: create cooldown'); return; }
     markCreate(clientX, clientY);
     const lb = validateCurrentBox();
@@ -1753,7 +1753,7 @@ export function initRenderFacade(deps) {
       pinned: false, bookmarks: []
     });
     smallBoxById.set(lb.id + ":" + lb.children[lb.children.length - 1].id, lb.children[lb.children.length - 1]);
-    // BX-DEV-106: elastic-snap to avoid overlapping existing small boxes
+    // elastic-snap to avoid overlapping existing small boxes
     const others = lb.children.filter(s => s.id !== lb.children[lb.children.length - 1].id).map(s => ({ x: s.x, y: s.y, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H }));
     const last = lb.children[lb.children.length - 1];
     const unsnapped = elasticSnap({ x: snapped.x, y: snapped.y }, SMALL_DEF_W, SMALL_DEF_H, others, INNER_GRID, snapInner);
@@ -1772,11 +1772,11 @@ export function initRenderFacade(deps) {
     if (!lb) return;
     const result = commit("deleteSmallBox", { largeId, smallId }, { save: true });
     if (result && result.skipped) return;
-    disposeAllConns(); // BX-DEV-137+++: clear stale lines before re-rendering inner surface
+    disposeAllConns(); // clear stale lines before re-rendering inner surface
     renderInnerSurface(lb);
     renderConnections();
   }
 
-  // BX-DEV-122: sync settings-DOM from layout.settings. Used by openSettingsModal init
+  // sync settings-DOM from layout.settings. Used by openSettingsModal init
   // AND by applyExternalLayout so cross-tab settings writes (e.g. urlOpenMode flip) reflect
   // in the local settings modal even before the user reopens it. Without this, the local

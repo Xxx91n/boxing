@@ -114,7 +114,7 @@ test.describe('Boxing v3 Extension', () => {
     expect(css).toMatch(/height:\s*\d{3}px/);
   });
 
-  test('design-system.css uses beige token palette (ADR-0008 three-layer)', async () => {
+  test('design-system.css uses beige token palette (three-layer tokens)', async () => {
     const css = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp', 'design-system.css'), 'utf8');
     expect(css).toContain('--color-warm-50: #F1EEE8');  // Layer 1: Primitive
     expect(css).toContain('--color-warm-150: #EBE5DB');
@@ -134,15 +134,6 @@ test.describe('Boxing v3 Extension', () => {
     const gi = fs.readFileSync(path.join(EXTENSION_PATH, '.gitignore'), 'utf8');
     expect(gi).toContain('.codegraph/');
   });
-
-  test('README.md documents v3 features', async () => {
-    const readme = fs.readFileSync(path.join(EXTENSION_PATH, 'README.md'), 'utf8');
-    expect(readme).toContain('Boxing');
-    expect(readme).toMatch(/[Ll]anguage/);
-    expect(readme).toMatch(/[Cc]anvas/);  // updated for README rewrite
-    expect(readme).toMatch(/[Zz]oom/);
-    expect(readme).toMatch(/[Bb]ookmark/);
-    });
 
   // v3.7.1: urlOpenMode removed — bookmarks always open in new tab (browser-compatible)
   test('open-bookmark handler uses browser tabs API', async () => {
@@ -254,7 +245,7 @@ test.describe('Boxing v3 Extension', () => {
 
 
   // Ticket 27 (quarantine convergence): @quarantine retired. Pin toggle is a DOM
-  // reparenting contract (BX-DEV-* header pin), not input realness — native click
+  // reparenting contract (header pin), not input realness — native click
   // stalled on the firefox lane under load (playwright#16095 class), so the two
   // toggle clicks are synthetic.
   test('Pin header button: visible, clickable, toggles header hide/show', async ({ browser }) => {
@@ -301,7 +292,7 @@ test.describe('Boxing v3 Extension', () => {
   });
 
 
-  // BX-DEV-111k: Cross-tab delete protection — box deleted, guards block inner ops + show warning
+  // Cross-tab delete protection — box deleted, guards block inner ops + show warning
   // Ticket 27 (quarantine convergence): @quarantine retired; box creation is app-level,
   // native dblclick stalled on firefox under load (playwright#16095 class) → synthetic.
   test('Cross-tab delete: validateCurrentBox guards fire when box deleted', async ({ browser }) => {

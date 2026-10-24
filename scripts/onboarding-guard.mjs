@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Ticket 101 (A-055 / B65): first-run onboarding dismissal guard.
+// Ticket 101 (/ B65): first-run onboarding dismissal guard.
 //
 // Ticket 89 hardened ONE spec against the fire-and-forget dismissal race and left
 // ~25 siblings carrying it; ticket 93 then hit the same race again on a sibling

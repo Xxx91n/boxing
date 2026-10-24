@@ -52,7 +52,7 @@ When adding a feature, add a test spec that covers the core behavior.
 - `background.js` — Service worker
 - `_locales/` — 14 language directories
 - Build output: `dist/boxing-chrome` + `dist/boxing-firefox`
-- See [CONTEXT.md](docs/CONTEXT.md) for the full architecture glossary
+- See [GLOSSARY.md](GLOSSARY.md) for the domain and build glossary
 
 ## Reporting Issues
 

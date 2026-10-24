@@ -12,7 +12,7 @@ async function resetBoxing(page) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
 }
 
-test.describe('Boxing inner surface clip (BX-DEV-CLIP)', () => {
+test.describe('Boxing inner surface clip ', () => {
   // Ticket 111 / B72 / N-106-01: the first test in this file carries the Firefox headed
   // cold-start cost on this host (~22s launch alone; ticket 13 DEBUG=pw:api evidence) and,
   // under multi-worker host contention, the 30s default budget is consumed inside the shared

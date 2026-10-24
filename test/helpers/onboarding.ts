@@ -1,4 +1,4 @@
-// Boxing e2e helper — first-run onboarding overlay (ticket 101 / A-055 / B65).
+// Boxing e2e helper — first-run onboarding overlay (ticket 101 B65).
 //
 // ROOT CAUSE (measured, not inferred — ticket 89 §6.1, ticket 93 §2.3):
 // ntp/index.html ships a full-screen first-run tour overlay (#onboarding-overlay,

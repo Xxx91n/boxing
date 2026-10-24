@@ -1,5 +1,5 @@
 // Boxing — onboarding module (ticket 10, architecture-recovery).
-// First-run guided tour. ADR-0016 trigger model: background.js persists boxingInstallSignal on
+// First-run guided tour. Trigger model: background.js persists boxingInstallSignal on
 // chrome.runtime.onInstalled (reason install|update); ntp.js init() consumes the signal and calls
 // initOnboarding({ reason }). reason 'install' → tour when not completed; 'update' → suppressed;
 // missing signal (file:// mock lane) → legacy empty-canvas fresh-install judgment (tests alive).
@@ -13,7 +13,7 @@ import { renderCanvas, updateAutohideUI } from './render.js';
 import { openSettingsModal } from './settings-ui.js';
 
 let debug, debugErr, updateCaption, langSelect;
-// BX-D-009: injected runtime-id probe (defensive demo detection). ntp.js holds the
+// injected runtime-id probe (defensive demo detection). ntp.js holds the
 // only sanctioned browser-API handle; this module reads through the facade so the
 // import-graph-guard B-6 whitelist stays intact.
 let demoRuntimeId;
@@ -25,7 +25,7 @@ export function initOnboardingFacade(deps) {
 }
 
   // ── BX-ONBOARDING: first-run guided tour ───────────────────────────────
-  // BX-D-009 (bug3): the Pages demo is a trial surface, not a tutorial. The tour
+  // (bug3): the Pages demo is a trial surface, not a tutorial. The tour
   // is an aria-modal overlay that wins the hit test for the WHOLE page, so on the
   // demo — which has no install signal, so it fell through to the legacy
   // empty-canvas judgment — the tour blocked every pointer gesture: you could not
@@ -65,7 +65,7 @@ export function initOnboardingFacade(deps) {
     } catch (e) { if (typeof debugErr === 'function') debugErr('onboarding demo probe', e); }
     const overlay = document.getElementById('onboarding-overlay');
     if (!overlay) return;
-    // ADR-0016: trigger by the onInstalled signal (install/update distinction) instead of judging
+    // Trigger by the onInstalled signal (install/update distinction) instead of judging
     // fresh install on every init. reason 'install' → tour if not completed; 'update' → suppressed;
     // no signal (file:// mock lane) → legacy judgment keeps the debug/test lane alive (ticket 03).
     const reason = trigger.reason || null;
@@ -132,7 +132,7 @@ export function initOnboardingFacade(deps) {
     skipBtn?.addEventListener('click', () => close(false));
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
 
-    // BX-DEV-111O+: onboarding data-restore shortcut — opens Settings > Data and triggers the import
+    // +: onboarding data-restore shortcut — opens Settings > Data and triggers the import
     // file picker so users with an existing JSON backup can pull it in on first run without hunting menus.
     try {
       const restoreBtn = document.getElementById('onboarding-restore-btn');
@@ -149,7 +149,7 @@ export function initOnboardingFacade(deps) {
         });
       }
     } catch (e) { debugErr('onboarding restore bind', e); }
-    // BX-DEV-111O: build onboarding language picker — mirrors the Settings lang-select list.
+    // build onboarding language picker — mirrors the Settings lang-select list.
     try {
       const onbLang = document.getElementById('onboarding-lang-select');
       const ONB_LANG_LABELS = { en: 'English', zh_CN: '简体中文', ja: '日本語', ko: '한국어', fr: 'Français', de: 'Deutsch', es: 'Español', pt_BR: 'Português (Brasil)', ru: 'Русский', ar: 'العربية', hi: 'हिन्दी', th: 'ไทย', vi: 'Tiếng Việt', zh_TW: '繁體中文' };

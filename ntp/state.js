@@ -44,13 +44,13 @@
   // double-click detection
   export let lastClickTime = 0;
   export let lastClickTarget = null;
-  export let lastDragEndTime = 0;  // skip click if within 60ms of drag end (BX-DEV-065)
-export let lastEnterLargeBoxAt = 0;  // BX-DEV-112C: time of last enterLargeBox via click/dblclick — used to suppress stray inner dblclick
-export let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set by enterLargeBox to swallow the next inner dblclick
-  export let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click (BX-DEV-077)
+  export let lastDragEndTime = 0;  // skip click if within 60ms of drag end
+export let lastEnterLargeBoxAt = 0;  // time of last enterLargeBox via click/dblclick — used to suppress stray inner dblclick
+export let suppressInnerDblClickOnce = false;  // one-shot flag set by enterLargeBox to swallow the next inner dblclick
+  export let lastDragEndId = null;  // box id just dragged - clears barDownWasDragZone on next click
 
   // header auto-hide state (must be declared before functions that reference it)
-  export let headerPinned = true;  // BX-DEV-111: set after loadLayout reads persisted value
+  export let headerPinned = true;  // set after loadLayout reads persisted value
   export let scrollTimeout;
 
   export const writerId = crypto.randomUUID ? crypto.randomUUID() : `page-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -65,7 +65,7 @@ export let suppressInnerDblClickOnce = false;  // BX-DEV-112C: one-shot flag set
   export const __viewStatePersistTimers = new Map();
   export const __selfLastWriteTs = new Map();
 
-  // -- box index maps (ADR-0007 Phase 1.3: O(1) lookups) --
+  // -- box index maps (O(1) lookups) --
   export const boxById = new Map();       // largeBoxId -> box object
   export const smallBoxById = new Map();  // smallKey ("largeId:smallId") -> small box object
 

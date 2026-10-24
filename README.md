@@ -80,10 +80,10 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 > [!IMPORTANT]
 > **Install from official store pages** (recommended). GitHub Releases are a **user-facing
 > changelog** and optional source/sideload zips — they **no longer ship `.xpi` / `.crx`**.
-> For the current published version see [docs/release-status.md](docs/release-status.md)
+> For the current published version see the store listings linked above
 > (single source of truth — this README deliberately does not restate a version literal,
 > so it cannot go stale; the badges above are workflow-backed and always live).
-> Gate background: [ADR-0017](docs/adr/0017-release-data-gate.md). Publisher workflow:
+> Gate background: CI gate ∧ manual store golden path ∧ Pages check. Publisher workflow:
 > [publishing guide](docs/publishing-guide.md) · [store plan](docs/store-publishing-plan.md).
 
 ### Firefox (official install)
@@ -168,14 +168,6 @@ npm test          # Playwright tests (Chrome + Firefox)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
-
-## Testing governance
-
-The quarantine register, its expiry rule, and the host-environment incident register are no longer
-inlined in this product-facing entry: they are English-only governance records (all 13 localized
-READMEs omit them) that carried agent work-log paths.
-
-See [docs/testing-governance.md](docs/testing-governance.md).
 
 ## Contributing
 

@@ -61,7 +61,7 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
 ## インストール
 
 > [!IMPORTANT]
-> **公式ストアページからインストールしてください**（推奨）。インストール手順と現在公開されているストアバージョンの一次情報は [英語版 README — Install](../../README.md#install) と [リリース状況ページ](../../docs/release-status.md) にあります。
+> **公式ストアページからインストールしてください**（推奨）。インストール手順と現在公開されているストアバージョンの一次情報は [英語版 README — Install](../../README.md#install) にあります。
 > GitHub Releases は**ユーザー向けの変更履歴**です：[最新リリース](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox（正式インストール）

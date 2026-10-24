@@ -12,7 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
 const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp', 'index.html')).href;
-// Ticket 95 (A-049 credential sweep): NO real credentials in source. This spec's
+// Ticket 95 (credential sweep): NO real credentials in source. This spec's
 // WebDAV transport is fully stubbed by the runtime.sendMessage mock, so the config
 // only needs to pass checkUrlValid (https, non-private host, no embedded auth).
 // A staging account can be injected via BOXING_SPEC_WEBDAV_* env vars (91R pattern).

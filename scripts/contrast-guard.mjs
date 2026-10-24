@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Ticket 102 (architecture-recovery) - A-056 / B66 / Wave 11 D-003: 对比度与 Token 配对门禁。
+// Ticket 102 (architecture-recovery) - B66 / Wave 11 D-003: 对比度与 Token 配对门禁。
 //
 // 为什么是"构建期 token 配对断言"而不是只靠浏览器测试:
 //   axe-core 的 color-contrast 规则只覆盖 SC 1.4.3 文本, 且对渐变/伪元素/opacity 标记

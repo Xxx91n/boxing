@@ -747,11 +747,11 @@
   },
   "connStarParent": {
     "message": "标记为组父盒子",
-    "description": "BX-DEV-137 box connections / star-mark"
+    "description": "box connections / star-mark"
   },
   "connStart": {
     "message": "Start a connection to another box",
-    "description": "BX-DEV-137 box connections / star-mark"
+    "description": "box connections / star-mark"
   },
   "connDeleteActionLabel": {
     "message": "删除连线方式",

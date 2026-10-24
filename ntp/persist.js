@@ -1,6 +1,6 @@
 /** Boxing — NTP persistence module (ticket 08, architecture-recovery).
  * Layout/view-state persistence extracted verbatim from ntp.js (zero-build strangler-fig):
- * tab view keys, view-state persist family (BX-DEV-111L/M/N), theme packs (ADR-0012),
+ * tab view keys, view-state persist family, theme packs,
  * loadSettings. Sits on top of the storage facade (./storage.js, ticket 07).
  * Diffs vs origin: 'export ' prefixes + this header/imports/initPersistFacade — nothing else.
  * Cross-scope deps are injected once via initPersistFacade() (same pattern as initStorageFacade). */
@@ -19,12 +19,12 @@ export function initPersistFacade(deps) {
 }
 
   export const TAB_VIEW_KEY = 'boxingTabView.v2';
-  // Ticket 60 (Wave7 zero-flash): paint-critical boot mirror key — sync-readable first-paint
+  // Ticket 60 (zero-flash): paint-critical boot mirror key — sync-readable first-paint
   // cache of already-persisted theme/darkMode/fontSize. Written by the storage facade's
   // successful persist path; read by ntp/boot-theme.js (classic blocking script).
   export const BOOT_THEME_KEY = 'boxingBootTheme.v1';
   export const LAST_ACTIVE_VIEW_KEY = 'boxingLastActiveView.v2';
-  // BX-DEV-111L: permanent tab-view history (survives browser restart). LRU-bounded to prevent heap blow-up.
+  // permanent tab-view history (survives browser restart). LRU-bounded to prevent heap blow-up.
   const TAB_VIEW_HISTORY_KEY = 'boxingTabViewHistory.v3';
   const MAX_TAB_VIEW_HISTORY = 8;
   // Per-large-box inner view state persisted into layout (auto-syncs across tabs via chrome.storage).
@@ -46,7 +46,7 @@ export function initPersistFacade(deps) {
     if (includeLastActive && layout.settings.rememberLastPos !== false) {
       try { localStorage.setItem(LAST_ACTIVE_VIEW_KEY, serialized); } catch (e) { debugWarn('last active view save', e); }
     }
-    // BX-DEV-111L: permanent LRU history — survives browser close. Used as fallback when sessionStorage is gone.
+    // permanent LRU history — survives browser close. Used as fallback when sessionStorage is gone.
     try { pushTabViewHistory(snap); } catch (e) { debugWarn('tab view history push', e); }
   }
 
@@ -66,7 +66,7 @@ export function initPersistFacade(deps) {
   }
 
   // ═══════════════════════════════════════════════════
-  // Paint-critical boot mirror (ticket 60, Wave7 A-013/A-014)
+  // Paint-critical boot mirror (ticket 60)
   // ═══════════════════════════════════════════════════
   // Sync-readable first-paint cache: ONLY paint-critical settings (theme/darkMode/
   // fontSize) mirrored from the layout AFTER a successful boxingLayout persist. NOT a
@@ -88,7 +88,7 @@ export function initPersistFacade(deps) {
     try { localStorage.removeItem(BOOT_THEME_KEY); } catch (e) { /* silent: localStorage clear, already gone */ }
   }
 
-  // ── BX-D-008: the single dark-mode apply path ──────────────────────────
+  // ── the single dark-mode apply path ──────────────────────────
   // Three asymmetries used to write '.ntp--dark' (bug2, ledger D-008/D-011②):
   //   1. boot-theme.js ADDED it to documentElement and only ever added, never
   //      removed, so a session that booted dark kept a permanently-dark ancestor
@@ -134,7 +134,7 @@ export function initPersistFacade(deps) {
 
   window.__boxingClearTabViewHistory = function () { try { localStorage.removeItem(TAB_VIEW_HISTORY_KEY); localStorage.removeItem(LAST_ACTIVE_VIEW_KEY); localStorage.removeItem(TAB_VIEW_KEY); sessionStorage.removeItem(TAB_VIEW_KEY); } catch (e) { /* silent: localStorage clear, already gone */ } return true; };
 
-  // BX-DEV-111N: persist the inner canvas zoom/pan into the large box record so it survives tab/browser close
+  // persist the inner canvas zoom/pan into the large box record so it survives tab/browser close
   // and syncs across tabs via chrome.storage.onChanged. Cheap write — called on pan-end/zoom-end/exit.
   export function saveLargeBoxViewState(boxId) {
     if (!boxId) return;
@@ -142,7 +142,7 @@ export function initPersistFacade(deps) {
     if (!lb) return;
     const ts = Date.now();
     lb.viewState = { innerZoom: innerZoom, innerPanX: innerPanX, innerPanY: innerPanY, updatedAt: ts };
-    // BX-DEV-111N+v2: record this tab's own write timestamp per box so applyExternalLayout
+    // +v2: record this tab's own write timestamp per box so applyExternalLayout
     // can compare incoming.viewState.updatedAt against what *this* tab last wrote, not
     // against layout._meta.updatedAt (which mergeConcurrentLayout already overwrote).
     try { __selfLastWriteTs.set(boxId, ts); } catch (e) { debugWarn('selfLastWriteTs set', e); }
@@ -158,7 +158,7 @@ export function initPersistFacade(deps) {
     saveLayout();
   }
   window.__boxingSaveLargeBoxViewState = saveLargeBoxViewState;
-  // BX-DEV-111N+v2 : millisecond-grade cross-tab viewState propagation. Per-box 80ms
+  // +v2: millisecond-grade cross-tab viewState propagation. Per-box 80ms
   // throttle (up from 25ms) keeps pan/zoom writes under chrome.storage.sync
   // MAX_WRITE_OPERATIONS_PER_MINUTE=1200 (=20/sec) quota with a 4x safety margin.
   // Each large box has its OWN timer (Map<boxId, timerHandle>) so switching boxes
@@ -181,7 +181,7 @@ export function initPersistFacade(deps) {
     __viewStatePersistTimers.set(boxId, handle);
   }
   window.__boxingScheduleLargeBoxViewStatePersist = scheduleLargeBoxViewStatePersist;
-  // BX-DEV-111N+v2 : flush all pending per-box view-state timers immediately. Called on
+  // +v2: flush all pending per-box view-state timers immediately. Called on
   // pagehide / visibilitychange=hidden / beforeunload so a tab close never loses the last
   // pan/zoom that was sitting in an 80ms timer window. Synchronous save so the browser
   // has the storage write before it tears down the page.
@@ -196,10 +196,10 @@ export function initPersistFacade(deps) {
   }
   window.__boxingFlushPendingViewStatePersist = flushPendingViewStatePersist;
   // ═══════════════════════════════════════════════════
-  // Accent Theme Manager (ADR-0012)
+  // Accent Theme Manager
   // Hue-based preset + slider for user-customizable accent color
   // ═══════════════════════════════════════════════════
-  // ADR-0012: Curated theme pack system — replaces free hue slider (supersedes ADR-0010)
+  // Curated theme pack system — replaces the old free hue slider.
   // 5 designer-curated themes: beige (default), graphite, coastal, forest, pure
   // Each theme stores complete warm bg ramp (9 tiers) + accent ramp (3 tiers) for light + dark.
   // User picks a theme by key — no free hue slider.
@@ -264,7 +264,7 @@ export function initPersistFacade(deps) {
   export function applyTheme(themeKey) {
     const theme = THEME_PACKS[themeKey] || THEME_PACKS.beige;
     const root = document.documentElement;
-    // ADR-0012: delta-diff (pwm gpt5.6 enterprise pattern) only setProperty for changed vars
+    // Delta-diff: only setProperty for changed vars
     for (const tier of Object.keys(theme.light.warm)) {
       const v = theme.light.warm[tier], vd = theme.dark.warm[tier];
       if (root.style.getPropertyValue('--color-warm-' + tier) !== v) root.style.setProperty('--color-warm-' + tier, v);
@@ -295,20 +295,20 @@ export function initPersistFacade(deps) {
     setInnerZoom(layout.settings.zoomLevel || 1.0);
     const fs = layout.settings.fontSize || 14;
     document.documentElement.style.setProperty('--font-size-base', fs + 'px');
-    // Ticket 60 (Wave7 zero-flash): authoritative hydration — boxingLayout is the source of
+    // Ticket 60 (zero-flash): authoritative hydration — boxingLayout is the source of
     // truth; re-apply over whatever the boot mirror applied (covers the one-shot default
     // downgrade after localStorage was cleared, and theme changes made in another tab).
     if (typeof mirrorWriter === 'function') {
       persistBootThemeMirror(mirrorWriter);
     }
 
-   // dark mode — BX-D-008: the single apply path. The old block here ADDED the class to
+   // dark mode — the single apply path. The old block here ADDED the class to
    // #app + body while leaving the html class boot-theme.js had added untouched — that
    // asymmetry is bug2's "cannot switch back to light, only a new tab helps" failure.
    // applyDarkMode writes documentElement symmetrically and rewrites the boot mirror,
    // so the class and the mirror can no longer disagree with settings.
    applyDarkMode(layout.settings.darkMode === true);
-    // accent theme (ADR-0012) — apply curated theme pack
+    // Accent theme — apply curated theme pack
     if (layout.settings.theme && layout.settings.theme !== 'beige') {
       applyTheme(layout.settings.theme);
     }

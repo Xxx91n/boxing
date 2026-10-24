@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Ticket 108 (A-063) - layout-bypass static gate.
+// Ticket 108  - layout-bypass static gate.
 //
 // Contract: every membership change of a LAYOUT COLLECTION must go through the
-// single mutation entry commit(op) -> mutationHandlers (ADR-0007 Q2, tldraw
+// single mutation entry commit(op) -> mutationHandlers (tldraw
 // Store pattern). A bypass is exactly how the ticket-107 P0 happened: popups.js
 // spliced the bookmarks array directly and fire-and-forgot saveLayout, so no
 // tombstone was written and a stale remote copy resurrected the bookmark on the
@@ -245,7 +245,7 @@ function analyze(sources) {
       for (const name of r.missing) {
         violations.push({
           rule: "LB-0", file: src.rel, line: 1, op: "contract", receiver: "-",
-          message: "allow-region marker missing: " + name + " - gate fails closed (ADR-0007 Q2 allow-region)"
+          message: "allow-region marker missing: " + name + " - gate fails closed (allow-region marker)"
         });
       }
       ranges = r.ranges;
@@ -273,7 +273,7 @@ function analyze(sources) {
         violations.push({
           rule: h.rule, file: src.rel, line: n, op: h.op, receiver: h.receiver,
           message: h.rule + ": layout collection '" + h.receiver + "' " + h.op +
-            " outside mutationHandlers - route it through commit(op) (ADR-0007 Q2 / ticket 108)"
+            " outside mutationHandlers - route it through commit(op) (ticket 108)"
         });
       }
     });
@@ -363,6 +363,6 @@ if (argv.indexOf("--json") < 0) {
   console.log(JSON.stringify(payload));
 }
 if (!ok) {
-  console.log("layout bypass gate: " + result.violations.length + " violation(s) - layout collections must be mutated through commit(op) (ADR-0007 Q2)");
+  console.log("layout bypass gate: " + result.violations.length + " violation(s) - layout collections must be mutated through commit(op)");
 }
 process.exitCode = ok ? 0 : 1;

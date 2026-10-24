@@ -7,9 +7,8 @@
 // the Playwright report never diverge. Failures exit 1, which makes npm test (and CI,
 // which runs it via the pretest lifecycle) red — per issues/45, red is the gate.
 //
-// Spec refs: .scratch/architecture-recovery/spec.md L3 (release gating),
-// docs/adr/0009 (schemaVersion / crash rescue), docs/adr/0007 Q1 + Q4c (groups ->
-// isParent one-time migration, connection props backfill).
+// Covers: release gating, schemaVersion / crash rescue, the groups -> isParent
+// one-time migration, and connection props backfill.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,12 +44,12 @@ function canon(value) {
 }
 
 // Rollback half of the expand/contract exercise: a reader frozen at the PREVIOUS
-// contract (pre-ADR-0009: no schemaVersion awareness; pre-Q1: groups optional with
+// contract (no schemaVersion awareness; groups optional with
 // fallback). The point of the contract is that this reader keeps every user-visible
 // object from current data (boxes, children, bookmarks, connections); only the
 // runtime-only grouping decoration may differ, and that survives via isParent.
 function legacyReader(raw) {
-  if (!raw || typeof raw !== 'object' || !(raw.version >= 3)) return null; // BX-DEV-085: >=3 taken as-is
+  if (!raw || typeof raw !== 'object' || !(raw.version >= 3)) return null; // >=3 taken as-is
   return {
     boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
     connections: Array.isArray(raw.connections) ? raw.connections : [],
@@ -88,7 +87,7 @@ async function runMigrationGoldenChecks() {
     add('v1-settings-superset', Object.keys(d.settings).every((k) => k in m.settings) && m.settings.theme === 'beige');
   }
 
-  // -- legacy-groups.json: ADR-0007 Q1 + Q4c one-time migration -------------------
+  // -- legacy-groups.json: groups migration (runtime-only) + props backfill --------
   {
     const raw = loadFixture('legacy-groups.json');
     const m = migrateLayout(JSON.parse(JSON.stringify(raw)));
@@ -102,7 +101,7 @@ async function runMigrationGoldenChecks() {
     add('groups-migration-idempotent', canon(migrateLayout(JSON.parse(JSON.stringify(m)))) === canon(m));
   }
 
-  // -- legacy-v2.json: BX-DEV-085 v2 -> 3.5 expansion ------------------------------
+  // -- legacy-v2.json: v2 -> 3.5 expansion ------------------------------
   {
     const raw = loadFixture('legacy-v2.json');
     const once = migrateLayout(JSON.parse(JSON.stringify(raw)));

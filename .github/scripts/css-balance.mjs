@@ -1,6 +1,6 @@
-// Boxing — build-time CSS balance gate (ticket 53, spec D6, ledger A-010).
+// Boxing — build-time CSS balance gate (ticket 53, spec D6, ledger ).
 // Deterministic, zero-dep scanner for the two failure modes behind the
-// 2026-09-12 freeze incident (docs/adr/0017 Context): a missing closing
+// 2026-09-12 freeze incident: a missing closing
 // brace made CSS Nesting swallow every following top-level rule, and a
 // [hidden] fallback pair nested inside a block never matches. Both are
 // detectable from brace depth alone, so the gate is pure text analysis:
@@ -18,7 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 // Every shipped source CSS, repo-relative. ntp/ntp.css is excluded on
-// purpose: it is a gitignored build artifact (ADR-0011) whose balance is
+// purpose: it is a gitignored build artifact whose balance is
 // derived from these inputs. New shipped .css sources join here, not in
 // per-call-site lists.
 export const SOURCE_CSS = [

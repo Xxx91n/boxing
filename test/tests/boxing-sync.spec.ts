@@ -4,7 +4,7 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
-// Ticket 95 (A-049 credential sweep): NO real credentials in source. This spec's
+// Ticket 95 (credential sweep): NO real credentials in source. This spec's
 // WebDAV transport is fully stubbed by the runtime.sendMessage mock, so the config
 // only needs to pass checkUrlValid (https, non-private host, no embedded auth).
 // A staging account can be injected via BOXING_SPEC_WEBDAV_* env vars (91R pattern).
@@ -84,7 +84,7 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
     expect(after).toBe(5);
   });
 
-  test('cloud newer than local merges cloud (ADR-0009 concurrent-change merge)', async ({ page }) => {
+  test('cloud newer than local merges cloud (concurrent-change merge)', async ({ page }) => {
     const heart = (msg) => {
       const body = '{"version":3.5,"boxes":[{"id":"cloud-new","type":"large","title":"Cloud wins","x":0,"y":0,"width":320,"height":220,"children":[]}],"settings":{},"_meta":{"revision":10,"updatedAt":' + (Date.now() + 100000) + ',"writerId":"other-client"}}';
       if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, body };
@@ -95,7 +95,7 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
     await page.evaluate((cfg) => (window as any).__boxingDebug.setWebDAVConfig(cfg.url, cfg.user, cfg.pass), { url: WEBDAV_URL, user: WEBDAV_USER, pass: WEBDAV_PASS });
     await setSyncState(page, { lastSyncAt: Date.now() - 60000, updatedAt: Date.now() - 50000, revision: 1, writerId: 'this-tab' });
     const result = await page.evaluate(() => (window as any).__boxingDebug.syncWebDAV());
-    // ADR-0009: cloud newer AND local changed since lastSyncAt with different
+    // Cloud newer AND local changed since lastSyncAt with different
     // writerId -> concurrent change -> field-level merge (direction 'merge').
     // Outcome invariant unchanged: cloud content lands in the layout.
     expect(['merge', 'pull']).toContain(result.direction);
@@ -155,7 +155,7 @@ test.describe('Boxing WebDAV sync (two-way)', () => {
     expect(before).toBe(1);
     const localTitleBefore = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0]?.title);
     const result = await page.evaluate(() => (window as any).__boxingDebug.syncWebDAV());
-    // BX-FATAL-FIX invariant (ADR-0009 semantics): non-empty local must NEVER be
+    // BX-FATAL-FIX invariant (copy-before-overwrite semantics): non-empty local must NEVER be
     // blindly replaced by cloud. Cloud-old + local-new with different writers
     // satisfies the concurrent-change condition -> field-level 'merge' unions
     // both sides (legacy 'push' replaced cloud wholesale). Either way, the

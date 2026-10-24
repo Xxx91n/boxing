@@ -10,7 +10,7 @@ const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.
 // without the layout.groups shim. Results determine if Block 1 (L1417-1430) in
 // dsuRebuildFromConnections can be safely removed.
 
-// A-041 (ticket 87): `reset` controls the storage wipe. Default true = clean slate.
+// (ticket 87): `reset` controls the storage wipe. Default true = clean slate.
 // Pass { reset: false } for a tab that must ADOPT state another tab persisted: clearing
 // storage there deletes the very data under test. Scenario 1 did exactly that and
 // regressed to starB === null (box absent, not unstarred) on all three OS.

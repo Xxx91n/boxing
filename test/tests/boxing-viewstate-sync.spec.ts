@@ -8,7 +8,7 @@ const NTP_URL = `file:///${path
   .resolve(__dirname, '..', '..', 'ntp', 'index.html')
   .replace(/\\/g, '/')}`;
 
-// BX-DEV-111N+ regression: millisecond-grade cross-tab viewState propagation.
+// + regression: millisecond-grade cross-tab viewState propagation.
 // Two pages share the same file:// origin so the mock-storage 'storage' event
 // delivers boxingLayout changes between them. A pan/zoom on page A must surface
 // on page B's in-memory layout within the throttled persist window.
@@ -21,7 +21,7 @@ async function boot(page: Page) {
   await dismissOnboarding(page);
 }
 
-test.describe('Cross-tab per-box viewState sync (BX-DEV-111N+)', () => {
+test.describe('Cross-tab per-box viewState sync (+)', () => {
   test('inner zoom/pan written on tab A reaches tab B via storage.onChanged', async ({ browser }: { browser: Browser }) => {
     const ctx = await browser.newContext();
     const a = await ctx.newPage();

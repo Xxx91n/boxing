@@ -7,11 +7,11 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..', '..');
 
 /**
- * BX-MANIFEST-004b: dev scripts MUST chain build -> web-ext.
+ * Dev scripts MUST chain build -> web-ext.
  * Prevents the "stale dist" bug where source was fixed
  * but dist was never recompiled before dev loading.
  */
-test.describe('BX-MANIFEST-004b: build-before-dev pipeline', () => {
+test.describe('build-before-dev pipeline', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
   test('dev:chrome chains npm run build before web-ext run', () => {
@@ -53,17 +53,10 @@ test.describe('BX-MANIFEST-004b: build-before-dev pipeline', () => {
     expect(buildSrc).toContain('[STALE_DIST]');
     expect(buildSrc).toContain('BUILD_INFO.json');
   });
-
-  test('AGENTS.md documents BX-MANIFEST-004b', () => {
-    const agentsPath = path.join(ROOT, 'AGENTS.md');
-    const agentsSrc = fs.readFileSync(agentsPath, 'utf8');
-    expect(agentsSrc).toContain('BX-MANIFEST-004b');
-    expect(agentsSrc).toContain('stale');
-  });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BX-D-009 (Wave 2026.10.11 P-18 / S-11): Pages demo build contract.
+// (Wave 2026.10.11 P-18 / S-11): Pages demo build contract.
 //
 // Regression class: the demo artifact is what visitors actually touch, and its
 // first-run tour silently blocked every pointer gesture there. The fix is a
@@ -72,9 +65,9 @@ test.describe('BX-MANIFEST-004b: build-before-dev pipeline', () => {
 //
 // These are static artifact/source contracts (fast, no browser needed). The
 // RUNTIME half — overlay really is suppressed, right-click really works — lives
-// in the BX-D-009 onboarding block below, because that needs a live page.
+// in the onboarding block below, because that needs a live page.
 // ═══════════════════════════════════════════════════════════════════════════
-test.describe('BX-D-009: Pages demo artifact suppresses the first-run tour', () => {
+test.describe('Pages demo artifact suppresses the first-run tour', () => {
   const buildDemoSrc = () => fs.readFileSync(path.join(ROOT, '.github', 'scripts', 'build-demo.mjs'), 'utf8');
   const onboardingSrc = () => fs.readFileSync(path.join(ROOT, 'ntp', 'onboarding.js'), 'utf8');
   const ntpIndexHtml = () => fs.readFileSync(path.join(ROOT, 'ntp', 'index.html'), 'utf8');

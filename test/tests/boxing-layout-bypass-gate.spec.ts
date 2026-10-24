@@ -9,8 +9,8 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..', '..');
 
 /**
- * Ticket 108 (A-063): layout collections must be mutated through the single
- * mutation entry commit(op) -> mutationHandlers (ADR-0007 Q2).
+ * Ticket 108: layout collections must be mutated through the single
+ * mutation entry commit(op) -> mutationHandlers.
  *
  * The gate itself is scripts/layout-bypass-guard.mjs. These checks are offline
  * (layer 1 of the industrial recipe: build-time contract assertions) - the guard
