@@ -16,6 +16,8 @@
     "guard:site-constants": "node scripts/guard-site-constants.mjs",
     "guard:manifest-contract": "node scripts/manifest-contract-guard.mjs",
     "guard:security-contract": "node scripts/security-contract-guard.mjs",
+    "guard:docs-links": "node scripts/docs-link-guard.mjs",
+    "evidence": "node scripts/test-evidence.mjs",
     "pretest": "node scripts/test-mutex-verify.mjs && node scripts/import-graph-guard.mjs && node scripts/layout-bypass-guard.mjs && node scripts/migration-golden-guard.mjs && node scripts/css-balance-guard.mjs && node scripts/contrast-guard.mjs && node scripts/calver-guard.mjs && node scripts/onboarding-guard.mjs && node scripts/guard-fontsize.mjs && node scripts/guard-site-constants.mjs && node scripts/manifest-contract-guard.mjs && node scripts/security-contract-guard.mjs",
     "test": "node scripts/test-mutex.mjs full",
     "test:all": "node scripts/test-mutex.mjs full",
