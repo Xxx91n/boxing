@@ -224,6 +224,21 @@
   "darkModeHint": {
     "message": "Переключение между светлым и тёмным оформлением"
   },
+  "darkModeLight": {
+    "message": "Светлая"
+  },
+  "darkModeDark": {
+    "message": "Тёмная"
+  },
+  "darkModeSystem": {
+    "message": "Как в системе"
+  },
+  "darkModeSwitchToDark": {
+    "message": "Переключить на тёмную тему"
+  },
+  "darkModeSwitchToLight": {
+    "message": "Переключить на светлую тему"
+  },
   "exportData": {
     "message": "Экспорт данных"
   },

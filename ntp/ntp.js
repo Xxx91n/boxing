@@ -417,9 +417,9 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   const confirmCancel = $('#confirm-cancel-btn');
   const confirmDelete = $('#confirm-delete-btn');
 
-  // dark mode
+  // dark mode (ticket 44, spec #41): three-state preference radio group
   const darkModeBtn = $('#dark-mode-btn');
-  const darkModeCB = $('#dark-mode-cb');
+  const darkModeGroup = $('#dark-mode-group');
 
   // import/export
   const exportBtn = $('#export-data-btn');
@@ -490,7 +490,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   // (gate2 single-write-path) and stays a pure crypto leaf.
   initCredentialsFacade({ debugErr, credKeyStore: { get: credKeyGet, set: credKeySet } });
   initSyncEngineFacade({ debug, debugErr, debugWarn, syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput });
-  initSettingsUiFacade({ debug, debugErr, debugWarn, updateCaption, settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect });
+  initSettingsUiFacade({ debug, debugErr, debugWarn, updateCaption, settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeGroup, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect });
   initOnboardingFacade({ debug, debugErr, updateCaption, langSelect, demoRuntimeId: () => (api && api.runtime && api.runtime.id) || null });
 
   // ── Header Pin: two-position strategy (v3.7.2) ──────────────────────────

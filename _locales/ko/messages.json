@@ -224,6 +224,21 @@
   "darkModeHint": {
     "message": "밝은 모드와 어두운 모드 전환"
   },
+  "darkModeLight": {
+    "message": "라이트"
+  },
+  "darkModeDark": {
+    "message": "다크"
+  },
+  "darkModeSystem": {
+    "message": "시스템 설정 따르기"
+  },
+  "darkModeSwitchToDark": {
+    "message": "다크 모드로 전환"
+  },
+  "darkModeSwitchToLight": {
+    "message": "라이트 모드로 전환"
+  },
   "exportData": {
     "message": "데이터 내보내기"
   },

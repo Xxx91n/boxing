@@ -5,8 +5,8 @@
  * Diffs vs origin: 'export ' prefixes + this header/imports/initPersistFacade — nothing else.
  * Cross-scope deps are injected once via initPersistFacade() (same pattern as initStorageFacade). */
 import { __selfLastWriteTs, __viewStatePersistTimers, canvasPanX, canvasPanY, canvasZoom, currentLargeBoxId, headerPinned, innerPanX, innerPanY, innerZoom, layout, setCanvasZoom, setInnerZoom } from './state.js';
-import { SUPPORTED_LANGS, loadI18nStore } from './i18n.js';
-import { hexToRgbTriplet } from './utils.js';
+import { SUPPORTED_LANGS, i18n, loadI18nStore } from './i18n.js';
+import { hexToRgbTriplet, normalizeDarkModePref } from './utils.js';
 import { saveLayout } from './storage.js';
 
 // Injected ntp.js-scope deps (set once at boot, before any runtime call).
@@ -74,11 +74,14 @@ export function initPersistFacade(deps) {
   // the authoritative values stay in boxingLayout and loadSettings() re-applies them.
   // Written via the mirror-writer injected by ntp.js (the storage facade's success path)
   // so the mirror can never drift ahead of a persisted layout.
-  export function persistBootThemeMirror(mirrorWriter, darkMode = layout.settings.darkMode === true) {
+  export function persistBootThemeMirror(mirrorWriter, darkMode = normalizeDarkModePref(layout.settings.darkMode)) {
     try {
       mirrorWriter({
         theme: layout.settings.theme || 'beige',
-        darkMode: darkMode === true,
+        // Ticket 44 (spec #41): the mirror carries the PREFERENCE ('light' | 'dark' |
+        // 'system'), never the resolved OS value. It is a display cache, not a second
+        // layout source — resolving 'system' at first paint belongs to ticket #48.
+        darkMode: normalizeDarkModePref(darkMode),
         fontSize: typeof layout.settings.fontSize === 'number' ? layout.settings.fontSize : 14
       });
     } catch (e) { debugWarn('boot theme mirror write', e); }
@@ -109,8 +112,39 @@ export function initPersistFacade(deps) {
   //     never disagree (the reload half of bug 2).
   //   - Display only. This helper NEVER writes layout.settings: matchMedia
   //     fallback values are for showing, not for persisting.
+  // ── effective dark state (ticket 44, spec #41) ──────────────
+  // The persisted value is a PREFERENCE ('light' | 'dark' | 'system'); what the
+  // interface shows is derived. Booleans stay accepted for the test seam / legacy
+  // callers (`__boxingDebug.applyDarkMode(true)`), mapping to 'dark'/'light'.
+  export function resolveEffectiveDark(pref) {
+    const p = typeof pref === 'string' ? normalizeDarkModePref(pref) : (pref === true ? 'dark' : 'light');
+    if (p === 'dark') return true;
+    if (p === 'light') return false;
+    try {
+      return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+    } catch (_) { return false; }
+  }
+
+  // One-shot live OS listener. It belongs here because persist.js owns the display
+  // application; it is consulted only while the preference is 'system' and it NEVER
+  // writes settings or the layout — display only (the mirror is a display cache).
+  let __darkSchemeQuery = null;
+  function ensureSystemDarkListener() {
+    if (__darkSchemeQuery || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    try { __darkSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)'); }
+    catch (_) { __darkSchemeQuery = null; return; }
+    const onChange = () => {
+      if (normalizeDarkModePref(layout.settings.darkMode) !== 'system') return;
+      applyDarkMode('system');
+    };
+    if (typeof __darkSchemeQuery.addEventListener === 'function') __darkSchemeQuery.addEventListener('change', onChange);
+    else if (typeof __darkSchemeQuery.addListener === 'function') __darkSchemeQuery.addListener(onChange);
+  }
+
   export function applyDarkMode(on) {
-    const dark = on === true;
+    const pref = typeof on === 'string' ? normalizeDarkModePref(on) : (on === true ? 'dark' : 'light');
+    const dark = resolveEffectiveDark(pref);
     const root = document.documentElement;
     if (root) root.classList.toggle('ntp--dark', dark);
     // Header button glyph: ☽ = dark active, ☀ = light active. Both directions are
@@ -118,9 +152,16 @@ export function initPersistFacade(deps) {
     if (darkModeBtn) {
       const span = darkModeBtn.querySelector('span');
       if (span) span.textContent = dark ? '☽' : '☀';
+      // Ticket 44 (spec #41): the tooltip names the ACTION a click performs (the
+      // opposite of the effective state), not the current state, so in follow-system
+      // mode it still describes exactly what the quick toggle will do.
+      const actionLabel = i18n(dark ? 'darkModeSwitchToLight' : 'darkModeSwitchToDark');
+      darkModeBtn.title = actionLabel;
+      darkModeBtn.setAttribute('aria-label', actionLabel);
     }
+    ensureSystemDarkListener();
     if (typeof mirrorWriter === 'function') {
-      try { persistBootThemeMirror(mirrorWriter, dark); } catch (e) { debugWarn('boot theme mirror write', e); }
+      try { persistBootThemeMirror(mirrorWriter, pref); } catch (e) { debugWarn('boot theme mirror write', e); }
     }
   }
 
@@ -307,7 +348,10 @@ export function initPersistFacade(deps) {
    // asymmetry is bug2's "cannot switch back to light, only a new tab helps" failure.
    // applyDarkMode writes documentElement symmetrically and rewrites the boot mirror,
    // so the class and the mirror can no longer disagree with settings.
-   applyDarkMode(layout.settings.darkMode === true);
+   // Ticket 44 (spec #41): normalize the preference on read (legacy boolean -> string)
+   // and let applyDarkMode derive the effective state ('system' follows matchMedia).
+   layout.settings.darkMode = normalizeDarkModePref(layout.settings.darkMode);
+   applyDarkMode(layout.settings.darkMode);
     // Accent theme — apply curated theme pack
     if (layout.settings.theme && layout.settings.theme !== 'beige') {
       applyTheme(layout.settings.theme);

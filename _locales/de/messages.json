@@ -224,6 +224,21 @@
   "darkModeHint": {
     "message": "Zwischen hellem und dunklem Erscheinungsbild wechseln"
   },
+  "darkModeLight": {
+    "message": "Hell"
+  },
+  "darkModeDark": {
+    "message": "Dunkel"
+  },
+  "darkModeSystem": {
+    "message": "Systemeinstellung folgen"
+  },
+  "darkModeSwitchToDark": {
+    "message": "Zum Dunkelmodus wechseln"
+  },
+  "darkModeSwitchToLight": {
+    "message": "Zum Hellmodus wechseln"
+  },
   "exportData": {
     "message": "Daten exportieren"
   },

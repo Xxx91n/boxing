@@ -130,10 +130,20 @@
     return local;
   }
 
+  // Ticket 44 (spec #41): dark mode is a three-valued preference. This is the
+  // single normalization helper — every read/migrate/merge path funnels through it.
+  // Legacy boolean true/false maps to 'dark'/'light'; unknown values degrade to the
+  // default 'light'. Writes always store the string form.
+  function normalizeDarkModePref(value) {
+    if (value === true || value === 'dark') return 'dark';
+    if (value === 'system') return 'system';
+    return 'light';
+  }
+
   function defaultLayout() {
    return {
       version: 3.5, schemaVersion: 1, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, lastBackupAt: Date.now(), headerPinned: true, syncProvider: 'local', urlOpenMode: 'sameTab', connDeleteAction: 'alt+click', theme: 'beige', webdavAllowPrivateHost: false, autoTitleEnabled: true, autoTitleRules: [ { pattern: 'https://github.com/*/*', type: 'first-two-paths' }, { pattern: 'https://*/*', type: 'domain-main' } ] }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: 'light', fontSize: 14, squareCorners: false, autoBackupInterval: 86400, lastBackupAt: Date.now(), headerPinned: true, syncProvider: 'local', urlOpenMode: 'sameTab', connDeleteAction: 'alt+click', theme: 'beige', webdavAllowPrivateHost: false, autoTitleEnabled: true, autoTitleRules: [ { pattern: 'https://github.com/*/*', type: 'first-two-paths' }, { pattern: 'https://*/*', type: 'domain-main' } ] }
     };
   }
 
@@ -161,7 +171,7 @@
         // Ticket 52: spread defaultLayout().settings so the v2 migration write path can
         // never persist a settings blob missing urlOpenMode (fresh default = sameTab);
         // an explicitly stored newTab still wins (user choice preserved).
-        settings: { ...defaultLayout().settings, ...(raw.settings || {}), theme: raw.settings?.theme || 'beige' }
+        settings: { ...defaultLayout().settings, ...(raw.settings || {}), theme: raw.settings?.theme || 'beige', darkMode: normalizeDarkModePref(raw.settings?.darkMode) }
       };
     }
     // Data integrity — version >= 3 returns as-is; no data loss on downgrade.
@@ -175,7 +185,7 @@
         boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
         connections: Array.isArray(raw.connections) ? raw.connections : [],
         groups: [], // groups are no longer persisted
-        settings: { ...defaults.settings, ...(raw.settings || {}) }
+        settings: { ...defaults.settings, ...(raw.settings || {}), darkMode: normalizeDarkModePref(raw.settings?.darkMode) }
       };
     // One-time migration — restore box.isParent from old layout.groups, then discard
     if (!raw._meta || !raw._meta.__groupsMigrated) {
@@ -347,7 +357,7 @@ function compareVersions(v1, v2) {
   return 0;
 }
 
-export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, compareVersions, normalizeBookmarkUrl, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
+export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, compareVersions, normalizeBookmarkUrl, normalizeDarkModePref, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
 
 // ─── Id-level three-way layout merge ──────────
 // Implements the three-way-with-base plan, degrading to the

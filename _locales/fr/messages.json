@@ -224,6 +224,21 @@
   "darkModeHint": {
     "message": "Basculer entre l'apparence claire et sombre"
   },
+  "darkModeLight": {
+    "message": "Clair"
+  },
+  "darkModeDark": {
+    "message": "Sombre"
+  },
+  "darkModeSystem": {
+    "message": "Suivre le système"
+  },
+  "darkModeSwitchToDark": {
+    "message": "Passer en mode sombre"
+  },
+  "darkModeSwitchToLight": {
+    "message": "Passer en mode clair"
+  },
   "exportData": {
     "message": "Exporter les données"
   },

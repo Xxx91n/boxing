@@ -22,7 +22,7 @@ import {
   saveDebounceTimer, setApplyingExternalLayout, setCurrentLargeBoxId, setInnerPanX, setInnerPanY,
   setInnerZoom, setLayout, setSaveDebounceTimer, setStorageWriteChain, storageWriteChain, writerId,
 } from './state.js';
-import { defaultLayout, isPlausibleLayout, mergeById, migrateLayout } from './utils.js';
+import { defaultLayout, isPlausibleLayout, mergeById, migrateLayout, normalizeDarkModePref } from './utils.js';
 
 // ── injected ntp.js-scope bindings (assigned once by initStorageFacade, before any call) ──
 let api = null;
@@ -658,7 +658,10 @@ export function registerStorageOnChanged() {
       ...localValue,
       boxes,
       nextLargeIndex: Math.max(Number(localValue.nextLargeIndex) || 1, Number(remoteValue.nextLargeIndex) || 1),
-      settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}) },
+      // Ticket 44 (spec #41): field-by-field, local-wins as before; darkMode is one
+      // field like any other and is normalized after the spread (a legacy boolean from
+      // either side becomes the three-valued string, never a resolved OS value).
+      settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}), darkMode: normalizeDarkModePref((localValue.settings || {}).darkMode !== undefined ? localValue.settings.darkMode : (remoteValue.settings || {}).darkMode) },
       connections: mergeByIdUnion(localValue.connections, remoteValue.connections),
       _meta: { ...(remoteValue._meta || {}), ...(localValue._meta || {}), deleted: trimmedDeleted }
     };
@@ -674,6 +677,9 @@ export function registerStorageOnChanged() {
     delete out.groups;
     const cloned = JSON.parse(JSON.stringify(out));
     if (cloned.settings && typeof cloned.settings === 'object') {
+      // Ticket 44 (spec #41): the persisted payload always stores the three-valued
+      // dark-mode preference, even if a legacy boolean reached the live layout.
+      cloned.settings.darkMode = normalizeDarkModePref(cloned.settings.darkMode);
       for (const k of Object.keys(cloned.settings)) {
         if (RUNTIME_ONLY_SETTING_RE.test(k)) delete cloned.settings[k];
       }
@@ -748,6 +754,9 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
       debug('saveLayout called, boxCount=' + layout.boxes.length + ' nextLargeIndex=' + layout.nextLargeIndex);
       persistViewState(true);
       layout.settings.headerPinned = headerPinned;
+      // Ticket 44 (spec #41): normalize the live value so every subsequent read and
+      // the mirror see the three-valued preference, never a legacy boolean.
+      layout.settings.darkMode = normalizeDarkModePref(layout.settings.darkMode);
       try { pruneConnArrays(); } catch (e) { debugErr("pruneConnArrays", e); }
       const stored = await layoutStorage.get({ boxingLayout: null });
       // 43R (spec D3): 写路径同 fork 语义 —— stored 载荷可读但非 plausible 时先归档
@@ -800,7 +809,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
         // Settings controls only mutate the persisted value and call saveLayout;
         // replay the visual state here after durability succeeds so every toggle
         // still uses the single applyDarkMode path.
-        try { if (typeof applyDarkMode === 'function') applyDarkMode(layout.settings.darkMode === true); } catch (_dm) { debugWarn('saveLayout applyDarkMode', _dm); }
+        try { if (typeof applyDarkMode === 'function') applyDarkMode(layout.settings.darkMode); } catch (_dm) { debugWarn('saveLayout applyDarkMode', _dm); }
       } catch (e) {
         debugErr('saveLayout: set failed (quota?) — writing fallback snapshot', e);
         try {
@@ -960,7 +969,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
       // looked right until the next reload reverted it. Replaying through the single
       // apply path is what removes "inconsistent within the session vs. after reload".
       // Engine layering and the remote-wins LWW semantics above are untouched.
-      try { applyDarkMode(layout.settings.darkMode === true); } catch (e) { debugWarn("applyDarkMode replay", e); }
+      try { applyDarkMode(layout.settings.darkMode); } catch (e) { debugWarn("applyDarkMode replay", e); }
       debug('external layout applied', { revision: incomingRevision, boxes: layout.boxes.length });
       return true;
     } finally {

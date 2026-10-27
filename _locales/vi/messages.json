@@ -224,6 +224,21 @@
   "darkModeHint": {
     "message": "Chuyển đổi giữa giao diện sáng và tối"
   },
+  "darkModeLight": {
+    "message": "Sáng"
+  },
+  "darkModeDark": {
+    "message": "Tối"
+  },
+  "darkModeSystem": {
+    "message": "Theo hệ thống"
+  },
+  "darkModeSwitchToDark": {
+    "message": "Chuyển sang chế độ tối"
+  },
+  "darkModeSwitchToLight": {
+    "message": "Chuyển sang chế độ sáng"
+  },
   "exportData": {
     "message": "Xuất dữ liệu"
   },
