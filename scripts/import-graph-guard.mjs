@@ -168,8 +168,14 @@ function analyzeIsolation(sources) {
       let match;
       while ((match = regex.exec(scanned.text)) !== null) {
         // The keyword must itself be code: a quoted path or a commented-out import
-        // keeps the regex text but is not an executable dependency.
+        // keeps the regex text but is not an executable dependency. When the match
+        // carries a `from` clause, that token must be code too: otherwise a template
+        // substitution such as `${import.meta.url} from '...'` would bridge from code
+        // into template text and report a dependency that does not exist.
         if (scanned.mask[match.index] !== '1') continue;
+        const quote = match[0].lastIndexOf(match[1]);
+        const from = match[0].lastIndexOf('from', quote);
+        if (from !== -1 && scanned.mask[match.index + from] !== '1') continue;
         const specifier = match[2];
         if (!isFrozenReaderSpecifier(specifier)) continue;
         found.push({
@@ -223,6 +229,8 @@ function selfTest() {
     [{ rel: 'ntp/render.js', text: "const prefix = 'ok';\nconst x = `${await import('../scripts/legacy-reader-frozen.mjs')}`;\n" }], 'B-10@2');
   check('template literal text mentioning the frozen reader is NOT flagged',
     [{ rel: 'ntp/render.js', text: "const note = `import('../scripts/legacy-reader-frozen.mjs')`;\n" }], '');
+  check('code import.meta followed by template text is NOT bridged into a match',
+    [{ rel: 'ntp/render.js', text: "const label = `${import.meta.url} from '../scripts/legacy-reader-frozen.mjs'`;\n" }], '');
   return { bad, lines };
 }
 
