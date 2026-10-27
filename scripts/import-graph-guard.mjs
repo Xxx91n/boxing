@@ -29,10 +29,38 @@ const EXPORT_FROM_RE = /\bexport\s*(?:\*|\{[^}]*\})(?:\s*as\s*[\w$]+)?\s*from\s*
 // cannot even parse. Scan both, so B-10 covers the worker as specified.
 const IMPORT_SCRIPTS_CALL_RE = /\bimportScripts\s*\(/g;
 
+// A module specifier is the *value* of the literal, so JavaScript escapes must
+// be decoded before comparing: `legacy-reader-frozen\u002emjs` is the same URL
+// as `legacy-reader-frozen.mjs`. Covers the common escape forms.
+function decodeJavaScriptEscapes(value) {
+  return String(value).replace(
+    /\\(?:u\{([0-9a-fA-F]+)\}|u([0-9a-fA-F]{4})|x([0-9a-fA-F]{2})|([0-7]{1,3})|(\r\n|[\r\n])|(.))/g,
+    (match, codePoint, unicode, hex, octal, lineBreak, escaped) => {
+      if (codePoint !== undefined) {
+        const point = Number.parseInt(codePoint, 16);
+        return point <= 0x10ffff ? String.fromCodePoint(point) : match;
+      }
+      if (unicode !== undefined) return String.fromCharCode(Number.parseInt(unicode, 16));
+      if (hex !== undefined) return String.fromCharCode(Number.parseInt(hex, 16));
+      if (octal !== undefined) return String.fromCharCode(Number.parseInt(octal, 8));
+      if (lineBreak !== undefined) return '';
+      switch (escaped) {
+        case 'b': return '\b';
+        case 'f': return '\f';
+        case 'n': return '\n';
+        case 'r': return '\r';
+        case 't': return '\t';
+        case 'v': return '\v';
+        default: return escaped;
+      }
+    },
+  );
+}
+
 function isFrozenReaderSpecifier(specifier) {
   // Strip an ESM query/hash suffix before splitting: a slash inside the suffix
   // (`?cache=/v1`) must not become the basename.
-  const basename = (String(specifier).replace(/[?#].*$/, '').split(/[\\/]/).pop() || '');
+  const basename = (decodeJavaScriptEscapes(specifier).replace(/[?#].*$/, '').split(/[\\/]/).pop() || '');
   return basename === FROZEN_READER_BASENAME || basename === 'legacy-reader-frozen';
 }
 
@@ -327,7 +355,8 @@ function selfTest() {
       { rel: 'ntp/render.js', text: "import '../scripts/legacy-reader-frozen.mjs?cache=1';\n" },
       { rel: 'ntp/popups.js', text: "const m = await import('../scripts/legacy-reader-frozen.mjs#x');\n" },
       { rel: 'ntp/render.js', text: "import '../scripts/legacy-reader-frozen.mjs?cache=/v1';\n" },
-    ], 'B-10@1,B-10@1,B-10@1');
+      { rel: 'ntp/render.js', text: "import '../scripts/legacy-reader-frozen\\u002emjs';\n" },
+    ], 'B-10@1,B-10@1,B-10@1,B-10@1');
   check('service worker importScripts of the frozen reader is red',
     [
       { rel: 'background.js', text: "importScripts('../scripts/legacy-reader-frozen.mjs');\n" },
@@ -336,7 +365,8 @@ function selfTest() {
       { rel: 'background.js', text: "importScripts(getHelperUrl(), '../scripts/legacy-reader-frozen.mjs');\n" },
       { rel: 'background.js', text: "importScripts(\"helper's.js\", '../scripts/legacy-reader-frozen.mjs');\n" },
       { rel: 'background.js', text: "const label = \"importScripts(\";\nimportScripts('../scripts/legacy-reader-frozen.mjs');\n" },
-    ], 'B-10@1,B-10@1,B-10@1,B-10@1,B-10@1,B-10@2');
+      { rel: 'background.js', text: "importScripts('./scripts/legacy-reader-frozen\\x2emjs');\n" },
+    ], 'B-10@1,B-10@1,B-10@1,B-10@1,B-10@1,B-10@1,B-10@2');
   check('unrelated importScripts, comments, and strings are NOT flagged',
     [
       { rel: 'background.js', text: "importScripts('a.js');\n// importScripts('../scripts/legacy-reader-frozen.mjs');\n/* importScripts('../scripts/legacy-reader-frozen.mjs'); */\nconst note = \"importScripts('../scripts/legacy-reader-frozen.mjs')\";\n" },
