@@ -43,6 +43,24 @@ test.describe('Migration golden fixtures (ticket 45)', () => {
     expect(failures, 'migration golden failures: ' + JSON.stringify(failures, null, 2)).toEqual([]);
   });
 
+  test('published check names are frozen: exactly 33 in order (ticket 43 AC1)', async () => {
+    const guard = await import(GUARD_URL);
+    const result = await guard.runMigrationGoldenChecks();
+    expect(result.checks.map((c: any) => c.name)).toEqual([
+      'fixtures-present', 'fixtures-schema-coverage',
+      'v1-bookmarks-preserved', 'v1-boxes-preserved', 'v1-schema-fields', 'v1-groups-stripped',
+      'v1-props-present', 'v1-idempotent', 'v1-settings-superset',
+      'groups-bookmarks-preserved', 'groups-isparent-restored-large', 'groups-isparent-restored-small',
+      'groups-stripped-after-migration', 'groups-schema-version-defaulted', 'groups-props-backfilled',
+      'groups-meta-flag-set', 'groups-migration-idempotent',
+      'v2-bookmarks-preserved', 'v2-version-bumped', 'v2-size-defaults-filled', 'v2-theme-defaulted',
+      'v2-next-small-index', 'v2-one-pass-complete', 'v2-groups-stripped', 'v2-idempotent',
+      'v2-preserves-connections', 'v2-restores-isparent-from-groups', 'v2-malformed-groups-tolerated',
+      'rollback-old-reader-accepts', 'rollback-bookmarks-visible', 'rollback-boxes-visible',
+      'rollback-connections-visible', 'rollback-isparent-self-contained',
+    ]);
+  });
+
   test('fixture manifest covers every historical schemaVersion + pre-versioning shapes', async () => {
     const guard = await import(GUARD_URL);
     const names: string[] = guard.fixtureNames();
@@ -103,6 +121,9 @@ test.describe('Frozen reader contract registry (ticket 43)', () => {
 
   test('registering an edited body under an existing id throws', async () => {
     const frozen = await import(FROZEN_READER_URL);
+    // This exercises the append-only id collision (registering the same id twice),
+    // which fires before any body comparison. Real body drift is proven by the
+    // temp-module tests in the ticket 46 block below.
     expect(() => frozen.registerContract({
       id: 'pre-adr0009',
       frozenSince: '2026-09-12',
@@ -148,6 +169,31 @@ test.describe('Frozen reader contract registry (ticket 43)', () => {
     // v1.json carries exactly one star (large box lb1, isParent === true).
     expect(audit.starSurvival).toEqual({ total: 1, survived: 1, lost: [], groupsLeaked: false });
   });
+
+  test('rollback audit reports the loss path when the old reader accepts nothing', async () => {
+    const frozen = await import(FROZEN_READER_URL);
+    const guard = await import(GUARD_URL);
+    const { migrateLayout } = await import(UTILS_URL);
+    const current = migrateLayout(guard.loadFixture('v1.json'));
+    // Unique per run so `--repeat-each` does not collide with an earlier append.
+    const id = 'test-contract-loss-43-' + process.pid + '-' + Date.now();
+    frozen.registerContract({ id, frozenSince: '2026-10-27', reader: () => null });
+    const audit = frozen.rollbackAudit(id, current);
+    expect(audit.acceptance).toBe(false);
+    expect(audit.bookmarkDiff.lost.length).toBeGreaterThan(0);
+    expect(audit.bookmarkDiff.gained).toEqual([]);
+    expect(audit.boxDelta).toBeNull();
+    expect(audit.connectionDelta).toBeNull();
+    expect(audit.starSurvival.survived).toBe(0);
+  });
+
+  test('the gate imports the frozen module and owns no reader declaration (tickets 43/46)', async () => {
+    const gateSource = await fs.promises.readFile(
+      path.resolve(__dirname, '..', '..', 'scripts', 'migration-golden-guard.mjs'), 'utf8');
+    expect(gateSource).toMatch(/from\s+['"]\.\/legacy-reader-frozen\.mjs['"]/);
+    expect(gateSource).toContain("getContract('pre-adr0009')");
+    expect(gateSource).not.toMatch(/\bfunction\s+legacyReader\s*\(/);
+  });
 });
 
 // Ticket 46 (spec #40): each frozen contract function body is pinned by a
@@ -186,6 +232,25 @@ test.describe('Frozen function-body pins (ticket 46)', () => {
 
     const tmpPath = path.join(os.tmpdir(), 'legacy-reader-frozen-logic-' + process.pid + '-' + Date.now() + '.mjs');
     await fs.promises.writeFile(tmpPath, edited, 'utf8');
+    try {
+      await expect(import(pathToFileURL(tmpPath).href)).rejects.toThrow(/pre-adr0009[\s\S]*legacyReader/);
+    } finally {
+      await fs.promises.unlink(tmpPath);
+    }
+  });
+
+  test('a shadow declaration of a pinned reader is rejected at load (append-only bypass)', async () => {
+    const original = await fs.promises.readFile(FROZEN_SOURCE, 'utf8');
+    const needle = 'reader: legacyReader,';
+    expect(original).toContain(needle);
+    // Realistic bypass: register an inline body under the pinned name while the
+    // real declaration stays untouched. A first-match pin would still verify the
+    // original and miss the substituted reader, so duplicate detection must fire.
+    const spoofed = original.replace(needle, 'reader: function legacyReader(raw) { return null; },');
+    expect(spoofed).not.toBe(original);
+
+    const tmpPath = path.join(os.tmpdir(), 'legacy-reader-frozen-shadow-' + process.pid + '-' + Date.now() + '.mjs');
+    await fs.promises.writeFile(tmpPath, spoofed, 'utf8');
     try {
       await expect(import(pathToFileURL(tmpPath).href)).rejects.toThrow(/pre-adr0009[\s\S]*legacyReader/);
     } finally {

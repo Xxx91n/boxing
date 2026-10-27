@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import fs from 'fs';
+import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import { dismissOnboarding } from '../helpers/onboarding';
@@ -185,12 +186,19 @@ test.describe('B-10 production isolation for the frozen reader', () => {
 
   test('self-test proves production frozen-reader imports are red and gate-side imports are not flagged', () => {
     const out = execFileSync(process.execPath, [guard, '--self-test'], { encoding: 'utf8' });
-    expect(out).toContain('self-test: PASS');
+    expect(out).toContain('self-test: PASS (12/12)');
     expect(out).toContain('production ntp module importing the frozen reader is red');
     expect(out).toContain('production ntp module dynamic-importing the frozen reader is red');
     expect(out).toContain('service worker importing the frozen reader is red');
     expect(out).toContain('service worker dynamic-importing the frozen reader is red');
     expect(out).toContain('gate-side scripts import is NOT flagged');
+    expect(out).toContain('production re-export of the frozen reader is red');
+    expect(out).toContain('comment-only mention of the frozen reader is NOT flagged');
+    expect(out).toContain('string-literal mention of the frozen reader is NOT flagged');
+    expect(out).toContain('backtick dynamic import of the frozen reader is red');
+    expect(out).toContain('no-space static import of the frozen reader is red');
+    expect(out).toContain('no-space re-export of the frozen reader is red');
+    expect(out).toContain('import.meta mention is NOT flagged');
   });
 
   test('the import-graph guard is green on the current tree', () => {
@@ -203,13 +211,36 @@ test.describe('B-10 production isolation for the frozen reader', () => {
     expect(pkg.scripts.pretest).toContain('node scripts/import-graph-guard.mjs');
   });
 
-  test('no current production module or the service worker imports the frozen reader', () => {
-    const ntpDir = path.join(ROOT, 'ntp');
-    const productionFiles = fs.readdirSync(ntpDir)
-      .filter((name) => name.endsWith('.js'))
-      .map((name) => path.join(ntpDir, name))
-      .concat([path.join(ROOT, 'background.js')]);
-    const offenders = productionFiles.filter((file) => fs.readFileSync(file, 'utf8').includes('legacy-reader-frozen'));
-    expect(offenders).toEqual([]);
+  test('the real tree has no B-10 violation (parsed analyzer output, not a substring)', () => {
+    const out = execFileSync(process.execPath, [guard], { encoding: 'utf8' });
+    const parsed = JSON.parse(out);
+    expect(parsed.ok).toBe(true);
+    expect(parsed.violations.filter((v: any) => v.rule === 'B-10')).toEqual([]);
+  });
+
+  test('a production import of the frozen reader yields a B-10 violation on a real tree copy', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-b10-'));
+    try {
+      fs.cpSync(path.join(ROOT, 'ntp'), path.join(tmp, 'ntp'), { recursive: true });
+      fs.copyFileSync(path.join(ROOT, 'background.js'), path.join(tmp, 'background.js'));
+      fs.mkdirSync(path.join(tmp, 'test', 'tests'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, 'test', 'cluster-map.json'), JSON.stringify({ clusters: {} }));
+      fs.writeFileSync(path.join(tmp, 'ntp', '_offender.js'),
+        "import { rollbackAudit } from '../scripts/legacy-reader-frozen.mjs';\n");
+
+      let failure: any = null;
+      try {
+        execFileSync(process.execPath, [guard], { cwd: tmp, encoding: 'utf8', stdio: 'pipe' });
+      } catch (error: any) {
+        failure = error;
+      }
+      expect(failure, 'guard must fail when a production module imports the frozen reader').not.toBeNull();
+      const parsed = JSON.parse(failure.stdout);
+      expect(parsed.ok).toBe(false);
+      const b10 = parsed.violations.filter((v: any) => v.rule === 'B-10');
+      expect(b10.map((v: any) => v.file)).toContain('ntp/_offender.js');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });

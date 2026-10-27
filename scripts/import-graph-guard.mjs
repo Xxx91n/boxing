@@ -19,49 +19,53 @@ const add = (rule, file, line, message) => violations.push({ rule, file, line, m
 // basename so every relative spelling from any directory depth is caught.
 const FROZEN_READER_BASENAME = 'legacy-reader-frozen.mjs';
 const PRODUCTION_SCOPE_RE = /^(?:ntp\/[^/]+\.js|background\.js)$/;
-const STATIC_IMPORT_RE = /\bimport\s+(?:[^'"]*?\s+from\s+)?(['"])([^'"]+)\1/g;
-const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*(['"])([^'"]+)\1\s*\)/g;
+const STATIC_IMPORT_RE = /\bimport\s*(?:[^'"]*?\bfrom\s*)?(['"])([^'"]+)\1/g;
+const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*([`'"])([^`'"$]+)\1\s*\)/g;
 // Re-exporting is exposure too: `export { x } from '.../legacy-reader-frozen.mjs'`
 // hands the frozen reader to production consumers as surely as an import does.
-const EXPORT_FROM_RE = /\bexport\s+(?:\*|\{[^}]*\})(?:\s+as\s+[\w$]+)?\s+from\s+(['"])([^'"]+)\1/g;
+const EXPORT_FROM_RE = /\bexport\s*(?:\*|\{[^}]*\})(?:\s*as\s*[\w$]+)?\s*from\s*(['"])([^'"]+)\1/g;
 
 function isFrozenReaderSpecifier(specifier) {
   const basename = String(specifier).split(/[\\/]/).pop() || '';
   return basename === FROZEN_READER_BASENAME || basename === 'legacy-reader-frozen';
 }
 
-// Remove comments while preserving length and newlines so match offsets (and the
-// reported line numbers) stay aligned with the original source. String and
-// template literals are copied verbatim: a path or a `//` inside a literal is
-// code, not commentary.
-function stripComments(text) {
+// Scan source into two same-length views:
+//   * text — comment characters blanked to spaces (newlines preserved, offsets
+//     unchanged), while string/template literal contents stay verbatim; and
+//   * mask — '1' where the character is code, '0' in comments and inside literals.
+// A regex hit is only real when its keyword lands on code, which is what keeps a
+// quoted or commented mention of the frozen reader from becoming a false positive.
+function scanCode(text) {
   let out = '';
+  let mask = '';
+  const push = (ch, isCode) => { out += ch; mask += isCode ? '1' : '0'; };
   let mode = 'code';
   for (let i = 0; i < text.length; i += 1) {
     const ch = text[i];
     const next = text[i + 1];
     if (mode === 'code') {
-      if (ch === '/' && next === '/') { mode = 'line'; out += '  '; i += 1; continue; }
-      if (ch === '/' && next === '*') { mode = 'block'; out += '  '; i += 1; continue; }
-      if (ch === "'" || ch === '"' || ch === '`') mode = ch;
-      out += ch;
+      if (ch === '/' && next === '/') { mode = 'line'; push(' ', false); i += 1; push(' ', false); continue; }
+      if (ch === '/' && next === '*') { mode = 'block'; push(' ', false); i += 1; push(' ', false); continue; }
+      if (ch === "'" || ch === '"' || ch === '`') { mode = ch; push(ch, false); continue; }
+      push(ch, true);
       continue;
     }
     if (mode === 'line') {
-      if (ch === '\n') { mode = 'code'; out += ch; } else out += ' ';
+      if (ch === '\n') { mode = 'code'; push(ch, true); } else push(' ', false);
       continue;
     }
     if (mode === 'block') {
-      if (ch === '*' && next === '/') { mode = 'code'; out += '  '; i += 1; continue; }
-      out += ch === '\n' ? '\n' : ' ';
+      if (ch === '*' && next === '/') { mode = 'code'; push(' ', false); i += 1; push(' ', false); continue; }
+      push(ch === '\n' ? '\n' : ' ', false);
       continue;
     }
     // Inside a string/template literal: copy verbatim, honouring escapes.
-    out += ch;
-    if (ch === '\\') { if (i + 1 < text.length) { out += text[i + 1]; i += 1; } continue; }
+    push(ch, false);
+    if (ch === '\\') { if (i + 1 < text.length) { push(text[i + 1], false); i += 1; } continue; }
     if (ch === mode) mode = 'code';
   }
-  return out;
+  return { text: out, mask };
 }
 
 function lineOf(text, index) {
@@ -74,11 +78,14 @@ function analyzeIsolation(sources) {
   const found = [];
   for (const source of sources) {
     if (!PRODUCTION_SCOPE_RE.test(source.rel)) continue;
-    const code = stripComments(source.text);
+    const scanned = scanCode(source.text);
     for (const regex of [STATIC_IMPORT_RE, DYNAMIC_IMPORT_RE, EXPORT_FROM_RE]) {
       regex.lastIndex = 0;
       let match;
-      while ((match = regex.exec(code)) !== null) {
+      while ((match = regex.exec(scanned.text)) !== null) {
+        // The keyword must itself be code: a quoted path or a commented-out import
+        // keeps the regex text but is not an executable dependency.
+        if (scanned.mask[match.index] !== '1') continue;
         const specifier = match[2];
         if (!isFrozenReaderSpecifier(specifier)) continue;
         found.push({
@@ -116,6 +123,16 @@ function selfTest() {
     [{ rel: 'ntp/popups.js', text: "export { rollbackAudit } from '../scripts/legacy-reader-frozen.mjs';\n" }], 'B-10@1');
   check('comment-only mention of the frozen reader is NOT flagged',
     [{ rel: 'ntp/render.js', text: "// import { rollbackAudit } from '../scripts/legacy-reader-frozen.mjs'\n/* export { x } from './legacy-reader-frozen.mjs' */\n" }], '');
+  check('string-literal mention of the frozen reader is NOT flagged',
+    [{ rel: 'ntp/render.js', text: "const note = \"import '../scripts/legacy-reader-frozen.mjs'\";\n" }], '');
+  check('backtick dynamic import of the frozen reader is red',
+    [{ rel: 'ntp/render.js', text: "const m = await import(`../scripts/legacy-reader-frozen.mjs`);\n" }], 'B-10@1');
+  check('no-space static import of the frozen reader is red',
+    [{ rel: 'ntp/render.js', text: "import'../scripts/legacy-reader-frozen.mjs';\n" }], 'B-10@1');
+  check('no-space re-export of the frozen reader is red',
+    [{ rel: 'ntp/render.js', text: "export*from'../scripts/legacy-reader-frozen.mjs';\n" }], 'B-10@1');
+  check('import.meta mention is NOT flagged',
+    [{ rel: 'ntp/render.js', text: 'const url = import.meta.url;\n' }], '');
   return { bad, lines };
 }
 
