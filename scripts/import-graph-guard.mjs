@@ -66,6 +66,10 @@ function scanCode(text) {
   let lastToken = null; // { type: 'word' | 'punct' | 'value', value? }
   let word = '';
   let inClass = false;
+  // Template substitutions (`${...}`) are executable code, not literal text.
+  // Each open frame is the brace depth of one substitution; nested templates push
+  // additional frames, and the matching `}` returns to the enclosing template.
+  const templateFrames = [];
   for (let i = 0; i < text.length; i += 1) {
     const ch = text[i];
     const next = text[i + 1];
@@ -81,6 +85,21 @@ function scanCode(text) {
         mode = 'regex'; inClass = false; push(' ', false); continue;
       }
       if (ch === "'" || ch === '"' || ch === '`') { mode = ch; push(ch, false); continue; }
+      // Inside a template substitution, braces are real code structure: track the
+      // depth and hand control back to the template when the matching `}` closes it.
+      if (templateFrames.length > 0) {
+        if (ch === '{') {
+          templateFrames[templateFrames.length - 1] += 1;
+        } else if (ch === '}') {
+          templateFrames[templateFrames.length - 1] -= 1;
+          if (templateFrames[templateFrames.length - 1] === 0) {
+            templateFrames.pop();
+            mode = '`';
+            push(ch, false);
+            continue;
+          }
+        }
+      }
       // `)` and `]` end a value: a following `/` is division, not a regex.
       if (ch === ')' || ch === ']') { push(ch, true); lastToken = { type: 'value' }; continue; }
       push(ch, true);
@@ -114,7 +133,18 @@ function scanCode(text) {
       push(ch === '\n' ? '\n' : ' ', false);
       continue;
     }
-    // Inside a string/template literal: copy verbatim, honouring escapes.
+    // Inside a string/template literal: copy verbatim, honouring escapes. A `${`
+    // in a template opens an executable expression, so the delimiters stay masked
+    // while the substitution itself is scanned as code.
+    if (mode === '`' && ch === '$' && next === '{') {
+      push('$', false);
+      push('{', false);
+      templateFrames.push(1);
+      mode = 'code';
+      lastToken = { type: 'punct', value: '{' };
+      i += 1;
+      continue;
+    }
     push(ch, false);
     if (ch === '\\') { if (i + 1 < text.length) { push(text[i + 1], false); i += 1; } continue; }
     if (ch === mode) { mode = 'code'; lastToken = { type: 'value' }; }
@@ -189,6 +219,10 @@ function selfTest() {
     [{ rel: 'ntp/render.js', text: 'const url = import.meta.url;\n' }], '');
   check('quoted regex literal does not mask a following dynamic import',
     [{ rel: 'ntp/render.js', text: "const r = /[&<>\"']/g;\nconst m = await import('../scripts/legacy-reader-frozen.mjs');\n" }], 'B-10@2');
+  check('import inside a template substitution is red at its line',
+    [{ rel: 'ntp/render.js', text: "const prefix = 'ok';\nconst x = `${await import('../scripts/legacy-reader-frozen.mjs')}`;\n" }], 'B-10@2');
+  check('template literal text mentioning the frozen reader is NOT flagged',
+    [{ rel: 'ntp/render.js', text: "const note = `import('../scripts/legacy-reader-frozen.mjs')`;\n" }], '');
   return { bad, lines };
 }
 

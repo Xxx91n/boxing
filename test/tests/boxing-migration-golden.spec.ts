@@ -304,4 +304,20 @@ test.describe('Frozen function-body pins (ticket 46)', () => {
     expect(existing.sourcePins).toBe(existingPins);
     expect(frozen.getRegistry()['pre-adr0009'].sourcePins.legacyReader).toBe(existingPins.legacyReader);
   });
+
+  test('a new id reusing the pinned function name is pinned by its own supplied body', async () => {
+    const frozen = await import(FROZEN_READER_URL);
+    // The supplied function is genuinely new but shares the pinned declaration's
+    // name. Pinning it from the module's on-disk `legacyReader` would record the
+    // wrong body; the pin must describe the function that was actually supplied.
+    const id = 'test-contract-46-name-collision-' + process.pid + '-' + Date.now();
+    const entry = frozen.registerContract({
+      id,
+      frozenSince: '2026-10-27',
+      reader: function legacyReader(raw: any) { return raw; },
+    });
+    expect(entry.sourcePins.legacyReader).toMatch(/^[0-9a-f]{64}$/);
+    expect(entry.sourcePins.legacyReader)
+      .not.toBe(frozen.getContract('pre-adr0009').sourcePins.legacyReader);
+  });
 });
