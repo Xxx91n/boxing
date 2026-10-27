@@ -56,6 +56,10 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **applyDarkMode()** — Toggles the `ntp--dark` class on the single host `document.documentElement`.
 
+**dark-mode preference** — `layout.settings.darkMode`, one of `light`, `dark`, or `system` (default `light`). A legacy boolean reads as light/dark, and every write stores the three-valued string.
+
+**effective dark state** — The derived display value: the preference for `light`/`dark`, and the live `prefers-color-scheme` value for `system`. It is never persisted; the preference is.
+
 **boxingBootTheme.v1** — Sync-readable first-paint cache of theme and dark mode. It is not a second layout source.
 
 **__BOXING_DEMO__** — Build-time window flag for the standalone demo; it suppresses the first-run tour.

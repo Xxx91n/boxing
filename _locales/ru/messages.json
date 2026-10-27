@@ -222,7 +222,22 @@
     "message": "Тёмный режим"
   },
   "darkModeHint": {
-    "message": "Переключение между светлым и тёмным оформлением"
+    "message": "Светлая, тёмная или как в системе"
+  },
+  "darkModeLight": {
+    "message": "Светлая"
+  },
+  "darkModeDark": {
+    "message": "Тёмная"
+  },
+  "darkModeSystem": {
+    "message": "Как в системе"
+  },
+  "darkModeSwitchToDark": {
+    "message": "Переключить на тёмную тему"
+  },
+  "darkModeSwitchToLight": {
+    "message": "Переключить на светлую тему"
   },
   "exportData": {
     "message": "Экспорт данных"

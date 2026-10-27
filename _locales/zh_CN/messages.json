@@ -225,7 +225,22 @@
     "message": "暗黑模式"
   },
   "darkModeHint": {
-    "message": "在亮色和暗色外观之间切换"
+    "message": "选择浅色、深色或跟随系统"
+  },
+  "darkModeLight": {
+    "message": "亮色"
+  },
+  "darkModeDark": {
+    "message": "暗色"
+  },
+  "darkModeSystem": {
+    "message": "跟随系统"
+  },
+  "darkModeSwitchToDark": {
+    "message": "切换到暗色模式"
+  },
+  "darkModeSwitchToLight": {
+    "message": "切换到亮色模式"
   },
   "exportData": {
     "message": "导出数据"

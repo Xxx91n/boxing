@@ -325,9 +325,15 @@ Each theme stores a **complete** color ramp:
 
 ### Dark Mode
 
-Dark mode is handled by the `darkMode` boolean setting which triggers `applyTheme()` to
-switch from light to dark warm/accent ramps. The `--color-warm-dark-*` and `--color-accent-dark-*`
-CSS variables are always set regardless of current mode, so toggling is instantaneous.
+Dark mode is a three-valued preference: `layout.settings.darkMode` is `light`, `dark`, or
+`system` (default `light`; a legacy boolean reads as light/dark). The effective state is
+derived — the preference itself for light/dark, and the live `prefers-color-scheme` value for
+system — and `applyDarkMode()` toggles the `.ntp--dark` class on `<html>` from it. The
+appearance tab exposes the three modes as radios in `#dark-mode-group`; the header button
+remains a quick toggle that exits system mode by choosing the opposite effective state.
+`--color-warm-dark-*` and `--color-accent-dark-*` are always set, so switching is
+instantaneous. The `boxingBootTheme.v1` first-paint cache stores the preference, never the
+resolved OS value.
 
 ### Related
 

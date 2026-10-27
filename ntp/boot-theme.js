@@ -9,6 +9,10 @@
  *   - NOT a second layout source: only theme/darkMode/fontSize are mirrored from
  *     boxingLayout; loadSettings() re-applies authoritative values after load. The
  *     mirror never feeds loadLayout / migrate / sync / export.
+ *   - darkMode in the mirror is the three-valued PREFERENCE ('light' | 'dark' |
+ *     'system'; legacy boolean accepted). This script resolves 'system' against the
+ *     live matchMedia value at first paint and never writes the result back; the
+ *     mirror therefore stays preference-only (spec #41).
  *   - Zero imports (an import would make this a module and defer it past first paint),
  *     zero chrome./browser. API access (CSP script-src self + import-graph guard B-6).
  *   - No inline script (CSP script-src self): external file only.
@@ -51,7 +55,19 @@
     // The write is now SYMMETRIC (toggle), matching applyDarkMode. It used to only ever
     // ADD the class, so a tab that booted dark could never return to light in that
     // session — bug2's headline symptom ("only opening a new tab helps").
-    root.classList.toggle('ntp--dark', v.darkMode === true);
+    // Ticket 44/48 (spec #41): the mirror carries the PREFERENCE ('light' | 'dark' |
+    // 'system'; a legacy boolean is still accepted). Resolve it synchronously here:
+    //   'dark' | true        -> dark
+    //   'light' | false      -> light
+    //   'system'             -> the live OS value at first paint
+    //   anything else        -> light (same normalization as ntp/utils.js)
+    // Reading matchMedia here (rather than persisting the resolved OS value) is what
+    // makes a tab opened after the OS changed while the browser was closed paint the
+    // matching theme: the mirror stays the preference, the OS is sampled fresh.
+    // This stays import-free by design (CSP script-src self + import-graph guard).
+    const pref = v.darkMode;
+    const dark = pref === 'system' ? systemPrefersDark() : (pref === true || pref === 'dark');
+    root.classList.toggle('ntp--dark', dark);
     if (typeof v.fontSize === 'number' && v.fontSize >= 11 && v.fontSize <= 20) {
       root.style.setProperty('--font-size-base', v.fontSize + 'px');
     }
@@ -66,10 +82,18 @@
   // the structural half of "matchMedia fallback must not be persisted".
   // Symmetric toggle, for the same reason applyDarkMode uses one.
   function applySystemDarkFallback() {
+    // systemPrefersDark() swallows an absent/throwing matchMedia, so the very old
+    // engine case degrades to the stylesheet default without an extra guard here.
+    root.classList.toggle('ntp--dark', systemPrefersDark());
+  }
+  // Ticket 48 (spec #41): live OS value for a 'system' preference at first paint.
+  // Unsupported engines / a throwing matchMedia degrade to light (stylesheet default),
+  // matching normalizeDarkModePref's fallback for unknown values.
+  function systemPrefersDark() {
     try {
-      if (!window.matchMedia) return;
-      root.classList.toggle('ntp--dark', !!window.matchMedia('(prefers-color-scheme: dark)').matches);
-    } catch (e) { /* silent: no matchMedia (very old engine) — stylesheet default stands */ }
+      if (!window.matchMedia) return false;
+      return !!window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch (e) { return false; }
   }
   function applyPack(themeKey) {
     // Five curated theme packs, inlined verbatim from persist.js THEME_PACKS.

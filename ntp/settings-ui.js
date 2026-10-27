@@ -8,16 +8,16 @@
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
 import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, readDrBodies } from './storage.js';
-import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions } from './utils.js';
+import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
-import { applyTheme } from './persist.js';
+import { applyDarkMode, applyTheme, nextDarkModePreference } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
 import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
 import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
 
 let debug, debugErr, debugWarn, updateCaption;
-let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeCB, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
+let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeGroup, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
 
 // Ticket 10: inject ntp.js-scope deps (loggers + caption updater + shared DOM refs declared once in ntp.js).
 export function initSettingsUiFacade(deps) {
@@ -25,11 +25,19 @@ export function initSettingsUiFacade(deps) {
   settingsModal = deps.settingsModal; modalClose = deps.modalClose; langSelect = deps.langSelect;
   rememberCheck = deps.rememberCheck; urlOpenModeSelect = deps.urlOpenModeSelect; connDeleteActionSelect = deps.connDeleteActionSelect;
   fontSlider = deps.fontSlider; fontSliderVal = deps.fontSliderVal; zoomSlider = deps.zoomSlider; zoomSliderVal = deps.zoomSliderVal;
-  darkModeCB = deps.darkModeCB; darkModeBtn = deps.darkModeBtn; confirmModal = deps.confirmModal;
+  darkModeGroup = deps.darkModeGroup; darkModeBtn = deps.darkModeBtn; confirmModal = deps.confirmModal;
   confirmTitle = deps.confirmTitle; confirmBody = deps.confirmBody; confirmCancel = deps.confirmCancel; confirmDelete = deps.confirmDelete;
   appEl = deps.appEl; exportBtn = deps.exportBtn; exportFullBtn = deps.exportFullBtn; importBtn = deps.importBtn; importFile = deps.importFile;
   diagExportLogBtn = deps.diagExportLogBtn; diagClearLogBtn = deps.diagClearLogBtn; diagLogLevelSelect = deps.diagLogLevelSelect;
 }
+
+  // Ticket 44 (spec #41): three-value preference — the checked radio shows the
+  // active mode. Legacy booleans are read through the single normalizer.
+  function syncDarkModeRadios() {
+    if (typeof darkModeGroup === 'undefined' || !darkModeGroup) return;
+    const pref = normalizeDarkModePref(layout.settings.darkMode);
+    darkModeGroup.querySelectorAll('input[name="dark-mode"]').forEach(r => { r.checked = r.value === pref; });
+  }
 
   export function syncSettingsDOM() {
     initAboutTab();
@@ -38,7 +46,7 @@ export function initSettingsUiFacade(deps) {
     if (typeof rememberCheck !== 'undefined' && rememberCheck) rememberCheck.checked = layout.settings.rememberLastPos !== false;
     if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'sameTab';
     if (typeof connDeleteActionSelect !== 'undefined' && connDeleteActionSelect) connDeleteActionSelect.value = layout.settings.connDeleteAction || 'alt+click';
-    if (typeof darkModeCB !== 'undefined' && darkModeCB) darkModeCB.checked = layout.settings.darkMode === true;
+    syncDarkModeRadios();
     if (typeof zoomSlider !== 'undefined' && zoomSlider) zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
     if (typeof zoomSliderVal !== 'undefined' && zoomSliderVal) zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
     if (typeof fontSlider !== 'undefined' && fontSlider) fontSlider.value = layout.settings.fontSize || 14;
@@ -641,6 +649,10 @@ export function bindSettingsUi() {
         updateCaption();
       } else { renderCanvas(); }
      applyI18n();
+     // Re-apply the action tooltip/aria-label in the new language (the header button
+     // no longer carries a static data-i18n-title). Kept even though saveLayout above
+     // already replays the apply path: a failed persist must not leave a stale label.
+     applyDarkMode(layout.settings.darkMode);
      applyCanvasTransform();
      // Re-apply pin tooltip after i18n reset (applyI18n overwrites data-i18n-title)
      updateAutohideUI();
@@ -687,11 +699,12 @@ export function bindSettingsUi() {
       saveLayout();
     });
 
-    // Dark mode toggle — degenerated to "write the setting, then let the
-    // single apply path render the DOM" (the toggle no longer touches any class
-    // itself — that duplication is what let the three hosts drift apart).
-    darkModeCB?.addEventListener('change', () => {
-      layout.settings.darkMode = darkModeCB.checked;
+    // Dark mode preference — the three radios only WRITE the preference; the single
+    // apply path (persist.js applyDarkMode) derives and renders the effective state.
+    darkModeGroup?.addEventListener('change', () => {
+      const checked = darkModeGroup.querySelector('input[name="dark-mode"]:checked');
+      if (!checked) return;
+      layout.settings.darkMode = normalizeDarkModePref(checked.value);
       saveLayout();
     });
 
@@ -721,7 +734,11 @@ export function bindSettingsUi() {
 
     if (darkModeBtn) {
       darkModeBtn.addEventListener('click', () => {
-        layout.settings.darkMode = !layout.settings.darkMode;
+        // Ticket 44 (spec #41): explicit preferences toggle to the opposite explicit
+        // preference; 'system' exits by choosing the opposite of the CURRENT EFFECTIVE
+        // state (currently dark -> 'light', currently light -> 'dark').
+        layout.settings.darkMode = nextDarkModePreference(layout.settings.darkMode);
+        syncDarkModeRadios(); // keep the appearance radios truthful if the panel is open
         saveLayout();
       });
     }

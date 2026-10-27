@@ -222,7 +222,22 @@
     "message": "โหมดมืด"
   },
   "darkModeHint": {
-    "message": "สลับระหว่างลักษณะสว่างและมืด"
+    "message": "เลือกสว่าง มืด หรือตามระบบ"
+  },
+  "darkModeLight": {
+    "message": "สว่าง"
+  },
+  "darkModeDark": {
+    "message": "มืด"
+  },
+  "darkModeSystem": {
+    "message": "ตามระบบ"
+  },
+  "darkModeSwitchToDark": {
+    "message": "สลับไปโหมดมืด"
+  },
+  "darkModeSwitchToLight": {
+    "message": "สลับไปโหมดสว่าง"
   },
   "exportData": {
     "message": "ส่งออกข้อมูล"

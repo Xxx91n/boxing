@@ -130,10 +130,21 @@
     return local;
   }
 
+  // Ticket 44 (spec #41): dark mode is a three-valued preference. This is the
+  // single normalization helper used by the live read boundaries (loadSettings,
+  // merge, save/persist) and effective-state derivation; migration output stays
+  // byte-stable by design. Legacy boolean true/false maps to 'dark'/'light';
+  // unknown values degrade to the default 'light'. Writes always store the string form.
+  function normalizeDarkModePref(value) {
+    if (value === true || value === 'dark') return 'dark';
+    if (value === 'system') return 'system';
+    return 'light';
+  }
+
   function defaultLayout() {
    return {
       version: 3.5, schemaVersion: 1, boxes: [], nextLargeIndex: 1, connections: [], groups: [],
-      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: false, fontSize: 14, squareCorners: false, autoBackupInterval: 86400, lastBackupAt: Date.now(), headerPinned: true, syncProvider: 'local', urlOpenMode: 'sameTab', connDeleteAction: 'alt+click', theme: 'beige', webdavAllowPrivateHost: false, autoTitleEnabled: true, autoTitleRules: [ { pattern: 'https://github.com/*/*', type: 'first-two-paths' }, { pattern: 'https://*/*', type: 'domain-main' } ] }
+      settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, darkMode: 'light', fontSize: 14, squareCorners: false, autoBackupInterval: 86400, lastBackupAt: Date.now(), headerPinned: true, syncProvider: 'local', urlOpenMode: 'sameTab', connDeleteAction: 'alt+click', theme: 'beige', webdavAllowPrivateHost: false, autoTitleEnabled: true, autoTitleRules: [ { pattern: 'https://github.com/*/*', type: 'first-two-paths' }, { pattern: 'https://*/*', type: 'domain-main' } ] }
     };
   }
 
@@ -165,7 +176,11 @@
       };
     }
     // Data integrity — version >= 3 returns as-is; no data loss on downgrade.
-    // Unknown future versions (>= 4) are still accepted to prevent upgrade-then-downgrade data loss.
+    // Dark-mode preference normalization is deliberately NOT part of migration (spec
+    // #41 keeps migration golden outputs stable): the live-layout read boundary
+    // (loadSettings / mergeConcurrentLayout) accepts the legacy boolean, and every
+    // write path stores the three-valued form. Unknown future versions (>= 4) are
+    // still accepted to prevent upgrade-then-downgrade data loss.
     if (raw.version >= 3) {
       const defaults = defaultLayout();
       const result = {
@@ -347,7 +362,7 @@ function compareVersions(v1, v2) {
   return 0;
 }
 
-export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, compareVersions, normalizeBookmarkUrl, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
+export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, compareVersions, normalizeBookmarkUrl, normalizeDarkModePref, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
 
 // ─── Id-level three-way layout merge ──────────
 // Implements the three-way-with-base plan, degrading to the

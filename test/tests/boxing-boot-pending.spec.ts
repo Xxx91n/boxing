@@ -114,6 +114,57 @@ async function traceOf(page: Page): Promise<BootTrace> {
   return await page.evaluate(() => (window as any).__bootTrace);
 }
 
+// Ticket 48 (spec #41): seed the three-valued PREFERENCE through the real persist
+// path, then close the tab. Closing is enough to represent "the browser was closed":
+// the mirror lives in the shared context's localStorage and the next tab boots from it.
+async function seedPreference(
+  ctx: BrowserContext,
+  pref: 'light' | 'dark' | 'system',
+  os: 'light' | 'dark'
+): Promise<void> {
+  const seed = await ctx.newPage();
+  await seed.emulateMedia({ colorScheme: os });
+  await seed.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+  await expect.poll(() => seed.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
+  await seed.evaluate(async (value) => {
+    const dbg = (window as any).__boxingDebug;
+    dbg.layout.settings.darkMode = value;
+    await dbg.saveLayout();
+  }, pref);
+  // The mirror rides the successful persist path and stores the preference (system),
+  // never the resolved OS value. Wait for it before closing so the next tab sees it.
+  await expect.poll(() => seed.evaluate((key: string) => {
+    try {
+      const m = JSON.parse(localStorage.getItem(key) || 'null');
+      return m && m.darkMode !== undefined ? m.darkMode : null;
+    } catch (_) { return null; }
+  }, BOOT_MIRROR_KEY), { timeout: 10000 }).toBe(pref);
+  await seed.close();
+}
+
+// Open a tab with a given OS preference and return the first-frame witness recorded
+// by the boot recorder (taken right after boot-theme.js runs, before <body> parses).
+async function openWithOs(
+  ctx: BrowserContext,
+  os: 'light' | 'dark'
+): Promise<{ page: Page; trace: BootTrace }> {
+  const page = await ctx.newPage();
+  // Emulation must be in place BEFORE goto so the boot script's first paint sees it.
+  await page.emulateMedia({ colorScheme: os });
+  await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+  await expect.poll(() => page.evaluate(() => Boolean((window as any).__bootTrace && (window as any).__bootTrace.remove)), { timeout: 15000 }).toBe(true);
+  return { page, trace: await traceOf(page) };
+}
+
+function firstFrameSnap(trace: BootTrace): BootSnap {
+  expect(trace.observerError).toBeNull();
+  expect(trace.add, 'boot-theme must mask the canvas at head time').not.toBeNull();
+  const snap = trace.addSnapshot as BootSnap;
+  expect(snap.bodyPresent, 'witness must precede body parsing (first frame)').toBe(false);
+  expect(snap.bootPending).toBe(true);
+  return snap;
+}
+
 test.describe('boot-pending zero-flash e2e', () => {
   // Firefox headed launch alone eats ~22s on this host (WORKFLOW section 6 tickets 15/13);
   // two full boots + a reload need headroom.
@@ -137,12 +188,14 @@ test.describe('boot-pending zero-flash e2e', () => {
       await dbg.saveLayout();
     });
     // Mirror rides the successful persist path only — never drifts ahead of the layout.
+    // Ticket 44 (spec #41): the mirror carries the three-valued PREFERENCE, so the
+    // legacy boolean written above is persisted as 'dark'.
     await expect.poll(() => p1.evaluate((key: string) => {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
       const m = JSON.parse(raw);
       return [m.theme, m.darkMode, m.fontSize].join('|');
-    }, BOOT_MIRROR_KEY), { timeout: 10000 }).toBe('forest|true|14');
+    }, BOOT_MIRROR_KEY), { timeout: 10000 }).toBe('forest|dark|14');
 
     // The fresh tab: full boot re-runs against the shared file:// origin state.
     const p2 = await ctx.newPage();
@@ -263,6 +316,121 @@ test.describe('boot-pending zero-flash e2e', () => {
     expect(css).toContain('html.boot-pending .canvas__surface,');
     expect(css).toContain('html.boot-pending .canvas__empty,');
     expect(css).toContain('html.boot-pending .inner {');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// Ticket 48 (spec #41): the boot script must resolve the three-valued preference
+// at first paint (light/dark/system), not treat 'system' as light. Every test
+// below observes the FIRST FRAME through the pre-body witness — never the state
+// after loadSettings() hydration, which would mask a wrong first paint.
+// ══════════════════════════════════════════════════════════════════════════
+
+test.describe('boot first frame resolves the three-state dark-mode preference', () => {
+  test.setTimeout(120000);
+
+  test('system preference + dark OS paints dark on the first frame', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    await seedBootRecorder(ctx);
+    // Seed the preference while the OS is LIGHT, so the dark frame below can only
+    // come from resolving system against the new OS, not from a resolved value.
+    await seedPreference(ctx, 'system', 'light');
+    const { page, trace } = await openWithOs(ctx, 'dark');
+    const snap = firstFrameSnap(trace);
+    expect(snap.dark, 'system + dark OS must paint dark before the body parses').toBe(true);
+    await page.close();
+    await ctx.close();
+  });
+
+  test('system preference + light OS paints light on the first frame', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    await seedBootRecorder(ctx);
+    // Seed while the OS is DARK: treating the stored 'system' as light would pass,
+    // resolving the live light OS must also produce light.
+    await seedPreference(ctx, 'system', 'dark');
+    const { page, trace } = await openWithOs(ctx, 'light');
+    const snap = firstFrameSnap(trace);
+    expect(snap.dark, 'system + light OS must paint light before the body parses').toBe(false);
+    await page.close();
+    await ctx.close();
+  });
+
+  test('a tab opened after an OS change while the browser was closed paints the matching theme', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    await seedBootRecorder(ctx);
+    // The browser is "closed" with the OS in light mode and the preference in system.
+    await seedPreference(ctx, 'system', 'light');
+    // It reopens with the OS now dark: the first frame must follow the NEW OS value.
+    const { page, trace } = await openWithOs(ctx, 'dark');
+    const snap = firstFrameSnap(trace);
+    expect(snap.dark, 'a tab opened after the OS changed must match the OS at first paint').toBe(true);
+    // The cache stays preference-only: booting from it never rewrites the resolved OS value.
+    const mirrorPref = await page.evaluate((key: string) => {
+      try { return JSON.parse(localStorage.getItem(key) || 'null')?.darkMode ?? null; } catch (_) { return null; }
+    }, BOOT_MIRROR_KEY);
+    expect(mirrorPref, 'the mirror must keep the preference, never the resolved OS value').toBe('system');
+    await page.close();
+    await ctx.close();
+  });
+
+  test('explicit dark preference wins over a conflicting light OS on the first frame', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    await seedBootRecorder(ctx);
+    await seedPreference(ctx, 'dark', 'light');
+    const { page, trace } = await openWithOs(ctx, 'light');
+    const snap = firstFrameSnap(trace);
+    expect(snap.dark, 'an explicit dark preference must beat a light OS at first paint').toBe(true);
+    await page.close();
+    await ctx.close();
+  });
+
+  test('explicit light preference wins over a conflicting dark OS on the first frame', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    await seedBootRecorder(ctx);
+    await seedPreference(ctx, 'light', 'dark');
+    const { page, trace } = await openWithOs(ctx, 'dark');
+    const snap = firstFrameSnap(trace);
+    expect(snap.dark, 'an explicit light preference must beat a dark OS at first paint').toBe(false);
+    await page.close();
+    await ctx.close();
+  });
+
+  test('malformed mirror falls back to the live OS value at first paint', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    await seedBootRecorder(ctx);
+    const page = await ctx.newPage();
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
+    // Corrupt only the mirror, then re-boot: the classic script's early-return path
+    // must sample the OS value instead of hard-coding light.
+    await page.evaluate((key: string) => localStorage.setItem(key, '123'), BOOT_MIRROR_KEY);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__bootTrace && (window as any).__bootTrace.remove)), { timeout: 15000 }).toBe(true);
+    const snap = firstFrameSnap(await traceOf(page));
+    expect(snap.dark, 'a malformed cache must fall back to the live dark OS at first paint').toBe(true);
+    await ctx.close();
+  });
+
+  test('a legacy boolean mirror still resolves at first paint', async ({ browser }) => {
+    // Upgrading installs carry the pre-#44 boolean cache. The OS is deliberately the
+    // opposite of the stored value, so only the explicit legacy choice can produce it.
+    for (const [legacy, expected, os] of [[true, true, 'light'], [false, false, 'dark']] as const) {
+      const ctx = await browser.newContext();
+      await seedBootRecorder(ctx);
+      const page = await ctx.newPage();
+      await page.emulateMedia({ colorScheme: os });
+      await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
+      await page.evaluate(({ key, value }) => {
+        localStorage.setItem(key, JSON.stringify({ theme: 'beige', darkMode: value, fontSize: 14 }));
+      }, { key: BOOT_MIRROR_KEY, value: legacy });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__bootTrace && (window as any).__bootTrace.remove)), { timeout: 15000 }).toBe(true);
+      const snap = firstFrameSnap(await traceOf(page));
+      expect(snap.dark, `legacy ${String(legacy)} mirror must resolve at first paint`).toBe(expected);
+      await ctx.close();
+    }
   });
 });
 

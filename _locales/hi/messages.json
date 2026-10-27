@@ -222,7 +222,22 @@
     "message": "डार्क मोड"
   },
   "darkModeHint": {
-    "message": "लाइट और डार्क उपस्थिति के बीच स्विच करें"
+    "message": "लाइट, डार्क या सिस्टम का पालन चुनें"
+  },
+  "darkModeLight": {
+    "message": "लाइट"
+  },
+  "darkModeDark": {
+    "message": "डार्क"
+  },
+  "darkModeSystem": {
+    "message": "सिस्टम का पालन करें"
+  },
+  "darkModeSwitchToDark": {
+    "message": "डार्क मोड पर स्विच करें"
+  },
+  "darkModeSwitchToLight": {
+    "message": "लाइट मोड पर स्विच करें"
   },
   "exportData": {
     "message": "डेटा निर्यात करें"
