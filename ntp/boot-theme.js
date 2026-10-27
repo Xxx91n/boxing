@@ -5,7 +5,7 @@
  * dark-mode class + base font size BEFORE the first visible frame \u2014 the FART fix
  * (CSS-Tricks blocking-boot pattern; chrome.storage is always async, localStorage is the
  * sync-readable first-paint cache, paint-critical boot mirror).
- * Constraints (spec D-002 negatives):
+ * Constraints:
  *   - NOT a second layout source: only theme/darkMode/fontSize are mirrored from
  *     boxingLayout; loadSettings() re-applies authoritative values after load. The
  *     mirror never feeds loadLayout / migrate / sync / export.
@@ -16,7 +16,7 @@
  *     default-theme downgrade, corrected by loadSettings() hydration right after (AC).
  *   - Adds html.boot-pending: canvas content stays invisible until renderCanvas /
  *     _enterLargeBox complete (removed in render.js); a 4s failsafe clears it if init
- *     dies, so content is never permanently hidden (ticket 104 / B68: the failsafe is
+ *     dies, so content is never permanently hidden (the failsafe is
  *     armed before any early return). The page background is already the remembered
  *     theme color, so the hidden state never shows a wrong/default UI. */
 (function () {
@@ -24,7 +24,7 @@
   var KEY = 'boxingBootTheme.v1';
   var root = document.documentElement;
   root.classList.add('boot-pending');
-  // Failsafe (ticket 104 / B68): arm the unmask timer BEFORE any early return below.
+  // Failsafe: arm the unmask timer BEFORE any early return below.
   // The mask is already on <html>, so every exit path out of this script — mirror
   // missing, mirror malformed, JSON parse throw, or the normal flow — must leave the
   // failsafe armed. Registering it last (ticket 60) let the two early returns skip it:
@@ -36,13 +36,13 @@
     // one wrong answer guaranteed to be visible. Fall back to the OS preference instead.
     // DISPLAY ONLY — this script has no chrome./browser access by design (CSP + the
     // import-graph guard), so it structurally cannot write the value back to settings
-    // (D-008 / D-011③ "matchMedia value must never be persisted"). loadSettings()
+    // ("matchMedia value must never be persisted"). loadSettings()
     // applies the authoritative layout.settings.darkMode moments later regardless.
     if (!raw) { applySystemDarkFallback(); return; } // fresh profile: beige default stands
     var v = JSON.parse(raw);
     if (!v || typeof v !== 'object') { applySystemDarkFallback(); return; }
     applyPack(v.theme);
-    // (boot exemption D-008⑤ + fallback D-008⑦): this stays a classic blocking
+    // (boot exemption + fallback): this stays a classic blocking
     // script with ZERO imports — an import would make it a module and defer it past first
     // paint (see header) — so it cannot call persist.js applyDarkMode(). It keeps the
     // minimal self-contained "read mirror + write the html class" logic, and ntp.js
@@ -63,7 +63,7 @@
   // OS-preference fallback for a missing/corrupt boot mirror. Display-only
   // by construction: this script has no chrome./browser/localStorage-write access (CSP +
   // import-graph guard B-6), so the value can never leak into layout.settings — that is
-  // the structural half of "matchMedia fallback must not be persisted" (D-008/D-011③).
+  // the structural half of "matchMedia fallback must not be persisted".
   // Symmetric toggle, for the same reason applyDarkMode uses one.
   function applySystemDarkFallback() {
     try {

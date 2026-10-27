@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// D-002 / S-02 req4: Build-time consistency guard for public site URLs.
+// Build-time consistency guard for public site URLs.
 // Asserts that build-side (.github/scripts/site-constants.mjs) and
 // runtime-side (ntp/site-constants.js) URL constants match exactly,
 // and that settings-ui.js consumes PRIVACY_URL without string literal hardcoding.

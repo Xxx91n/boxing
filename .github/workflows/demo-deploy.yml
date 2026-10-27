@@ -53,7 +53,7 @@ jobs:
         run: |
           test -s pages-artifact/demo/ntp.css
           test -s pages-artifact/privacy-policy.html
-      - name: Publish expected version (G-C)
+      - name: Publish expected version (Pages check)
         id: version
         run: echo "value=$(node -p "require('./pages-artifact/demo/version.json').version")" >> "$GITHUB_OUTPUT"
       - name: Configure Pages

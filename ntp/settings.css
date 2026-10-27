@@ -1044,7 +1044,7 @@ body.box-resizing {
   box-shadow: 0 0 0 2px var(--color-accent-soft-2);
 }
 /* BX-CSS-DUAL-WRITE-SHARED: accent theme controls — shared selectors, no dual-write needed */
-/* Q4: Chrome UA button reset */
+/* Chrome UA button reset */
 .box-expand-btn, .box-pin-btn, .box-mode-btn, .box-resize-handle,
 .large-box__delete, .small-box__delete {
   -webkit-appearance: none;
@@ -1053,7 +1053,7 @@ body.box-resizing {
   box-shadow: none;
 }
 
-/* Q5: Chrome select/input focus ring reset */
+/* Chrome select/input focus ring reset */
 .modal select:focus,
 .modal input:focus,
 .modal button:focus,
@@ -1067,7 +1067,7 @@ body.box-resizing {
 }
 
 /* ══════════════════════════════════════════════
-   About Tab (D-006)
+   About Tab
    ══════════════════════════════════════════════ */
 .about-section {
   display: flex;

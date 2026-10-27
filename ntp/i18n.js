@@ -271,7 +271,7 @@ I18N_FALLBACK.rollbackFailed = 'Rollback failed - your current data was kept unc
 I18N_FALLBACK.exportFullPackage = 'Full DR package';
 I18N_FALLBACK.exportFullOverflow = 'The full DR package still exceeds the 5MB restore limit after trimming snapshot bodies. A standard envelope export was downloaded instead.';
 
-// Wave 2026.10.16 keys (D-004, D-005, D-006, D-007)
+// Wave 2026.10.16 keys
 I18N_FALLBACK.aboutUpdateAvailable = 'New version available: ';
 I18N_FALLBACK.autoTitleEnabled = 'Auto-derive bookmark title';
 I18N_FALLBACK.autoTitleHint = 'Derive bookmark title from URL structure using rules';

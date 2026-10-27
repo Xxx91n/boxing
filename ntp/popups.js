@@ -274,7 +274,7 @@ export function initPopupsFacade(deps) {
     const addBtn = document.createElement('button');
     addBtn.textContent = i18n('addBookmarkBtn');
     addBtn.style.cssText = 'padding:5px 14px;background:var(--color-accent);color:#F7F3ED;border:0;border-radius:4px;font-size:var(--fs-sm);font-weight:600;cursor:pointer;';
-    // Ticket N-108-01 / C05 (D-005): addBookmark goes through commit(op) so the
+    // addBookmark goes through commit(op) so the
     // write path is consistent with deleteBookmark/reorderBookmarks (all mutations go through commit).
     const addBmAction = () => {
       const title = titleInput.value.trim();

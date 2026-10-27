@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// D-004: Global font-size regression guard.
+// Global font-size regression guard.
 //
 // Contract:
 //   No hardcoded `font-size:\s*\d+px` styles are allowed in NTP JS files (ntp/*.js).

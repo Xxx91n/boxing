@@ -136,15 +136,12 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 
 ## 附录 — 发行检查单模板（原 WORKFLOW §4.4）
 
-> 每次发行复制一份到该发行票的报告逐项勾选。可发行 = G-A（CI）∧ G-B（手工商店黄金路径）∧ G-C（Pages）三条件合取。
+> 每次发行复制一份到该发行票的报告逐项勾选。可发行 = CI 门禁 ∧ 手工商店黄金路径 ∧ Pages 检查，三条件合取。
 
 ```
 发行检查单 — <版本号>
 CI 门禁
 - [ ] main 全量 test.yml run URL: __________ → 全绿
-- [ ] 残红豁免逐行 (用例名 | 基线 run | 失败签名 | 归属票 | 到期条件):
-      - [ ] ________________________________
-- [ ] node scripts/waiver-ledger-check.mjs exit 0, 且逐行将台账失败签名与最新基线 run 日志复核一致 (票48 机制)
 人工 zip 黄金路径 (Chrome 与 Firefox 各一遍, 用解包产物)
 - [ ] 全新安装 → 引导可走完 (Skip/Next), 关闭后主界面可点击, 零 console 错误
 - [ ] 建盒/改名/拖拽/缩放 → 重开后数据完整

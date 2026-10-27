@@ -75,7 +75,7 @@ test.describe('dblclick — REAL native input + text selection', () => {
   // Native-input realness IS this block's purpose — the browser must not select
   // text under a real dblclick (BX-SEL-01 end-to-end proof, chrome-origin bug) —
   // so the tests are NOT converted to synthetic dispatch. Firefox coverage runs
-  // natively again: D-012 (2026-10-13) flipped the firefox lane headless — the
+  // natively again: the firefox lane went headless on 2026-10-13 — the
   // headed persistent-context input pipe wedges (playwright#16095 class, probe-
   // verified) while headless is clean. The synthetic block below remains as the
   // app-level guard contract on both lanes.
@@ -162,8 +162,8 @@ test.describe('dblclick — REAL native input + text selection', () => {
 
 // Ticket 27 (quarantine convergence): the synthetic twin of the native block —
 // BX-SEL-01's app-level contract (renderCanvas clears residual selection; focus is
-// not stolen by canvas dblclick; .canvas keeps user-select:none). D-012 flipped
-// the firefox lane headless so native input runs there again — this synthetic
+// not stolen by canvas dblclick; .canvas keeps user-select:none). The firefox lane
+// is headless so native input runs there again — this synthetic
 // block remains on BOTH lanes as the app-level guard contract.
 // Seeding a real Selection makes the clear-guard assertion behavioral, not vacuous.
 test.describe('dblclick — BX-SEL-01 selection guard via synthetic input', () => {

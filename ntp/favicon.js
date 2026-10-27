@@ -140,7 +140,7 @@ function applyDecodedFavicon(img, host, src) {
 }
 
 async function loadFavicon(img, url, opts) {
-  // (B10): parallel CDN race via Promise.any — fastest token wins, no serial waterfall.
+  // Parallel CDN race via Promise.any — fastest token wins, no serial waterfall.
   // BX ticket 12 (single-flight + SWR): concurrent same-host loads share ONE in-flight probe
   // (Map<host, Promise>, forgotten on settle so a failed probe never parks later callers). A
   // stale-but-usable hydrate hit paints first, then triggers exactly one background

@@ -6,7 +6,7 @@ import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ════════════════════════════════════════════════════════════════════════════
-// Ticket 92 (B56): boot-pending 专项 e2e — zero-flash regression guard.
+// Boot-pending 专项 e2e — zero-flash regression guard.
 // Automates the report 73 P-73-1 recommendation: a fresh tab whose first frame must
 // already carry the remembered theme, canvas content masked by html.boot-pending
 // until renderCanvas confirms the remembered state, unmasked exactly at that point.
@@ -21,8 +21,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // order, mask rule, both unmask sites, 4s failsafe) so a rollback cannot pass CI.
 // This spec touches NO production code — it must never "delete boot-pending to fix
 // the test" (forbidden by reports/73 section 2 checkpoint).
-// Ticket 104 (B68) added the second describe block below together
-// with the production fix it locks (boot-theme.js: failsafe armed before early return).
+// The second describe block below locks the early-return failsafe together
+// with the production fix it covers (boot-theme.js: failsafe armed before early return).
 // ════════════════════════════════════════════════════════════════════════════
 
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -114,7 +114,7 @@ async function traceOf(page: Page): Promise<BootTrace> {
   return await page.evaluate(() => (window as any).__bootTrace);
 }
 
-test.describe('B56: boot-pending zero-flash e2e (ticket 92)', () => {
+test.describe('boot-pending zero-flash e2e', () => {
   // Firefox headed launch alone eats ~22s on this host (WORKFLOW section 6 tickets 15/13);
   // two full boots + a reload need headroom.
   test.setTimeout(120000);
@@ -267,7 +267,7 @@ test.describe('B56: boot-pending zero-flash e2e (ticket 92)', () => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════
-// Ticket 104 (B68): boot-theme early-return failsafe.
+// Boot-theme early-return failsafe.
 // P-92-1 found that the two early returns in boot-theme.js (mirror missing / mirror
 // malformed) skipped the trailing 4s failsafe registration: a fresh profile whose init
 // died before renderCanvas left html.boot-pending on <html> forever (permanent blank).
@@ -285,7 +285,7 @@ test.describe('B56: boot-pending zero-flash e2e (ticket 92)', () => {
 const BOOT_FAILSAFE_MS = 4000;
 const BOOT_TIMER_SRC = "setTimeout(function () { root.classList.remove('boot-pending'); }, 4000)";
 
-test.describe('B68: boot-theme early-return failsafe (ticket 104)', () => {
+test.describe('boot-theme early-return failsafe', () => {
   test.setTimeout(120000);
 
   async function bootThenWaitForDebug(page: Page): Promise<void> {
@@ -342,7 +342,7 @@ test.describe('B68: boot-theme early-return failsafe (ticket 104)', () => {
     const earlyReturns = [...boot.matchAll(/\breturn;/g)].map((m) => m.index as number);
     expect(earlyReturns.length, 'boot-theme.js early-return sites (P-92-1)').toBeGreaterThanOrEqual(2);
     for (const idx of earlyReturns) {
-      expect(timerIdx, 'the failsafe must be armed before every early return (ticket 104 / B68)').toBeLessThan(idx);
+      expect(timerIdx, 'the failsafe must be armed before every early return').toBeLessThan(idx);
     }
     expect(boot.split("root.classList.remove('boot-pending')").length - 1,
       'exactly one failsafe registration (no duplicated timer)').toBe(1);

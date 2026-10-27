@@ -42,7 +42,7 @@ test.describe('BX-PAGES-GC: Pages version freshness gate', () => {
     expect(src).toContain('FATAL: resolved version is empty');
   });
 
-  test('the demo renders the deployed version (B75, machine readable)', () => {
+  test('the demo renders the deployed version (machine readable)', () => {
     const src = fs.readFileSync(buildScript, 'utf8');
     expect(src).toContain('data-boxing-version');
     expect(src).toContain('name="boxing-version"');

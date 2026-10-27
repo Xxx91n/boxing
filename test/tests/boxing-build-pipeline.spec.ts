@@ -76,13 +76,13 @@ test.describe('Pages demo artifact suppresses the first-run tour', () => {
   // code so no editor/template layer can silently turn it into a real newline.
   const BS_N = String.fromCharCode(92) + 'n';
 
-  test('D009-b1: build-demo.mjs injects the __BOXING_DEMO__ flag', () => {
+  test('build-demo.mjs injects the __BOXING_DEMO__ flag', () => {
     const src = buildDemoSrc();
     expect(src, 'the demo build must set the flag').toContain('__BOXING_DEMO__');
     expect(src, 'the flag must be written as its own file').toContain('demo-flag.js');
   });
 
-  test('D009-b2: the flag ships as a SEPARATE classic script (CSP + ordering), never inline', () => {
+  test('the flag ships as a SEPARATE classic script (CSP + ordering), never inline', () => {
     const src = buildDemoSrc();
     // CSP is script-src 'self' (SEC-15): an inline flag would be blocked outright.
     expect(ntpIndexHtml()).toContain("script-src 'self'");
@@ -108,7 +108,7 @@ test.describe('Pages demo artifact suppresses the first-run tour', () => {
       .not.toContain('<script>window.__BOXING_DEMO__');
   });
 
-  test('D009-b3: the generated flag file content sets the global', () => {
+  test('the generated flag file content sets the global', () => {
     const src = buildDemoSrc();
     // Plain indexOf slicing rather than a regex: backslash classes inside a regex
     // literal are a needless escaping hazard in a generated spec. The window is
@@ -126,7 +126,7 @@ test.describe('Pages demo artifact suppresses the first-run tour', () => {
     expect(call).not.toContain('defer');
   });
 
-  test('D009-b4: initOnboarding returns early on the flag AND on runtime.id (defense in depth)', () => {
+  test('initOnboarding returns early on the flag AND on runtime.id (defense in depth)', () => {
     const src = onboardingSrc();
     expect(src).toContain('__BOXING_DEMO__');
     expect(src, 'runtime.id is the defensive second condition').toContain('boxing-pages-demo');
@@ -149,7 +149,7 @@ test.describe('Pages demo artifact suppresses the first-run tour', () => {
     expect(body.slice(flagAt, guardEnd), 'the guard must return early').toContain('return;');
   });
 
-  test('D009-b5: the file:// debug lane is NOT suppressed (empty-canvas tour still reachable)', () => {
+  test('the file:// debug lane is NOT suppressed (empty-canvas tour still reachable)', () => {
     const src = onboardingSrc();
     // Suppression keys ONLY off the demo flag / demo runtime id — a plain file://
     // load has neither, so the legacy empty-canvas judgment must still be there.
@@ -168,7 +168,7 @@ test.describe('Pages demo artifact suppresses the first-run tour', () => {
     expect(src, 'and the demo runtime id as a defensive second condition').toContain('boxing-pages-demo');
   });
 
-  test('D009-b6: overlay is dismissible with Escape (WCAG 2.1.2 No Keyboard Trap, Level A)', () => {
+  test('overlay is dismissible with Escape (WCAG 2.1.2 No Keyboard Trap, Level A)', () => {
     const src = onboardingSrc();
     expect(src, 'Escape handler must exist').toContain("e.key !== 'Escape'");
     // Capture phase: must outrank the document-level canvas Escape semantics.

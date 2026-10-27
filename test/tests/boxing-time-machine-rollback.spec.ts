@@ -6,7 +6,7 @@
 // (3) every restore/overwrite/import entry takes a saveSnapshot('pre-restore') safety copy
 // first (fail-closed: no un-snapshotted full replace), (4) this spec pins the rollback
 // round-trip + the safety-snapshot counts.
-// file:// mock lane per 43R/t44 harness discipline: mutations go through the t41R seam
+// file:// mock lane: mutations go through the debug snapshot seam
 // (__boxingDebug.saveSnapshot / listSnapshots / storageGet), never window.chrome.storage;
 // no boot→seed→reload windows where an unload flush could clobber the seed.
 import { test, expect } from '@playwright/test';
@@ -24,7 +24,7 @@ async function bootFresh(page) {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   await page.reload({ waitUntil: 'domcontentloaded' });
-  // Readiness = the t41R snapshot seam itself (ticket 01 lesson: poll what the test calls)
+  // Readiness = the snapshot debug seam itself (poll what the test calls)
   await expect.poll(() => page.evaluate(() =>
     Boolean((window as any).__boxingDebug?.listSnapshots
       && (window as any).__boxingDebug?.saveSnapshot
@@ -83,14 +83,14 @@ test.describe('Ticket 50 — Time Machine rollback UI + pre-restore safety snaps
 
     // Secondary confirm must appear BEFORE anything is replaced.
     // (evaluate-click, not a real pointer click: the onboarding overlay intercepts pointer
-    // events in the file:// lane — same synthetic-input discipline as t41R/t44 specs.)
+    // events in the file:// lane — same synthetic-input discipline as the other file:// specs.)
     await page.evaluate(() => {
       const btn = document.querySelector('#data-snapshot-list .data-snapshot-row .data-snapshot-rollback-btn');
       btn?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     });
     await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
     const body = await page.evaluate(() => document.getElementById('confirm-body')?.textContent || '');
-    expect(body).toMatch(/snapshot/i);               // t44 AC3 precedent: confirm names the snapshot mechanism
+    expect(body).toMatch(/snapshot/i);               // AC3 precedent: confirm names the snapshot mechanism
     const mid = await page.evaluate(() => (window as any).__boxingDebug.layout.boxes.map((b) => b.title));
     expect(mid).toEqual(['A', 'B']);                 // nothing replaced while the dialog is open
 
@@ -180,7 +180,7 @@ test.describe('Ticket 50 — Time Machine rollback UI + pre-restore safety snaps
         { id: 'L9', type: 'large', title: 'Backup New', x: 400, y: 40, width: 320, height: 220, nextSmallIndex: 1, children: [] },
       ],
       connections: [], groups: [],
-      _meta: { revision: 7, updatedAt: Date.now() - 1000, writerId: 't50-backup' },
+      _meta: { revision: 7, updatedAt: Date.now() - 1000, writerId: 'backup-writer' },
       settings: {},
     };
     await runImport(page, 'backup.json', backup);

@@ -56,7 +56,7 @@ test.describe('Snapshot split-key storage + rotation (Ticket 41R)', () => {
         bodyPayloadIsolated: bodyKeys.every(k => Array.isArray(all[k]?.data?.boxes) && all[k].data.boxes.length > 0),
       };
     }, { prefix: SNAP_KEY_PREFIX, indexKey: SNAP_INDEX_KEY });
-    console.log('T41R-1:', JSON.stringify(r));
+    console.log('snapshot rotation 1:', JSON.stringify(r));
     expect(r.beforeCount).toBe(0);            // fresh profile starts empty
     expect(r.afterCount).toBeGreaterThanOrEqual(2); // raw keep floor keeps same-hour entries
     expect(r.bodyKeys.length).toBeGreaterThanOrEqual(2); // one key per snapshot
@@ -90,7 +90,7 @@ test.describe('Snapshot split-key storage + rotation (Ticket 41R)', () => {
         missing: missing === null,
       };
     });
-    console.log('T41R-2:', JSON.stringify(r));
+    console.log('snapshot rotation 2:', JSON.stringify(r));
     expect(r.restoredTitles).toEqual(['A']);   // the snapshot taken BEFORE box B existed
     expect(r.restoredMigrated).toBe(true);     // returns migrateLayout-normalized data
     expect(r.missing).toBe(true);              // unknown ts → null, no throw
@@ -130,7 +130,7 @@ test.describe('Snapshot split-key storage + rotation (Ticket 41R)', () => {
         bodiesAreSubsetOfIndex: bodyKeys.every(k => list.some((e: any) => prefix + e.ts === k)),
       };
     }, { prefix: SNAP_KEY_PREFIX, indexKey: SNAP_INDEX_KEY });
-    console.log('T41R-3:', JSON.stringify(r));
+    console.log('snapshot rotation 3:', JSON.stringify(r));
     expect(r.count).toBe(11);                  // 10 floor + 1 deduped from the 3 beyond the floor
     expect(r.prunedOldest).toEqual([false, false, false]); // orphaned body keys removed from storage
     expect(r.dedupSurvivor).toBe(true);        // newest-per-bucket survives dedup
@@ -171,7 +171,7 @@ test.describe('Snapshot split-key storage + rotation (Ticket 41R)', () => {
         payloadsReadable: list.every((e: any) => Array.isArray(all[prefix + e.ts]?.data?.boxes) && all[prefix + e.ts].data.boxes.length === 1),
       };
     }, { prefix: SNAP_KEY_PREFIX, indexKey: SNAP_INDEX_KEY });
-    console.log('T41R-4:', JSON.stringify(r));
+    console.log('snapshot rotation 4:', JSON.stringify(r));
     expect(r.count).toBe(2);                   // both legacy entries migrated into the index
     expect(r.hasMonolith).toBe(false);         // monolith removed (AC1)
     expect(r.bodyKeys.length).toBe(2);         // split keys per snapshot

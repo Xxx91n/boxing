@@ -45,7 +45,7 @@ function bareLayout(title) {
 // it throws ReferenceError and aborts the remainder of the script. That seeded
 // boxingLayout (first statement) but never the snapshot keys, so AC1/AC2 asserted
 // against an empty snapshot index (0 instead of 1) and could never go green. Same
-// class of bug as the t43R "single goto, no reload" harness discipline: the
+// class of bug as the "single goto, no reload" harness discipline: the
 // fixture must survive the serialization boundary.
 const SNAP_TS = 111;
 function seedStorage(localTitle) {
@@ -130,7 +130,7 @@ test.describe('Ticket 51 — export envelope + full DR package + copy-before-ove
     // main layout rides in the envelope
     expect(Array.isArray(env.layout.boxes)).toBe(true);
     expect(env.layout.boxes[0].title).toBe('Envelope Root');
-    // meta carries the snapshot INDEX entries only — never bodies (D-006 negative)
+    // meta carries the snapshot INDEX entries only — never bodies (negative constraint)
     expect(Array.isArray(env.meta.snapshots)).toBe(true);
     expect(env.meta.snapshots.length).toBe(1);
     expect(env.meta.snapshots[0].ts).toBe(SNAP_TS);

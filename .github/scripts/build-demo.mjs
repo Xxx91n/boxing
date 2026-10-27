@@ -102,7 +102,7 @@ copyFile(path.join(ROOT, "demo", "chrome-stub.js"), DEMO);
 //   - Ordering: a classic <script src> in <head> runs before the deferred
 //     `<script type="module" src="ntp.js">`, so the flag is guaranteed set before
 //     ntp.js executes — no DOMContentLoaded wait, no init race.
-// D-011③: this is the ONLY injection point (demo has exactly one build chain),
+// This is the ONLY injection point (demo has exactly one build chain),
 // and chrome-stub.js keeps its real runtime.id — the flag is the single source.
 fs.writeFileSync(
   path.join(DEMO, "demo-flag.js"),
@@ -239,7 +239,7 @@ function renderPrivacyPolicy(md) {
   ].join("\n") + "\n";
 }
 
-// CNAME — triggers GitHub Pages custom domain binding (D-002)
+// CNAME — triggers GitHub Pages custom domain binding
 fs.writeFileSync(path.join(OUT, "CNAME"), "boxing.xxx91n.com\n", "utf8");
 
 console.log(JSON.stringify({

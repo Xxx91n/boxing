@@ -17,13 +17,13 @@
 
 ## Grill Decisions（历史裁定，仍有效）
 
-| Q | Decision | Rationale |
+| Decision | Choice | Rationale |
 |---|----------|-----------|
-| Q1 | A+B sync, prepare everything at once | Screenshots as placeholders, human replaces later |
-| Q2 | (A) Chrome optional_host_permissions + Firefox keeps host_permissions | Chrome review: narrower permissions = higher pass rate; Firefox more tolerant of WebDAV |
-| Q3 | (A) GitHub Pages hosts privacy policy | https://boxing.xxx91n.com/privacy-policy.html |
-| Q4 | (A) 5 transparent 1280x800 PNG placeholders + README | Human overwrites same filenames later |
-| Q5 | CRX pem + AMO API key deferred to daytime interactive setup | Involves user account identity, needs hands-on guidance |
+| 同步策略 | A+B sync, prepare everything at once | Screenshots as placeholders, human replaces later |
+| 权限模型 | (A) Chrome optional_host_permissions + Firefox keeps host_permissions | Chrome review: narrower permissions = higher pass rate; Firefox more tolerant of WebDAV |
+| 隐私政策托管 | (A) GitHub Pages hosts privacy policy | https://boxing.xxx91n.com/privacy-policy.html |
+| 商店截图 | (A) 5 transparent 1280x800 PNG placeholders + README | Human overwrites same filenames later |
+| 签名与 API 密钥 | CRX pem + AMO API key deferred to daytime interactive setup | Involves user account identity, needs hands-on guidance |
 | 发行门禁 | 可发行 = CI 门禁 ∧ 人工黄金路径 ∧ Pages 检查 | 数据事故驱动；程序性门禁，非流水线硬拦 |
 | 发行号零闪现 | 发行号 2026.9.12 含零闪现 | 用户痛点；新 build，非覆盖旧包 |
 | 人工黄金路径强制通过 | 用户强制通过（无产物） | 发布权限方裁定；**非**可审计 |
@@ -85,7 +85,7 @@ CI 在 ubuntu 腿自动生成并 Publish：`chrome.zip` `firefox.zip` `source.zi
 
 | 风险/红线 | 说明 |
 |---|---|
-| 发行门禁合取 | tag/宣称可发行仍看 CI ∧ 人工黄金路径 ∧ Pages；本波人工黄金路径为强制豁免（D-009） |
+| 发行门禁合取 | tag/宣称可发行仍看 CI ∧ 人工黄金路径 ∧ Pages；本波人工黄金路径为强制豁免 |
 | CRX key 丢失 | 新 ID 重上架（若仍走 CWS 自签；商店包不依赖本地 crx） |
 | AMO 版号烧录 | `web-ext sign` 真密钥会占用版号；商店网页上传 zip 不烧本仓 CI 号 |
 | 双安装源 | **禁止**再引导用户从 GitHub 下 xpi/crx 当正式安装 |

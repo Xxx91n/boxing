@@ -170,7 +170,7 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
     // Shared helper defined once...
     expect((src.match(/function selectAllTitleText\(/g) || []).length).toBe(1);
-    // D-003: focus-state machine defined once...
+    // focus-state machine defined once...
     expect((src.match(/function makeTitleFocusMachine\(/g) || []).length).toBe(1);
     // ...wired into exactly the three title surfaces.
     expect((src.match(/makeTitleFocusMachine\(title\)/g) || []).length).toBe(2);   // large + small
@@ -184,7 +184,7 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     expect((src.match(/void saveLayout\(\);/g) || []).length).toBe(3);
   });
 
-  test('D-003 source contract: per-focus flag + mouseup re-assert guard present', () => {
+  test('source contract: per-focus flag + mouseup re-assert guard present', () => {
     const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
     // Per-focus-cycle flag (not a bare "first ever click" boolean) gates the select-all.
     expect(src).toContain('let selectedThisFocus = false;');
@@ -197,7 +197,7 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     expect(src).toContain('e.preventDefault();');
   });
 
-  test('D-003: second activation places a native caret (first click still selects all)', async ({ page }) => {
+  test('second activation places a native caret (first click still selects all)', async ({ page }) => {
     test.setTimeout(30000);
     await boot(page);
     await seedTitles(page);
@@ -218,7 +218,7 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     expect(after.collapsed).toBe(true);
   });
 
-  test('D-003: arrow key collapses the select-all; Shift+Arrow makes a partial selection', async ({ page }) => {
+  test('arrow key collapses the select-all; Shift+Arrow makes a partial selection', async ({ page }) => {
     test.setTimeout(30000);
     await boot(page);
     await seedTitles(page);
@@ -243,10 +243,10 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     expect('Alpha'.includes(partial.text)).toBe(true);
   });
 
-  test('D-003: mouse drag makes a partial selection (native)', async ({ page }) => {
+  test('mouse drag makes a partial selection (native)', async ({ page }) => {
     test.setTimeout(30000);
-    // D-012 (2026-10-13): firefox lane is headless now — the headed-lane
-    // native-input wedge (playwright#16095 class) does not apply there.
+    // The firefox lane is headless now — the headed-lane native-input wedge
+    // (playwright#16095 class) does not apply there.
     await boot(page);
     await seedTitles(page);
 
@@ -271,7 +271,7 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     expect('Alpha'.startsWith(s.text)).toBe(true);
   });
 
-  test('D-005: favicon Phase-1 hot pool, decode(), is-loading and is-cached classes', () => {
+  test('favicon Phase-1 hot pool, decode(), is-loading and is-cached classes', () => {
     const favSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/favicon.js'), 'utf8');
     const popSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/popups.js'), 'utf8');
     const cssSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/base.css'), 'utf8');
@@ -287,7 +287,7 @@ test.describe('Ticket 10 - title click selects all (large / small / crumb)', () 
     expect(cssSrc).toContain('.bm-row__favicon.is-cached');
   });
 
-  test('D-006: About tab markup, initAboutTab, and 14-locale i18n completeness', () => {
+  test('About tab markup, initAboutTab, and 14-locale i18n completeness', () => {
     const htmlSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8');
     const settingsUiSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/settings-ui.js'), 'utf8');
     const i18nSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/i18n.js'), 'utf8');

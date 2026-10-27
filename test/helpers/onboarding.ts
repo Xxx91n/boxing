@@ -1,4 +1,4 @@
-// Boxing e2e helper — first-run onboarding overlay (ticket 101 B65).
+// Boxing e2e helper — first-run onboarding overlay.
 //
 // ROOT CAUSE (measured, not inferred — ticket 89 §6.1, ticket 93 §2.3):
 // ntp/index.html ships a full-screen first-run tour overlay (#onboarding-overlay,
@@ -66,7 +66,7 @@ export async function waitForOnboardingDecision(page: Page, timeout = 15000): Pr
     }, ONBOARDING_OVERLAY_ID),
     {
       timeout,
-      message: 'ntp init() must settle the first-run onboarding decision before the tour can be dismissed permanently (ticket 101 / B65)',
+      message: 'ntp init() must settle the first-run onboarding decision before the tour can be dismissed permanently',
     },
   ).toBe(true);
 }
@@ -95,7 +95,7 @@ export async function dismissOnboarding(
     }, ONBOARDING_OVERLAY_ID),
     {
       timeout: opts.dismissTimeout ?? 8000,
-      message: 'first-run onboarding overlay must be provably hidden before real pointer input (ticket 101 / B65)',
+      message: 'first-run onboarding overlay must be provably hidden before real pointer input',
     },
   ).toBe(true);
 }

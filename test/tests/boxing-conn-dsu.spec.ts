@@ -363,7 +363,7 @@ test.describe('connection lines render only in their owning surface', () => {
     };
   });
 
-  test('D007-1: canvas-level edge renders on the canvas and nowhere else', async ({ page }) => {
+  test('canvas-level edge renders on the canvas and nowhere else', async ({ page }) => {
     await seedTwoBoxes(page);
     // Canvas is the open surface -> the large<->large edge renders exactly once.
     const onCanvas = await lineCount(page);
@@ -372,7 +372,7 @@ test.describe('connection lines render only in their owning surface', () => {
     expect(onCanvas.total).toBe(1);
   });
 
-  test('D007-2: canvas-level edge is NOT projected into an open inner surface', async ({ page }) => {
+  test('canvas-level edge is NOT projected into an open inner surface', async ({ page }) => {
     // Canvas-ONLY seed on purpose: seedTwoBoxes also creates an inner edge, so
     // counting there could not tell "the canvas edge leaked in" apart from "the
     // inner edge correctly rendered". With a single canvas edge, any line at all
@@ -401,7 +401,7 @@ test.describe('connection lines render only in their owning surface', () => {
     expect(inA.total, 'zero lines total inside A (canvas surface is closed)').toBe(0);
   });
 
-  test('D007-3: an inner edge renders only inside ITS OWN box (B sees zero lines)', async ({ page }) => {
+  test('an inner edge renders only inside ITS OWN box (B sees zero lines)', async ({ page }) => {
     await seedTwoBoxes(page);
     await enterBox(page, 'A');
     const inA = await lineCount(page);
@@ -414,7 +414,7 @@ test.describe('connection lines render only in their owning surface', () => {
     expect(inB.total).toBe(0);
   });
 
-  test('D007-4: going back to A restores its edge (suppression is view-scoped, not destructive)', async ({ page }) => {
+  test('going back to A restores its edge (suppression is view-scoped, not destructive)', async ({ page }) => {
     await seedTwoBoxes(page);
     await enterBox(page, 'A');
     expect((await lineCount(page)).inner).toBe(1);
@@ -424,7 +424,7 @@ test.describe('connection lines render only in their owning surface', () => {
     expect((await lineCount(page)).inner, 'returning to A must bring the line back').toBe(1);
   });
 
-  test('D007-5: resolveConnSurface contract (canvas / inner / cross-parent / mixed)', async ({ page }) => {
+  test('resolveConnSurface contract (canvas / inner / cross-parent / mixed)', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -466,7 +466,7 @@ test.describe('connection lines render only in their owning surface', () => {
     expect(r.garbage.kind).toBe('none');
   });
 
-  test('D007-5a: inner ownership follows the live layout after reparenting', async ({ page }) => {
+  test('inner ownership follows the live layout after reparenting', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -486,7 +486,7 @@ test.describe('connection lines render only in their owning surface', () => {
     expect(r).toEqual({ kind: 'none', reason: 'inner-surface-closed' });
   });
 
-  test('D007-6: cross-parent inner edge keeps its DATA and logs a console debugWarn (no UI warning)', async ({ page }) => {
+  test('cross-parent inner edge keeps its DATA and logs a console debugWarn (no UI warning)', async ({ page }) => {
     await resetBoxing(page);
     const warns: string[] = [];
     page.on('console', (m) => { if (m.type() === 'warning' || m.type() === 'debug') warns.push(m.text()); });
@@ -513,7 +513,7 @@ test.describe('connection lines render only in their owning surface', () => {
       };
     });
     expect(r.added).toBe(true);
-    // DATA RETAINED (D-007: deleting it would break merge reversibility).
+    // DATA RETAINED: deleting it would break merge reversibility.
     expect(r.stored).toBe(1);
     expect(r.storedConn.from).toBe('small:A:a1');
     expect(r.storedConn.to).toBe('small:B:b1');
@@ -528,7 +528,7 @@ test.describe('connection lines render only in their owning surface', () => {
     })).toBe(false);
   });
 
-  test('D007-7: deleting the source edge removes every projection (tombstone is conn-scoped)', async ({ page }) => {
+  test('deleting the source edge removes every projection (tombstone is conn-scoped)', async ({ page }) => {
     await seedTwoBoxes(page);
     await enterBox(page, 'A');
     expect((await lineCount(page)).inner).toBe(1);
@@ -547,7 +547,7 @@ test.describe('connection lines render only in their owning surface', () => {
     expect((await lineCount(page)).total).toBe(0);
   });
 
-  test('D007-8: legacy raw-id connections still render on the canvas (back-compat preserved)', async ({ page }) => {
+  test('legacy raw-id connections still render on the canvas (back-compat preserved)', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;

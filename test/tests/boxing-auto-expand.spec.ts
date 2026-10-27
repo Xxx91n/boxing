@@ -10,8 +10,8 @@ const NTP_PATH = 'ntp/index.html';
 // position:fixed; inset:0; z-index:100 with aria-modal="true" — it is NOT inert.
 // It wins the hit test, so a real page.hover lands on the overlay and the box
 // never enters CSS :hover; the collapsed clamp (max-height:60px) then survives
-// the whole poll. That is exactly the ubuntu-only signature from the G-A
-// definitive run 34749813393 ("Expected > 80 / Received 60" at line 44), which a
+// the whole poll. That is exactly the ubuntu-only signature from the CI gate
+// run ("Expected > 80 / Received 60" at line 44), which a
 // local A/B/A probe reproduced deterministically by forcing the overlay visible
 // (hidden -> h=105; visible -> h=60, elementFromPoint = #onboarding-overlay).
 // The previous dismissal was fire-and-forget (optional-chained, issued before
