@@ -173,8 +173,11 @@ function analyzeIsolation(sources) {
         // substitution such as `${import.meta.url} from '...'` would bridge from code
         // into template text and report a dependency that does not exist.
         if (scanned.mask[match.index] !== '1') continue;
-        const quote = match[0].lastIndexOf(match[1]);
-        const from = match[0].lastIndexOf('from', quote);
+        // Search only before the specifier's opening quote. Searching from the
+        // closing quote would find a `from` inside the specifier path itself and,
+        // because specifier text is masked as literal, skip a real import.
+        const openingQuote = match[0].indexOf(match[1]);
+        const from = match[0].lastIndexOf('from', openingQuote);
         if (from !== -1 && scanned.mask[match.index + from] !== '1') continue;
         const specifier = match[2];
         if (!isFrozenReaderSpecifier(specifier)) continue;
@@ -231,6 +234,12 @@ function selfTest() {
     [{ rel: 'ntp/render.js', text: "const note = `import('../scripts/legacy-reader-frozen.mjs')`;\n" }], '');
   check('code import.meta followed by template text is NOT bridged into a match',
     [{ rel: 'ntp/render.js', text: "const label = `${import.meta.url} from '../scripts/legacy-reader-frozen.mjs'`;\n" }], '');
+  check('a "from" substring inside the specifier path does not hide the import',
+    [
+      { rel: 'ntp/render.js', text: "import '../from/legacy-reader-frozen.mjs';\n" },
+      { rel: 'ntp/popups.js', text: "const m = await import('../from/legacy-reader-frozen.mjs');\n" },
+      { rel: 'background.js', text: "export * from './from/legacy-reader-frozen.mjs';\n" },
+    ], 'B-10@1,B-10@1,B-10@1');
   return { bad, lines };
 }
 
