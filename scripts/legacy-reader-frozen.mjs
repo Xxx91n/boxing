@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+import { createHash } from 'node:crypto';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 // Ticket 43 (spec #40): frozen pre-migration reader contract registry.
 //
 // The migration golden gate proves that current data stays readable by the reader
@@ -14,14 +18,106 @@
 // Pure move: the reader body below is the verbatim logic that lived in the gate.
 // The gate keeps its layout comparison helpers (canon/bookmarkIds/fixtures).
 //
-// Extension points kept deliberately open for later tickets:
-//   * #46 pins a source-text hash per frozen function body. Registration already
-//     preserves arbitrary metadata on a contract entry, so a hash can be attached
-//     here without changing the registry shape or the call sites.
-//   * #47 forbids production imports. This module is gate-side (scripts/), and
-//     the registry/accessor split below keeps the boundary auditable.
+// Ticket 46: every frozen function body is pinned by the SHA-256 of its raw
+// source text. The pin is deliberately NOT normalized: any edit, including
+// whitespace-only reformatting, is a drift failure. Adding a new contract id
+// needs no entry here; it is pinned in memory on registration and cannot
+// disturb the historical pins below.
+//
+// "Raw source text" is read from this module's own file rather than from
+// Function.prototype.toString(): test runners load .mjs through a compiler that
+// reprints function bodies (Playwright's Babel pass, for example, drops trailing
+// commas), so toString() is not byte-stable across loaders. The on-disk text is.
+const PINS = Object.freeze({
+  'pre-adr0009': Object.freeze({
+    legacyReader: '3118867cbd77d5afa628fefc49651d77bef5374a37bb94dabf1b684e6aafd1c6',
+  }),
+});
 
+// #47 forbids production imports. This module is gate-side (scripts/), and the
+// registry/accessor split below keeps the boundary auditable.
+
+const MODULE_SOURCE = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8');
 const CONTRACTS = new Map();
+
+function sha256(text) {
+  return createHash('sha256').update(text).digest('hex');
+}
+
+// Top-level function-valued properties of a contract are its frozen bodies.
+function functionBodies(contract) {
+  const bodies = [];
+  for (const key of Object.keys(contract)) {
+    if (typeof contract[key] === 'function') bodies.push(contract[key]);
+  }
+  return bodies;
+}
+
+// Byte-exact slice of `function <name>(...) { ... }` from the module source.
+// The brace scanner skips quotes, template literals and comments so braces in
+// those contexts cannot end the body early.
+function extractFunctionSource(source, functionName) {
+  const header = 'function ' + functionName + '(';
+  const start = source.indexOf(header);
+  if (start === -1) return null;
+  let depth = 0;
+  let mode = 'code';
+  for (let i = source.indexOf('{', start + header.length); i < source.length; i++) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (mode === 'code') {
+      if (ch === '/' && next === '/') { mode = 'line'; i++; continue; }
+      if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
+      if (ch === "'" || ch === '"' || ch === '`') { mode = ch; continue; }
+      if (ch === '{') depth++;
+      else if (ch === '}' && --depth === 0) return source.slice(start, i + 1);
+    } else if (mode === 'line') {
+      if (ch === '\n') mode = 'code';
+    } else if (mode === 'block') {
+      if (ch === '*' && next === '/') { mode = 'code'; i++; }
+    } else if (ch === '\\') {
+      i++; // escaped character inside a string/template literal
+    } else if (ch === mode) {
+      mode = 'code';
+    }
+  }
+  return null;
+}
+
+function computeSourcePins(contract) {
+  const pins = {};
+  for (const fn of functionBodies(contract)) {
+    const name = fn.name || '<anonymous>';
+    const raw = extractFunctionSource(MODULE_SOURCE, name);
+    pins[name] = sha256(raw === null ? fn.toString() : raw);
+  }
+  return pins;
+}
+
+// A pinned id must present exactly the source text that was frozen. Renaming the
+// function is drift too: the pin is keyed by function name, so a missing name is
+// reported against the pinned name rather than silently skipped.
+function assertPinnedFunctionBodies(contract) {
+  const pinned = PINS[contract.id];
+  if (!pinned) return; // genuinely new id: no historical pin to defend yet
+  for (const [functionName, expectedHash] of Object.entries(pinned)) {
+    const supplied = functionBodies(contract).find((candidate) => candidate.name === functionName);
+    const raw = extractFunctionSource(MODULE_SOURCE, functionName);
+    if (!supplied || raw === null) {
+      throw new Error(
+        'frozen reader contract "' + contract.id + '" function "' + functionName +
+        '" is missing or renamed: pinned source hash cannot be verified'
+      );
+    }
+    const actualHash = sha256(raw);
+    if (actualHash !== expectedHash) {
+      throw new Error(
+        'frozen reader contract "' + contract.id + '" function "' + functionName +
+        '" body drifted: pinned ' + expectedHash + ', got ' + actualHash
+      );
+    }
+  }
+}
 
 function deepFreeze(value, seen = new WeakSet()) {
   if (value === null || (typeof value !== 'object' && typeof value !== 'function')) return value;
@@ -50,15 +146,25 @@ function assertContractInput(contract) {
 }
 
 // Append-only registration. An id may be registered exactly once; a different
-// body under an existing id is therefore rejected by the same id check.
+// body under an existing id is therefore rejected by the same id check. Pinned
+// ids additionally must present their original source text (ticket 46).
 function registerContract(contract) {
   assertContractInput(contract);
   if (CONTRACTS.has(contract.id)) {
     throw new Error('frozen reader contract "' + contract.id + '" is already registered (append-only)');
   }
-  // Spread preserves future metadata (e.g. #46 source hashes) while the required
-  // fields below win over any accidental overrides in the descriptor.
-  const entry = deepFreeze({ ...contract, id: contract.id, frozenSince: contract.frozenSince, reader: contract.reader });
+  assertPinnedFunctionBodies(contract);
+  // Every entry carries the in-memory pins computed from its own bodies. Pinned
+  // ids were just verified against PINS; a new id simply records its first pin.
+  // Spread preserves arbitrary metadata (e.g. tags) while the required fields and
+  // pins below win over any accidental overrides in the descriptor.
+  const entry = deepFreeze({
+    ...contract,
+    id: contract.id,
+    frozenSince: contract.frozenSince,
+    reader: contract.reader,
+    sourcePins: Object.freeze(computeSourcePins(contract)),
+  });
   CONTRACTS.set(entry.id, entry);
   return entry;
 }
