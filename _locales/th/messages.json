@@ -222,7 +222,7 @@
     "message": "โหมดมืด"
   },
   "darkModeHint": {
-    "message": "สลับระหว่างลักษณะสว่างและมืด"
+    "message": "เลือกสว่าง มืด หรือตามระบบ"
   },
   "darkModeLight": {
     "message": "สว่าง"

@@ -74,14 +74,14 @@ export function initPersistFacade(deps) {
   // the authoritative values stay in boxingLayout and loadSettings() re-applies them.
   // Written via the mirror-writer injected by ntp.js (the storage facade's success path)
   // so the mirror can never drift ahead of a persisted layout.
-  export function persistBootThemeMirror(mirrorWriter, darkMode = normalizeDarkModePref(layout.settings.darkMode)) {
+  export function persistBootThemeMirror(mirrorWriter) {
     try {
       mirrorWriter({
         theme: layout.settings.theme || 'beige',
         // Ticket 44 (spec #41): the mirror carries the PREFERENCE ('light' | 'dark' |
         // 'system'), never the resolved OS value. It is a display cache, not a second
         // layout source — resolving 'system' at first paint belongs to ticket #48.
-        darkMode: normalizeDarkModePref(darkMode),
+        darkMode: normalizeDarkModePref(layout.settings.darkMode),
         fontSize: typeof layout.settings.fontSize === 'number' ? layout.settings.fontSize : 14
       });
     } catch (e) { debugWarn('boot theme mirror write', e); }
@@ -117,13 +117,19 @@ export function initPersistFacade(deps) {
   // interface shows is derived. Booleans stay accepted for the test seam / legacy
   // callers (`__boxingDebug.applyDarkMode(true)`), mapping to 'dark'/'light'.
   export function resolveEffectiveDark(pref) {
-    const p = typeof pref === 'string' ? normalizeDarkModePref(pref) : (pref === true ? 'dark' : 'light');
+    const p = normalizeDarkModePref(pref);
     if (p === 'dark') return true;
     if (p === 'light') return false;
     try {
       return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
         && window.matchMedia('(prefers-color-scheme: dark)').matches === true;
     } catch (_) { return false; }
+  }
+
+  // The header quick toggle exits 'system' by choosing the opposite of the current
+  // effective state; an explicit light/dark choice simply flips to the other one.
+  export function nextDarkModePreference(pref) {
+    return resolveEffectiveDark(pref) ? 'light' : 'dark';
   }
 
   // One-shot live OS listener. It belongs here because persist.js owns the display
@@ -143,7 +149,7 @@ export function initPersistFacade(deps) {
   }
 
   export function applyDarkMode(on) {
-    const pref = typeof on === 'string' ? normalizeDarkModePref(on) : (on === true ? 'dark' : 'light');
+    const pref = normalizeDarkModePref(on);
     const dark = resolveEffectiveDark(pref);
     const root = document.documentElement;
     if (root) root.classList.toggle('ntp--dark', dark);
@@ -160,8 +166,11 @@ export function initPersistFacade(deps) {
       darkModeBtn.setAttribute('aria-label', actionLabel);
     }
     ensureSystemDarkListener();
+    // The cache mirrors the authoritative preference from layout, never this call's
+    // display argument: the debug seam may apply a resolved boolean while the stored
+    // preference is 'system'.
     if (typeof mirrorWriter === 'function') {
-      try { persistBootThemeMirror(mirrorWriter, pref); } catch (e) { debugWarn('boot theme mirror write', e); }
+      try { persistBootThemeMirror(mirrorWriter); } catch (e) { debugWarn('boot theme mirror write', e); }
     }
   }
 

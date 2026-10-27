@@ -71,7 +71,7 @@ const I18N_FALLBACK = {
   confirmDeleteTitle: 'Confirm Delete', confirmYes: 'Delete', confirmCancel: 'Cancel',
   confirmDeleteLargeBody: 'Delete this large box and all its small boxes? This action cannot be undone.',
   confirmDeleteSmallBody: 'Delete this small box and all its bookmarks? This action cannot be undone.',
- darkMode: 'Dark Mode', darkModeHint: 'Switch between light and dark appearance',
+ darkMode: 'Dark Mode', darkModeHint: 'Choose light, dark, or follow the system',
   darkModeLight: 'Light', darkModeDark: 'Dark', darkModeSystem: 'Follow system',
   darkModeSwitchToDark: 'Switch to dark mode', darkModeSwitchToLight: 'Switch to light mode',
   themeColorLabel: 'Color Theme', themeColorHint: 'Select a color theme for the entire interface',

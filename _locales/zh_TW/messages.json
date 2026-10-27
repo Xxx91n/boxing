@@ -225,7 +225,7 @@
     "message": "暗黑模式"
   },
   "darkModeHint": {
-    "message": "在亮色和暗色外觀之間切換"
+    "message": "選擇淺色、深色或跟隨系統"
   },
   "darkModeLight": {
     "message": "亮色"

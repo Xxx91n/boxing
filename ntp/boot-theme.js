@@ -65,10 +65,8 @@
     // makes a tab opened after the OS changed while the browser was closed paint the
     // matching theme: the mirror stays the preference, the OS is sampled fresh.
     // This stays import-free by design (CSP script-src self + import-graph guard).
-    var pref = v.darkMode;
-    var dark;
-    if (pref === 'system') dark = systemPrefersDark();
-    else dark = pref === true || pref === 'dark';
+    const pref = v.darkMode;
+    const dark = pref === 'system' ? systemPrefersDark() : (pref === true || pref === 'dark');
     root.classList.toggle('ntp--dark', dark);
     if (typeof v.fontSize === 'number' && v.fontSize >= 11 && v.fontSize <= 20) {
       root.style.setProperty('--font-size-base', v.fontSize + 'px');
@@ -84,10 +82,8 @@
   // the structural half of "matchMedia fallback must not be persisted".
   // Symmetric toggle, for the same reason applyDarkMode uses one.
   function applySystemDarkFallback() {
-    try {
-      if (!window.matchMedia) return;
-      root.classList.toggle('ntp--dark', !!window.matchMedia('(prefers-color-scheme: dark)').matches);
-    } catch (e) { /* silent: no matchMedia (very old engine) — stylesheet default stands */ }
+    try { root.classList.toggle('ntp--dark', systemPrefersDark()); }
+    catch (e) { /* silent: no matchMedia (very old engine) — stylesheet default stands */ }
   }
   // Ticket 48 (spec #41): live OS value for a 'system' preference at first paint.
   // Unsupported engines / a throwing matchMedia degrade to light (stylesheet default),

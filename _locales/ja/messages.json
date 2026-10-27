@@ -222,7 +222,7 @@
     "message": "ダークモード"
   },
   "darkModeHint": {
-    "message": "ライトとダークの外観を切り替えます"
+    "message": "ライト、ダーク、またはシステムに合わせる"
   },
   "darkModeLight": {
     "message": "ライト"

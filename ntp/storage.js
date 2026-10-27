@@ -653,15 +653,18 @@ export function registerStorageOnChanged() {
       for (const item of la) { if (item && item[keyField] && !tombstones.has(item[keyField])) map.set(item[keyField], item); }
       return Array.from(map.values());
     };
+    const localSettings = localValue.settings || {};
+    const remoteSettings = remoteValue.settings || {};
+    // Ticket 44 (spec #41): field-by-field, local-wins as before; darkMode is one
+    // field like any other and is normalized after the spread (a legacy boolean from
+    // either side becomes the three-valued string, never a resolved OS value).
+    const darkMode = localSettings.darkMode !== undefined ? localSettings.darkMode : remoteSettings.darkMode;
     return {
       ...remoteValue,
       ...localValue,
       boxes,
       nextLargeIndex: Math.max(Number(localValue.nextLargeIndex) || 1, Number(remoteValue.nextLargeIndex) || 1),
-      // Ticket 44 (spec #41): field-by-field, local-wins as before; darkMode is one
-      // field like any other and is normalized after the spread (a legacy boolean from
-      // either side becomes the three-valued string, never a resolved OS value).
-      settings: { ...(remoteValue.settings || {}), ...(localValue.settings || {}), darkMode: normalizeDarkModePref((localValue.settings || {}).darkMode !== undefined ? localValue.settings.darkMode : (remoteValue.settings || {}).darkMode) },
+      settings: { ...remoteSettings, ...localSettings, darkMode: normalizeDarkModePref(darkMode) },
       connections: mergeByIdUnion(localValue.connections, remoteValue.connections),
       _meta: { ...(remoteValue._meta || {}), ...(localValue._meta || {}), deleted: trimmedDeleted }
     };

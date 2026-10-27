@@ -174,8 +174,10 @@
         settings: { ...defaultLayout().settings, ...(raw.settings || {}), theme: raw.settings?.theme || 'beige', darkMode: normalizeDarkModePref(raw.settings?.darkMode) }
       };
     }
-    // Data integrity — version >= 3 returns as-is; no data loss on downgrade.
-    // Unknown future versions (>= 4) are still accepted to prevent upgrade-then-downgrade data loss.
+    // Data integrity — version >= 3 keeps its payload; no data loss on downgrade.
+    // The one accepted read-side rewrite is the dark-mode preference: a legacy boolean
+    // becomes its three-valued string form (spec #41). Unknown future versions (>= 4)
+    // are still accepted to prevent upgrade-then-downgrade data loss.
     if (raw.version >= 3) {
       const defaults = defaultLayout();
       const result = {

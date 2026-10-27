@@ -222,7 +222,7 @@
     "message": "다크 모드"
   },
   "darkModeHint": {
-    "message": "밝은 모드와 어두운 모드 전환"
+    "message": "라이트, 다크 또는 시스템 설정 따르기"
   },
   "darkModeLight": {
     "message": "라이트"

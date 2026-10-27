@@ -394,6 +394,23 @@ test.describe('boot first frame resolves the three-state dark-mode preference', 
     await page.close();
     await ctx.close();
   });
+
+  test('malformed mirror falls back to the live OS value at first paint', async ({ browser }) => {
+    const ctx = await browser.newContext();
+    await seedBootRecorder(ctx);
+    const page = await ctx.newPage();
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
+    // Corrupt only the mirror, then re-boot: the classic script's early-return path
+    // must sample the OS value instead of hard-coding light.
+    await page.evaluate((key: string) => localStorage.setItem(key, '123'), BOOT_MIRROR_KEY);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__bootTrace && (window as any).__bootTrace.remove)), { timeout: 15000 }).toBe(true);
+    const snap = firstFrameSnap(await traceOf(page));
+    expect(snap.dark, 'a malformed cache must fall back to the live dark OS at first paint').toBe(true);
+    await ctx.close();
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════

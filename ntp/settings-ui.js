@@ -10,7 +10,7 @@ import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInn
 import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, readDrBodies } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
-import { applyTheme, resolveEffectiveDark } from './persist.js';
+import { applyDarkMode, applyTheme, nextDarkModePreference } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
 import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
@@ -31,6 +31,14 @@ export function initSettingsUiFacade(deps) {
   diagExportLogBtn = deps.diagExportLogBtn; diagClearLogBtn = deps.diagClearLogBtn; diagLogLevelSelect = deps.diagLogLevelSelect;
 }
 
+  // Ticket 44 (spec #41): three-value preference — the checked radio shows the
+  // active mode. Legacy booleans are read through the single normalizer.
+  function syncDarkModeRadios() {
+    if (typeof darkModeGroup === 'undefined' || !darkModeGroup) return;
+    const pref = normalizeDarkModePref(layout.settings.darkMode);
+    darkModeGroup.querySelectorAll('input[name="dark-mode"]').forEach(r => { r.checked = r.value === pref; });
+  }
+
   export function syncSettingsDOM() {
     initAboutTab();
     syncAutoTitleDOM();
@@ -38,12 +46,7 @@ export function initSettingsUiFacade(deps) {
     if (typeof rememberCheck !== 'undefined' && rememberCheck) rememberCheck.checked = layout.settings.rememberLastPos !== false;
     if (typeof urlOpenModeSelect !== 'undefined' && urlOpenModeSelect) urlOpenModeSelect.value = layout.settings.urlOpenMode || 'sameTab';
     if (typeof connDeleteActionSelect !== 'undefined' && connDeleteActionSelect) connDeleteActionSelect.value = layout.settings.connDeleteAction || 'alt+click';
-    // Ticket 44 (spec #41): three-value preference — the checked radio shows the
-    // active mode. Legacy booleans are read through the single normalizer.
-    if (typeof darkModeGroup !== 'undefined' && darkModeGroup) {
-      const pref = normalizeDarkModePref(layout.settings.darkMode);
-      darkModeGroup.querySelectorAll('input[name="dark-mode"]').forEach(r => { r.checked = r.value === pref; });
-    }
+    syncDarkModeRadios();
     if (typeof zoomSlider !== 'undefined' && zoomSlider) zoomSlider.value = Math.round((canvasZoom || 1.0) * 100);
     if (typeof zoomSliderVal !== 'undefined' && zoomSliderVal) zoomSliderVal.textContent = Math.round((canvasZoom || 1.0) * 100) + '%';
     if (typeof fontSlider !== 'undefined' && fontSlider) fontSlider.value = layout.settings.fontSize || 14;
@@ -646,6 +649,9 @@ export function bindSettingsUi() {
         updateCaption();
       } else { renderCanvas(); }
      applyI18n();
+     // Re-apply the action tooltip/aria-label in the new language (the header button
+     // no longer carries a static data-i18n-title).
+     applyDarkMode(layout.settings.darkMode);
      applyCanvasTransform();
      // Re-apply pin tooltip after i18n reset (applyI18n overwrites data-i18n-title)
      updateAutohideUI();
@@ -730,8 +736,8 @@ export function bindSettingsUi() {
         // Ticket 44 (spec #41): explicit preferences toggle to the opposite explicit
         // preference; 'system' exits by choosing the opposite of the CURRENT EFFECTIVE
         // state (currently dark -> 'light', currently light -> 'dark').
-        layout.settings.darkMode = resolveEffectiveDark(layout.settings.darkMode) ? 'light' : 'dark';
-        syncSettingsDOM(); // keep the appearance radios truthful if the panel is open
+        layout.settings.darkMode = nextDarkModePreference(layout.settings.darkMode);
+        syncDarkModeRadios(); // keep the appearance radios truthful if the panel is open
         saveLayout();
       });
     }

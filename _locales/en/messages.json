@@ -228,7 +228,7 @@
     "description": "Dark mode toggle label"
   },
   "darkModeHint": {
-    "message": "Switch between light and dark appearance",
+    "message": "Choose light, dark, or follow the system",
     "description": "Dark mode hint"
   },
   "darkModeLight": {

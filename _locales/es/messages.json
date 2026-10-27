@@ -222,7 +222,7 @@
     "message": "Modo oscuro"
   },
   "darkModeHint": {
-    "message": "Cambiar entre apariencia clara y oscura"
+    "message": "Elige claro, oscuro o seguir el sistema"
   },
   "darkModeLight": {
     "message": "Claro"

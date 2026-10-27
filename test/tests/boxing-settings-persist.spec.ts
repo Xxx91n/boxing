@@ -559,6 +559,22 @@ test.describe('dark mode has one host and one apply path', () => {
     await expect.poll(() => storedDarkPref(page)).toBe('system');
   });
 
+  test('display-only apply seam never rewrites the stored preference or the mirror', async ({ page }) => {
+    await resetAndDismiss(page);
+    await page.emulateMedia({ colorScheme: 'light' });
+    await setDarkPref(page, 'system');
+    await expect.poll(async () => (await themeState(page)).setting).toBe('system');
+
+    // The debug seam applies a resolved boolean for display. The authoritative
+    // preference (and therefore the first-paint cache) must not change.
+    await page.evaluate(() => (window as any).__boxingDebug.applyDarkMode(true));
+    const s = await themeState(page);
+    expect(s.html).toBe(true);
+    expect(s.setting).toBe('system');
+    expect(s.mirror.darkMode).toBe('system');
+    await expect.poll(() => storedDarkPref(page)).toBe('system');
+  });
+
   test('explicit light/dark preferences ignore OS changes', async ({ page }) => {
     await resetAndDismiss(page);
     await page.emulateMedia({ colorScheme: 'light' });

@@ -282,6 +282,12 @@
   margin-bottom: var(--space-2);
 }
 
+/* hidden override pairing (docs/css-dual-write-convention.md) */
+.dark-mode-group[hidden],
+.radio-label[hidden] {
+  display: none;
+}
+
 .radio-label {
   display: flex;
   align-items: center;
