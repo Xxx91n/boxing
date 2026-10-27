@@ -18,11 +18,13 @@ import { fileURLToPath } from 'node:url';
 // Pure move: the reader body below is the verbatim logic that lived in the gate.
 // The gate keeps its layout comparison helpers (canon/bookmarkIds/fixtures).
 //
-// Ticket 46: every frozen function body is pinned by the SHA-256 of its raw
-// source text. The pin is deliberately NOT normalized: any edit, including
-// whitespace-only reformatting, is a drift failure. Adding a new contract id
-// needs no entry here; it is pinned in memory on registration and cannot
-// disturb the historical pins below.
+// Ticket 46: every function-valued property of a registered contract entry is
+// pinned by the SHA-256 of its raw source text. The pin is deliberately NOT
+// normalized: any edit, including whitespace-only reformatting, is a drift
+// failure. Adding a new contract id needs no entry here; it is pinned in memory
+// on registration and cannot disturb the historical pins below. Helper functions
+// in this module (rollbackAudit, bookmarkIds, starIds, ...) are not contract
+// bodies and are not pinned.
 //
 // "Raw source text" is read from this module's own file rather than from
 // Function.prototype.toString(): test runners load .mjs through a compiler that
@@ -183,10 +185,6 @@ function getRegistry() {
   return deepFreeze(registry);
 }
 
-function contractIds() {
-  return Object.freeze([...CONTRACTS.keys()]);
-}
-
 // Rollback half of the expand/contract exercise: a reader frozen at the PREVIOUS
 // contract (no schemaVersion awareness; groups optional with fallback). The point
 // of the contract is that this reader keeps every user-visible object from current
@@ -205,7 +203,7 @@ function legacyReader(raw) {
 function bookmarkIds(layout) {
   const ids = [];
   for (const box of layout.boxes || []) for (const child of box.children || []) for (const bm of child.bookmarks || []) ids.push(bm.id);
-  return ids;
+  return ids.sort();
 }
 
 // Star truth is box.isParent (GLOSSARY "isParent"), on large and small boxes alike.
@@ -216,13 +214,12 @@ function starIds(layout) {
     for (const child of (box && box.children) || []) visit(child);
   };
   for (const box of (layout && layout.boxes) || []) visit(box);
-  return ids;
+  return ids.sort();
 }
 
-function resolveContract(contractOrId) {
-  if (typeof contractOrId === 'string') return getContract(contractOrId);
-  if (contractOrId && typeof contractOrId === 'object' && typeof contractOrId.reader === 'function') return contractOrId;
-  throw new TypeError('rollbackAudit expects a registered contract id or contract object');
+function resolveContract(contractId) {
+  if (typeof contractId === 'string') return getContract(contractId);
+  throw new TypeError('rollbackAudit expects a registered contract id string');
 }
 
 // One verdict for the rollback half: did the frozen reader accept the serialized
@@ -246,7 +243,7 @@ function rollbackAudit(contractOrId, currentLayout) {
   const lostStars = currentStars.filter((id) => !previousStarSet.has(id));
 
   return {
-    acceptance: acceptance,
+    acceptance,
     bookmarkDiff: {
       lost: currentBookmarkIds.filter((id) => !previousBookmarkSet.has(id)),
       gained: previousBookmarkIds.filter((id) => !currentBookmarkSet.has(id)),
@@ -270,4 +267,4 @@ registerContract({
   reader: legacyReader,
 });
 
-export { registerContract, getContract, getRegistry, contractIds, rollbackAudit };
+export { registerContract, getContract, getRegistry, rollbackAudit };

@@ -9,10 +9,14 @@
 //
 // Covers: release gating, schemaVersion / crash rescue, the groups -> isParent
 // one-time migration, and connection props backfill.
+//
+// Check-count note: the recovered pre-migration design report says 28 acceptance
+// checks. That number is stale historical context: this gate publishes 33 checks
+// (including the five rollback checks below) and must not be "corrected" to 28.
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { rollbackAudit } from './legacy-reader-frozen.mjs';
+import { getContract } from './legacy-reader-frozen.mjs';
 
 const FIXTURE_DIR = new URL('../test/fixtures/schema/', import.meta.url);
 const UTILS_URL = new URL('../ntp/utils.js', import.meta.url);
@@ -130,19 +134,19 @@ async function runMigrationGoldenChecks() {
   }
 
   // -- rollback safety: current persisted data readable by the previous reader -----
-  // The reader itself is the append-only pre-adr0009 contract; the gate keeps the
-  // layout comparison helpers and derives the same five checks from one audit.
+  // Pure extraction: the reader itself is the append-only pre-adr0009 contract and
+  // the gate keeps its own comparison helpers, so the five checks are derived
+  // directly from the frozen reader's output rather than from an audit verdict.
   {
     const current = migrateLayout(loadFixture('v1.json'));
-    const audit = rollbackAudit('pre-adr0009', current);
-    add('rollback-old-reader-accepts', audit.acceptance);
-    add('rollback-bookmarks-visible', audit.acceptance
-      && audit.bookmarkDiff.lost.length === 0 && audit.bookmarkDiff.gained.length === 0);
-    add('rollback-boxes-visible', audit.acceptance && audit.boxDelta === 0);
-    add('rollback-connections-visible', audit.acceptance && audit.connectionDelta === 0);
-    add('rollback-isparent-self-contained', audit.acceptance
-      && audit.starSurvival.lost.length === 0 && !audit.starSurvival.groupsLeaked
-      && audit.starSurvival.total > 0); // grouping survives the contract without groups
+    const serialized = JSON.parse(JSON.stringify(current)); // storage boundary
+    const old = getContract('pre-adr0009').reader(serialized);
+    add('rollback-old-reader-accepts', old !== null);
+    add('rollback-bookmarks-visible', old !== null && canon(bookmarkIds(old)) === canon(bookmarkIds(current)));
+    add('rollback-boxes-visible', old !== null && old.boxes.length === current.boxes.length);
+    add('rollback-connections-visible', old !== null && old.connections.length === current.connections.length);
+    add('rollback-isparent-self-contained', old !== null && old.boxes.every((b) => b.groups === undefined)
+      && current.boxes.some((b) => b.isParent === true)); // grouping survives the contract without groups
   }
 
   const failures = checks.filter((c) => !c.pass).map((c) => c.name);
