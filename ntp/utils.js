@@ -131,9 +131,10 @@
   }
 
   // Ticket 44 (spec #41): dark mode is a three-valued preference. This is the
-  // single normalization helper — every read/migrate/merge path funnels through it.
-  // Legacy boolean true/false maps to 'dark'/'light'; unknown values degrade to the
-  // default 'light'. Writes always store the string form.
+  // single normalization helper used by the live read boundaries (loadSettings,
+  // merge, save/persist) and effective-state derivation; migration output stays
+  // byte-stable by design. Legacy boolean true/false maps to 'dark'/'light';
+  // unknown values degrade to the default 'light'. Writes always store the string form.
   function normalizeDarkModePref(value) {
     if (value === true || value === 'dark') return 'dark';
     if (value === 'system') return 'system';

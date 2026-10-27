@@ -411,6 +411,27 @@ test.describe('boot first frame resolves the three-state dark-mode preference', 
     expect(snap.dark, 'a malformed cache must fall back to the live dark OS at first paint').toBe(true);
     await ctx.close();
   });
+
+  test('a legacy boolean mirror still resolves at first paint', async ({ browser }) => {
+    // Upgrading installs carry the pre-#44 boolean cache. The OS is deliberately the
+    // opposite of the stored value, so only the explicit legacy choice can produce it.
+    for (const [legacy, expected, os] of [[true, true, 'light'], [false, false, 'dark']] as const) {
+      const ctx = await browser.newContext();
+      await seedBootRecorder(ctx);
+      const page = await ctx.newPage();
+      await page.emulateMedia({ colorScheme: os });
+      await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
+      await page.evaluate(({ key, value }) => {
+        localStorage.setItem(key, JSON.stringify({ theme: 'beige', darkMode: value, fontSize: 14 }));
+      }, { key: BOOT_MIRROR_KEY, value: legacy });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__bootTrace && (window as any).__bootTrace.remove)), { timeout: 15000 }).toBe(true);
+      const snap = firstFrameSnap(await traceOf(page));
+      expect(snap.dark, `legacy ${String(legacy)} mirror must resolve at first paint`).toBe(expected);
+      await ctx.close();
+    }
+  });
 });
 
 // ══════════════════════════════════════════════════════════════════════════
