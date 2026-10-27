@@ -13,6 +13,78 @@ const linesByFile = new Map();
 const violations = [];
 const add = (rule, file, line, message) => violations.push({ rule, file, line, message });
 
+// B-10 (ticket 47, spec #40): the frozen reader is gate-side proof material.
+// Production new-tab modules and the service worker may never import it, so the
+// rollback oracle cannot become a production dependency. Match by module
+// basename so every relative spelling from any directory depth is caught.
+const FROZEN_READER_BASENAME = 'legacy-reader-frozen.mjs';
+const PRODUCTION_SCOPE_RE = /^(?:ntp\/[^/]+\.js|background\.js)$/;
+const STATIC_IMPORT_RE = /\bimport\s+(?:[^'"]*?\s+from\s+)?(['"])([^'"]+)\1/g;
+const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*(['"])([^'"]+)\1\s*\)/g;
+
+function isFrozenReaderSpecifier(specifier) {
+  const basename = String(specifier).split(/[\\/]/).pop() || '';
+  return basename === FROZEN_READER_BASENAME || basename === 'legacy-reader-frozen';
+}
+
+function lineOf(text, index) {
+  let line = 1;
+  for (let i = 0; i < index; i += 1) if (text.charCodeAt(i) === 10) line += 1;
+  return line;
+}
+
+function analyzeIsolation(sources) {
+  const found = [];
+  for (const source of sources) {
+    if (!PRODUCTION_SCOPE_RE.test(source.rel)) continue;
+    for (const regex of [STATIC_IMPORT_RE, DYNAMIC_IMPORT_RE]) {
+      regex.lastIndex = 0;
+      let match;
+      while ((match = regex.exec(source.text)) !== null) {
+        const specifier = match[2];
+        if (!isFrozenReaderSpecifier(specifier)) continue;
+        found.push({
+          rule: 'B-10',
+          file: source.rel,
+          line: lineOf(source.text, match.index),
+          message: `production module must not import the frozen reader (gate-side only): ${specifier}`,
+        });
+      }
+    }
+  }
+  return found;
+}
+
+function selfTest() {
+  const lines = [];
+  let bad = 0;
+  const check = (label, sources, expected) => {
+    const printed = analyzeIsolation(sources).map((violation) => `${violation.rule}@${violation.line}`).sort().join(',');
+    const ok = printed === expected;
+    if (!ok) bad += 1;
+    lines.push(`${ok ? 'self-test ok  ' : 'SELFTEST FAIL'} ${label} -> [${printed}] expected [${expected}]`);
+  };
+  check('production ntp module importing the frozen reader is red',
+    [{ rel: 'ntp/popups.js', text: "import { rollbackAudit } from '../scripts/legacy-reader-frozen.mjs';\n" }], 'B-10@1');
+  check('production ntp module dynamic-importing the frozen reader is red',
+    [{ rel: 'ntp/render.js', text: "const m = await import('../scripts/legacy-reader-frozen.mjs');\n" }], 'B-10@1');
+  check('service worker importing the frozen reader is red',
+    [{ rel: 'background.js', text: "import { rollbackAudit } from './scripts/legacy-reader-frozen.mjs';\n" }], 'B-10@1');
+  check('service worker dynamic-importing the frozen reader is red',
+    [{ rel: 'background.js', text: "const m = await import('./scripts/legacy-reader-frozen.mjs');\n" }], 'B-10@1');
+  check('gate-side scripts import is NOT flagged',
+    [{ rel: 'scripts/migration-golden-guard.mjs', text: "import { rollbackAudit } from './legacy-reader-frozen.mjs';\n" }], '');
+  return { bad, lines };
+}
+
+const argv = process.argv.slice(2);
+if (argv.includes('--self-test')) {
+  const self = selfTest();
+  for (const line of self.lines) console.log(line);
+  console.log(`self-test: ${self.bad === 0 ? 'PASS' : 'FAIL'} (${self.lines.length - self.bad}/${self.lines.length})`);
+  process.exit(self.bad === 0 ? 0 : 1);
+}
+
 function parseImport(line) {
   const match = line.match(/^\s*import\s+(?:[\s\S]*?\s+from\s+)?['"]([^'"]+)['"]\s*;?\s*$/);
   return match?.[1] || null;
@@ -30,6 +102,10 @@ for (const file of files) {
     if (nodes.has(`${target}.js`)) edges.get(file).push(`${target}.js`);
   });
 }
+
+const isolationSources = files.map((file) => ({ rel: `ntp/${file}`, text: linesByFile.get(file).join('\n') }));
+isolationSources.push({ rel: 'background.js', text: fs.readFileSync(path.join(root, 'background.js'), 'utf8') });
+for (const violation of analyzeIsolation(isolationSources)) add(violation.rule, violation.file, violation.line, violation.message);
 
 const leaves = new Set(['state.js', 'utils.js', 'credentials.js', 'favicon.js', 'i18n.js', 'storage.js', 'site-constants.js', 'url-title.js']);
 for (const file of leaves) for (const target of edges.get(file) || []) {
