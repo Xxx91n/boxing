@@ -186,7 +186,7 @@ test.describe('B-10 production isolation for the frozen reader', () => {
 
   test('self-test proves production frozen-reader imports are red and gate-side imports are not flagged', () => {
     const out = execFileSync(process.execPath, [guard, '--self-test'], { encoding: 'utf8' });
-    expect(out).toContain('self-test: PASS (16/16)');
+    expect(out).toContain('self-test: PASS (20/20)');
     expect(out).toContain('production ntp module importing the frozen reader is red');
     expect(out).toContain('production ntp module dynamic-importing the frozen reader is red');
     expect(out).toContain('service worker importing the frozen reader is red');
@@ -203,6 +203,10 @@ test.describe('B-10 production isolation for the frozen reader', () => {
     expect(out).toContain('import inside a template substitution is red at its line');
     expect(out).toContain('template literal text mentioning the frozen reader is NOT flagged');
     expect(out).toContain('code import.meta followed by template text is NOT bridged into a match');
+    expect(out).toContain('a "from" substring inside the specifier path does not hide the import');
+    expect(out).toContain('query or hash suffix does not hide the frozen reader import');
+    expect(out).toContain('service worker importScripts of the frozen reader is red');
+    expect(out).toContain('unrelated importScripts, comments, and strings are NOT flagged');
   });
 
   test('the import-graph guard is green on the current tree', () => {
@@ -231,6 +235,16 @@ test.describe('B-10 production isolation for the frozen reader', () => {
       fs.writeFileSync(path.join(tmp, 'test', 'cluster-map.json'), JSON.stringify({ clusters: {} }));
       fs.writeFileSync(path.join(tmp, 'ntp', '_offender.js'),
         "import { rollbackAudit } from '../scripts/legacy-reader-frozen.mjs';\n");
+      // A `from` inside the specifier path must not be mistaken for the import
+      // keyword and mask the dependency.
+      fs.writeFileSync(path.join(tmp, 'ntp', '_offender-from.js'),
+        "import '../from/legacy-reader-frozen.mjs';\n");
+      // A query suffix is still the same module.
+      fs.writeFileSync(path.join(tmp, 'ntp', '_offender-query.js'),
+        "import '../scripts/legacy-reader-frozen.mjs?cache=1';\n");
+      // The service worker is a classic script and loads through importScripts.
+      fs.appendFileSync(path.join(tmp, 'background.js'),
+        "importScripts('../scripts/legacy-reader-frozen.mjs');\n");
 
       let failure: any = null;
       try {
@@ -243,6 +257,9 @@ test.describe('B-10 production isolation for the frozen reader', () => {
       expect(parsed.ok).toBe(false);
       const b10 = parsed.violations.filter((v: any) => v.rule === 'B-10');
       expect(b10.map((v: any) => v.file)).toContain('ntp/_offender.js');
+      expect(b10.map((v: any) => v.file)).toContain('ntp/_offender-from.js');
+      expect(b10.map((v: any) => v.file)).toContain('ntp/_offender-query.js');
+      expect(b10.map((v: any) => v.file)).toContain('background.js');
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
