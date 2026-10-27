@@ -181,7 +181,9 @@
     if (!raw._meta || !raw._meta.__groupsMigrated) {
       if (Array.isArray(raw.groups) && raw.groups.length > 0) {
         for (const g of raw.groups) {
-          if (!g || !g.parentId) continue;
+          // Legacy groups rows are untrusted input: a non-string parentId must be
+          // skipped, not allowed to throw out of migrateLayout during boot.
+          if (!g || typeof g.parentId !== 'string' || !g.parentId) continue;
           if (g.parentId.startsWith("large:")) {
             const lb = result.boxes.find(b => b.id === g.parentId.slice(6)); if (lb) lb.isParent = true;
           } else if (g.parentId.startsWith("small:")) {

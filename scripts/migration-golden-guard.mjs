@@ -129,6 +129,18 @@ async function runMigrationGoldenChecks() {
       && v2GroupsOnce.connections[0].props && typeof v2GroupsOnce.connections[0].props === 'object');
     add('v2-restores-isparent-from-groups', v2GroupsOnce.boxes.some((b) => b.id === 'lb1' && b.isParent === true)
       && v2GroupsOnce.boxes.find((b) => b.id === 'lb2').children.some((s) => s.id === 's3' && s.isParent === true));
+
+    // Malformed legacy groups rows must not throw out of migration: a throw during
+    // boot would enter recovery without archiving the otherwise readable payload.
+    // Input reuses legacy-v2.json and only injects invalid group rows.
+    const v2Malformed = { ...loadFixture('legacy-v2.json'), groups: [{ parentId: 42 }, null, {}] };
+    let malformedOk = false;
+    try {
+      const onceMalformed = migrateLayout(JSON.parse(JSON.stringify(v2Malformed)));
+      malformedOk = canon(bookmarkIds(onceMalformed)) === canon(bookmarkIds(v2Malformed))
+        && Array.isArray(onceMalformed.groups) && onceMalformed.groups.length === 0;
+    } catch (_) { malformedOk = false; }
+    add('v2-malformed-groups-tolerated', malformedOk);
   }
 
   // -- rollback safety: current persisted data readable by the previous reader -----

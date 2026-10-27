@@ -105,7 +105,15 @@ export function registerStorageOnChanged() {
           corruptRaw = data.boxingLayout;
           corruptErr = new Error('boxingLayout failed integrity check (readable but not a layout)');
         } else {
-          setLayout(migrateLayout(data.boxingLayout));
+          try {
+            setLayout(migrateLayout(data.boxingLayout));
+          } catch (migrateErr) {
+            // The payload is readable but the migration rejected it. Keep it so the
+            // corrupt-payload fork archives it before the recovery write replaces
+            // the main key; without this the catch below sees corruptRaw === null.
+            corruptRaw = data.boxingLayout;
+            throw migrateErr;
+          }
         }
       } else {
         const legacy = layoutStorage === api.storage.sync ? data : await api.storage.sync.get({ boxingLayout: null });
@@ -117,7 +125,12 @@ export function registerStorageOnChanged() {
             corruptRaw = legacy.boxingLayout;
             corruptErr = new Error('legacy boxingLayout failed integrity check (readable but not a layout)');
           } else {
-            setLayout(migrateLayout(legacy.boxingLayout));
+            try {
+              setLayout(migrateLayout(legacy.boxingLayout));
+            } catch (migrateErr) {
+              corruptRaw = legacy.boxingLayout;
+              throw migrateErr;
+            }
             if (layoutStorage !== api.storage.sync) {
               await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
               // A6: one-time cleanup — remove stale sync data after successful local migration

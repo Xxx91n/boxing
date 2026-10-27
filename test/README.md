@@ -89,8 +89,9 @@ suite**, never a silent skip:
 - a changed file maps to zero clusters (entry surface: `ntp/ntp.js`,
   `background.js`, `manifest.json`, css, `index.html`) or to more than one.
 
-The import-graph gate fails on stale cluster entries. CI itself still runs the
-full suite; the selector is the local/agent fast path.
+The import-graph gate fails on stale cluster entries, but it can only check that
+mapped spec files exist — cluster coverage stays a manual maintenance duty. CI
+itself still runs the full suite; the selector is the local/agent fast path.
 
 **Hot-file single-agent convention**
 

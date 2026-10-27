@@ -264,6 +264,53 @@ test.describe('Data Recovery & Export/Import', () => {
   // and archived nothing (baseline: archiveKeys=0, 1 failed). Seeding via addInitScript
   // BEFORE the first navigation leaves no window for an unload flush — the very first
   // boot already starts from the corrupt key and exercises the fork path directly.
+  // Same fork, different trigger: the payload is a plausible layout
+  // (isPlausibleLayout passes) but migration itself throws on a malformed v2 box.
+  // loadLayout must still keep the readable payload so the fork archives it before
+  // rebuilding the main key (review finding on the #34 v2 single-pass change).
+  test('Plausible payload rejected by migration is archived, not silently overwritten', async ({ browser }) => {
+    test.setTimeout(20000);
+
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    const pageErrors: string[] = [];
+    page.on('pageerror', err => pageErrors.push(`[ERROR] ${err.message}`));
+
+    const seeded = { version: 2, boxes: [null], settings: {} };
+    await page.addInitScript((payload) => {
+      localStorage.setItem('boxingLayout', JSON.stringify(payload));
+    }, seeded);
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    await page.waitForTimeout(2000);
+
+    expect(pageErrors).toEqual([]);
+
+    const archiveKeys = await page.evaluate(() => {
+      const out: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('bxstore:boxingLayout.corrupt.') && !k.endsWith('.index')) out.push(k);
+      }
+      return out;
+    });
+    expect(archiveKeys.length).toBeGreaterThan(0);
+    const archived = await page.evaluate(key => {
+      try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+    }, archiveKeys[archiveKeys.length - 1]);
+    expect(archived).not.toBeNull();
+    expect(JSON.stringify(archived.raw)).toContain('"boxes":[null]');
+    expect(archived.error).toBeTruthy();
+
+    const rebuilt = await page.evaluate(() => {
+      try { return JSON.parse(localStorage.getItem('boxingLayout') || 'null'); } catch { return null; }
+    });
+    expect(rebuilt).not.toBeNull();
+    expect(Array.isArray(rebuilt.boxes)).toBe(true);
+
+    await context.close();
+  });
+
   test('Corrupt main key is archived (fork) and app still boots', async ({ browser }) => {
     test.setTimeout(20000);
 
