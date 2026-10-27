@@ -24,9 +24,15 @@ const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*([`'"])([^`'"$]+)\1\s*\)/g;
 // Re-exporting is exposure too: `export { x } from '.../legacy-reader-frozen.mjs'`
 // hands the frozen reader to production consumers as surely as an import does.
 const EXPORT_FROM_RE = /\bexport\s*(?:\*|\{[^}]*\})(?:\s*as\s*[\w$]+)?\s*from\s*(['"])([^'"]+)\1/g;
+// The service worker manifest has no `"type": "module"`, so the worker is a
+// classic script and importScripts is its real loader; a static ESM import there
+// cannot even parse. Scan both, so B-10 covers the worker as specified.
+const IMPORT_SCRIPTS_RE = /\bimportScripts\s*\(([^)]*)\)/g;
+const QUOTED_ARG_RE = /(['"])([^'"]+)\1/g;
 
 function isFrozenReaderSpecifier(specifier) {
-  const basename = String(specifier).split(/[\\/]/).pop() || '';
+  // Strip an ESM query/hash suffix: `x.mjs?cache=1` is the same module as `x.mjs`.
+  const basename = (String(specifier).split(/[\\/]/).pop() || '').replace(/[?#].*$/, '');
   return basename === FROZEN_READER_BASENAME || basename === 'legacy-reader-frozen';
 }
 
@@ -189,6 +195,23 @@ function analyzeIsolation(sources) {
         });
       }
     }
+    IMPORT_SCRIPTS_RE.lastIndex = 0;
+    let scriptsMatch;
+    while ((scriptsMatch = IMPORT_SCRIPTS_RE.exec(scanned.text)) !== null) {
+      if (scanned.mask[scriptsMatch.index] !== '1') continue;
+      QUOTED_ARG_RE.lastIndex = 0;
+      let literalMatch;
+      while ((literalMatch = QUOTED_ARG_RE.exec(scriptsMatch[1])) !== null) {
+        const specifier = literalMatch[2];
+        if (!isFrozenReaderSpecifier(specifier)) continue;
+        found.push({
+          rule: 'B-10',
+          file: source.rel,
+          line: lineOf(source.text, scriptsMatch.index),
+          message: `production module must not import the frozen reader (gate-side only): ${specifier}`,
+        });
+      }
+    }
   }
   return found;
 }
@@ -240,6 +263,16 @@ function selfTest() {
       { rel: 'ntp/popups.js', text: "const m = await import('../from/legacy-reader-frozen.mjs');\n" },
       { rel: 'background.js', text: "export * from './from/legacy-reader-frozen.mjs';\n" },
     ], 'B-10@1,B-10@1,B-10@1');
+  check('query or hash suffix does not hide the frozen reader import',
+    [
+      { rel: 'ntp/render.js', text: "import '../scripts/legacy-reader-frozen.mjs?cache=1';\n" },
+      { rel: 'ntp/popups.js', text: "const m = await import('../scripts/legacy-reader-frozen.mjs#x');\n" },
+    ], 'B-10@1,B-10@1');
+  check('service worker importScripts of the frozen reader is red',
+    [
+      { rel: 'background.js', text: "importScripts('../scripts/legacy-reader-frozen.mjs');\n" },
+      { rel: 'background.js', text: "importScripts('a.js', './from/legacy-reader-frozen.mjs?x=1');\n" },
+    ], 'B-10@1,B-10@1');
   return { bad, lines };
 }
 
