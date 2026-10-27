@@ -945,6 +945,9 @@
   "aboutVersion": {
     "message": "เวอร์ชัน"
   },
+  "aboutShowTour": {
+    "message": "แสดงทัวร์"
+  },
   "aboutLinksTitle": {
     "message": "ลิงก์"
   },

@@ -205,6 +205,7 @@ I18N_FALLBACK.settingsNavData = 'Data';
 I18N_FALLBACK.settingsNavSync = 'Sync & Backup';
 I18N_FALLBACK.settingsNavAbout = 'About';
 I18N_FALLBACK.aboutVersion = 'Version';
+I18N_FALLBACK.aboutShowTour = 'Show the tour';
 I18N_FALLBACK.aboutLinksTitle = 'Links';
 I18N_FALLBACK.aboutLinkRepo = 'GitHub Repository';
 I18N_FALLBACK.aboutLinkIssues = 'Issues';

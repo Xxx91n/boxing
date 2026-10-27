@@ -945,6 +945,9 @@
   "aboutVersion": {
     "message": "الإصدار"
   },
+  "aboutShowTour": {
+    "message": "عرض الجولة"
+  },
   "aboutLinksTitle": {
     "message": "الروابط"
   },

@@ -116,6 +116,9 @@
   box-sizing: border-box;
   border-bottom: 1px solid var(--border-soft, rgba(0,0,0,0.08));
 }
+.onboarding__lang[hidden] {
+  display: none;
+}
 .onboarding__lang-label {
   font-weight: 600;
   font-size: var(--fs-md);

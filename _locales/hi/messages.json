@@ -945,6 +945,9 @@
   "aboutVersion": {
     "message": "संस्करण"
   },
+  "aboutShowTour": {
+    "message": "टूर दिखाएँ"
+  },
   "aboutLinksTitle": {
     "message": "लिंक्स"
   },

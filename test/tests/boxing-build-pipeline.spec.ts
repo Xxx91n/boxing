@@ -128,8 +128,15 @@ test.describe('Pages demo artifact suppresses the first-run tour', () => {
 
   test('initOnboarding returns early on the flag AND on runtime.id (defense in depth)', () => {
     const src = onboardingSrc();
-    expect(src).toContain('__BOXING_DEMO__');
-    expect(src, 'runtime.id is the defensive second condition').toContain('boxing-pages-demo');
+    // Ticket 45 shares the demo probe with the replay entry, so both conditions
+    // now live in one helper. Assert the helper still carries both inputs.
+    const helperStart = src.indexOf('function demoSuppressionReason');
+    expect(helperStart, 'the shared demo probe must exist').toBeGreaterThan(-1);
+    const helperEnd = src.indexOf("\n}\n", helperStart);
+    expect(helperEnd, 'demoSuppressionReason must terminate').toBeGreaterThan(helperStart);
+    const helper = src.slice(helperStart, helperEnd);
+    expect(helper, 'the build flag must be the first condition').toContain('window.__BOXING_DEMO__ === true');
+    expect(helper, 'runtime.id is the defensive second condition').toContain('boxing-pages-demo');
     // The flag check must precede the fresh-install judgment, otherwise the tour
     // is already committed to showing before the suppression runs.
     // Anchor on the UNIQUE signature: plain 'export function initOnboarding'
@@ -138,15 +145,15 @@ test.describe('Pages demo artifact suppresses the first-run tour', () => {
     const bodyStart = src.indexOf('export function initOnboarding(trigger');
     expect(bodyStart, 'initOnboarding signature not found').toBeGreaterThan(-1);
     const body = src.slice(bodyStart);
-    const flagAt = body.indexOf('__BOXING_DEMO__');
+    const probeAt = body.indexOf('demoSuppressionReason()');
     const freshAt = body.indexOf('const freshInstall');
-    expect(flagAt, 'the demo guard must exist inside initOnboarding').toBeGreaterThan(-1);
+    expect(probeAt, 'the demo guard must exist inside initOnboarding').toBeGreaterThan(-1);
     expect(freshAt, 'the fresh-install decision must exist').toBeGreaterThan(-1);
-    expect(flagAt, 'demo suppression must run BEFORE the fresh-install decision').toBeLessThan(freshAt);
+    expect(probeAt, 'demo suppression must run BEFORE the fresh-install decision').toBeLessThan(freshAt);
     // The guard must actually RETURN, not merely be evaluated.
     const guardEnd = body.indexOf("const overlay = document.getElementById('onboarding-overlay')");
-    expect(guardEnd, 'overlay lookup must follow the guard').toBeGreaterThan(flagAt);
-    expect(body.slice(flagAt, guardEnd), 'the guard must return early').toContain('return;');
+    expect(guardEnd, 'overlay lookup must follow the guard').toBeGreaterThan(probeAt);
+    expect(body.slice(probeAt, guardEnd), 'the guard must return early').toContain('return;');
   });
 
   test('the file:// debug lane is NOT suppressed (empty-canvas tour still reachable)', () => {
@@ -177,5 +184,25 @@ test.describe('Pages demo artifact suppresses the first-run tour', () => {
     expect(src).toContain('attachOverlayKeydown()');
     expect(src).toContain('detachOverlayKeydown()');
     expect(src).toContain("document.removeEventListener('keydown', onOverlayKeydown, true)");
+  });
+
+  // Ticket 45: the replay entry lives in the same artifact, so the demo's tour
+  // suppression must also suppress (hide + not bind) the entry. A source-only
+  // ordering assertion is enough: the runtime half lives in the onboarding spec.
+  test('demo suppression precedes the replay-entry binding (no dead control)', () => {
+    const src = onboardingSrc();
+    const start = src.indexOf('export function initTourReplayEntry');
+    expect(start, 'initTourReplayEntry must exist').toBeGreaterThan(-1);
+    const body = src.slice(start);
+    const guardAt = body.indexOf('demoSuppressionReason()');
+    const bindAt = body.indexOf('btn.addEventListener');
+    expect(guardAt, 'the entry path must run the shared demo probe').toBeGreaterThan(-1);
+    expect(bindAt, 'the entry must bind a click listener').toBeGreaterThan(guardAt);
+    // The demo branch hides the control AND returns before any binding.
+    const guard = body.slice(guardAt, bindAt);
+    expect(guard, 'the demo guard must hide the control').toContain('btn.hidden = true');
+    expect(guard, 'the demo guard must return before binding').toContain('return;');
+    // The entry is a normal button in the About section.
+    expect(ntpIndexHtml()).toContain('id="about-show-tour"');
   });
 });

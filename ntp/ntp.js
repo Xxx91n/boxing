@@ -47,7 +47,7 @@ import { initPopupsFacade } from './popups.js';
 import { initCredentialsFacade } from './credentials.js';
 import { initSyncEngineFacade, bindSyncBackupUi } from './sync-engine.js';
 import { initSettingsUiFacade, bindSettingsUi, syncSettingsDOM, openSettingsModal, openConfirmModal } from './settings-ui.js';
-import { initOnboardingFacade, initOnboarding } from './onboarding.js';
+import { initOnboardingFacade, initOnboarding, initTourReplayEntry } from './onboarding.js';
 (async () => {
   // ── cross-browser API ──────────────────────────────────
   let api = (typeof browser !== 'undefined' ? browser : typeof chrome !== 'undefined' ? chrome : null);
@@ -1204,6 +1204,9 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     // installReason was consumed before loadLayout (ticket 42) so the update path
     // could snapshot first; the file:// mock lane has no signal and falls back to the legacy
     // empty-canvas judgment inside initOnboarding (ticket-03 lesson).
+    // Ticket 45: Settings > About tour replay entry (bound here so settings-ui.js
+    // never imports onboarding.js — import-graph-guard B-9).
+    try { initTourReplayEntry(); } catch (e) { debugErr('tour replay init', e); }
     try { initOnboarding({ reason: installReason }); } catch (e) { debugErr('onboarding init', e); }
     persistViewState(true);
     debug('init complete ' + __boxingVersion(), { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, headerPinned, darkMode: layout.settings.darkMode });

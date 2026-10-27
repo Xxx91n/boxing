@@ -948,6 +948,9 @@
   "aboutVersion": {
     "message": "版本"
   },
+  "aboutShowTour": {
+    "message": "顯示導覽"
+  },
   "aboutLinksTitle": {
     "message": "連結"
   },

@@ -945,6 +945,9 @@
   "aboutVersion": {
     "message": "Versión"
   },
+  "aboutShowTour": {
+    "message": "Mostrar el recorrido"
+  },
   "aboutLinksTitle": {
     "message": "Enlaces"
   },
