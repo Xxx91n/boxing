@@ -30,25 +30,61 @@ function isFrozenReaderSpecifier(specifier) {
   return basename === FROZEN_READER_BASENAME || basename === 'legacy-reader-frozen';
 }
 
+// Regex literals are code, not strings. A pattern such as /[&<>"']/ contains a
+// quote; without regex awareness the scanner enters a bogus string mode at that
+// quote and masks the rest of the line as literal text, hiding a real import that
+// follows. When `/` is not the start of a comment, decide with the standard
+// previous-token heuristic whether it opens a regex literal. Regex may start at
+// file start, after an operator/punctuator, or after a keyword; it is division
+// after an identifier, number, `)`, `]`, or a closing quote.
+const REGEX_PRECEDING_PUNCT = new Set('(,=:[!&|?{};+-*%<>~^');
+const REGEX_PRECEDING_KEYWORDS = new Set([
+  'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void',
+  'case', 'do', 'else', 'yield', 'await',
+]);
+const WORD_CHAR_RE = /[A-Za-z0-9_$]/;
+
+function regexMayStart(lastToken) {
+  if (!lastToken) return true; // start of file: nothing to divide
+  if (lastToken.type === 'word') return REGEX_PRECEDING_KEYWORDS.has(lastToken.value);
+  if (lastToken.type === 'punct') return REGEX_PRECEDING_PUNCT.has(lastToken.value);
+  return false; // value (identifier/number/literal/`)`/`]`): division
+}
+
 // Scan source into two same-length views:
-//   * text — comment characters blanked to spaces (newlines preserved, offsets
-//     unchanged), while string/template literal contents stay verbatim; and
-//   * mask — '1' where the character is code, '0' in comments and inside literals.
-// A regex hit is only real when its keyword lands on code, which is what keeps a
-// quoted or commented mention of the frozen reader from becoming a false positive.
+//   * text — comment and regex characters blanked to spaces (newlines preserved,
+//     offsets unchanged), while string/template literal contents stay verbatim; and
+//   * mask — '1' where the character is code, '0' in comments/regexes and inside
+//     literals. A regex hit is only real when its keyword lands on code, which is
+//     what keeps a quoted or commented mention of the frozen reader from becoming
+//     a false positive.
 function scanCode(text) {
   let out = '';
   let mask = '';
   const push = (ch, isCode) => { out += ch; mask += isCode ? '1' : '0'; };
   let mode = 'code';
+  let lastToken = null; // { type: 'word' | 'punct' | 'value', value? }
+  let word = '';
+  let inClass = false;
   for (let i = 0; i < text.length; i += 1) {
     const ch = text[i];
     const next = text[i + 1];
     if (mode === 'code') {
+      // Comments are checked before the regex rule: `//` and `/*` win over `/`.
       if (ch === '/' && next === '/') { mode = 'line'; push(' ', false); i += 1; push(' ', false); continue; }
       if (ch === '/' && next === '*') { mode = 'block'; push(' ', false); i += 1; push(' ', false); continue; }
+      if (WORD_CHAR_RE.test(ch)) { word += ch; push(ch, true); continue; }
+      // A non-word character ends the pending identifier/number token.
+      if (word) { lastToken = { type: 'word', value: word }; word = ''; }
+      if (/\s/.test(ch)) { push(ch, true); continue; }
+      if (ch === '/' && regexMayStart(lastToken)) {
+        mode = 'regex'; inClass = false; push(' ', false); continue;
+      }
       if (ch === "'" || ch === '"' || ch === '`') { mode = ch; push(ch, false); continue; }
+      // `)` and `]` end a value: a following `/` is division, not a regex.
+      if (ch === ')' || ch === ']') { push(ch, true); lastToken = { type: 'value' }; continue; }
       push(ch, true);
+      lastToken = { type: 'punct', value: ch };
       continue;
     }
     if (mode === 'line') {
@@ -60,10 +96,28 @@ function scanCode(text) {
       push(ch === '\n' ? '\n' : ' ', false);
       continue;
     }
+    if (mode === 'regex') {
+      // Mask the whole pattern, preserving newlines. A `[...]` character class may
+      // contain `/` without closing the literal, and `\` escapes the next char.
+      if (ch === '\\') {
+        push(ch === '\n' ? '\n' : ' ', false);
+        if (i + 1 < text.length) { push(text[i + 1] === '\n' ? '\n' : ' ', false); i += 1; }
+        continue;
+      }
+      if (ch === '[') { inClass = true; push(' ', false); continue; }
+      if (ch === ']' && inClass) { inClass = false; push(' ', false); continue; }
+      if (ch === '/' && !inClass) {
+        // Closing delimiter. The literal is a value, so a following `/` is division;
+        // flags stay ordinary code characters handled in code mode.
+        mode = 'code'; lastToken = { type: 'value' }; push(' ', false); continue;
+      }
+      push(ch === '\n' ? '\n' : ' ', false);
+      continue;
+    }
     // Inside a string/template literal: copy verbatim, honouring escapes.
     push(ch, false);
     if (ch === '\\') { if (i + 1 < text.length) { push(text[i + 1], false); i += 1; } continue; }
-    if (ch === mode) mode = 'code';
+    if (ch === mode) { mode = 'code'; lastToken = { type: 'value' }; }
   }
   return { text: out, mask };
 }
@@ -133,6 +187,8 @@ function selfTest() {
     [{ rel: 'ntp/render.js', text: "export*from'../scripts/legacy-reader-frozen.mjs';\n" }], 'B-10@1');
   check('import.meta mention is NOT flagged',
     [{ rel: 'ntp/render.js', text: 'const url = import.meta.url;\n' }], '');
+  check('quoted regex literal does not mask a following dynamic import',
+    [{ rel: 'ntp/render.js', text: "const r = /[&<>\"']/g;\nconst m = await import('../scripts/legacy-reader-frozen.mjs');\n" }], 'B-10@2');
   return { bad, lines };
 }
 

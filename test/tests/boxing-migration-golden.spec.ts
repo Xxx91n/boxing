@@ -258,6 +258,28 @@ test.describe('Frozen function-body pins (ticket 46)', () => {
     }
   });
 
+  test('a substituted reader under the pinned name is rejected by identity', async () => {
+    const original = await fs.promises.readFile(FROZEN_SOURCE, 'utf8');
+    const needle = 'reader: legacyReader,';
+    expect(original).toContain(needle);
+    // Identity bypass: the pinned declaration stays untouched (count 1) and the
+    // substituted arrow's inferred name is still `legacyReader`, so the source-hash
+    // pin and the duplicate-declaration check both pass. Only checking that the
+    // supplied function *is* the module's pinned binding catches the swap.
+    const substituted = original.replace(
+      needle,
+      'reader: (() => { const legacyReader = () => null; return legacyReader; })(),');
+    expect(substituted).not.toBe(original);
+
+    const tmpPath = path.join(os.tmpdir(), 'legacy-reader-frozen-identity-' + process.pid + '-' + Date.now() + '.mjs');
+    await fs.promises.writeFile(tmpPath, substituted, 'utf8');
+    try {
+      await expect(import(pathToFileURL(tmpPath).href)).rejects.toThrow(/pre-adr0009[\s\S]*legacyReader/);
+    } finally {
+      await fs.promises.unlink(tmpPath);
+    }
+  });
+
   test('a new contract id gets its own computed pin and leaves existing pins untouched', async () => {
     const frozen = await import(FROZEN_READER_URL);
     const existing = frozen.getContract('pre-adr0009');
