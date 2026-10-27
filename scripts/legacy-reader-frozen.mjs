@@ -56,23 +56,126 @@ function functionBodies(contract) {
 }
 
 // Byte-exact slice of `function <name>(...) { ... }` from the module source.
-// The brace scanner skips quotes, template literals and comments so braces in
-// those contexts cannot end the body early.
+//
+// A pinned declaration must be unambiguous: a second `function <name>(` header is
+// the realistic bypass (an inline replacement body registered under the pinned
+// name), and taking the first match would silently pin the untouched original.
+// The parameter list is scanned before the body so a default parameter object such
+// as `opts = {}` cannot be mistaken for the body's opening brace.
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function functionHeaderRegex(functionName) {
+  return new RegExp('\\bfunction\\s+' + escapeRegExp(functionName) + '\\s*\\(', 'g');
+}
+
+// Comment/string-aware view for declaration counting: comment and literal
+// characters are blanked to spaces (newlines and offsets preserved), so prose or
+// a quoted snippet that mentions the declaration header is not counted as one.
+function maskNonCode(source) {
+  let out = '';
+  let mode = 'code';
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (mode === 'code') {
+      if (ch === '/' && next === '/') { mode = 'line'; out += '  '; i += 1; continue; }
+      if (ch === '/' && next === '*') { mode = 'block'; out += '  '; i += 1; continue; }
+      if (ch === "'" || ch === '"' || ch === '`') { mode = ch; out += ' '; continue; }
+      out += ch;
+      continue;
+    }
+    if (mode === 'line') {
+      if (ch === '\n') { mode = 'code'; out += ch; } else out += ' ';
+      continue;
+    }
+    if (mode === 'block') {
+      if (ch === '*' && next === '/') { mode = 'code'; out += '  '; i += 1; continue; }
+      out += ch === '\n' ? '\n' : ' ';
+      continue;
+    }
+    if (ch === '\\') {
+      out += ' ';
+      if (i + 1 < source.length) { out += source[i + 1] === '\n' ? '\n' : ' '; i += 1; }
+      continue;
+    }
+    if (ch === mode) { mode = 'code'; out += ' '; continue; }
+    out += ch === '\n' ? '\n' : ' ';
+  }
+  return out;
+}
+
+// number of `function <name>(` declaration headers, optional whitespace before `(`
+function countFunctionDeclarations(source, functionName) {
+  const regex = functionHeaderRegex(functionName);
+  const code = maskNonCode(source);
+  let count = 0;
+  while (regex.exec(code) !== null) count += 1;
+  return count;
+}
+
 function extractFunctionSource(source, functionName) {
-  const header = 'function ' + functionName + '(';
-  const start = source.indexOf(header);
-  if (start === -1) return null;
+  if (countFunctionDeclarations(source, functionName) !== 1) return null;
+  const header = functionHeaderRegex(functionName).exec(maskNonCode(source));
+  if (!header) return null;
+  const start = header.index;
+  const openParen = header.index + header[0].length - 1;
+
+  // 1) Walk the parameter list to its matching ')'.
   let depth = 0;
   let mode = 'code';
-  for (let i = source.indexOf('{', start + header.length); i < source.length; i++) {
+  let closeParen = -1;
+  for (let i = openParen; i < source.length; i++) {
     const ch = source[i];
     const next = source[i + 1];
     if (mode === 'code') {
       if (ch === '/' && next === '/') { mode = 'line'; i++; continue; }
       if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
       if (ch === "'" || ch === '"' || ch === '`') { mode = ch; continue; }
-      if (ch === '{') depth++;
-      else if (ch === '}' && --depth === 0) return source.slice(start, i + 1);
+      if (ch === '(') depth++;
+      else if (ch === ')' && --depth === 0) { closeParen = i; break; }
+    } else if (mode === 'line') {
+      if (ch === '\n') mode = 'code';
+    } else if (mode === 'block') {
+      if (ch === '*' && next === '/') { mode = 'code'; i++; }
+    } else if (ch === '\\') {
+      i++; // escaped character inside a string/template literal
+    } else if (ch === mode) {
+      mode = 'code';
+    }
+  }
+  if (closeParen === -1) return null;
+
+  // 2) The body opens at the first '{' at paren depth 0 after the parameter list.
+  // Anything else (other than whitespace/comments) means this is not a plain
+  // declaration body, so fail closed instead of returning a truncated prefix.
+  let bodyStart = -1;
+  mode = 'code';
+  for (let i = closeParen + 1; i < source.length; i++) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (mode === 'line') { if (ch === '\n') mode = 'code'; continue; }
+    if (mode === 'block') { if (ch === '*' && next === '/') { mode = 'code'; i++; } continue; }
+    if (ch === '/' && next === '/') { mode = 'line'; i++; continue; }
+    if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
+    if (ch === '{') { bodyStart = i; break; }
+    if (!/\s/.test(ch)) return null;
+  }
+  if (bodyStart === -1) return null;
+
+  // 3) Brace-match the body, skipping quotes, templates and comments.
+  let bodyDepth = 0;
+  mode = 'code';
+  for (let i = bodyStart; i < source.length; i++) {
+    const ch = source[i];
+    const next = source[i + 1];
+    if (mode === 'code') {
+      if (ch === '/' && next === '/') { mode = 'line'; i++; continue; }
+      if (ch === '/' && next === '*') { mode = 'block'; i++; continue; }
+      if (ch === "'" || ch === '"' || ch === '`') { mode = ch; continue; }
+      if (ch === '{') bodyDepth++;
+      else if (ch === '}' && --bodyDepth === 0) return source.slice(start, i + 1);
     } else if (mode === 'line') {
       if (ch === '\n') mode = 'code';
     } else if (mode === 'block') {
@@ -103,6 +206,17 @@ function assertPinnedFunctionBodies(contract) {
   const pinned = PINS[contract.id];
   if (!pinned) return; // genuinely new id: no historical pin to defend yet
   for (const [functionName, expectedHash] of Object.entries(pinned)) {
+    // Exactly one declaration header must exist. A second one is the bypass where
+    // an inline `reader: function legacyReader(raw) { ... }` is registered while
+    // the real, still-pinned declaration stays untouched elsewhere in the file.
+    const declarationCount = countFunctionDeclarations(MODULE_SOURCE, functionName);
+    if (declarationCount !== 1) {
+      throw new Error(
+        'frozen reader contract "' + contract.id + '" function "' + functionName +
+        '" declaration count is ' + declarationCount +
+        ': the pinned declaration is missing, duplicated or renamed'
+      );
+    }
     const supplied = functionBodies(contract).find((candidate) => candidate.name === functionName);
     const raw = extractFunctionSource(MODULE_SOURCE, functionName);
     if (!supplied || raw === null) {
