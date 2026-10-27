@@ -186,7 +186,7 @@ test.describe('B-10 production isolation for the frozen reader', () => {
 
   test('self-test proves production frozen-reader imports are red and gate-side imports are not flagged', () => {
     const out = execFileSync(process.execPath, [guard, '--self-test'], { encoding: 'utf8' });
-    expect(out).toContain('self-test: PASS (19/19)');
+    expect(out).toContain('self-test: PASS (20/20)');
     expect(out).toContain('production ntp module importing the frozen reader is red');
     expect(out).toContain('production ntp module dynamic-importing the frozen reader is red');
     expect(out).toContain('service worker importing the frozen reader is red');
@@ -206,6 +206,7 @@ test.describe('B-10 production isolation for the frozen reader', () => {
     expect(out).toContain('a "from" substring inside the specifier path does not hide the import');
     expect(out).toContain('query or hash suffix does not hide the frozen reader import');
     expect(out).toContain('service worker importScripts of the frozen reader is red');
+    expect(out).toContain('unrelated importScripts, comments, and strings are NOT flagged');
   });
 
   test('the import-graph guard is green on the current tree', () => {

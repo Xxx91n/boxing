@@ -28,7 +28,9 @@ const EXPORT_FROM_RE = /\bexport\s*(?:\*|\{[^}]*\})(?:\s*as\s*[\w$]+)?\s*from\s*
 // classic script and importScripts is its real loader; a static ESM import there
 // cannot even parse. Scan both, so B-10 covers the worker as specified.
 const IMPORT_SCRIPTS_RE = /\bimportScripts\s*\(([^)]*)\)/g;
-const QUOTED_ARG_RE = /(['"])([^'"]+)\1/g;
+// A simple template literal (no `${...}`) is a static specifier too. Rejecting
+// substitutions keeps computed arguments out of the static check.
+const ARG_LITERAL_RE = /(['"])([^'"]+)\1|`([^`$]+)`/g;
 
 function isFrozenReaderSpecifier(specifier) {
   // Strip an ESM query/hash suffix: `x.mjs?cache=1` is the same module as `x.mjs`.
@@ -199,10 +201,10 @@ function analyzeIsolation(sources) {
     let scriptsMatch;
     while ((scriptsMatch = IMPORT_SCRIPTS_RE.exec(scanned.text)) !== null) {
       if (scanned.mask[scriptsMatch.index] !== '1') continue;
-      QUOTED_ARG_RE.lastIndex = 0;
+      ARG_LITERAL_RE.lastIndex = 0;
       let literalMatch;
-      while ((literalMatch = QUOTED_ARG_RE.exec(scriptsMatch[1])) !== null) {
-        const specifier = literalMatch[2];
+      while ((literalMatch = ARG_LITERAL_RE.exec(scriptsMatch[1])) !== null) {
+        const specifier = literalMatch[2] || literalMatch[3];
         if (!isFrozenReaderSpecifier(specifier)) continue;
         found.push({
           rule: 'B-10',
@@ -272,7 +274,12 @@ function selfTest() {
     [
       { rel: 'background.js', text: "importScripts('../scripts/legacy-reader-frozen.mjs');\n" },
       { rel: 'background.js', text: "importScripts('a.js', './from/legacy-reader-frozen.mjs?x=1');\n" },
-    ], 'B-10@1,B-10@1');
+      { rel: 'background.js', text: "importScripts(`./scripts/legacy-reader-frozen.mjs`);\n" },
+    ], 'B-10@1,B-10@1,B-10@1');
+  check('unrelated importScripts, comments, and strings are NOT flagged',
+    [
+      { rel: 'background.js', text: "importScripts('a.js');\n// importScripts('../scripts/legacy-reader-frozen.mjs');\n/* importScripts('../scripts/legacy-reader-frozen.mjs'); */\nconst note = \"importScripts('../scripts/legacy-reader-frozen.mjs')\";\n" },
+    ], '');
   return { bad, lines };
 }
 
