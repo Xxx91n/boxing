@@ -930,6 +930,9 @@
   "aboutVersion": {
     "message": "버전"
   },
+  "aboutShowTour": {
+    "message": "둘러보기 표시"
+  },
   "aboutLinksTitle": {
     "message": "링크"
   },

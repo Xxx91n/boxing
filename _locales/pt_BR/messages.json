@@ -930,6 +930,9 @@
   "aboutVersion": {
     "message": "Versão"
   },
+  "aboutShowTour": {
+    "message": "Mostrar o tour"
+  },
   "aboutLinksTitle": {
     "message": "Links"
   },

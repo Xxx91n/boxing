@@ -1113,6 +1113,11 @@ body.box-resizing {
   justify-content: center;
 }
 
+/* `.btn` sets display:inline-flex, so the hidden state needs its own pair. */
+#about-show-tour[hidden] {
+  display: none;
+}
+
 .about-license {
   margin: 0;
   font-size: var(--fs-xs);

@@ -930,6 +930,9 @@
   "aboutVersion": {
     "message": "Version"
   },
+  "aboutShowTour": {
+    "message": "Afficher la visite guidée"
+  },
   "aboutLinksTitle": {
     "message": "Liens"
   },

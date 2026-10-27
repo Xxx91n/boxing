@@ -930,6 +930,9 @@
   "aboutVersion": {
     "message": "Phiên bản"
   },
+  "aboutShowTour": {
+    "message": "Hiển thị hướng dẫn"
+  },
   "aboutLinksTitle": {
     "message": "Liên kết"
   },
