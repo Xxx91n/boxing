@@ -27,15 +27,64 @@ const EXPORT_FROM_RE = /\bexport\s*(?:\*|\{[^}]*\})(?:\s*as\s*[\w$]+)?\s*from\s*
 // The service worker manifest has no `"type": "module"`, so the worker is a
 // classic script and importScripts is its real loader; a static ESM import there
 // cannot even parse. Scan both, so B-10 covers the worker as specified.
-const IMPORT_SCRIPTS_RE = /\bimportScripts\s*\(([^)]*)\)/g;
-// A simple template literal (no `${...}`) is a static specifier too. Rejecting
-// substitutions keeps computed arguments out of the static check.
-const ARG_LITERAL_RE = /(['"])([^'"]+)\1|`([^`$]+)`/g;
+const IMPORT_SCRIPTS_CALL_RE = /\bimportScripts\s*\(/g;
 
 function isFrozenReaderSpecifier(specifier) {
-  // Strip an ESM query/hash suffix: `x.mjs?cache=1` is the same module as `x.mjs`.
-  const basename = (String(specifier).split(/[\\/]/).pop() || '').replace(/[?#].*$/, '');
+  // Strip an ESM query/hash suffix before splitting: a slash inside the suffix
+  // (`?cache=/v1`) must not become the basename.
+  const basename = (String(specifier).replace(/[?#].*$/, '').split(/[\\/]/).pop() || '');
   return basename === FROZEN_READER_BASENAME || basename === 'legacy-reader-frozen';
+}
+
+// Locate the `)` matching the call's `(`. Only code-mode parentheses count, so a
+// `)` inside a string, template, regex, or comment cannot close the call early.
+function matchingParen(scanned, openIndex) {
+  let depth = 0;
+  for (let i = openIndex; i < scanned.text.length; i += 1) {
+    if (scanned.mask[i] !== '1') continue;
+    const ch = scanned.text[i];
+    if (ch === '(') depth += 1;
+    else if (ch === ')') {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+// Split on top-level commas; commas inside nested calls/objects/arrays and
+// inside literals stay part of their argument.
+function splitTopLevelArgs(text, mask) {
+  const parts = [];
+  let start = 0;
+  let depth = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    if (mask[i] !== '1') continue;
+    const ch = text[i];
+    if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+    else if (ch === ')' || ch === ']' || ch === '}') depth -= 1;
+    else if (ch === ',' && depth === 0) {
+      parts.push([text.slice(start, i), mask.slice(start, i)]);
+      start = i + 1;
+    }
+  }
+  parts.push([text.slice(start), mask.slice(start)]);
+  return parts;
+}
+
+// A static argument is one complete quoted or template literal. Mixed code
+// (ternary, concatenation, `${...}`) is an expression we cannot resolve, so it
+// must not be reported as a literal URL.
+function staticArgValue(text, mask) {
+  let start = 0;
+  while (start < text.length && /\s/.test(text[start])) start += 1;
+  let end = text.length;
+  while (end > start && /\s/.test(text[end - 1])) end -= 1;
+  if (start >= end) return null;
+  for (let i = start; i < end; i += 1) if (mask[i] !== '0') return null;
+  const quote = text[start];
+  if ((quote !== "'" && quote !== '"' && quote !== '`') || text[end - 1] !== quote) return null;
+  return text.slice(start + 1, end - 1);
 }
 
 // Regex literals are code, not strings. A pattern such as /[&<>"']/ contains a
@@ -197,19 +246,27 @@ function analyzeIsolation(sources) {
         });
       }
     }
-    IMPORT_SCRIPTS_RE.lastIndex = 0;
-    let scriptsMatch;
-    while ((scriptsMatch = IMPORT_SCRIPTS_RE.exec(scanned.text)) !== null) {
-      if (scanned.mask[scriptsMatch.index] !== '1') continue;
-      ARG_LITERAL_RE.lastIndex = 0;
-      let literalMatch;
-      while ((literalMatch = ARG_LITERAL_RE.exec(scriptsMatch[1])) !== null) {
-        const specifier = literalMatch[2] || literalMatch[3];
-        if (!isFrozenReaderSpecifier(specifier)) continue;
+    IMPORT_SCRIPTS_CALL_RE.lastIndex = 0;
+    let callMatch;
+    while ((callMatch = IMPORT_SCRIPTS_CALL_RE.exec(scanned.text)) !== null) {
+      if (scanned.mask[callMatch.index] !== '1') {
+        // A match starting inside a literal or comment must not consume a later
+        // real call; resume right after the rejected start.
+        IMPORT_SCRIPTS_CALL_RE.lastIndex = callMatch.index + 1;
+        continue;
+      }
+      const openIndex = callMatch.index + callMatch[0].length - 1;
+      const closeIndex = matchingParen(scanned, openIndex);
+      if (closeIndex === -1) continue;
+      const argsText = scanned.text.slice(openIndex + 1, closeIndex);
+      const argsMask = scanned.mask.slice(openIndex + 1, closeIndex);
+      for (const [argText, argMask] of splitTopLevelArgs(argsText, argsMask)) {
+        const specifier = staticArgValue(argText, argMask);
+        if (specifier === null || !isFrozenReaderSpecifier(specifier)) continue;
         found.push({
           rule: 'B-10',
           file: source.rel,
-          line: lineOf(source.text, scriptsMatch.index),
+          line: lineOf(source.text, callMatch.index),
           message: `production module must not import the frozen reader (gate-side only): ${specifier}`,
         });
       }
@@ -269,16 +326,22 @@ function selfTest() {
     [
       { rel: 'ntp/render.js', text: "import '../scripts/legacy-reader-frozen.mjs?cache=1';\n" },
       { rel: 'ntp/popups.js', text: "const m = await import('../scripts/legacy-reader-frozen.mjs#x');\n" },
-    ], 'B-10@1,B-10@1');
+      { rel: 'ntp/render.js', text: "import '../scripts/legacy-reader-frozen.mjs?cache=/v1';\n" },
+    ], 'B-10@1,B-10@1,B-10@1');
   check('service worker importScripts of the frozen reader is red',
     [
       { rel: 'background.js', text: "importScripts('../scripts/legacy-reader-frozen.mjs');\n" },
       { rel: 'background.js', text: "importScripts('a.js', './from/legacy-reader-frozen.mjs?x=1');\n" },
       { rel: 'background.js', text: "importScripts(`./scripts/legacy-reader-frozen.mjs`);\n" },
-    ], 'B-10@1,B-10@1,B-10@1');
+      { rel: 'background.js', text: "importScripts(getHelperUrl(), '../scripts/legacy-reader-frozen.mjs');\n" },
+      { rel: 'background.js', text: "importScripts(\"helper's.js\", '../scripts/legacy-reader-frozen.mjs');\n" },
+      { rel: 'background.js', text: "const label = \"importScripts(\";\nimportScripts('../scripts/legacy-reader-frozen.mjs');\n" },
+    ], 'B-10@1,B-10@1,B-10@1,B-10@1,B-10@1,B-10@2');
   check('unrelated importScripts, comments, and strings are NOT flagged',
     [
       { rel: 'background.js', text: "importScripts('a.js');\n// importScripts('../scripts/legacy-reader-frozen.mjs');\n/* importScripts('../scripts/legacy-reader-frozen.mjs'); */\nconst note = \"importScripts('../scripts/legacy-reader-frozen.mjs')\";\n" },
+      { rel: 'background.js', text: "importScripts(name === 'legacy-reader-frozen.mjs' ? 'compat.js' : 'worker.js');\n" },
+      { rel: 'background.js', text: "importScripts(`./scripts/${name}.mjs`);\n" },
     ], '');
   return { bad, lines };
 }
