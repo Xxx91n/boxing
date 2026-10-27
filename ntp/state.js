@@ -24,7 +24,7 @@
       selectedLanguage: 'en',
       rememberLastPos: true,
       zoomLevel: 1.0,
-      darkMode: false,
+      darkMode: 'light',
       fontSize: 14
     }
   };

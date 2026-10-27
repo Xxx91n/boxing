@@ -51,7 +51,12 @@
     // The write is now SYMMETRIC (toggle), matching applyDarkMode. It used to only ever
     // ADD the class, so a tab that booted dark could never return to light in that
     // session — bug2's headline symptom ("only opening a new tab helps").
-    root.classList.toggle('ntp--dark', v.darkMode === true);
+    // Ticket 44 (spec #41): the mirror carries the PREFERENCE ('light' | 'dark' |
+    // 'system'; legacy 'true'/'false' still accepted). Resolve the explicit choice
+    // here; 'system' is deliberately treated as light at first paint until ticket #48
+    // teaches this classic script to read matchMedia (it must stay import-free).
+    var pref = v.darkMode;
+    root.classList.toggle('ntp--dark', pref === true || pref === 'dark');
     if (typeof v.fontSize === 'number' && v.fontSize >= 11 && v.fontSize <= 20) {
       root.style.setProperty('--font-size-base', v.fontSize + 'px');
     }

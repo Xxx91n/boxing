@@ -227,6 +227,21 @@
   "darkModeHint": {
     "message": "在亮色和暗色外觀之間切換"
   },
+  "darkModeLight": {
+    "message": "亮色"
+  },
+  "darkModeDark": {
+    "message": "暗色"
+  },
+  "darkModeSystem": {
+    "message": "跟隨系統"
+  },
+  "darkModeSwitchToDark": {
+    "message": "切換到暗色模式"
+  },
+  "darkModeSwitchToLight": {
+    "message": "切換到亮色模式"
+  },
   "exportData": {
     "message": "導出數據"
   },

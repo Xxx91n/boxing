@@ -231,6 +231,26 @@
     "message": "Switch between light and dark appearance",
     "description": "Dark mode hint"
   },
+  "darkModeLight": {
+    "message": "Light",
+    "description": "Dark mode preference: always light"
+  },
+  "darkModeDark": {
+    "message": "Dark",
+    "description": "Dark mode preference: always dark"
+  },
+  "darkModeSystem": {
+    "message": "Follow system",
+    "description": "Dark mode preference: follow the operating system"
+  },
+  "darkModeSwitchToDark": {
+    "message": "Switch to dark mode",
+    "description": "Header quick-toggle tooltip when the light theme is showing"
+  },
+  "darkModeSwitchToLight": {
+    "message": "Switch to light mode",
+    "description": "Header quick-toggle tooltip when the dark theme is showing"
+  },
   "exportData": {
     "message": "Export Data",
     "description": "Export button"

@@ -224,6 +224,21 @@
   "darkModeHint": {
     "message": "ライトとダークの外観を切り替えます"
   },
+  "darkModeLight": {
+    "message": "ライト"
+  },
+  "darkModeDark": {
+    "message": "ダーク"
+  },
+  "darkModeSystem": {
+    "message": "システムに従う"
+  },
+  "darkModeSwitchToDark": {
+    "message": "ダークモードに切り替える"
+  },
+  "darkModeSwitchToLight": {
+    "message": "ライトモードに切り替える"
+  },
   "exportData": {
     "message": "データをエクスポート"
   },

@@ -47,7 +47,7 @@
           <span aria-hidden="true">⚙</span>
         </button>
         <button id="dark-mode-btn" tabindex="-1" class="btn btn--ghost" aria-label="Dark mode"
-          data-i18n-title="darkMode" style="font-size:14px;">
+          style="font-size:14px;">
           <span aria-hidden="true">☀</span>
         </button>
       </nav>
@@ -202,10 +202,23 @@
           <!-- Appearance tab -->
           <div class="settings-tab" id="tab-appearance" hidden>
             <section class="modal__section">
-              <label class="checkbox-label">
-                <input type="checkbox" id="dark-mode-cb">
-                <span class="checkbox-label__text" data-i18n="darkMode">Dark Mode</span>
-              </label>
+              <!-- Ticket 44 (spec #41): three-state dark-mode preference. The group id
+                   and radio name/values are the confirmed test interface. -->
+              <fieldset class="dark-mode-group" id="dark-mode-group">
+                <legend class="modal__label" data-i18n="darkMode">Dark Mode</legend>
+                <label class="radio-label">
+                  <input type="radio" name="dark-mode" value="light">
+                  <span class="radio-label__text" data-i18n="darkModeLight">Light</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="dark-mode" value="dark">
+                  <span class="radio-label__text" data-i18n="darkModeDark">Dark</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="dark-mode" value="system">
+                  <span class="radio-label__text" data-i18n="darkModeSystem">Follow system</span>
+                </label>
+              </fieldset>
               <p class="modal__hint" data-i18n="darkModeHint">Switch between light and dark appearance</p>
             </section>
             <section class="modal__section" id="theme-section">

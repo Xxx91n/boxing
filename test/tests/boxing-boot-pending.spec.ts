@@ -137,12 +137,14 @@ test.describe('boot-pending zero-flash e2e', () => {
       await dbg.saveLayout();
     });
     // Mirror rides the successful persist path only — never drifts ahead of the layout.
+    // Ticket 44 (spec #41): the mirror carries the three-valued PREFERENCE, so the
+    // legacy boolean written above is persisted as 'dark'.
     await expect.poll(() => p1.evaluate((key: string) => {
       const raw = localStorage.getItem(key);
       if (!raw) return null;
       const m = JSON.parse(raw);
       return [m.theme, m.darkMode, m.fontSize].join('|');
-    }, BOOT_MIRROR_KEY), { timeout: 10000 }).toBe('forest|true|14');
+    }, BOOT_MIRROR_KEY), { timeout: 10000 }).toBe('forest|dark|14');
 
     // The fresh tab: full boot re-runs against the shared file:// origin state.
     const p2 = await ctx.newPage();

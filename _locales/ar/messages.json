@@ -224,6 +224,21 @@
   "darkModeHint": {
     "message": "التبديل بين المظهر الفاتح والداكن"
   },
+  "darkModeLight": {
+    "message": "فاتح"
+  },
+  "darkModeDark": {
+    "message": "داكن"
+  },
+  "darkModeSystem": {
+    "message": "اتباع النظام"
+  },
+  "darkModeSwitchToDark": {
+    "message": "التبديل إلى الوضع الداكن"
+  },
+  "darkModeSwitchToLight": {
+    "message": "التبديل إلى الوضع الفاتح"
+  },
   "exportData": {
     "message": "تصدير البيانات"
   },

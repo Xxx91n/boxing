@@ -283,8 +283,28 @@ test.describe('dark mode has one host and one apply path', () => {
       mirror,
       // The control must agree with the applied theme, in both directions.
       glyph: document.querySelector('#dark-mode-btn span')?.textContent || null,
+      // Ticket 44: the tooltip names the ACTION the quick toggle performs.
+      title: document.querySelector('#dark-mode-btn')?.getAttribute('title') || null,
     };
   }, BOOT_MIRROR_KEY);
+
+  // Ticket 44 (spec #41): set the three-valued preference through the confirmed
+  // test interface — the #dark-mode-group radios.
+  async function setDarkPref(page: any, value: 'light' | 'dark' | 'system') {
+    await page.evaluate((v) => {
+      const input = document.querySelector(`#dark-mode-group input[name="dark-mode"][value="${v}"]`) as HTMLInputElement | null;
+      if (!input) throw new Error('#dark-mode-group radio missing for ' + v);
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }, value);
+  }
+
+  // The storage facade is async; persisted-value assertions poll the stored layout.
+  const storedDarkPref = (page: any) => page.evaluate(async () => {
+    const dbg = (window as any).__boxingDebug;
+    const stored = await dbg.storageGet('boxingLayout');
+    return stored?.boxingLayout?.settings?.darkMode;
+  });
 
   test('header toggle switches dark -> light in-page (the headline bug)', async ({ page }) => {
     await resetAndDismiss(page);
@@ -292,14 +312,16 @@ test.describe('dark mode has one host and one apply path', () => {
     // Go dark through the real control.
     await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
+    await expect.poll(async () => (await themeState(page)).setting).toBe('dark');
     // Back to light. Before the fix this could not clear the html class that
     // boot-theme.js had added, so the page stayed dark until a new tab opened.
     await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html, { timeout: 5000 }).toBe(false);
     const s = await themeState(page);
-    expect(s.setting).toBe(false);
-    expect(s.mirror.darkMode).toBe(false);
+    expect(s.setting).toBe('light');
+    expect(s.mirror.darkMode).toBe('light');
     expect(s.glyph).toBe('\u2600'); // sun = light active
+    expect(s.title).toBe('Switch to dark mode'); // tooltip names the next action
   });
 
   test('html is the ONLY host — #app/body never carry the class', async ({ page }) => {
@@ -316,31 +338,45 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.body).toBe(false);
   });
 
-  test('settings checkbox drives the same single path as the header button', async ({ page }) => {
+  test('appearance radio group drives the same single path as the header button', async ({ page }) => {
     await resetBoxing(page);
-    await page.evaluate(() => {
-      const cb = document.getElementById('dark-mode-cb') as HTMLInputElement | null;
-      if (!cb) throw new Error('dark-mode checkbox missing');
-      cb.checked = true;
-      cb.dispatchEvent(new Event('change', { bubbles: true }));
+    // Confirmed test interface (ticket 44): group id + three named radios.
+    const shape = await page.evaluate(() => {
+      const group = document.getElementById('dark-mode-group');
+      const inputs = group ? Array.from(group.querySelectorAll('input[name="dark-mode"]')) as HTMLInputElement[] : [];
+      return {
+        hasGroup: Boolean(group),
+        values: inputs.map((i) => i.value),
+        types: inputs.map((i) => i.type),
+        tabindex: inputs.map((i) => i.getAttribute('tabindex')),
+      };
     });
+    expect(shape.hasGroup).toBe(true);
+    expect(shape.values).toEqual(['light', 'dark', 'system']);
+    expect(shape.types).toEqual(['radio', 'radio', 'radio']);
+    // Keyboard reachable: no radio opts out of the tab order.
+    expect(shape.tabindex).toEqual([null, null, null]);
+
+    await setDarkPref(page, 'dark');
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
     let s = await themeState(page);
-    expect(s.setting).toBe(true);
-    expect(s.mirror.darkMode).toBe(true);
+    expect(s.setting).toBe('dark');
+    expect(s.mirror.darkMode).toBe('dark');
     expect(s.app).toBe(false);
     expect(s.body).toBe(false);
-    // And back off through the same control.
-    await page.evaluate(() => {
-      const cb = document.getElementById('dark-mode-cb') as HTMLInputElement | null;
-      if (!cb) throw new Error('dark-mode checkbox missing');
-      cb.checked = false;
-      cb.dispatchEvent(new Event('change', { bubbles: true }));
+    // The panel shows which mode is active.
+    const checkedDark = await page.evaluate(() => {
+      (window as any)._boxingOpenSettings();
+      return document.querySelector('#dark-mode-group input[name="dark-mode"]:checked')?.getAttribute('value') || null;
     });
+    expect(checkedDark).toBe('dark');
+
+    // And back off through the same control.
+    await setDarkPref(page, 'light');
     await expect.poll(async () => (await themeState(page)).html).toBe(false);
     s = await themeState(page);
-    expect(s.setting).toBe(false);
-    expect(s.mirror.darkMode).toBe(false);
+    expect(s.setting).toBe('light');
+    expect(s.mirror.darkMode).toBe('light');
   });
 
   test('choice survives a reload (boot mirror and settings agree)', async ({ page }) => {
@@ -359,8 +395,8 @@ test.describe('dark mode has one host and one apply path', () => {
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
     await expect.poll(async () => (await themeState(page)).html, { timeout: 8000 }).toBe(false);
     const s = await themeState(page);
-    expect(s.setting).toBe(false);
-    expect(s.mirror.darkMode).toBe(false);
+    expect(s.setting).toBe('light');
+    expect(s.mirror.darkMode).toBe('light');
   });
 
   test('remote merge (incomingWins) replays the visual state in-session', async ({ page }) => {
@@ -385,8 +421,8 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(applied).toBe(true);
     await expect.poll(async () => (await themeState(page)).html, { timeout: 5000 }).toBe(false);
     const s = await themeState(page);
-    expect(s.setting).toBe(false);
-    expect(s.mirror.darkMode, 'the boot mirror must be rewritten on merge, or the reload regresses').toBe(false);
+    expect(s.setting).toBe('light');
+    expect(s.mirror.darkMode, 'the boot mirror must be rewritten on merge, or the reload regresses').toBe('light');
   });
 
   test('remote merge to dark also replays + rewrites the mirror', async ({ page }) => {
@@ -406,7 +442,8 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(applied).toBe(true);
     await expect.poll(async () => (await themeState(page)).html, { timeout: 5000 }).toBe(true);
     const s = await themeState(page);
-    expect(s.mirror.darkMode).toBe(true);
+    expect(s.setting).toBe('dark');
+    expect(s.mirror.darkMode).toBe('dark');
     expect(s.glyph).toBe('\u263D'); // moon = dark active
   });
 
@@ -430,7 +467,7 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.html).toBe(true);
     expect(s.app).toBe(false);
     expect(s.body).toBe(false);
-    expect(s.setting).toBe(true);
+    expect(s.setting).toBe('dark');
   });
 
   test('no boot mirror + dark OS preference falls back to dark WITHOUT persisting it', async ({ page }) => {
@@ -473,8 +510,156 @@ test.describe('dark mode has one host and one apply path', () => {
     const hydratedLight = trace.find((t: any) => t.on === false && t.booted === true);
     expect(hydratedLight, 'loadSettings must re-apply the authoritative setting after the boot fallback').toBeTruthy();
     const s = await themeState(page);
-    expect(s.setting, 'matchMedia fallback is display-only and must never be persisted').toBe(false);
-    expect(s.mirror ? s.mirror.darkMode : false).toBe(false);
+    expect(s.setting, 'matchMedia fallback is display-only and must never be persisted').toBe('light');
+    expect(s.mirror ? s.mirror.darkMode : null, 'the mirror carries the preference, never the resolved OS value').toBe('light');
     await page.emulateMedia({ colorScheme: 'light' });
+  });
+
+  // ── Ticket 44 (spec #41): three-state preference + live system following ────
+  test('fresh default is light; a legacy boolean reads as light/dark', async ({ page }) => {
+    await resetBoxing(page);
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const migrate = (darkMode: any) => dbg.migrateLayout({ version: 3.5, settings: { darkMode } }).settings.darkMode;
+      return {
+        fresh: dbg.layout.settings.darkMode,
+        legacyTrue: migrate(true),
+        legacyFalse: migrate(false),
+        system: migrate('system'),
+        garbage: migrate('legacy-garbage'),
+      };
+    });
+    expect(r.fresh).toBe('light');
+    expect(r.legacyTrue).toBe('dark');
+    expect(r.legacyFalse).toBe('light');
+    expect(r.system).toBe('system');
+    expect(r.garbage).toBe('light');
+  });
+
+  test('system preference follows a live OS change without a reload', async ({ page }) => {
+    await resetAndDismiss(page);
+    await page.emulateMedia({ colorScheme: 'light' });
+    await setDarkPref(page, 'system');
+    await expect.poll(async () => (await themeState(page)).setting).toBe('system');
+    await expect.poll(async () => (await themeState(page)).html).toBe(false);
+
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect.poll(async () => (await themeState(page)).html, { timeout: 5000 }).toBe(true);
+    let s = await themeState(page);
+    expect(s.setting).toBe('system'); // the OS change never rewrote the preference
+    expect(s.mirror.darkMode).toBe('system');
+    expect(s.glyph).toBe('\u263D');
+    expect(s.title).toBe('Switch to light mode');
+
+    await page.emulateMedia({ colorScheme: 'light' });
+    await expect.poll(async () => (await themeState(page)).html, { timeout: 5000 }).toBe(false);
+    s = await themeState(page);
+    expect(s.setting).toBe('system');
+    expect(s.glyph).toBe('\u2600');
+    await expect.poll(() => storedDarkPref(page)).toBe('system');
+  });
+
+  test('explicit light/dark preferences ignore OS changes', async ({ page }) => {
+    await resetAndDismiss(page);
+    await page.emulateMedia({ colorScheme: 'light' });
+    await setDarkPref(page, 'dark');
+    await expect.poll(async () => (await themeState(page)).html).toBe(true);
+
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.waitForTimeout(150); // give any change listener a chance to (wrongly) fire
+    expect((await themeState(page)).html).toBe(true);
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.waitForTimeout(150);
+    expect((await themeState(page)).html).toBe(true);
+    expect((await themeState(page)).setting).toBe('dark');
+
+    await setDarkPref(page, 'light');
+    await expect.poll(async () => (await themeState(page)).html).toBe(false);
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.waitForTimeout(150);
+    expect((await themeState(page)).html).toBe(false);
+    expect((await themeState(page)).setting).toBe('light');
+  });
+
+  test('switching modes updates the applied state immediately', async ({ page }) => {
+    await resetAndDismiss(page);
+    await page.emulateMedia({ colorScheme: 'dark' });
+
+    await setDarkPref(page, 'light'); // explicit light wins over a dark OS
+    await expect.poll(async () => (await themeState(page)).html).toBe(false);
+
+    await setDarkPref(page, 'system'); // following a dark OS -> dark
+    await expect.poll(async () => (await themeState(page)).html).toBe(true);
+    await expect.poll(async () => (await themeState(page)).setting).toBe('system');
+  });
+
+  test('persisted layout stores the preference and never the resolved OS value', async ({ page }) => {
+    await resetAndDismiss(page);
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await setDarkPref(page, 'system');
+    await expect.poll(async () => (await themeState(page)).html).toBe(true);
+    await expect.poll(() => storedDarkPref(page)).toBe('system');
+
+    const snap = await page.evaluate(() => {
+      const raw = localStorage.getItem('boxingLayout') || '';
+      let parsed: any = null;
+      try { parsed = JSON.parse(raw); } catch (_) { /* assertion reports the raw string */ }
+      let mirror: any = null;
+      try { mirror = JSON.parse(localStorage.getItem('boxingBootTheme.v1') || 'null'); } catch (_) { /* mirror assertion below */ }
+      return { pref: parsed?.settings?.darkMode, raw, mirror: mirror?.darkMode };
+    });
+    expect(snap.pref).toBe('system');
+    expect(typeof snap.pref).toBe('string');
+    expect(snap.mirror).toBe('system');
+    // No resolved OS value may leak into the stored layout.
+    expect(snap.raw).not.toContain('"darkMode":true');
+    expect(snap.raw).not.toContain('"darkMode":false');
+
+    // Explicit choices are written in the same three-valued form.
+    await setDarkPref(page, 'dark');
+    await expect.poll(() => storedDarkPref(page)).toBe('dark');
+    const mirrorDark = await page.evaluate(() => JSON.parse(localStorage.getItem('boxingBootTheme.v1') || 'null')?.darkMode);
+    expect(mirrorDark).toBe('dark');
+  });
+
+  test('header quick-toggle exits system mode by choosing the opposite effective state', async ({ page }) => {
+    await resetAndDismiss(page);
+    // OS dark while following system -> the click chooses explicit light.
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await setDarkPref(page, 'system');
+    await expect.poll(async () => (await themeState(page)).html).toBe(true);
+    await clickDarkToggle(page);
+    await expect.poll(async () => (await themeState(page)).setting).toBe('light');
+    await expect.poll(async () => (await themeState(page)).html).toBe(false);
+    expect((await themeState(page)).mirror.darkMode).toBe('light');
+
+    // OS light while following system -> the click chooses explicit dark.
+    await page.emulateMedia({ colorScheme: 'light' });
+    await setDarkPref(page, 'system');
+    await expect.poll(async () => (await themeState(page)).html).toBe(false);
+    await clickDarkToggle(page);
+    await expect.poll(async () => (await themeState(page)).setting).toBe('dark');
+    await expect.poll(async () => (await themeState(page)).html).toBe(true);
+  });
+
+  test('cross-tab merge keeps field-by-field local-wins for the preference', async ({ page }) => {
+    await resetAndDismiss(page);
+    await setDarkPref(page, 'dark');
+    await expect.poll(() => storedDarkPref(page)).toBe('dark');
+    const r = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const stored = await dbg.storageGet('boxingLayout');
+      // Another tab wrote a NEWER payload that prefers light. saveLayout's merge is
+      // field-by-field local-wins, so this tab's explicit dark must survive.
+      const remote = JSON.parse(JSON.stringify(stored.boxingLayout));
+      remote.settings = { ...(remote.settings || {}), darkMode: 'light' };
+      remote._meta = { ...(remote._meta || {}), revision: 999, updatedAt: Date.now() + 10000, writerId: 'remote-tab' };
+      await dbg.storageSet({ boxingLayout: remote });
+      await dbg.saveLayout();
+      const after = await dbg.storageGet('boxingLayout');
+      return { setting: dbg.layout.settings.darkMode, persisted: after.boxingLayout.settings.darkMode };
+    });
+    expect(r.setting).toBe('dark');
+    expect(r.persisted).toBe('dark');
   });
 });
