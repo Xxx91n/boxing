@@ -100,6 +100,50 @@ export async function dismissOnboarding(
   ).toBe(true);
 }
 
+export type ReplayDismissal = 'finish' | 'skip' | 'escape' | 'outside-click';
+
+/**
+ * Dismiss an open tour REPLAY through the same user-visible paths the spec
+ * requires (finish, skip, Escape, outside click).
+ *
+ * Unlike dismissOnboarding(), this must NOT call __boxingDebug.skipOnboarding():
+ * that helper writes onboardingCompleted and saves the layout, which is exactly
+ * what replay dismissal is asserted not to do. Keeping the actions here makes
+ * every replay dismissal in the specs go through one shared helper.
+ */
+export async function dismissReplay(
+  page: Page,
+  via: ReplayDismissal,
+): Promise<void> {
+  const click = (sel: string) =>
+    page.evaluate((s) => (document.querySelector(s) as HTMLElement | null)?.click(), sel);
+  switch (via) {
+    case 'finish':
+      // Three steps: Next, Next, then Finish (the last Next closes the tour).
+      await click('#onboarding-next-btn');
+      await click('#onboarding-next-btn');
+      await click('#onboarding-next-btn');
+      break;
+    case 'skip':
+      await click('#onboarding-skip-btn');
+      break;
+    case 'escape':
+      await page.keyboard.press('Escape');
+      break;
+    case 'outside-click':
+      // Backdrop click: the overlay itself, away from the inner modal card.
+      await page.mouse.click(4, 4);
+      break;
+  }
+  await expect.poll(
+    () => page.evaluate((overlayId) => {
+      const overlay = document.getElementById(overlayId) as HTMLElement | null;
+      return Boolean(overlay && overlay.hidden);
+    }, ONBOARDING_OVERLAY_ID),
+    { timeout: 8000, message: `replay dismissal via ${via} must hide the overlay` },
+  ).toBe(true);
+}
+
 /**
  * The whole fresh-storage boot in one call: goto -> (clear storage) -> reload ->
  * wait for __boxingDebug -> dismiss the tour. Use this for new specs; existing

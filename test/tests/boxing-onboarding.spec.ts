@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
-import { dismissOnboarding } from '../helpers/onboarding';
+import { dismissOnboarding, dismissReplay, type ReplayDismissal } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
@@ -264,6 +264,9 @@ test.describe('tour replay entry (Settings > About)', () => {
 
   async function openReplay(page) {
     await openAboutTab(page);
+    // Focus first, then activate synthetically: focus is what a real keyboard or
+    // pointer activation establishes, and replay saves it for restoration.
+    await page.evaluate(() => (document.getElementById('about-show-tour') as HTMLElement).focus());
     // Synthetic activation, same reason as the step machine above: the Firefox
     // lane can stall on native locator.click under load.
     await jsClick(page, '#about-show-tour');
@@ -306,42 +309,21 @@ test.describe('tour replay entry (Settings > About)', () => {
     await expect(page.locator('#onboarding-lang-wrap')).toBeHidden();
   });
 
-  const dismissals: Array<{ name: string; dismiss: (page) => Promise<void> }> = [
-    {
-      name: 'finish',
-      dismiss: async (page) => {
-        // Three steps: Next, Next, then Finish (the last Next closes the tour).
-        await jsClick(page, '#onboarding-next-btn');
-        await jsClick(page, '#onboarding-next-btn');
-        await jsClick(page, '#onboarding-next-btn');
-      },
-    },
-    {
-      name: 'skip',
-      dismiss: async (page) => { await jsClick(page, '#onboarding-skip-btn'); },
-    },
-    {
-      name: 'Escape',
-      dismiss: async (page) => { await page.keyboard.press('Escape'); },
-    },
-    {
-      name: 'outside click',
-      dismiss: async (page) => {
-        // Backdrop click: the overlay itself, away from the inner modal card.
-        await page.mouse.click(4, 4);
-      },
-    },
+  const dismissals: Array<{ name: string; via: ReplayDismissal }> = [
+    { name: 'finish', via: 'finish' },
+    { name: 'skip', via: 'skip' },
+    { name: 'Escape', via: 'escape' },
+    { name: 'outside click', via: 'outside-click' },
   ];
 
-  for (const { name, dismiss } of dismissals) {
+  for (const { name, via } of dismissals) {
     test(`replay dismissal via ${name} leaves the completion flag and stored layout untouched`, async ({ page }) => {
       await completeFirstRun(page);
       await openReplay(page);
       const before = await storedLayout(page);
 
-      await dismiss(page);
+      await dismissReplay(page, via);
 
-      await expect.poll(() => overlayHidden(page)).toBe(true);
       const after = await storedLayout(page);
       expect(after, `closing a replay via ${name} must not write the layout`).toBe(before);
       const flag = await page.evaluate(() => (window as any).__boxingDebug.layout.settings.onboardingCompleted);
@@ -352,12 +334,24 @@ test.describe('tour replay entry (Settings > About)', () => {
   test('closing a replay keeps focus on the About entry (keyboard path)', async ({ page }) => {
     await completeFirstRun(page);
     await openReplay(page);
-    // The entry was focused by the click; make it deterministic for the assertion.
-    await page.evaluate(() => (document.getElementById('about-show-tour') as HTMLElement).focus());
+    // openReplay focuses the entry and openTour saves it for restoration.
     await page.keyboard.press('Escape');
     await expect.poll(() => overlayHidden(page)).toBe(true);
     const focused = await page.evaluate(() => document.activeElement?.id || null);
     expect(focused, 'a replay close must not re-render the canvas and blur the entry').toBe('about-show-tour');
+  });
+
+  test('replay moves focus into the tour so Enter advances instead of reopening', async ({ page }) => {
+    await completeFirstRun(page);
+    await openReplay(page);
+    const focused = await page.evaluate(() => document.activeElement?.id || null);
+    expect(focused, 'replay must move focus into the overlay').toBe('onboarding-next-btn');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.locator('.onboarding__step:not([hidden])').getAttribute('data-step')).toBe('2');
+    await page.keyboard.press('Escape');
+    await expect.poll(() => overlayHidden(page)).toBe(true);
+    const restored = await page.evaluate(() => document.activeElement?.id || null);
+    expect(restored, 'closing the replay must return focus to the entry').toBe('about-show-tour');
   });
 
   test('genuine first-run tour still shows the language picker, starts at step 1, and records completion', async ({ page }) => {

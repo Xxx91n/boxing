@@ -98,6 +98,10 @@ function demoSuppressionReason() {
   let tourCurrent = 0;
   let tourMode = 'first-run';
   let tourControlsBound = false;
+  // Replay moves focus into the overlay (so Enter advances instead of re-opening
+  // the replay) and returns it to the About entry on close. First run keeps its
+  // existing focus behaviour unchanged.
+  let tourReturnFocus = null;
 
   function renderTour() {
     tourSteps.forEach((el, i) => { el.hidden = i !== tourCurrent; });
@@ -119,6 +123,10 @@ function demoSuppressionReason() {
     detachOverlayKeydown();
     if (!tourOverlay) return;
     tourOverlay.hidden = true;
+    if (tourMode === 'replay') {
+      if (tourReturnFocus && tourReturnFocus.isConnected) tourReturnFocus.focus();
+      tourReturnFocus = null;
+    }
     // Ticket 45: a replay must be harmless. It never writes the completion flag
     // (even when the stored flag is still false) and never triggers a cross-tab
     // layout save.
@@ -224,12 +232,17 @@ function demoSuppressionReason() {
 
   // Open the shared overlay in one of the two modes (ticket 45). The first run
   // keeps the language picker; a replay hides it and always starts at step 1.
-  function openTour(mode, overlay) {
+  function openTour(mode, overlay, trigger) {
     const el = overlay || document.getElementById('onboarding-overlay');
     if (!el) return;
     tourMode = mode;
     tourOverlay = el;
     ensureTourControlsBound(el);
+    // Pass the trigger explicitly: some browsers do not focus a button on pointer
+    // click, so activeElement alone would restore focus to the wrong node.
+    tourReturnFocus = mode === 'replay'
+      ? (trigger || (document.activeElement instanceof HTMLElement ? document.activeElement : null))
+      : null;
     const langWrap = document.getElementById('onboarding-lang-wrap');
     if (langWrap) langWrap.hidden = mode === 'replay';
     tourCurrent = 0;
@@ -238,6 +251,10 @@ function demoSuppressionReason() {
     // while the tour is open, never permanently).
     attachOverlayKeydown();
     renderTour();
+    // Replay: move keyboard focus onto the primary action. The controls keep their
+    // tabindex="-1" (the first-run tour's documented keyboard model), but Enter on
+    // the focused Next button advances the tour instead of re-opening it.
+    if (mode === 'replay') tourNextBtn?.focus();
   }
 
   // Ticket 45: Settings > About "Show the tour" entry. Bind it here (not in
@@ -254,5 +271,5 @@ function demoSuppressionReason() {
       return;
     }
     if (!btn) return;
-    btn.addEventListener('click', () => { openTour('replay'); });
+    btn.addEventListener('click', () => { openTour('replay', null, btn); });
   }
