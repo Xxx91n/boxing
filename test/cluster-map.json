@@ -195,6 +195,7 @@
       "boxing-wave11-1017.spec.ts"
     ],
     "ntp/favicon.js": [
+      "boxing-favicon-fixture.spec.ts",
       "boxing-memory.spec.ts",
       "boxing-popup-dragselect.spec.ts",
       "boxing-search.spec.ts"
