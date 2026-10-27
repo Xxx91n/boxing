@@ -50,12 +50,12 @@ test.describe('Onboarding (first-run guided tour)', () => {
     expect(stepActive).toBe('1');
 
     await jsClick('#onboarding-next-btn');
-    stepActive = await page.locator('.onboarding__step:not([hidden])').getAttribute('data-step');
-    expect(stepActive).toBe('2');
+    // Poll the step label: the click handler updates it asynchronously, and a
+    // same-turn read under load observes the previous step (issue #36).
+    await expect.poll(() => page.locator('.onboarding__step:not([hidden])').getAttribute('data-step')).toBe('2');
 
     await jsClick('#onboarding-prev-btn');
-    stepActive = await page.locator('.onboarding__step:not([hidden])').getAttribute('data-step');
-    expect(stepActive).toBe('1');
+    await expect.poll(() => page.locator('.onboarding__step:not([hidden])').getAttribute('data-step')).toBe('1');
 
     await jsClick('#onboarding-next-btn');
     await jsClick('#onboarding-next-btn');
@@ -96,7 +96,7 @@ test.describe('Onboarding (first-run guided tour)', () => {
 //     still shows it — i.e. the suppression is scoped, not a global kill switch.
 // ═══════════════════════════════════════════════════════════════════════════
 test.describe('tour suppression scope + Escape dismissal (live)', () => {
-  test('D009-r1: with __BOXING_DEMO__ set, no overlay blocks the page', async ({ page }) => {
+  test('with __BOXING_DEMO__ set, no overlay blocks the page', async ({ page }) => {
     await page.addInitScript(() => {
       // Same mechanism the demo build uses (a classic script running before the
       // deferred ntp.js module) — here injected at document start.
@@ -132,7 +132,7 @@ test.describe('tour suppression scope + Escape dismissal (live)', () => {
     expect(blocked, 'pointer must reach the canvas on the demo lane').toBeNull();
   });
 
-  test('D009-r2: real-extension install tour STILL appears (suppression is scoped to demo)', async ({ page }) => {
+  test('real-extension install tour STILL appears (suppression is scoped to demo)', async ({ page }) => {
     await resetFreshInstall(page);
     // No __BOXING_DEMO__ here — this is the genuine fresh-install path.
     expect(await page.evaluate(() => Boolean((window as any).__BOXING_DEMO__))).toBe(false);
@@ -142,10 +142,10 @@ test.describe('tour suppression scope + Escape dismissal (live)', () => {
     }), { timeout: 8000 }).toBe(true);
   });
 
-  test('D009-r3: file:// debug lane still shows the tour on an empty canvas', async ({ page }) => {
+  test('file:// debug lane still shows the tour on an empty canvas', async ({ page }) => {
     await resetFreshInstall(page);
-    // Same as r2 by construction (file:// lane, no demo flag); asserted separately
-    // because it is the deliberate D-009 negative constraint: the debugging entry
+    // Same as the real-extension case by construction (file:// lane, no demo flag);
+    // asserted separately because it is the deliberate negative constraint: the debugging entry
     // point must keep working.
     const visible = await page.evaluate(() => {
       const ov = document.getElementById('onboarding-overlay');
@@ -154,7 +154,7 @@ test.describe('tour suppression scope + Escape dismissal (live)', () => {
     expect(visible, 'file:// empty-canvas tour must survive (debug lane)').toBe(true);
   });
 
-  test('D009-r4: Escape dismisses the tour (WCAG 2.1.2) and takes priority over canvas Escape', async ({ page }) => {
+  test('Escape dismisses the tour (WCAG 2.1.2) and takes priority over canvas Escape', async ({ page }) => {
     await resetFreshInstall(page);
     await expect.poll(() => page.evaluate(() => {
       const ov = document.getElementById('onboarding-overlay');
@@ -188,7 +188,7 @@ test.describe('tour suppression scope + Escape dismissal (live)', () => {
     expect(after.completed, 'Escape counts as a dismissal').toBe(true);
   });
 
-  test('D009-r5: the Escape listener does not outlive the overlay', async ({ page }) => {
+  test('the Escape listener does not outlive the overlay', async ({ page }) => {
     await resetFreshInstall(page);
     await expect.poll(() => page.evaluate(() => {
       const ov = document.getElementById('onboarding-overlay');

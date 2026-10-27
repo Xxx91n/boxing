@@ -5,7 +5,7 @@ import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
-// Architecture audit Q1: verify cross-tab star sync behavior.
+// Architecture audit: verify cross-tab star sync behavior.
 // These tests probe whether box.isParent survives cross-tab mergeConcurrentLayout
 // without the layout.groups shim. Results determine if Block 1 (L1417-1430) in
 // dsuRebuildFromConnections can be safely removed.
@@ -25,7 +25,7 @@ async function boot(page: Page, opts: { reset?: boolean } = {}) {
   await dismissOnboarding(page);
 }
 
-test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => {
+test.describe('Cross-tab star (isParent) sync — architecture audit', () => {
   test('Scenario 1: star set on tab A, fresh tab B adopts star via box.isParent', async ({ browser }: { browser: Browser }) => {
     const ctx = await browser.newContext();
     const a = await ctx.newPage();
@@ -141,12 +141,10 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
   });
 
   test('Scenario 2: star set on tab A, existing tab B (already has box) adopts star', async ({ browser }: { browser: Browser }) => {
-    test.setTimeout(60000);
+    test.setTimeout(90000);
     const ctx = await browser.newContext();
     const a = await ctx.newPage();
-    const b = await ctx.newPage();
     await boot(a);
-    await boot(b);
 
     // Create box on tab A
     const idA = await a.evaluate(() => {
@@ -156,7 +154,14 @@ test.describe('Cross-tab star (isParent) sync — architecture audit Q1', () => 
     await a.evaluate(() => (window as any).__boxingDebug.saveLayout());
     await a.waitForTimeout(400);
 
-    // Wait for tab B to receive the box — expect.poll over a fixed sleep so
+    // Open tab B only after the box is persisted, so it starts with the box but
+    // isParent=false — the "existing tab already has the box" state under test.
+    // (Creating a second blank page before A's first goto could stall that goto
+    // late in a full chromium-extension run; this keeps the same precondition.)
+    const b = await ctx.newPage();
+    await boot(b, { reset: false });
+
+    // Wait for tab B to have the box — expect.poll over a fixed sleep so
     // slow/parallel runs cannot read before propagation (audit B-01 class).
     await expect.poll(async () => b.evaluate((id) => {
       const lb = (window as any).__boxingDebug.layout.boxes.find((bx: any) => bx.id === id);

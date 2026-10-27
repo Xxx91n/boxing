@@ -7,9 +7,9 @@
 //       whose JSON carries the verbatim archived entry (ts / reason / side / raw.boxes).
 //   AC3 archive write semantics untouched: rendering + export never mutate
 //       boxingLayout.conflict.index / boxingLayout.conflict.* bodies (read-only readout).
-// file:// mock lane per t50/t51 harness discipline: mutations go through the t41R seam
+// file:// mock lane: mutations go through the debug storage seam
 // (__boxingDebug.storageSet / saveSnapshot / layout), never window.chrome.storage; the
-// export capture patches URL.createObjectURL + HTMLAnchorElement.click (t51 precedent).
+// export capture patches URL.createObjectURL + HTMLAnchorElement.click (export-capture precedent).
 import { test, expect } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
@@ -59,7 +59,7 @@ async function seedViaStorage(page, seed) {
   }, seed);
 }
 
-// t51 precedent: capture blob text + anchor download name without a real download.
+// Export-capture precedent: capture blob text + anchor download name without a real download.
 async function armExportCapture(page) {
   await page.evaluate(() => {
     (window as any).__cap = { text: null, name: null };
@@ -84,7 +84,9 @@ test.describe('Ticket 79 — conflict-copy readout (list + single export)', () =
     await seedViaStorage(page, seedConflictCopy('Conflicted Side'));
 
     await openSettingsDataTab(page);
-    await expect(conflictRows(page)).toHaveCount(1);
+    // The data tab reads the conflict index asynchronously; allow headroom for a
+    // loaded worker without changing the expected count.
+    await expect(conflictRows(page)).toHaveCount(1, { timeout: 15000 });
     const row = conflictRows(page).first();
     const rowText = (await row.textContent()) || '';
     expect(rowText).toContain('import-merge');                       // reason shown
@@ -107,7 +109,7 @@ test.describe('Ticket 79 — conflict-copy readout (list + single export)', () =
     await bootFresh(page);
     await seedViaStorage(page, seedConflictCopy('Conflicted Side'));
     await openSettingsDataTab(page);
-    await expect(conflictRows(page)).toHaveCount(1);
+    await expect(conflictRows(page)).toHaveCount(1, { timeout: 15000 });
 
     await armExportCapture(page);
     await page.evaluate(() => {
@@ -130,7 +132,7 @@ test.describe('Ticket 79 — conflict-copy readout (list + single export)', () =
     await bootFresh(page);
     await seedViaStorage(page, seedConflictCopy('Conflicted Side'));
     await openSettingsDataTab(page);
-    await expect(conflictRows(page)).toHaveCount(1);
+    await expect(conflictRows(page)).toHaveCount(1, { timeout: 15000 });
 
     await armExportCapture(page);
     await page.evaluate(() => {
