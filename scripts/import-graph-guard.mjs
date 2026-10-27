@@ -21,10 +21,47 @@ const FROZEN_READER_BASENAME = 'legacy-reader-frozen.mjs';
 const PRODUCTION_SCOPE_RE = /^(?:ntp\/[^/]+\.js|background\.js)$/;
 const STATIC_IMPORT_RE = /\bimport\s+(?:[^'"]*?\s+from\s+)?(['"])([^'"]+)\1/g;
 const DYNAMIC_IMPORT_RE = /\bimport\s*\(\s*(['"])([^'"]+)\1\s*\)/g;
+// Re-exporting is exposure too: `export { x } from '.../legacy-reader-frozen.mjs'`
+// hands the frozen reader to production consumers as surely as an import does.
+const EXPORT_FROM_RE = /\bexport\s+(?:\*|\{[^}]*\})(?:\s+as\s+[\w$]+)?\s+from\s+(['"])([^'"]+)\1/g;
 
 function isFrozenReaderSpecifier(specifier) {
   const basename = String(specifier).split(/[\\/]/).pop() || '';
   return basename === FROZEN_READER_BASENAME || basename === 'legacy-reader-frozen';
+}
+
+// Remove comments while preserving length and newlines so match offsets (and the
+// reported line numbers) stay aligned with the original source. String and
+// template literals are copied verbatim: a path or a `//` inside a literal is
+// code, not commentary.
+function stripComments(text) {
+  let out = '';
+  let mode = 'code';
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (mode === 'code') {
+      if (ch === '/' && next === '/') { mode = 'line'; out += '  '; i += 1; continue; }
+      if (ch === '/' && next === '*') { mode = 'block'; out += '  '; i += 1; continue; }
+      if (ch === "'" || ch === '"' || ch === '`') mode = ch;
+      out += ch;
+      continue;
+    }
+    if (mode === 'line') {
+      if (ch === '\n') { mode = 'code'; out += ch; } else out += ' ';
+      continue;
+    }
+    if (mode === 'block') {
+      if (ch === '*' && next === '/') { mode = 'code'; out += '  '; i += 1; continue; }
+      out += ch === '\n' ? '\n' : ' ';
+      continue;
+    }
+    // Inside a string/template literal: copy verbatim, honouring escapes.
+    out += ch;
+    if (ch === '\\') { if (i + 1 < text.length) { out += text[i + 1]; i += 1; } continue; }
+    if (ch === mode) mode = 'code';
+  }
+  return out;
 }
 
 function lineOf(text, index) {
@@ -37,10 +74,11 @@ function analyzeIsolation(sources) {
   const found = [];
   for (const source of sources) {
     if (!PRODUCTION_SCOPE_RE.test(source.rel)) continue;
-    for (const regex of [STATIC_IMPORT_RE, DYNAMIC_IMPORT_RE]) {
+    const code = stripComments(source.text);
+    for (const regex of [STATIC_IMPORT_RE, DYNAMIC_IMPORT_RE, EXPORT_FROM_RE]) {
       regex.lastIndex = 0;
       let match;
-      while ((match = regex.exec(source.text)) !== null) {
+      while ((match = regex.exec(code)) !== null) {
         const specifier = match[2];
         if (!isFrozenReaderSpecifier(specifier)) continue;
         found.push({
@@ -74,6 +112,10 @@ function selfTest() {
     [{ rel: 'background.js', text: "const m = await import('./scripts/legacy-reader-frozen.mjs');\n" }], 'B-10@1');
   check('gate-side scripts import is NOT flagged',
     [{ rel: 'scripts/migration-golden-guard.mjs', text: "import { rollbackAudit } from './legacy-reader-frozen.mjs';\n" }], '');
+  check('production re-export of the frozen reader is red',
+    [{ rel: 'ntp/popups.js', text: "export { rollbackAudit } from '../scripts/legacy-reader-frozen.mjs';\n" }], 'B-10@1');
+  check('comment-only mention of the frozen reader is NOT flagged',
+    [{ rel: 'ntp/render.js', text: "// import { rollbackAudit } from '../scripts/legacy-reader-frozen.mjs'\n/* export { x } from './legacy-reader-frozen.mjs' */\n" }], '');
   return { bad, lines };
 }
 

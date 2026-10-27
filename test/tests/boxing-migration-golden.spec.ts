@@ -114,13 +114,15 @@ test.describe('Frozen reader contract registry (ticket 43)', () => {
     const frozen = await import(FROZEN_READER_URL);
     const existing = frozen.getContract('pre-adr0009');
     const registryBefore = frozen.getRegistry();
+    // Unique per run so `--repeat-each` does not collide with an earlier append.
+    const id = 'test-contract-43-' + process.pid + '-' + Date.now();
     const entry = frozen.registerContract({
-      id: 'test-contract-43',
+      id,
       frozenSince: '2026-10-27',
       reader: (raw: any) => raw,
       metadata: { tags: ['red'], nested: { ok: true } },
     });
-    expect(entry.id).toBe('test-contract-43');
+    expect(entry.id).toBe(id);
     // Deep freeze covers nested values supplied with the contract.
     expect(Object.isFrozen(entry)).toBe(true);
     expect(Object.isFrozen(entry.metadata)).toBe(true);
@@ -128,9 +130,9 @@ test.describe('Frozen reader contract registry (ticket 43)', () => {
     expect(Object.isFrozen(entry.metadata.nested)).toBe(true);
     // Existing contract identity and the previously published snapshot are untouched.
     expect(frozen.getContract('pre-adr0009')).toBe(existing);
-    expect(registryBefore['test-contract-43']).toBeUndefined();
+    expect(registryBefore[id]).toBeUndefined();
     expect(frozen.getRegistry()['pre-adr0009']).toBe(existing);
-    expect(frozen.getRegistry()['test-contract-43']).toBe(entry);
+    expect(frozen.getRegistry()[id]).toBe(entry);
   });
 
   test('rollback audit reports acceptance, bookmark diff, deltas and star survival', async () => {
@@ -173,6 +175,24 @@ test.describe('Frozen function-body pins (ticket 46)', () => {
     }
   });
 
+  test('editing a frozen body fails load, naming the contract and function', async () => {
+    const original = await fs.promises.readFile(FROZEN_SOURCE, 'utf8');
+    const needle = '!(raw.version >= 3)';
+    expect(original).toContain(needle);
+    // Semantic edit inside the frozen body: a v3 guard weakened to v2 changes
+    // behaviour, so the source pin must reject the loaded copy.
+    const edited = original.replace(needle, '!(raw.version >= 2)');
+    expect(edited).not.toBe(original);
+
+    const tmpPath = path.join(os.tmpdir(), 'legacy-reader-frozen-logic-' + process.pid + '-' + Date.now() + '.mjs');
+    await fs.promises.writeFile(tmpPath, edited, 'utf8');
+    try {
+      await expect(import(pathToFileURL(tmpPath).href)).rejects.toThrow(/pre-adr0009[\s\S]*legacyReader/);
+    } finally {
+      await fs.promises.unlink(tmpPath);
+    }
+  });
+
   test('a new contract id gets its own computed pin and leaves existing pins untouched', async () => {
     const frozen = await import(FROZEN_READER_URL);
     const existing = frozen.getContract('pre-adr0009');
@@ -180,8 +200,10 @@ test.describe('Frozen function-body pins (ticket 46)', () => {
     expect(existingPins.legacyReader).toMatch(/^[0-9a-f]{64}$/);
 
     const reader = (raw: any) => raw;
+    // Unique per run so `--repeat-each` does not collide with an earlier append.
+    const id = 'test-contract-46-' + process.pid + '-' + Date.now();
     const entry = frozen.registerContract({
-      id: 'test-contract-46',
+      id,
       frozenSince: '2026-10-27',
       reader,
     });
