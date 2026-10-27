@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import crypto from 'crypto';
+import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dismissOnboarding } from '../helpers/onboarding';
@@ -142,5 +145,54 @@ test.describe('Frozen reader contract registry (ticket 43)', () => {
     expect(audit.connectionDelta).toBe(0);
     // v1.json carries exactly one star (large box lb1, isParent === true).
     expect(audit.starSurvival).toEqual({ total: 1, survived: 1, lost: [], groupsLeaked: false });
+  });
+});
+
+// Ticket 46 (spec #40): each frozen contract function body is pinned by a
+// source-text hash. The pin is over the module's raw on-disk function source, so
+// a semantic no-op reformat still fails. These tests stay at the module boundary:
+// they exercise load-time drift rejection and the in-memory pin of a new id.
+test.describe('Frozen function-body pins (ticket 46)', () => {
+  const FROZEN_SOURCE = path.resolve(__dirname, '..', '..', 'scripts', 'legacy-reader-frozen.mjs');
+
+  test('reformatting a frozen body fails load, naming the contract and function', async () => {
+    const original = await fs.promises.readFile(FROZEN_SOURCE, 'utf8');
+    const needle = "if (!raw || typeof raw !== 'object' || !(raw.version >= 3)) return null; // >=3 taken as-is";
+    expect(original).toContain(needle);
+    // Whitespace-only reformat inside the frozen body: same behaviour, different source.
+    const reformatted = original.replace(needle, needle.replace(') return', ')  return'));
+    expect(reformatted).not.toBe(original);
+
+    const tmpPath = path.join(os.tmpdir(), 'legacy-reader-frozen-drift-' + process.pid + '-' + Date.now() + '.mjs');
+    await fs.promises.writeFile(tmpPath, reformatted, 'utf8');
+    try {
+      // The module has no relative imports, so a standalone copy is a valid import.
+      await expect(import(pathToFileURL(tmpPath).href)).rejects.toThrow(/pre-adr0009[\s\S]*legacyReader/);
+    } finally {
+      await fs.promises.unlink(tmpPath);
+    }
+  });
+
+  test('a new contract id gets its own computed pin and leaves existing pins untouched', async () => {
+    const frozen = await import(FROZEN_READER_URL);
+    const existing = frozen.getContract('pre-adr0009');
+    const existingPins = existing.sourcePins;
+    expect(existingPins.legacyReader).toMatch(/^[0-9a-f]{64}$/);
+
+    const reader = (raw: any) => raw;
+    const entry = frozen.registerContract({
+      id: 'test-contract-46',
+      frozenSince: '2026-10-27',
+      reader,
+    });
+
+    // The new id is pinned in memory from its own body; no manifest entry needed.
+    expect(entry.sourcePins).toEqual({
+      reader: crypto.createHash('sha256').update(reader.toString()).digest('hex'),
+    });
+    // Existing contract identity, its pin record, and the previous snapshot survive.
+    expect(frozen.getContract('pre-adr0009')).toBe(existing);
+    expect(existing.sourcePins).toBe(existingPins);
+    expect(frozen.getRegistry()['pre-adr0009'].sourcePins.legacyReader).toBe(existingPins.legacyReader);
   });
 });
