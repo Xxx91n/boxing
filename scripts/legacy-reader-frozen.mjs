@@ -206,7 +206,13 @@ function computeSourcePins(contract) {
   const pins = {};
   for (const fn of functionBodies(contract)) {
     const name = fn.name || '<anonymous>';
-    const raw = extractFunctionSource(MODULE_SOURCE, name);
+    // Only this contract's pinned implementation is described by the on-disk
+    // declaration. A caller-supplied function that merely shares the name (for
+    // example a new id registered with `reader: function legacyReader(raw) { ... }`)
+    // must be pinned by its own source, never by the module's unrelated
+    // declaration. Hashing the on-disk slice there would record the wrong body.
+    const pinnedImpl = PINNED_IMPLS[contract.id]?.[name];
+    const raw = pinnedImpl === fn ? extractFunctionSource(MODULE_SOURCE, name) : null;
     pins[name] = sha256(raw === null ? fn.toString() : raw);
   }
   return pins;
