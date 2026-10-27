@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
+import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import { dismissOnboarding } from '../helpers/onboarding';
@@ -174,5 +176,40 @@ test.describe('Architecture acceptance gates', () => {
     expect(r.beforeVS).toBe(true);
     expect(r.afterBoxNull).toBe(true);
     expect(r.boxCount).toBe(0);
+  });
+});
+
+test.describe('B-10 production isolation for the frozen reader', () => {
+  const ROOT = path.resolve(__dirname, '..', '..');
+  const guard = path.join(ROOT, 'scripts', 'import-graph-guard.mjs');
+
+  test('self-test proves production frozen-reader imports are red and gate-side imports are not flagged', () => {
+    const out = execFileSync(process.execPath, [guard, '--self-test'], { encoding: 'utf8' });
+    expect(out).toContain('self-test: PASS');
+    expect(out).toContain('production ntp module importing the frozen reader is red');
+    expect(out).toContain('production ntp module dynamic-importing the frozen reader is red');
+    expect(out).toContain('service worker importing the frozen reader is red');
+    expect(out).toContain('service worker dynamic-importing the frozen reader is red');
+    expect(out).toContain('gate-side scripts import is NOT flagged');
+  });
+
+  test('the import-graph guard is green on the current tree', () => {
+    const out = execFileSync(process.execPath, [guard], { encoding: 'utf8' });
+    expect(out).toContain('"ok": true');
+  });
+
+  test('B-10 rides the existing pretest guard run (no new pipeline step)', () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+    expect(pkg.scripts.pretest).toContain('node scripts/import-graph-guard.mjs');
+  });
+
+  test('no current production module or the service worker imports the frozen reader', () => {
+    const ntpDir = path.join(ROOT, 'ntp');
+    const productionFiles = fs.readdirSync(ntpDir)
+      .filter((name) => name.endsWith('.js'))
+      .map((name) => path.join(ntpDir, name))
+      .concat([path.join(ROOT, 'background.js')]);
+    const offenders = productionFiles.filter((file) => fs.readFileSync(file, 'utf8').includes('legacy-reader-frozen'));
+    expect(offenders).toEqual([]);
   });
 });
