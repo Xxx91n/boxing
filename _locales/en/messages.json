@@ -225,7 +225,7 @@
   },
   "darkMode": {
     "message": "Dark Mode",
-    "description": "Dark mode toggle label"
+    "description": "Dark mode preference group label"
   },
   "darkModeHint": {
     "message": "Choose light, dark, or follow the system",

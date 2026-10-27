@@ -409,7 +409,7 @@ test.describe('dark mode has one host and one apply path', () => {
     const applied = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       const remote = JSON.parse(JSON.stringify(dbg.layout));
-      remote.settings = { ...(remote.settings || {}), darkMode: false };
+      remote.settings = { ...(remote.settings || {}), darkMode: 'light' };
       remote._meta = {
         ...(remote._meta || {}),
         revision: (remote._meta?.revision || 0) + 1,
@@ -430,7 +430,7 @@ test.describe('dark mode has one host and one apply path', () => {
     const applied = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       const remote = JSON.parse(JSON.stringify(dbg.layout));
-      remote.settings = { ...(remote.settings || {}), darkMode: true };
+      remote.settings = { ...(remote.settings || {}), darkMode: 'dark' };
       remote._meta = {
         ...(remote._meta || {}),
         revision: (remote._meta?.revision || 0) + 1,
@@ -445,6 +445,28 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.setting).toBe('dark');
     expect(s.mirror.darkMode).toBe('dark');
     expect(s.glyph).toBe('\u263D'); // moon = dark active
+  });
+
+  test('remote merge to system follows the live OS and keeps the preference', async ({ page }) => {
+    await resetAndDismiss(page);
+    await page.emulateMedia({ colorScheme: 'dark' });
+    const applied = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      const remote = JSON.parse(JSON.stringify(dbg.layout));
+      remote.settings = { ...(remote.settings || {}), darkMode: 'system' };
+      remote._meta = {
+        ...(remote._meta || {}),
+        revision: (remote._meta?.revision || 0) + 1,
+        updatedAt: Date.now() + 1000,
+        writerId: 'remote-tab-system',
+      };
+      return dbg.applyExternalLayout(remote);
+    });
+    expect(applied).toBe(true);
+    await expect.poll(async () => (await themeState(page)).html, { timeout: 5000 }).toBe(true);
+    const s = await themeState(page);
+    expect(s.setting).toBe('system');
+    expect(s.mirror.darkMode, 'the cache keeps the preference, not the resolved OS value').toBe('system');
   });
 
   test('repeated onChanged-shaped applies are idempotent (no drift, no throw)', async ({ page }) => {
@@ -518,22 +540,24 @@ test.describe('dark mode has one host and one apply path', () => {
   // ── Ticket 44 (spec #41): three-state preference + live system following ────
   test('fresh default is light; a legacy boolean reads as light/dark', async ({ page }) => {
     await resetBoxing(page);
-    const r = await page.evaluate(() => {
-      const dbg = (window as any).__boxingDebug;
-      const migrate = (darkMode: any) => dbg.migrateLayout({ version: 3.5, settings: { darkMode } }).settings.darkMode;
-      return {
-        fresh: dbg.layout.settings.darkMode,
-        legacyTrue: migrate(true),
-        legacyFalse: migrate(false),
-        system: migrate('system'),
-        garbage: migrate('legacy-garbage'),
-      };
-    });
-    expect(r.fresh).toBe('light');
-    expect(r.legacyTrue).toBe('dark');
-    expect(r.legacyFalse).toBe('light');
-    expect(r.system).toBe('system');
-    expect(r.garbage).toBe('light');
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.settings.darkMode)).toBe('light');
+
+    // Exercise the real read boundary: seed a pre-upgrade layout, reload, and verify
+    // the live preference and applied state. migrateLayout itself stays byte-stable
+    // (spec #41 keeps migration golden outputs unchanged).
+    for (const [legacy, expected, dark] of [[true, 'dark', true], [false, 'light', false]] as const) {
+      await page.evaluate(async (value) => {
+        const dbg = (window as any).__boxingDebug;
+        const seeded = JSON.parse(JSON.stringify(dbg.layout));
+        seeded.settings.darkMode = value;
+        await dbg.storageSet({ boxingLayout: seeded });
+      }, legacy);
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
+      await expect.poll(async () => (await themeState(page)).setting,
+        { message: `legacy ${String(legacy)} must read as ${expected}` }).toBe(expected);
+      await expect.poll(async () => (await themeState(page)).html).toBe(dark);
+    }
   });
 
   test('system preference follows a live OS change without a reload', async ({ page }) => {

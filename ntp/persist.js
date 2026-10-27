@@ -149,8 +149,7 @@ export function initPersistFacade(deps) {
   }
 
   export function applyDarkMode(on) {
-    const pref = normalizeDarkModePref(on);
-    const dark = resolveEffectiveDark(pref);
+    const dark = resolveEffectiveDark(on);
     const root = document.documentElement;
     if (root) root.classList.toggle('ntp--dark', dark);
     // Header button glyph: ☽ = dark active, ☀ = light active. Both directions are

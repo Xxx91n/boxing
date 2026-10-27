@@ -650,7 +650,8 @@ export function bindSettingsUi() {
       } else { renderCanvas(); }
      applyI18n();
      // Re-apply the action tooltip/aria-label in the new language (the header button
-     // no longer carries a static data-i18n-title).
+     // no longer carries a static data-i18n-title). Kept even though saveLayout above
+     // already replays the apply path: a failed persist must not leave a stale label.
      applyDarkMode(layout.settings.darkMode);
      applyCanvasTransform();
      // Re-apply pin tooltip after i18n reset (applyI18n overwrites data-i18n-title)

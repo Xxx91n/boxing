@@ -171,13 +171,15 @@
         // Ticket 52: spread defaultLayout().settings so the v2 migration write path can
         // never persist a settings blob missing urlOpenMode (fresh default = sameTab);
         // an explicitly stored newTab still wins (user choice preserved).
-        settings: { ...defaultLayout().settings, ...(raw.settings || {}), theme: raw.settings?.theme || 'beige', darkMode: normalizeDarkModePref(raw.settings?.darkMode) }
+        settings: { ...defaultLayout().settings, ...(raw.settings || {}), theme: raw.settings?.theme || 'beige' }
       };
     }
-    // Data integrity — version >= 3 keeps its payload; no data loss on downgrade.
-    // The one accepted read-side rewrite is the dark-mode preference: a legacy boolean
-    // becomes its three-valued string form (spec #41). Unknown future versions (>= 4)
-    // are still accepted to prevent upgrade-then-downgrade data loss.
+    // Data integrity — version >= 3 returns as-is; no data loss on downgrade.
+    // Dark-mode preference normalization is deliberately NOT part of migration (spec
+    // #41 keeps migration golden outputs stable): the live-layout read boundary
+    // (loadSettings / mergeConcurrentLayout) accepts the legacy boolean, and every
+    // write path stores the three-valued form. Unknown future versions (>= 4) are
+    // still accepted to prevent upgrade-then-downgrade data loss.
     if (raw.version >= 3) {
       const defaults = defaultLayout();
       const result = {
@@ -187,7 +189,7 @@
         boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
         connections: Array.isArray(raw.connections) ? raw.connections : [],
         groups: [], // groups are no longer persisted
-        settings: { ...defaults.settings, ...(raw.settings || {}), darkMode: normalizeDarkModePref(raw.settings?.darkMode) }
+        settings: { ...defaults.settings, ...(raw.settings || {}) }
       };
     // One-time migration — restore box.isParent from old layout.groups, then discard
     if (!raw._meta || !raw._meta.__groupsMigrated) {

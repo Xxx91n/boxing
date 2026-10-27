@@ -82,8 +82,9 @@
   // the structural half of "matchMedia fallback must not be persisted".
   // Symmetric toggle, for the same reason applyDarkMode uses one.
   function applySystemDarkFallback() {
-    try { root.classList.toggle('ntp--dark', systemPrefersDark()); }
-    catch (e) { /* silent: no matchMedia (very old engine) — stylesheet default stands */ }
+    // systemPrefersDark() swallows an absent/throwing matchMedia, so the very old
+    // engine case degrades to the stylesheet default without an extra guard here.
+    root.classList.toggle('ntp--dark', systemPrefersDark());
   }
   // Ticket 48 (spec #41): live OS value for a 'system' preference at first paint.
   // Unsupported engines / a throwing matchMedia degrade to light (stylesheet default),
