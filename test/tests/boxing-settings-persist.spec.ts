@@ -16,7 +16,7 @@ async function resetBoxing(page) {
 // the dark-mode cases drive the REAL header button, and the first-run
 // tour is a full-viewport aria-modal overlay that wins the hit test — without
 // this, page.click('#dark-mode-btn') lands on the overlay and every case fails
-// for a reason that has nothing to do with dark mode (ticket 101 B65).
+// for a reason that has nothing to do with dark mode.
 async function resetAndDismiss(page) {
   await resetBoxing(page);
   await dismissOnboarding(page);
@@ -99,15 +99,15 @@ test.describe('Bug3 settings persistence repro', () => {
   });
 });
 
-test.describe('Ticket 11 — urlOpenMode defaults to sameTab (bookmarks open in current tab)', () => {
-  test('T11-a: fresh install defaults layout.settings.urlOpenMode to sameTab', async ({ page }) => {
+test.describe('urlOpenMode defaults to sameTab (bookmarks open in current tab)', () => {
+  test('fresh install defaults layout.settings.urlOpenMode to sameTab', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
     const r = await page.evaluate(() => (window as any).__boxingDebug.layout.settings.urlOpenMode);
     expect(r).toBe('sameTab');
   });
 
-  test('T11-b: migrateLayout — missing key migrates to sameTab, explicit stored newTab is preserved', async ({ page }) => {
+  test('migrateLayout — missing key migrates to sameTab, explicit stored newTab is preserved', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -117,48 +117,48 @@ test.describe('Ticket 11 — urlOpenMode defaults to sameTab (bookmarks open in 
         storedNewTab: dbg.migrateLayout({ version: 3.5, settings: { urlOpenMode: 'newTab' } }).settings.urlOpenMode,
       };
     });
-    console.log('T11-b:', JSON.stringify(r));
+    console.log('urlOpenMode migration:', JSON.stringify(r));
     expect(r.empty).toBe('sameTab');
     expect(r.missingKey).toBe('sameTab');
     // user's explicit stored New Tab choice must survive the upgrade
     expect(r.storedNewTab).toBe('newTab');
   });
 
-  test('T11-c: open path with missing key navigates the CURRENT tab, no new tab spawned', async ({ page }) => {
+  test('open path with missing key navigates the CURRENT tab, no new tab spawned', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
     await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       delete dbg.layout.settings.urlOpenMode;
-      (window as any).__t11opened = [];
-      window.open = (u?: any) => { (window as any).__t11opened.push(String(u)); return null; };
-      dbg.openBookmarkUrl(location.href + '#t11-same-tab');
+      (window as any).__sameTabOpened = [];
+      window.open = (u?: any) => { (window as any).__sameTabOpened.push(String(u)); return null; };
+      dbg.openBookmarkUrl(location.href + '#same-tab');
     });
-    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('#t11-same-tab');
-    const opened = await page.evaluate(() => (window as any).__t11opened || []);
+    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('#same-tab');
+    const opened = await page.evaluate(() => (window as any).__sameTabOpened || []);
     expect(opened).toEqual([]);
   });
 
-  test('T11-d: open path with stored newTab still opens a NEW tab, current tab untouched', async ({ page }) => {
+  test('open path with stored newTab still opens a NEW tab, current tab untouched', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       dbg.layout.settings.urlOpenMode = 'newTab';
-      (window as any).__t11opened = [];
-      window.open = (u?: any) => { (window as any).__t11opened.push(String(u)); return null; };
+      (window as any).__sameTabOpened = [];
+      window.open = (u?: any) => { (window as any).__sameTabOpened.push(String(u)); return null; };
       const before = location.href;
       dbg.openBookmarkUrl('https://example.test/bookmark');
-      return { opened: (window as any).__t11opened, before, stillHere: location.href };
+      return { opened: (window as any).__sameTabOpened, before, stillHere: location.href };
     });
     expect(r.opened).toContain('https://example.test/bookmark');
     expect(r.stillHere).toBe(r.before);
   });
 });
 
-// ═════════════════════════ Ticket 52 — 新装/重置默认 sameTab（以实机为准） ═════════════════════════
-test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT tab ', () => {
-  test('T52-a: empty-storage fresh install — model default sameTab, no persisted newTab', async ({ page }) => {
+// ═════════════════════════ 新装/重置默认 sameTab（以实机为准） ═════════════════════════
+test.describe('fresh-install/reset opens bookmarks in the CURRENT tab ', () => {
+  test('empty-storage fresh install — model default sameTab, no persisted newTab', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
     const r = await page.evaluate(() => ({
@@ -170,24 +170,24 @@ test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT 
     if (r.stored) expect(r.stored).not.toContain('newTab');
   });
 
-  test('T52-b: bookmark-ROW click after fresh install navigates the CURRENT tab, spawns no new tab', async ({ page }) => {
+  test('bookmark-ROW click after fresh install navigates the CURRENT tab, spawns no new tab', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
     // seed one box with one bookmark (in-memory layout, default settings — same state a fresh install has)
     await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       dbg.layout.boxes = [{
-        id: 't52-lg', type: 'large', title: 'T52', x: 0, y: 0, width: 320, height: 220,
+        id: 'url-mode-lg', type: 'large', title: 'UrlMode', x: 0, y: 0, width: 320, height: 220,
         children: [
-          { id: 't52-sm', type: 'small', title: 'SB', x: 0, y: 0, width: 300, height: 200,
-            bookmarks: [{ id: 'bm52', title: 'T52 target', url: 'https://t52.example.test/bookmark' }],
+          { id: 'url-mode-sm', type: 'small', title: 'SB', x: 0, y: 0, width: 300, height: 200,
+            bookmarks: [{ id: 'bm-url-mode', title: 'UrlMode target', url: 'https://url-mode.example.test/bookmark' }],
           },
         ],
       }];
       dbg.layout._meta = { updatedAt: Date.now() };
     });
     // Brain fix 2026-09-12: persistView() only writes view-state keys — the seeded
-    // boxes must go through saveLayout() or reload loses them (T52-b was a broken test).
+    // boxes must go through saveLayout() or reload loses them (this test used to be broken).
     await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 10000 }).toBe(true);
@@ -195,30 +195,30 @@ test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT 
     await page.evaluate(() => (window as any).__boxingDebug.renderCanvas());
     // enter the large box via synthetic dblclick (native input stalls on firefox — playwright#16095 precedent)
     await page.evaluate(() => {
-      const el = document.querySelector('.large-box[data-id="t52-lg"]') as HTMLElement | null;
+      const el = document.querySelector('.large-box[data-id="url-mode-lg"]') as HTMLElement | null;
       el?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     });
     await page.waitForTimeout(300);
-    await page.route('https://t52.example.test/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>t52</body></html>' }));
+    await page.route('https://url-mode.example.test/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>url-mode</body></html>' }));
     const ctx = page.context();
     // sameTab contract: current tab navigates to the bookmark URL …
     await page.evaluate(() => {
-      const row = document.querySelector('.small-box[data-id="t52-sm"] .bm-row') as HTMLElement | null;
+      const row = document.querySelector('.small-box[data-id="url-mode-sm"] .bm-row') as HTMLElement | null;
       row?.click();
     });
-    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('t52.example.test/bookmark');
+    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('url-mode.example.test/bookmark');
     // … and NO new tab is spawned (newTab branch would window.open / tabs.create → page event)
     expect(ctx.pages().length).toBe(1);
   });
 
-  test('T52-c: first-frame settings DOM defaults to sameTab before any modal sync (首帧 DOM)', async ({ page }) => {
+  test('first-frame settings DOM defaults to sameTab before any modal sync (首帧 DOM)', async ({ page }) => {
     await resetBoxing(page);
     // syncSettingsDOM only runs on modal-open / applyExternalLayout — this pins the static HTML default.
     const v = await page.evaluate(() => (document.getElementById('url-open-mode-select') as HTMLSelectElement | null)?.value);
     expect(v).toBe('sameTab');
   });
 
-  test('T52-d: v2 migration write path fills urlOpenMode=sameTab (旧包迁移残留面)', async ({ page }) => {
+  test('v2 migration write path fills urlOpenMode=sameTab (旧包迁移残留面)', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -235,18 +235,18 @@ test.describe('Ticket 52 — fresh-install/reset opens bookmarks in the CURRENT 
     expect(r.storedNewTab).toBe('newTab');
   });
 
-  test('T52-e: unknown/legacy mode value is treated as sameTab, never spawns a tab (残留写路径硬化)', async ({ page }) => {
+  test('unknown/legacy mode value is treated as sameTab, never spawns a tab (残留写路径硬化)', async ({ page }) => {
     await resetBoxing(page);
     await page.waitForFunction(() => (window as any).__boxingDebug && (window as any).__boxingDebug.layout, undefined, { timeout: 3000 });
     await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
       dbg.layout.settings.urlOpenMode = 'legacy-garbage';
-      (window as any).__t52opened = [];
-      window.open = ((u: any) => { (window as any).__t52opened.push(String(u)); return null; }) as any;
-      dbg.openBookmarkUrl(location.href + '#t52-unknown');
+      (window as any).__urlModeOpened = [];
+      window.open = ((u: any) => { (window as any).__urlModeOpened.push(String(u)); return null; }) as any;
+      dbg.openBookmarkUrl(location.href + '#url-mode-unknown');
     });
-    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('#t52-unknown');
-    const opened = await page.evaluate(() => (window as any).__t52opened || []);
+    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('#url-mode-unknown');
+    const opened = await page.evaluate(() => (window as any).__urlModeOpened || []);
     expect(opened).toEqual([]);
   });
 });
@@ -286,7 +286,7 @@ test.describe('dark mode has one host and one apply path', () => {
     };
   }, BOOT_MIRROR_KEY);
 
-  test('D008-1: header toggle switches dark -> light in-page (the headline bug)', async ({ page }) => {
+  test('header toggle switches dark -> light in-page (the headline bug)', async ({ page }) => {
     await resetAndDismiss(page);
     expect((await themeState(page)).html).toBe(false);
     // Go dark through the real control.
@@ -302,7 +302,7 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.glyph).toBe('\u2600'); // sun = light active
   });
 
-  test('D008-2: html is the ONLY host — #app/body never carry the class', async ({ page }) => {
+  test('html is the ONLY host — #app/body never carry the class', async ({ page }) => {
     await resetAndDismiss(page);
     await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
@@ -316,7 +316,7 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.body).toBe(false);
   });
 
-  test('D008-3: settings checkbox drives the same single path as the header button', async ({ page }) => {
+  test('settings checkbox drives the same single path as the header button', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
       const cb = document.getElementById('dark-mode-cb') as HTMLInputElement | null;
@@ -343,7 +343,7 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.mirror.darkMode).toBe(false);
   });
 
-  test('D008-4: choice survives a reload (boot mirror and settings agree)', async ({ page }) => {
+  test('choice survives a reload (boot mirror and settings agree)', async ({ page }) => {
     await resetAndDismiss(page);
     await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
@@ -363,7 +363,7 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.mirror.darkMode).toBe(false);
   });
 
-  test('D008-5: remote merge (incomingWins) replays the visual state in-session', async ({ page }) => {
+  test('remote merge (incomingWins) replays the visual state in-session', async ({ page }) => {
     await resetAndDismiss(page);
     // Local tab is dark...
     await clickDarkToggle(page);
@@ -378,7 +378,7 @@ test.describe('dark mode has one host and one apply path', () => {
         ...(remote._meta || {}),
         revision: (remote._meta?.revision || 0) + 1,
         updatedAt: Date.now() + 1000,
-        writerId: 'remote-tab-D008',
+        writerId: 'remote-tab-light',
       };
       return dbg.applyExternalLayout(remote);
     });
@@ -389,7 +389,7 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.mirror.darkMode, 'the boot mirror must be rewritten on merge, or the reload regresses').toBe(false);
   });
 
-  test('D008-6: remote merge to dark also replays + rewrites the mirror', async ({ page }) => {
+  test('remote merge to dark also replays + rewrites the mirror', async ({ page }) => {
     await resetBoxing(page);
     const applied = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -399,7 +399,7 @@ test.describe('dark mode has one host and one apply path', () => {
         ...(remote._meta || {}),
         revision: (remote._meta?.revision || 0) + 1,
         updatedAt: Date.now() + 1000,
-        writerId: 'remote-tab-D008-dark',
+        writerId: 'remote-tab-dark',
       };
       return dbg.applyExternalLayout(remote);
     });
@@ -410,7 +410,7 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.glyph).toBe('\u263D'); // moon = dark active
   });
 
-  test('D008-7: repeated onChanged-shaped applies are idempotent (no drift, no throw)', async ({ page }) => {
+  test('repeated onChanged-shaped applies are idempotent (no drift, no throw)', async ({ page }) => {
     await resetAndDismiss(page);
     await clickDarkToggle(page);
     await expect.poll(async () => (await themeState(page)).html).toBe(true);
@@ -433,7 +433,7 @@ test.describe('dark mode has one host and one apply path', () => {
     expect(s.setting).toBe(true);
   });
 
-  test('D008-8: no boot mirror + dark OS preference falls back to dark WITHOUT persisting it', async ({ page }) => {
+  test('no boot mirror + dark OS preference falls back to dark WITHOUT persisting it', async ({ page }) => {
     // Observe the FIRST FRAME, before loadSettings() hydrates the authoritative
     // default (darkMode=false) and corrects the class. Reading the class after
     // hydration would only ever see the corrected value and could not tell a

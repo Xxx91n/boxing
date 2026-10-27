@@ -94,7 +94,7 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
         signalConsumed: !('boxingInstallSignal' in all),
       };
     }, { prefix: SNAP_KEY_PREFIX, indexKey: SNAP_INDEX_KEY });
-    console.log('T42-1:', JSON.stringify(r));
+    console.log('pre-update copy-on-write 1:', JSON.stringify(r));
     expect(r.snapCount).toBeGreaterThanOrEqual(1); // acceptance 3: pre-update snapshot exists
     expect(r.snapKeepsLegacyShape).toBe(true);     // it preserves the PRE-update schema shape
     expect(r.snapSchemaVersion).toBe(1);           // schemaVersion preserved on the copy
@@ -111,7 +111,7 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
     await page.evaluate(async (layout) => {
       const dbg = (window as any).__boxingDebug;
       await dbg.storageSet({ boxingLayout: layout, boxingInstallSignal: { reason: 'update', at: Date.now() } });
-      window.__boxingFlushCredentials = null; // 42R: see T42-1 comment — unload write-back neutralization
+      window.__boxingFlushCredentials = null; // see copy-on-write 1 comment — unload write-back neutralization
     }, modernLayout());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.listSnapshots)), { timeout: 10000 }).toBe(true);
@@ -126,7 +126,7 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
         signalConsumed: !('boxingInstallSignal' in all),
       };
     }, { indexKey: SNAP_INDEX_KEY });
-    console.log('T42-2:', JSON.stringify(r));
+    console.log('pre-update copy-on-write 2:', JSON.stringify(r));
     expect(r.snapCount).toBe(0);       // needsMigration()=false → no COW copy for already-migrated data
     expect(r.noSnapshotKeys).toBe(0);
     expect(r.layoutLoaded).toBe(true); // boot still completes normally
@@ -139,7 +139,7 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
     await page.evaluate(async (layout) => {
       const dbg = (window as any).__boxingDebug;
       await dbg.storageSet({ boxingLayout: layout }); // NOTE: no boxingInstallSignal seeded
-      window.__boxingFlushCredentials = null; // 42R: see T42-1 comment — unload write-back neutralization
+      window.__boxingFlushCredentials = null; // see copy-on-write 1 comment — unload write-back neutralization
     }, legacyLayout());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.layout?.boxes?.length)), { timeout: 10000 }).toBe(true);
@@ -156,7 +156,7 @@ test.describe('Update COW before migrate (Ticket 42)', () => {
         signalAbsent: !('boxingInstallSignal' in all),
       };
     }, { indexKey: SNAP_INDEX_KEY });
-    console.log('T42-3:', JSON.stringify(r));
+    console.log('pre-update copy-on-write 3:', JSON.stringify(r));
     expect(r.snapCount).toBe(0);       // acceptance 4: no signal → no COW snapshot (no regression)
     expect(r.layoutLoaded).toBe(true);
     expect(r.hasMigratedSettings).toBe(true); // migration path untouched

@@ -7,7 +7,7 @@
  * When to edit:
  *   - Changing the palette hue/saturation range → edit Layer 1 primitive values
  *   - Adding a new semantic role → edit Layer 2
- *   - Tweaking a specific component's color → edit Layer 3 in ntp.css (after Q2/D split)
+ *   - Tweaking a specific component's color → edit Layer 3 in ntp.css (after the CSS split)
  * Reference: docs/DESIGN.md, W3C DTCG spec (designtokens.org)
  */
 

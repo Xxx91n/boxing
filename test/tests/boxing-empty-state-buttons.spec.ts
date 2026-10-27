@@ -156,7 +156,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(info!.pe).toBe('auto');
   });
 
-  // Bug 2: large box empty shows button only (hint text removed per Q2)
+  // Bug 2: large box empty shows button only (hint text removed)
   test('Bug2: large box empty state shows button only (no hint text)', async ({ page }) => {
     await resetBoxing(page);
     await addLargeBox(page);
@@ -267,7 +267,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
   // Ticket 13: in dark mode .bm-add-btn must keep the transparent ghost style.
   // Regression guard: :root.ntp--dark .bm-add-row button (0-3-1) used to beat
   // .bm-add-row .bm-add-btn (0-2-0) and painted the accent background.
-  test('Bug5-dark: bm-add-btn stays transparent in dark mode', async ({ page }) => {
+  test('Bug5-dark: bm-add-btn stays transparent in dark mode', async ({ page, browserName }) => {
     await resetBoxing(page);
     const lbId = await addLargeBox(page);
     await enterLargebox(page, lbId);
@@ -297,12 +297,27 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     // and the hover below never reaches the button. resetBoxing now proves the overlay
     // hidden, and this guard names the blocker if it ever reappears.
     await assertPointerReaches(page, '.bm-add-btn');
-    await page.hover('.bm-add-btn');
+    if (browserName === 'chromium') {
+      // Headed Chromium under xvfb can progressively stall native pointer input
+      // (playwright#16095 class), so page.hover() never reaches :hover even though
+      // assertPointerReaches() already proved the element is hit-testable. Force the
+      // real :hover cascade via CDP instead: this exercises the same CSS rule and
+      // transition, without depending on the native input pipe.
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('DOM.enable');
+      await cdp.send('CSS.enable');
+      const { root } = await cdp.send('DOM.getDocument');
+      const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector: '.bm-add-btn' });
+      expect(nodeId, '.bm-add-btn must exist for the forced hover').toBeGreaterThan(0);
+      await cdp.send('CSS.forcePseudoState', { nodeId, forcedPseudoClasses: ['hover'] });
+    } else {
+      await page.hover('.bm-add-btn');
+    }
     // Ticket 72: .bm-add-btn transitions `background` over --dur-fast
     // (140ms), so reading the computed style in the same turn as the hover sampled the START of
     // the transition (rgba(0,0,0,0)) and red. Poll for the settled value instead — the assertion
     // itself is unchanged: dark :hover must still paint --color-accent-soft. Not a waiver: the
-    // CSS contract is real, the old read was a transition race (probe: t0=transparent, t500=accent-soft).
+    // CSS contract is real, the old read was a transition race (probe: 0ms=transparent, 500ms=accent-soft).
     await expect.poll(() => page.evaluate(() =>
       getComputedStyle(document.querySelector('.bm-add-btn')!).backgroundColor)).toBe(probeBg);
   });
@@ -377,9 +392,9 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
   });
 
 
-  // Ticket 102 (/ B66): the LIGHT bm-add-btn carried the mirror image of the dark defect
-  // fixed by ticket 88. Measured on the small-box backdrop (--color-elevated #EBE5DB) before this
-  // ticket: glyph --color-muted #7B7167 = 3.81:1 (below SC 1.4.3 4.5:1 for 13px/500 text) and the
+  // The LIGHT bm-add-btn carried the mirror image of the dark defect. Measured on the
+  // small-box backdrop (--color-elevated #EBE5DB) before the fix: glyph --color-muted #7B7167
+  // = 3.81:1 (below SC 1.4.3 4.5:1 for 13px/500 text) and the
   // dashed border --color-hairline = 1.11:1 (far below the 3:1 line SC 1.4.11 sets for non-text).
   // Fixed by moving the light rule onto the SAME token pair the dark override already used
   // (--color-ink-soft / --color-muted) — 9.78:1 glyph / 3.81:1 border — so the two themes can no
@@ -562,8 +577,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(info!.contain).toContain('layout');
   });
 
-  // Q1: Canvas empty state has unified button (not just text hint)
-  test('Q1: canvas empty state has action button', async ({ page }) => {
+  // Canvas empty state has unified button (not just text hint)
+  test('canvas empty state has action button', async ({ page }) => {
     await resetBoxing(page);
     const info = await page.evaluate(() => {
       const btn = document.querySelector('.canvas__empty-action');
@@ -582,8 +597,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(info.hasHint).toBe(true);
   });
 
-  // Q1: clicking canvas empty action button creates a large box
-  test('Q1: clicking canvas empty action button adds a large box', async ({ page }) => {
+  // Clicking canvas empty action button creates a large box
+  test('clicking canvas empty action button adds a large box', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => {
       const btn = document.querySelector('.canvas__empty-action') as HTMLElement;
@@ -594,8 +609,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(boxCount).toBe(1);
   });
 
-  // Q3: pin tooltip shows ACTION semantics (not state)
-  test('Q3: pin tooltip shows action unpin when pinned', async ({ page }) => {
+  // Pin tooltip shows ACTION semantics (not state)
+  test('pin tooltip shows action unpin when pinned', async ({ page }) => {
     await resetBoxing(page);
     // Default headerPinned=true -> tooltip should say "Unpin header" (the action)
     const title = await page.evaluate(() => {
@@ -607,7 +622,7 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(title).not.toMatch(/pinned|已固定/i);
   });
 
-  test('Q3: pin tooltip shows action pin when unpinned', async ({ page }) => {
+  test('pin tooltip shows action pin when unpinned', async ({ page }) => {
     await resetBoxing(page);
     // Toggle pin off first
     await page.evaluate(() => {
@@ -624,8 +639,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(title).not.toMatch(/not pinned|未固定|unpinned/i);
   });
 
-  // Q4: settings-content has overflow-anchor:none (FF scroll jank fix)
-  test('Q4: settings-content has overflow-anchor none', async ({ page }) => {
+  // settings-content has overflow-anchor:none (FF scroll jank fix)
+  test('settings-content has overflow-anchor none', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => (window as any)._boxingOpenSettings());
     await page.waitForTimeout(200);
@@ -636,8 +651,8 @@ test.describe('Empty state buttons + locate + perf (Bug 1-6 v2)', () => {
     expect(overflowAnchor).toBe('none');
   });
 
-  // Q4: modal__body does NOT have overflow-y auto (nested scroll jank fix)
-  test('Q4: modal__body does not have overflow-y auto', async ({ page }) => {
+  // modal__body does NOT have overflow-y auto (nested scroll jank fix)
+  test('modal__body does not have overflow-y auto', async ({ page }) => {
     await resetBoxing(page);
     await page.evaluate(() => (window as any)._boxingOpenSettings());
     await page.waitForTimeout(200);

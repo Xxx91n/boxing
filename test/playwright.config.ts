@@ -9,6 +9,10 @@ const EXTENSION_PATH = path.resolve(__dirname, '..');
 
 export default defineConfig({
   testDir: './tests',
+  // Slow-host headroom: browser setup/teardown on a contended desktop can exceed the
+  // 30s default without any assertion failing (issue #36). Specs that need more still
+  // set their own timeout.
+  timeout: 60000,
   // Ticket 45 (architecture-recovery): burn-in exclusion for the @data-golden gates.
   // .github/workflows/test.yml sets BOXING_EXCLUDE_GREP=@data-golden on the main lane and
   // runs the spec in its own continue-on-error data-golden job; after the burn-in week,
@@ -17,14 +21,17 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  // Worker policy (ticket 20, architecture-recovery):
-  // - Local cap 4: default (all cores) launches 8 headed browsers on this
-  //   8-thread host and starves them — random 30s setup/timeout failures with
-  //   different victims each run (ticket 01 gate evidence).
-  // - CI cap 2: GitHub standard runners have 4 cores; 2-4 workers is the
-  //   measured sweet spot there (currents.dev), and 2 keeps headroom for the
-  //   headed browsers themselves. Explicit policy, not an ad hoc flag.
-  workers: process.env.CI ? 2 : 4,
+  // Worker policy (issue #36):
+  // - Cap 2 everywhere. CI standard runners have 4 cores and 2 is the measured
+  //   sweet spot (currents.dev). Locally, 4 workers still produced rotating
+  //   chromium timeouts (page.goto / browserContext.close) on this 8-thread host
+  //   once unrelated desktop apps contended for CPU; 2 keeps the full suite a
+  //   usable merge gate. Coverage and assertions are unchanged.
+  // - The deeper Firefox starvation source was Playwright's default
+  //   dom.ipc.processCount=60000: the file:// suite spawned a content process per
+  //   page (156 processes / ~6GB observed) that never got recycled. The Firefox
+  //   project caps that pref below.
+  workers: 2,
   reporter: 'html',
   use: {
     trace: 'on-first-retry',
@@ -33,7 +40,7 @@ export default defineConfig({
   projects: [
     {
       name: 'firefox-extension',
-      // D-012 (wave-2026.10.11 Round-3, 2026-10-13): firefox lane runs HEADLESS.
+      // Firefox headless (wave-2026.10.11 Round-3, 2026-10-13): the lane runs HEADLESS.
       // The headed persistent-context native-input pipe wedges (playwright#16095
       // class — page.mouse.* progressively stalls, probe-verified 3/3 rounds); headless is
       // clean (0/3). One headless lane restores the 4 native-input tests in place
@@ -47,6 +54,27 @@ export default defineConfig({
         headless: true,
         launchOptions: {
           args: ['-no-remote'],
+          // Issue #36: Playwright sets dom.ipc.processCount=60000 for Firefox.
+          // Every file:// test page could then take its own content process and the
+          // full suite accumulated 156 processes / ~6GB, starving page.goto and
+          // browserContext.close. Cap it; tests never need more than a handful of
+          // concurrent tabs per browser.
+          firefoxUserPrefs: {
+            'dom.ipc.processCount': 1,
+            'dom.ipc.processCount.file': 1,
+            'dom.ipc.processPrelaunch.enabled': false,
+            'fission.autostart': false,
+            // Headless Firefox on this host intermittently logs
+            // "RenderCompositorSWGL failed mapping default framebuffer" and then
+            // wedges page.goto/context.close. The suite only needs DOM/CSS, so use
+            // the basic compositor path instead of software WebRender.
+            'gfx.webrender.enabled': false,
+            'gfx.webrender.all': false,
+            'gfx.webrender.software': false,
+            'gfx.webrender.compositor': false,
+            'layers.acceleration.disabled': true,
+            'gfx.canvas.accelerated': false,
+          },
         },
       },
     },

@@ -1,4 +1,4 @@
-// Wave 2026.10.17 Acceptance Specs (S-01 to S-04 / D-001 to D-004)
+// Wave 2026.10.17 Acceptance Specs
 import { test, expect, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
@@ -18,11 +18,11 @@ async function boot(page: Page) {
   await page.waitForTimeout(200);
 }
 
-test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
+test.describe('Wave 2026.10.17 — Acceptance Tests', () => {
   test.setTimeout(30000);
 
-  // ── S-01 / D-001: Auto-backup decoupling & local silent snapshot ──────────
-  test('S-01 / D-001: performBackup does not trigger file download; Backup Now does; demo mode gated', async ({ page }) => {
+  // ── Auto-backup decoupling & local silent snapshot ──────────
+  test('performBackup does not trigger file download; Backup Now does; demo mode gated', async ({ page }) => {
     // 1. Static contract
     const syncSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/sync-engine.js'), 'utf8');
     const utilsSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/utils.js'), 'utf8');
@@ -87,8 +87,8 @@ test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
     expect(r.lastBackupUpdated).toBe(true);
   });
 
-  // ── S-02 / D-002: Version check authority direct connection & UI feedback ──
-  test('S-02 / D-002: checkVersionUpdate connects to GitHub API, supports force refresh, and shows low-profile hint', async ({ page }) => {
+  // ── Version check authority direct connection & UI feedback ──
+  test('checkVersionUpdate connects to GitHub API, supports force refresh, and shows low-profile hint', async ({ page }) => {
     // 1. Static contract
     const settingsUiSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/settings-ui.js'), 'utf8');
     const indexSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8');
@@ -165,8 +165,8 @@ test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
     expect(r.hasUpToDateText).toBe(true);
   });
 
-  // ── S-03 / D-003: Auto-title rule buttons dark mode & token normalization ───
-  test('S-03 / D-003: rule action buttons use CSS classes and design tokens; getComputedStyle runtime verified', async ({ page }) => {
+  // ── Auto-title rule buttons dark mode & token normalization ───
+  test('rule action buttons use CSS classes and design tokens; getComputedStyle runtime verified', async ({ page }) => {
     // 1. Static CSS verification: design-system definitions & settings.css token bindings
     const dsSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/design-system.css'), 'utf8');
     const settingsSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/settings.css'), 'utf8');
@@ -326,8 +326,8 @@ test.describe('Wave 2026.10.17 — S-01 to S-04 Acceptance Tests', () => {
     expect(darkCheck.delColor).toBe('rgb(252, 165, 165)');
   });
 
-  // ── S-04 / D-004: Snapshot count cap (MAX_SNAPSHOT_COUNT = 30) & FIFO truncation ──
-  test('S-04 / D-004: MAX_SNAPSHOT_COUNT = 30 truncates oldest snapshots and removes pruned keys', async ({ page }) => {
+  // ── Snapshot count cap (MAX_SNAPSHOT_COUNT = 30) & FIFO truncation ──
+  test('MAX_SNAPSHOT_COUNT = 30 truncates oldest snapshots and removes pruned keys', async ({ page }) => {
     // 1. Static contract verification
     const storageSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/storage.js'), 'utf8');
     expect(storageSrc).toContain('MAX_SNAPSHOT_COUNT = 30');

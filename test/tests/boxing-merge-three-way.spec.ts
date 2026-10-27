@@ -1,8 +1,8 @@
-// Boxing — ticket 91 (B55): child-box/id-level three-way WebDAV merge.
-// AC coverage (issues/91-merge-three-way-b55.md):
+// Boxing — child-box/id-level three-way WebDAV merge.
+// AC coverage:
 //   AC1 子盒/id 级合并落地 + e2e 双端加子盒 → pull → 双方可见:
 //       both ends add a DIFFERENT small box under the SAME large box, then sync →
-//       direction 'merge', conflicts 0, BOTH children visible (the B55 silent-swallow
+//       direction 'merge', conflicts 0, BOTH children visible (the silent-swallow gap
 //       is gone), merged state rolls the syncBase slot + _meta.baseRevision forward.
 //   AC2 冲突副本 UI (票 79) 接线: same-id child divergence archives a parent-wrapped
 //       'webdav-child-conflict' copy AND the Settings > Data conflict list renders it
@@ -13,7 +13,7 @@
 //   AC4 no-base degradation = additive two-way (never worse than ticket-44 baseline):
 //       exercised by AC1 (fresh device, no syncBase yet). The legacy field-conflict
 //       contract stays pinned by boxing-import-merge.spec.ts AC-sync.
-// file:// mock lane per t44/t79 harness discipline: seed BEFORE first goto via
+// file:// mock lane: seed BEFORE first goto via
 // addInitScript (no reload race), WebDAV GET/PUT answered by a runtime.sendMessage
 // stub, sync driven through window.__boxingDebug.syncWebDAV(). The mock never pollutes
 // self.chrome beyond the local object (SEC-01).
@@ -31,7 +31,7 @@ const WEBDAV_URL = process.env.BOXING_SPEC_WEBDAV_URL || 'https://webdav.invalid
 const WEBDAV_USER = process.env.BOXING_SPEC_WEBDAV_USER || 'spec-user';
 const WEBDAV_PASS = process.env.BOXING_SPEC_WEBDAV_PASS || 'spec-pass';
 
-const S = (id, title) => ({ id, title, x: 0, y: 0, width: 240, height: 180, pinned: true, bookmarks: [{ id: 'b-' + id, title, url: 'https://t91.test/' + id }] });
+const S = (id, title) => ({ id, title, x: 0, y: 0, width: 240, height: 180, pinned: true, bookmarks: [{ id: 'b-' + id, title, url: 'https://merge.test/' + id }] });
 
 // One large box L1 with the given children, everything else fixed so only the
 // children array (and chosen scalar fields) differ across the three fixtures.
@@ -57,13 +57,13 @@ async function boot(page, cloudBody, localLayout) {
   const pageErrors = [];
   page.on('pageerror', (err) => pageErrors.push(err.message));
   await page.addInitScript((c) => {
-    window.__t91cloud = c;
+    window.__mergeCloud = c;
     window.chrome = {
       runtime: {
         sendMessage: (msg, cb) => {
           try {
             if (msg && msg.type === 'webdav-get') {
-              cb && cb(window.__t91cloud ? { success: true, status: 200, ok: true, body: JSON.stringify(window.__t91cloud) } : { success: true, status: 404, ok: false, body: null });
+              cb && cb(window.__mergeCloud ? { success: true, status: 200, ok: true, body: JSON.stringify(window.__mergeCloud) } : { success: true, status: 404, ok: false, body: null });
               return;
             }
             cb && cb({ success: true, status: 200, ok: true });
@@ -97,7 +97,7 @@ const childTitles = (page) => page.evaluate(() => window.__boxingDebug.layout.bo
 const conflictIndex = (page) => page.evaluate(async () => (await window.__boxingDebug.storageGet(['boxingLayout.conflict.index']))['boxingLayout.conflict.index'] || []);
 const readKey = (page, key) => page.evaluate(async (k) => (await window.__boxingDebug.storageGet([k]))[k], key);
 
-test.describe('Ticket 91 — B55 child-box/id-level three-way WebDAV merge', () => {
+test.describe('child-box/id-level three-way WebDAV merge', () => {
   test('AC1: dual-end small-box adds under the same large box both survive a merge (no base → additive two-way)', async ({ browser }) => {
     test.setTimeout(30000);
     const context = await browser.newContext();
@@ -111,7 +111,7 @@ test.describe('Ticket 91 — B55 child-box/id-level three-way WebDAV merge', () 
     expect(result.direction).toBe('merge');
     expect(result.conflicts).toBe(0);
 
-    // BOTH sides' new small boxes are visible — the core B55 acceptance.
+    // BOTH sides' new small boxes are visible — the core acceptance.
     const ids = await childIds(page);
     expect(ids).toContain('S1');
     expect(ids).toContain('S2l');

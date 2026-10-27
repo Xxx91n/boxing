@@ -1,13 +1,13 @@
-// Boxing — ticket 107 : P0 single-bookmark delete writes a tombstone and
-// routes through the unified commit entry.
+// Boxing — P0 single-bookmark delete writes a tombstone and routes through the
+// unified commit entry.
 //
-// ROOT CAUSE (Q2 research + local evidence): popups.js deleted a bookmark with a bare
+// ROOT CAUSE (research + local evidence): popups.js deleted a bookmark with a bare
 // `sb.bookmarks.splice(index, 1); saveLayout();` — no markDeleted, no commit. The
 // cross-tab merge path (storage.applyExternalLayout -> mergeConcurrentLayout ->
 // mergeById(local, remote, tombstones)) therefore had no tombstone to filter the stale
 // remote copy with, so the bookmark came back after a merge or a reload.
 //
-// AC coverage (issues/107-bookmark-delete-commit-p0.md):
+// AC coverage (single-bookmark delete contract):
 //   AC1 mutationHandlers.deleteBookmark returns tombstoneIds:[bmId]
 //   AC2 popups delete button goes through commit('deleteBookmark', ...); bare splice gone
 //   AC3 never-quarantine regression: add -> delete -> stale remote merge / reload ->
@@ -15,7 +15,7 @@
 //   AC4 never-quarantine: this spec must never carry the @quarantine tag, so a
 //       regression here can never be shelved instead of fixed.
 //
-// Harness discipline (t44/t91 file:// mock lane): seed BEFORE the first navigation via
+// Harness discipline (file:// mock lane): seed BEFORE the first navigation via
 // addInitScript (no reload race). The stale remote is injected through
 // window.__boxingDebug.applyExternalLayout — the very entry the cross-tab
 // storage.onChanged bridge calls — so the assertion exercises the real
@@ -38,9 +38,9 @@ function seedLayout() {
   return {
     version: 3.5, schemaVersion: 1, nextLargeIndex: 2,
     boxes: [{
-      id: 'L1', type: 'large', title: 'T107 Root', x: 40, y: 40, width: 320, height: 220,
+      id: 'L1', type: 'large', title: 'Delete Root', x: 40, y: 40, width: 320, height: 220,
       nextSmallIndex: 2,
-      children: [{ id: 'S1', title: 'T107 Small', x: 0, y: 0, width: 260, height: 190, pinned: true, bookmarks: [] }],
+      children: [{ id: 'S1', title: 'Delete Small', x: 0, y: 0, width: 260, height: 190, pinned: true, bookmarks: [] }],
     }],
     connections: [], groups: [],
     settings: { selectedLanguage: 'en', rememberLastPos: true, zoomLevel: 1.0, lastSyncAt: 0 },
@@ -49,7 +49,7 @@ function seedLayout() {
 }
 
 async function seedAndBoot(page) {
-  // Seed BEFORE the first navigation (t44/t91 no-reload-race discipline). The guard is
+  // Seed BEFORE the first navigation (no-reload-race discipline). The guard is
   // load-bearing: addInitScript re-runs on EVERY navigation — including page.reload() —
   // and an unguarded seed would rewrite the pre-delete payload over the state under test.
   await page.addInitScript((seed) => {
@@ -141,7 +141,7 @@ test.describe('Ticket 107 — bookmark delete writes a tombstone (never-quaranti
 
     await seedAndBoot(page);
     await enterLargeBox(page);
-    await addBookmarkViaPopup(page, 'T107 bookmark', 'https://t107.example.test/a');
+    await addBookmarkViaPopup(page, 'Delete bookmark', 'https://bookmark-delete.example.test/a');
 
     const bmId = (await readBookmarks(page)).ids[0];
     expect(typeof bmId).toBe('string');
@@ -158,7 +158,7 @@ test.describe('Ticket 107 — bookmark delete writes a tombstone (never-quaranti
     }, bmId);
     expect(stale.carriesDeletedBm).toBe(true);
 
-    await deleteBookmarkViaPopup(page, 'T107 bookmark');
+    await deleteBookmarkViaPopup(page, 'Delete bookmark');
 
     // In-memory post-condition: bookmark gone, tombstone written for its id.
     const afterDelete = await readBookmarks(page);
@@ -211,10 +211,10 @@ test.describe('Ticket 107 — bookmark delete writes a tombstone (never-quaranti
       const dbg = window.__boxingDebug;
       dbg.layout.boxes = [{
         id: 'L1', type: 'large', title: 'R', x: 0, y: 0, width: 320, height: 220,
-        children: [{ id: 'S1', title: 's', x: 0, y: 0, width: 200, height: 150, bookmarks: [{ id: 'bm-107', title: 'x', url: 'https://t107.example.test/x' }] }],
+        children: [{ id: 'S1', title: 's', x: 0, y: 0, width: 200, height: 150, bookmarks: [{ id: 'bm-delete', title: 'x', url: 'https://bookmark-delete.example.test/x' }] }],
       }];
       dbg.renderCanvas();
-      const res = dbg.commit('deleteBookmark', { largeId: 'L1', smallId: 'S1', bmId: 'bm-107' }, {});
+      const res = dbg.commit('deleteBookmark', { largeId: 'L1', smallId: 'S1', bmId: 'bm-delete' }, {});
       const lb = dbg.layout.boxes.find((b) => b.id === 'L1');
       const sb = lb.children.find((c) => c.id === 'S1');
       return {
@@ -225,9 +225,9 @@ test.describe('Ticket 107 — bookmark delete writes a tombstone (never-quaranti
       };
     });
     expect(r.skipped).toBe(false);
-    expect(r.tombstoneIds).toEqual(['bm-107']);
+    expect(r.tombstoneIds).toEqual(['bm-delete']);
     expect(r.remaining).toEqual([]);
-    expect(r.deleted).toContain('bm-107');
+    expect(r.deleted).toContain('bm-delete');
   });
 
   test('AC2 static: popups delete button routes through commit and no bare splice remains', async () => {

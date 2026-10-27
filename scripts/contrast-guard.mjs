@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Ticket 102 (architecture-recovery) - B66 / Wave 11 D-003: 对比度与 Token 配对门禁。
+// 对比度与 Token 配对门禁 (Wave 11)。
 //
 // 为什么是"构建期 token 配对断言"而不是只靠浏览器测试:
 //   axe-core 的 color-contrast 规则只覆盖 SC 1.4.3 文本, 且对渐变/伪元素/opacity 标记
@@ -221,7 +221,7 @@ function main() {
     if (r.body == null) { console.error("[contrast-guard] rule not found: " + r.name); process.exit(1); }
   }
 
-  // Wave 11 / D-003: .rule-action-btn blocks
+  // Wave 11: .rule-action-btn blocks
   const ruleBtnBlocks = {
     btn: blockBody(settings, ".rule-action-btn"),
     btnHover: blockBody(settings, ".rule-action-btn:hover"),
@@ -266,7 +266,7 @@ function main() {
     }
   }
 
-  // Section 2: Wave 11 D-003 .rule-action-btn & --delete variant (normal / hover / disabled × light / dark)
+  // Section 2: Wave 11 .rule-action-btn & --delete variant (normal / hover / disabled × light / dark)
   for (const theme of themes) {
     const t = theme.tokens;
 

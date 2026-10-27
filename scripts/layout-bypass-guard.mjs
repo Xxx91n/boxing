@@ -32,7 +32,7 @@
 // Allow-region (no comment needed)
 //   The mutationHandlers object literal and the commit() body in ntp/render.js.
 //
-// Exemption (named, expiring, ticketed — C07 / D-005)
+// Exemption (named, expiring, ticketed)
 //   // layout-bypass-allow: <name> - <reason> (expires:YYYY-MM-DD; ticket:<ref>)
 //   on the same line or the line directly above. <name> must match
 //   [a-z0-9][a-z0-9._-]*, <reason> must be at least 12 characters, and the reason
@@ -204,7 +204,7 @@ function matchExemption(line) {
   if (!m) return null;
   const reason = (m[2] || "").trim();
   if (reason.length < MIN_REASON) return null;
-  // C07 (D-005): rewrite exemptions are named + expiring + ticketed. No permanent allow.
+  // Rewrite exemptions are named + expiring + ticketed. No permanent allow.
   // expires:YYYY-MM-DD and ticket:<ref> must appear in the reason, otherwise the
   // comment is NOT a valid exemption and the site stays a violation (fail closed).
   const exp = /expires:(\d{4}-\d{2}-\d{2})/.exec(reason);

@@ -11,7 +11,7 @@ import { dismissOnboarding } from '../helpers/onboarding';
 //      a stale snapshot must never overwrite the newest revision.
 //   2. single write path: static scan — no direct chrome.storage writes outside the
 //      ntp/storage.js facade; SW side scanned for WRITE calls of the
-//      boxingLayout key (45R) — legal reads like the t42 pre-update COW pass.
+//      boxingLayout key — legal reads like the pre-update COW pass.
 //   3. undici keep-alive reuse across two syncs.
 //   4. cross-page: window A layout update syncs into window B — same real browser
 //      profile (newContext = fresh non-incognito profile), never a shared ephemeral
@@ -154,15 +154,15 @@ test.describe('Data-layer golden gates (ticket 45) @data-golden', () => {
       'storageSet: (obj) => layoutStorage.set(obj),',
     ]);
 
-    // SW contract, 45R semantics: never WRITE boxingLayout (the facade
-    // invariant); reads and other-key writes (t42 COW snap.v1.*) are legal.
+    // SW contract: never WRITE boxingLayout (the facade
+    // invariant); reads and other-key writes (COW snap.v1.*) are legal.
     const bgSrc = fs.readFileSync(path.join(ROOT_DIR, 'background.js'), 'utf8');
-    expect(scanBackgroundWrites(bgSrc), '45R: background must never write boxingLayout').toEqual([]);
+    expect(scanBackgroundWrites(bgSrc), 'background must never write boxingLayout').toEqual([]);
 
     // Shape tripwire on the SW write sites: every storage.local.set must target a
     // documented key class — the two non-layout small keys (bgErrLog,
     // boxingInstallSignal), the autoBackupDue coordination flag (SW
-    // writes, NTP consumes via the storage.js facade), or the t42 snapshot keys
+    // writes, NTP consumes via the storage.js facade), or the snapshot keys
     // resolving to snap.v1.*.
     const bgWrites = bgSrc.split(/\r?\n/).filter((l) => /\.storage\.local\.set\(/.test(l));
     expect(bgWrites.length, 'background must keep its storage writes').toBeGreaterThan(0);
@@ -173,12 +173,12 @@ test.describe('Data-layer golden gates (ticket 45) @data-golden', () => {
     }
   });
 
-  test('gate 2b: write-path scanner (45R) — legal reads pass, any boxingLayout write is caught', () => {
-    // Table pinned to the exact merged-future shapes: t42 COW read + snap.v1
+  test('gate 2b: write-path scanner — legal reads pass, any boxingLayout write is caught', () => {
+    // Table pinned to the exact merged-future shapes: COW read + snap.v1
     // writes stay green; every way of writing the boxingLayout key turns red.
     const table: Array<[string, number, string]> = [
-      ['const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });', 0, 't42 COW legal read'],
-      ['const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });\nawait api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });', 0, 't42 COW full shape (read + snap.v1 write)'],
+      ['const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });', 0, 'COW legal read'],
+      ['const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });\nawait api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });', 0, 'COW full shape (read + snap.v1 write)'],
       ['await api.storage.local.set({ boxingLayout: snap });', 1, 'direct object-literal write'],
       ["chrome.storage.sync.remove('boxingLayout');", 1, 'quoted key remove'],
       ['await api.storage.local.set({\n  boxingLayout: p,\n});', 1, 'multi-line set (flattened pass)'],
@@ -309,14 +309,20 @@ test.describe('Data-layer golden gates (ticket 45) @data-golden', () => {
     await page.evaluate(() => { (document.querySelector('#settings-btn') as HTMLElement | null)?.click(); });
     await page.evaluate(() => { (document.querySelector('#import-data-btn') as HTMLElement | null)?.click(); });
     (await chooser1Promise).setFiles({ name: 'huge.json', mimeType: 'application/json', buffer: Buffer.from(huge) });
-    await page.waitForTimeout(800);
+    // Wait for the specific alert instead of a fixed sleep: under worker load the
+    // import handler can take longer than a fixed window (issue #36 rotating reds).
+    await expect.poll(() => page.evaluate(() =>
+      ((window as any).__alerts || []).some((m: string) => /import failed|invalid data format/i.test(m))
+    ), { timeout: 15000 }).toBe(true);
 
     // Over the 5MB file cap -> importTooLarge alert.
     const oversized = JSON.stringify({ version: 3.5, boxes: [], pad: 'y'.repeat(5 * 1024 * 1024 + 64) });
     const chooser2Promise = page.waitForEvent('filechooser');
     await page.evaluate(() => { (document.querySelector('#import-data-btn') as HTMLElement | null)?.click(); });
     (await chooser2Promise).setFiles({ name: 'oversized.json', mimeType: 'application/json', buffer: Buffer.from(oversized) });
-    await page.waitForTimeout(800);
+    await expect.poll(() => page.evaluate(() =>
+      ((window as any).__alerts || []).some((m: string) => /too large/i.test(m))
+    ), { timeout: 15000 }).toBe(true);
 
     const alerts = await page.evaluate(() => (window as any).__alerts);
     expect(alerts.length).toBeGreaterThanOrEqual(2);

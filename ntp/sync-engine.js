@@ -388,11 +388,11 @@ export function initSyncEngineFacade(deps) {
 
     // Two-way sync. Returns { direction: 'pull'|'push'|'merge'|'none', cloudBoxes, localBoxes }.
     // Outbox-style merge for concurrent WebDAV changes.
-    // Ticket 91 (B55): the big-box field heuristic is upgraded to an
+    // The big-box field heuristic is upgraded to an
     // id-level three-way merge in utils.mergeLayoutThreeWay. baseData = the client-
     // local syncBase slot (last state both sides agreed on; storage.getSyncBase) or
     // null -> additive two-way fallback. Children (small boxes) now ALWAYS merge per
-    // id, so a child added on either side is never silently swallowed (the B55 gap);
+    // id, so a child added on either side is never silently swallowed (the old gap);
     // same-id child divergence lands in child-level conflict copies instead of a
     // silent local overwrite. Merge-failure contract (return null -> caller archives
     // the losing side, then newer-wins) is preserved unchanged (ticket 44).
@@ -556,7 +556,7 @@ export function initSyncEngineFacade(deps) {
         // Original newer-wins logic
         if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {
           // Cloud is newer or equal-but-different-writer → pull.
-          // Ticket 51 (spec ticket 51 / D-006): 覆盖必先本地副本 — this pull fully
+          // Ticket 51: 覆盖必先本地副本 — this pull fully
           // replaces the main key, so snapshot the discarded local side FIRST
           // (copy-before-overwrite discipline; the import-side twin lives in settings-ui's
           // overwrite-confirmed branch, and the data-loss / merge-failure paths

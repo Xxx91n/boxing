@@ -70,7 +70,7 @@ export function initPersistFacade(deps) {
   // ═══════════════════════════════════════════════════
   // Sync-readable first-paint cache: ONLY paint-critical settings (theme/darkMode/
   // fontSize) mirrored from the layout AFTER a successful boxingLayout persist. NOT a
-  // second layout source (D-002 negative): never read by loadLayout/migrate/sync/export;
+  // second layout source (negative constraint): never read by loadLayout/migrate/sync/export;
   // the authoritative values stay in boxingLayout and loadSettings() re-applies them.
   // Written via the mirror-writer injected by ntp.js (the storage facade's success path)
   // so the mirror can never drift ahead of a persisted layout.
@@ -99,7 +99,7 @@ export function initPersistFacade(deps) {
   //      any visual state or rewriting the mirror — "looks right in this session,
   //      wrong after reload".
   //
-  // Contract (D-008):
+  // Contract:
   //   - documentElement is the ONLY host. CSS is prefixed ':root.ntp--dark'.
   //     Industry model: the theme rides on :root so it also covers the root
   //     scrollbar and the pre-paint background.
@@ -108,7 +108,7 @@ export function initPersistFacade(deps) {
   //   - The boot mirror is rewritten in the same step, so mirror and settings can
   //     never disagree (the reload half of bug 2).
   //   - Display only. This helper NEVER writes layout.settings: matchMedia
-  //     fallback values are for showing, not for persisting (D-008/D-011③).
+  //     fallback values are for showing, not for persisting.
   export function applyDarkMode(on) {
     const dark = on === true;
     const root = document.documentElement;

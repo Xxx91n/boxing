@@ -49,7 +49,7 @@ Layer 3: Component (component-specific — defined per-component below, applied 
 Same ramp structure (`--color-warm-dark-*`, `--color-accent-dark-*`) with inverted lightness.
 Dark mode overrides only Layer 2 semantic tokens to reference dark primitives — component CSS unchanged.
 
-### Hairline 与控件边界的语义契约（revised 2026-09-14 · ticket 103 B67）
+### Hairline 与控件边界的语义契约（revised 2026-09-14）
 
 `--color-hairline` / `--color-hairline-strong` 的语义是**弱分隔线（decorative divider）**：
 只负责在视觉上分组与收边，本身不承担任何可访问性义务。二者由 ink 基色经 rgba 派生
@@ -141,7 +141,7 @@ implement these exact mappings.
 | z-index | 1 | (same) | 5 | — |
 | border-radius | `var(--radius-card)` | (same) | (same, no regression BX-145) | — |
 
-> 偏差收口（N-103-01 → closed 2026-09-15 · ticket 114 B74）：本表已按 `ntp/base.css`
+> 偏差收口（closed 2026-09-15）：本表已按 `ntp/base.css`
 > 代码现实校正（词表对齐原则）——default 描边 `1px solid var(--color-hairline)`、
 > hover 才切 `--color-card-edge`、拖拽切 `--color-accent`；`border-radius` 实为 `--radius-card`；
 > default 无 box-shadow、hover 无 z-index 变化；代码无 disabled 态，列名按 §3/§5 惯例改写。
@@ -212,7 +212,7 @@ implement these exact mappings.
 | button color | `var(--color-ink-soft)` | `var(--color-ink)` | — | — |
 | button border | none (`border: 0`) | (same) | — | — |
 
-> 偏差收口（N-103-02 → closed 2026-09-15 · ticket 114 B74）：本表已按 `ntp/settings.css`
+> 偏差收口（closed 2026-09-15）：本表已按 `ntp/settings.css`
 > 代码现实校正——`.zoom-btn` 为 `border: 0`、无 `:active` 规则，hover 仅改 background/color；
 > 原表的 hairline/accent 描边实际位于容器 `.zoom-controls`（填充面板的装饰收边，§Hairline 契约
 > 允许），已补为「border (container)」行。透明 `.zoom-btn` 的示能由图标字形承担

@@ -139,6 +139,31 @@
 
   function migrateLayout(raw) {
     if (!raw) return defaultLayout();
+    // v2 -> 3.5 expansion happens before the shared normalizer so the FIRST migrated
+    // object is already complete. Previously this branch returned no connections,
+    // groups or schemaVersion, and a crash-rescue write-back of that first pass could
+    // persist the partial shape until some later load normalized it (issue #34).
+    if (raw.version === 2) {
+      raw = {
+        version: 3.5,
+        schemaVersion: 1,
+        boxes: (raw.boxes || []).map(b => ({
+          ...b, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H,
+          nextSmallIndex: (b.children?.length || 0) + 1,
+          children: (b.children || []).map(s => ({
+            ...s, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H,
+            pinned: s.pinned !== false, bookmarks: s.bookmarks || []
+          }))
+        })),
+        nextLargeIndex: (raw.boxes?.length || 0) + 1,
+        connections: Array.isArray(raw.connections) ? raw.connections : [],
+        groups: Array.isArray(raw.groups) ? raw.groups : [],
+        // Ticket 52: spread defaultLayout().settings so the v2 migration write path can
+        // never persist a settings blob missing urlOpenMode (fresh default = sameTab);
+        // an explicitly stored newTab still wins (user choice preserved).
+        settings: { ...defaultLayout().settings, ...(raw.settings || {}), theme: raw.settings?.theme || 'beige' }
+      };
+    }
     // Data integrity — version >= 3 returns as-is; no data loss on downgrade.
     // Unknown future versions (>= 4) are still accepted to prevent upgrade-then-downgrade data loss.
     if (raw.version >= 3) {
@@ -156,7 +181,9 @@
     if (!raw._meta || !raw._meta.__groupsMigrated) {
       if (Array.isArray(raw.groups) && raw.groups.length > 0) {
         for (const g of raw.groups) {
-          if (!g || !g.parentId) continue;
+          // Legacy groups rows are untrusted input: a non-string parentId must be
+          // skipped, not allowed to throw out of migrateLayout during boot.
+          if (!g || typeof g.parentId !== 'string' || !g.parentId) continue;
           if (g.parentId.startsWith("large:")) {
             const lb = result.boxes.find(b => b.id === g.parentId.slice(6)); if (lb) lb.isParent = true;
           } else if (g.parentId.startsWith("small:")) {
@@ -171,24 +198,6 @@
     // Backfill connection.props for older layouts
     for (const c of result.connections) { if (c && c.props == null) c.props = {}; }
     return result;
-    }
-    if (raw.version === 2) {
-      return {
-        version: 3.5,
-        boxes: (raw.boxes || []).map(b => ({
-          ...b, width: b.width || LARGE_DEF_W, height: b.height || LARGE_DEF_H,
-          nextSmallIndex: (b.children?.length || 0) + 1,
-          children: (b.children || []).map(s => ({
-            ...s, width: s.width || SMALL_DEF_W, height: s.height || SMALL_DEF_H,
-            pinned: s.pinned !== false, bookmarks: s.bookmarks || []
-          }))
-        })),
-       nextLargeIndex: (raw.boxes?.length || 0) + 1,
-       // Ticket 52: spread defaultLayout().settings so the v2 migration write path can
-       // never persist a settings blob missing urlOpenMode (fresh default = sameTab);
-       // an explicitly stored newTab still wins (user choice preserved).
-       settings: { ...defaultLayout().settings, ...(raw.settings || {}), theme: raw.settings?.theme || 'beige' }
-      };
     }
     return defaultLayout();
   }
@@ -340,8 +349,8 @@ function compareVersions(v1, v2) {
 
 export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, clampToEdge, deepJsonEquals, defaultLayout, elasticSnap, hexToRgbTriplet, isPlausibleLayout, largeKey, mergeById, mergeImportedLayout, migrateLayout, compareVersions, normalizeBookmarkUrl, querySpatialNearby, unwrapExportEnvelope, rectsOverlap, screenToWorld, smallKey, snapCanvas, snapInner, zoomAtPoint };
 
-// ─── Ticket 91 (B55): id-level three-way layout merge ──────────
-// Implements the ticket-80 recommended plan (three-way with base, degrading to the
+// ─── Id-level three-way layout merge ──────────
+// Implements the three-way-with-base plan, degrading to the
 // two-way additive merge when no base). Industrial baseline: Joplin sync_items.base_*
 // client-local common-ancestor + refresh-on-clean-sync, Syncthing/Dropbox conflict-
 // copy semantics (ctx sources: atomcode-91-baseline, atomcode-merge-quality).
@@ -356,7 +365,7 @@ export { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_M
 //    child is returned as a child-level conflict copy (caller archives it);
 //  - one side lacks a base-known child: pure deletion (other side unchanged vs
 //    base) is honored; delete-vs-edit keeps the side that has content;
-//  - new ids from either side are additive — this is the B55 silent-swallow fix.
+//  - new ids from either side are additive — this is the silent-swallow fix.
 function mergeChildrenById(localChildren, cloudChildren, baseChildren) {
   const localArr = Array.isArray(localChildren) ? localChildren : [];
   const cloudArr = Array.isArray(cloudChildren) ? cloudChildren : [];
@@ -409,9 +418,9 @@ function mergeChildrenById(localChildren, cloudChildren, baseChildren) {
 // Three-way merge of the whole layout (cloud x local x optional base).
 // cloud/local MUST be migrateLayout-ed; base is the raw syncBase slot payload as
 // stored (already normalized when written) or null. Per box id: children ALWAYS
-// merge via mergeChildrenById (the B55 fix — children is no longer clobbered as one
-// field); non-children fields use diff3 vs base when a base box exists, else the
-// preserved ticket-44 heuristic (>3 diverged fields -> local wins wholesale, else
+// merge via mergeChildrenById (children is no longer clobbered as one field);
+// non-children fields use diff3 vs base when a base box exists, else the
+// preserved field-count heuristic (>3 diverged fields -> local wins wholesale, else
 // field merge local-wins; any divergence archives the cloud box verbatim as a
 // conflict copy — never silent). Boxes absent from one side: additive by default;
 // with base, a pure one-side deletion (other side unchanged vs base) is honored.

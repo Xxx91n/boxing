@@ -188,6 +188,7 @@
       "boxing-memory.spec.ts",
       "boxing-migration-golden.spec.ts",
       "boxing-search.spec.ts",
+      "boxing-settings-persist.spec.ts",
       "boxing-sync-bookmark-delete-tombstone.spec.ts",
       "boxing-state-sync.spec.ts",
       "boxing-v3.spec.ts",
@@ -195,6 +196,7 @@
       "boxing-wave11-1017.spec.ts"
     ],
     "ntp/favicon.js": [
+      "boxing-favicon-fixture.spec.ts",
       "boxing-memory.spec.ts",
       "boxing-popup-dragselect.spec.ts",
       "boxing-search.spec.ts"

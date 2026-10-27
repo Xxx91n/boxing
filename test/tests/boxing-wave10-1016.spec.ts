@@ -16,8 +16,8 @@ async function boot(page: Page) {
   await page.waitForTimeout(200);
 }
 
-// D-008 behavioral lane: L1 -> S1 seed so the real add/edit popups can be driven
-// (t44/t91 discipline — seed before first navigation, synthetic dblclick for the
+// Behavioral lane: L1 -> S1 seed so the real add/edit popups can be driven
+// (seed-before-first-navigation discipline, synthetic dblclick for the
 // firefox headed lane, same pattern as boxing-sync-bookmark-delete-tombstone).
 function seedPopupLayout() {
   return {
@@ -67,11 +67,11 @@ async function clickPopupPrimary(page: Page, label: string) {
   }, label);
 }
 
-test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
+test.describe('Wave 2026.10.16 — E2E & Contract Tests', () => {
   test.setTimeout(30000);
 
-  // ── S-01 / D-001: Favicon cold path & display restoration ──────────────────
-  test('S-01 / D-001: popups.js does not trigger false error; applyDecodedFavicon restores display', () => {
+  // ── Favicon cold path & display restoration ──────────────────
+  test('popups.js does not trigger false error; applyDecodedFavicon restores display', () => {
     const popSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/popups.js'), 'utf8');
     const favSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/favicon.js'), 'utf8');
 
@@ -83,8 +83,8 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(favSrc).toContain("img.style.display = '';");
   });
 
-  // ── S-02 / D-002: Auto-backup alarm hub + NTP catch-up ─────────────────────
-  test('S-02 / D-002: SW records autoBackupDue; NTP catches up without duplicate onAlarm', () => {
+  // ── Auto-backup alarm hub + NTP catch-up ─────────────────────
+  test('SW records autoBackupDue; NTP catches up without duplicate onAlarm', () => {
     const bgSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'background.js'), 'utf8');
     const syncSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/sync-engine.js'), 'utf8');
 
@@ -108,8 +108,8 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(syncSrc).toContain('checkAutoBackupCatchUp');
   });
 
-  // ── S-03 / D-003: Title selection focus machine ────────────────────────────
-  test('S-03 / D-003: title focus machine has unconditional mouseup preventDefault & caret fallback', () => {
+  // ── Title selection focus machine ────────────────────────────
+  test('title focus machine has unconditional mouseup preventDefault & caret fallback', () => {
     const renderSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
 
     // guardFirstMouseUp prevents default without checking isCollapsed
@@ -123,8 +123,8 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(renderSrc).toContain('caretRangeFromPoint');
   });
 
-  // ── S-04 / D-004: Version check module & About tab ─────────────────────────
-  test('S-04 / D-004: About tab version check markup, 24h caching, and 14-locale hint', () => {
+  // ── Version check module & About tab ─────────────────────────
+  test('About tab version check markup, 24h caching, and 14-locale hint', () => {
     const htmlSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8');
     const settingsUiSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/settings-ui.js'), 'utf8');
 
@@ -144,8 +144,8 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     }
   });
 
-  // ── S-05 / D-005 ~ D-007: URL title 8 preset types & match-pattern ────────
-  test('S-05 / D-005 ~ D-007: url-title 8 preset types, pattern matching, eTLD+1 parsing', async () => {
+  // ── URL title 8 preset types & match-pattern ────────
+  test('url-title 8 preset types, pattern matching, eTLD+1 parsing', async () => {
     const {
       parseDomain,
       extractTitleByType,
@@ -205,8 +205,8 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(deriveTitleFromUrl('https://github.com/foo/bar', rules, false)).toBe('github.com');
   });
 
-  // ── S-05 / D-008: Settings General tab auto-title UI & Popups wiring ───────
-  test('S-05 / D-008: General tab auto-title controls present and functional', async ({ page }) => {
+  // ── Settings General tab auto-title UI & Popups wiring ───────
+  test('General tab auto-title controls present and functional', async ({ page }) => {
     await boot(page);
 
     // Open Settings modal
@@ -357,8 +357,8 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(versionFetchCount, 'Within 24h TTL, version check uses cache').toBe(1);
   });
 
-  // ── S-05 / D-008 behavioral: real add/edit popups (fill, guard, fallback, persist) ──
-  test('S-05 / D-008 behavioral: add popup auto-fills title; manual edit protected; rules persist', async ({ page }) => {
+  // ── Behavioral: real add/edit popups (fill, guard, fallback, persist) ──
+  test('add popup auto-fills title; manual edit protected; rules persist', async ({ page }) => {
     await bootIntoAddPopup(page);
     // URL input -> 300ms debounced fill; github.com/*/* rule -> first-two-paths
     await typeIntoPopupInput(page, 1, 'https://github.com/foo/bar');
@@ -390,7 +390,7 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     expect(saved2.title).toBe('gitlab');
   });
 
-  test('S-05 / D-008 behavioral: rules disabled -> hostname fallback; edit popup shares helper guard', async ({ page }) => {
+  test('rules disabled -> hostname fallback; edit popup shares helper guard', async ({ page }) => {
     await bootIntoAddPopup(page);
     await page.evaluate(() => { (window as any).__boxingDebug.layout.settings.autoTitleEnabled = false; });
     await typeIntoPopupInput(page, 1, 'https://github.com/foo/bar');
@@ -411,8 +411,8 @@ test.describe('Wave 2026.10.16 — S-01 to S-05 E2E & Contract Tests', () => {
     await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].bookmarks[0].title)).toBe('other.io');
   });
 
-  // ── D-004: right-click return hardening (FF/LibreWolf) ───────────────────
-  test('D-004: edge anchor ignores non-left buttons; button-2 release exits box even if contextmenu is swallowed', async ({ page }) => {
+  // ── Right-click return hardening (FF/LibreWolf) ───────────────────
+  test('edge anchor ignores non-left buttons; button-2 release exits box even if contextmenu is swallowed', async ({ page }) => {
     const connSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/conn-layer.js'), 'utf8');
     const ntpSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/ntp.js'), 'utf8');
 

@@ -803,7 +803,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
   }
 
   // ── context menu (right-click → back) ──────────────────
-  // D-004: contextmenu alone is fragile in Firefox-family browsers — they
+  // Contextmenu alone is fragile in Firefox-family browsers — they
   // dispatch it as part of the mousedown default action, so an ancestor
   // preventDefault (or a fork's input pipeline, e.g. LibreWolf) can swallow it.
   // The button-2 release listener exits the box independently of contextmenu
@@ -1010,7 +1010,7 @@ import { initOnboardingFacade, initOnboarding } from './onboarding.js';
     debug('settingsBtn listener attached, settingsBtn=', !!settingsBtn);
 
     document.addEventListener('contextmenu', onContextMenu);
-    // D-004: button-2 release fallback — exits even when contextmenu never
+    // Button-2 release fallback — exits even when contextmenu never
     // dispatches. First exit clears currentLargeBoxId, so double registration
     // (mouseup + pointerup cover different swallow classes, cf. ) is
     // a no-op for the same gesture.

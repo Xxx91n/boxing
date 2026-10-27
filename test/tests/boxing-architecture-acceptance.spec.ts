@@ -15,7 +15,7 @@ async function resetBoxing(page) {
 }
 
 test.describe('Architecture acceptance gates', () => {
-  test('Q1 migration: old layout.groups restores isParent then discards groups + sets __groupsMigrated', async ({ page }) => {
+  test('legacy groups migration: old layout.groups restores isParent then discards groups + sets __groupsMigrated', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;
@@ -54,7 +54,7 @@ test.describe('Architecture acceptance gates', () => {
     expect(r.persistedGroups).toBeUndefined();
   });
 
-  test('Q1 persist: saveLayout strip keeps groups out of storage snapshot', async ({ page }) => {
+  test('legacy groups persist: saveLayout strip keeps groups out of storage snapshot', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(async () => {
       const dbg = (window as any).__boxingDebug;
@@ -85,7 +85,7 @@ test.describe('Architecture acceptance gates', () => {
     if (r.storedHasGroups !== null) expect(r.storedHasGroups).toBe(false);
   });
 
-  test('Q4a tombstone GC: entries older than 24h removed; fresh kept; hard cap still honored', async ({ page }) => {
+  test('tombstone GC: entries older than 24h removed; fresh kept; hard cap still honored', async ({ page }) => {
     await resetBoxing(page);
     const r = await page.evaluate(() => {
       const dbg = (window as any).__boxingDebug;

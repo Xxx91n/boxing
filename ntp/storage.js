@@ -30,8 +30,8 @@ let layoutStorage = null;
 let mirrorWriter = null; // ticket 60: paint-critical boot mirror writer (persist.js facade)
 let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning;
 // the single dark-mode apply path, INJECTED (not imported). storage.js is
-// a leaf module (import-graph-guard B-1 forbids sibling imports), and D-011② keeps
-// the write chain / loop guard / onChanged listener as one inseparable unit here —
+// a leaf module (import-graph-guard B-1 forbids sibling imports), and the write
+// chain / loop guard / onChanged listener stay as one inseparable unit here —
 // moving the listener elsewhere to reach a helper directly would violate WORKFLOW §6.
 // Facade injection is the established pattern for exactly this constraint.
 let applyDarkMode = null;
@@ -105,7 +105,15 @@ export function registerStorageOnChanged() {
           corruptRaw = data.boxingLayout;
           corruptErr = new Error('boxingLayout failed integrity check (readable but not a layout)');
         } else {
-          setLayout(migrateLayout(data.boxingLayout));
+          try {
+            setLayout(migrateLayout(data.boxingLayout));
+          } catch (migrateErr) {
+            // The payload is readable but the migration rejected it. Keep it so the
+            // corrupt-payload fork archives it before the recovery write replaces
+            // the main key; without this the catch below sees corruptRaw === null.
+            corruptRaw = data.boxingLayout;
+            throw migrateErr;
+          }
         }
       } else {
         const legacy = layoutStorage === api.storage.sync ? data : await api.storage.sync.get({ boxingLayout: null });
@@ -117,7 +125,12 @@ export function registerStorageOnChanged() {
             corruptRaw = legacy.boxingLayout;
             corruptErr = new Error('legacy boxingLayout failed integrity check (readable but not a layout)');
           } else {
-            setLayout(migrateLayout(legacy.boxingLayout));
+            try {
+              setLayout(migrateLayout(legacy.boxingLayout));
+            } catch (migrateErr) {
+              corruptRaw = legacy.boxingLayout;
+              throw migrateErr;
+            }
             if (layoutStorage !== api.storage.sync) {
               await layoutStorage.set({ boxingLayout: stripGroupsForPersist(layout) });
               // A6: one-time cleanup — remove stale sync data after successful local migration
@@ -290,8 +303,8 @@ export function registerStorageOnChanged() {
   // written on the snapshot BODY only; snap.v1.index stays metadata-only {ts,schemaVersion,size}
   // (41R pin). Returns snap.ts on success, null when skipped (over-cap) or on storage error —
   // callers fail closed: ticket 50 forbids a full-replacement restore without a safety snapshot
-  // (atomcode: claudette #47 fail-closed semantics). Monotonic ts guard (precedent: t44
-  // _lastConflictTs): two snapshots in one millisecond must not share a body key.
+  // (fail-closed semantics). Monotonic ts guard (precedent: _lastConflictTs):
+  // two snapshots in one millisecond must not share a body key.
   let _lastSnapTs = 0;
   export async function saveSnapshot(reason) {
     try {
@@ -370,7 +383,7 @@ export function registerStorageOnChanged() {
   // Deliberately bypasses mergeConcurrentLayout — a cross-tab merge would resurrect the
   // replaced-away boxes from storage and break rollback ("restore to point" must be exact).
   // Keeps the two write-path invariants that still matter:
-  //   - t43R fork: a corrupt-but-readable stored payload is archived before the overwrite;
+  //   - corrupt-payload fork: a corrupt-but-readable stored payload is archived before the overwrite;
   //   - revision continues above the stored value, so other tabs' applyExternalLayout gate
   //     still orders correctly.
   // In-memory layout is replaced only after the write resolves (fail closed on quota errors).
@@ -528,7 +541,7 @@ export function registerStorageOnChanged() {
     } catch (e) { debugErr('getConflictArchive', e); return null; }
   }
 
-  // ── Ticket 91 (B55): sync base slot ───────────────────────────────
+  // ── Sync base slot ───────────────────────────────────────────────
   // Client-local record of the last state BOTH sides agreed on — the common
   // ancestor the sync-engine three-way merge (utils.mergeLayoutThreeWay) diffs
   // against. Written only after a clean pull/merge/push lands and NEVER uploaded
@@ -556,7 +569,7 @@ export function registerStorageOnChanged() {
   // The optional "full disaster-recovery package" export needs the VERBATIM bodies
   // behind the three index keys (snap.v1.*, boxingLayout.corrupt.*, boxingLayout.
   // conflict.*). The default envelope export never calls this — snapshot payloads
-  // stay out of everyday backups (D-006 negative constraint). Read-only facade
+  // stay out of everyday backups (negative constraint). Read-only facade
   // method: returns { snapshots, corrupt, conflicts }, each oldest→newest, skipping
   // bodies already pruned from storage (index entry stays, body may be gone).
   export async function readDrBodies() {
@@ -781,7 +794,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
         if (layout.settings && layout.settings.__lastSaveError) { layout.settings.__lastSaveError = null; }
         // Ticket 60 (zero-flash): mirror paint-critical settings AFTER a successful
         // boxingLayout persist so the first paint of the next new tab is already the
-        // remembered theme. Mirror is derived-only (never a second layout source, D-002);
+        // remembered theme. Mirror is derived-only (never a second layout source);
         // failure here is fail-soft — the boot script falls back to default theme once.
         try { if (typeof mirrorWriter === 'function') mirrorWriter(); } catch (_mw) { /* non-fatal */ }
         // Settings controls only mutate the persisted value and call saveLayout;
@@ -946,7 +959,7 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
       // visual state was replayed and the boot mirror was not rewritten, so the session
       // looked right until the next reload reverted it. Replaying through the single
       // apply path is what removes "inconsistent within the session vs. after reload".
-      // Engine layering and the remote-wins LWW semantics above are untouched (D-008⑧).
+      // Engine layering and the remote-wins LWW semantics above are untouched.
       try { applyDarkMode(layout.settings.darkMode === true); } catch (e) { debugWarn("applyDarkMode replay", e); }
       debug('external layout applied', { revision: incomingRevision, boxes: layout.boxes.length });
       return true;

@@ -46,14 +46,14 @@ export function initOnboardingFacade(deps) {
   //
   // The file:// debug lane is deliberately NOT suppressed: it has no
   // __BOXING_DEMO__, so the empty-canvas judgment still shows the tour there and
-  // that debugging entry point keeps working (D-009 negative constraint).
+  // that debugging entry point keeps working (deliberate negative constraint).
   export function initOnboarding(trigger = {}) {
     try {
       if (window.__BOXING_DEMO__ === true) {
         if (typeof debug === 'function') debug('onboarding', 'suppressed for Pages demo (__BOXING_DEMO__)');
         return;
       }
-      // Defensive second condition (D-009). Read through the INJECTED runtime id,
+      // Defensive second condition. Read through the INJECTED runtime id,
       // never `chrome.*` directly: import-graph-guard B-6 forbids browser API
       // access outside its whitelist, and ntp.js is the module allowed to hold it.
       // The build-time flag above remains the single source; this only catches the
@@ -94,7 +94,7 @@ export function initOnboardingFacade(deps) {
       // down on close, so it can never outlive the modal or interfere with canvas
       // Escape semantics (ntp.js onKeyDown: Escape = exit box / clear search).
       // Capture phase + stopPropagation makes it win over that document-level
-      // bubble-phase handler when both would fire (D-009④).
+      // bubble-phase handler when both would fire.
       detachOverlayKeydown();
       overlay.hidden = true;
       layout.settings.onboardingCompleted = true;
@@ -175,8 +175,8 @@ export function initOnboardingFacade(deps) {
       }
     } catch (el) { debugErr('onboarding lang setup', el); }
     overlay.hidden = false;
-    // Mounted here, i.e. exactly when the overlay becomes visible (D-009④: mounted
-    // only while the tour is open, never permanently).
+    // Mounted here, i.e. exactly when the overlay becomes visible (mounted only
+    // while the tour is open, never permanently).
     attachOverlayKeydown();
     render();
   }

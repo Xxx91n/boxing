@@ -63,7 +63,7 @@ jobs:
       - name: Build extension
         run: node .github/scripts/build.mjs
 
-      - name: Contrast guard (ticket 102 B66)
+      - name: Contrast guard
         run: node scripts/contrast-guard.mjs
 
       - name: Layout bypass guard (ticket 108)

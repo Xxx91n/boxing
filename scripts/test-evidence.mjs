@@ -56,7 +56,7 @@ function gitInfo() {
 }
 
 // Per-project headed state: read the config text rather than re-deriving it —
-// the config is the source of truth (firefox went headless in D-012).
+// the config is the source of truth (firefox runs headless).
 // `//` comments are stripped first so prose like "// headless: true …" cannot
 // false-positive a project; project bodies slice between `name:` marks so a
 // missed `}]` terminator can't bleed one project's flags into the next.

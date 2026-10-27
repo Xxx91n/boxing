@@ -13,11 +13,11 @@ User-facing notes for store listings and the GitHub Release body.
 
 ### Added
 - **Quiet local auto-backups** — Local mode scheduled backups save silent internal snapshots by default without intrusive file download dialogs on new tabs.
-- **Direct version check** — About tab checks GitHub Releases API directly as primary authority with Pages mirror fallback and 2-hour cache (D-002).
+- **Direct version check** — About tab checks GitHub Releases API directly as primary authority with Pages mirror fallback and 2-hour cache.
 - **Snapshot count hard ceiling** — Enforces MAX_SNAPSHOT_COUNT = 30 with GFS-tiered rotation, physical key pruning, and RAW_KEEP_FLOOR = 10 safety.
 
 ### Fixed
-- **Design token normalization** — Rule action buttons fully tokenized with --color-danger, --color-hover, and --radius-sm, restoring danger red and 3px radius in light and dark modes (D-003).
+- **Design token normalization** — Rule action buttons fully tokenized with --color-danger, --color-hover, and --radius-sm, restoring danger red and 3px radius in light and dark modes.
 
 ### Internal
 - Architecture decision: local auto-backup convergence & snapshot cap.
@@ -34,12 +34,12 @@ User-facing notes for store listings and the GitHub Release body.
 
 ### Added
 - **URL auto-title rule engine** — Derives bookmark title from URL structure using 8 preset extraction types and Chrome-style match patterns; configurable via General settings with manual-edit override protection.
-- **About tab version check** — Quietly checks for new releases with 24h local caching, showing an update link when available (D-004).
+- **About tab version check** — Quietly checks for new releases with 24h local caching, showing an update link when available.
 - **Auto-backup catch-up** — Service Worker alarm hub records due status and performs catch-up backups on NTP open, fixing cross-session alarm loss.
 
 ### Fixed
-- **Favicon cold-path display** — Fixed favicons remaining hidden on first entry into small boxes due to false error event (D-001).
-- **Title select-all & caret placement** — Unconditional mouseup normalization guard guarantees whole-name selection on first click and native caret placement on second click (D-003).
+- **Favicon cold-path display** — Fixed favicons remaining hidden on first entry into small boxes due to false error event.
+- **Title select-all & caret placement** — Unconditional mouseup normalization guard guarantees whole-name selection on first click and native caret placement on second click.
 
 ### Internal
 - Architecture decisions: auto-backup alarm hub; URL auto-title rule engine.

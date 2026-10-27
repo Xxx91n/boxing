@@ -47,11 +47,11 @@ export function initConnFacade(deps) {
   // SVG overlay lives INSIDE the transform surface, so line coords = box logical coords.
   // No BCR reads, no transform-commit timing issues, lines clipped by surface overflow.
   // The pool is GLOBAL and stateless (bare <line> elements —
-  // appendChild reparents them, so no per-surface split; D-011 negative). The cost
+  // appendChild reparents them, so no per-surface split). The cost
   // of a global pool is that a recycled element can carry residue from its previous
   // life, so strip it HERE at acquire time as well as at recycle time: acquire is
   // the single choke point every consumer goes through, so this is the one place
-  // that can guarantee a clean element no matter who recycled it (D-011③).
+  // that can guarantee a clean element no matter who recycled it.
   export function acquireLineEl() {
     const el = __linePool.pop();
     if (el) {
@@ -225,7 +225,7 @@ export function initConnFacade(deps) {
       a.dataset.boxKey = boxKey;
       a.dataset.side = side;
       a.addEventListener('mousedown', e => {
-        // D-004: left button only. A right-button preventDefault here suppresses
+        // Left button only. A right-button preventDefault here suppresses
         // the contextmenu event in Firefox-family browsers (contextmenu is part
         // of the mousedown default action there) and would also wrongly enter
         // connect mode on a right-press.
@@ -338,7 +338,7 @@ export function initConnFacade(deps) {
   //
   // Ownership is recomputed from live layout on every call — never cached —
   // because reparenting a small box changes its connection's owning surface
-  // instantly (D-007 requirement).
+  // instantly.
   const __surfaceWarned = new Set(); // one debugWarn per connId, never per frame
   export function resolveConnSurface(from, to) {
     const a = endpointTier(from);
@@ -384,7 +384,7 @@ export function initConnFacade(deps) {
   export function connSvgForConn(c) {
     const r = resolveConnSurface(c.from, c.to);
     if (r.kind === 'none') {
-      // console-only diagnostic (D-007: no UI warning). Deduplicated per connId so
+      // console-only diagnostic (no UI warning). Deduplicated per connId so
       // a per-frame render loop cannot turn this into log spam.
       if (r.crossParent && c.id && !__surfaceWarned.has(c.id)) {
         __surfaceWarned.add(c.id);

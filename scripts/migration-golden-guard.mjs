@@ -111,12 +111,36 @@ async function runMigrationGoldenChecks() {
       && once.boxes[0].children[0].width != null && once.boxes[0].children[0].pinned === true);
     add('v2-theme-defaulted', once.settings.theme === 'beige');
     add('v2-next-small-index', once.boxes[0].nextSmallIndex === once.boxes[0].children.length + 1);
-    // KNOWN GAP (upstream ticket per ticket-45 acceptance rule): the v2 branch returns
-    // without connections/groups/schemaVersion keys; consumers normalize via the >= 3
-    // branch on next load. Second pass must normalize without losing anything.
-    const twice = migrateLayout(JSON.parse(JSON.stringify(once)));
-    add('v2-second-pass-normalized', Array.isArray(twice.connections) && twice.schemaVersion === 1
-      && canon(bookmarkIds(twice)) === canon(bookmarkIds(raw)));
+    // Issue #34: one pass must yield a complete layout. A crash-rescue write-back of
+    // this first result must not depend on a later load to restore missing keys.
+    add('v2-one-pass-complete',
+      Array.isArray(once.connections) && Array.isArray(once.groups)
+      && once.schemaVersion === 1 && once._meta && once._meta.__groupsMigrated === true);
+    add('v2-groups-stripped', once.groups.length === 0);
+    add('v2-idempotent',
+      canon(migrateLayout(JSON.parse(JSON.stringify(once)))) === canon(once));
+
+    // Same payload shape as legacy-groups.json, downgraded to v2: the single pass must
+    // still preserve its connection and restore isParent from the legacy groups row.
+    // Input reuses repo fixtures instead of a freshly invented shape.
+    const v2Groups = { ...loadFixture('legacy-groups.json'), version: 2 };
+    const v2GroupsOnce = migrateLayout(JSON.parse(JSON.stringify(v2Groups)));
+    add('v2-preserves-connections', v2GroupsOnce.connections.length === v2Groups.connections.length
+      && v2GroupsOnce.connections[0].props && typeof v2GroupsOnce.connections[0].props === 'object');
+    add('v2-restores-isparent-from-groups', v2GroupsOnce.boxes.some((b) => b.id === 'lb1' && b.isParent === true)
+      && v2GroupsOnce.boxes.find((b) => b.id === 'lb2').children.some((s) => s.id === 's3' && s.isParent === true));
+
+    // Malformed legacy groups rows must not throw out of migration: a throw during
+    // boot would enter recovery without archiving the otherwise readable payload.
+    // Input reuses legacy-v2.json and only injects invalid group rows.
+    const v2Malformed = { ...loadFixture('legacy-v2.json'), groups: [{ parentId: 42 }, null, {}] };
+    let malformedOk = false;
+    try {
+      const onceMalformed = migrateLayout(JSON.parse(JSON.stringify(v2Malformed)));
+      malformedOk = canon(bookmarkIds(onceMalformed)) === canon(bookmarkIds(v2Malformed))
+        && Array.isArray(onceMalformed.groups) && onceMalformed.groups.length === 0;
+    } catch (_) { malformedOk = false; }
+    add('v2-malformed-groups-tolerated', malformedOk);
   }
 
   // -- rollback safety: current persisted data readable by the previous reader -----

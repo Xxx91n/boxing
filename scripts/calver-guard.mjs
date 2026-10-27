@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Ticket 100 (architecture-recovery) - B64: calver 版本面一致性门禁。
+// calver 版本面一致性门禁。
 //
 // 被检面(任一不一致即 exit 1):
 //   1. manifest.json version            2. manifest.json version_name

@@ -15,7 +15,7 @@
 // Exit: 0 = pass, 1 = gate failed, 2 = usage/config error.
 // No dependencies (CRX-R-009): Node >= 18 global fetch.
 //
-// Failure taxonomy (D-003): MISMATCH = the deploy pipeline never landed the new
+// Failure taxonomy: MISMATCH = the deploy pipeline never landed the new
 // artifact (stale site); UNREACHABLE = liveness/read problem (Pages down,
 // cached 404, version.json unreadable).
 

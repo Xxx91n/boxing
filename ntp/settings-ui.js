@@ -252,7 +252,7 @@ export function initSettingsUiFacade(deps) {
   // names both the target point and the safety copy so wording matches the executed action).
   async function performSnapshotRollback(ts) {
     const when = new Date(ts).toLocaleString();
-    closeSettingsModal(); // don't stack the decision modal behind the settings overlay (t44 precedent)
+    closeSettingsModal(); // don't stack the decision modal behind the settings overlay
     const decision = await askConfirmModal(
       i18n('rollbackConfirmTitle'),
       i18n('rollbackConfirmBody', [when]),
@@ -330,7 +330,7 @@ export async function checkVersionUpdate(forceRefresh = false) {
 
   const cr = globalThis.chrome || globalThis.browser;
   const CACHE_KEY = 'boxingVersionCache';
-  const TTL = 2 * 60 * 60 * 1000; // 2 hours TTL (D-002 / S-02)
+  const TTL = 2 * 60 * 60 * 1000; // 2 hours TTL
 
   hintEl.hidden = false;
   hintEl.textContent = i18n('aboutUpdateChecking') || 'Checking for updates...';
@@ -347,7 +347,7 @@ export async function checkVersionUpdate(forceRefresh = false) {
 
     if (forceRefresh || !latest || (now - (cached?.ts || 0)) >= TTL) {
       let fetched = null;
-      // 1. Primary authority: GitHub Releases API (D-002 / S-02)
+      // 1. Primary authority: GitHub Releases API
       try {
         const ghRes = await fetch('https://api.github.com/repos/Xxx91n/boxing/releases/latest', { cache: 'no-cache' });
         if (ghRes.ok) {
@@ -726,7 +726,7 @@ export function bindSettingsUi() {
       });
     }
     // Export / Import
-    // Ticket 51 (spec ticket 51 / D-006 hybrid strategy): the DEFAULT export is a clean
+    // Ticket 51 (hybrid strategy): the DEFAULT export is a clean
     // envelope — current main layout + lightweight meta index (snap.v1 / corrupt /
     // conflict entries, NO bodies; pg_dump-vs-WAL separation per the 2026-09-12
     // atomcode export research). The optional second button exports the FULL DR

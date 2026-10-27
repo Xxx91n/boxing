@@ -70,7 +70,7 @@ export function initRenderFacade(deps) {
     if (sel) { sel.removeAllRanges(); sel.addRange(range); }
   }
 
-  // D-003: focus-state-machine title helper — preserves BX-TITLE-SEL first-click select-all
+  // Focus-state-machine title helper — preserves first-click select-all
   // while allowing caret placement on subsequent clicks.
   function makeTitleFocusMachine(el) {
     if (el._titleFocusMachineAttached) return;
@@ -268,7 +268,7 @@ export function initRenderFacade(deps) {
       bms.splice(to, 0, moved);
       return { reordered: { largeId, smallId, from, to } };
     },
-    // Ticket N-108-01 / C05 (D-005): addBookmark is a layout mutation too. The old
+    // addBookmark is a layout mutation too. The old
     // popups.js path did sb.bookmarks.push + fire-and-forget saveLayout outside
     // commit(), so write-path consistency (and any future add-side tombstone/merge
     // policy) had no single entry. Net-additive: no tombstoneIds.
@@ -713,7 +713,7 @@ export function initRenderFacade(deps) {
       }
       body.appendChild(chips);
     } else {
-      // Q2: Empty state — action button only, no hint text line.
+      // Empty state — action button only, no hint text line.
       // User: "删除'点击添加小盒子'的一行字彻底替换成按钮". Button alone carries intent.
       const actionBtn = document.createElement('button');
       actionBtn.className = 'large-box__empty-action';
