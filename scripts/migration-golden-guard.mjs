@@ -9,9 +9,14 @@
 //
 // Covers: release gating, schemaVersion / crash rescue, the groups -> isParent
 // one-time migration, and connection props backfill.
+//
+// Check-count note: the recovered pre-migration design report says 28 acceptance
+// checks. That number is stale historical context: this gate publishes 33 checks
+// (including the five rollback checks below) and must not be "corrected" to 28.
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { getContract } from './legacy-reader-frozen.mjs';
 
 const FIXTURE_DIR = new URL('../test/fixtures/schema/', import.meta.url);
 const UTILS_URL = new URL('../ntp/utils.js', import.meta.url);
@@ -41,21 +46,6 @@ function canon(value) {
   if (Array.isArray(value)) return '[' + value.map(canon).join(',') + ']';
   const keys = Object.keys(value).sort();
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + canon(value[k])).join(',') + '}';
-}
-
-// Rollback half of the expand/contract exercise: a reader frozen at the PREVIOUS
-// contract (no schemaVersion awareness; groups optional with
-// fallback). The point of the contract is that this reader keeps every user-visible
-// object from current data (boxes, children, bookmarks, connections); only the
-// runtime-only grouping decoration may differ, and that survives via isParent.
-function legacyReader(raw) {
-  if (!raw || typeof raw !== 'object' || !(raw.version >= 3)) return null; // >=3 taken as-is
-  return {
-    boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
-    connections: Array.isArray(raw.connections) ? raw.connections : [],
-    groups: Array.isArray(raw.groups) ? raw.groups : [],
-    settings: raw.settings || {},
-  };
 }
 
 async function runMigrationGoldenChecks() {
@@ -144,10 +134,13 @@ async function runMigrationGoldenChecks() {
   }
 
   // -- rollback safety: current persisted data readable by the previous reader -----
+  // Pure extraction: the reader itself is the append-only pre-adr0009 contract and
+  // the gate keeps its own comparison helpers, so the five checks are derived
+  // directly from the frozen reader's output rather than from an audit verdict.
   {
     const current = migrateLayout(loadFixture('v1.json'));
     const serialized = JSON.parse(JSON.stringify(current)); // storage boundary
-    const old = legacyReader(serialized);
+    const old = getContract('pre-adr0009').reader(serialized);
     add('rollback-old-reader-accepts', old !== null);
     add('rollback-bookmarks-visible', old !== null && canon(bookmarkIds(old)) === canon(bookmarkIds(current)));
     add('rollback-boxes-visible', old !== null && old.boxes.length === current.boxes.length);
