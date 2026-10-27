@@ -12,6 +12,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { rollbackAudit } from './legacy-reader-frozen.mjs';
 
 const FIXTURE_DIR = new URL('../test/fixtures/schema/', import.meta.url);
 const UTILS_URL = new URL('../ntp/utils.js', import.meta.url);
@@ -41,21 +42,6 @@ function canon(value) {
   if (Array.isArray(value)) return '[' + value.map(canon).join(',') + ']';
   const keys = Object.keys(value).sort();
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + canon(value[k])).join(',') + '}';
-}
-
-// Rollback half of the expand/contract exercise: a reader frozen at the PREVIOUS
-// contract (no schemaVersion awareness; groups optional with
-// fallback). The point of the contract is that this reader keeps every user-visible
-// object from current data (boxes, children, bookmarks, connections); only the
-// runtime-only grouping decoration may differ, and that survives via isParent.
-function legacyReader(raw) {
-  if (!raw || typeof raw !== 'object' || !(raw.version >= 3)) return null; // >=3 taken as-is
-  return {
-    boxes: Array.isArray(raw.boxes) ? raw.boxes : [],
-    connections: Array.isArray(raw.connections) ? raw.connections : [],
-    groups: Array.isArray(raw.groups) ? raw.groups : [],
-    settings: raw.settings || {},
-  };
 }
 
 async function runMigrationGoldenChecks() {
@@ -144,16 +130,19 @@ async function runMigrationGoldenChecks() {
   }
 
   // -- rollback safety: current persisted data readable by the previous reader -----
+  // The reader itself is the append-only pre-adr0009 contract; the gate keeps the
+  // layout comparison helpers and derives the same five checks from one audit.
   {
     const current = migrateLayout(loadFixture('v1.json'));
-    const serialized = JSON.parse(JSON.stringify(current)); // storage boundary
-    const old = legacyReader(serialized);
-    add('rollback-old-reader-accepts', old !== null);
-    add('rollback-bookmarks-visible', old !== null && canon(bookmarkIds(old)) === canon(bookmarkIds(current)));
-    add('rollback-boxes-visible', old !== null && old.boxes.length === current.boxes.length);
-    add('rollback-connections-visible', old !== null && old.connections.length === current.connections.length);
-    add('rollback-isparent-self-contained', old !== null && old.boxes.every((b) => b.groups === undefined)
-      && current.boxes.some((b) => b.isParent === true)); // grouping survives the contract without groups
+    const audit = rollbackAudit('pre-adr0009', current);
+    add('rollback-old-reader-accepts', audit.acceptance);
+    add('rollback-bookmarks-visible', audit.acceptance
+      && audit.bookmarkDiff.lost.length === 0 && audit.bookmarkDiff.gained.length === 0);
+    add('rollback-boxes-visible', audit.acceptance && audit.boxDelta === 0);
+    add('rollback-connections-visible', audit.acceptance && audit.connectionDelta === 0);
+    add('rollback-isparent-self-contained', audit.acceptance
+      && audit.starSurvival.lost.length === 0 && !audit.starSurvival.groupsLeaked
+      && audit.starSurvival.total > 0); // grouping survives the contract without groups
   }
 
   const failures = checks.filter((c) => !c.pass).map((c) => c.name);
