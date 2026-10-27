@@ -36,6 +36,19 @@ const PINS = Object.freeze({
   }),
 });
 
+// Ticket 46 (review fix): the pin must mean the gate calls the pinned declaration,
+// not merely that a declaration with the pinned name exists somewhere in the file.
+// Hash text alone is not enough: a substituted reader under an identical name
+// (`reader: (() => { const legacyReader = () => null; return legacyReader; })()`)
+// keeps the declaration count at 1 and its inferred name at `legacyReader`, so the
+// source pin would verify the untouched declaration while the gate calls the
+// substitute. Binding each contracted function name to this module's actual
+// implementation and requiring identity closes that hole. Function declarations
+// hoist, so this frozen map can sit above the declarations it references.
+const PINNED_IMPLS = Object.freeze({
+  'pre-adr0009': Object.freeze({ legacyReader }),
+});
+
 // #47 forbids production imports. This module is gate-side (scripts/), and the
 // registry/accessor split below keeps the boundary auditable.
 
@@ -223,6 +236,16 @@ function assertPinnedFunctionBodies(contract) {
       throw new Error(
         'frozen reader contract "' + contract.id + '" function "' + functionName +
         '" is missing or renamed: pinned source hash cannot be verified'
+      );
+    }
+    // Identity against the module's own binding: the hashed declaration must be the
+    // very function the gate will call. A same-named substitute (e.g. an IIFE that
+    // shadows the declaration locally) is rejected here even though its inferred
+    // name and the untouched declaration both satisfy the textual checks above.
+    if (supplied !== PINNED_IMPLS[contract.id]?.[functionName]) {
+      throw new Error(
+        'frozen reader contract "' + contract.id + '" function "' + functionName +
+        '" supplied body does not match the pinned implementation'
       );
     }
     const actualHash = sha256(raw);

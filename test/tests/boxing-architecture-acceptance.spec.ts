@@ -186,7 +186,7 @@ test.describe('B-10 production isolation for the frozen reader', () => {
 
   test('self-test proves production frozen-reader imports are red and gate-side imports are not flagged', () => {
     const out = execFileSync(process.execPath, [guard, '--self-test'], { encoding: 'utf8' });
-    expect(out).toContain('self-test: PASS (12/12)');
+    expect(out).toContain('self-test: PASS (13/13)');
     expect(out).toContain('production ntp module importing the frozen reader is red');
     expect(out).toContain('production ntp module dynamic-importing the frozen reader is red');
     expect(out).toContain('service worker importing the frozen reader is red');
@@ -199,6 +199,7 @@ test.describe('B-10 production isolation for the frozen reader', () => {
     expect(out).toContain('no-space static import of the frozen reader is red');
     expect(out).toContain('no-space re-export of the frozen reader is red');
     expect(out).toContain('import.meta mention is NOT flagged');
+    expect(out).toContain('quoted regex literal does not mask a following dynamic import');
   });
 
   test('the import-graph guard is green on the current tree', () => {
