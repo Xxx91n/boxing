@@ -1137,6 +1137,42 @@
     "message": "URL",
     "description": "User-editable bookmark field in the conflict comparison (issue #54)"
   },
+  "dataConflictAddBtn": {
+    "message": "Add this item back",
+    "description": "Issue #55: the one explicit choice that adds a copy-only small box or bookmark back into the subtree that still exists (spec #53 D2)"
+  },
+  "dataConflictAddApplied": {
+    "message": "Added $added$ item(s) back, applied $fields$ field(s)",
+    "description": "Result line after an explicit conflict apply that added copy-only items (issue #55)",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "An object with this id is already on your canvas - nothing to add back",
+    "description": "A copy-only object whose id is already on the canvas; adding it would duplicate the merge and tombstone key (issue #55)"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "This object was deleted after the copy was archived - it will not be added back",
+    "description": "A copy-only object the user deleted after the copy was archived; never added back (issue #55, spec #53 D3)"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "This object cannot be stored as the copy holds it - nothing to add back",
+    "description": "A copy-only object the archived bytes cannot store as they are (geometry or url), so nothing is added (issue #55)"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "This box has reached its item limit - nothing was added back",
+    "description": "An add refused by the existing per-box item limit (issue #55)"
+  },
+  "dataConflictAddFailed": {
+    "message": "Some of the items you selected could not be added back",
+    "description": "An add the unified mutation entry refused for another reason (issue #55)"
+  },
   "dataConflictDeleteBtn": {
     "message": "Delete",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

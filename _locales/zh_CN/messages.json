@@ -1103,6 +1103,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "补入该项"
+  },
+  "dataConflictAddApplied": {
+    "message": "已补入 $added$ 项、应用 $fields$ 个字段",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "画布上已存在相同 id 的对象 - 无需补入"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "该对象在副本归档后被删除 - 不会补入"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "无法按副本中的原样保存该对象 - 无需补入"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "该盒子已达条目上限 - 未补入任何内容"
+  },
+  "dataConflictAddFailed": {
+    "message": "所选部分项目未能补入"
+  },
   "dataConflictDeleteBtn": {
     "message": "删除",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

@@ -1100,6 +1100,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "이 항목 다시 추가"
+  },
+  "dataConflictAddApplied": {
+    "message": "$added$개를 다시 추가하고 $fields$개 항목을 적용했습니다",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "이 id의 개체가 이미 캔버스에 있어 다시 추가할 수 없습니다"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "이 항목은 사본을 보관한 뒤에 삭제되어 다시 추가하지 않습니다"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "사본에 있는 그대로 저장할 수 없어 다시 추가할 수 없습니다"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "이 박스는 항목 한도에 도달해 다시 추가되지 않았습니다"
+  },
+  "dataConflictAddFailed": {
+    "message": "선택한 항목 일부를 다시 추가할 수 없습니다"
+  },
   "dataConflictDeleteBtn": {
     "message": "삭제",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

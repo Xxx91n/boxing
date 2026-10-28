@@ -560,8 +560,9 @@ function mergeLayoutThreeWay(cloud, local, base) {
 //   bookmarks — title, url
 // Geometry is grouped x/y and width/height because a half-adopted box would land on top
 // of its neighbours. Internal state stays out: ids, nextSmallIndex/nextLargeIndex
-// counters, children/bookmarks membership (adding copy-only objects is #55), _meta,
-// per-box view state and settings. Nothing here can express "edit raw JSON".
+// counters, children/bookmarks membership (a copy-only object is added whole by the #55
+// path below, never as a field), _meta, per-box view state and settings. Nothing here can
+// express "edit raw JSON".
 const CONFLICT_BOX_FIELDS = [
   { key: 'title', kind: 'text', labelKey: 'dataConflictFieldTitle' },
   { key: 'position', kind: 'num', fields: ['x', 'y'], labelKey: 'dataConflictFieldPosition' },
@@ -668,10 +669,83 @@ function conflictObjectLabel(obj) {
   return obj && typeof obj.title === 'string' ? obj.title : '';
 }
 
+// ── Issue #55 (#53 D2): copy-only objects the user may add back ───────────────
+// The archive holds the LOSING side, so it can carry a small box or bookmark the canvas
+// never received: sync-engine.js:521 archives a diverged cloud child parent-wrapped, and
+// sync-engine.js:521 / settings-ui.js:1434 archive a verbatim cloud large box with its
+// whole bookmark list. D2 lets the user add those back into a subtree that still exists.
+// Three conditions make one un-addable, and each is reported instead of quietly dropped:
+//   exists   — that id is already on the canvas. Ids are the merge and tombstone key (and
+//              popups.js resolves a small box by bare id), so a second object with the
+//              same id would be dropped by the next cross-tab merge or shadow the live one.
+//   deleted  — the id sits in _meta.deleted, i.e. the user deleted it after the copy was
+//              archived. Adding it back would undo that delete, which #53 D3 keeps out of
+//              adjudication entirely (the same rule that refuses to rebuild a deleted
+//              large box, applied to the smaller targets).
+//   unusable — the payload cannot be stored as the copy holds it: geometry that cannot be
+//              placed, or a url normalizeBookmarkUrl refuses. A copy-only small box brings
+//              its own bookmarks, so one unusable bookmark refuses the whole box rather
+//              than silently inserting half of it.
+// The MAX_SMALL_BOXES / MAX_BOOKMARKS caps stay out of this function: utils.js is a leaf
+// module (import-graph B-1 forbids it from importing state.js), so the mutation handler
+// enforces them when the selection is applied.
+function conflictCurrentIds(boxes) {
+  const ids = new Set();
+  for (const b of boxes) {
+    if (!b || typeof b.id !== 'string') continue;
+    ids.add(b.id);
+    for (const s of (Array.isArray(b.children) ? b.children : [])) {
+      if (!s || typeof s.id !== 'string') continue;
+      ids.add(s.id);
+      for (const bm of (Array.isArray(s.bookmarks) ? s.bookmarks : [])) {
+        if (bm && typeof bm.id === 'string') ids.add(bm.id);
+      }
+    }
+  }
+  return ids;
+}
+
+// One archived object -> { reason, obj }. reason null means the user can ask for it.
+// The payload is the archive's own object, field-whitelisted to what the app can edit:
+// its id (object identity is carried, never invented), the user-editable box fields and
+// its bookmarks — no counters, no _meta, no per-box view state, nothing that would turn
+// an add into raw-JSON editing. isParent stays with the caller's star entry point.
+function conflictAddPayload(obj, level, taken, deleted, tieredKey) {
+  if (!obj || typeof obj.id !== 'string' || !obj.id) return { reason: 'unusable' };
+  if (typeof obj.title !== 'string') return { reason: 'unusable' };
+  if (taken.has(obj.id)) return { reason: 'exists' };
+  if (deleted.has(obj.id) || (tieredKey && deleted.has(tieredKey))) return { reason: 'deleted' };
+  if (level === 'bookmark') {
+    const url = normalizeBookmarkUrl(obj.url);
+    if (!url) return { reason: 'unusable' };
+    return { reason: null, obj: { id: obj.id, title: obj.title, url }, ids: [obj.id] };
+  }
+  const geo = ['x', 'y', 'width', 'height'].map((k) => conflictNumber(obj[k]));
+  if (!geo.every(Number.isFinite)) return { reason: 'unusable' };
+  const bookmarks = [];
+  const ids = [obj.id];
+  for (const bm of (Array.isArray(obj.bookmarks) ? obj.bookmarks : [])) {
+    const nested = conflictAddPayload(bm, 'bookmark', taken, deleted, null);
+    if (nested.reason) return { reason: nested.reason };
+    bookmarks.push(nested.obj);
+    ids.push(...nested.ids);
+  }
+  return {
+    reason: null,
+    ids,
+    obj: {
+      id: obj.id, type: 'small', title: obj.title,
+      x: geo[0], y: geo[1], width: geo[2], height: geo[3],
+      pinned: Boolean(obj.pinned), collapseHover: Boolean(obj.collapseHover),
+      isParent: Boolean(obj.isParent), bookmarks,
+    },
+  };
+}
+
 // entry: a verbatim conflict body ({ ts, raw, truncated? } as stored by the facade).
 // layout: the live layout the comparison runs against.
 function diffConflictArchive(entry, layout) {
-  const result = { applicable: false, reason: null, groups: [], stats: { objects: 0, fieldDiffs: 0, missing: 0 }, signature: '' };
+  const result = { applicable: false, reason: null, groups: [], stats: { objects: 0, fieldDiffs: 0, missing: 0, adds: 0, unaddable: 0 }, signature: '' };
   if (!entry || typeof entry !== 'object') { result.reason = 'unavailable'; return result; }
   // #53 D3: a body that was over the byte cap (truncated) or already pruned by rotation
   // never carries the archive content, so it must not be presented as applicable.
@@ -679,13 +753,27 @@ function diffConflictArchive(entry, layout) {
   if (!entry.raw || !Array.isArray(entry.raw.boxes)) { result.reason = 'unavailable'; return result; }
   result.applicable = true;
   const currentBoxes = Array.isArray(layout && layout.boxes) ? layout.boxes : [];
+  // `taken` starts as the ids the canvas already holds and grows with every add candidate
+  // accepted below, so a copy that lists the same id twice cannot plan two objects with it.
+  const taken = conflictCurrentIds(currentBoxes);
+  const deleted = new Set(Object.keys((layout && layout._meta && layout._meta.deleted) || {}));
   const sig = [];
+  const addCandidate = (obj, level, path) => {
+    const check = conflictAddPayload(obj, level, taken, deleted, level === 'small' ? path : null);
+    sig.push(path + '=' + (check.reason || 'copyOnly'));
+    if (check.reason) { result.stats.unaddable++; return { path, reason: check.reason }; }
+    for (const id of check.ids) taken.add(id);
+    result.stats.adds++;
+    return { path, reason: null, obj: check.obj };
+  };
   for (const archived of entry.raw.boxes) {
     if (!archived || typeof archived.id !== 'string') continue;
     const basePath = largeKey(archived.id);
     const cur = currentBoxes.find((b) => b && b.id === archived.id) || null;
     // Target gone: report it, offer nothing. Rebuilding a box the user deleted is out of
-    // scope for adjudication (#53 D3), and the archive row itself is never touched.
+    // scope for adjudication (#53 D3), and the archive row itself is never touched. Its
+    // copy-only descendants go with it: #55 only ever adds into a subtree that still
+    // exists, so a large box the canvas does not have never reaches the add list.
     if (!cur) {
       sig.push(basePath + '=missing');
       result.stats.missing++;
@@ -700,9 +788,17 @@ function diffConflictArchive(entry, layout) {
       if (!archivedChild || typeof archivedChild.id !== 'string') continue;
       const childBase = smallKey(archived.id, archivedChild.id);
       const curChild = currentChildren.find((s) => s && s.id === archivedChild.id) || null;
-      // A child the canvas does not have is either copy-only (#55 adds it) or deleted
-      // later; neither is a field adjudication, so it stays off the list entirely.
-      if (!curChild) continue;
+      if (!curChild) {
+        // #55: a small box the canvas does not have is offered as an explicit whole-object
+        // add (its bookmarks come with it), never as a field verdict — there is no current
+        // side to compare against.
+        group.children.push({
+          level: 'small', id: archivedChild.id, title: conflictObjectLabel(archivedChild),
+          status: 'copyOnly', fields: [], children: [], bookmarks: [],
+          add: addCandidate(archivedChild, 'small', childBase),
+        });
+        continue;
+      }
       const child = { level: 'small', id: archivedChild.id, title: conflictObjectLabel(archivedChild), status: 'matched', fields: [], bookmarks: [] };
       child.fields = collectConflictFields(curChild, archivedChild, CONFLICT_BOX_FIELDS, childBase, sig, result.stats);
       result.stats.objects++;
@@ -711,7 +807,13 @@ function diffConflictArchive(entry, layout) {
         if (!archivedBm || typeof archivedBm.id !== 'string') continue;
         const bmBase = childBase + ':' + archivedBm.id;
         const curBm = currentBookmarks.find((b) => b && b.id === archivedBm.id) || null;
-        if (!curBm) continue;
+        if (!curBm) {
+          child.bookmarks.push({
+            level: 'bookmark', id: archivedBm.id, title: conflictObjectLabel(archivedBm),
+            status: 'copyOnly', fields: [], add: addCandidate(archivedBm, 'bookmark', bmBase),
+          });
+          continue;
+        }
         const bm = { level: 'bookmark', id: archivedBm.id, title: conflictObjectLabel(archivedBm), status: 'matched', fields: [] };
         bm.fields = collectConflictFields(curBm, archivedBm, CONFLICT_BOOKMARK_FIELDS, bmBase, sig, result.stats);
         result.stats.objects++;
@@ -744,9 +846,20 @@ function planConflictApply(diff, selectedPaths) {
       }
     };
     push(group, group.fields, 'large');
+    // A copy-only object carries one add op instead of field writes: the user chose the
+    // object, not a field of it. An un-addable candidate has no payload, so it cannot be
+    // planned even if its path were somehow selected (the UI never renders a control for it).
+    const pushAdd = (node, level, smallId, bmId) => {
+      if (!node.add || !node.add.obj || !selected.has(node.add.path)) return;
+      ops.push({ path: node.add.path, level, largeId: group.id, smallId: smallId || null, bmId: bmId || null, add: node.add.obj, field: null, value: null });
+    };
     for (const child of group.children || []) {
+      if (child.status === 'copyOnly') { pushAdd(child, 'small', child.id, null); continue; }
       push(child, child.fields, 'small', child.id);
-      for (const bm of child.bookmarks || []) push(bm, bm.fields, 'bookmark', child.id, bm.id);
+      for (const bm of child.bookmarks || []) {
+        if (bm.status === 'copyOnly') pushAdd(bm, 'bookmark', child.id, bm.id);
+        else push(bm, bm.fields, 'bookmark', child.id, bm.id);
+      }
     }
   }
   return ops;

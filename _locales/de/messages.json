@@ -1100,6 +1100,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "Dieses Element zurückholen"
+  },
+  "dataConflictAddApplied": {
+    "message": "$added$ Element(e) zurückgeholt, $fields$ Feld(er) angewendet",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "Ein Objekt mit dieser ID ist bereits auf Ihrer Fläche - nichts zurückzuholen"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "Dieses Element wurde nach dem Archivieren der Kopie gelöscht - es wird nicht zurückgeholt"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "Dieses Element lässt sich nicht wie in der Kopie speichern - nichts zurückzuholen"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "Diese Box hat ihr Limit erreicht - nichts wurde zurückgeholt"
+  },
+  "dataConflictAddFailed": {
+    "message": "Einige gewählte Elemente konnten nicht zurückgeholt werden"
+  },
   "dataConflictDeleteBtn": {
     "message": "Löschen",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

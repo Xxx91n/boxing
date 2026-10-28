@@ -1100,6 +1100,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "أعد إضافة هذا العنصر"
+  },
+  "dataConflictAddApplied": {
+    "message": "أُعيدت إضافة $added$ عنصرًا وطُبِّق $fields$ من الحقول",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "يوجد كائن بهذا المعرّف في لوحتك بالفعل - لا شيء لإضافته"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "حُذف هذا العنصر بعد أرشفة النسخة - لن تُعاد إضافته"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "لا يمكن حفظ هذا العنصر كما تحفظه النسخة - لا شيء لإضافته"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "وصل هذا الصندوق إلى حد العناصر - لم تُعد إضافة أي شيء"
+  },
+  "dataConflictAddFailed": {
+    "message": "تعذّرت إعادة إضافة بعض العناصر المحددة"
+  },
   "dataConflictDeleteBtn": {
     "message": "حذف",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

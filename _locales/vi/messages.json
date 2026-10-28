@@ -1100,6 +1100,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "Thêm lại mục này"
+  },
+  "dataConflictAddApplied": {
+    "message": "Đã thêm lại $added$ mục và áp dụng $fields$ trường",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "Một đối tượng có id này đã tồn tại trên canvas của bạn - không có gì để thêm lại"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "Mục này đã bị xoá sau khi bản sao được lưu trữ - nó sẽ không được thêm lại"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "Không thể lưu mục này nguyên như bản sao giữ - không có gì để thêm lại"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "Hộp này đã đạt giới hạn mục - không có gì được thêm lại"
+  },
+  "dataConflictAddFailed": {
+    "message": "Một số mục bạn chọn đã không thể thêm lại"
+  },
   "dataConflictDeleteBtn": {
     "message": "Xoá",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

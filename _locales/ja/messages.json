@@ -1100,6 +1100,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "この項目を戻す"
+  },
+  "dataConflictAddApplied": {
+    "message": "$added$ 項目を戻し、$fields$ 件のフィールドを適用しました",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "この id のオブジェクトはキャンバスに既にあるため、戻せません"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "この項目はコピーをアーカイブした後に削除されたため、戻しません"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "コピーにあるままの形では保存できないため、戻せません"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "このボックスは項目数の上限に達しているため、戻されませんでした"
+  },
+  "dataConflictAddFailed": {
+    "message": "選択した項目の一部を戻せませんでした"
+  },
   "dataConflictDeleteBtn": {
     "message": "削除",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
