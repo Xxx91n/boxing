@@ -732,7 +732,11 @@ function conflictAddPayload(obj, level, taken, deleted, tieredKey) {
     if (!bm || typeof bm.id !== 'string' || !bm.id || ids.has(bm.id)) return { reason: 'unusable' };
     ids.add(bm.id);
     const nested = conflictAddPayload(bm, 'bookmark', taken, deleted, null);
-    if (nested.reason) return { reason: nested.reason };
+    // A nested bookmark that collides with the canvas or a tombstone refuses the BOX, and
+    // the honest label is 'unusable': the object the row is about (the box) was never
+    // deleted and is not on the canvas — the copy simply cannot be stored as it holds it.
+    // The box-level reasons stay reserved for the box's own id.
+    if (nested.reason) return { reason: 'unusable' };
     bookmarks.push(nested.obj);
   }
   return {

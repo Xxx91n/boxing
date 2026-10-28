@@ -61,8 +61,9 @@ const P_BOX = 'small:L1:S2';
 const P_BM = 'small:L1:S1:b2';
 const P_TITLE = 'large:L1#title';
 const P_URL = 'small:L1:S1:b1#url';
-// ntp/state.js:16 — the production per-small-box bookmark cap, not a spec invention.
+// ntp/state.js — the production per-box caps, not spec inventions.
 const MAX_BOOKMARKS = 50;
+const MAX_SMALL_BOXES = 500;
 
 // Canvas state: L1 (+ child S1 + bookmark b1) and an unrelated L2. Deliberately the same
 // canvas #54 compares, so the two tickets' row sets can be asserted side by side.
@@ -474,11 +475,73 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     expect((await addRows(page)).find((r: any) => r.path === P_BOX).tickable).toBe(false);
   });
 
+  test('AC4: a repeated id inside one archived small box refuses the whole box', async ({ page }) => {
+    test.setTimeout(90000);
+    // The id is the merge key, so a copy that lists b3 twice would lose one bookmark at the
+    // next cross-tab merge. That payload is not addable, and it must not be offered.
+    const dup = copyEntry();
+    dup.raw.boxes[0].children[1].bookmarks = [
+      { id: 'b3', title: 'First B3', url: 'https://cloud.test/b3' },
+      { id: 'b3', title: 'Second B3', url: 'https://cloud.test/b3b' },
+    ];
+    await bootFileLane(page, dup);
+    await openCompare(page);
+    const boxRow = (await addRows(page)).find((r: any) => r.path === P_BOX);
+    expect(boxRow.tickable).toBe(false);
+    expect(boxRow.text).toContain('cannot be stored as the copy holds it');
+    expect(await tickAdd(page, P_BOX)).toBe(false);
+    expect(await childIds(page)).toEqual(['S1']);
+  });
+
+  test('AC4: a starred copy-only box keeps its star through the star entry, not as a field', async ({ page }) => {
+    test.setTimeout(90000);
+    // isParent is DSU leader truth (GLOSSARY), so the added box's star must land via the
+    // star path — and the archive's starred L1 must stay an unadopted FIELD verdict.
+    const starred = copyEntry({}, {});
+    starred.raw.boxes[0].children[1].isParent = true;
+    await bootFileLane(page, starred);
+    await openCompare(page);
+    expect(await tickAdd(page, P_BOX)).toBe(true);
+    expect(await clickApply(page)).toBe(true);
+    await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/Added 1 item/);
+    const after = await memoryLayout(page);
+    const lb = after.boxes.find((b: any) => b.id === 'L1');
+    const s2 = lb.children.find((s: any) => s.id === 'S2');
+    expect(s2.isParent).toBe(true);
+    expect(lb.isParent).toBeFalsy();                 // the star FIELD of L1 was never adopted
+    const stored = JSON.parse(await storedValue(page));
+    expect(stored.boxes.find((b: any) => b.id === 'L1').children.find((s: any) => s.id === 'S2').isParent).toBe(true);
+    // Star truth stays the persisted field; the group mirror is derived and never stored.
+    expect(stored.groups).toBeUndefined();
+  });
+
+  test('AC4: the existing per-box small-box cap still binds an add', async ({ page }) => {
+    test.setTimeout(90000);
+    // L1 is exactly at the production cap (ntp/state.js MAX_SMALL_BOXES), so the add has to
+    // be refused by the mutation entry rather than pushing the layout over its limit.
+    const full = liveLayout();
+    const kids: any[] = [];
+    for (let i = 1; i < MAX_SMALL_BOXES; i++) {
+      kids.push({ id: 'k' + i, type: 'small', title: 'Box ' + i, x: i, y: 0, width: 240, height: 180, pinned: false, bookmarks: [] });
+    }
+    // S1 plus 499 generated boxes = the cap, so the fixture itself stays a legal canvas.
+    full.boxes[0].children = [full.boxes[0].children[0]].concat(kids);
+    await bootFileLane(page, copyEntry(), full);
+    await openCompare(page);
+    expect(await tickAdd(page, P_BOX)).toBe(true);
+    expect(await clickApply(page)).toBe(true);
+    await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/item limit/);
+    const stored = JSON.parse(await storedValue(page));
+    const lb = stored.boxes.find((b: any) => b.id === 'L1');
+    expect(lb.children.some((s: any) => s.id === 'S2')).toBe(false);
+    expect(lb.children).toHaveLength(MAX_SMALL_BOXES);
+  });
+
   test('AC4: the existing per-box bookmark cap still binds an add', async ({ page }) => {
     test.setTimeout(90000);
     // S1 is already at the production cap, and the copy offers one more bookmark.
     const full = liveLayout();
-    const bms = [];
+    const bms: any[] = [];
     for (let i = 1; i <= MAX_BOOKMARKS; i++) {
       bms.push({ id: 'b' + i, title: 'Bookmark ' + i, url: 'https://local.test/b' + i });
     }

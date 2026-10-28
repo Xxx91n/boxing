@@ -796,21 +796,27 @@ export function initSettingsUiFacade(deps) {
 
   // Issue #55: an add is the one conflict write that changes collection membership, so it
   // goes through the same unified mutation entry the canvas controls use — commit('addBookmark')
-  // and commit('addSmallBox') — and the star of an added small box goes through the star
-  // entry, exactly like a field verdict does. The object's id is the archive's own; nothing
-  // here invents one or exposes a counter. No save: applyConflictCompare owns the single
-  // write and repaint, so adding several objects lands as one layout change.
+  // and commit('addSmallBox'). The object's id is the archive's own; nothing here invents
+  // one or exposes a counter. Neither handler saves, so a multi-object add is written once,
+  // by applyConflictCompare, and repainted once — except a starred added box, whose star
+  // goes through toggleStarMark and therefore queues its own save first (the same thing a
+  // #54 field verdict on the star does). The write chain serialises, so the final awaited
+  // save still lands the complete selection.
   // Returns null on success, or the reason the entry refused.
   function applyConflictAdd(op) {
     const res = op.level === 'bookmark'
       ? commit('addBookmark', { largeId: op.largeId, smallId: op.smallId, bookmark: op.add })
       : commit('addSmallBox', { largeId: op.largeId, smallBox: op.add });
     if (!res || res.skipped) return (res && res.reason) || 'failed';
+    // addBookmark returns addedBookmark and addSmallBox returns addedSmall: the star only
+    // ever belongs to the box tier, so the key is read from the shape that has it.
     // Same rule as a field verdict on the star (writeConflictOp): the runtime groupStar
-    // mirror can already hold this key, and toggleStar UNSTARS when it does — so the star
-    // is only applied when it is actually missing, never toggled blind.
-    const key = smallKey(op.largeId, res.addedSmall.smallId);
-    if (op.level === 'small' && op.add.isParent && !groupStar.has(key)) toggleStarMark(key);
+    // mirror can already hold this key, and toggleStar UNSTARS when it does — so the star is
+    // applied only when it is actually missing, never toggled blind.
+    if (op.level === 'small' && op.add.isParent) {
+      const key = smallKey(op.largeId, res.addedSmall.smallId);
+      if (!groupStar.has(key)) toggleStarMark(key);
+    }
     return null;
   }
 
