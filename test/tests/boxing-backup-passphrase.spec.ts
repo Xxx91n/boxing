@@ -19,6 +19,7 @@
 import { expect, test } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { webcrypto } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'url';
 // The size caps are imported from the module under test (one number shared with the importer);
 // the crypto parameters below are deliberately not.
@@ -40,10 +41,10 @@ const NEW_I18N_KEYS = [
   'passphraseRequired', 'passphraseTooLong', 'passphraseMismatch', 'passphraseWrong',  'importEncryptedInvalid', 'exportEncryptedTooLarge',
 ];
 
-function bareLayout(title) {
+function bareLayout(title: string, id = 'L1') {
   return {
     version: 3.5, schemaVersion: 3, nextLargeIndex: 2,
-    boxes: [{ id: 'L1', type: 'large', title, x: 40, y: 40, width: 320, height: 220, nextSmallIndex: 1, children: [] }],
+    boxes: [{ id, type: 'large', title, x: 40, y: 40, width: 320, height: 220, nextSmallIndex: 1, children: [] }],
     connections: [], settings: { zoomLevel: 1.0, lastSyncAt: 0 },
     _meta: { revision: 1, updatedAt: Date.now() - 60000, writerId: 'this-tab' },
   };
@@ -200,10 +201,13 @@ function unb64(text: string) {
 
 // Node-side v1 seal/open. Used only to build files the product UI cannot produce, and to read
 // back what the browser sealed — the passphrases here are test fixtures, never user data.
+// `webcrypto` is imported explicitly: package.json allows node >=18, where the global is still
+// behind --experimental-global-webcrypto, so a local run on 18 would die before the browser
+// lane even started (CI pins 24 through .nvmrc, where it happens to work either way).
 async function nodeKey(passphrase: string, salt: Uint8Array, usage: 'encrypt' | 'decrypt') {
   // NFC to match the product's v1 contract (see deriveFileKey in ntp/backup-crypto.js).
-  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
+  const base = await webcrypto.subtle.importKey('raw', new TextEncoder().encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);
+  return webcrypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: salt as BufferSource, iterations: V1.iterations, hash: V1.hash },
     base,
     { name: 'AES-GCM', length: 256 },
@@ -212,10 +216,10 @@ async function nodeKey(passphrase: string, salt: Uint8Array, usage: 'encrypt' | 
   );
 }
 async function seal(innerJson: string, passphrase: string, overrides: Record<string, any> = {}) {
-  const salt = crypto.getRandomValues(new Uint8Array(V1.saltBytes));
-  const iv = crypto.getRandomValues(new Uint8Array(V1.ivBytes));
+  const salt = webcrypto.getRandomValues(new Uint8Array(V1.saltBytes));
+  const iv = webcrypto.getRandomValues(new Uint8Array(V1.ivBytes));
   const key = await nodeKey(passphrase, salt, 'encrypt');
-  const sealed = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, new TextEncoder().encode(innerJson));
+  const sealed = await webcrypto.subtle.encrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, new TextEncoder().encode(innerJson));
   return Object.assign({
     boxingBackup: 1,
     kdf: { name: 'PBKDF2', hash: V1.hash, iterations: V1.iterations, salt: b64(salt) },
@@ -225,7 +229,7 @@ async function seal(innerJson: string, passphrase: string, overrides: Record<str
 }
 async function openSealed(sealed: any, passphrase: string) {
   const key = await nodeKey(passphrase, unb64(sealed.kdf.salt), 'decrypt');
-  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(sealed.cipher.iv) as BufferSource }, key, unb64(sealed.payload) as BufferSource);
+  const plain = await webcrypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(sealed.cipher.iv) as BufferSource }, key, unb64(sealed.payload) as BufferSource);
   return new TextDecoder().decode(plain);
 }
 
@@ -326,6 +330,15 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect((await passphraseDialogState(page)).open).toBe(false);
     expect(await downloadCount(page)).toBe(0);
 
+    // focus goes in with the dialog and comes back out to the opener (a real click would have
+    // left it on the export button; the harness clicks programmatically, so it is set here)
+    await page.evaluate(() => (document.getElementById('export-data-btn') as HTMLElement).focus());
+    await click(page, '#export-data-btn');
+    await expect.poll(() => page.evaluate(() => !document.getElementById('passphrase-modal')!.hidden), { timeout: 15000 }).toBe(true);
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe('passphrase-input');
+    await click(page, '#passphrase-cancel-btn');
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe('export-data-btn');
+
     // two different typings -> inline error, dialog stays open, still nothing downloaded
     await click(page, '#export-data-btn');
     await typePassphrase(page, 'first-typing', 'second-typing');
@@ -380,7 +393,7 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     // Install A seals the file and is then thrown away — no origin data, no origin key.
     const contextA = await browser.newContext();
     const pageA = await contextA.newPage();
-    await boot(pageA, { layout: bareLayout('Sealed From A'), snapData: bareLayout('Snap A'), ts: SNAP_TS });
+    await boot(pageA, { layout: bareLayout('Sealed From A', 'L7'), snapData: bareLayout('Snap A'), ts: SNAP_TS });
     const sealedText = (await exportFile(pageA, { passphrase: 'open sesame 会话', useEnter: true })).text;
     expect(JSON.parse(sealedText!).boxingBackup).toBe(1);
     await contextA.close();
@@ -519,7 +532,7 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     const bytes = Buffer.byteLength(plain.text!, 'utf8');
     expect(bytes).toBeGreaterThan(maxInnerBytes());
     expect(bytes).toBeLessThanOrEqual(MAX_BACKUP_FILE_BYTES);
-    expect(JSON.parse(plain.text!).boxes[0].children[0].bookmarks).toHaveLength(10000);
+    expect(JSON.parse(plain.text!).layout.boxes[0].children[0].bookmarks).toHaveLength(10000);
     expect(await downloadCount(page)).toBe(1);
 
     // and the importer still gates a SEALED file by its own size: too big is rejected before
