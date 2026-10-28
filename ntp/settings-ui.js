@@ -299,7 +299,6 @@ export function initSettingsUiFacade(deps) {
       const actionEl = document.getElementById('passphrase-action-btn');
       const cancelEl = document.getElementById('passphrase-cancel-btn');
       const isExport = mode === 'export';
-      passphraseDialogOpen = true;
       let settled = false;
       const showError = (message) => { errorEl.textContent = message; errorEl.hidden = false; };
       const hideError = () => { errorEl.textContent = ''; errorEl.hidden = true; };
@@ -347,9 +346,10 @@ export function initSettingsUiFacade(deps) {
       bodyEl.textContent = i18n(isExport ? 'passphraseExportBody' : 'passphraseImportBody');
       actionEl.textContent = i18n(isExport ? 'passphraseExportAction' : 'passphraseImportAction');
       repeatEl.hidden = !isExport;
-      // Export mints a new secret (never offer a stored one); decrypt just reads it back.
-      inputEl.autocomplete = isExport ? 'new-password' : 'off';
-      repeatEl.autocomplete = isExport ? 'new-password' : 'off';
+      // 'off' in both modes: a password-manager prompt would offer to keep a copy of a phrase
+      // this feature promises is unrecoverable, and export cannot autofill what it just minted.
+      inputEl.autocomplete = 'off';
+      repeatEl.autocomplete = 'off';
       inputEl.value = ''; repeatEl.value = '';
       if (initialError) showError(initialError); else hideError();
       actionEl.addEventListener('click', onAction);
@@ -357,6 +357,11 @@ export function initSettingsUiFacade(deps) {
       modal.addEventListener('click', onBackdrop);
       inputEl.addEventListener('keydown', onKey);
       repeatEl.addEventListener('keydown', onKey);
+      modal.addEventListener('keydown', onModalKey);
+      // Marked open only now that setup ran: a throw before this point must not leave the
+      // re-entry guard stuck on, or every later export and encrypted import would silently
+      // resolve as a dismissal forever.
+      passphraseDialogOpen = true;
       modal.hidden = false;
       inputEl.focus();
     });
@@ -1201,8 +1206,8 @@ export function bindSettingsUi() {
             // standard envelope so the user still gets a clean, importable export.
             debug('Full DR package exceeds 5MB after trim — falling back to standard envelope');
             try { alert(i18n('exportFullOverflow')); } catch (_) { /* alert may be blocked */ }
-            const plain = await buildExportEnvelope();
-            text = JSON.stringify(plain, null, 2);
+            env = await buildExportEnvelope();
+            text = JSON.stringify(env, null, 2);
           }
         }
         if (passphrase) {
