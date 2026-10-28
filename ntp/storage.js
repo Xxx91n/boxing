@@ -673,9 +673,9 @@ export function registerStorageOnChanged() {
       if (Array.isArray(guard.raw.boxes)) entry.boxes = guard.raw.boxes.length;
       await _writeConflictEntry(entry);
       // The conflict store's count cap prunes by oldest ts, so restoring an archive older than
-      // row already held can drop the row this call just wrote. Report that as a failure: the
-      // archive would not be readable through the conflict list, and the store is back to the
-      // rows it held before this call, so "nothing was changed" stays true for the user.
+      // every row already held can drop the row this call just wrote. Report that as a failure:
+      // the archive would not be readable through the conflict list, and the store is back to
+      // the rows it held before this call, so "nothing was changed" stays true for the user.
       const after = await _readConflictIndex();
       if (!after.some(e => e && e.ts === originTs)) {
         debug('restoreConflictGuard: restored row pruned by the archive cap (ts=' + originTs + ')');

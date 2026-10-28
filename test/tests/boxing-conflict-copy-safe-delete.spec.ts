@@ -38,10 +38,9 @@ const GUARD_PREFIX = 'snap.guard.v1.';
 const GUARD_INDEX_KEY = 'snap.guard.v1.index';
 // The archived subtree reused from the ticket-44/79 samples (L9 / 'Conflicted Side').
 const CONFLICT_RAW = { boxes: [{ id: 'L9', type: 'large', title: 'Conflicted Side', x: 10, y: 10, width: 320, height: 220, nextSmallIndex: 1, children: [] }] };
-// archiveConflictLayouts records the size of the ARCHIVED PAYLOAD, so the seed must carry that
-// same number: a hand-written constant would make the restore's "same bytes as before"
-// assertion compare against a shape the real archive path never produces.
-const CONFLICT_SIZE = JSON.stringify(CONFLICT_RAW).length;
+// archiveConflictLayouts records the size of the ARCHIVED PAYLOAD, so the seed derives it from
+// the payload instead of hardcoding a number: a hand-written constant would make the restore's
+// "same bytes as before" assertion compare against a shape the real archive path never writes.
 
 async function bootFresh(page) {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
@@ -230,6 +229,9 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect(restoredBody.size).toBe(preDeleteRow.size);            // same bytes shown before and after
     // Prove it through the EXISTING readout: the per-row export downloads the archived entry
     // verbatim, which is what "恢复后可通过现有冲突列表／读取能力取得原文" actually promises.
+    // Wait for the row to be painted first — the storage poll above says nothing about the
+    // asynchronous refreshDataHealth render (readout-spec precedent).
+    await expect(conflictRows(page)).toHaveCount(1, { timeout: 15000 });
     await armExportCapture(page);
     await page.evaluate(() => {
       const btn = document.querySelector('#data-conflict-list .data-conflict-row-item .data-conflict-export-btn');
