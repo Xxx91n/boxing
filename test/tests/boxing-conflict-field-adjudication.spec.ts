@@ -125,9 +125,14 @@ async function openSettingsDataTab(page: any) {
   // trading the race for one longer wait.
   await expect.poll(async () => {
     await jsClick(page, '#settings-btn');
-    return page.evaluate(() => !document.getElementById('settings-modal')?.hidden);
-  }, { timeout: 25000 }).toBe(true);
+    // The modal must EXIST: `!el?.hidden` would pass vacuously on a page without it.
+    return page.evaluate(() => {
+      const modal = document.getElementById('settings-modal') as HTMLElement | null;
+      return Boolean(modal) && !modal!.hidden;
+    });
+  }, { timeout: 25000, message: 'settings modal must be open before the data tab is read' }).toBe(true);
   expect(await jsClick(page, '.settings-nav__item[data-tab="data"]')).toBe(true);
+  await expect.poll(() => page.evaluate(() => !document.getElementById('tab-data')?.hidden), { timeout: 10000 }).toBe(true);
   await expect.poll(() => page.evaluate(() =>
     document.querySelectorAll('#data-conflict-list .data-conflict-row-item').length), { timeout: 15000 }).toBeGreaterThan(0);
 }
@@ -206,7 +211,8 @@ async function bootFileLane(page: any, entry: any) {
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageGet)), { timeout: 20000 }).toBe(true);
   // Boot has to finish loading the seeded layout: until init() is through, the canvas is
   // the empty default and the settings controls are not wired yet.
-  await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().boxes), { timeout: 20000 }).toBe(2);
+  await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().boxes), { timeout: 20000 })
+    .toBe(liveLayout().boxes.length);
   await dismissOnboarding(page);
   await openSettingsDataTab(page);
 }
@@ -488,6 +494,10 @@ test.describe('Issue #54 — golden path in the real Chrome extension build', ()
       await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageSet)), { timeout: 30000 }).toBe(true);
       // Lane proof: this page is served by the extension, not from disk.
       expect(page.url()).toContain('chrome-extension://');
+      // Gate the seed on init() being through: __boxingDebug appears early (before storage
+      // is read), and a boot-time write landing after the seed would clobber it. The
+      // onboarding decision is init()'s last step, so this helper is the completion signal.
+      await dismissOnboarding(page);
 
       const entry = archivedEntry();
       await page.evaluate(async ({ layout, conflict }) => {
@@ -501,7 +511,8 @@ test.describe('Issue #54 — golden path in the real Chrome extension build', ()
       }, { layout: liveLayout(), conflict: entry });
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
       await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageSet)), { timeout: 30000 }).toBe(true);
-      await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().boxes), { timeout: 30000 }).toBe(2);
+      await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().boxes), { timeout: 30000 })
+        .toBe(liveLayout().boxes.length);
       await dismissOnboarding(page);
       await openSettingsDataTab(page);
       await openCompare(page);
