@@ -40,6 +40,33 @@ async function clickDarkToggle(page) {
   });
 }
 
+// Paint-critical first-paint cache key (ntp/persist.js BOOT_THEME_KEY). Shared by the
+// file:// cases below and the issue #60 real-build lane, which read the same bytes.
+const BOOT_MIRROR_KEY = 'boxingBootTheme.v1';
+
+// Init script: record every write to the ntp--dark token together with the resulting
+// state and whether the ntp module had taken over yet, so the sequence
+// (fallback-true, then hydrate-false) is provable from the page's own history.
+function darkTraceRecorder(): void {
+  const w = window as any;
+  w.__darkTrace = [];
+  for (const op of ['add', 'remove', 'toggle'] as const) {
+    const orig = DOMTokenList.prototype[op];
+    DOMTokenList.prototype[op] = function (...tokens: string[]) {
+      const res = (orig as any).apply(this, tokens);
+      const root = document.documentElement;
+      if (root && this === root.classList && tokens.indexOf('ntp--dark') !== -1) {
+        w.__darkTrace.push({
+          op,
+          on: root.classList.contains('ntp--dark'),
+          booted: Boolean(w.__boxingDebug),
+        });
+      }
+      return res;
+    };
+  }
+}
+
 test.describe('Bug3 settings persistence repro', () => {
   test('Bug3-a: set sameTab via UI change event; layout.settings.urlOpenMode= sameTab persisted', async ({ page }) => {
     await resetBoxing(page);
@@ -269,7 +296,6 @@ test.describe('fresh-install/reset opens bookmarks in the CURRENT tab ', () => {
 // these pass while #app/body still carry the class, the bug is back.
 // ═══════════════════════════════════════════════════════════════════════════
 test.describe('dark mode has one host and one apply path', () => {
-  const BOOT_MIRROR_KEY = 'boxingBootTheme.v1';
 
   // Read every place the class could be, so an assertion can never pass by
   // looking at only one of them.
@@ -500,26 +526,7 @@ test.describe('dark mode has one host and one apply path', () => {
     // hydration would only ever see the corrected value and could not tell a
     // working fallback from a hard-coded light.
     await page.emulateMedia({ colorScheme: 'dark' });
-    await page.addInitScript(() => {
-      // Record every write to the ntp--dark token together with the resulting
-      // state, so the sequence (fallback-true, then hydrate-false) is provable.
-      (window as any).__darkTrace = [];
-      for (const op of ['add', 'remove', 'toggle'] as const) {
-        const orig = DOMTokenList.prototype[op];
-        DOMTokenList.prototype[op] = function (...tokens: string[]) {
-          const res = (orig as any).apply(this, tokens);
-          const root = document.documentElement;
-          if (root && this === root.classList && tokens.indexOf('ntp--dark') !== -1) {
-            (window as any).__darkTrace.push({
-              op,
-              on: root.classList.contains('ntp--dark'),
-              booted: Boolean((window as any).__boxingDebug),
-            });
-          }
-          return res;
-        };
-      }
-    });
+    await page.addInitScript(darkTraceRecorder);
     await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -713,36 +720,16 @@ test.describe('dark mode has one host and one apply path', () => {
 // control surface (#dark-mode-group radios, #dark-mode-btn quick toggle) inside the
 // ACTUAL built extension, on the seam ticket-54's AC-real lane opened: its own persistent
 // Chromium over dist/boxing-chrome with a throwaway profile, real chrome.storage.local
-// bytes, the OS theme value emulated at context launch so the first tab already paints
-// with it, and a browser close/reopen between the two sessions so "the OS changed while
-// Boxing was closed" is a real restart instead of an in-page media flip. It skips visibly
+// bytes, and the OS value emulated at context launch so the first tab already paints
+// with it. Three sessions cover three different mechanisms: the mirror-absent fallback
+// plus a live OS change inside one tab, a restart where the OS changed while the browser
+// was closed, and a restart where an explicit choice has to beat the OS. It skips visibly
 // when the build is absent and never falls back to the file:// page.
-// The recorder is the __darkTrace shape this file already uses: every write to the
-// ntp--dark token, with the resulting state and whether hydration had taken over yet.
-// Mask timing and boot-variable witnesses stay in boxing-boot-pending.spec.ts.
-test.describe('Issue #60 — three-state theme in the real Chrome extension build', () => {
-  const BOOT_MIRROR = 'boxingBootTheme.v1';
+// Witnesses reuse this file's darkTraceRecorder: every write to the ntp--dark token, with
+// the resulting state and whether the ntp module had taken over yet. Mask timing and
+// boot-variable witnesses stay in boxing-boot-pending.spec.ts.
+test.describe('Issue #60 — three-state dark-mode preference in the real Chrome extension build', () => {
   const DIST_CHROME = path.resolve(__dirname, '..', '..', 'dist', 'boxing-chrome');
-
-  function darkTraceRecorder(): void {
-    const w = window as any;
-    w.__darkTrace = [];
-    for (const op of ['add', 'remove', 'toggle'] as const) {
-      const orig = DOMTokenList.prototype[op];
-      DOMTokenList.prototype[op] = function (...tokens: string[]) {
-        const res = (orig as any).apply(this, tokens);
-        const root = document.documentElement;
-        if (root && this === root.classList && tokens.indexOf('ntp--dark') !== -1) {
-          w.__darkTrace.push({
-            op,
-            on: root.classList.contains('ntp--dark'),
-            booted: Boolean(w.__boxingDebug),
-          });
-        }
-        return res;
-      };
-    }
-  }
 
   const launch = (profile: string, scheme: 'light' | 'dark') =>
     chromium.launchPersistentContext(profile, {
@@ -781,8 +768,12 @@ test.describe('Issue #60 — three-state theme in the real Chrome extension buil
     let mirror = null;
     try { mirror = JSON.parse(localStorage.getItem(mirrorKey) || 'null'); } catch (_) { mirror = null; }
     return { pref: stored?.boxingLayout?.settings?.darkMode, mirrorPref: mirror?.darkMode };
-  }, BOOT_MIRROR);
+  }, BOOT_MIRROR_KEY);
 
+  // REAL pointer input, unlike the synthetic clicks this file uses elsewhere: the
+  // playwright#16095 stall that forced those is a Firefox persistent-context bug, and
+  // this lane skips everything but chromium (test.skip below). #53 T3 asks for the UI
+  // being operated, and the settings listeners are already gated by dismissOnboarding.
   async function openAppearance(page) {
     await page.click('#settings-btn', { timeout: 15000 });
     await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 15000 });
@@ -790,7 +781,7 @@ test.describe('Issue #60 — three-state theme in the real Chrome extension buil
     await expect(page.locator('#dark-mode-group')).toBeVisible({ timeout: 15000 });
   }
 
-  test('AC-real: first paint, the three-state control, quick toggle and the persisted preference in dist/boxing-chrome', async ({}, testInfo) => {
+  test('AC-real: first paint, live OS following, the three-state control, quick toggle and the persisted preference in dist/boxing-chrome', async ({}, testInfo) => {
     test.setTimeout(240000);
     test.skip(testInfo.project.name !== 'chromium-extension', 'the loaded build is a chromium lane');
     test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
@@ -800,18 +791,21 @@ test.describe('Issue #60 — three-state theme in the real Chrome extension buil
     let ctx = null;
     try {
       // Session 1 — OS dark, nothing stored yet. boot-theme has no mirror, so the real
-      // build must fall back to the live OS at first paint and then let hydration apply
-      // the authoritative default (light) without ever persisting the OS value.
+      // build must fall back to the live OS at first paint; hydration then corrects the
+      // class to the authoritative default (light), and that fallback must never reach
+      // the stored bytes.
       ctx = await launch(profile, 'dark');
       await ctx.addInitScript(darkTraceRecorder);
       let page = await openExtensionTab(ctx);
       let trace = await darkTrace(page);
       expect(trace.find((t) => t.on === true && t.booted === false),
         'boot-theme must fall back to prefers-color-scheme when the mirror is absent').toBeTruthy();
-      expect(trace.find((t) => t.on === false && t.booted === true),
-        'loadSettings must re-apply the authoritative setting after the boot fallback').toBeTruthy();
       await expect.poll(() => appliedDark(page), { timeout: 15000 }).toBe(false);
       await expect.poll(() => livePref(page), { timeout: 15000 }).toBe('light');
+      const fresh = await persisted(page);
+      expect([fresh.pref, fresh.mirrorPref].filter((v) => v === 'dark' || v === true),
+        'the matchMedia fallback is display-only: neither the stored layout nor the '
+        + 'first-paint cache may carry the resolved OS value').toEqual([]);
 
       // Follow system through the real control: the page goes dark with the live OS, and
       // what lands in chrome.storage.local + the first-paint cache is the preference.
@@ -823,6 +817,12 @@ test.describe('Issue #60 — three-state theme in the real Chrome extension buil
       // so it is polled rather than read once.
       await expect.poll(async () => (await persisted(page)).mirrorPref, { timeout: 15000,
         message: 'the first-paint cache stores the preference, never the resolved OS value' }).toBe('system');
+
+      // The OS changes while the tab stays open: the listener re-applies display only.
+      await page.emulateMedia({ colorScheme: 'light' });
+      await expect.poll(() => appliedDark(page), { timeout: 15000 }).toBe(false);
+      expect((await persisted(page)).pref,
+        'a live OS change must not rewrite the stored preference').toBe('system');
       await ctx.close();
       ctx = null;
 
@@ -833,10 +833,10 @@ test.describe('Issue #60 — three-state theme in the real Chrome extension buil
       await ctx.addInitScript(darkTraceRecorder);
       page = await openExtensionTab(ctx);
       trace = await darkTrace(page);
-      expect(trace.some((t) => t.on === true && t.booted === false),
-        'a tab opened after the OS changed must not replay the previous OS value').toBe(false);
       expect(trace.find((t) => t.on === false && t.booted === false),
         'boot-theme must resolve the stored system preference against the live OS').toBeTruthy();
+      expect(trace.some((t) => t.on === true && t.booted === false),
+        'a tab opened after the OS changed must not replay the previous OS value').toBe(false);
       await expect.poll(() => appliedDark(page), { timeout: 15000 }).toBe(false);
       await expect.poll(async () => (await persisted(page)).pref, { timeout: 15000 }).toBe('system');
 
@@ -847,6 +847,20 @@ test.describe('Issue #60 — three-state theme in the real Chrome extension buil
       await expect.poll(async () => (await persisted(page)).pref, { timeout: 15000 }).toBe('dark');
       await expect.poll(async () => (await persisted(page)).mirrorPref, { timeout: 15000,
         message: 'the cache keeps the explicit choice' }).toBe('dark');
+      await ctx.close();
+      ctx = null;
+
+      // Session 3 — same profile, OS still light, but the choice is now explicit 'dark':
+      // the stored preference must beat the OS on the first frame, before hydration.
+      ctx = await launch(profile, 'light');
+      await ctx.addInitScript(darkTraceRecorder);
+      page = await openExtensionTab(ctx);
+      trace = await darkTrace(page);
+      expect(trace.find((t) => t.on === true && t.booted === false),
+        'an explicit dark preference must win over a light OS at first paint').toBeTruthy();
+      await expect.poll(() => appliedDark(page), { timeout: 15000 }).toBe(true);
+      expect((await persisted(page)).pref, 'an explicit choice must not be lost on restart')
+        .toBe('dark');
     } finally {
       if (ctx) await ctx.close().catch(() => { /* lane teardown is best-effort */ });
       fs.rmSync(profile, { recursive: true, force: true });
