@@ -88,7 +88,7 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **passphrase backup file** — Manual export (standard envelope or full DR package) sealed with a user-typed passphrase in a versioned `boxingBackup: 1` envelope (PBKDF2-SHA-256 → AES-GCM). Keyed on the passphrase alone, never on the install key, so another install can open it; Boxing does not store the passphrase and cannot recover it. Distinct from the credential envelope, which is per-install obfuscation of sync secrets.
 
-**credential envelope** — Sync secrets (`_encWebdavPass` / `_encGistToken`) obfuscated at rest with the per-install key. It is not file encryption and never travels in usable form inside a backup file.
+**credential envelope** — Sync secrets (`_encWebdavPass` / `_encGistToken`) obfuscated at rest with the per-install key. It is not file encryption, and the per-install key never leaves the profile — so a **v3** envelope is unusable to whoever holds a backup file. Legacy **v1** envelopes bundled their own key and **v2** used a constant shipped in the source, so any of those still living in a profile do travel inside an exported file and can be recovered by its holder (see the version history in `ntp/credentials.js`). Treat every backup file, sealed or plain, as secret-bearing.
 
 **autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
 

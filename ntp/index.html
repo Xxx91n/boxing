@@ -279,7 +279,9 @@
                  Unchecked keeps the plain JSON export byte-for-byte what it was — encryption is
                  never a forced migration. The passphrase is read once at click time and never
                  persisted, so the hint states the loss consequence and the sync-credential
-                 boundary (a restored file carries no usable WebDAV/Gist login). -->
+                 boundary (the per-install key never travels, so a v3 credential envelope inside
+                 the file cannot be reopened elsewhere; legacy v1/v2 records are covered in
+                 GLOSSARY.md — a new install re-types its sync credentials either way). -->
             <section class="modal__section">
               <label class="checkbox-label">
                 <input type="checkbox" id="export-encrypt-cb">

@@ -5,7 +5,11 @@
 // here is keyed solely on a passphrase the user types, so no storage, no install key and no
 // session secret is reachable from this module (zero imports). The two consequences the UI
 // states verbatim: a lost passphrase means the file is unreadable forever, and a decrypted
-// backup never carries usable WebDAV/Gist credentials — a new install re-types them.
+// backup never carries the per-install key — so a v3 credential envelope inside it cannot be
+// reopened by whoever holds the file, and a new install re-types its sync credentials.
+// (Legacy v1 envelopes bundled their own key and v2 used a shipped constant; any still living
+// in a profile do travel inside the exported bytes. That is credentials.js's pre-existing
+// version history, not something this module introduces or can fix.)
 //
 // Envelope v1 — versioned, with every parameter pinned to the version so a file is always
 // decoded with the parameters it was written with (expand/contract: a future v2 adds a
