@@ -110,6 +110,23 @@ function archivedEntryWithUrl(copyUrl: string) {
   };
 }
 
+// A payload shaped like something an external file could have produced: null dimensions
+// (Number(null) is 0), a fractional coordinate, and a bookmark url identical to the live one
+// apart from case. None of these may turn into a choice the user can adopt.
+function archivedIntegrityEntry() {
+  const boxes = archivedBoxes();
+  const box = boxes[0] as any;
+  box.width = null;
+  box.height = null;
+  box.x = 40.5;
+  box.y = 40;
+  box.children[0].bookmarks[0].url = 'https://local.test/b1';
+  return {
+    ts: CONFLICT_TS, reason: 'import-merge', side: 'incoming',
+    raw: { boxes }, size: JSON.stringify(boxes).length, boxes: 1,
+  };
+}
+
 const jsClick = (page: any, sel: string) =>
   page.evaluate((s) => {
     const el = document.querySelector(s) as HTMLElement | null;
@@ -198,7 +215,8 @@ const storedData = (page: any) =>
 
 // file:// lane boot: seed the canvas layout AND one archived conflict copy before the very
 // first navigation, then land on the settings data tab where the comparison lives.
-async function bootFileLane(page: any, entry: any) {
+async function bootFileLane(page: any, entry: any, seedLayout?: any) {
+  const layout = seedLayout || liveLayout();
   await page.addInitScript(({ layout, conflict }) => {
     localStorage.setItem('boxingLayout', JSON.stringify(layout));
     localStorage.setItem('bxstore:boxingLayout.conflict.' + conflict.ts, JSON.stringify(conflict));
@@ -206,13 +224,13 @@ async function bootFileLane(page: any, entry: any) {
       ts: conflict.ts, reason: conflict.reason, side: conflict.side,
       size: conflict.size, boxes: conflict.boxes || 0, truncated: !!conflict.truncated,
     }]));
-  }, { layout: liveLayout(), conflict: entry });
+  }, { layout, conflict: entry });
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageGet)), { timeout: 20000 }).toBe(true);
   // Boot has to finish loading the seeded layout: until init() is through, the canvas is
   // the empty default and the settings controls are not wired yet.
   await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().boxes), { timeout: 20000 })
-    .toBe(liveLayout().boxes.length);
+    .toBe(layout.boxes.length);
   await dismissOnboarding(page);
   await openSettingsDataTab(page);
 }
@@ -316,6 +334,24 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     await openCompare(page);
     expect(await fieldPaths(page)).not.toContain(P_URL);
     expect(await fieldPaths(page)).toContain(P_TITLE);
+  });
+
+  test('AC2: unusable geometry is never offered and the compared precision is what shows', async ({ page }) => {
+    test.setTimeout(90000);
+    const junkCase = liveLayout();
+    // Same url the copy holds, only upper-cased: comparing raw bytes would invent a conflict.
+    junkCase.boxes[0].children[0].bookmarks[0].url = 'HTTPS://LOCAL.TEST/b1';
+    await bootFileLane(page, archivedIntegrityEntry(), junkCase);
+    await openCompare(page);
+    const paths = await fieldPaths(page);
+    expect(paths).not.toContain('large:L1#size');              // null width/height, not "0"
+    expect(paths).not.toContain('small:L1:S1:b1#url');         // canonical-equal, no phantom diff
+    expect(paths).toContain('large:L1#position');
+    const row = await page.evaluate((p) => (document.querySelector(
+      p + ' .data-conflict-diff-field[data-path="large:L1#position"]') as HTMLElement | null)?.textContent || '', PANEL);
+    expect(row).toContain('40.5, 40');                         // shown with the compared precision
+    expect(row).toContain('40, 40');
+    expect(await hasApplyButton(page)).toBe(true);
   });
 
   test('AC6: geometry is adopted as pairs, the star goes through the mutation entry, and nothing is tombstoned', async ({ page }) => {
@@ -498,6 +534,10 @@ test.describe('Issue #54 — golden path in the real Chrome extension build', ()
       // is read), and a boot-time write landing after the seed would clobber it. The
       // onboarding decision is init()'s last step, so this helper is the completion signal.
       await dismissOnboarding(page);
+      // skipOnboarding() queues a saveLayout on the app's write chain while the seed below
+      // writes storage directly, so that save can land on top of the fixture. Awaiting
+      // saveLayout() drains the chain: everything queued before it has then run.
+      await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
 
       const entry = archivedEntry();
       await page.evaluate(async ({ layout, conflict }) => {
