@@ -668,7 +668,7 @@ export function initSettingsUiFacade(deps) {
     row.dataset.path = node.add.path;
     row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:2px 0;font-size:var(--fs-xs);';
     if (node.add.reason) {
-      row.append(conflictSpan(i18n(CONFLICT_ADD_REASONS[node.add.reason] || 'dataConflictAddSkippedUnusable')));
+      row.append(conflictSpan(i18n(CONFLICT_ADD_REASONS[node.add.reason])));
       return row;
     }
     const label = document.createElement('label');
@@ -806,17 +806,27 @@ export function initSettingsUiFacade(deps) {
       ? commit('addBookmark', { largeId: op.largeId, smallId: op.smallId, bookmark: op.add })
       : commit('addSmallBox', { largeId: op.largeId, smallBox: op.add });
     if (!res || res.skipped) return (res && res.reason) || 'failed';
-    if (op.level === 'small' && op.add.isParent) toggleStarMark(smallKey(op.largeId, res.addedSmall.smallId));
+    // Same rule as a field verdict on the star (writeConflictOp): the runtime groupStar
+    // mirror can already hold this key, and toggleStar UNSTARS when it does — so the star
+    // is only applied when it is actually missing, never toggled blind.
+    const key = smallKey(op.largeId, res.addedSmall.smallId);
+    if (op.level === 'small' && op.add.isParent && !groupStar.has(key)) toggleStarMark(key);
     return null;
   }
 
+  // Which rule the unified mutation entry held. Codes come from the handlers in
+  // ntp/render.js: the two caps are the existing per-box limits, anything else is a
+  // refusal the user has to be told about rather than being counted as an add.
+  const CONFLICT_ADD_REFUSAL_KEYS = {
+    'max-small-boxes': 'dataConflictAddSkippedFull',
+    'max-bookmarks': 'dataConflictAddSkippedFull',
+  };
+
   // One result line for both kinds of write: #54 counts adopted fields, #55 counts the
-  // objects added back. A refusal is an existing limit the mutation entry held (the box or
-  // bookmark cap) or an id that appeared since the comparison — said out loud instead of
-  // quietly counted as an add.
+  // objects added back. A refusal is said out loud instead of quietly counted as an add.
   function conflictRefusedNotice(reason) {
     if (!reason) return '';
-    return ' · ' + i18n(reason.indexOf('max') === 0 ? 'dataConflictAddSkippedFull' : 'dataConflictAddFailed');
+    return ' · ' + i18n(CONFLICT_ADD_REFUSAL_KEYS[reason] || 'dataConflictAddFailed');
   }
 
   function conflictApplyNotice(applied, added, refusedReason) {

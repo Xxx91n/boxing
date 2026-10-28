@@ -671,9 +671,10 @@ function conflictObjectLabel(obj) {
 
 // ── Issue #55 (#53 D2): copy-only objects the user may add back ───────────────
 // The archive holds the LOSING side, so it can carry a small box or bookmark the canvas
-// never received: sync-engine.js:521 archives a diverged cloud child parent-wrapped, and
-// sync-engine.js:521 / settings-ui.js:1434 archive a verbatim cloud large box with its
-// whole bookmark list. D2 lets the user add those back into a subtree that still exists.
+// never received: mergeLayoutFields reports a diverged child through archiveConflictLayouts
+// as a parent-wrapped copy, and the same facade archives a verbatim cloud large box with
+// its whole bookmark list (ntp/sync-engine.js, ntp/settings-ui.js import merge). D2 lets the
+// user add those back into a subtree that still exists.
 // Three conditions make one un-addable, and each is reported instead of quietly dropped:
 //   exists   — that id is already on the canvas. Ids are the merge and tombstone key (and
 //              popups.js resolves a small box by bare id), so a second object with the
@@ -718,17 +719,21 @@ function conflictAddPayload(obj, level, taken, deleted, tieredKey) {
   if (level === 'bookmark') {
     const url = normalizeBookmarkUrl(obj.url);
     if (!url) return { reason: 'unusable' };
-    return { reason: null, obj: { id: obj.id, title: obj.title, url }, ids: [obj.id] };
+    return { reason: null, obj: { id: obj.id, title: obj.title, url }, ids: new Set([obj.id]) };
   }
   const geo = ['x', 'y', 'width', 'height'].map((k) => conflictNumber(obj[k]));
   if (!geo.every(Number.isFinite)) return { reason: 'unusable' };
   const bookmarks = [];
-  const ids = [obj.id];
+  const ids = new Set([obj.id]);
   for (const bm of (Array.isArray(obj.bookmarks) ? obj.bookmarks : [])) {
+    // A repeated id INSIDE one object is a payload that cannot be stored as it stands: the
+    // id is the merge key, so mergeById would drop one of the two at the next cross-tab
+    // merge. Refused as unusable, not as exists — nothing on the canvas holds it yet.
+    if (!bm || typeof bm.id !== 'string' || !bm.id || ids.has(bm.id)) return { reason: 'unusable' };
+    ids.add(bm.id);
     const nested = conflictAddPayload(bm, 'bookmark', taken, deleted, null);
     if (nested.reason) return { reason: nested.reason };
     bookmarks.push(nested.obj);
-    ids.push(...nested.ids);
   }
   return {
     reason: null,

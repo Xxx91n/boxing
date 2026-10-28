@@ -235,7 +235,11 @@ export function initRenderFacade(deps) {
       lb.children = lb.children || [];
       if (lb.children.length >= MAX_SMALL_BOXES) return { skipped: true, reason: "max-small-boxes" };
       if (lb.children.some(s => s && s.id === smallBox.id)) return { skipped: true, reason: "duplicate-id" };
-      const entry = { ...smallBox, type: "small", isParent: false };
+      // The bookmarks come with the box, so they have to respect the same cap the popup add
+      // enforces — otherwise an archived box would land on the canvas over the limit.
+      const bookmarks = Array.isArray(smallBox.bookmarks) ? smallBox.bookmarks : [];
+      if (bookmarks.length > MAX_BOOKMARKS) return { skipped: true, reason: "max-bookmarks" };
+      const entry = { ...smallBox, type: "small", isParent: false, bookmarks };
       lb.children.push(entry);
       smallBoxById.set(largeId + ":" + entry.id, entry);
       return {

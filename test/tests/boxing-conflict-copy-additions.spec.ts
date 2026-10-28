@@ -33,9 +33,10 @@
 //
 // SAMPLE SOURCES (#53 T2, user-confirmed for this ticket): every fixture below is shaped
 // like a payload the production archive path actually writes — a verbatim cloud large box
-// from ntp/sync-engine.js:521 / ntp/settings-ui.js:1434, or the parent-wrapped diverged
-// child from ntp/sync-engine.js:523-525 — on top of #54's L1/L2/S1/b1 canvas. The new
-// dimension is only "the canvas does not have this id".
+// from the import-merge and webdav field-conflict calls to archiveConflictLayouts
+// (ntp/settings-ui.js, ntp/sync-engine.js), or the parent-wrapped diverged child from the
+// webdav-child-conflict call in ntp/sync-engine.js — on top of #54's L1/L2/S1/b1 canvas.
+// The new dimension is only "the canvas does not have this id".
 //
 // KNOWN GAP, DECLARED NOT HIDDEN: Firefox. The suite has never loaded an extension in
 // Firefox (its project installs no add-on), so AC-real covers the built Chrome extension
@@ -101,9 +102,9 @@ function copyOnlySmallBox(over: any = {}) {
   };
 }
 
-// The verbatim cloud large box an import/sync field conflict archives (sync-engine.js:521,
-// settings-ui.js:1434): same ids as the canvas PLUS a copy-only child (S2) and a copy-only
-// bookmark (b2) inside the matched child.
+// The verbatim cloud large box an import/sync field conflict archives (the
+// archiveConflictLayouts({ boxes: conflicts }) call sites): same ids as the canvas
+// PLUS a copy-only child (S2) and a copy-only bookmark (b2) inside the matched child.
 function archivedCloudBox(over: any = {}) {
   const box: any = {
     id: 'L1', type: 'large', title: 'Cloud Root', x: 900, y: 900, width: 420, height: 300,
@@ -130,9 +131,10 @@ function entryOf(boxes: any[], over: any = {}) {
 
 const copyEntry = (over: any = {}, boxOver: any = {}) => entryOf([archivedCloudBox(boxOver)], over);
 
-// Sample B: the parent-wrapped shape sync-engine.js:523-525 writes for a diverged child —
-// the wrapper carries only id/type/title (no geometry of its own), and the child inside it
-// is the copy-only object the canvas never received.
+// Sample B: the parent-wrapped shape the webdav-child-conflict archive call in
+// ntp/sync-engine.js writes for a diverged child — the wrapper carries only id/type/title
+// (no geometry of its own), and the child inside it is the copy-only object the canvas
+// never received.
 const wrappedEntry = () => ({
   ts: CONFLICT_TS, reason: 'webdav-child-conflict', side: 'cloud',
   raw: { boxes: [{ id: 'L1', type: 'large', title: 'Local Root', children: [copyOnlySmallBox()] }] },
@@ -367,9 +369,14 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
       Boolean(document.querySelector('.small-box[data-id="S2"]'))), { timeout: 10000 }).toBe(true);
     await page.evaluate(() => { (window as any).__boxingDebug._execDeleteSmallBox('L1', 'S2'); });
     await expect.poll(() => childIds(page), { timeout: 10000 }).not.toContain('S2');
-    // Adjudication and adding write; neither deletes anything else.
+    // The only tombstones left are the ones this test's own final delete legitimately
+    // wrote. Comparing, adopting fields and adding never tombstone, and nothing the user
+    // kept — the box, its original child, either bookmark — is touched.
     const deleted = await page.evaluate(() => Object.keys((window as any).__boxingDebug.layout._meta?.deleted || {}));
-    expect(deleted.filter((k: string) => k === 'b3' || k === 'b4' || k.startsWith('L1') || k.includes(':L1'))).toEqual([]);
+    expect(deleted.filter((k: string) => k === 'L1' || k === 'S1' || k === 'b1' || k === 'b2'
+      || k.includes(':L1:S1'))).toEqual([]);
+    expect(deleted).toContain('S2');
+    expect(deleted).toContain('small:L1:S2');
   });
 
   test('AC2: a copy-only large box is never rebuilt and its descendants never reach the add list', async ({ page }) => {
