@@ -17,8 +17,10 @@
 //       storage cannot back.
 //   AC4 a safe copy is never a layout snapshot: it stays out of snap.v1.index, is not listed
 //       by Time Machine, and restoreFromSnapshot refuses it (layout rollback does not regress).
-//   AC5 safe copies obey the existing rotation/capacity limits — no unbounded store, and
-//       guard rotation never prunes layout snapshots.
+//   AC5 the safe-copy store stays inside the existing count/byte limits without buying room by
+//       evicting another archive's only copy: at the cap it refuses the save (so nothing is
+//       deleted) and reclaims only copies that still duplicate a listed archive, and guard
+//       retention never reaches the layout snapshot index.
 //   AC6 the fourteen locale key sets stay identical and carry the new strings.
 // Lane honesty (#53 T3 / AC7): this drives the file:// mock lane — real UI clicks plus the
 // existing storage facade seam — so it proves the behaviour above, NOT the "actual
@@ -488,13 +490,13 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect(await canvasTitles(page)).toEqual(['Kept Box']);             // and still no canvas change
   });
 
-  test('AC5: the safe-copy store is bounded by the existing rotation cap and never prunes layout snapshots', async ({ page }) => {
+  test('AC5: a full safe-copy store refuses rather than evicting another archive only copy, and never touches layout snapshots', async ({ page }) => {
     test.setTimeout(60000);
     await bootFresh(page);
     await seedCanvas(page);
-    // Fill the safe-copy store to the conflict archive's own count cap (20) with ancient rows,
-    // then protect one more archive: the oldest safe copy (row + body) must be pruned instead
-    // of the store growing.
+    // 20 guards at the store's own count cap, each protecting an archive that is no longer
+    // listed (nothing redundant). Protecting one more must refuse, not evict: an older safe
+    // copy is the sole remaining copy of something the user already deleted.
     await page.evaluate(async ({ prefix, indexKey, ts, raw, guardPrefix, guardIndexKey, count }) => {
       const dbg = (window as any).__boxingDebug;
       const rows = [];
@@ -506,7 +508,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
         [guardIndexKey]: rows,
       };
       for (let i = 0; i < count; i++) {
-        payload[guardPrefix + (1000 + i)] = { ts: 1000 + i, originTs: 1000 + i, reason: 'seed', side: 'seed', raw: { boxes: [] }, size: 40 };
+        payload[guardPrefix + (1000 + i)] = { ts: 1000 + i, originTs: 900000 + i, reason: 'seed', side: 'seed', raw: { boxes: [{ id: 'SEED' + i, type: 'large', title: 'S' + i, x: 0, y: 0, width: 1, height: 1, children: [] }] }, size: 40 };
       }
       await dbg.storageSet(payload);
     }, {
@@ -517,12 +519,13 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     const snapsBefore = await page.evaluate(async () => {
       const dbg = (window as any).__boxingDebug;
       // Seed a non-empty snapshot list first: comparing 0 against 0 would prove nothing about
-      // guard rotation leaving layout snapshots alone.
+      // the guard store leaving layout snapshots alone.
       await dbg.saveSnapshot('seed-a');
       await dbg.saveSnapshot('seed-b');
       return (await dbg.listSnapshots()).length;
     });
     expect(snapsBefore).toBe(2);
+    await armAlertCapture(page);
     await openSettingsDataTab(page);
     await expect(snapshotRows(page)).toHaveCount(2, { timeout: 15000 });
     await expect(guardRows(page)).toHaveCount(20, { timeout: 15000 });
@@ -530,16 +533,49 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     await clickDelete(page);
     await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
     await confirmAction(page);
-    await expect.poll(async () => (await guardIndex(page))?.length, { timeout: 10000 }).toBe(20);
-    const guards = await guardIndex(page);
-    expect(guards.some(e => e.originTs === CONFLICT_TS)).toBe(true);   // newest survives
-    expect(guards.some(e => e.ts === 1000)).toBe(false);               // oldest dropped by the cap
-    expect(await readKey(page, GUARD_PREFIX + 1000)).toBeUndefined();     // its body went with the row
-    expect(await readKey(page, GUARD_PREFIX + 1019)).toBeTruthy();      // the rest stay readable
-    expect((await conflictIndex(page))?.length).toBe(0);
+    await expect.poll(async () => (await alerts(page)).length, { timeout: 8000 }).toBe(1);
+    expect((await alerts(page))[0]).toMatch(/nothing was deleted/i);
+    // D3 holds in both directions: no safe copy, no deletion, and the store never shrank to
+    // buy itself room.
+    expect((await conflictIndex(page))?.length).toBe(1);
+    expect(await readKey(page, CONFLICT_PREFIX + CONFLICT_TS)).toBeTruthy();
+    const held = await guardIndex(page);
+    expect(held.length).toBe(20);
+    expect(held.every(e => e.ts >= 1000 && e.ts <= 1019)).toBe(true);   // every prior guard kept
+    expect(await readKey(page, GUARD_PREFIX + 1000)).toBeTruthy();      // oldest body intact too
     await expect(guardRows(page)).toHaveCount(20, { timeout: 15000 });
     const snapsAfter = await page.evaluate(async () => (await (window as any).__boxingDebug.listSnapshots()).length);
-    expect(snapsAfter).toBe(snapsBefore);   // guard rotation never touches the snapshot index
+    expect(snapsAfter).toBe(snapsBefore);   // guard retention never reaches the snapshot index
+
+    // Room may be made only from copies that duplicate a still-listed archive. Make six of the
+    // twenty redundant that way, and the same delete now succeeds by reclaiming exactly those.
+    await page.evaluate(async ({ prefix, indexKey, guardPrefix, count }) => {
+      const dbg = (window as any).__boxingDebug;
+      const existing = await dbg.storageGet(indexKey);
+      const rows = Array.isArray(existing?.[indexKey]) ? existing[indexKey] : [];
+      const payload: Record<string, unknown> = {};
+      for (let i = 0; i < 6; i++) {
+        const ts = 1000 + i;
+        const guard = (await dbg.storageGet(guardPrefix + ts))?.[guardPrefix + ts];
+        if (!guard) continue;
+        rows.push({ ts, reason: 'seed', side: 'seed', size: guard.size, boxes: 1, truncated: false });
+        payload[prefix + ts] = { ts, reason: 'seed', side: 'seed', raw: guard.raw, size: guard.size, boxes: 1 };
+      }
+      payload[indexKey] = rows;
+      await dbg.storageSet(payload);
+    }, { prefix: CONFLICT_PREFIX, indexKey: CONFLICT_INDEX_KEY, guardPrefix: GUARD_PREFIX, count: 20 });
+
+    await openSettingsDataTab(page);
+    await expect(conflictRows(page)).toHaveCount(7, { timeout: 15000 });
+    await clickDelete(page);
+    await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
+    await confirmAction(page);
+    await expect.poll(async () => (await conflictIndex(page))?.length, { timeout: 10000 }).toBe(6);
+    const after = await guardIndex(page);
+    expect(after.some(e => e.originTs === CONFLICT_TS)).toBe(true);      // the new protection landed
+    expect(after.filter(e => e.ts >= 1006 && e.ts <= 1019).length).toBe(14);  // the real ones survived
+    expect(await readKey(page, GUARD_PREFIX + 1019)).toBeTruthy();
+    expect(await readKey(page, GUARD_PREFIX + 1000)).toBeUndefined();    // a redundant one paid
   });
 
   test('AC6: the fourteen locale key sets stay identical and cover the new strings', () => {

@@ -589,6 +589,37 @@ export function registerStorageOnChanged() {
   const GUARD_NS = { keyPrefix: GUARD_KEY_PREFIX, indexKey: GUARD_INDEX_KEY, countCap: MAX_CONFLICT_ARCHIVES, tiers: false };
   let _lastGuardTs = 0; // monotonic ts guard: two safe copies in one ms must not share a key
 
+  // A guard protects nothing while its archive still lists the very same payload — the copy is
+  // redundant, and it is the only kind of guard that may be dropped to make room. Anything
+  // else in the store is the sole copy of an archive the user already deleted.
+  async function _guardIsRedundant(guard) {
+    if (!guard || guard.raw === undefined) return false;
+    const originTs = Number(guard.originTs);
+    if (!Number.isFinite(originTs) || originTs <= 0) return false;
+    const live = await getConflictArchive(originTs);
+    return !!(live && JSON.stringify(live.raw) === JSON.stringify(guard.raw));
+  }
+
+  // Drop every redundant guard, oldest row first, committing the index before removing bodies
+  // (same rule as the rotation). Returns the surviving index.
+  async function _reclaimRedundantGuards() {
+    const rows = (await _readIndex(GUARD_INDEX_KEY)).slice().sort((a, b) => a.ts - b.ts);
+    const dropped = [];
+    for (const row of rows) {
+      const guard = await getConflictGuard(row.ts);
+      if (guard && await _guardIsRedundant(guard)) dropped.push(Number(row.ts));
+    }
+    if (!dropped.length) return rows;
+    const dropSet = new Set(dropped);
+    const kept = rows.filter(e => !dropSet.has(Number(e.ts)));
+    await _writeIndex(kept, GUARD_INDEX_KEY);
+    for (const ts of dropped) {
+      try { await layoutStorage.remove(GUARD_KEY_PREFIX + ts); } catch (_) { /* non-fatal: orphan bytes */ }
+    }
+    debug('Reclaimed ' + dropped.length + ' redundant safe cop' + (dropped.length === 1 ? 'y' : 'ies'));
+    return await _readIndex(GUARD_INDEX_KEY);
+  }
+
   // Fail-closed by construction: any path that cannot land the verbatim payload returns
   // null, and deleteConflictArchive refuses to run without a returned ts. A `truncated`
   // archive (metadata only, SEC-06), a missing or null payload and an over-cap body all fail —
@@ -647,8 +678,22 @@ export function registerStorageOnChanged() {
         debug('Conflict guard skipped: safe copy ' + guardJson.length + 'B exceeds cap ' + MAX_SNAPSHOT_BYTES);
         return null;
       }
+      // Room is made ONLY from guards that duplicate a still-listed archive. Writing
+      // unconditionally would let this store's own cap evict an older safe copy that is the
+      // sole remaining copy of an archive the user deleted earlier — trading one protection for
+      // another. With no room left and nothing redundant, the save fails, and the delete that
+      // depends on it fails with it (#53 D3: 保存失败不删除).
+      let index = await _readIndex(GUARD_INDEX_KEY);
+      const fits = () => index.length + 1 <= GUARD_NS.countCap &&
+        index.reduce((s, e) => s + (e.size || 0), 0) + guard.size <= MAX_SNAPSHOTS_TOTAL_BYTES;
+      if (!fits()) {
+        index = await _reclaimRedundantGuards();
+        if (!fits()) {
+          debug('Conflict guard skipped: safe-copy store is full at ' + index.length + ' entries with nothing redundant to reclaim');
+          return null;
+        }
+      }
       await layoutStorage.set({ [GUARD_KEY_PREFIX + guardTs]: guard });
-      const index = await _readIndex(GUARD_INDEX_KEY);
       index.push({ ts: guardTs, originTs, size: guard.size });
       await _rotateAndWriteIndex(index, GUARD_NS);
       debug('Conflict archive guarded @' + new Date(guardTs).toISOString() + ' (origin=' + originTs + ')');
@@ -825,10 +870,7 @@ export function registerStorageOnChanged() {
     try {
       const guard = await getConflictGuard(guardTs);
       if (!guard) return false;
-      const originTs = Number(guard.originTs);
-      if (!Number.isFinite(originTs) || originTs <= 0) return false;
-      const current = await getConflictArchive(originTs);
-      if (!current || JSON.stringify(current.raw) !== JSON.stringify(guard.raw)) {
+      if (!await _guardIsRedundant(guard)) {
         debug('discardConflictGuard kept ts=' + Number(guardTs) + ' (archive does not duplicate it)');
         return false;
       }
