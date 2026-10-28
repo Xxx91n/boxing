@@ -500,10 +500,11 @@ export function registerStorageOnChanged() {
     } catch (_) { return []; }
   }
 
-  // Shared write leg of the conflict store: body key + index row + isolation-area cap.
-  // The row shape {ts, reason, side, size, boxes, truncated} is pinned by the ticket 44/79
-  // specs. Re-inserting a known ts updates that row instead of duplicating it — ticket 56
-  // restores a deleted archive under its ORIGINAL ts so the copy keeps its identity.
+  // Shared write leg of the conflict store: body key + index row + the store's own count cap.
+  // Row shape is {ts, reason, side, size, boxes, truncated} — the fields listConflictArchives
+  // and the settings readout consume, as ticket 44 wrote them and ticket 79 renders them.
+  // Re-inserting a known ts updates that row instead of duplicating it: ticket 56 restores a
+  // deleted archive under its ORIGINAL ts, so the copy keeps the identity it had before.
   async function _writeConflictEntry(entry) {
     await layoutStorage.set({ [CONFLICT_PREFIX + entry.ts]: entry });
     const index = await _readConflictIndex();
@@ -611,7 +612,6 @@ export function registerStorageOnChanged() {
         side: String(entry.side || 'unknown'),
         raw: entry.raw
       };
-      if (Array.isArray(entry.raw.boxes)) guard.boxes = entry.raw.boxes.length;
       let rawJson = '';
       try { rawJson = JSON.stringify(entry.raw); } catch (_) { rawJson = ''; }
       if (!rawJson || rawJson.length > MAX_SNAPSHOT_BYTES) {
@@ -688,10 +688,10 @@ export function registerStorageOnChanged() {
 
   // D3's proof obligation lives in the facade, not only in the caller: without a stored safe
   // copy of THIS archive there is nothing to delete, so a caller that skipped or lost the save
-  // can never reach the removal. The body key goes first and the index row second — an index
-  // row whose body was pruned is a state the readout already handles (rotation prunes bodies
-  // the same way), while a live body whose row is gone would hide an archive the user never
-  // agreed to lose.
+  // can never reach the removal. The body key goes first and the index row second: a row whose
+  // body was lost (a storage error in between, or an upgrade that pruned bodies) is a state the
+  // readout already handles fail-soft, while a live body whose row is gone would hide an
+  // archive the user never agreed to lose.
   export async function deleteConflictArchive(ts, guardTs) {
     try {
       const originTs = Number(ts);

@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Сначала Boxing сохраняет архивную копию от $point$ как резервную и удаляет её только если сохранение удалось. Резервные копии подчиняются тем же ограничениям хранения, что и снимки, поэтому позже могут быть удалены.",
+    "message": "Сначала Boxing сохраняет архивную копию от $point$ как резервную и удаляет её только если сохранение удалось. Резервные копии имеют ограниченный срок хранения и позже могут быть удалены.",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

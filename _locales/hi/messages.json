@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Boxing पहले $point$ की संग्रहीत प्रति को सुरक्षित प्रति के रूप में सहेजता है और उसे केवल सहेजने के सफल होने पर ही हटाता है। सुरक्षित प्रति स्नैपशॉट की ही प्रतिधारण सीमाओं का पालन करती हैं, इसलिए बाद में समाप्त हो सकती हैं।",
+    "message": "Boxing पहले $point$ की संग्रहीत प्रति को सुरक्षित प्रति के रूप में सहेजता है और उसे केवल सहेजने के सफल होने पर ही हटाता है। सुरक्षित प्रतिों की प्रतिधारण सीमित है, इसलिए बाद में हटाई जा सकती हैं।",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

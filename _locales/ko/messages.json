@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Boxing은 먼저 $point$의 보관 사본을 안전 사본으로 저장하고, 저장이 성공한 경우에만 삭제합니다. 안전 사본은 스냅샷과 동일한 보존 한도를 따르므로 나중에 삭제될 수 있습니다.",
+    "message": "Boxing은 먼저 $point$의 보관 사본을 안전 사본으로 저장하고, 저장이 성공한 경우에만 삭제합니다. 안전 사본의 보존에는 한도가 있어 나중에 삭제될 수 있습니다.",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

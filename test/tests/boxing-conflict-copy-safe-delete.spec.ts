@@ -6,9 +6,10 @@
 //       is deleted; a failed safe save (metadata-only/truncated archive, or a storage error)
 //       leaves the original archive in place — a current-layout snapshot is NOT the proof.
 //   AC3 the deleted archive is restored individually: the existing conflict list/readout
-//       returns the same verbatim payload under its original ts, and the canvas plus any
-//       work done after the deletion is not rolled back. A restore the archive cap would
-//       immediately prune reports failure instead of a success storage cannot back.
+//       returns the same verbatim payload (same ts, reason, side, size, boxes) under its
+//       original ts, and the canvas plus any work done after the deletion is not rolled back.
+//       A restore the archive cap would prune again, and a safe copy whose body was later
+//       pruned, both report failure instead of claiming a success storage cannot back.
 //   AC4 a safe copy is never a layout snapshot: it stays out of snap.v1.index, is not listed
 //       by Time Machine, and restoreFromSnapshot refuses it (layout rollback does not regress).
 //   AC5 safe copies obey the existing rotation/capacity limits — no unbounded store, and
@@ -104,6 +105,25 @@ async function armAlertCapture(page) {
 }
 const alerts = (page) => page.evaluate(() => (window as any).__alerts || []);
 
+// Export-capture precedent (boxing-conflict-copy-readout.spec.ts): capture the blob text and
+// the anchor download name without a real download, so the restore is proven through the
+// EXISTING readout path rather than by reading storage keys.
+async function armExportCapture(page) {
+  await page.evaluate(() => {
+    (window as any).__cap = { text: null, name: null };
+    const origUrl = URL.createObjectURL;
+    URL.createObjectURL = (blob: Blob) => {
+      (blob as Blob).text().then((t) => { (window as any).__cap.text = t; });
+      return origUrl.call(URL, blob);
+    };
+    const origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+      if (this.download) (window as any).__cap.name = this.download;
+      return origClick.apply(this, arguments as any);
+    };
+  });
+}
+
 async function clickDelete(page, ts = CONFLICT_TS) {
   await page.evaluate((wantTs) => {
     const btn = Array.from(document.querySelectorAll('#data-conflict-list .data-conflict-delete-btn'))
@@ -155,6 +175,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect((await alerts(page))).toEqual([]);
 
     // ── AC2: confirm → the archived payload lands as a safe copy, then the archive goes ──
+    const preDeleteRow = (await conflictIndex(page))[0];
     await clickDelete(page);
     await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
     await confirmAction(page);
@@ -165,6 +186,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     const guardBody = await readKey(page, GUARD_PREFIX + guardTs);
     expect(JSON.stringify(guardBody.raw)).toBe(JSON.stringify(CONFLICT_RAW)); // verbatim payload
     expect(guardBody.reason).toBe('import-merge');
+    expect(guardBody.size).toBe(JSON.stringify(CONFLICT_RAW).length); // payload bytes, not envelope
     expect((await conflictIndex(page))?.length).toBe(0);          // deleted only after the save succeeded
     expect(await readKey(page, CONFLICT_PREFIX + CONFLICT_TS)).toBeUndefined();
     expect((await alerts(page))).toEqual([]);                     // no failure notice on the happy path
@@ -196,8 +218,22 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect(restoredRow.ts).toBe(CONFLICT_TS);                     // original archive identity kept
     expect(restoredRow.reason).toBe('import-merge');
     expect(restoredRow.side).toBe('incoming');
+    expect(restoredRow.size).toBe(preDeleteRow.size);             // row metadata survives unchanged
+    expect(restoredRow.boxes).toBe(preDeleteRow.boxes);
     const restoredBody = await readKey(page, CONFLICT_PREFIX + CONFLICT_TS);
     expect(JSON.stringify(restoredBody.raw)).toBe(JSON.stringify(CONFLICT_RAW)); // readout returns the original text
+    expect(restoredBody.size).toBe(preDeleteRow.size);            // same bytes shown before and after
+    // Prove it through the EXISTING readout: the per-row export downloads the archived entry
+    // verbatim, which is what "恢复后可通过现有冲突列表／读取能力取得原文" actually promises.
+    await armExportCapture(page);
+    await page.evaluate(() => {
+      const btn = document.querySelector('#data-conflict-list .data-conflict-row-item .data-conflict-export-btn');
+      btn?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__cap?.text)), { timeout: 8000 }).toBe(true);
+    const cap = await page.evaluate(() => ({ text: (window as any).__cap.text, name: (window as any).__cap.name }));
+    expect(cap.name).toBe('boxing-conflict-' + CONFLICT_TS + '.json');
+    expect(JSON.parse(cap.text).raw).toEqual(CONFLICT_RAW);
     expect(await canvasTitles(page)).toEqual(['Kept Box', 'Later Work']);  // canvas + later work intact
     expect(await storedTitles(page)).toEqual(['Kept Box', 'Later Work']);
     await expect(conflictRows(page)).toHaveCount(1, { timeout: 10000 });
@@ -330,6 +366,27 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect(idx.map(e => e.ts).sort((a, b) => a - b)).toEqual(Array.from({ length: 20 }, (_, i) => 1000 + i));
     expect(await canvasTitles(page)).toEqual(['Kept Box']);         // and still no canvas change
     await expect(guardRows(page)).toHaveCount(1, { timeout: 10000 }); // the safe copy survives a retry
+  });
+
+  test('AC3-fail: a safe copy whose body was later pruned reports failure instead of fabricating an archive', async ({ page }) => {
+    test.setTimeout(40000);
+    await bootFresh(page);
+    await seedCanvas(page);
+    // The guard index outlives its body exactly the way the snapshot index can outlive a
+    // pruned snapshot body (#53 N2: a safe copy is not promised to survive forever).
+    await page.evaluate(({ guardIndexKey, guardTs, originTs }) => (window as any).__boxingDebug.storageSet({
+      [guardIndexKey]: [{ ts: guardTs, originTs, size: 200 }],
+    }), { guardIndexKey: GUARD_INDEX_KEY, guardTs: 6000, originTs: CONFLICT_TS });
+    await armAlertCapture(page);
+    await openSettingsDataTab(page);
+    await expect(guardRows(page)).toHaveCount(1, { timeout: 15000 });   // row lists from the index
+
+    await clickRestore(page);
+    await expect.poll(async () => (await alerts(page)).length, { timeout: 8000 }).toBe(1);
+    expect((await alerts(page))[0]).toMatch(/could not be restored/i);
+    expect(await conflictIndex(page)).toBeUndefined();                  // no archive invented
+    expect(await readKey(page, CONFLICT_PREFIX + CONFLICT_TS)).toBeUndefined();
+    expect(await canvasTitles(page)).toEqual(['Kept Box']);             // and still no canvas change
   });
 
   test('AC5: the safe-copy store is bounded by the existing rotation cap and never prunes layout snapshots', async ({ page }) => {

@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "يحفظ Boxing أولاً النسخة المؤرشفة من $point$ كنسخة آمنة، ولا يحذفها إلا إذا نجح ذلك الحفظ. تتبع النسخ الآمنة حدود الاحتفاظ نفسها التي تتبعها اللقطات، لذا قد تنتهي صلاحيتها لاحقًا.",
+    "message": "يحفظ Boxing أولاً النسخة المؤرشفة من $point$ كنسخة آمنة، ولا يحذفها إلا إذا نجح ذلك الحفظ. النسخ الآمنة ذات مدة احتفاظ محدودة، لذا قد تُزال لاحقًا.",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

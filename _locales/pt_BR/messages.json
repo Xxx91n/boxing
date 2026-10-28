@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "O Boxing primeiro salva a cópia arquivada de $point$ como cópia de segurança e só a exclui se esse salvamento tiver sucesso. As cópias de segurança seguem os mesmos limites de retenção das snapshots, portanto podem expirar depois.",
+    "message": "O Boxing primeiro salva a cópia arquivada de $point$ como cópia de segurança e só a exclui se esse salvamento tiver sucesso. As cópias de segurança têm um limite de retenção e podem ser removidas depois.",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

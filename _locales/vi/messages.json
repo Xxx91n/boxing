@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Trước tiên Boxing lưu bản sao đã được lưu trữ từ $point$ dưới dạng bản sao an toàn và chỉ xoá nó nếu việc lưu thành công. Các bản sao an toàn tuân theo giới hạn giữ liệu giống như ảnh chụp, vì vậy chúng có thể hết hạn sau này.",
+    "message": "Trước tiên Boxing lưu bản sao đã được lưu trữ từ $point$ dưới dạng bản sao an toàn và chỉ xoá nó nếu việc lưu thành công. Các bản sao an toàn có giới hạn lưu giữ nên có thể bị xoá sau này.",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

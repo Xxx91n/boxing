@@ -1073,7 +1073,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Boxing first saves the archived copy from $point$ as a safe copy, and deletes it only if that save succeeds. Safe copies follow the same retention limits as snapshots, so they can expire later.",
+    "message": "Boxing first saves the archived copy from $point$ as a safe copy, and deletes it only if that save succeeds. Safe copies are kept under a bounded limit and can be pruned later.",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

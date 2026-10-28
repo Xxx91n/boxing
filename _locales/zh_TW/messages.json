@@ -1059,7 +1059,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Boxing 會先將 $point$ 的歸檔副本儲存為安全副本，只有在儲存成功後才會刪除。安全副本沿用與快照相同的保留上限，因此日後可能被淘汰。",
+    "message": "Boxing 會先將 $point$ 的歸檔副本儲存為安全副本，只有在儲存成功後才會刪除。安全副本的留存有上限，日後可能被淘汰。",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

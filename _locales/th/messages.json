@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Boxing จะเก็บสำเนาที่บันทึกไว้จาก $point$ เป็นสำเนาที่ปลอดภัยก่อน และจะลบเฉพาะเมื่อการเก็บนั้นสำเร็จ สำเนาที่ปลอดภัยใช้ขีดจำกัดการเก็บรักษาเดียวกับสแนปชอต จึงอาจหมดอายุในภายหลัง",
+    "message": "Boxing จะเก็บสำเนาที่บันทึกไว้จาก $point$ เป็นสำเนาที่ปลอดภัยก่อน และจะลบเฉพาะเมื่อการเก็บนั้นสำเร็จ สำเนาที่ปลอดภัยมีขีดจำกัดการเก็บรักษา จึงอาจถูกลบในภายหลัง",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {

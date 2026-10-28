@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Boxing guarda primero la copia archivada del $point$ como copia segura y solo la elimina si ese guardado tiene éxito. Las copias seguras siguen los mismos límites de retención que las instantáneas, por lo que pueden caducar más adelante.",
+    "message": "Boxing guarda primero la copia archivada del $point$ como copia segura y solo la elimina si ese guardado tiene éxito. Las copias seguras tienen un límite de retención y pueden eliminarse más adelante.",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {
