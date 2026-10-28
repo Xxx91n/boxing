@@ -4,8 +4,10 @@
 //       dialog is open, and dismissing it changes nothing.
 //   AC2 the archived payload itself is saved into the snapshot subsystem BEFORE the archive
 //       is deleted; a failed safe save (metadata-only/truncated archive, or a storage error)
-//       leaves the original archive in place — a current-layout snapshot is NOT the proof. A
-//       delete that fails midway puts the archive body back, so it stays listed and retryable.
+//       leaves the original archive in place — a current-layout snapshot is NOT the proof. The
+//       index is committed before any body is removed, so a rejected commit changes nothing and
+//       the delete stays retryable; a guard that protected nothing is recycled, never one that
+//       is the archive's only remaining copy.
 //   AC3 the deleted archive is restored individually: the existing conflict list/readout
 //       returns the same verbatim payload (same reason, side, size, boxes) under its original
 //       ts — unless another archive already occupies that ts, in which case the restore lands
@@ -379,15 +381,15 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     await expect(guardRows(page)).toHaveCount(1, { timeout: 10000 }); // the safe copy survives a retry
   });
 
-  test('AC2-fail: a failed index write puts the archive back and reclaims the unused safe copy', async ({ page }) => {
+  test('AC2-fail: a rejected index commit leaves the archive untouched and recycles the guard', async ({ page }) => {
     test.setTimeout(60000);
     await bootFresh(page);
     await seedCanvas(page);
     await seedConflict(page);
     await armAlertCapture(page);
-    // Fail ONLY the conflict index write, and only once: the safe copy lands, the body key is
-    // removed, then the index write throws. Record every key written afterwards so the
-    // put-back is observable rather than inferred from "the file is still there".
+    // Fail ONLY the conflict index write, and only once. The index is committed before anything
+    // is removed, so a rejected commit must leave the archive listed AND readable with no undo
+    // work at all. Record the keys written after the fault to prove nothing was touched.
     await page.evaluate(() => {
       const orig = Storage.prototype.setItem;
       const w = window as any;
@@ -411,14 +413,17 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     await confirmAction(page);
     await expect.poll(async () => (await alerts(page)).length, { timeout: 8000 }).toBe(1);
     expect((await alerts(page))[0]).toMatch(/did not complete/i);
+    const faulted = await page.evaluate(() => (window as any).__faulted);
+    expect(faulted).toBe(true);                                     // the injected fault fired
+    const writes = await page.evaluate(() => (window as any).__writes);
+    expect(writes).not.toContain('bxstore:' + CONFLICT_PREFIX + CONFLICT_TS); // body never touched
     const idx = await conflictIndex(page);
     expect(idx.length).toBe(1);                                   // row still listed
     expect(idx[0].ts).toBe(CONFLICT_TS);
-    const writes = await page.evaluate(() => (window as any).__writes);
-    expect(writes).toContain('bxstore:' + CONFLICT_PREFIX + CONFLICT_TS);  // the body was put back
     const survived = await readKey(page, CONFLICT_PREFIX + CONFLICT_TS);
-    expect(JSON.stringify(survived.raw)).toBe(JSON.stringify(CONFLICT_RAW)); // and is readable
-    // The safe copy that protected nothing is reclaimed instead of piling up in the store.
+    expect(JSON.stringify(survived.raw)).toBe(JSON.stringify(CONFLICT_RAW)); // and readable, unchanged
+    // Nothing was deleted, so the safe copy that only duplicated the archive is recycled
+    // instead of crowding another archive's protection out of the store's shared budget.
     expect((await guardIndex(page))?.length ?? 0).toBe(0);
     await expect(guardRows(page)).toHaveCount(0, { timeout: 10000 });
     expect(await canvasTitles(page)).toEqual(['Kept Box']);

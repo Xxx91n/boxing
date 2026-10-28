@@ -286,25 +286,24 @@ export function registerStorageOnChanged() {
         ];
     kept.sort((a, b) => a.ts - b.ts);
     // Absolute count cap: drop oldest until at or under the namespace cap (snapshots: 30)
-    while (kept.length > countCap) {
-      const removed = kept.shift();
-      try { await layoutStorage.remove(keyPrefix + removed.ts); } catch (_) { /* non-fatal */ }
-    }
+    while (kept.length > countCap) kept.shift();
     // Total byte cap: drop oldest until under budget (keep at least 1)
     let totalBytes = kept.reduce((s, e) => s + (e.size || 0), 0);
     while (kept.length > 1 && totalBytes > MAX_SNAPSHOTS_TOTAL_BYTES) {
-      const removed = kept.shift();
-      totalBytes -= (removed.size || 0);
-      try { await layoutStorage.remove(keyPrefix + removed.ts); } catch (_) { /* non-fatal */ }
+      totalBytes -= (kept.shift().size || 0);
     }
-    // Remove pruned entries' keys that are no longer in the kept set
+    // Commit the surviving index FIRST, then remove the bodies it no longer lists. Removing
+    // before the commit was the wrong order: if the commit is rejected the stored index keeps
+    // pointing at payloads that are already gone, and a safe copy of an already deleted archive
+    // becomes unreadable for good. A removal that fails after the commit only leaves bytes no
+    // index lists any more.
     const keptTs = new Set(kept.map(e => e.ts));
+    await _writeIndex(kept, indexKey);
     for (const e of index) {
       if (!keptTs.has(e.ts)) {
-        try { await layoutStorage.remove(keyPrefix + e.ts); } catch (_) { /* non-fatal */ }
+        try { await layoutStorage.remove(keyPrefix + e.ts); } catch (_) { /* non-fatal: orphan bytes */ }
       }
     }
-    await _writeIndex(kept, indexKey);
     return kept;
   }
 
@@ -505,6 +504,9 @@ export function registerStorageOnChanged() {
   // settings readout, boxes and truncated are the archive's own metadata. Re-inserting a known
   // ts updates that row instead of duplicating it: ticket 56 restores a deleted archive under
   // its ORIGINAL ts, so the copy keeps the identity it had before.
+  //
+  // The committed index is written before any pruned body is removed (#62): a rejected index
+  // write must not leave a listed row whose payload was already deleted.
   async function _writeConflictEntry(entry) {
     await layoutStorage.set({ [CONFLICT_PREFIX + entry.ts]: entry });
     const index = await _readConflictIndex();
@@ -512,12 +514,15 @@ export function registerStorageOnChanged() {
     const at = index.findIndex(e => e && e.ts === entry.ts);
     if (at >= 0) index[at] = row; else index.push(row);
     index.sort((a, b) => a.ts - b.ts);
-    while (index.length > MAX_CONFLICT_ARCHIVES) {
-      const oldest = index.shift();
-      try { await layoutStorage.remove(CONFLICT_PREFIX + oldest.ts); } catch (_) { /* non-fatal */ }
+    const kept = index.length > MAX_CONFLICT_ARCHIVES ? index.slice(index.length - MAX_CONFLICT_ARCHIVES) : index.slice();
+    const keptTs = new Set(kept.map(e => e.ts));
+    await layoutStorage.set({ [CONFLICT_INDEX_KEY]: kept });
+    for (const e of index) {
+      if (!keptTs.has(e.ts)) {
+        try { await layoutStorage.remove(CONFLICT_PREFIX + e.ts); } catch (_) { /* non-fatal: orphan bytes */ }
+      }
     }
-    await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index });
-    return index;
+    return kept;
   }
 
   export async function archiveConflictLayouts(payload, meta) {
@@ -732,10 +737,13 @@ export function registerStorageOnChanged() {
         entry.ts = freshTs;
       }
       await _writeConflictEntry(entry);
-      // The conflict store's count cap prunes by oldest ts, so restoring an archive older than
-      // every row already held can drop the row this call just wrote. Report that as a failure:
-      // the archive would not be readable through the conflict list, and the store is back to
-      // the rows it held before this call, so "nothing was changed" stays true for the user.
+      // Post-commit check: the conflict store's count cap prunes by oldest ts, so restoring an
+      // archive older than every row already held drops the row this call just wrote, along with
+      // its body. Report that as a failure — the archive would not be readable through the
+      // conflict list, and the committed index holds exactly the rows it held before, so
+      // "nothing was changed" is true for THIS case. A rejected index commit is a different
+      // path: it throws past this point, leaving the listed rows untouched with only an orphan
+      // body behind, which the readout never sees.
       const after = await _readConflictIndex();
       if (!after.some(e => e && e.ts === entry.ts)) {
         debug('restoreConflictGuard: restored row pruned by the archive cap (ts=' + entry.ts + ')');
@@ -761,11 +769,11 @@ export function registerStorageOnChanged() {
   // to avoid. The row's recorded size must also agree with the guard, otherwise the body being
   // unreadable is not the only explanation left.
   //
-  // The body key goes first and the index row second: a row whose body was lost is a state the
-  // readout already handles fail-soft, while a live body whose row is gone would hide an
-  // archive the user never agreed to lose. If the index write itself fails, the body is put
-  // back before returning false, so "nothing was deleted" is literally true and the deletion
-  // stays retryable.
+  // The index commit goes first and the body removal second (#62): a rejected index write then
+  // leaves the archive exactly as it was — listed, readable, retryable — with nothing to undo.
+  // If the removal itself fails afterwards, the row is already gone and the payload survives in
+  // the safe copy, so the bytes become an orphan nothing lists rather than a listed row with no
+  // body.
   export async function deleteConflictArchive(ts, guardTs) {
     try {
       const originTs = Number(ts);
@@ -798,17 +806,9 @@ export function registerStorageOnChanged() {
         debug('deleteConflictArchive refused: archive at ' + originTs + ' no longer matches its safe copy');
         return false;
       }
-      await layoutStorage.remove(CONFLICT_PREFIX + originTs);
-      try {
-        await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index.filter(e => e && e.ts !== originTs) });
-      } catch (indexErr) {
-        debugErr('deleteConflictArchive: index write failed, putting the archive body back', indexErr);
-        if (current) {
-          try { await layoutStorage.set({ [CONFLICT_PREFIX + originTs]: current }); }
-          catch (restoreErr) { debugErr('deleteConflictArchive: archive body could not be restored', restoreErr); }
-        }
-        return false;
-      }
+      await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index.filter(e => e && e.ts !== originTs) });
+      try { await layoutStorage.remove(CONFLICT_PREFIX + originTs); }
+      catch (removeErr) { debugErr('deleteConflictArchive: row removed, archive body left as orphan', removeErr); }
       debug('Conflict copy deleted @' + new Date(originTs).toISOString() + ' (safe copy kept)');
       return true;
     } catch (e) { debugErr('deleteConflictArchive', e); return false; }
@@ -832,17 +832,11 @@ export function registerStorageOnChanged() {
         debug('discardConflictGuard kept ts=' + Number(guardTs) + ' (archive does not duplicate it)');
         return false;
       }
-      await layoutStorage.remove(GUARD_KEY_PREFIX + Number(guardTs));
       const index = await _readIndex(GUARD_INDEX_KEY);
       const kept = index.filter(e => e && Number(e.ts) !== Number(guardTs));
-      try {
-        await _writeIndex(kept, GUARD_INDEX_KEY);
-      } catch (indexErr) {
-        debugErr('discardConflictGuard: index write failed, putting the safe copy back', indexErr);
-        try { await layoutStorage.set({ [GUARD_KEY_PREFIX + Number(guardTs)]: guard }); }
-        catch (restoreErr) { debugErr('discardConflictGuard: safe copy could not be restored', restoreErr); }
-        return false;
-      }
+      await _writeIndex(kept, GUARD_INDEX_KEY);
+      try { await layoutStorage.remove(GUARD_KEY_PREFIX + Number(guardTs)); }
+      catch (removeErr) { debugErr('discardConflictGuard: row removed, safe copy body left as orphan', removeErr); }
       debug('Discarded unused safe copy ts=' + Number(guardTs));
       return true;
     } catch (e) { debugErr('discardConflictGuard', e); return false; }
