@@ -675,8 +675,18 @@ export function registerStorageOnChanged() {
     try {
       await _migrateSnapshots();
       const guard = await getConflictGuard(ts);
-      if (!guard || guard.raw === undefined || guard.raw === null) {
+      if (!guard) {
+        // The index row outlived its body (a partial prune, or the same torn write this
+        // function guards against). Nothing can be restored from it, and leaving it spends one
+        // of the store's shared slots, so reclaim the row — never the other way round.
         debug('restoreConflictGuard: no safe copy at ts=' + ts);
+        const rows = await _readIndex(GUARD_INDEX_KEY);
+        const stillListed = rows.some(e => e && Number(e.ts) === Number(ts));
+        if (stillListed) await _writeIndex(rows.filter(e => e && Number(e.ts) !== Number(ts)), GUARD_INDEX_KEY);
+        return null;
+      }
+      if (guard.raw === undefined || guard.raw === null) {
+        debug('restoreConflictGuard: safe copy at ts=' + ts + ' holds no payload');
         return null;
       }
       const originTs = Number(guard.originTs);
@@ -742,10 +752,14 @@ export function registerStorageOnChanged() {
   // safe copy byte-for-byte, so a same-timestamp rewrite between the save and this delete
   // cannot let a newer payload be erased while the guard holds only the older one.
   //
-  // An absent body is the exception, not a refusal: a row listed with no body is the leftover
-  // of an earlier partial pruning (rotation removes both, so only a failed write leaves one
-  // behind). Its payload is exactly what the verified guard already holds, so dropping the
-  // phantom row loses nothing and is the only way the user can clear it.
+  // An absent body is the exception, not a refusal: a row listed with no body is the leftover of
+  // an earlier partial failure (rotation removes both together, so only a failed write leaves one
+  // behind), and its payload is exactly what the verified guard holds, so dropping the phantom
+  // row loses nothing and is the only way the user can clear it. Absence must be PROVEN though:
+  // getConflictArchive swallows read errors as null, and treating "could not read" as "not there"
+  // would delete the row and orphan a live body — the state this function's own ordering exists
+  // to avoid. The row's recorded size must also agree with the guard, otherwise the body being
+  // unreadable is not the only explanation left.
   //
   // The body key goes first and the index row second: a row whose body was lost is a state the
   // readout already handles fail-soft, while a live body whose row is gone would hide an
@@ -762,9 +776,25 @@ export function registerStorageOnChanged() {
         return false;
       }
       const index = await _readConflictIndex();
-      if (!index.some(e => e && e.ts === originTs)) return false;
+      const row = index.find(e => e && e.ts === originTs);
+      if (!row) return false;
       const current = await getConflictArchive(originTs);
-      if (current && JSON.stringify(current.raw) !== JSON.stringify(guard.raw)) {
+      if (!current) {
+        let exists = true;
+        try {
+          const key = CONFLICT_PREFIX + originTs;
+          const raw = await layoutStorage.get(key);
+          exists = !!(raw && raw[key] !== undefined);
+        } catch (readErr) {
+          debugErr('deleteConflictArchive: archive read failed, keeping the row', readErr);
+          return false;
+        }
+        if (exists) return false;                                 // unreadable-but-present: never delete blind
+        if (Number(row.size) !== Number(guard.size)) {
+          debug('deleteConflictArchive refused: bodyless row at ' + originTs + ' does not match the safe copy size');
+          return false;
+        }
+      } else if (JSON.stringify(current.raw) !== JSON.stringify(guard.raw)) {
         debug('deleteConflictArchive refused: archive at ' + originTs + ' no longer matches its safe copy');
         return false;
       }
@@ -785,20 +815,34 @@ export function registerStorageOnChanged() {
   }
 
   // A safe copy is only meaningful once its archive has actually been removed. When a delete is
-  // refused (stale content, failed index write) the guard would sit in the store as garbage —
-  // and because the store shares one count/byte budget, that garbage can evict a real safe copy
-  // of another archive. Discard only while the archive still exists, so the sole copy of
-  // anything is never dropped.
+  // refused (failed index write) the guard would sit in the store as garbage — and because the
+  // store shares one count/byte budget, that garbage can evict a real safe copy of another
+  // archive. So discard requires proof the archive is still there AND still holds exactly the
+  // bytes the guard copied: on a stale-content refusal the live archive was rewritten to
+  // something else, which makes the guard the only remaining copy of the older payload and it
+  // must be kept. An absent body is likewise kept — the guard may be the only copy.
   export async function discardConflictGuard(guardTs) {
     try {
       const guard = await getConflictGuard(guardTs);
       if (!guard) return false;
       const originTs = Number(guard.originTs);
       if (!Number.isFinite(originTs) || originTs <= 0) return false;
-      if (!(await getConflictArchive(originTs))) return false;   // archive gone: the guard is the only copy
+      const current = await getConflictArchive(originTs);
+      if (!current || JSON.stringify(current.raw) !== JSON.stringify(guard.raw)) {
+        debug('discardConflictGuard kept ts=' + Number(guardTs) + ' (archive does not duplicate it)');
+        return false;
+      }
       await layoutStorage.remove(GUARD_KEY_PREFIX + Number(guardTs));
       const index = await _readIndex(GUARD_INDEX_KEY);
-      await _writeIndex(index.filter(e => e && Number(e.ts) !== Number(guardTs)), GUARD_INDEX_KEY);
+      const kept = index.filter(e => e && Number(e.ts) !== Number(guardTs));
+      try {
+        await _writeIndex(kept, GUARD_INDEX_KEY);
+      } catch (indexErr) {
+        debugErr('discardConflictGuard: index write failed, putting the safe copy back', indexErr);
+        try { await layoutStorage.set({ [GUARD_KEY_PREFIX + Number(guardTs)]: guard }); }
+        catch (restoreErr) { debugErr('discardConflictGuard: safe copy could not be restored', restoreErr); }
+        return false;
+      }
       debug('Discarded unused safe copy ts=' + Number(guardTs));
       return true;
     } catch (e) { debugErr('discardConflictGuard', e); return false; }

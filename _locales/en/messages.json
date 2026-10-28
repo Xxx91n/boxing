@@ -1091,8 +1091,8 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "Deleting the conflict copy did not complete. Its safe copy is saved, so nothing is lost.",
-    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
+    "message": "Deleting the conflict copy did not complete. Nothing was changed.",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
   },
   "conflictGuardRestoreFailed": {
     "message": "That safe copy could not be restored - nothing was changed.",

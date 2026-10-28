@@ -369,8 +369,9 @@ export function initSettingsUiFacade(deps) {
   // snapshots the CURRENT canvas, while this must snapshot the ARCHIVED payload that is
   // about to be deleted. `saveSnapshot('pre-delete')` therefore does not satisfy this flow
   // — a current-layout copy says nothing about the conflict content being removed. No guard
-  // ts, no deletion. A successful guard that then fails to delete keeps the safe copy; the
-  // archive stays listed, so the user can retry.
+  // ts, no deletion. A delete that fails after a successful guard is reported honestly: the
+  // archive it refused to remove keeps its safe copy, and a guard that protects content still
+  // present in the list is recycled instead of left to crowd out another archive's protection.
   async function performConflictDelete(ts) {
     const when = new Date(ts).toLocaleString();
     closeSettingsModal(); // don't stack the decision modal behind the settings overlay

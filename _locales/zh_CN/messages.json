@@ -1077,8 +1077,8 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "删除冲突副本未完全成功。其安全副本已保存，因此没有内容丢失。",
-    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
+    "message": "删除冲突副本未完全成功。未更改任何内容。",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
   },
   "conflictGuardRestoreFailed": {
     "message": "无法从该安全副本恢复 - 未更改任何内容。",

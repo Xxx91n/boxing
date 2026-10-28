@@ -1074,8 +1074,8 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "संघर्ष प्रति हटाना पूरा नहीं हुआ। उसकी सुरक्षित प्रति सहेजी गई है, इसलिए कुछ भी नहीं खोया।",
-    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
+    "message": "संघर्ष प्रति हटाना पूरा नहीं हुआ। कुछ भी नहीं बदला गया।",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
   },
   "conflictGuardRestoreFailed": {
     "message": "उस सुरक्षित प्रति को पुनर्स्थापित नहीं किया जा सका - कुछ भी नहीं बदला गया।",

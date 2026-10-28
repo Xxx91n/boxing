@@ -1074,8 +1074,8 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "충돌 사본 삭제를 완료하지 못했습니다. 안전 사본은 저장되어 있어 잃어버린 내용은 없습니다.",
-    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
+    "message": "충돌 사본 삭제를 완료하지 못했습니다. 아무것도 변경되지 않았습니다.",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
   },
   "conflictGuardRestoreFailed": {
     "message": "해당 안전 사본을 복원할 수 없습니다 - 아무것도 변경되지 않았습니다.",

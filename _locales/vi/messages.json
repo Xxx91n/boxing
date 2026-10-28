@@ -1074,8 +1074,8 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "Việc xoá bản sao xung đột không hoàn tất. Bản sao an toàn của nó đã được lưu nên không mất gì.",
-    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
+    "message": "Việc xoá bản sao xung đột không hoàn tất. Không có gì thay đổi.",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
   },
   "conflictGuardRestoreFailed": {
     "message": "Không thể khôi phục bản sao an toàn đó - không có gì thay đổi.",
