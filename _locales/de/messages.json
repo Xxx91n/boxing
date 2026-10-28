@@ -1146,4 +1146,58 @@
     "message": "Diese Sicherheitskopie konnte nicht wiederhergestellt werden - es wurde nichts geändert.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
+,
+  "exportEncryptLabel": {
+    "message": "Exporte mit Passphrase verschlüsseln"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing speichert diese Passphrase nicht: geht sie verloren, bleibt die Datei unlesbar. Nach einer Wiederherstellung auf einer anderen Installation müssen WebDAV-/GitHub-Daten erneut eingegeben werden."
+  },
+  "passphraseExportTitle": {
+    "message": "Backup mit Passphrase verschlüsseln"
+  },
+  "passphraseExportBody": {
+    "message": "Passphrase zweimal eingeben. Boxing speichert sie nicht und kann sie nicht wiederherstellen - ohne sie bleibt die Datei unlesbar."
+  },
+  "passphraseExportAction": {
+    "message": "Verschlüsseln & exportieren"
+  },
+  "passphraseImportTitle": {
+    "message": "Backup-Passphrase eingeben"
+  },
+  "passphraseImportBody": {
+    "message": "Diese Datei ist durch eine Passphrase geschützt. Am Canvas ändert sich nichts, bevor sie erfolgreich geöffnet wurde."
+  },
+  "passphraseImportAction": {
+    "message": "Entschlüsseln & importieren"
+  },
+  "passphraseFieldLabel": {
+    "message": "Passphrase"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "Passphrase wiederholen"
+  },
+  "passphraseRequired": {
+    "message": "Zuerst eine Passphrase eingeben."
+  },
+  "passphraseMismatch": {
+    "message": "Die beiden Passphrasen stimmen nicht überein."
+  },
+  "passphraseWrong": {
+    "message": "Falsche Passphrase oder beschädigte Datei - nichts wurde importiert."
+  },
+  "importEncryptedInvalid": {
+    "message": "Import fehlgeschlagen: Boxing kann diese Passphrase-Datei nicht öffnen (vielleicht ist eine neuere Version nötig). Keine Daten geändert."
+  },
+  "exportEncryptedTooLarge": {
+    "message": "Export fehlgeschlagen: Das Backup ist zu groß, um innerhalb des 5-MB-Limits verschlüsselt zu werden. Nichts exportiert."
+  }
+,
+  "passphraseTooLong": {
+    "message": "Diese Passphrase ist zu lang, als dass Boxing sie verwenden könnte."
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Export fehlgeschlagen: Die Canvas-Daten dieser Sicherung überschreiten das Wiederherstellungslimit von Boxing (2.000.000 Zeichen Layout). Nichts exportiert."
+  }
 }

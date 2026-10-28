@@ -1146,4 +1146,58 @@
     "message": "Esa copia segura no se pudo restaurar - no se cambió nada.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
+,
+  "exportEncryptLabel": {
+    "message": "Cifrar las exportaciones con frase de paso"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing nunca guarda esta frase de paso: si se pierde, el archivo queda ilegible. Al restaurar en otra instalación habrá que volver a escribir las credenciales de WebDAV/GitHub."
+  },
+  "passphraseExportTitle": {
+    "message": "Cifrar la copia de seguridad con una frase de paso"
+  },
+  "passphraseExportBody": {
+    "message": "Escriba la frase de paso dos veces. Boxing no la guarda ni puede recuperarla: sin ella el archivo queda ilegible."
+  },
+  "passphraseExportAction": {
+    "message": "Cifrar y exportar"
+  },
+  "passphraseImportTitle": {
+    "message": "Escriba la frase de paso de la copia"
+  },
+  "passphraseImportBody": {
+    "message": "Este archivo está protegido con una frase de paso. Nada cambia en el lienzo hasta que se abra correctamente."
+  },
+  "passphraseImportAction": {
+    "message": "Descifrar e importar"
+  },
+  "passphraseFieldLabel": {
+    "message": "Frase de paso"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "Repita la frase de paso"
+  },
+  "passphraseRequired": {
+    "message": "Escriba primero una frase de paso."
+  },
+  "passphraseMismatch": {
+    "message": "Las dos frases de paso no coinciden."
+  },
+  "passphraseWrong": {
+    "message": "Frase de paso incorrecta o archivo dañado: no se importó nada."
+  },
+  "importEncryptedInvalid": {
+    "message": "Importación fallida: Boxing no puede abrir este archivo cifrado (quizá necesite una versión más reciente). No se cambió nada."
+  },
+  "exportEncryptedTooLarge": {
+    "message": "Exportación fallida: la copia es demasiado grande para cifrarla dentro del límite de 5 MB. No se exportó nada."
+  }
+,
+  "passphraseTooLong": {
+    "message": "Esa frase de paso es demasiado larga para que Boxing la use."
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Exportación fallida: el lienzo de esta copia supera lo que Boxing puede restaurar (2.000.000 caracteres de layout). No se exportó nada."
+  }
 }

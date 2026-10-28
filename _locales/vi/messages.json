@@ -1146,4 +1146,58 @@
     "message": "Không thể khôi phục bản sao an toàn đó - không có gì thay đổi.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
+,
+  "exportEncryptLabel": {
+    "message": "Mã hóa tệp xuất bằng mật khẩu"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing không lưu mật khẩu này; nếu mất, tệp sẽ không thể đọc được. Sau khi khôi phục trên bản cài khác, vẫn phải nhập lại thông tin WebDAV/GitHub."
+  },
+  "passphraseExportTitle": {
+    "message": "Mã hóa bản sao lưu bằng mật khẩu"
+  },
+  "passphraseExportBody": {
+    "message": "Nhập mật khẩu hai lần. Boxing không lưu và không thể khôi phục mật khẩu; thiếu nó tệp sẽ vĩnh viễn không đọc được."
+  },
+  "passphraseExportAction": {
+    "message": "Mã hóa và xuất"
+  },
+  "passphraseImportTitle": {
+    "message": "Nhập mật khẩu bản sao lưu"
+  },
+  "passphraseImportBody": {
+    "message": "Tệp này được bảo vệ bằng mật khẩu. Chưa có gì thay đổi trên Canvas cho tới khi tệp mở thành công."
+  },
+  "passphraseImportAction": {
+    "message": "Giải mã và nhập"
+  },
+  "passphraseFieldLabel": {
+    "message": "Mật khẩu"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "Nhập lại mật khẩu"
+  },
+  "passphraseRequired": {
+    "message": "Hãy nhập mật khẩu trước."
+  },
+  "passphraseMismatch": {
+    "message": "Hai mật khẩu không khớp."
+  },
+  "passphraseWrong": {
+    "message": "Sai mật khẩu hoặc tệp bị hỏng — chưa nhập gì."
+  },
+  "importEncryptedInvalid": {
+    "message": "Nhập thất bại: Boxing không mở được tệp mã hóa này (có thể cần phiên bản mới hơn). Dữ liệu hiện tại không thay đổi."
+  },
+  "exportEncryptedTooLarge": {
+    "message": "Xuất thất bại: bản sao lưu quá lớn để mã hóa trong giới hạn khôi phục 5MB. Chưa xuất gì."
+  }
+,
+  "passphraseTooLong": {
+    "message": "Mật khẩu này quá dài để Boxing có thể sử dụng."
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Xuất thất bại: dữ liệu Canvas trong bản sao lưu này vượt giới hạn Boxing có thể khôi phục (2.000.000 ký tự layout). Chưa xuất gì."
+  }
 }

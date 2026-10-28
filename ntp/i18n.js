@@ -305,6 +305,24 @@ I18N_FALLBACK.rollbackFailed = 'Rollback failed - your current data was kept unc
 // Ticket 51 (spec ticket 51): export envelope + optional full DR package UI strings (BX-I18N-005 fallback).
 I18N_FALLBACK.exportFullPackage = 'Full DR package';
 I18N_FALLBACK.exportFullOverflow = 'The full DR package still exceeds the 5MB restore limit after trimming snapshot bodies. A standard envelope export was downloaded instead.';
+// Issue #57 (spec #53 D4): optional passphrase protection for manual backup files (BX-I18N-005 fallback).
+I18N_FALLBACK.exportEncryptLabel = 'Passphrase-protect exports';
+I18N_FALLBACK.exportEncryptHint = 'Boxing never stores this passphrase: lose it and the file stays unreadable. A restore on another install still needs WebDAV/GitHub credentials typed in again.';
+I18N_FALLBACK.passphraseExportTitle = 'Encrypt backup with a passphrase';
+I18N_FALLBACK.passphraseExportBody = 'Type the passphrase twice. Boxing does not store it and cannot recover it - without it the file stays unreadable.';
+I18N_FALLBACK.passphraseExportAction = 'Encrypt & export';
+I18N_FALLBACK.passphraseImportTitle = 'Enter the backup passphrase';
+I18N_FALLBACK.passphraseImportBody = 'This file is passphrase-protected. Nothing on your canvas changes until it opens successfully.';
+I18N_FALLBACK.passphraseImportAction = 'Decrypt & import';
+I18N_FALLBACK.passphraseFieldLabel = 'Passphrase';
+I18N_FALLBACK.passphraseRepeatFieldLabel = 'Repeat passphrase';
+I18N_FALLBACK.passphraseRequired = 'Type a passphrase first.';
+I18N_FALLBACK.passphraseTooLong = 'That passphrase is too long for Boxing to seal.';
+I18N_FALLBACK.passphraseMismatch = 'The two passphrases do not match.';
+I18N_FALLBACK.passphraseWrong = 'Wrong passphrase or damaged file - nothing was imported.';
+I18N_FALLBACK.importEncryptedInvalid = 'Import failed: Boxing cannot open this passphrase file (it may need a newer version). Nothing was changed.';
+I18N_FALLBACK.exportEncryptedTooLarge = 'Export failed: the backup is too large to encrypt inside the 5MB restore limit. Nothing was exported.';
+I18N_FALLBACK.exportEncryptedLayoutTooLarge = 'Export failed: the canvas inside this backup is larger than Boxing can restore (2,000,000 characters of layout). Nothing was exported.';
 
 // Wave 2026.10.16 keys
 I18N_FALLBACK.aboutUpdateAvailable = 'New version available: ';

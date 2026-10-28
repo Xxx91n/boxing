@@ -275,6 +275,21 @@
                 <input type="file" id="import-file-input" accept=".json" hidden>
               </div>
             </section>
+            <!-- Issue #57 (spec #53 D4): optional user-passphrase protection for MANUAL exports.
+                 Unchecked keeps the plain JSON export byte-for-byte what it was — encryption is
+                 never a forced migration. The passphrase is read once at click time and never
+                 persisted, so the hint states the loss consequence and the sync-credential
+                 boundary (the per-install key never travels, so a v3 credential envelope inside
+                 the file cannot be reopened elsewhere; legacy v1/v2 records are covered in
+                 GLOSSARY.md — a new install re-types its sync credentials either way). -->
+            <section class="modal__section">
+              <label class="checkbox-label">
+                <input type="checkbox" id="export-encrypt-cb">
+                <span class="checkbox-label__text" data-i18n="exportEncryptLabel">Passphrase-protect exports</span>
+              </label>
+              <p class="modal__hint" id="export-encrypt-hint" data-i18n="exportEncryptHint"
+                style="margin:2px 0 0;font-size:11px;">Boxing never stores this passphrase: lose it and the file stays unreadable. A restore on another install still needs WebDAV/GitHub credentials typed in again.</p>
+            </section>
             <!-- Ticket 43 (spec D3): data-health surface — snapshot count +
                  latest snapshot time so users can tell resilience is working; corrupt-archive
                  entry row appears only when crash-rescue forked a damaged main key (ABP-style
@@ -484,6 +499,32 @@
         <button id="confirm-delete-btn" tabindex="-1" class="btn"
           style="background:var(--color-accent-ink);color:#F4EFE5;border-color:var(--color-accent-ink);"
           data-i18n="confirmYes">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Issue #57 (spec #53 D4): passphrase dialog for manual backups. Same overlay surface as
+       the confirm modal and later in the DOM, so it paints above the settings overlay without
+       closing it. Both fields are cleared on every settle — the passphrase exists only for the
+       click that asked for it, and never reaches storage, logs or the sync payload. -->
+  <div id="passphrase-modal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-label="Passphrase">
+    <div class="modal confirm-modal">
+      <div class="modal__head">
+        <h2 class="modal__title" id="passphrase-title">Passphrase</h2>
+      </div>
+      <div class="modal__body">
+        <p id="passphrase-body" style="margin:0 0 10px;font-size:14px;line-height:1.6;"></p>
+        <input id="passphrase-input" class="modal__input" type="password" spellcheck="false" autocomplete="off"
+          data-i18n-placeholder="passphraseFieldLabel">
+        <input id="passphrase-repeat-input" class="modal__input" type="password" spellcheck="false" autocomplete="off"
+          data-i18n-placeholder="passphraseRepeatFieldLabel" hidden>
+        <p id="passphrase-error" style="margin:6px 0 0;font-size:12px;color:var(--color-danger);" hidden></p>
+      </div>
+      <div class="modal__foot" style="justify-content:space-between;">
+        <button id="passphrase-cancel-btn" tabindex="-1" class="btn" data-i18n="confirmCancel">Cancel</button>
+        <button id="passphrase-action-btn" tabindex="-1" class="btn"
+          style="background:var(--color-accent-ink);color:#F4EFE5;border-color:var(--color-accent-ink);">Encrypt &amp;
+          export</button>
       </div>
     </div>
   </div>

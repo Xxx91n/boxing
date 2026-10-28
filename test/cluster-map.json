@@ -145,6 +145,9 @@
       "boxing-sync.spec.ts",
       "boxing-webdav.spec.ts"
     ],
+    "ntp/backup-crypto.js": [
+      "boxing-backup-passphrase.spec.ts"
+    ],
     "ntp/settings-ui.js": [
       "boxing-accent-theme.spec.ts",
       "boxing-build-pipeline.spec.ts",
@@ -160,6 +163,7 @@
       "boxing-dr-export-envelope.spec.ts",
       "boxing-conflict-copy-safe-delete.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts",
+      "boxing-backup-passphrase.spec.ts",
       "boxing-wave10-1016.spec.ts",
       "boxing-wave11-1017.spec.ts"
     ],

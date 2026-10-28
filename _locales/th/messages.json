@@ -1146,4 +1146,58 @@
     "message": "ไม่สามารถคืนค่าสำเนาที่ปลอดภัยนั้นได้ ไม่มีสิ่งใดถูกเปลี่ยนแปลง",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
+,
+  "exportEncryptLabel": {
+    "message": "เข้ารหัสไฟล์ที่ส่งออกด้วยวลีรหัส"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing ไม่เก็บวลีรหัสนี้ หากทำหายไฟล์จะอ่านไม่ได้อีก และเมื่อกู้คืนบนเครื่องอื่นก็ยังต้องกรอกข้อมูล WebDAV/GitHub ใหม่อีกครั้ง"
+  },
+  "passphraseExportTitle": {
+    "message": "เข้ารหัสไฟล์สำรองข้อมูลด้วยวลีรหัส"
+  },
+  "passphraseExportBody": {
+    "message": "พิมพ์วลีรหัสสองครั้ง Boxing ไม่เก็บและกู้คืนให้ไม่ได้ หากไม่มีวลีรหัสนี้ไฟล์จะอ่านไม่ได้อีก"
+  },
+  "passphraseExportAction": {
+    "message": "เข้ารหัสแล้วส่งออก"
+  },
+  "passphraseImportTitle": {
+    "message": "กรอกวลีรหัสของไฟล์สำรอง"
+  },
+  "passphraseImportBody": {
+    "message": "ไฟล์นี้ป้องกันด้วยวลีรหัส จะยังไม่มีอะไรเปลี่ยนบนผืนผ้าใบจนกว่าไฟล์จะเปิดสำเร็จ"
+  },
+  "passphraseImportAction": {
+    "message": "ถอดรหัสแล้วนำเข้า"
+  },
+  "passphraseFieldLabel": {
+    "message": "วลีรหัส"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "ยืนยันวลีรหัสอีกครั้ง"
+  },
+  "passphraseRequired": {
+    "message": "กรุณากรอกวลีรหัสก่อน"
+  },
+  "passphraseMismatch": {
+    "message": "วลีรหัสทั้งสองไม่ตรงกัน"
+  },
+  "passphraseWrong": {
+    "message": "วลีรหัสไม่ถูกต้องหรือไฟล์เสียหาย — ไม่ได้นำเข้าสิ่งใด"
+  },
+  "importEncryptedInvalid": {
+    "message": "นำเข้าล้มเหลว: Boxing ไม่สามารถเปิดไฟล์ที่เข้ารหัสนี้ (อาจต้องใช้เวอร์ชันใหม่กว่า) ข้อมูลเดิมไม่ได้ถูกเปลี่ยน"
+  },
+  "exportEncryptedTooLarge": {
+    "message": "ส่งออกล้มเหลว: ไฟล์สำรองใหญ่เกินกว่าจะเข้ารหัสให้อยู่ในขีดจำกัดการกู้คืน 5MB ไม่ได้ส่งออกสิ่งใด"
+  }
+,
+  "passphraseTooLong": {
+    "message": "วลีรหัสนี้ยาวเกินกว่าที่ Boxing จะใช้งานได้"
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "ส่งออกล้มเหลว: ข้อมูลผืนผ้าในไฟล์สำรองนี้เกินกว่าที่ Boxing จะกู้คืนได้ (layout 2,000,000 ตัวอักษร) ไม่ได้ส่งออกสิ่งใด"
+  }
 }

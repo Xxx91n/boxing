@@ -1146,4 +1146,58 @@
     "message": "Эту безопасную копию не удалось восстановить - ничего не изменено.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
+,
+  "exportEncryptLabel": {
+    "message": "Шифровать экспортные файлы парольной фразой"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing не сохраняет парольную фразу: при её утрате файл останется нечитаемым. При восстановлении в другой установке учётные данные WebDAV/GitHub нужно ввести заново."
+  },
+  "passphraseExportTitle": {
+    "message": "Зашифровать резервную копию парольной фразой"
+  },
+  "passphraseExportBody": {
+    "message": "Введите парольную фразу дважды. Boxing её не хранит и не может восстановить: без неё файл останется нечитаемым."
+  },
+  "passphraseExportAction": {
+    "message": "Зашифровать и экспортировать"
+  },
+  "passphraseImportTitle": {
+    "message": "Введите парольную фразу резервной копии"
+  },
+  "passphraseImportBody": {
+    "message": "Этот файл защищён парольной фразой. Пока он не откроется, на холсте ничего не изменится."
+  },
+  "passphraseImportAction": {
+    "message": "Расшифровать и импортировать"
+  },
+  "passphraseFieldLabel": {
+    "message": "Парольная фраза"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "Повторите парольную фразу"
+  },
+  "passphraseRequired": {
+    "message": "Сначала введите парольную фразу."
+  },
+  "passphraseMismatch": {
+    "message": "Парольные фразы не совпадают."
+  },
+  "passphraseWrong": {
+    "message": "Неверная парольная фраза или повреждённый файл — ничего не импортировано."
+  },
+  "importEncryptedInvalid": {
+    "message": "Сбой импорта: Boxing не может открыть этот зашифрованный файл (возможно, нужна более новая версия). Данные не изменены."
+  },
+  "exportEncryptedTooLarge": {
+    "message": "Сбой экспорта: резервная копия слишком велика, чтобы уложиться в лимит 5 МБ после шифрования. Ничего не экспортировано."
+  }
+,
+  "passphraseTooLong": {
+    "message": "Эта парольная фраза слишком длинная, чтобы Boxing мог её использовать."
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Сбой экспорта: данные холста в этой копии превышают предел восстановления Boxing (2 000 000 символов layout). Ничего не экспортировано."
+  }
 }
