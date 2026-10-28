@@ -20,23 +20,24 @@ import { expect, test } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
+// The size caps are imported from the module under test (one number shared with the importer);
+// the crypto parameters below are deliberately not.
+import { MAX_BACKUP_FILE_BYTES, maxInnerBytes } from '../../ntp/backup-crypto.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const REPO_PATH = path.resolve(__dirname, '..', '..');
 const NTP_URL = pathToFileURL(path.join(REPO_PATH, 'ntp', 'index.html')).href;
 
-// The v1 file contract, restated here for the two tests that must hand the importer a file the
-// UI itself cannot produce (an unknown version marker, an over-cap payload) and for the Node-side
-// seal/open below. A parameter change here is a format change, not a refactor.
+// The v1 CRYPTO parameters are restated here on purpose: the Node-side seal below is an
+// independent implementation of the file format, so a silent parameter change must break this
+// round trip rather than be re-derived from the code that made it.
 const V1 = { iterations: 310000, hash: 'SHA-256', saltBytes: 16, ivBytes: 12 };
-const MAX_BACKUP_FILE_BYTES = 5 * 1024 * 1024;
 const NEW_I18N_KEYS = [
   'exportEncryptLabel', 'exportEncryptHint',
   'passphraseExportTitle', 'passphraseExportBody', 'passphraseExportAction',
   'passphraseImportTitle', 'passphraseImportBody', 'passphraseImportAction',
   'passphraseFieldLabel', 'passphraseRepeatFieldLabel',
-  'passphraseRequired', 'passphraseMismatch', 'passphraseWrong',
-  'importEncryptedInvalid', 'exportEncryptedTooLarge',
+  'passphraseRequired', 'passphraseTooLong', 'passphraseMismatch', 'passphraseWrong',  'importEncryptedInvalid', 'exportEncryptedTooLarge',
 ];
 
 function bareLayout(title) {
@@ -49,14 +50,18 @@ function bareLayout(title) {
 }
 
 // One snap.v1 split-key snapshot (index entry + body) so a full DR package has a body to embed.
-// `ts` rides in on the `seed` argument: init scripts are serialized with fn.toString(), so a
-// module-scope constant would be a free variable in the page (ticket 71 N4 lesson).
+// seedStorage is a FACTORY returning the page-side function, and everything the page needs
+// rides in on the `seed` argument: addInitScript serializes with fn.toString(), so a module
+// scope constant like SNAP_TS would be a free variable in the page and throw ReferenceError
+// there (ticket 71 N4 lesson, boxed in boxing-dr-export-envelope.spec.ts).
 const SNAP_TS = 111;
 function seedStorage(seed) {
-  const ts = seed.ts;
-  localStorage.setItem('boxingLayout', JSON.stringify(seed.layout));
-  localStorage.setItem('bxstore:snap.v1.index', JSON.stringify([{ ts, schemaVersion: 3, size: 999 }]));
-  localStorage.setItem('bxstore:snap.v1.' + ts, JSON.stringify({ ts, schemaVersion: 3, data: seed.snapData }));
+  return (s) => {
+    const ts = s.ts;
+    localStorage.setItem('boxingLayout', JSON.stringify(s.layout));
+    localStorage.setItem('bxstore:snap.v1.index', JSON.stringify([{ ts, schemaVersion: 3, size: 999 }]));
+    localStorage.setItem('bxstore:snap.v1.' + ts, JSON.stringify({ ts, schemaVersion: 3, data: s.snapData }));
+  };
 }
 
 async function boot(page, seed?) {
@@ -243,7 +248,7 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect(env.layout.boxes[0].title).toBe('Plain Root');
     expect((await passphraseDialogState(page)).open).toBe(false);
     // the honest warning is on the surface before the user ever types
-    expect(await page.textContent('#exportEncryptHint')).toMatch(/never stores/i);
+    expect(await page.textContent('[data-i18n="exportEncryptHint"]')).toMatch(/never stores/i);
     expect(errors).toEqual([]);
     await context.close();
   });
@@ -313,10 +318,14 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect(state.errorText).toMatch(/do not match/i);
     expect(await downloadCount(page)).toBe(0);
 
-    // empty submit is rejected the same way, and Escape walks away clearing both fields
+    // empty submit is rejected the same way, and an over-long one is refused in words instead
+    // of being clamped silently (a clamped pair would match and seal a phrase never typed)
     await page.evaluate(() => { (document.getElementById('passphrase-input') as HTMLInputElement).value = ''; });
     await click(page, '#passphrase-action-btn');
     expect((await passphraseDialogState(page)).errorText).toMatch(/type a passphrase/i);
+    await page.evaluate(() => { (document.getElementById('passphrase-input') as HTMLInputElement).value = 'x'.repeat(1100); });
+    await click(page, '#passphrase-action-btn');
+    expect((await passphraseDialogState(page)).errorText).toMatch(/too long/i);
     await page.evaluate(() => document.getElementById('passphrase-input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
     const after = await passphraseDialogState(page);
     expect(after.open).toBe(false);
@@ -452,9 +461,6 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     const page = await context.newPage();
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(String(e)));
-    // The bound itself comes from the module under test — the AC is about that public input
-    // boundary, so restating the number here would let the test and the code drift together.
-    const { maxInnerBytes } = await import(pathToFileURL(path.join(REPO_PATH, 'ntp', 'backup-crypto.js')).href);
     // A layout that serializes PAST the sealed bound but still inside the plain 5MB cap, with
     // no snapshot bodies left to trim. The only way "under" would be a plain fallback, which
     // would hand out exactly the content the user just asked to protect.
