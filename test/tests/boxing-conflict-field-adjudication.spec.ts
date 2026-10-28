@@ -119,10 +119,17 @@ const jsClick = (page: any, sel: string) =>
   }, sel);
 
 async function openSettingsDataTab(page: any) {
-  expect(await jsClick(page, '#settings-btn')).toBe(true);
+  // The listener that opens the modal is attached late in ntp init(), so a click that
+  // lands before boot finished does nothing at all (macOS CI proved it). The open is
+  // polled with the click repeated — openSettingsModal is idempotent — rather than
+  // trading the race for one longer wait.
+  await expect.poll(async () => {
+    await jsClick(page, '#settings-btn');
+    return page.evaluate(() => !document.getElementById('settings-modal')?.hidden);
+  }, { timeout: 25000 }).toBe(true);
   expect(await jsClick(page, '.settings-nav__item[data-tab="data"]')).toBe(true);
   await expect.poll(() => page.evaluate(() =>
-    document.querySelectorAll('#data-conflict-list .data-conflict-row-item').length), { timeout: 10000 }).toBeGreaterThan(0);
+    document.querySelectorAll('#data-conflict-list .data-conflict-row-item').length), { timeout: 15000 }).toBeGreaterThan(0);
 }
 
 const openCompare = async (page: any) => {
@@ -197,6 +204,9 @@ async function bootFileLane(page: any, entry: any) {
   }, { layout: liveLayout(), conflict: entry });
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageGet)), { timeout: 20000 }).toBe(true);
+  // Boot has to finish loading the seeded layout: until init() is through, the canvas is
+  // the empty default and the settings controls are not wired yet.
+  await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().boxes), { timeout: 20000 }).toBe(2);
   await dismissOnboarding(page);
   await openSettingsDataTab(page);
 }
@@ -491,6 +501,7 @@ test.describe('Issue #54 — golden path in the real Chrome extension build', ()
       }, { layout: liveLayout(), conflict: entry });
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
       await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageSet)), { timeout: 30000 }).toBe(true);
+      await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.state().boxes), { timeout: 30000 }).toBe(2);
       await dismissOnboarding(page);
       await openSettingsDataTab(page);
       await openCompare(page);
