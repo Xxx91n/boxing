@@ -629,38 +629,19 @@
        so every canvas gesture stays hittable while it is open and Escape only acts when focus is
        inside the panel. Every line reuses a string the app already ships and already translates
        into all fourteen locales (operation hints + tour copy) — this adds no new tutorial text,
-       no completion state and never opens by itself. -->
+       no completion state and never opens by itself.
+       The strings are filled by onboarding.js from the i18n store rather than data-i18n, on
+       purpose: a second [data-i18n="footerHint"] / [data-i18n="syncProviderHint"] node in the
+       document breaks strict-mode locators for the strings the rest of the UI already owns —
+       proven by boxing-i18n-module.spec.ts:74 going red the moment this card was declarative. -->
   <section id="quick-help" class="quick-help" hidden aria-labelledby="quick-help-title">
     <div class="quick-help__head">
-      <h2 class="quick-help__title" id="quick-help-title" data-i18n="aboutQuickHelp">Quick reference</h2>
-      <button type="button" class="btn btn--ghost btn--icon quick-help__close" id="quick-help-close-btn"
-        data-i18n-title="closeSettings"><span aria-hidden="true">&times;</span><span class="sr-only"
-          data-i18n="closeSettings">Close</span></button>
+      <h2 class="quick-help__title" id="quick-help-title"></h2>
+      <button type="button" class="btn btn--ghost btn--icon quick-help__close" id="quick-help-close-btn">
+        <span aria-hidden="true">&times;</span><span class="sr-only" id="quick-help-close-label"></span>
+      </button>
     </div>
-    <ul class="quick-help__list">
-      <li class="quick-help__item">
-        <span class="quick-help__label" data-i18n="quickHelpCreateBox">Add boxes</span>
-        <span class="quick-help__text"><span data-i18n="dblclickCreateHint">Double-click to create</span> · <span
-            data-i18n="addLargeBoxTooltip">Add large box</span> · <span data-i18n="addSmallBoxTooltip">Add small
-            box</span></span>
-      </li>
-      <li class="quick-help__item">
-        <span class="quick-help__label" data-i18n="quickHelpBookmarks">Bookmarks</span>
-        <span class="quick-help__text"><span data-i18n="addBookmarkPlaceholder">Paste URL…</span> · <span
-            data-i18n="dragToReorder">Drag to reorder</span></span>
-      </li>
-      <li class="quick-help__item">
-        <span class="quick-help__label" data-i18n="quickHelpPanZoom">Pan &amp; zoom</span>
-        <span class="quick-help__text" data-i18n="footerHint">Ctrl+scroll to zoom · Drag blank to pan · Double-click to
-          create box · Right-click to go back · Drag titlebar to move · ⊙ top-right: unpin for fullscreen</span>
-      </li>
-      <li class="quick-help__item">
-        <span class="quick-help__label" data-i18n="quickHelpSyncRestore">Sync &amp; restore</span>
-        <span class="quick-help__text"><span data-i18n="syncProviderHint">Boxing stores your layout in this browser’s
-            local storage. Pick a provider to sync across devices.</span> · <span
-            data-i18n="onboardingRestore">Restore from backup</span></span>
-      </li>
-    </ul>
+    <ul class="quick-help__list" id="quick-help-list"></ul>
   </section>
   <!-- Ticket 03 (architecture-recovery): ESM switch — type="module" defers by default (V8/MDN), ntp.js now imports ./favicon.js (first module, spec.md strangler-fig). -->
   <script type="module" src="ntp.js"></script>

@@ -285,11 +285,51 @@ function demoSuppressionReason() {
   // first-run tour and its replay keep their own contract (#42).
   // The demo build keeps this entry: bug3 suppressed the TOUR there because the modal overlay
   // wins the hit test for the whole page, and a plain card over the canvas cannot do that.
+  // The card's content, by key: group label + the existing strings it lists. Nothing here is
+  // new prose — every entry is a message the app already ships (#53 D7 "复用已有操作说明"), and
+  // the group names are the four operations D7 itself enumerates.
+  // Filled through i18n() instead of data-i18n because applyI18n writes textContent per
+  // [data-i18n] node: a second [data-i18n="footerHint"] would make every strict-mode locator on
+  // the strings the rest of the UI owns ambiguous (boxing-i18n-module.spec.ts:74 went red that
+  // way in CI). Re-rendered on each open, so a language change taken while the card is hidden
+  // shows up the next time it is raised.
+  const QUICK_HELP_GROUPS = [
+    ['quickHelpCreateBox', ['dblclickCreateHint', 'addLargeBoxTooltip', 'addSmallBoxTooltip']],
+    ['quickHelpBookmarks', ['addBookmarkPlaceholder', 'dragToReorder']],
+    ['quickHelpPanZoom', ['footerHint']],
+    ['quickHelpSyncRestore', ['syncProviderHint', 'onboardingRestore']],
+  ];
+
+  function renderQuickHelp() {
+    const list = document.getElementById('quick-help-list');
+    const title = document.getElementById('quick-help-title');
+    const closeLabel = document.getElementById('quick-help-close-label');
+    const closeBtn = document.getElementById('quick-help-close-btn');
+    if (!list || !title) return;
+    title.textContent = i18n('aboutQuickHelp');
+    if (closeLabel) closeLabel.textContent = i18n('closeSettings');
+    if (closeBtn) closeBtn.title = i18n('closeSettings');
+    list.innerHTML = '';
+    for (const [labelKey, textKeys] of QUICK_HELP_GROUPS) {
+      const item = document.createElement('li');
+      item.className = 'quick-help__item';
+      const label = document.createElement('span');
+      label.className = 'quick-help__label';
+      label.textContent = i18n(labelKey);
+      const text = document.createElement('span');
+      text.className = 'quick-help__text';
+      text.textContent = textKeys.map((k) => i18n(k)).join(' · ');
+      item.append(label, text);
+      list.appendChild(item);
+    }
+  }
+
   export function initQuickHelpEntry() {
     const entry = document.getElementById('about-quick-help');
     const panel = document.getElementById('quick-help');
     if (!entry || !panel) return;
     const closeBtn = document.getElementById('quick-help-close-btn');
+    renderQuickHelp();
     const onPanelKeydown = (e) => {
       if (e.key !== 'Escape') return;
       e.preventDefault();
@@ -307,6 +347,7 @@ function demoSuppressionReason() {
       // D7: the sheet is read while the canvas is used, so the settings panel closes instead of
       // staying on top of it.
       closeSettingsModal();
+      renderQuickHelp();
       panel.hidden = false;
       panel.addEventListener('keydown', onPanelKeydown);
       closeBtn?.focus();
