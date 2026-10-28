@@ -845,17 +845,25 @@ async function copyToClipboard(text) {
       return true;
     }
   } catch (e) { debugWarn('clipboard writeText', e); }
+  let ta = null;
   try {
-    const ta = document.createElement('textarea');
+    ta = document.createElement('textarea');
     ta.value = text;
     ta.setAttribute('readonly', '');
-    ta.className = 'sr-only';
+    // Off-screen but still laid out: execCommand('copy') needs a selectable range, and the
+    // shared .sr-only utility (clip + 1px box) is the one thing a future a11y tweak could
+    // silently turn into visibility:hidden — which would break this path.
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
     document.body.appendChild(ta);
     ta.select();
-    const ok = document.execCommand('copy');
-    ta.remove();
-    return ok;
-  } catch (e) { debugErr('clipboard fallback', e); return false; }
+    return document.execCommand('copy');
+  } catch (e) {
+    debugErr('clipboard fallback', e);
+    return false;
+  } finally {
+    // A throw from execCommand must not leave a stray textarea on the page forever.
+    ta?.remove();
+  }
 }
 
 let _copyStatusTimer = null;
