@@ -1034,5 +1034,51 @@
   },
   "aboutViewReleases": {
     "message": "रिलीज़ देखें"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "हटाएँ",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "सुरक्षित प्रतियाँ",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "हटाई गई संघर्ष प्रति",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "पुनर्स्थापित करें",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "इस संघर्ष प्रति को हटाएँ?",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing पहले $point$ की संग्रहीत प्रति को सुरक्षित प्रति के रूप में सहेजता है और उसे केवल सहेजने के सफल होने पर ही हटाता है। सुरक्षित प्रति स्नैपशॉट की ही प्रतिधारण सीमाओं का पालन करती हैं, इसलिए बाद में समाप्त हो सकती हैं।",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "सुरक्षित प्रति सहेजें और हटाएँ",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "संग्रहीत प्रति को सुरक्षित प्रति के रूप में नहीं सहेजा जा सका, इसलिए कुछ भी नहीं हटाया गया। यदि उसकी सामग्री चाहिए तो पहले उसे निर्यात करें।",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "संघर्ष प्रति हटाने में विफल - वह अभी भी सूची में है।",
+    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+  },
+  "conflictGuardUnavailable": {
+    "message": "वह सुरक्षित प्रति अब उपलब्ध नहीं है। कुछ भी नहीं बदला गया।",
+    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
   }
 }

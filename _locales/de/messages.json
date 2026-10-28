@@ -1034,5 +1034,51 @@
   },
   "aboutViewReleases": {
     "message": "Releases anzeigen"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "Löschen",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "Sicherheitskopien",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "gelöschte Konfliktkopie",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "Wiederherstellen",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "Diese Konfliktkopie löschen?",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing speichert die archivierte Kopie vom $point$ zuerst als Sicherheitskopie und löscht sie nur, wenn das Speichern gelingt. Sicherheitskopien unterliegen denselben Aufbewahrungsgrenzen wie Snapshots und können später entfernt werden.",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "Sicherheitskopie speichern und löschen",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "Die archivierte Kopie konnte nicht als Sicherheitskopie gespeichert werden - es wurde nichts gelöscht. Exportieren Sie sie zuerst, wenn Sie ihren Inhalt brauchen.",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "Das Löschen der Konfliktkopie ist fehlgeschlagen - sie ist weiterhin in der Liste.",
+    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+  },
+  "conflictGuardUnavailable": {
+    "message": "Diese Sicherheitskopie ist nicht mehr verfügbar. Es wurde nichts geändert.",
+    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
   }
 }

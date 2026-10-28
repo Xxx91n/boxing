@@ -261,6 +261,17 @@ I18N_FALLBACK.dataConflictArchived = 'Conflict copies archived';
 // Ticket 79 (spec): conflict-copy readout list + single export (BX-I18N-005)
 I18N_FALLBACK.dataConflictList = 'Conflict copies';
 I18N_FALLBACK.dataConflictExportBtn = 'Export';
+// Ticket 56 (#53 D3): conflict-copy safe delete + individual restore (BX-I18N-005)
+I18N_FALLBACK.dataConflictDeleteBtn = 'Delete';
+I18N_FALLBACK.dataConflictGuardList = 'Safe copies';
+I18N_FALLBACK.dataConflictGuardArchived = 'deleted conflict copy';
+I18N_FALLBACK.dataConflictGuardRestoreBtn = 'Restore';
+I18N_FALLBACK.conflictDeleteConfirmTitle = 'Delete this conflict copy?';
+I18N_FALLBACK.conflictDeleteConfirmBody = 'Boxing first saves the archived copy from $1$ as a safe copy, and deletes it only if that save succeeds. Safe copies follow the same retention limits as snapshots, so they can expire later.';
+I18N_FALLBACK.conflictDeleteConfirmAction = 'Save safe copy and delete';
+I18N_FALLBACK.conflictDeleteNoSafety = 'The archived copy could not be saved as a safe copy, so nothing was deleted. Export it first if you need its content.';
+I18N_FALLBACK.conflictDeleteFailed = 'Deleting the conflict copy failed - it is still in the list.';
+I18N_FALLBACK.conflictGuardUnavailable = 'That safe copy is no longer available. Nothing was changed.';
 // Ticket 50 (spec ticket 50): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
 I18N_FALLBACK.dataTimeMachine = 'Time Machine';
 I18N_FALLBACK.dataRollbackBtn = 'Roll back';

@@ -1034,5 +1034,51 @@
   },
   "aboutViewReleases": {
     "message": "リリース一覧を見る"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "削除",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "セーフティコピー",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "削除済みの競合コピー",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "復元",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "この競合コピーを削除しますか？",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing はまず $point$ のアーカイブ済みコピーをセーフティコピーとして保存し、保存に成功した場合のみ削除します。セーフティコピーはスナップショットと同じ保存上限に従うため、後で削除される場合があります。",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "セーフティコピーを保存して削除",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "アーカイブ済みコピーをセーフティコピーとして保存できなかったため、何も削除しませんでした。内容が必要であれば先にエクスポートしてください。",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "競合コピーの削除に失敗しました - まだ一覧にあります。",
+    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+  },
+  "conflictGuardUnavailable": {
+    "message": "このセーフティコピーは利用できません。何も変更されていません。",
+    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
   }
 }

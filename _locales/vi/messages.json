@@ -1034,5 +1034,51 @@
   },
   "aboutViewReleases": {
     "message": "Xem bản phát hành"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "Xoá",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "Bản sao an toàn",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "bản sao xung đột đã xoá",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "Khôi phục",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "Xoá bản sao xung đột này?",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Trước tiên Boxing lưu bản sao đã được lưu trữ từ $point$ dưới dạng bản sao an toàn và chỉ xoá nó nếu việc lưu thành công. Các bản sao an toàn tuân theo giới hạn giữ liệu giống như ảnh chụp, vì vậy chúng có thể hết hạn sau này.",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "Lưu bản sao an toàn rồi xoá",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "Không thể lưu bản sao đã lưu trữ dưới dạng bản sao an toàn, nên không có gì bị xoá. Hãy xuất nó trước nếu bạn cần nội dung của nó.",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "Xoá bản sao xung đột không thành công - nó vẫn còn trong danh sách.",
+    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+  },
+  "conflictGuardUnavailable": {
+    "message": "Bản sao an toàn đó không còn khả dụng. Không có gì thay đổi.",
+    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
   }
 }

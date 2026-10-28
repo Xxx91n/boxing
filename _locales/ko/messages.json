@@ -1034,5 +1034,51 @@
   },
   "aboutViewReleases": {
     "message": "릴리스 보기"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "삭제",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "안전 사본",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "삭제된 충돌 사본",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "복원",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "이 충돌 사본을 삭제할까요?",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing은 먼저 $point$의 보관 사본을 안전 사본으로 저장하고, 저장이 성공한 경우에만 삭제합니다. 안전 사본은 스냅샷과 동일한 보존 한도를 따르므로 나중에 삭제될 수 있습니다.",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "안전 사본 저장 후 삭제",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "보관 사본을 안전 사본으로 저장할 수 없어 아무것도 삭제하지 않았습니다. 내용이 필요하면 먼저 내보내세요.",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "충돌 사본 삭제에 실패했습니다 - 여전히 목록에 있습니다.",
+    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+  },
+  "conflictGuardUnavailable": {
+    "message": "해당 안전 사본을 더 이상 사용할 수 없습니다. 아무것도 변경되지 않았습니다.",
+    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
   }
 }
