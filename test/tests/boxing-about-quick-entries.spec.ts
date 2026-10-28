@@ -113,14 +113,27 @@ test.describe('About page entries', () => {
   test('AC1/AC3: version + the four existing links are copyable, next to the untouched replay entry', async ({ page }) => {
     await bootOnAbout(page);
 
-    // The entry pair D7 asks for: replay first, quick reference beside it, in the same section.
+    // The entry pair D7 asks for, measured rather than read off the tree: same row band, the
+    // sheet entry to the right of the replay entry. (A parent-node check alone stayed green
+    // while .modal__section's column direction stacked the two buttons on top of each other.)
     await expect(page.locator('#about-show-tour')).toHaveText('Show the tour');
     await expect(page.locator('#about-quick-help')).toHaveText('Quick reference');
-    expect(await page.evaluate(() => {
-      const tour = document.getElementById('about-show-tour');
-      const help = document.getElementById('about-quick-help');
-      return Boolean(tour?.parentElement) && tour?.parentElement === help?.parentElement;
-    }), 'the quick reference must be a sibling of the replay entry').toBe(true);
+    const entries = await page.evaluate(() => {
+      const r = (id: string) => {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        const b = el.getBoundingClientRect();
+        return { top: Math.round(b.top), right: Math.round(b.right), left: Math.round(b.left), w: Math.round(b.width) };
+      };
+      return { tour: r('about-show-tour'), help: r('about-quick-help') };
+    });
+    expect(entries.tour, 'the replay entry must still render').not.toBeNull();
+    expect(entries.help, 'the quick-reference entry must render').not.toBeNull();
+    expect(entries.help!.w, 'a zero-width entry is not laid out beside anything').toBeGreaterThan(0);
+    expect(Math.abs(entries.help!.top - entries.tour!.top), '并列 means one row, not a stack')
+      .toBeLessThanOrEqual(1);
+    expect(entries.help!.left, 'the quick reference sits beside the replay entry')
+      .toBeGreaterThanOrEqual(entries.tour!.right - 1);
 
     await expect(page.locator('#about-diagnostics-btn')).toHaveText('Open diagnostics');
     // Existing behavior survives: the version line still carries the check-for-updates control.
@@ -304,6 +317,22 @@ test.describe('quick reference stays out of the canvas way', () => {
     await expect(page.locator('#quick-help')).toBeVisible();
   });
 
+  // The empty-state action is the canvas control that lives mid-surface, so the sheet's corner
+  // is checked against it too: with nothing on the canvas yet, opening the help must still leave
+  // "Add large box" reachable — that button is the first operation a new user needs.
+  test('AC4: an empty canvas keeps its own action hittable while the sheet is open', async ({ page }) => {
+    await resetNtp(page, NTP_URL);
+    await openAboutTab(page);
+    await expect(page.locator('.canvas__empty-action')).toBeVisible();
+
+    await jsClick(page, '#about-quick-help');
+    await expect(page.locator('#quick-help')).toBeVisible();
+    await assertPointerReaches(page, '.canvas__empty-action');
+    await page.locator('.canvas__empty-action').click();
+    await expect.poll(() => page.locator('.large-box').count()).toBe(1);
+    await expect(page.locator('#quick-help')).toBeVisible();
+  });
+
   test('AC4: Escape collapses it only while focus is inside, and never eats canvas Escape', async ({ page }) => {
     await bootOnAbout(page);
     await jsClick(page, '#about-quick-help');
@@ -436,27 +465,31 @@ test.describe('Issue #59 — golden path in the real Chrome extension build', ()
       await openAboutTab(page);
       const clipboard = () => page.evaluate(async () => await navigator.clipboard.readText());
 
-      await jsClick(page, '#about-copy-version');
+      // Real clicks from here on, not synthetic ones: the clipboard API requires transient user
+      // activation, and a dispatched HTMLElement.click() grants none — with a synthetic click the
+      // product would look broken when it is the harness that never pressed anything. AC8 asks for
+      // the user actually operating the loaded build.
+      await page.locator('#about-copy-version').click();
       // Asserted on the clipboard itself: the status node keeps its previous text for a moment,
       // so polling that would let a stale 'Copied' satisfy the next round.
       await expect.poll(clipboard, { timeout: 15000 }).toBe(expectedVersion);
 
       // Every existing project link, copied verbatim instead of only opened in a tab.
       for (const [source, url] of PROJECT_LINKS) {
-        await jsClick(page, `.about-copy-btn[data-copy-source="${source}"]`);
+        await page.locator(`.about-copy-btn[data-copy-source="${source}"]`).click();
         await expect.poll(clipboard, { timeout: 15000 }).toBe(url);
       }
 
       // Diagnostics shortcut inside the real build: the same pre-existing section, real focus.
       await openAboutTab(page);
-      await jsClick(page, '#about-diagnostics-btn');
+      await page.locator('#about-diagnostics-btn').click();
       await expect(page.locator('#tab-data')).toBeVisible();
       await expect.poll(() => focusId(page), { timeout: 15000 }).toBe('diag-export-log-btn');
       expect(await page.evaluate(() => document.querySelectorAll('[data-i18n="diagSectionTitle"]').length)).toBe(1);
 
       // The sheet in the real build: settings closes, the canvas keeps working underneath it.
       await openAboutTab(page);
-      await jsClick(page, '#about-quick-help');
+      await page.locator('#about-quick-help').click();
       await expect(page.locator('#settings-modal')).toBeHidden();
       await seedOneBox(page);
       await assertPointerReaches(page, '.large-box');
@@ -464,7 +497,7 @@ test.describe('Issue #59 — golden path in the real Chrome extension build', ()
       await expect.poll(() => currentBox(page),
         { timeout: 15000 }).toBeTruthy();
       await expect(page.locator('#quick-help')).toBeVisible();
-      await jsClick(page, '#quick-help-close-btn');
+      await page.locator('#quick-help-close-btn').click();
       await expect(page.locator('#quick-help')).toBeHidden();
     } finally {
       await ctx.close();
