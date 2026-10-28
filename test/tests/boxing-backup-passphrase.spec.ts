@@ -350,6 +350,16 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect(after.values).toEqual(['', '']);
     expect(await downloadCount(page)).toBe(0);
 
+    // Escape with focus on a BUTTON is caught inside the dialog: the settings panel that is
+    // open behind it must survive, which is what the overlay's own keydown listener is for.
+    await click(page, '#settings-btn');
+    await expect.poll(() => page.evaluate(() => !document.getElementById('settings-modal')!.hidden), { timeout: 10000 }).toBe(true);
+    await click(page, '#export-data-btn');
+    await expect.poll(() => page.evaluate(() => !document.getElementById('passphrase-modal')!.hidden), { timeout: 15000 }).toBe(true);
+    await page.evaluate(() => document.getElementById('passphrase-action-btn')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect((await passphraseDialogState(page)).open).toBe(false);
+    expect(await page.evaluate(() => !document.getElementById('settings-modal')!.hidden)).toBe(true);
+
     // Enter works from either field, so the confirmation box is not a dead end
     await click(page, '#export-data-btn');
     await expect.poll(() => page.evaluate(() => !document.getElementById('passphrase-modal')!.hidden), { timeout: 15000 }).toBe(true);
@@ -454,7 +464,7 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     await boot(page, { layout: bareLayout('Guarded Root'), snapData: bareLayout('Snap'), ts: SNAP_TS });
     await armExportCapture(page);
 
-// structurally invalid layout, correctly sealed -> the existing structure checks reject it
+    // structurally invalid layout, correctly sealed -> the existing structure checks reject it
     const badShape = await seal(JSON.stringify({ version: 3.5, boxes: [{ id: 'L1', x: 'not-a-number', y: 0 }] }), 'cap-check');
     await runImport(page, 'bad-shape.json', badShape);
     await typePassphrase(page, 'cap-check', null);
