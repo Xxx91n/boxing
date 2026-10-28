@@ -298,6 +298,7 @@ export function initSettingsUiFacade(deps) {
         if (settled) return; settled = true;
         inputEl.removeEventListener('keydown', onKey);
         repeatEl.removeEventListener('keydown', onKey);
+        modal.removeEventListener('keydown', onModalKey);
         actionEl.removeEventListener('click', onAction);
         cancelEl.removeEventListener('click', onDismiss);
         modal.removeEventListener('click', onBackdrop);
@@ -310,6 +311,10 @@ export function initSettingsUiFacade(deps) {
       const onAction = () => {
         const passphrase = inputEl.value;
         if (!passphrase) { showError(i18n('passphraseRequired')); return; }
+        // No maxLength on the fields: the browser would truncate both halves identically, so a
+        // pasted over-long passphrase would pass the mismatch check and seal a phrase the user
+        // never typed — an unrecoverable file. Reject it in words instead.
+        if (passphrase.length > MAX_PASSPHRASE_CHARS) { showError(i18n('passphraseTooLong')); return; }
         if (isExport && passphrase !== repeatEl.value) { showError(i18n('passphraseMismatch')); return; }
         settle({ passphrase });
       };
@@ -320,6 +325,14 @@ export function initSettingsUiFacade(deps) {
         if (e.key === 'Enter') { e.preventDefault(); onAction(); }
         else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onDismiss(); }
       };
+      // Escape is also honored with focus on one of the dialog's own buttons; Enter is not
+      // handled here because the button's click already fires for it.
+      const onModalKey = (e) => {
+        if (e.key !== 'Escape') return;
+        e.preventDefault();
+        e.stopPropagation();
+        onDismiss();
+      };
       titleEl.textContent = i18n(isExport ? 'passphraseExportTitle' : 'passphraseImportTitle');
       bodyEl.textContent = i18n(isExport ? 'passphraseExportBody' : 'passphraseImportBody');
       actionEl.textContent = i18n(isExport ? 'passphraseExportAction' : 'passphraseImportAction');
@@ -327,8 +340,6 @@ export function initSettingsUiFacade(deps) {
       // Export mints a new secret (never offer a stored one); decrypt just reads it back.
       inputEl.autocomplete = isExport ? 'new-password' : 'off';
       repeatEl.autocomplete = isExport ? 'new-password' : 'off';
-      inputEl.maxLength = MAX_PASSPHRASE_CHARS;
-      repeatEl.maxLength = MAX_PASSPHRASE_CHARS;
       inputEl.value = ''; repeatEl.value = '';
       if (initialError) showError(initialError); else hideError();
       actionEl.addEventListener('click', onAction);
@@ -363,6 +374,26 @@ export function initSettingsUiFacade(deps) {
         initialError = i18n('passphraseWrong');
       }
     }
+  }
+
+
+  // Envelope -> sealed file text, or null when it cannot be sealed inside the importer's own
+  // 5MB file gate. Snapshot bodies trim first (the same oldest-first drop the plain path
+  // uses), and the measure is BYTES here because base64 inflates the payload while the
+  // importer still gates on the file's size. Refusing is the only alternative: falling back to
+  // a plain file would hand out exactly the content the user asked to protect, and raising the
+  // import gate would trade an existing protection for a round trip (spec #53 D4 / AC7).
+  async function sealForDownload(env, text, passphrase) {
+    const allowed = maxInnerBytes();
+    if (env._bodies) {
+      while (utf8ByteLength(text) > allowed && env._bodies.snapshots.length > 0) {
+        env._bodies.snapshots.shift();
+        env.meta.bodyTrimmed = (env.meta.bodyTrimmed || 0) + 1;
+        text = JSON.stringify(env, null, 2);
+      }
+    }
+    if (utf8ByteLength(text) > allowed) return null;
+    return JSON.stringify(await encryptBackupFile(text, passphrase));
   }
 
 
@@ -1134,33 +1165,21 @@ export function bindSettingsUi() {
           if (answer.dismiss) return;
           passphrase = answer.passphrase;
         }
-        const env = await buildExportEnvelope();
+        let env = await buildExportEnvelope();
         let text = JSON.stringify(env, null, 2);
-        // Size estimate + 5MB handling (SEC-06 parity: the importer rejects
-        // payloads it cannot land; a full package must stay restorable, not
-        // maximal). The PLAIN path keeps ticket 51's char-length measure against
-        // the same 5MB cap. A sealed file instead measures BYTES against the
-        // tighter ENCRYPTED bound: base64 inflates the payload while the importer
-        // still gates on the same 5MB file size, so no input limit is traded away
-        // for a round trip.
-        const allowed = passphrase ? maxInnerBytes() : MAX_BACKUP_FILE_BYTES;
-        const sizeOf = passphrase ? utf8ByteLength : (s) => s.length;
         if (fullPackage) {
           env.meta.fullPackage = true;
           env._bodies = await readDrBodies();
+          // Size estimate + 5MB handling (SEC-06 parity: the importer rejects
+          // payloads it cannot land; a full package must stay restorable, not
+          // maximal).
           text = JSON.stringify(env, null, 2);
-          while (sizeOf(text) > allowed && env._bodies.snapshots.length > 0) {
+          while (text.length > MAX_BACKUP_FILE_BYTES && env._bodies.snapshots.length > 0) {
             env._bodies.snapshots.shift(); // oldest body drops first
             env.meta.bodyTrimmed = (env.meta.bodyTrimmed || 0) + 1;
             text = JSON.stringify(env, null, 2);
           }
-          if (sizeOf(text) > allowed) {
-            if (passphrase) {
-              // FAIL CLOSED: falling back to a plain file would hand out exactly the
-              // content the user asked to protect, so the export stops and says why.
-              try { alert(i18n('exportEncryptedTooLarge')); } catch (_) { /* alert may be blocked */ }
-              return;
-            }
+          if (text.length > MAX_BACKUP_FILE_BYTES) {
             // even metadata-only is too big (huge live layout) — fall back to the
             // standard envelope so the user still gets a clean, importable export.
             debug('Full DR package exceeds 5MB after trim — falling back to standard envelope');
@@ -1170,12 +1189,11 @@ export function bindSettingsUi() {
           }
         }
         if (passphrase) {
-          // Standard envelope: nothing left to trim, the same bound still applies.
-          if (utf8ByteLength(text) > allowed) {
+          const sealedText = await sealForDownload(env, text, passphrase);
+          if (sealedText === null) {
             try { alert(i18n('exportEncryptedTooLarge')); } catch (_) { /* alert may be blocked */ }
             return;
           }
-          const sealedText = JSON.stringify(await encryptBackupFile(text, passphrase));
           downloadJson(sealedText, 'boxing-backup-' + _ymd() + '.json');
           debug('Export done — fullPackage=' + Boolean(fullPackage) + ' encrypted=true len=' + sealedText.length);
           return;
@@ -1193,8 +1211,10 @@ export function bindSettingsUi() {
       if (!importPending) return; importPending = false;
       const file = importFile.files[0];
       if (!file) return;
-      // File size sanity check — reject imports > 5MB (the same bound a sealed file is kept
-      // inside at export time, so an encrypted export can never be an unimportable file).
+      // File size sanity check — reject imports > 5MB. Export keeps a sealed file inside this
+      // same gate (maxInnerBytes()), so sealing can never produce a file the gate would refuse;
+      // the caps BEHIND the gate (structure checks, the 2,000,000-char layout payload) still
+      // apply to the decrypted bytes exactly as they do to a plain file.
       if (file.size > MAX_BACKUP_FILE_BYTES) { try { alert(i18n('importTooLarge')); } catch (e) { /* silent: alert may be blocked */ } importFile.value = ''; return; }
       try {
         const text = await file.text();

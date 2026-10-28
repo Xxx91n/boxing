@@ -138,15 +138,22 @@ function readEnvelope(value) {
   return { salt, iv, payload };
 }
 
-// Longest plain backup text that still fits MAX_BACKUP_FILE_BYTES once sealed and base64'd.
-// Measured against a real header (fixed-length salt/iv) so the estimate cannot come out low.
-export function maxInnerBytes() {
-  const overhead = JSON.stringify({
+// One builder for both the written file and the size estimate: the bound in maxInnerBytes()
+// is only trustworthy while the header it measures is the header encryptBackupFile writes.
+function buildEnvelope(salt, iv, payloadBytes) {
+  return {
     boxingBackup: FORMAT_VERSION,
-    kdf: { name: 'PBKDF2', hash: KDF_HASH, iterations: KDF_ITERATIONS, salt: u8ToB64(new Uint8Array(SALT_BYTES)) },
-    cipher: { name: 'AES-GCM', iv: u8ToB64(new Uint8Array(IV_BYTES)) },
-    payload: '',
-  }).length;
+    kdf: { name: 'PBKDF2', hash: KDF_HASH, iterations: KDF_ITERATIONS, salt: u8ToB64(salt) },
+    cipher: { name: 'AES-GCM', iv: u8ToB64(iv) },
+    payload: u8ToB64(payloadBytes),
+  };
+}
+
+// Longest plain backup text that still fits MAX_BACKUP_FILE_BYTES once sealed and base64'd.
+// Fixed-length zero salt/iv encode to exactly the same character counts as random ones, so the
+// header length is the real one without spending a key derivation.
+export function maxInnerBytes() {
+  const overhead = JSON.stringify(buildEnvelope(new Uint8Array(SALT_BYTES), new Uint8Array(IV_BYTES), new Uint8Array(0))).length;
   const usable = MAX_BACKUP_FILE_BYTES - overhead;
   return Math.floor(usable / 4) * 3 - GCM_TAG_BYTES;
 }
@@ -157,12 +164,7 @@ export async function encryptBackupFile(innerJson, passphrase) {
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
   const key = await deriveFileKey(passphrase, salt, 'encrypt');
   const sealed = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(innerJson));
-  return {
-    boxingBackup: FORMAT_VERSION,
-    kdf: { name: 'PBKDF2', hash: KDF_HASH, iterations: KDF_ITERATIONS, salt: u8ToB64(salt) },
-    cipher: { name: 'AES-GCM', iv: u8ToB64(iv) },
-    payload: u8ToB64(new Uint8Array(sealed)),
-  };
+  return buildEnvelope(salt, iv, new Uint8Array(sealed));
 }
 
 export async function decryptBackupFile(value, passphrase) {

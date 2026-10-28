@@ -285,7 +285,7 @@
                 <input type="checkbox" id="export-encrypt-cb">
                 <span class="checkbox-label__text" data-i18n="exportEncryptLabel">Passphrase-protect exports</span>
               </label>
-              <p class="modal__hint" data-i18n="exportEncryptHint"
+              <p class="modal__hint" id="export-encrypt-hint" data-i18n="exportEncryptHint"
                 style="margin:2px 0 0;font-size:11px;">Boxing never stores this passphrase: lose it and the file stays unreadable. A restore on another install still needs WebDAV/GitHub credentials typed in again.</p>
             </section>
             <!-- Ticket 43 (spec D3): data-health surface — snapshot count +
@@ -507,7 +507,7 @@
           data-i18n-placeholder="passphraseFieldLabel">
         <input id="passphrase-repeat-input" class="modal__input" type="password" spellcheck="false" autocomplete="off"
           data-i18n-placeholder="passphraseRepeatFieldLabel" hidden>
-        <p id="passphrase-error" style="margin:6px 0 0;font-size:12px;color:#b3261e;" hidden></p>
+        <p id="passphrase-error" style="margin:6px 0 0;font-size:12px;color:var(--color-danger);" hidden></p>
       </div>
       <div class="modal__foot" style="justify-content:space-between;">
         <button id="passphrase-cancel-btn" tabindex="-1" class="btn" data-i18n="confirmCancel">Cancel</button>
