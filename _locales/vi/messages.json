@@ -1074,11 +1074,11 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "Xoá bản sao xung đột không thành công - nó vẫn còn trong danh sách.",
-    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+    "message": "Không thể xoá bản sao xung đột. Bản sao an toàn của nó đã được lưu nên không mất gì.",
+    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
-  "conflictGuardUnavailable": {
-    "message": "Bản sao an toàn đó không còn khả dụng. Không có gì thay đổi.",
-    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
+  "conflictGuardRestoreFailed": {
+    "message": "Không thể khôi phục bản sao an toàn đó - không có gì thay đổi.",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 }

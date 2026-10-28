@@ -120,7 +120,7 @@ export function initSettingsUiFacade(deps) {
       // the Time Machine list (refreshDataHealth is the single seam).
       // Ticket 56 (#53 D3): the same rows gain a Delete action — secondary confirm, then a
       // safe copy of THIS archive's payload into the snapshot subsystem, then the deletion.
-      // Read-only rendering is preserved: nothing below mutates the archive (issue 79 AC3).
+      // The rendering itself stays read-only (issue 79 AC3); only performConflictDelete writes.
       const cWrapEl = document.getElementById('data-conflict-list-wrap');
       const cListEl = document.getElementById('data-conflict-list');
       if (cWrapEl && cListEl) {
@@ -402,7 +402,7 @@ export function initSettingsUiFacade(deps) {
   async function performConflictRestore(guardTs) {
     const restored = await restoreConflictGuard(guardTs);
     if (!restored) {
-      try { alert(i18n('conflictGuardUnavailable')); } catch (e) { /* silent: alert may be blocked */ }
+      try { alert(i18n('conflictGuardRestoreFailed')); } catch (e) { /* silent: alert may be blocked */ }
       return;
     }
     debug('Conflict archive restored from safe copy: origin ts=' + restored);

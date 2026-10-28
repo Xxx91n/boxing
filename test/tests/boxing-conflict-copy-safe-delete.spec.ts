@@ -202,6 +202,30 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect(await storedTitles(page)).toEqual(['Kept Box', 'Later Work']);
     await expect(conflictRows(page)).toHaveCount(1, { timeout: 10000 });
     await expect(snapshotRows(page)).toHaveCount(1);              // restore is not a rollback
+
+    // ── AC6 tail: with a guard store present, the existing layout rollback still works ──
+    // Same row/confirm surface the ticket-50 spec drives. Rolling back to the baseline
+    // snapshot must replace the canvas (that IS what a rollback does) while leaving the
+    // restored archive and its safe copy listed — the two paths stay distinguishable.
+    await page.evaluate(() => {
+      const btn = document.querySelector('#data-snapshot-list .data-snapshot-row .data-snapshot-rollback-btn');
+      btn?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    });
+    await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
+    await confirmAction(page);
+    await expect.poll(() => canvasTitles(page), { timeout: 5000 }).toEqual(['Kept Box']);
+    const rollback = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const list = await dbg.listSnapshots();
+      const newest = list[list.length - 1];
+      const all = await dbg.storageGet('snap.v1.' + newest.ts);
+      return { count: list.length, reason: all?.['snap.v1.' + newest.ts]?.reason };
+    });
+    expect(rollback.reason).toBe('pre-restore');                  // rollback safety copy still taken
+    expect(rollback.count).toBe(2);
+    await expect(conflictRows(page)).toHaveCount(1, { timeout: 10000 });  // archives untouched by rollback
+    await expect(guardRows(page)).toHaveCount(1, { timeout: 10000 });
+    expect(await storedTitles(page)).toEqual(['Kept Box']);
   });
 
   test('AC2-fail: a metadata-only (truncated) archive is refused as a safe copy, so nothing is deleted', async ({ page }) => {
@@ -299,7 +323,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
 
     await clickRestore(page);
     await expect.poll(async () => (await alerts(page)).length, { timeout: 8000 }).toBe(1);
-    expect((await alerts(page))[0]).toMatch(/no longer available/i);
+    expect((await alerts(page))[0]).toMatch(/could not be restored/i);
     const idx = await conflictIndex(page);
     expect(idx.length).toBe(20);                                   // no row was lost either way
     expect(idx.some(e => e.ts === 100)).toBe(false);               // the self-pruned restore is not claimed
@@ -332,8 +356,17 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
       guardPrefix: GUARD_PREFIX, guardIndexKey: GUARD_INDEX_KEY, count: 20,
     });
 
-    const snapsBefore = await page.evaluate(async () => (await (window as any).__boxingDebug.listSnapshots()).length);
+    const snapsBefore = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      // Seed a non-empty snapshot list first: comparing 0 against 0 would prove nothing about
+      // guard rotation leaving layout snapshots alone.
+      await dbg.saveSnapshot('seed-a');
+      await dbg.saveSnapshot('seed-b');
+      return (await dbg.listSnapshots()).length;
+    });
+    expect(snapsBefore).toBe(2);
     await openSettingsDataTab(page);
+    await expect(snapshotRows(page)).toHaveCount(2, { timeout: 15000 });
     await expect(guardRows(page)).toHaveCount(20, { timeout: 15000 });
 
     await clickDelete(page);
@@ -359,7 +392,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     const needed = [
       'dataConflictDeleteBtn', 'dataConflictGuardList', 'dataConflictGuardArchived',
       'dataConflictGuardRestoreBtn', 'conflictDeleteConfirmTitle', 'conflictDeleteConfirmBody',
-      'conflictDeleteConfirmAction', 'conflictDeleteNoSafety', 'conflictDeleteFailed', 'conflictGuardUnavailable',
+      'conflictDeleteConfirmAction', 'conflictDeleteNoSafety', 'conflictDeleteFailed', 'conflictGuardRestoreFailed',
     ];
     for (const lang of langs) {
       const msgs = JSON.parse(fs.readFileSync(path.join(localesDir, lang, 'messages.json'), 'utf8'));

@@ -1074,11 +1074,11 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "La suppression de la copie de conflit a échoué - elle est toujours dans la liste.",
-    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+    "message": "La copie de conflit n'a pas pu être supprimée. Sa copie de sécurité est enregistrée - rien n'est perdu.",
+    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
-  "conflictGuardUnavailable": {
-    "message": "Cette copie de sécurité n'est plus disponible. Rien n'a été modifié.",
-    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
+  "conflictGuardRestoreFailed": {
+    "message": "Cette copie de sécurité n'a pas pu être restaurée - rien n'a été modifié.",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 }

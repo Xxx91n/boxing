@@ -1074,11 +1074,11 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "ลบสำเนาข้อขัดแย้งไม่สำเร็จ - ยังอยู่ในรายการ",
-    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+    "message": "ลบสำเนาข้อขัดแย้งไม่ได้ สำเนาที่ปลอดภัยถูกบันทึกไว้ จึงไม่มีสิ่งใดสูญหาย",
+    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
-  "conflictGuardUnavailable": {
-    "message": "สำเนาที่ปลอดภัยนั้นไม่พร้อมใช้งานอีกต่อไป ไม่มีสิ่งใดถูกเปลี่ยนแปลง",
-    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
+  "conflictGuardRestoreFailed": {
+    "message": "ไม่สามารถคืนค่าสำเนาที่ปลอดภัยนั้นได้ ไม่มีสิ่งใดถูกเปลี่ยนแปลง",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 }

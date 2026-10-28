@@ -569,14 +569,15 @@ export function registerStorageOnChanged() {
   // payload is not a layout snapshot, so Time Machine listing, restoreFromSnapshot and
   // migrateLayout never see it (restoring one must not roll back the canvas).
   //
-  // Retention is the snapshot rotation contract applied to a second namespace: same 2MB
-  // per-body ceiling, same newest-RAW_KEEP_FLOOR verbatim floor, same 8MB total-byte cap —
-  // enforced per index, so the safe-copy store adds a bounded budget of its own rather than
-  // sharing the layout snapshots' (worst case +8MB against storage.local, the same ceiling a
-  // second snapshot rotation would already cost). Safe copies are therefore NOT promised to
-  // live forever (#53 N2), and the count cap is the isolation area's own (20).
-  // Tier dedup is off here: unlike layout snapshots, every safe copy holds distinct content,
-  // so dropping a same-bucket entry would destroy data rather than a redundant sample.
+  // Retention runs the snapshot rotation code on a second namespace: the same 2MB per-body
+  // ceiling and the same 8MB total-byte cap, each enforced per index, so the safe-copy store
+  // adds a bounded budget of its own instead of sharing the layout snapshots' (worst case
+  // +8MB against storage.local + unlimitedStorage — it cannot starve the layout legs). The
+  // count cap is the isolation area's own (20) and tier dedup is OFF: unlike layout
+  // snapshots, where a same-bucket entry is a redundant sample, every safe copy holds
+  // distinct content, so only the count and byte caps prune here. Safe copies are therefore
+  // NOT promised to live forever (#53 N2), and restoring one re-enters the conflict store
+  // through the existing archive leg, inheriting that store's oldest-first pruning.
   const GUARD_KEY_PREFIX = 'snap.guard.v1.';
   const GUARD_INDEX_KEY = 'snap.guard.v1.index';
   const GUARD_NS = { keyPrefix: GUARD_KEY_PREFIX, indexKey: GUARD_INDEX_KEY, countCap: MAX_CONFLICT_ARCHIVES, tiers: false };
@@ -586,6 +587,11 @@ export function registerStorageOnChanged() {
   // null, and deleteConflictArchive refuses to run without a returned ts. A `truncated`
   // archive (metadata only, SEC-06) and an over-cap payload both fail — saving a stub
   // would not be a safe copy of what is actually about to be deleted.
+  //
+  // guard.size is the length of the ARCHIVED PAYLOAD, not of the guard envelope, so a restore
+  // re-registers the conflict row with the exact size it had before the deletion (the readout
+  // shows the same bytes either way). The stored body is then measured separately, because
+  // the ceiling that matters for storage is the whole body.
   export async function saveConflictGuard(ts) {
     try {
       await _migrateSnapshots();
@@ -606,12 +612,18 @@ export function registerStorageOnChanged() {
         raw: entry.raw
       };
       if (Array.isArray(entry.raw.boxes)) guard.boxes = entry.raw.boxes.length;
+      let rawJson = '';
+      try { rawJson = JSON.stringify(entry.raw); } catch (_) { rawJson = ''; }
+      if (!rawJson || rawJson.length > MAX_SNAPSHOT_BYTES) {
+        debug('Conflict guard skipped: archived payload ' + rawJson.length + 'B exceeds cap ' + MAX_SNAPSHOT_BYTES);
+        return null;
+      }
+      guard.size = rawJson.length;
       const guardJson = JSON.stringify(guard);
       if (guardJson.length > MAX_SNAPSHOT_BYTES) {
         debug('Conflict guard skipped: safe copy ' + guardJson.length + 'B exceeds cap ' + MAX_SNAPSHOT_BYTES);
         return null;
       }
-      guard.size = guardJson.length;
       await layoutStorage.set({ [GUARD_KEY_PREFIX + guardTs]: guard });
       const index = await _readIndex(GUARD_INDEX_KEY);
       index.push({ ts: guardTs, originTs, size: guard.size });

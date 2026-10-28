@@ -1074,11 +1074,11 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "Не удалось удалить копию конфликта - она всё ещё в списке.",
-    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+    "message": "Копию конфликта не удалось удалить. Её резервная копия сохранена - ничего не потеряно.",
+    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
-  "conflictGuardUnavailable": {
-    "message": "Эта резервная копия больше недоступна. Ничего не изменено.",
-    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
+  "conflictGuardRestoreFailed": {
+    "message": "Эту резервную копию не удалось восстановить - ничего не изменено.",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 }

@@ -1074,11 +1074,11 @@
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "فشل حذف النسخة المتعارَض عليها - ما زالت في القائمة.",
-    "description": "Shown when the safe copy was saved but deleting the conflict copy failed (ticket 56)"
+    "message": "تعذّر حذف النسخة المتعارَض عليها. نسختها الآمنة محفوظة، لذا لم يُفقد أي شيء.",
+    "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
-  "conflictGuardUnavailable": {
-    "message": "هذه النسخة الآمنة لم تعد متاحة. لم يتغيّر أي شيء.",
-    "description": "Shown when a safe copy body no longer exists; nothing was changed (ticket 56)"
+  "conflictGuardRestoreFailed": {
+    "message": "تعذّرت استعادة هذه النسخة الآمنة - لم يتغيّر أي شيء.",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 }
