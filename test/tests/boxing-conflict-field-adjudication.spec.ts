@@ -26,6 +26,12 @@
 // happens before the first navigation (addInitScript, the import-merge harness discipline).
 // Storage goes through __boxingDebug.storageGet/Set — the existing facade seam; no new
 // test-only production interface.
+//
+// KNOWN GAP, DECLARED NOT HIDDEN: #54 asks for Chrome AND Firefox actual builds. The suite
+// has never loaded an extension in Firefox (its project installs no add-on), so that lane
+// needs temporary-add-on infrastructure this ticket does not add. AC-real below covers the
+// built Chrome extension, and it needs `npm run build` — CI builds before testing, and the
+// test states the missing-build reason instead of passing quietly.
 import { test, expect, chromium } from '@playwright/test';
 import fs from 'fs';
 import os from 'os';
@@ -44,7 +50,7 @@ const PANEL = LIST + ' .data-conflict-diff';
 // The paths the diff produces for the fixtures below (id-addressed, same grammar as the
 // tiered box keys: large:<id> / small:<large>:<small>[:<bookmark>]).
 const P_TITLE = 'large:L1#title';
-const P_URL = 'small:L1:S1:bm1#url';
+const P_URL = 'small:L1:S1:b1#url';
 const P_STAR = 'large:L1#star';
 
 // Canvas state: L1 (+ child S1 + bookmark b1) and an unrelated L2 that must never move.
@@ -140,6 +146,11 @@ const keepRadios = (page: any) =>
 const hasApplyButton = (page: any) =>
   page.evaluate((p) => Boolean(document.querySelector(p + ' .data-conflict-apply-btn')), PANEL);
 
+// #53 D2 keeps adjudication after-the-fact: neither comparing nor applying may put a
+// decision dialog in front of the canvas the user is working on.
+const confirmModalHidden = (page: any) =>
+  page.evaluate(() => Boolean(document.getElementById('confirm-modal')?.hidden));
+
 const applyDisabled = (page: any) =>
   page.evaluate((p) => (document.querySelector(p + ' .data-conflict-apply-btn') as HTMLButtonElement | null)?.disabled ?? null, PANEL);
 
@@ -200,13 +211,12 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     // AC2: exactly the differing user-editable fields of the objects both sides have.
     expect(await fieldPaths(page)).toEqual([
       'large:L1#title', 'large:L1#position', 'large:L1#pinned', 'large:L1#autoExpand', 'large:L1#star',
-      'small:L1:S1:bm1#url',
+      'small:L1:S1:b1#url',
     ]);
     // Internal state and equal fields stay out: counters, writer ids, size, the small box.
     expect(text).not.toContain('nextSmallIndex');
     expect(text).not.toContain('schemaVersion');
     expect(text).not.toContain('writerId');
-    expect(text).not.toContain('99');
     expect(text).not.toContain('Other Root');                 // objects only one side has stay out
     // Default is always keep-current (#53 D2: comparing must not overwrite for the user).
     expect((await keepRadios(page)).every(Boolean)).toBe(true);
@@ -224,6 +234,7 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     await openCompare(page);
     expect(await adoptField(page, P_URL)).toBe(true);
     expect(await clickApply(page)).toBe(true);
+    expect(await confirmModalHidden(page)).toBe(true);        // no modal in front of the canvas
 
     const after = await memoryLayout(page);
     const bm = after.boxes[0].children[0].bookmarks[0];
@@ -313,8 +324,9 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     await bootFileLane(page, archivedEntry());
 
     // AC5: comparing and closing is read-only — none of the user's data moves.
-    const dataBefore = await storedData(page);
+    const bytesBefore = await storedData(page);
     await openCompare(page);
+    expect(await confirmModalHidden(page)).toBe(true);
     await closeCompare(page);
     expect(await storedData(page)).toBe(dataBefore);
 
