@@ -38,7 +38,7 @@ import { test, expect, chromium } from '@playwright/test';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { pathToFileURL } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dismissOnboarding } from '../helpers/onboarding';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
