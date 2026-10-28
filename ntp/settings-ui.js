@@ -298,6 +298,10 @@ export function initSettingsUiFacade(deps) {
       const errorEl = document.getElementById('passphrase-error');
       const actionEl = document.getElementById('passphrase-action-btn');
       const cancelEl = document.getElementById('passphrase-cancel-btn');
+      // Where the user was standing before this dialog steals focus — keyboard and
+      // screen-reader users get their place back when it closes, instead of a hidden
+      // focused control dropping focus to the body.
+      const opener = document.activeElement;
       const isExport = mode === 'export';
       let settled = false;
       const showError = (message) => { errorEl.textContent = message; errorEl.hidden = false; };
@@ -314,6 +318,7 @@ export function initSettingsUiFacade(deps) {
         inputEl.value = ''; repeatEl.value = '';
         hideError();
         modal.hidden = true;
+        if (opener && typeof opener.focus === 'function' && document.contains(opener)) opener.focus();
         resolve(result);
       };
       const onDismiss = () => settle({ dismiss: true });
