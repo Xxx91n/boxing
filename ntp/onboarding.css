@@ -187,10 +187,14 @@
 .quick-help {
   position: fixed;
   left: 16px;
+  /* Clears the .foot band (space-3 padding + one hint line). The band grows with
+     --font-size-base, so the card is height-bounded instead of chasing it: on a short or
+     narrow window the worst case is the always-visible hint text sliding behind a sheet the
+     user just opened, never a control it claims to explain. */
   bottom: 44px;
   z-index: 40;
   max-width: 340px;
-  max-height: 60vh;
+  max-height: min(45vh, 300px);
   overflow-y: auto;
   scrollbar-width: thin;
   display: flex;
