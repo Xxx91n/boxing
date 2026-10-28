@@ -582,6 +582,15 @@ function conflictSymbolValue(bool, negate) {
   return shown ? '✓' : '–';
 }
 
+// Geometry is only adoptable when BOTH sides hold a real finite number. Number(null),
+// Number(true) and Number('') are 0/1, so a payload carrying null or a leftover flag would
+// otherwise be offered as a size and written as 0 — an unwritten-by-design box dimension.
+function conflictNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+  if (typeof value === 'string' && value.trim() !== '') return Number(value);
+  return NaN;
+}
+
 // One descriptor -> { token, entry }. The token describes the CURRENT side, so it feeds the
 // staleness signature; a group with nothing to compare (a side without finite geometry) pins
 // 'n/a', because nothing can ever be written for it and its drift needs no re-confirmation.
@@ -602,35 +611,38 @@ function probeConflictField(cur, copy, spec, basePath) {
   }
   if (spec.kind === 'num') {
     const keys = spec.fields || [field];
-    // A geometry group is atomic: adopting x without y would drop the box on top of its
-    // neighbours, and a side that carries no finite number is not user data to adopt.
-    if (!keys.every((k) => Number.isFinite(Number(cur[k])) && Number.isFinite(Number(copy[k])))) {
+    const curVals = keys.map((k) => conflictNumber(cur[k]));
+    const copyVals = keys.map((k) => conflictNumber(copy[k]));
+    if (!curVals.every(Number.isFinite) || !copyVals.every(Number.isFinite)) {
       return { token: path + '=n/a', entry: null };
     }
-    const changed = keys.some((k) => Number(cur[k]) !== Number(copy[k]));
+    const changed = curVals.some((v, i) => v !== copyVals[i]);
+    // The displayed numbers are the compared ones: rounding here would show two different
+    // coordinates as identical while adoption still moved the box.
     const entry = changed ? {
       key: spec.key, labelKey: spec.labelKey, path,
-      current: keys.map((k) => Math.round(Number(cur[k]))).join(', '),
-      copy: keys.map((k) => Math.round(Number(copy[k]))).join(', '),
-      writes: keys.map((k) => ({ field: k, value: Number(copy[k]) })),
+      current: curVals.join(', '),
+      copy: copyVals.join(', '),
+      writes: keys.map((k, i) => ({ field: k, value: copyVals[i] })),
     } : null;
-    return { token: keys.map((k) => path + '.' + k + '=' + Number(cur[k])).join(','), entry };
+    return { token: keys.map((k, i) => path + '.' + k + '=' + curVals[i]).join(','), entry };
   }
   if (spec.kind === 'url') {
-    // Every url the app itself writes goes through normalizeBookmarkUrl (popup add/edit,
-    // and the importer treats an un-normalizable url as corruption). A conflict copy can
-    // carry a url from an imported file, so adopting one has to land in the same canonical
-    // form — and a value that cannot be normalized is not adoptable at all rather than a
-    // blank or a scheme the app would refuse on the next import. The row shows the value
-    // that would actually be stored, so adopting never differs from what was displayed.
+    // Every url the app itself writes goes through normalizeBookmarkUrl (popup add/edit),
+    // and the importer treats an un-normalizable url as corruption — so adopting a url from
+    // an archived file has to land in that same canonical form, and a value that cannot be
+    // normalized is not adoptable at all. The row shows the value that will be stored.
     const adopt = normalizeBookmarkUrl(copy[field]);
-    const curText = typeof cur[field] === 'string' ? cur[field] : '';
-    if (!adopt) return { token: path + '=' + curText, entry: null };
-    const entry = curText === adopt ? null : {
-      key: spec.key, labelKey: spec.labelKey, path, current: curText, copy: adopt,
+    const curRaw = typeof cur[field] === 'string' ? cur[field] : '';
+    if (!adopt) return { token: path + '=' + curRaw, entry: null };
+    // Compared canonical-to-canonical: the import path validates a url but keeps the bytes it
+    // read, so two identical "HTTPS://Example.com/" values must not be reported as a conflict.
+    const curCanonical = normalizeBookmarkUrl(cur[field]) || curRaw;
+    const entry = curCanonical === adopt ? null : {
+      key: spec.key, labelKey: spec.labelKey, path, current: curRaw, copy: adopt,
       writes: [{ field, value: adopt }],
     };
-    return { token: path + '=' + curText, entry };
+    return { token: path + '=' + curCanonical, entry };
   }
   const pv = copy[field];
   if (typeof pv !== 'string') return { token: path + '=n/a', entry: null };

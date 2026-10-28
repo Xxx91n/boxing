@@ -540,14 +540,25 @@ export function initSettingsUiFacade(deps) {
       return;
     }
     await saveLayout();
-    renderCanvas();
-    applyCanvasTransform();
-    applyInnerTransform();
-    updateCaption();
+    // renderCanvas() hides the inner wrapper — it repaints the OUTER canvas — so applying
+    // while the user is drilled into a box must repaint that box instead of silently kicking
+    // them back to the canvas. exitToCanvas() repaints the outer surface on the way out, so
+    // the not-yet-visible layer cannot go stale from skipping renderCanvas here.
     if (currentLargeBoxId) {
       const lb = getLargeBox(currentLargeBoxId);
-      if (lb) renderInnerSurface(lb);
+      if (lb) {
+        renderInnerSurface(lb);
+        renderCrumbs(lb);
+      } else {
+        renderCanvas();
+        applyCanvasTransform();
+      }
+    } else {
+      renderCanvas();
+      applyCanvasTransform();
+      applyInnerTransform();
     }
+    updateCaption();
     // The archive row and its body stay exactly as they were (applying is not deleting):
     // the panel is re-compared so the adopted fields now read as the current values, while
     // the copy itself stays listed for export or a later verdict.
