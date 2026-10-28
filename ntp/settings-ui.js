@@ -525,13 +525,17 @@ export function initSettingsUiFacade(deps) {
     // Count fields the user chose, not raw key writes — one adopted position sets x and y.
     const done = new Set();
     for (const op of planConflictApply(fresh, state.selected)) {
-      if (!writeConflictOp(op)) continue;
-      if (!done.has(op.path)) { done.add(op.path); }
+      if (writeConflictOp(op)) done.add(op.path);
     }
     const applied = done.size;
     conflictPanels.delete(ts);
     if (!applied) {
-      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh));
+      // Nothing to write (the targets went away, or the values already match): keep the
+      // panel open on the refreshed diff so the user sees the current state, and say why
+      // the apply did nothing rather than leaving a silent no-op.
+      conflictPanels.set(ts, { signature: fresh.signature, selected: new Set() });
+      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh, i18n('dataConflictStale')));
+      debug('Conflict apply wrote nothing: ts=' + ts + ' (no selected target could be written)');
       return;
     }
     await saveLayout();

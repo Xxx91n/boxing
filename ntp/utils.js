@@ -582,8 +582,10 @@ function conflictSymbolValue(bool, negate) {
   return shown ? '✓' : '–';
 }
 
-// One descriptor -> { token, entry }. The token always describes the CURRENT side
-// (it feeds the staleness signature), the entry only exists when the two sides differ.
+// One descriptor -> { token, entry }. The token describes the CURRENT side, so it feeds the
+// staleness signature; a group that cannot be adopted at all (a side without finite
+// geometry) pins 'n/a' instead, because nothing can ever be written for it and its drift
+// needs no re-confirmation. The entry only exists when the two sides differ.
 function probeConflictField(cur, copy, spec, basePath) {
   const path = basePath + '#' + spec.key;
   const field = spec.field || spec.key;
@@ -619,13 +621,13 @@ function probeConflictField(cur, copy, spec, basePath) {
     // and the importer treats an un-normalizable url as corruption). A conflict copy can
     // carry a url from an imported file, so adopting one has to land in the same canonical
     // form — and a value that cannot be normalized is not adoptable at all rather than a
-    // blank or a scheme the app would refuse on the next import.
+    // blank or a scheme the app would refuse on the next import. The row shows the value
+    // that would actually be stored, so adopting never differs from what was displayed.
     const adopt = normalizeBookmarkUrl(copy[field]);
-    if (!adopt) return { token: path + '=n/a', entry: null };
-    const shown = typeof copy[field] === 'string' ? copy[field] : '';
     const curText = typeof cur[field] === 'string' ? cur[field] : '';
-    const entry = curText === shown ? null : {
-      key: spec.key, labelKey: spec.labelKey, path, current: curText, copy: shown,
+    if (!adopt) return { token: path + '=' + curText, entry: null };
+    const entry = curText === adopt ? null : {
+      key: spec.key, labelKey: spec.labelKey, path, current: curText, copy: adopt,
       writes: [{ field, value: adopt }],
     };
     return { token: path + '=' + curText, entry };

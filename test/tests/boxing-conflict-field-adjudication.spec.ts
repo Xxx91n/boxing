@@ -13,8 +13,9 @@
 //   AC5  opening and closing a comparison is read-only — no save, no stored-byte change —
 //        so comparing can never be mistaken for applying (import/sync keep their own specs
 //        for "not blocked by adjudication").
-//   AC6  the star verdict goes through the single mutation entry, and the persisted payload
-//        keeps `groups` as the non-persisted runtime mirror it is.
+//   AC6  geometry is decided in pairs (never x without y), the star verdict goes through the
+//        single mutation entry, adjudication writes without tombstoning anything, and the
+//        persisted payload keeps `groups` as the non-persisted runtime mirror it is.
 //   AC7  static gate: every new key exists in all 14 locale files and in the en fallback.
 //   AC-real  the golden path in the ACTUAL built extension (dist/boxing-chrome).
 //
@@ -23,8 +24,8 @@
 // separate describe that launches its own persistent Chromium on dist/ — a file:// pass is
 // never evidence of extension behavior and is not reported as one. Input is JS-dispatched,
 // matching the sibling data-tab specs (boxing-debug, boxing-webdav) — real pointer input is
-// the native-input specs' job, not this flow. seeding
-// happens before the first navigation (addInitScript, the import-merge harness discipline).
+// the native-input specs' job, not this flow. Seeding happens before the first navigation
+// (addInitScript, the import-merge harness discipline).
 // Storage goes through __boxingDebug.storageGet/Set — the existing facade seam; no new
 // test-only production interface.
 //
@@ -76,17 +77,18 @@ function liveLayout() {
 }
 
 // The archived losing side (the #53 D2 counterpart): same ids, divergent title / position /
-// pin / hover-expand / star, and a moved bookmark url. width+height, the small box and the
-// bookmark title are deliberately IDENTICAL so "only differing fields are offered" proves
-// something, and nextSmallIndex 99 vs 2 is the internal counter that must never show up.
-function archivedBoxes() {
+// size / pin / hover-expand / star, and a moved bookmark url. The small box and the bookmark
+// title are deliberately IDENTICAL so "only differing fields are offered" proves something,
+// and nextSmallIndex 99 vs 2 is the internal counter that must never show up.
+function archivedBoxes(over: Record<string, unknown> = {}) {
   return [{
-    id: 'L1', type: 'large', title: 'Cloud Root', x: 900, y: 900, width: 320, height: 220,
+    id: 'L1', type: 'large', title: 'Cloud Root', x: 900, y: 900, width: 420, height: 300,
     pinned: true, collapseHover: true, isParent: true, nextSmallIndex: 99,
     children: [{
       id: 'S1', type: 'small', title: 'Local Small', x: 0, y: 0, width: 240, height: 180,
       pinned: true, bookmarks: [{ id: 'b1', title: 'Shared Bookmark', url: 'https://cloud.test/b1' }],
     }],
+    ...over,
   }];
 }
 
@@ -95,6 +97,16 @@ function archivedEntry(over: Record<string, unknown> = {}) {
   return {
     ts: CONFLICT_TS, reason: 'import-merge', side: 'incoming',
     raw: { boxes }, size: JSON.stringify(boxes).length, boxes: boxes.length, ...over,
+  };
+}
+
+// One archived bookmark url, so the url rules can be proven without a second fixture shape.
+function archivedEntryWithUrl(copyUrl: string) {
+  const boxes = archivedBoxes();
+  (boxes[0].children[0].bookmarks as any[])[0].url = copyUrl;
+  return {
+    ts: CONFLICT_TS, reason: 'import-merge', side: 'incoming',
+    raw: { boxes }, size: JSON.stringify(boxes).length, boxes: 1,
   };
 }
 
@@ -211,17 +223,18 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
 
     // AC2: exactly the differing user-editable fields of the objects both sides have.
     expect(await fieldPaths(page)).toEqual([
-      'large:L1#title', 'large:L1#position', 'large:L1#pinned', 'large:L1#autoExpand', 'large:L1#star',
+      'large:L1#title', 'large:L1#position', 'large:L1#size', 'large:L1#pinned',
+      'large:L1#autoExpand', 'large:L1#star',
       'small:L1:S1:b1#url',
     ]);
-    // Internal state and equal fields stay out: counters, writer ids, size, the small box.
+    // Internal state and equal fields stay out: counters, writer ids, the small box.
     expect(text).not.toContain('nextSmallIndex');
     expect(text).not.toContain('schemaVersion');
     expect(text).not.toContain('writerId');
     expect(text).not.toContain('Other Root');                 // objects only one side has stay out
     // Default is always keep-current (#53 D2: comparing must not overwrite for the user).
     expect((await keepRadios(page)).every(Boolean)).toBe(true);
-    expect(await page.evaluate((p) => document.querySelectorAll(p + ' input[value="copy"]').length, PANEL)).toBe(6);
+    expect(await page.evaluate((p) => document.querySelectorAll(p + ' input[value="copy"]').length, PANEL)).toBe(7);
     // Applying waits for an explicit choice.
     expect(await hasApplyButton(page)).toBe(true);
     expect(await applyDisabled(page)).toBe(true);
@@ -257,25 +270,59 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     expect(body.raw.boxes[0].title).toBe('Cloud Root');
     expect(body.truncated).toBeUndefined();
     // The panel says what it did, and only the chosen field left the diff: the box's own
-    // five differences are still on the table because the user never adopted them.
+    // six differences are still on the table because the user never adopted them.
     await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/Applied 1 field/);
     expect(await fieldPaths(page)).toEqual([
-      'large:L1#title', 'large:L1#position', 'large:L1#pinned', 'large:L1#autoExpand', 'large:L1#star',
+      'large:L1#title', 'large:L1#position', 'large:L1#size', 'large:L1#pinned',
+      'large:L1#autoExpand', 'large:L1#star',
     ]);
   });
 
-  test('AC6: the star verdict goes through the mutation entry and groups stay unpersisted', async ({ page }) => {
+  test('AC2: an archived url is adopted in the form the app stores, and an unusable one is never offered', async ({ page }) => {
+    test.setTimeout(90000);
+    // Schemeless copy: the app never writes a url without normalizing it (popup add/edit,
+    // and the importer rejects what normalizeBookmarkUrl cannot handle), so what the row
+    // shows and what lands must both be the canonical form.
+    await bootFileLane(page, archivedEntryWithUrl('cloud.test/orphan'));
+    await openCompare(page);
+    expect(await adoptField(page, P_URL)).toBe(true);
+    expect(await clickApply(page)).toBe(true);
+    const stored = JSON.parse(await storedValue(page));
+    expect(stored.boxes[0].children[0].bookmarks[0].url).toBe('https://cloud.test/orphan');
+    expect((await memoryLayout(page)).boxes[0].children[0].bookmarks[0].url).toBe('https://cloud.test/orphan');
+
+    // A url the app refuses to store cannot be adopted; the row stays for export, and the
+    // rest of the comparison is unaffected.
+    await page.evaluate(async (entry) => {
+      await (window as any).__boxingDebug.storageSet({ ['boxingLayout.conflict.' + entry.ts]: entry });
+    }, archivedEntryWithUrl('javascript:alert(1)'));
+    await closeCompare(page);
+    await openCompare(page);
+    expect(await fieldPaths(page)).not.toContain(P_URL);
+    expect(await fieldPaths(page)).toContain(P_TITLE);
+  });
+
+  test('AC6: geometry is adopted as pairs, the star goes through the mutation entry, and nothing is tombstoned', async ({ page }) => {
     test.setTimeout(90000);
     await bootFileLane(page, archivedEntry());
     await openCompare(page);
     expect(await adoptField(page, P_STAR)).toBe(true);
     expect(await adoptField(page, P_TITLE)).toBe(true);
+    expect(await adoptField(page, 'large:L1#position')).toBe(true);
+    expect(await adoptField(page, 'large:L1#size')).toBe(true);
     expect(await clickApply(page)).toBe(true);
 
     const after = await memoryLayout(page);
     expect(after.boxes[0].isParent).toBe(true);              // star adopted via toggleStarMark
     expect(after.boxes[0].title).toBe('Cloud Root');         // second selected field lands too
+    // A position/size choice is one field: both coordinates, both dimensions, never half.
+    expect([after.boxes[0].x, after.boxes[0].y]).toEqual([900, 900]);
+    expect([after.boxes[0].width, after.boxes[0].height]).toEqual([420, 300]);
     expect(after.boxes[0].pinned).toBe(false);               // unselected fields stay current
+    expect(after.boxes[0].collapseHover).toBe(false);
+    // Adjudication writes, it does not delete: no tombstone for anything it touched.
+    const deleted = await page.evaluate(() => Object.keys((window as any).__boxingDebug.layout._meta?.deleted || {}));
+    expect(deleted.filter((k: string) => k.startsWith('L1') || k.startsWith('S1') || k === 'b1' || k.includes(':L1'))).toEqual([]);
     const stored = JSON.parse(await storedValue(page));
     // The runtime groups mirror is stripped before persisting, so it is absent entirely.
     expect(stored.groups).toBeUndefined();
