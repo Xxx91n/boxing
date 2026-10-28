@@ -129,33 +129,39 @@ try { loadFaviconCacheFromStorage(); } catch (e) { /* silent: favicon cache hydr
 // authorization the browser already grants. This is a discardable accelerator for the
 // URL cache above, never a second source of truth: a corrupt, expired, unreadable,
 // undecodable, oversized or quota-blocked pixel always falls back to the URL/SWR path.
-// It lives in the favicon URL cache's localStorage area, not the layout storage.local
-// area, so it cannot squeeze bookmark, layout or snapshot writes.
+// It shares localStorage with the favicon URL cache and is capped at 1 MiB; the layout
+// itself lives in chrome.storage.local, and the emergency localStorage layout snapshot
+// reclaims this layer first when a quota failure blocks its own write.
 const FAV_PIXEL_KEY = 'boxingFaviconPixels.v1';
 const FAV_PIXEL_SIZE = 32;
 const FAV_PIXEL_MAX_ENTRY = 16 * 1024;    // stored data-URI bytes for one host
-const FAV_PIXEL_MAX_TOTAL = 1024 * 1024;  // whole pixel layer (discardable)
+const FAV_PIXEL_MAX_TOTAL = 1024 * 1024;  // whole serialized layer (discardable)
 const FAV_PIXEL_PREFIX = 'data:image/png;base64,';
-const faviconPixels = new Map(); // host -> { d: dataUri, ts: write time }
+const faviconPixels = new Map(); // host -> { data: dataUri, ts: write time }
 const pixelInflight = new Map(); // host -> Promise<void>; dedupes captures, never awaited by display
 let __favPixelPersistPending = false;
 
 function serializeFaviconPixels(pairs) {
   const entries = {};
-  for (const [host, e] of pairs) entries[host] = { d: e.d, ts: e.ts };
+  for (const [host, e] of pairs) entries[host] = { data: e.data, ts: e.ts };
   return JSON.stringify({ entries, savedAt: Date.now() });
 }
-// Pairs arrive oldest-write first. Drop from that end until the SERIALIZED layer (entries,
-// host keys, timestamps and envelope) fits the budget, so a newer entry is never evicted
-// while an older one survives. The order is write time, not last read: not an LRU.
+// Pairs arrive oldest-write first. The budget covers the whole serialized layer; measure
+// each exact entry chunk once and keep the newest contiguous run, so eviction is strictly
+// oldest-write-first and a newer entry never loses to an older one. Not an LRU.
 function fitFaviconPixelsToBudget(pairs) {
-  const kept = pairs.slice();
-  let payload = serializeFaviconPixels(kept);
-  while (kept.length && payload.length > FAV_PIXEL_MAX_TOTAL) {
-    kept.shift();
-    payload = serializeFaviconPixels(kept);
+  const chunks = pairs.map(([host, e]) => JSON.stringify(host) + ':' + JSON.stringify(e));
+  const envelope = '{"entries":{},"savedAt":' + Date.now() + '}';
+  let total = envelope.length;
+  let keepFrom = pairs.length;
+  for (let i = pairs.length - 1; i >= 0; i--) {
+    const cost = chunks[i].length + (keepFrom < pairs.length ? 1 : 0); // comma between entries
+    if (total + cost > FAV_PIXEL_MAX_TOTAL) break;
+    total += cost;
+    keepFrom = i;
   }
-  return { kept, payload };
+  const kept = pairs.slice(keepFrom);
+  return { kept, payload: serializeFaviconPixels(kept) };
 }
 function loadFaviconPixelsFromStorage() {
   try {
@@ -169,13 +175,13 @@ function loadFaviconPixelsFromStorage() {
     // Keep only successful PNG entries inside the hit SWR ceiling.
     for (const host of Object.keys(entries)) {
       const e = entries[host];
-      if (!e || typeof e.d !== 'string' || !e.d.startsWith(FAV_PIXEL_PREFIX) ||
+      if (!e || typeof e.data !== 'string' || !e.data.startsWith(FAV_PIXEL_PREFIX) ||
           typeof e.ts !== 'number' || !Number.isFinite(e.ts) ||
-          e.d.length > FAV_PIXEL_MAX_ENTRY || now - e.ts > FAV_HIT_SWR_TTL) {
+          e.data.length > FAV_PIXEL_MAX_ENTRY || now - e.ts > FAV_HIT_SWR_TTL) {
         changed = true;
         continue;
       }
-      candidates.push([host, { d: e.d, ts: e.ts }]);
+      candidates.push([host, { data: e.data, ts: e.ts }]);
     }
     candidates.sort((a, b) => a[1].ts - b[1].ts);
     const { kept } = fitFaviconPixelsToBudget(candidates);
@@ -187,7 +193,7 @@ function loadFaviconPixelsFromStorage() {
 function persistFaviconPixelsNow() {
   try {
     const candidates = Array.from(faviconPixels.entries())
-      .filter(([, e]) => e.d.length <= FAV_PIXEL_MAX_ENTRY)
+      .filter(([, e]) => e.data.length <= FAV_PIXEL_MAX_ENTRY)
       .sort((a, b) => a[1].ts - b[1].ts);
     const { kept, payload } = fitFaviconPixelsToBudget(candidates);
     const keptHosts = new Set(kept.map((p) => p[0]));
@@ -266,7 +272,7 @@ async function captureFaviconPixel(host, url) {
     if (!blob || blob.size === 0) return; // 200 with an empty body is not a pixel
     const dataUri = await encodePixelPng(blob);
     if (!dataUri || dataUri.length > FAV_PIXEL_MAX_ENTRY) return;
-    faviconPixels.set(host, { d: dataUri, ts: Date.now() });
+    faviconPixels.set(host, { data: dataUri, ts: Date.now() });
     persistFaviconPixelsDebounced();
   } catch (_) { /* best effort — the URL cache stays authoritative */ }
 }
@@ -277,32 +283,26 @@ function captureFaviconPixelOnce(host, url) {
   const forget = () => { if (pixelInflight.get(host) === task) pixelInflight.delete(host); };
   task.then(forget, forget);
 }
+function paintProbeImage(img, host, probe) {
+  img.src = probe.src;
+  img.style.display = '';
+  img.classList.remove('is-loading');
+  img.classList.add('is-cached');
+  _faviconHotPool.set(host, probe);
+}
 function paintFaviconPixel(img, host, pixel) {
   return new Promise((resolve) => {
     const probe = new Image();
-    probe.onload = () => {
-      img.src = probe.src;
-      img.style.display = '';
-      img.classList.remove('is-loading');
-      img.classList.add('is-cached');
-      _faviconHotPool.set(host, probe);
-      resolve(true);
-    };
+    probe.onload = () => { paintProbeImage(img, host, probe); resolve(true); };
     probe.onerror = () => resolve(false);
-    probe.src = pixel.d;
+    probe.src = pixel.data;
   });
 }
 
 function applyDecodedFavicon(img, host, src) {
   const probe = new Image();
   probe.src = src;
-  probe.decode().then(() => {
-    img.src = probe.src;
-    img.style.display = '';
-    img.classList.remove('is-loading');
-    img.classList.add('is-cached');
-    _faviconHotPool.set(host, probe);
-  }).catch(() => {
+  probe.decode().then(() => paintProbeImage(img, host, probe)).catch(() => {
     img.classList.remove('is-loading');
     img.style.display = 'none';
   });
@@ -326,10 +326,11 @@ async function loadFavicon(img, url, opts) {
     const entry = faviconCache.get(host);
     const pixel = faviconPixels.get(host);
     // #58: a usable pixel paints first and returns; a missing or failing pixel falls through
-    // to the URL cache. A fresh probe that found no source outranks an older pixel — never
-    // resurrect an icon the URL cache has just failed to confirm. The 7d/90d SWR clock still
-    // decides when a painted pixel is refreshed, and capture is detached from this paint.
-    if (pixel && !(entry && entry.url === null)) {
+    // to the URL cache. A negative probe NEWER than the pixel outranks it — never resurrect an
+    // icon a later probe failed to confirm — while a newer pixel still outranks an old miss.
+    // The 7d/90d SWR clock decides when a painted pixel is refreshed; capture is detached.
+    const missNewerThanPixel = !!(pixel && entry && entry.url === null && Number(entry.ts) >= pixel.ts);
+    if (pixel && !missNewerThanPixel) {
       if (Date.now() - pixel.ts <= FAV_HIT_SWR_TTL && await paintFaviconPixel(img, host, pixel)) {
         if (Date.now() - pixel.ts > FAV_HIT_TTL && !inflight.has(host)) {
           loadFavicon(img, url, { background: true });

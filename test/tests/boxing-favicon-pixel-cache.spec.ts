@@ -1,5 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
-import { chromium } from '@playwright/test';
+import { chromium, expect, test, type Page } from '@playwright/test';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -139,14 +138,14 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
 
-    await expect.poll(async () => Boolean((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.d), { timeout: 15000 }).toBe(true);
+    await expect.poll(async () => Boolean((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.data), { timeout: 15000 }).toBe(true);
     const pixel = (await readStore(page, PIXEL_KEY))!.entries![FIXTURE_HOST];
-    expect(String(pixel.d).startsWith(PIXEL_PREFIX)).toBe(true);
-    const meta = pngMeta(pixel.d);
+    expect(String(pixel.data).startsWith(PIXEL_PREFIX)).toBe(true);
+    const meta = pngMeta(pixel.data);
     // The source was 1×1: a 32×32 header proves the re-encode, not a stored original.
     expect(meta.width).toBe(32);
     expect(meta.height).toBe(32);
-    expect(String(pixel.d).length).toBeLessThanOrEqual(16 * 1024);
+    expect(String(pixel.data).length).toBeLessThanOrEqual(16 * 1024);
 
     // Cut every source, then display the same host through a fresh image: only the
     // persisted data URI can paint it.
@@ -181,13 +180,10 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
 
-    await expect.poll(async () => Boolean((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.d), { timeout: 15000 }).toBe(true);
-    const stored = String((await readStore(page, PIXEL_KEY))!.entries![FIXTURE_HOST].d);
+    await expect.poll(async () => Boolean((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.data), { timeout: 15000 }).toBe(true);
+    const stored = String((await readStore(page, PIXEL_KEY))!.entries![FIXTURE_HOST].data);
     expect(stored.startsWith(PIXEL_PREFIX)).toBe(true);
-    // Deterministic "not the raw SVG": PNG magic decides, and no stored byte can be the
-    // '<' that opens an SVG document.
-    const bytes = Buffer.from(stored.slice(PIXEL_PREFIX.length), 'base64');
-    expect(bytes[0]).not.toBe(0x3c);
+    // pngMeta's magic check is the deterministic "not the raw SVG": stored bytes are a PNG.
     const meta = pngMeta(stored);
     expect(meta.width).toBe(32);
     expect(meta.height).toBe(32);
@@ -197,12 +193,12 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     const prefix = PIXEL_PREFIX;
     await boot(page, {
       seed: async (p) => {
-        const entries: Record<string, { d: string; ts: number }> = {};
+        const entries: Record<string, { data: string; ts: number }> = {};
         const base = Date.now() - 10_000_000;
         // 70 × 16 000 chars = 1 120 000 > 1 MiB. The budget keeps 65 of them (newest first).
-        for (let i = 0; i < 70; i++) entries[`h${i}.test`] = { d: prefix + 'A'.repeat(16000 - prefix.length), ts: base + i * 1000 };
-        entries['oversize.test'] = { d: prefix + 'B'.repeat(17000), ts: base + 80_000 };
-        entries['expired.test'] = { d: prefix + 'C'.repeat(100), ts: Date.now() - 100 * 24 * 3600 * 1000 };
+        for (let i = 0; i < 70; i++) entries[`h${i}.test`] = { data: prefix + 'A'.repeat(16000 - prefix.length), ts: base + i * 1000 };
+        entries['oversize.test'] = { data: prefix + 'B'.repeat(17000), ts: base + 80_000 };
+        entries['expired.test'] = { data: prefix + 'C'.repeat(100), ts: Date.now() - 100 * 24 * 3600 * 1000 };
         localStorage.setItem(PIXEL_KEY, JSON.stringify({ entries, savedAt: Date.now() }));
       },
     });
@@ -216,7 +212,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     expect(stored['h4.test']).toBeUndefined();
     expect(stored['h5.test']).toBeDefined();
     expect(stored['h69.test']).toBeDefined();
-    const total = Object.values(stored).reduce((sum: number, e: any) => sum + String(e.d).length, 0);
+    const total = Object.values(stored).reduce((sum: number, e: any) => sum + String(e.data).length, 0);
     expect(total).toBeLessThanOrEqual(1024 * 1024);
     // The budget covers the whole serialized layer, not just the image payloads.
     const raw = await page.evaluate((k) => localStorage.getItem(k) || '', PIXEL_KEY);
@@ -224,27 +220,45 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     expect(raw.length).toBeLessThanOrEqual(1024 * 1024);
   });
 
-  test('a fresh negative URL entry outranks an older pixel', async ({ page }) => {
+  test('a negative probe newer than the pixel outranks it', async ({ page }) => {
+    const now = Date.now();
     await boot(page, {
       seed: async () => {
         localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { d: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() } },
+          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 60_000 } },
         }));
         localStorage.setItem(URL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { url: null, ts: Date.now() } }, savedAt: Date.now(),
+          entries: { [FIXTURE_HOST]: { url: null, ts: now } }, savedAt: now,
         }));
       },
     });
     await seedAndEnterSmallBox(page);
-    // The URL cache says "no source"; the pixel must not resurrect an icon.
+    // A later probe found no source; the pixel must not resurrect an icon.
     await expect.poll(async () => (await rowState(page)).display, { timeout: 5000 }).toBe('none');
     expect((await rowState(page)).cached).toBe(false);
+  });
+
+  test('a pixel newer than an old negative entry still paints', async ({ page }) => {
+    const now = Date.now();
+    await boot(page, {
+      seed: async () => {
+        localStorage.setItem(PIXEL_KEY, JSON.stringify({
+          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 5 * 24 * 3600 * 1000 } },
+        }));
+        localStorage.setItem(URL_KEY, JSON.stringify({
+          entries: { [FIXTURE_HOST]: { url: null, ts: now - 100 * 24 * 3600 * 1000 } }, savedAt: now,
+        }));
+      },
+    });
+    await seedAndEnterSmallBox(page);
+    await expectRowPainted(page);
+    expect((await rowState(page)).src.startsWith(PIXEL_PREFIX)).toBe(true);
   });
 
   test('a corrupt pixel is discarded and the existing URL icon still paints', async ({ page }) => {
     await boot(page, {
       seed: async (p) => {
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({ entries: { [FIXTURE_HOST]: { d: PIXEL_PREFIX + 'AAAA', ts: Date.now() } } }));
+        localStorage.setItem(PIXEL_KEY, JSON.stringify({ entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + 'AAAA', ts: Date.now() } } }));
         localStorage.setItem(URL_KEY, JSON.stringify({ entries: { [FIXTURE_HOST]: { url: CDN_URL, ts: Date.now() } }, savedAt: Date.now() }));
       },
       route: (p) => serveEverySource(p, PNG_1x1, 'image/png'),
@@ -261,7 +275,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     await boot(page, {
       seed: async () => {
         localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { d: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() - 91 * 24 * 3600 * 1000 } },
+          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() - 91 * 24 * 3600 * 1000 } },
         }));
       },
     });
@@ -277,7 +291,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     await boot(page, {
       seed: async () => {
         localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { d: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: oldTs } },
+          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: oldTs } },
         }));
       },
       route: (p) => serveEverySource(p, PNG_1x1, 'image/png'),
@@ -292,7 +306,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     await boot(page, {
       seed: async () => {
         localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { d: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() - 8 * 24 * 3600 * 1000 } },
+          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() - 8 * 24 * 3600 * 1000 } },
         }));
       },
     });
@@ -307,32 +321,37 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
 
   test('a hanging capture never delays the URL paint', async ({ page }) => {
     let captureFetches = 0;
-    await boot(page, {
-      route: async (p) => {
-        await p.route(EXTERNAL_FAVICON_RE, async (route) => {
-          // Image probes answer immediately; the capture's fetch hangs.
-          if (route.request().resourceType() === 'fetch') {
-            captureFetches++;
-            await new Promise((r) => setTimeout(r, 2000));
-            await route.abort().catch(() => { /* teardown race is not the assertion */ });
-            return;
-          }
-          await route.fulfill({
-            status: 200,
-            contentType: 'image/png',
-            headers: { 'access-control-allow-origin': '*' },
-            body: PNG_1x1,
+    let releaseFetch: () => void = () => {};
+    const fetchGate = new Promise<void>((resolve) => { releaseFetch = resolve; });
+    try {
+      await boot(page, {
+        route: async (p) => {
+          await p.route(EXTERNAL_FAVICON_RE, async (route) => {
+            // Image probes answer immediately; the capture's fetch hangs on the gate.
+            if (route.request().resourceType() === 'fetch') {
+              captureFetches++;
+              await fetchGate;
+              await route.abort().catch(() => { /* teardown race */ });
+              return;
+            }
+            await route.fulfill({
+              status: 200,
+              contentType: 'image/png',
+              headers: { 'access-control-allow-origin': '*' },
+              body: PNG_1x1,
+            });
           });
-        });
-      },
-    });
-    const started = Date.now();
-    await seedAndEnterSmallBox(page);
-    await expectRowPainted(page);
-    expect(Date.now() - started).toBeLessThan(15000);
-    // The paint landed while the capture fetch was still sleeping, and the capture did start.
-    await expect.poll(() => captureFetches, { timeout: 5000 }).toBeGreaterThan(0);
-    expect((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]).toBeUndefined();
+        },
+      });
+      await seedAndEnterSmallBox(page);
+      // If the paint waited for the gated fetch, this would never settle and the test
+      // would time out: no clock-bound assumption is needed.
+      await expectRowPainted(page);
+      await expect.poll(() => captureFetches, { timeout: 5000 }).toBeGreaterThan(0);
+      expect((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]).toBeUndefined();
+    } finally {
+      releaseFetch();
+    }
   });
 
   test('a refused pixel write neither hides the icon nor blocks the core save', async ({ page }) => {
@@ -359,6 +378,41 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
       return (window as any).__boxingDebug.storageGet('boxingLayout');
     });
     expect(persisted?.boxes?.length).toBe(1);
+  });
+
+  test('the emergency layout snapshot reclaims the pixel layer when quota blocks it', async ({ page }) => {
+    await page.addInitScript(() => {
+      const g = globalThis as any;
+      g.__failLayoutWrites = false;
+      g.__failFallbackOnce = false;
+      const original = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key: string, value: string) {
+        if (key === 'boxingLayout' && g.__failLayoutWrites) throw new DOMException('quota', 'QuotaExceededError');
+        if (key === 'boxingLayoutFallback.v1' && g.__failFallbackOnce) {
+          g.__failFallbackOnce = false;
+          throw new DOMException('quota', 'QuotaExceededError');
+        }
+        return original.call(this, key, value);
+      };
+    });
+    await boot(page);
+    await seedAndEnterSmallBox(page);
+    const result = await page.evaluate(async () => {
+      const g = globalThis as any;
+      const pixel = 'data:image/png;base64,' + 'A'.repeat(64);
+      localStorage.setItem('boxingFaviconPixels.v1', JSON.stringify({ entries: { 'x.test': { data: pixel, ts: Date.now() } } }));
+      g.__failLayoutWrites = true;
+      g.__failFallbackOnce = true;
+      await (window as any).__boxingDebug.saveLayout();
+      return {
+        fallback: localStorage.getItem('boxingLayoutFallback.v1'),
+        pixel: localStorage.getItem('boxingFaviconPixels.v1'),
+      };
+    });
+    // The first fallback write hit quota; releasing the discardable pixel layer let the
+    // retry through, so the core snapshot survives at the pixel layer's expense.
+    expect(result.fallback).toBeTruthy();
+    expect(result.pixel).toBeNull();
   });
 
   test('built manifests keep the existing authorization boundary', () => {
@@ -417,8 +471,8 @@ test.describe('#58 favicon pixel layer — real Chrome build restart', () => {
       expect(granted).toBe(false);
 
       await loadProbeImage(page, FIXTURE_HOST);
-      await expect.poll(async () => Boolean((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.d), { timeout: 30000 }).toBe(true);
-      persisted = String((await readStore(page, PIXEL_KEY))!.entries![FIXTURE_HOST].d);
+      await expect.poll(async () => Boolean((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.data), { timeout: 30000 }).toBe(true);
+      persisted = String((await readStore(page, PIXEL_KEY))!.entries![FIXTURE_HOST].data);
       expect(pngMeta(persisted).width).toBe(32);
     } finally {
       await first.close().catch(() => { /* teardown is best-effort */ });
@@ -439,7 +493,7 @@ test.describe('#58 favicon pixel layer — real Chrome build restart', () => {
       await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.loadFavicon)), { timeout: 30000 }).toBe(true);
 
       // The bytes came back from the profile, unchanged.
-      const restored = String((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.d || '');
+      const restored = String((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.data || '');
       expect(restored).toBe(persisted);
 
       await loadProbeImage(page, FIXTURE_HOST);

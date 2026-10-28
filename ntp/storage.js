@@ -817,7 +817,15 @@ export const TOMBSTONE_TTL_MS = 24 * 60 * 60 * 1000;
         debugErr('saveLayout: set failed (quota?) — writing fallback snapshot', e);
         try {
           if (layout.settings) layout.settings.__lastSaveError = (e && e.message ? e.message : String(e)) + ' @ ' + new Date().toISOString();
-          localStorage.setItem('boxingLayoutFallback.v1', JSON.stringify(stripGroupsForPersist(layout)));
+          const fallback = JSON.stringify(stripGroupsForPersist(layout));
+          try {
+            localStorage.setItem('boxingLayoutFallback.v1', fallback);
+          } catch (_quota) {
+            // #58: the discardable favicon pixel layer must never take the space this
+            // emergency snapshot needs; release it and retry once.
+            localStorage.removeItem('boxingFaviconPixels.v1');
+            localStorage.setItem('boxingLayoutFallback.v1', fallback);
+          }
         } catch (_fbErr) { debugErr('saveLayout: fallback snapshot also failed', _fbErr); }
         // Rethrow so the storage-write-chain catch below records it; the next saveLayout will retry.
         throw e;
