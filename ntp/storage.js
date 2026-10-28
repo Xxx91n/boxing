@@ -233,21 +233,28 @@ export function registerStorageOnChanged() {
     }
   }
 
-  async function _readIndex() {
+  // Namespace-scoped so ticket 56's conflict-archive safe copies run through this same
+  // rotation instead of growing a second retention engine; the defaults keep the layout
+  // snapshot path byte-identical. `tiers: false` is for stores whose entries hold distinct
+  // payloads (a safe copy is not a redundant sample of its bucket): only the caps prune.
+  async function _readIndex(indexKey = SNAP_INDEX_KEY) {
     try {
-      const stored = await layoutStorage.get(SNAP_INDEX_KEY);
-      const v = stored && stored[SNAP_INDEX_KEY];
+      const stored = await layoutStorage.get(indexKey);
+      const v = stored && stored[indexKey];
       return Array.isArray(v) ? v : [];
     } catch (_) { return []; }
   }
 
-  async function _writeIndex(index) {
-    await layoutStorage.set({ [SNAP_INDEX_KEY]: index });
+  async function _writeIndex(index, indexKey = SNAP_INDEX_KEY) {
+    await layoutStorage.set({ [indexKey]: index });
   }
 
   // Rotation: newest RAW_KEEP_FLOOR entries pass through verbatim; older
   // entries are tier-deduped (hourly / daily / weekly), then total-byte LRU.
-  async function _rotateAndWriteIndex(index) {
+  async function _rotateAndWriteIndex(index, ns = {}) {
+    const keyPrefix = ns.keyPrefix || SNAP_KEY_PREFIX;
+    const indexKey = ns.indexKey || SNAP_INDEX_KEY;
+    const countCap = ns.countCap || MAX_SNAPSHOT_COUNT;
     const now = Date.now();
     const sorted = index.slice().sort((a, b) => a.ts - b.ts);
     const floor = sorted.slice(Math.max(0, sorted.length - RAW_KEEP_FLOOR));
@@ -269,33 +276,35 @@ export function registerStorageOnChanged() {
       }
       return Array.from(map.values()).sort((a, b) => a.ts - b.ts);
     };
-    const kept = [
-      ...dedup(tiers.hourly, hourlyBucket),
-      ...dedup(tiers.daily, dailyBucket),
-      ...dedup(tiers.weekly, weeklyBucket),
-      ...floor,
-    ];
+    const kept = ns.tiers === false
+      ? sorted.slice()
+      : [
+          ...dedup(tiers.hourly, hourlyBucket),
+          ...dedup(tiers.daily, dailyBucket),
+          ...dedup(tiers.weekly, weeklyBucket),
+          ...floor,
+        ];
     kept.sort((a, b) => a.ts - b.ts);
-    // Absolute count cap: drop oldest until at or under MAX_SNAPSHOT_COUNT (30)
-    while (kept.length > MAX_SNAPSHOT_COUNT) {
+    // Absolute count cap: drop oldest until at or under the namespace cap (snapshots: 30)
+    while (kept.length > countCap) {
       const removed = kept.shift();
-      try { await layoutStorage.remove(SNAP_KEY_PREFIX + removed.ts); } catch (_) { /* non-fatal */ }
+      try { await layoutStorage.remove(keyPrefix + removed.ts); } catch (_) { /* non-fatal */ }
     }
     // Total byte cap: drop oldest until under budget (keep at least 1)
     let totalBytes = kept.reduce((s, e) => s + (e.size || 0), 0);
     while (kept.length > 1 && totalBytes > MAX_SNAPSHOTS_TOTAL_BYTES) {
       const removed = kept.shift();
       totalBytes -= (removed.size || 0);
-      try { await layoutStorage.remove(SNAP_KEY_PREFIX + removed.ts); } catch (_) { /* non-fatal */ }
+      try { await layoutStorage.remove(keyPrefix + removed.ts); } catch (_) { /* non-fatal */ }
     }
     // Remove pruned entries' keys that are no longer in the kept set
     const keptTs = new Set(kept.map(e => e.ts));
     for (const e of index) {
       if (!keptTs.has(e.ts)) {
-        try { await layoutStorage.remove(SNAP_KEY_PREFIX + e.ts); } catch (_) { /* non-fatal */ }
+        try { await layoutStorage.remove(keyPrefix + e.ts); } catch (_) { /* non-fatal */ }
       }
     }
-    await _writeIndex(kept);
+    await _writeIndex(kept, indexKey);
     return kept;
   }
 
@@ -491,6 +500,25 @@ export function registerStorageOnChanged() {
     } catch (_) { return []; }
   }
 
+  // Shared write leg of the conflict store: body key + index row + isolation-area cap.
+  // The row shape {ts, reason, side, size, boxes, truncated} is pinned by the ticket 44/79
+  // specs. Re-inserting a known ts updates that row instead of duplicating it — ticket 56
+  // restores a deleted archive under its ORIGINAL ts so the copy keeps its identity.
+  async function _writeConflictEntry(entry) {
+    await layoutStorage.set({ [CONFLICT_PREFIX + entry.ts]: entry });
+    const index = await _readConflictIndex();
+    const row = { ts: entry.ts, reason: entry.reason, side: entry.side, size: entry.size, boxes: entry.boxes || 0, truncated: !!entry.truncated };
+    const at = index.findIndex(e => e && e.ts === entry.ts);
+    if (at >= 0) index[at] = row; else index.push(row);
+    index.sort((a, b) => a.ts - b.ts);
+    while (index.length > MAX_CONFLICT_ARCHIVES) {
+      const oldest = index.shift();
+      try { await layoutStorage.remove(CONFLICT_PREFIX + oldest.ts); } catch (_) { /* non-fatal */ }
+    }
+    await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index });
+    return index;
+  }
+
   export async function archiveConflictLayouts(payload, meta) {
     try {
       let ts = Date.now();
@@ -509,15 +537,7 @@ export function registerStorageOnChanged() {
         entry.size = payloadJson ? payloadJson.length : 0;
       }
       if (Array.isArray(payload && payload.boxes)) entry.boxes = payload.boxes.length;
-      await layoutStorage.set({ [CONFLICT_PREFIX + ts]: entry });
-      const index = await _readConflictIndex();
-      index.push({ ts, reason, side, size: entry.size, boxes: entry.boxes || 0, truncated: !!entry.truncated });
-      index.sort((a, b) => a.ts - b.ts);
-      while (index.length > MAX_CONFLICT_ARCHIVES) {
-        const oldest = index.shift();
-        try { await layoutStorage.remove(CONFLICT_PREFIX + oldest.ts); } catch (_) { /* non-fatal */ }
-      }
-      await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index });
+      const index = await _writeConflictEntry(entry);
       debug('Conflict copy archived @' + new Date(ts).toISOString() + ' reason=' + reason + ' side=' + side + ' (archives=' + index.length + ')');
     } catch (e) { debugErr('archiveConflictLayouts', e); }
   }
@@ -539,6 +559,123 @@ export function registerStorageOnChanged() {
       const v = stored && stored[key];
       return v || null;
     } catch (e) { debugErr('getConflictArchive', e); return null; }
+  }
+
+  // ── Ticket 56 (spec #53 D3): conflict-archive safe copies ────────────────────
+  // Deleting a conflict copy must not be the moment its only copy disappears, so the
+  // VERBATIM archived payload is first written into the snapshot subsystem as its own
+  // split-key body (snap.guard.v1.<ts> + snap.guard.v1.index) and only then removed from
+  // the conflict store. It deliberately stays OUT of snap.v1.index: an archived conflict
+  // payload is not a layout snapshot, so Time Machine listing, restoreFromSnapshot and
+  // migrateLayout never see it (restoring one must not roll back the canvas). Retention
+  // reuses the one rotation contract (raw keep floor + total-byte cap) with the isolation
+  // area's count cap, so safe copies consume no new capacity class and are NOT promised to
+  // live forever. Tier dedup is off here: unlike layout snapshots, every safe copy holds
+  // distinct content, so dropping a same-bucket entry would destroy data rather than a
+  // redundant sample.
+  const GUARD_KEY_PREFIX = 'snap.guard.v1.';
+  const GUARD_INDEX_KEY = 'snap.guard.v1.index';
+  const GUARD_NS = { keyPrefix: GUARD_KEY_PREFIX, indexKey: GUARD_INDEX_KEY, countCap: MAX_CONFLICT_ARCHIVES, tiers: false };
+  let _lastGuardTs = 0; // monotonic ts guard: two safe copies in one ms must not share a key
+
+  // Fail-closed by construction: any path that cannot land the verbatim payload returns
+  // null, and the caller is forbidden to delete without a returned ts. A `truncated`
+  // archive (metadata only, SEC-06) and an over-cap payload both fail — saving a stub
+  // would not be a safe copy of what is actually about to be deleted.
+  export async function saveConflictGuard(ts) {
+    try {
+      await _migrateSnapshots();
+      const originTs = Number(ts);
+      const entry = await getConflictArchive(originTs);
+      if (!entry || entry.truncated || entry.raw === undefined) {
+        debug('Conflict guard skipped: archive ' + originTs + ' carries no verbatim payload');
+        return null;
+      }
+      let guardTs = Date.now();
+      if (guardTs <= _lastGuardTs) guardTs = _lastGuardTs + 1;
+      _lastGuardTs = guardTs;
+      const guard = {
+        ts: guardTs,
+        originTs,
+        reason: String(entry.reason || 'conflict'),
+        side: String(entry.side || 'unknown'),
+        raw: entry.raw
+      };
+      if (Array.isArray(entry.raw.boxes)) guard.boxes = entry.raw.boxes.length;
+      const guardJson = JSON.stringify(guard);
+      if (guardJson.length > MAX_SNAPSHOT_BYTES) {
+        debug('Conflict guard skipped: safe copy ' + guardJson.length + 'B exceeds cap ' + MAX_SNAPSHOT_BYTES);
+        return null;
+      }
+      guard.size = guardJson.length;
+      await layoutStorage.set({ [GUARD_KEY_PREFIX + guardTs]: guard });
+      const index = await _readIndex(GUARD_INDEX_KEY);
+      index.push({ ts: guardTs, originTs, size: guard.size });
+      await _rotateAndWriteIndex(index, GUARD_NS);
+      debug('Conflict archive guarded @' + new Date(guardTs).toISOString() + ' (origin=' + originTs + ')');
+      return guardTs;
+    } catch (e) { debugErr('saveConflictGuard', e); return null; }
+  }
+
+  export async function listConflictGuards() {
+    try {
+      await _migrateSnapshots();
+      return await _readIndex(GUARD_INDEX_KEY);
+    } catch (e) { debugErr('listConflictGuards', e); return []; }
+  }
+
+  export async function getConflictGuard(ts) {
+    try {
+      const key = GUARD_KEY_PREFIX + Number(ts);
+      const stored = await layoutStorage.get(key);
+      const v = stored && stored[key];
+      return v || null;
+    } catch (e) { debugErr('getConflictGuard', e); return null; }
+  }
+
+  // Re-inserts the protected payload into the conflict store under its ORIGINAL ts, so the
+  // existing readout/export path returns it unchanged. This is the whole restore: the main
+  // key, the in-memory layout and the revision are never touched — unlike a Time Machine
+  // rollback there is no full-canvas replace here.
+  export async function restoreConflictGuard(ts) {
+    try {
+      await _migrateSnapshots();
+      const guard = await getConflictGuard(ts);
+      if (!guard || guard.raw === undefined) {
+        debug('restoreConflictGuard: no safe copy at ts=' + ts);
+        return null;
+      }
+      const originTs = Number(guard.originTs);
+      if (!Number.isFinite(originTs) || originTs <= 0) return null;
+      const entry = {
+        ts: originTs,
+        reason: String(guard.reason || 'conflict'),
+        side: String(guard.side || 'unknown'),
+        raw: guard.raw,
+        size: Number(guard.size) || 0
+      };
+      if (Array.isArray(guard.raw.boxes)) entry.boxes = guard.raw.boxes.length;
+      await _writeConflictEntry(entry);
+      debug('Conflict archive restored from safe copy @' + new Date(originTs).toISOString() + ' (guard=' + Number(ts) + ')');
+      return originTs;
+    } catch (e) { debugErr('restoreConflictGuard', e); return null; }
+  }
+
+  // Only ever called after saveConflictGuard returned a ts (D3: save-then-delete). The body
+  // key goes first and the index row second: an index row whose body was pruned is a state
+  // the readout already handles (rotation prunes bodies the same way), while a live body
+  // whose row is gone would hide an archive the user never agreed to lose.
+  export async function deleteConflictArchive(ts) {
+    try {
+      const originTs = Number(ts);
+      if (!Number.isFinite(originTs) || originTs <= 0) return false;
+      const index = await _readConflictIndex();
+      if (!index.some(e => e && e.ts === originTs)) return false;
+      await layoutStorage.remove(CONFLICT_PREFIX + originTs);
+      await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index.filter(e => e && e.ts !== originTs) });
+      debug('Conflict copy deleted @' + new Date(originTs).toISOString() + ' (safe copy kept)');
+      return true;
+    } catch (e) { debugErr('deleteConflictArchive', e); return false; }
   }
 
   // ── Sync base slot ───────────────────────────────────────────────
