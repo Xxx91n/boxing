@@ -1146,4 +1146,8 @@
   "exportEncryptedTooLarge": {
     "message": "書き出し失敗：バックアップが大きすぎ、暗号化すると 5MB の復元上限を超えます。何も書き出されていません。"
   }
+,
+  "passphraseTooLong": {
+    "message": "そのパスフレーズは長すぎて、Boxing は暗号化できません。"
+  }
 }

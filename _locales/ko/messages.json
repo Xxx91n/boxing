@@ -1146,4 +1146,8 @@
   "exportEncryptedTooLarge": {
     "message": "내보내기 실패: 백업이 커서 암호화하면 5MB 복원 한도를 넘습니다. 내보낸 항목이 없습니다."
   }
+,
+  "passphraseTooLong": {
+    "message": "패스프레이즈가 너무 길어 Boxing이 암호화할 수 없습니다."
+  }
 }

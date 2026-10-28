@@ -1146,4 +1146,8 @@
   "exportEncryptedTooLarge": {
     "message": "Exportación fallida: la copia es demasiado grande para cifrarla dentro del límite de 5 MB. No se exportó nada."
   }
+,
+  "passphraseTooLong": {
+    "message": "Esa frase de paso es demasiado larga para que Boxing la use."
+  }
 }

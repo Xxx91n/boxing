@@ -1149,4 +1149,8 @@
   "exportEncryptedTooLarge": {
     "message": "导出失败：备份过大，加密后将超出 5MB 恢复上限。未导出任何内容。"
   }
+,
+  "passphraseTooLong": {
+    "message": "该口令过长，Boxing 无法用它加密。"
+  }
 }

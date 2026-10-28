@@ -1198,4 +1198,9 @@
     "message": "Export failed: the backup is too large to encrypt inside the 5MB restore limit. Nothing was exported.",
     "description": "Alert when the encrypted export would exceed the 5MB import cap"
   }
+,
+  "passphraseTooLong": {
+    "message": "That passphrase is too long for Boxing to seal.",
+    "description": "Inline error when the typed passphrase exceeds the dialog input bound"
+  }
 }

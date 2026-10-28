@@ -1146,4 +1146,8 @@
   "exportEncryptedTooLarge": {
     "message": "Export échoué : la sauvegarde est trop volumineuse pour être chiffrée sous la limite de 5 Mo. Rien n'a été exporté."
   }
+,
+  "passphraseTooLong": {
+    "message": "Cette phrase secrète est trop longue pour que Boxing l'utilise."
+  }
 }

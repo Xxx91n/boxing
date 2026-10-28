@@ -1146,4 +1146,8 @@
   "exportEncryptedTooLarge": {
     "message": "Falha na exportação: o backup é grande demais para criptografar dentro do limite de 5 MB de restauração. Nada foi exportado."
   }
+,
+  "passphraseTooLong": {
+    "message": "Essa frase secreta é longa demais para o Boxing usá-la."
+  }
 }

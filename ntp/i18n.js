@@ -306,6 +306,7 @@ I18N_FALLBACK.passphraseImportAction = 'Decrypt & import';
 I18N_FALLBACK.passphraseFieldLabel = 'Passphrase';
 I18N_FALLBACK.passphraseRepeatFieldLabel = 'Repeat passphrase';
 I18N_FALLBACK.passphraseRequired = 'Type a passphrase first.';
+I18N_FALLBACK.passphraseTooLong = 'That passphrase is too long for Boxing to seal.';
 I18N_FALLBACK.passphraseMismatch = 'The two passphrases do not match.';
 I18N_FALLBACK.passphraseWrong = 'Wrong passphrase or damaged file - nothing was imported.';
 I18N_FALLBACK.importEncryptedInvalid = 'Import failed: Boxing cannot open this passphrase file (it may need a newer version). Nothing was changed.';

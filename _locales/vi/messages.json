@@ -1146,4 +1146,8 @@
   "exportEncryptedTooLarge": {
     "message": "Xuất thất bại: bản sao lưu quá lớn để mã hóa trong giới hạn khôi phục 5MB. Chưa xuất gì."
   }
+,
+  "passphraseTooLong": {
+    "message": "Mật khẩu này quá dài để Boxing có thể sử dụng."
+  }
 }
