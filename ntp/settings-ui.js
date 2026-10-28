@@ -7,7 +7,7 @@
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
-import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, listConflictGuards, saveConflictGuard, deleteConflictArchive, restoreConflictGuard, readDrBodies } from './storage.js';
+import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, listConflictGuards, saveConflictGuard, deleteConflictArchive, discardConflictGuard, restoreConflictGuard, readDrBodies } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyDarkMode, applyTheme, nextDarkModePreference } from './persist.js';
@@ -387,6 +387,10 @@ export function initSettingsUiFacade(deps) {
       return;
     }
     if (!await deleteConflictArchive(ts, guardTs)) {
+      // Nothing was deleted, so this safe copy protects content that is still in the list.
+      // Leaving it behind would spend the guard store's shared count/byte budget on garbage and
+      // could evict a real safe copy of another archive.
+      await discardConflictGuard(guardTs);
       try { alert(i18n('conflictDeleteFailed')); } catch (e) { /* silent: alert may be blocked */ }
       openSettingsModal();
       return;

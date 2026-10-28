@@ -7,10 +7,12 @@
 //       leaves the original archive in place — a current-layout snapshot is NOT the proof. A
 //       delete that fails midway puts the archive body back, so it stays listed and retryable.
 //   AC3 the deleted archive is restored individually: the existing conflict list/readout
-//       returns the same verbatim payload (same ts, reason, side, size, boxes) under its
-//       original ts, and the canvas plus any work done after the deletion is not rolled back.
-//       A restore the archive cap would prune again, and a safe copy whose body was later
-//       pruned, both report failure instead of claiming a success storage cannot back.
+//       returns the same verbatim payload (same reason, side, size, boxes) under its original
+//       ts — unless another archive already occupies that ts, in which case the restore lands
+//       elsewhere rather than overwriting it — and the canvas plus any work done after the
+//       deletion is not rolled back. A restore the archive cap would prune again, and a safe
+//       copy whose body was later pruned, both report failure instead of claiming a success
+//       storage cannot back.
 //   AC4 a safe copy is never a layout snapshot: it stays out of snap.v1.index, is not listed
 //       by Time Machine, and restoreFromSnapshot refuses it (layout rollback does not regress).
 //   AC5 safe copies obey the existing rotation/capacity limits — no unbounded store, and
@@ -21,8 +23,9 @@
 // dist/boxing-chrome | dist/boxing-firefox extension build" check, which stays open.
 // Mutations go through __boxingDebug.storageSet / storageGet / listSnapshots / saveSnapshot /
 // restoreFromSnapshot / layout / saveLayout, never window.chrome.storage. alert() is captured
-// by patching window.alert (dialog-free), and the storage-failure case patches
-// Storage.prototype.setItem for the guard keys only, then restores it.
+// by patching window.alert (dialog-free), and the two injected-fault cases patch
+// Storage.prototype.setItem for one specific key (the guard bodies, then the conflict index)
+// and restore it afterwards.
 import { test, expect } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs';
@@ -376,23 +379,27 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     await expect(guardRows(page)).toHaveCount(1, { timeout: 10000 }); // the safe copy survives a retry
   });
 
-  test('AC2-fail: a failed index write puts the archive back, so the delete stays retryable', async ({ page }) => {
+  test('AC2-fail: a failed index write puts the archive back and reclaims the unused safe copy', async ({ page }) => {
     test.setTimeout(60000);
     await bootFresh(page);
     await seedCanvas(page);
     await seedConflict(page);
     await armAlertCapture(page);
     // Fail ONLY the conflict index write, and only once: the safe copy lands, the body key is
-    // removed, then the index write throws and the facade must restore the body it just took.
+    // removed, then the index write throws. Record every key written afterwards so the
+    // put-back is observable rather than inferred from "the file is still there".
     await page.evaluate(() => {
       const orig = Storage.prototype.setItem;
-      (window as any).__faulted = false;
-      (window as any).__restoreSetItem = () => { Storage.prototype.setItem = orig; };
+      const w = window as any;
+      w.__faulted = false;
+      w.__writes = [];
+      w.__restoreSetItem = () => { Storage.prototype.setItem = orig; };
       Storage.prototype.setItem = function (this: Storage, k: string, v: string) {
-        if (!window.__faulted && String(k) === 'bxstore:boxingLayout.conflict.index') {
-          window.__faulted = true;
+        if (!w.__faulted && String(k) === 'bxstore:boxingLayout.conflict.index') {
+          w.__faulted = true;
           throw new Error('QuotaExceeded (injected)');
         }
+        if (w.__faulted) w.__writes.push(String(k));
         return orig.apply(this, [k, v] as any);
       };
     });
@@ -407,9 +414,13 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     const idx = await conflictIndex(page);
     expect(idx.length).toBe(1);                                   // row still listed
     expect(idx[0].ts).toBe(CONFLICT_TS);
+    const writes = await page.evaluate(() => (window as any).__writes);
+    expect(writes).toContain('bxstore:' + CONFLICT_PREFIX + CONFLICT_TS);  // the body was put back
     const survived = await readKey(page, CONFLICT_PREFIX + CONFLICT_TS);
-    expect(JSON.stringify(survived.raw)).toBe(JSON.stringify(CONFLICT_RAW)); // body put back
-    expect((await guardIndex(page))?.length).toBe(1);             // the safe copy it earned stays
+    expect(JSON.stringify(survived.raw)).toBe(JSON.stringify(CONFLICT_RAW)); // and is readable
+    // The safe copy that protected nothing is reclaimed instead of piling up in the store.
+    expect((await guardIndex(page))?.length ?? 0).toBe(0);
+    await expect(guardRows(page)).toHaveCount(0, { timeout: 10000 });
     expect(await canvasTitles(page)).toEqual(['Kept Box']);
 
     // Clear the fault and retry the same row: the delete now completes.
@@ -419,11 +430,36 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     await clickDelete(page);
     await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
     await confirmAction(page);
-    await expect.poll(async () => (await guardIndex(page))?.length, { timeout: 8000 }).toBe(2);
+    await expect.poll(async () => (await guardIndex(page))?.length, { timeout: 8000 }).toBe(1);
     expect((await conflictIndex(page))?.length ?? 0).toBe(0);
     expect(await readKey(page, CONFLICT_PREFIX + CONFLICT_TS)).toBeUndefined();
     expect((await alerts(page)).length).toBe(1);                  // no second failure notice
-    await expect(guardRows(page)).toHaveCount(2, { timeout: 15000 });
+    await expect(guardRows(page)).toHaveCount(1, { timeout: 15000 });
+  });
+
+  test('AC2-fail: an archived payload that is literally null cannot be protected, so it is not deleted', async ({ page }) => {
+    test.setTimeout(40000);
+    await bootFresh(page);
+    await seedCanvas(page);
+    await page.evaluate(({ prefix, indexKey, ts }) => (window as any).__boxingDebug.storageSet({
+      [prefix + ts]: { ts, reason: 'import-merge', side: 'incoming', raw: null, size: 4, boxes: 0 },
+      [indexKey]: [{ ts, reason: 'import-merge', side: 'incoming', size: 4, boxes: 0, truncated: false }],
+    }), { prefix: CONFLICT_PREFIX, indexKey: CONFLICT_INDEX_KEY, ts: CONFLICT_TS });
+    await armAlertCapture(page);
+    await openSettingsDataTab(page);
+    await expect(conflictRows(page)).toHaveCount(1, { timeout: 15000 });
+
+    await clickDelete(page);
+    await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
+    await confirmAction(page);
+    await expect.poll(async () => (await alerts(page)).length, { timeout: 8000 }).toBe(1);
+    expect((await alerts(page))[0]).toMatch(/nothing was deleted/i);
+    // A null raw once passed the "verbatim payload exists" test, so the archive was deleted and
+    // the restore threw on it forever — the one copy gone with a green "safe copy saved" path.
+    expect((await conflictIndex(page))?.length).toBe(1);
+    expect(await readKey(page, CONFLICT_PREFIX + CONFLICT_TS)).toBeTruthy();
+    expect(await guardIndex(page)).toBeUndefined();
+    expect(await canvasTitles(page)).toEqual(['Kept Box']);
   });
 
   test('AC3-fail: a safe copy whose body was later pruned reports failure instead of fabricating an archive', async ({ page }) => {
