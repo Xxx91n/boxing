@@ -547,23 +547,25 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     const snapsAfter = await page.evaluate(async () => (await (window as any).__boxingDebug.listSnapshots()).length);
     expect(snapsAfter).toBe(snapsBefore);   // guard retention never reaches the snapshot index
 
-    // Room may be made only from copies that duplicate a still-listed archive. Make six of the
-    // twenty redundant that way, and the same delete now succeeds by reclaiming exactly those.
-    await page.evaluate(async ({ prefix, indexKey, guardPrefix, count }) => {
+    // Room may be made only from copies that duplicate a still-listed archive. A guard
+    // duplicates one when the LIVE archive at the guard's own originTs holds the same bytes, so
+    // the six archives created here are keyed by originTs (900000+i), not by the guard's ts —
+    // keying them by guard ts would leave all twenty non-redundant and the delete refused again.
+    await page.evaluate(async ({ prefix, indexKey, guardPrefix }) => {
       const dbg = (window as any).__boxingDebug;
       const existing = await dbg.storageGet(indexKey);
       const rows = Array.isArray(existing?.[indexKey]) ? existing[indexKey] : [];
       const payload: Record<string, unknown> = {};
       for (let i = 0; i < 6; i++) {
-        const ts = 1000 + i;
-        const guard = (await dbg.storageGet(guardPrefix + ts))?.[guardPrefix + ts];
+        const gts = 1000 + i;
+        const guard = (await dbg.storageGet(guardPrefix + gts))?.[guardPrefix + gts];
         if (!guard) continue;
-        rows.push({ ts, reason: 'seed', side: 'seed', size: guard.size, boxes: 1, truncated: false });
-        payload[prefix + ts] = { ts, reason: 'seed', side: 'seed', raw: guard.raw, size: guard.size, boxes: 1 };
+        rows.push({ ts: guard.originTs, reason: 'seed', side: 'seed', size: guard.size, boxes: 1, truncated: false });
+        payload[prefix + guard.originTs] = { ts: guard.originTs, reason: 'seed', side: 'seed', raw: guard.raw, size: guard.size, boxes: 1 };
       }
       payload[indexKey] = rows;
       await dbg.storageSet(payload);
-    }, { prefix: CONFLICT_PREFIX, indexKey: CONFLICT_INDEX_KEY, guardPrefix: GUARD_PREFIX, count: 20 });
+    }, { prefix: CONFLICT_PREFIX, indexKey: CONFLICT_INDEX_KEY, guardPrefix: GUARD_PREFIX });
 
     await openSettingsDataTab(page);
     await expect(conflictRows(page)).toHaveCount(7, { timeout: 15000 });
@@ -573,6 +575,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     await expect.poll(async () => (await conflictIndex(page))?.length, { timeout: 10000 }).toBe(6);
     const after = await guardIndex(page);
     expect(after.some(e => e.originTs === CONFLICT_TS)).toBe(true);      // the new protection landed
+    expect(after.length).toBe(15);                                       // 20 - 6 redundant + 1 new
     expect(after.filter(e => e.ts >= 1006 && e.ts <= 1019).length).toBe(14);  // the real ones survived
     expect(await readKey(page, GUARD_PREFIX + 1019)).toBeTruthy();
     expect(await readKey(page, GUARD_PREFIX + 1000)).toBeUndefined();    // a redundant one paid
