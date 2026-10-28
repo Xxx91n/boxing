@@ -1,5 +1,5 @@
 // Boxing — ticket 56 (#53 D3): conflict-copy SAFE delete + individual restore.
-// AC coverage:
+// AC coverage (the test names below match this list):
 //   AC1 delete runs behind a secondary confirm; nothing is written or removed while the
 //       dialog is open, and dismissing it changes nothing.
 //   AC2 the archived payload itself is saved into the snapshot subsystem BEFORE the archive
@@ -7,15 +7,20 @@
 //       leaves the original archive in place — a current-layout snapshot is NOT the proof.
 //   AC3 the deleted archive is restored individually: the existing conflict list/readout
 //       returns the same verbatim payload under its original ts, and the canvas plus any
-//       work done after the deletion is not rolled back.
+//       work done after the deletion is not rolled back. A restore the archive cap would
+//       immediately prune reports failure instead of a success storage cannot back.
 //   AC4 a safe copy is never a layout snapshot: it stays out of snap.v1.index, is not listed
 //       by Time Machine, and restoreFromSnapshot refuses it (layout rollback does not regress).
-//   AC5 safe copies obey the existing rotation/capacity limits (no unbounded store, no new
-//       recycle bin) and the fourteen locale key sets stay identical.
-// file:// mock lane: mutations go through the debug storage seam (__boxingDebug.storageSet /
-// storageGet / listSnapshots / saveSnapshot / restoreFromSnapshot / layout / saveLayout), never
-// window.chrome.storage. alert() is captured by patching window.alert (dialog-free), and the
-// storage-failure case patches Storage.prototype.setItem for the guard keys only, then restores.
+//   AC5 safe copies obey the existing rotation/capacity limits — no unbounded store, and
+//       guard rotation never prunes layout snapshots.
+//   AC6 the fourteen locale key sets stay identical and carry the new strings.
+// Lane honesty (#53 T3 / AC7): this drives the file:// mock lane — real UI clicks plus the
+// existing storage facade seam — so it proves the behaviour above, NOT the "actual
+// dist/boxing-chrome | dist/boxing-firefox extension build" check, which stays open.
+// Mutations go through __boxingDebug.storageSet / storageGet / listSnapshots / saveSnapshot /
+// restoreFromSnapshot / layout / saveLayout, never window.chrome.storage. alert() is captured
+// by patching window.alert (dialog-free), and the storage-failure case patches
+// Storage.prototype.setItem for the guard keys only, then restores it.
 import { test, expect } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs';
@@ -161,7 +166,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect(JSON.stringify(guardBody.raw)).toBe(JSON.stringify(CONFLICT_RAW)); // verbatim payload
     expect(guardBody.reason).toBe('import-merge');
     expect((await conflictIndex(page))?.length).toBe(0);          // deleted only after the save succeeded
-    expect(await readKey(page, CONFLICT_PREFIX + CONFLICT_TS)).toBeFalsy();
+    expect(await readKey(page, CONFLICT_PREFIX + CONFLICT_TS)).toBeUndefined();
     expect((await alerts(page))).toEqual([]);                     // no failure notice on the happy path
 
     // ── AC4: the safe copy is not a layout snapshot ──
@@ -240,7 +245,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
       const orig = Storage.prototype.setItem;
       (window as any).__restoreSetItem = () => { Storage.prototype.setItem = orig; };
       Storage.prototype.setItem = function (this: Storage, k: string, v: string) {
-        if (String(k).startsWith('bxstore:' + 'snap.guard.v1.')) throw new Error('QuotaExceeded (injected)');
+        if (String(k).startsWith('bxstore:snap.guard.v1.')) throw new Error('QuotaExceeded (injected)');
         return orig.apply(this, [k, v] as any);
       };
     });
@@ -259,6 +264,48 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect(await guardIndex(page)).toBeUndefined();
     expect(await canvasTitles(page)).toEqual(['Kept Box']);
     await page.evaluate(() => (window as any).__restoreSetItem());
+  });
+
+  test('AC3-fail: a restore the archive cap would prune immediately reports failure and loses nothing else', async ({ page }) => {
+    test.setTimeout(40000);
+    await bootFresh(page);
+    await seedCanvas(page);
+    // The conflict store is full (MAX_CONFLICT_ARCHIVES = 20, all NEWER than the archived
+    // copy this safe copy protects), so the row the restore writes is the oldest and the cap
+    // drops it again. The facade must return null — a success the storage cannot back would
+    // leave the UI claiming a restored archive that the readout cannot actually list.
+    await page.evaluate(({ prefix, indexKey, guardPrefix, guardIndexKey, count, raw }) => {
+      const dbg = (window as any).__boxingDebug;
+      const rows = [];
+      const payload: Record<string, unknown> = {};
+      for (let i = 0; i < count; i++) {
+        const ts = 1000 + i;
+        rows.push({ ts, reason: 'import-merge', side: 'incoming', size: 40, boxes: 1, truncated: false });
+        payload[prefix + ts] = { ts, reason: 'import-merge', side: 'incoming', raw: { boxes: [] }, size: 40, boxes: 1 };
+      }
+      payload[indexKey] = rows;
+      payload[guardIndexKey] = [{ ts: 5000, originTs: 100, size: 200 }];
+      payload[guardPrefix + 5000] = {
+        ts: 5000, originTs: 100, reason: 'import-merge', side: 'incoming', raw, size: 200, boxes: 1,
+      };
+      return dbg.storageSet(payload);
+    }, {
+      prefix: CONFLICT_PREFIX, indexKey: CONFLICT_INDEX_KEY,
+      guardPrefix: GUARD_PREFIX, guardIndexKey: GUARD_INDEX_KEY, count: 20, raw: CONFLICT_RAW,
+    });
+    await armAlertCapture(page);
+    await openSettingsDataTab(page);
+    await expect(guardRows(page)).toHaveCount(1, { timeout: 15000 });
+
+    await clickRestore(page);
+    await expect.poll(async () => (await alerts(page)).length, { timeout: 8000 }).toBe(1);
+    expect((await alerts(page))[0]).toMatch(/no longer available/i);
+    const idx = await conflictIndex(page);
+    expect(idx.length).toBe(20);                                   // no row was lost either way
+    expect(idx.some(e => e.ts === 100)).toBe(false);               // the self-pruned restore is not claimed
+    expect(idx.map(e => e.ts).sort((a, b) => a - b)).toEqual(Array.from({ length: 20 }, (_, i) => 1000 + i));
+    expect(await canvasTitles(page)).toEqual(['Kept Box']);         // and still no canvas change
+    await expect(guardRows(page)).toHaveCount(1, { timeout: 10000 }); // the safe copy survives a retry
   });
 
   test('AC5: the safe-copy store is bounded by the existing rotation cap and never prunes layout snapshots', async ({ page }) => {
@@ -296,7 +343,7 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     const guards = await guardIndex(page);
     expect(guards.some(e => e.originTs === CONFLICT_TS)).toBe(true);   // newest survives
     expect(guards.some(e => e.ts === 1000)).toBe(false);               // oldest dropped by the cap
-    expect(await readKey(page, GUARD_PREFIX + 1000)).toBeFalsy();       // its body went with the row
+    expect(await readKey(page, GUARD_PREFIX + 1000)).toBeUndefined();     // its body went with the row
     expect(await readKey(page, GUARD_PREFIX + 1019)).toBeTruthy();      // the rest stay readable
     expect((await conflictIndex(page))?.length).toBe(0);
     await expect(guardRows(page)).toHaveCount(20, { timeout: 15000 });

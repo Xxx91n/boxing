@@ -80,6 +80,8 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **conflict copy** — Losing subtree archived verbatim instead of being silently overwritten during import or sync merge.
 
+**safe copy** — The verbatim payload of a conflict copy, written into the snapshot subsystem as its own `snap.guard.v1.<ts>` key (metadata in `snap.guard.v1.index`) before that archive is deleted, and re-inserted into the conflict store on its own to restore it. Never a layout snapshot: it stays out of `snap.v1.index`, so Time Machine listing and layout restore never receive it. Rotation runs per namespace, so a safe copy is bounded like one and is not promised to survive forever.
+
 **autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
 
 **MAX_SNAPSHOT_COUNT** — Hard ceiling of 30 snapshots; older snapshots are physically deleted beyond it.

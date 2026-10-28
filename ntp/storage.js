@@ -567,19 +567,23 @@ export function registerStorageOnChanged() {
   // split-key body (snap.guard.v1.<ts> + snap.guard.v1.index) and only then removed from
   // the conflict store. It deliberately stays OUT of snap.v1.index: an archived conflict
   // payload is not a layout snapshot, so Time Machine listing, restoreFromSnapshot and
-  // migrateLayout never see it (restoring one must not roll back the canvas). Retention
-  // reuses the one rotation contract (raw keep floor + total-byte cap) with the isolation
-  // area's count cap, so safe copies consume no new capacity class and are NOT promised to
-  // live forever. Tier dedup is off here: unlike layout snapshots, every safe copy holds
-  // distinct content, so dropping a same-bucket entry would destroy data rather than a
-  // redundant sample.
+  // migrateLayout never see it (restoring one must not roll back the canvas).
+  //
+  // Retention is the snapshot rotation contract applied to a second namespace: same 2MB
+  // per-body ceiling, same newest-RAW_KEEP_FLOOR verbatim floor, same 8MB total-byte cap —
+  // enforced per index, so the safe-copy store adds a bounded budget of its own rather than
+  // sharing the layout snapshots' (worst case +8MB against storage.local, the same ceiling a
+  // second snapshot rotation would already cost). Safe copies are therefore NOT promised to
+  // live forever (#53 N2), and the count cap is the isolation area's own (20).
+  // Tier dedup is off here: unlike layout snapshots, every safe copy holds distinct content,
+  // so dropping a same-bucket entry would destroy data rather than a redundant sample.
   const GUARD_KEY_PREFIX = 'snap.guard.v1.';
   const GUARD_INDEX_KEY = 'snap.guard.v1.index';
   const GUARD_NS = { keyPrefix: GUARD_KEY_PREFIX, indexKey: GUARD_INDEX_KEY, countCap: MAX_CONFLICT_ARCHIVES, tiers: false };
   let _lastGuardTs = 0; // monotonic ts guard: two safe copies in one ms must not share a key
 
   // Fail-closed by construction: any path that cannot land the verbatim payload returns
-  // null, and the caller is forbidden to delete without a returned ts. A `truncated`
+  // null, and deleteConflictArchive refuses to run without a returned ts. A `truncated`
   // archive (metadata only, SEC-06) and an over-cap payload both fail — saving a stub
   // would not be a safe copy of what is actually about to be deleted.
   export async function saveConflictGuard(ts) {
@@ -656,19 +660,35 @@ export function registerStorageOnChanged() {
       };
       if (Array.isArray(guard.raw.boxes)) entry.boxes = guard.raw.boxes.length;
       await _writeConflictEntry(entry);
+      // The isolation-area cap prunes by oldest ts, so restoring an archive older than every
+      // row already held can drop the row this call just wrote. Report that as a failure: the
+      // archive would not be readable through the conflict list, and the store is back to the
+      // rows it held before this call, so "nothing was changed" stays true for the user.
+      const after = await _readConflictIndex();
+      if (!after.some(e => e && e.ts === originTs)) {
+        debug('restoreConflictGuard: restored row pruned by the archive cap (ts=' + originTs + ')');
+        return null;
+      }
       debug('Conflict archive restored from safe copy @' + new Date(originTs).toISOString() + ' (guard=' + Number(ts) + ')');
       return originTs;
     } catch (e) { debugErr('restoreConflictGuard', e); return null; }
   }
 
-  // Only ever called after saveConflictGuard returned a ts (D3: save-then-delete). The body
-  // key goes first and the index row second: an index row whose body was pruned is a state
-  // the readout already handles (rotation prunes bodies the same way), while a live body
-  // whose row is gone would hide an archive the user never agreed to lose.
-  export async function deleteConflictArchive(ts) {
+  // D3's proof obligation lives in the facade, not only in the caller: without a stored safe
+  // copy of THIS archive there is nothing to delete, so a caller that skipped or lost the save
+  // can never reach the removal. The body key goes first and the index row second — an index
+  // row whose body was pruned is a state the readout already handles (rotation prunes bodies
+  // the same way), while a live body whose row is gone would hide an archive the user never
+  // agreed to lose.
+  export async function deleteConflictArchive(ts, guardTs) {
     try {
       const originTs = Number(ts);
       if (!Number.isFinite(originTs) || originTs <= 0) return false;
+      const guard = await getConflictGuard(guardTs);
+      if (!guard || Number(guard.originTs) !== originTs || guard.raw === undefined) {
+        debug('deleteConflictArchive refused: no safe copy of ' + originTs + ' at guard ts=' + guardTs);
+        return false;
+      }
       const index = await _readConflictIndex();
       if (!index.some(e => e && e.ts === originTs)) return false;
       await layoutStorage.remove(CONFLICT_PREFIX + originTs);
@@ -705,10 +725,13 @@ export function registerStorageOnChanged() {
   // ── Ticket 51 (spec ticket 51): full DR package bodies ───────────────────────────
   // The optional "full disaster-recovery package" export needs the VERBATIM bodies
   // behind the three index keys (snap.v1.*, boxingLayout.corrupt.*, boxingLayout.
-  // conflict.*). The default envelope export never calls this — snapshot payloads
-  // stay out of everyday backups (negative constraint). Read-only facade
-  // method: returns { snapshots, corrupt, conflicts }, each oldest→newest, skipping
-  // bodies already pruned from storage (index entry stays, body may be gone).
+  // conflict.*). Ticket 56's fourth split-key store (snap.guard.v1.*) is deliberately
+  // NOT part of it: #53 D4 forbids extending the package's whole-package restore to new
+  // history bodies, and a safe copy is recovered one archive at a time through
+  // restoreConflictGuard, not by re-importing a file. The default envelope export never
+  // calls this — snapshot payloads stay out of everyday backups (negative constraint).
+  // Read-only facade method: returns { snapshots, corrupt, conflicts }, each oldest→newest,
+  // skipping bodies already pruned from storage (index entry stays, body may be gone).
   export async function readDrBodies() {
     const out = { snapshots: [], corrupt: [], conflicts: [] };
     try {

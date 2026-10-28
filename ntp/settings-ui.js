@@ -386,13 +386,12 @@ export function initSettingsUiFacade(deps) {
       openSettingsModal();
       return;
     }
-    if (!await deleteConflictArchive(ts)) {
+    if (!await deleteConflictArchive(ts, guardTs)) {
       try { alert(i18n('conflictDeleteFailed')); } catch (e) { /* silent: alert may be blocked */ }
       openSettingsModal();
       return;
     }
     debug('Conflict copy deleted after safe copy: ts=' + ts + ', guard ts=' + guardTs);
-    await refreshDataHealth();
     openSettingsModal(); // back on the data tab; the safe-copy row is the restore entry point
   }
 
@@ -1072,12 +1071,12 @@ export function bindSettingsUi() {
     // (rows are rebuilt on every modal open, so per-row listeners would leak).
     const conflictListEl = document.getElementById('data-conflict-list');
     conflictListEl?.addEventListener('click', (e) => {
-      const btn = e.target && e.target.closest ? e.target.closest('button') : null;
+      const btn = e.target && e.target.closest ? e.target.closest('.data-conflict-export-btn, .data-conflict-delete-btn') : null;
       if (!btn) return;
       const ts = Number(btn.dataset.ts);
       if (!Number.isFinite(ts) || ts <= 0) return;
-      if (btn.classList.contains('data-conflict-export-btn')) exportConflictCopy(ts);
-      else if (btn.classList.contains('data-conflict-delete-btn')) performConflictDelete(ts);
+      if (btn.classList.contains('data-conflict-delete-btn')) performConflictDelete(ts);
+      else exportConflictCopy(ts);
     });
 
     // Ticket 56: delegated restore click for the safe-copy rows
