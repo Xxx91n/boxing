@@ -1070,11 +1070,11 @@
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "संग्रहीत प्रति को सुरक्षित प्रति के रूप में नहीं सहेजा जा सका, इसलिए कुछ भी नहीं हटाया गया। यदि उसकी सामग्री चाहिए तो पहले उसे निर्यात करें।",
+    "message": "संग्रहीत प्रति को सुरक्षित प्रति के रूप में नहीं सहेजा जा सका, इसलिए कुछ भी नहीं हटाया गया। Boxing संघर्ष प्रति को केवल तभी हटाता है जब उसकी संग्रहीत सामग्री सुरक्षित रूप से सहेजी जाए।",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "संघर्ष प्रति हटाई नहीं जा सकी। उसकी सुरक्षित प्रति सहेजी गई है, इसलिए कुछ भी नहीं खोया।",
+    "message": "संघर्ष प्रति हटाना पूरा नहीं हुआ। उसकी सुरक्षित प्रति सहेजी गई है, इसलिए कुछ भी नहीं खोया।",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {

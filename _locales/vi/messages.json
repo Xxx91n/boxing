@@ -1070,11 +1070,11 @@
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "Không thể lưu bản sao đã lưu trữ dưới dạng bản sao an toàn, nên không có gì bị xoá. Hãy xuất nó trước nếu bạn cần nội dung của nó.",
+    "message": "Không thể lưu bản sao đã lưu trữ dưới dạng bản sao an toàn, nên không có gì bị xoá. Boxing chỉ xoá bản sao xung đột khi nội dung lưu trữ của nó được lưu an toàn.",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "Không thể xoá bản sao xung đột. Bản sao an toàn của nó đã được lưu nên không mất gì.",
+    "message": "Việc xoá bản sao xung đột không hoàn tất. Bản sao an toàn của nó đã được lưu nên không mất gì.",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {

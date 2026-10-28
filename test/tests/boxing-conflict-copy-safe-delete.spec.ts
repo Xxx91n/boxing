@@ -38,6 +38,10 @@ const GUARD_PREFIX = 'snap.guard.v1.';
 const GUARD_INDEX_KEY = 'snap.guard.v1.index';
 // The archived subtree reused from the ticket-44/79 samples (L9 / 'Conflicted Side').
 const CONFLICT_RAW = { boxes: [{ id: 'L9', type: 'large', title: 'Conflicted Side', x: 10, y: 10, width: 320, height: 220, nextSmallIndex: 1, children: [] }] };
+// archiveConflictLayouts records the size of the ARCHIVED PAYLOAD, so the seed must carry that
+// same number: a hand-written constant would make the restore's "same bytes as before"
+// assertion compare against a shape the real archive path never produces.
+const CONFLICT_SIZE = JSON.stringify(CONFLICT_RAW).length;
 
 async function bootFresh(page) {
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
@@ -72,9 +76,10 @@ const conflictIndex = (page) => readKey(page, CONFLICT_INDEX_KEY);
 async function seedConflict(page) {
   await page.evaluate(({ prefix, indexKey, ts, raw }) => {
     const dbg = (window as any).__boxingDebug;
+    const size = JSON.stringify(raw).length;   // same bytes archiveConflictLayouts would record
     return dbg.storageSet({
-      [prefix + ts]: { ts, reason: 'import-merge', side: 'incoming', raw, size: 200, boxes: 1 },
-      [indexKey]: [{ ts, reason: 'import-merge', side: 'incoming', size: 200, boxes: 1 }],
+      [prefix + ts]: { ts, reason: 'import-merge', side: 'incoming', raw, size, boxes: 1 },
+      [indexKey]: [{ ts, reason: 'import-merge', side: 'incoming', size, boxes: 1 }],
     });
   }, { prefix: CONFLICT_PREFIX, indexKey: CONFLICT_INDEX_KEY, ts: CONFLICT_TS, raw: CONFLICT_RAW });
 }
@@ -393,15 +398,17 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     test.setTimeout(60000);
     await bootFresh(page);
     await seedCanvas(page);
-    // Fill the guard store to the isolation-area cap (20) with ancient rows, then protect one
-    // more archive: the oldest safe copy (row + body) must be pruned instead of the store growing.
+    // Fill the safe-copy store to the conflict archive's own count cap (20) with ancient rows,
+    // then protect one more archive: the oldest safe copy (row + body) must be pruned instead
+    // of the store growing.
     await page.evaluate(async ({ prefix, indexKey, ts, raw, guardPrefix, guardIndexKey, count }) => {
       const dbg = (window as any).__boxingDebug;
       const rows = [];
       for (let i = 0; i < count; i++) rows.push({ ts: 1000 + i, originTs: 1000 + i, size: 40 });
+      const size = JSON.stringify(raw).length;
       const payload: Record<string, unknown> = {
-        [prefix + ts]: { ts, reason: 'import-merge', side: 'incoming', raw, size: 200, boxes: 1 },
-        [indexKey]: [{ ts, reason: 'import-merge', side: 'incoming', size: 200, boxes: 1 }],
+        [prefix + ts]: { ts, reason: 'import-merge', side: 'incoming', raw, size, boxes: 1 },
+        [indexKey]: [{ ts, reason: 'import-merge', side: 'incoming', size, boxes: 1 }],
         [guardIndexKey]: rows,
       };
       for (let i = 0; i < count; i++) {

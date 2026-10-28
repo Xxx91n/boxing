@@ -1087,11 +1087,11 @@
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "The archived copy could not be saved as a safe copy, so nothing was deleted. Export it first if you need its content.",
+    "message": "The archived copy could not be saved as a safe copy, so nothing was deleted. Boxing deletes a conflict copy only once its archived content is safely stored.",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "The conflict copy could not be deleted. Its safe copy is saved, so nothing is lost.",
+    "message": "Deleting the conflict copy did not complete. Its safe copy is saved, so nothing is lost.",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {

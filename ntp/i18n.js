@@ -269,8 +269,8 @@ I18N_FALLBACK.dataConflictGuardRestoreBtn = 'Restore';
 I18N_FALLBACK.conflictDeleteConfirmTitle = 'Delete this conflict copy?';
 I18N_FALLBACK.conflictDeleteConfirmBody = 'Boxing first saves the archived copy from $1$ as a safe copy, and deletes it only if that save succeeds. Safe copies are kept under a bounded limit and can be pruned later.';
 I18N_FALLBACK.conflictDeleteConfirmAction = 'Save safe copy and delete';
-I18N_FALLBACK.conflictDeleteNoSafety = 'The archived copy could not be saved as a safe copy, so nothing was deleted. Export it first if you need its content.';
-I18N_FALLBACK.conflictDeleteFailed = 'The conflict copy could not be deleted. Its safe copy is saved, so nothing is lost.';
+I18N_FALLBACK.conflictDeleteNoSafety = 'The archived copy could not be saved as a safe copy, so nothing was deleted. Boxing deletes a conflict copy only once its archived content is safely stored.';
+I18N_FALLBACK.conflictDeleteFailed = 'Deleting the conflict copy did not complete. Its safe copy is saved, so nothing is lost.';
 I18N_FALLBACK.conflictGuardRestoreFailed = 'That safe copy could not be restored - nothing was changed.';
 // Ticket 50 (spec ticket 50): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
 I18N_FALLBACK.dataTimeMachine = 'Time Machine';

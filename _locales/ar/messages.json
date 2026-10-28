@@ -1070,11 +1070,11 @@
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "لم يكن بالإمكان حفظ النسخة المؤرشفة كنسخة آمنة، لذا لم يُحذف أي شيء. صدّرها أولًا إذا كنت بحاجة إلى محتواها.",
+    "message": "تعذّر حفظ النسخة المؤرشفة كنسخة آمنة، لذا لم يُحذف أي شيء. يحذف Boxing النسخة المتعارَض عليها فقط بعد حفظ محتواها المؤرشف بأمان.",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "تعذّر حذف النسخة المتعارَض عليها. نسختها الآمنة محفوظة، لذا لم يُفقد أي شيء.",
+    "message": "لم يكتمل حذف النسخة المتعارَض عليها. نسختها الآمنة محفوظة، لذا لم يُفقد أي شيء.",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {

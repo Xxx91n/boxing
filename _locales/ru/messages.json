@@ -1040,7 +1040,7 @@
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
   },
   "dataConflictGuardList": {
-    "message": "Резервные копии",
+    "message": "Безопасные копии",
     "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
   },
   "dataConflictGuardArchived": {
@@ -1056,7 +1056,7 @@
     "description": "Conflict-copy deletion confirmation title (ticket 56)"
   },
   "conflictDeleteConfirmBody": {
-    "message": "Сначала Boxing сохраняет архивную копию от $point$ как резервную и удаляет её только если сохранение удалось. Резервные копии имеют ограниченный срок хранения и позже могут быть удалены.",
+    "message": "Сначала Boxing сохраняет архивную копию от $point$ как безопасную и удаляет её только если сохранение удалось. Безопасные копии имеют ограниченный срок хранения и позже могут быть удалены.",
     "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
     "placeholders": {
       "point": {
@@ -1066,19 +1066,19 @@
     }
   },
   "conflictDeleteConfirmAction": {
-    "message": "Сохранить резервную копию и удалить",
+    "message": "Сохранить безопасную копию и удалить",
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "Архивную копию не удалось сохранить как резервную - ничего не удалено. Сначала экспортируйте её, если нужно её содержимое.",
+    "message": "Архивную копию не удалось сохранить как безопасную - ничего не удалено. Boxing удаляет копию конфликта только когда её архивное содержимое надёжно сохранено.",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "Копию конфликта не удалось удалить. Её резервная копия сохранена - ничего не потеряно.",
+    "message": "Удаление копии конфликта не завершилось. Её безопасная копия сохранена - ничего не потеряно.",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {
-    "message": "Эту резервную копию не удалось восстановить - ничего не изменено.",
+    "message": "Эту безопасную копию не удалось восстановить - ничего не изменено.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 }

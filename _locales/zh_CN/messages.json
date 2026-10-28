@@ -1073,11 +1073,11 @@
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "无法把该归档副本保存为安全副本，因此未删除任何内容。如需保留其内容，请先导出。",
+    "message": "无法把该归档副本保存为安全副本，因此未删除任何内容。Boxing 只有在归档内容安全保存后才会删除冲突副本。",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "无法删除该冲突副本。其安全副本已保存，因此没有内容丢失。",
+    "message": "删除冲突副本未完全成功。其安全副本已保存，因此没有内容丢失。",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {

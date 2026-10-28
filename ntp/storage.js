@@ -501,10 +501,10 @@ export function registerStorageOnChanged() {
   }
 
   // Shared write leg of the conflict store: body key + index row + the store's own count cap.
-  // Row shape is {ts, reason, side, size, boxes, truncated} — the fields listConflictArchives
-  // and the settings readout consume, as ticket 44 wrote them and ticket 79 renders them.
-  // Re-inserting a known ts updates that row instead of duplicating it: ticket 56 restores a
-  // deleted archive under its ORIGINAL ts, so the copy keeps the identity it had before.
+  // Row shape is {ts, reason, side, size, boxes, truncated} — ts/reason/side/size drive the
+  // settings readout, boxes and truncated are the archive's own metadata. Re-inserting a known
+  // ts updates that row instead of duplicating it: ticket 56 restores a deleted archive under
+  // its ORIGINAL ts, so the copy keeps the identity it had before.
   async function _writeConflictEntry(entry) {
     await layoutStorage.set({ [CONFLICT_PREFIX + entry.ts]: entry });
     const index = await _readConflictIndex();
@@ -574,7 +574,7 @@ export function registerStorageOnChanged() {
   // ceiling and the same 8MB total-byte cap, each enforced per index, so the safe-copy store
   // adds a bounded budget of its own instead of sharing the layout snapshots' (worst case
   // +8MB against storage.local + unlimitedStorage — it cannot starve the layout legs). The
-  // count cap is the isolation area's own (20) and tier dedup is OFF: unlike layout
+  // count cap is the conflict store's own (20) and tier dedup is OFF: unlike layout
   // snapshots, where a same-bucket entry is a redundant sample, every safe copy holds
   // distinct content, so only the count and byte caps prune here. Safe copies are therefore
   // NOT promised to live forever (#53 N2), and restoring one re-enters the conflict store
@@ -672,7 +672,7 @@ export function registerStorageOnChanged() {
       };
       if (Array.isArray(guard.raw.boxes)) entry.boxes = guard.raw.boxes.length;
       await _writeConflictEntry(entry);
-      // The isolation-area cap prunes by oldest ts, so restoring an archive older than every
+      // The conflict store's count cap prunes by oldest ts, so restoring an archive older than
       // row already held can drop the row this call just wrote. Report that as a failure: the
       // archive would not be readable through the conflict list, and the store is back to the
       // rows it held before this call, so "nothing was changed" stays true for the user.

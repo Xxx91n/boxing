@@ -1070,11 +1070,11 @@
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "La copia archivada no pudo guardarse como copia segura - no se eliminó nada. Expórtela primero si necesita su contenido.",
+    "message": "La copia archivada no pudo guardarse como copia segura, así que no se eliminó nada. Boxing solo elimina una copia en conflicto cuando su contenido archivado está guardado a salvo.",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "No se pudo eliminar la copia en conflicto. Su copia segura está guardada, así que no se perdió nada.",
+    "message": "La eliminación de la copia en conflicto no se completó. Su copia segura está guardada, así que no se perdió nada.",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {

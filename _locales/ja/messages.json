@@ -1070,11 +1070,11 @@
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "アーカイブ済みコピーをセーフティコピーとして保存できなかったため、何も削除しませんでした。内容が必要であれば先にエクスポートしてください。",
+    "message": "アーカイブ済みコピーをセーフティコピーとして保存できなかったため、何も削除しませんでした。Boxing はアーカイブ済み内容を確実に保存できた場合にのみ競合コピーを削除します。",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "競合コピーを削除できませんでした。セーフティコピーは保存されているため、失われたものはありません。",
+    "message": "競合コピーの削除を完了できませんでした。セーフティコピーは保存されているため、失われたものはありません。",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {

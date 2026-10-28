@@ -1070,11 +1070,11 @@
     "description": "Conflict-copy deletion confirmation action button (ticket 56)"
   },
   "conflictDeleteNoSafety": {
-    "message": "ไม่สามารถเก็บสำเนาที่บันทึกไว้เป็นสำเนาที่ปลอดภัย จึงไม่ได้ลบสิ่งใดออก หากต้องการเนื้อหานั้น ให้ส่งออกไปก่อน",
+    "message": "ไม่สามารถเก็บสำเนาที่บันทึกไว้เป็นสำเนาที่ปลอดภัย จึงไม่ได้ลบสิ่งใดออก Boxing จะลบสำเนาข้อขัดแย้งก็ต่อเมื่อเนื้อหาที่บันทึกไว้ถูกเก็บอย่างปลอดภัยแล้ว",
     "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
   },
   "conflictDeleteFailed": {
-    "message": "ลบสำเนาข้อขัดแย้งไม่ได้ สำเนาที่ปลอดภัยถูกบันทึกไว้ จึงไม่มีสิ่งใดสูญหาย",
+    "message": "การลบสำเนาข้อขัดแย้งไม่เสร็จสมบูรณ์ สำเนาที่ปลอดภัยถูกบันทึกไว้ จึงไม่มีสิ่งใดสูญหาย",
     "description": "Shown when the safe copy exists but deleting the conflict copy failed; the protected content is not lost (ticket 56)"
   },
   "conflictGuardRestoreFailed": {
