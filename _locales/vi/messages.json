@@ -1034,5 +1034,62 @@
   },
   "aboutViewReleases": {
     "message": "Xem bản phát hành"
+  },
+  "dataConflictCompareBtn": {
+    "message": "So sánh"
+  },
+  "dataConflictDiffHeading": {
+    "message": "Khác biệt với nội dung hiện tại"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "Giữ nội dung hiện tại"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "Dùng bản sao"
+  },
+  "dataConflictApplyBtn": {
+    "message": "Áp dụng đã chọn"
+  },
+  "dataConflictNoDiffs": {
+    "message": "Không có khác biệt trong các trường sửa được"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "Bản sao lưu trữ bị thiếu hoặc bị cắt nên không thể áp dụng"
+  },
+  "dataConflictTargetMissing": {
+    "message": "Hộp này không còn tồn tại - sẽ không được tạo lại"
+  },
+  "dataConflictStale": {
+    "message": "Nội dung hiện tại đã đổi sau khi so sánh - hãy xem lại khác biệt mới và xác nhận lại"
+  },
+  "dataConflictApplied": {
+    "message": "Đã áp dụng $1$ trường"
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "Hộp lớn"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "Hộp nhỏ"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "Dấu trang"
+  },
+  "dataConflictFieldTitle": {
+    "message": "Tiêu đề"
+  },
+  "dataConflictFieldPosition": {
+    "message": "Vị trí"
+  },
+  "dataConflictFieldSize": {
+    "message": "Kích thước"
+  },
+  "dataConflictFieldPinned": {
+    "message": "Đã ghim"
+  },
+  "dataConflictFieldStar": {
+    "message": "Dấu sao"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
   }
 }

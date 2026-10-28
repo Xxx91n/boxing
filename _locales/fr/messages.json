@@ -1034,5 +1034,62 @@
   },
   "aboutViewReleases": {
     "message": "Voir les versions"
+  },
+  "dataConflictCompareBtn": {
+    "message": "Comparer"
+  },
+  "dataConflictDiffHeading": {
+    "message": "Différences avec le contenu actuel"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "Garder l'actuel"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "Adopter la copie"
+  },
+  "dataConflictApplyBtn": {
+    "message": "Appliquer la sélection"
+  },
+  "dataConflictNoDiffs": {
+    "message": "Aucune différence dans les champs modifiables"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "La copie archivée est absente ou tronquée - rien ne peut être appliqué"
+  },
+  "dataConflictTargetMissing": {
+    "message": "Cette boîte n'existe plus - elle ne sera pas recréée"
+  },
+  "dataConflictStale": {
+    "message": "Le contenu actuel a changé après cette comparaison - vérifiez les différences actualisées et confirmez à nouveau"
+  },
+  "dataConflictApplied": {
+    "message": "$1$ champ(s) appliqué(s)"
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "Grande boîte"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "Petite boîte"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "Signet"
+  },
+  "dataConflictFieldTitle": {
+    "message": "Titre"
+  },
+  "dataConflictFieldPosition": {
+    "message": "Position"
+  },
+  "dataConflictFieldSize": {
+    "message": "Taille"
+  },
+  "dataConflictFieldPinned": {
+    "message": "Épinglée"
+  },
+  "dataConflictFieldStar": {
+    "message": "Marque étoile"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
   }
 }

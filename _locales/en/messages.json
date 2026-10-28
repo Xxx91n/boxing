@@ -1051,5 +1051,81 @@
   },
   "aboutViewReleases": {
     "message": "View Releases"
+  },
+  "dataConflictCompareBtn": {
+    "message": "Compare",
+    "description": "Settings data tab: per-row button that compares a conflict copy with the current content (issue #54)"
+  },
+  "dataConflictDiffHeading": {
+    "message": "Differences with current content",
+    "description": "Heading of the inline conflict-copy comparison (issue #54)"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "Keep current",
+    "description": "Default per-field choice in the conflict comparison (issue #54)"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "Adopt copy",
+    "description": "Per-field choice that takes the archived copy value (issue #54)"
+  },
+  "dataConflictApplyBtn": {
+    "message": "Apply selected",
+    "description": "Explicit apply control of the conflict comparison (issue #54)"
+  },
+  "dataConflictNoDiffs": {
+    "message": "No editable-field differences with the current content",
+    "description": "Shown when the archived copy matches the current content (issue #54)"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "The archived copy is missing or truncated - nothing can be applied",
+    "description": "Apply is refused when the archive body was pruned or over the byte cap (issue #54, spec #53 D3)"
+  },
+  "dataConflictTargetMissing": {
+    "message": "This box no longer exists - it will not be rebuilt",
+    "description": "Deleted target in a conflict comparison; never rebuilt (issue #54, spec #53 D3)"
+  },
+  "dataConflictStale": {
+    "message": "The current content changed after this comparison - review the refreshed differences and confirm again",
+    "description": "Staleness notice that discards an unreviewed apply (issue #54, spec #53 D3)"
+  },
+  "dataConflictApplied": {
+    "message": "Applied $1$ field(s)",
+    "description": "Result line after an explicit conflict apply (issue #54)"
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "Large box",
+    "description": "Comparison level label (issue #54)"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "Small box",
+    "description": "Comparison level label (issue #54)"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "Bookmark",
+    "description": "Comparison level label (issue #54)"
+  },
+  "dataConflictFieldTitle": {
+    "message": "Title",
+    "description": "User-editable field name in the conflict comparison (issue #54)"
+  },
+  "dataConflictFieldPosition": {
+    "message": "Position",
+    "description": "User-editable field group (x and y) in the conflict comparison (issue #54)"
+  },
+  "dataConflictFieldSize": {
+    "message": "Size",
+    "description": "User-editable field group (width and height) in the conflict comparison (issue #54)"
+  },
+  "dataConflictFieldPinned": {
+    "message": "Pinned",
+    "description": "User-editable field name in the conflict comparison (issue #54)"
+  },
+  "dataConflictFieldStar": {
+    "message": "Star mark",
+    "description": "User-editable field name in the conflict comparison; the DSU leader flag (issue #54)"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL",
+    "description": "User-editable bookmark field in the conflict comparison (issue #54)"
   }
 }

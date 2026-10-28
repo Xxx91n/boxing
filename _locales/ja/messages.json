@@ -1034,5 +1034,62 @@
   },
   "aboutViewReleases": {
     "message": "リリース一覧を見る"
+  },
+  "dataConflictCompareBtn": {
+    "message": "比較"
+  },
+  "dataConflictDiffHeading": {
+    "message": "現在のコンテンツとの差分"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "現在のを保持"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "コピーを採用"
+  },
+  "dataConflictApplyBtn": {
+    "message": "選択を適用"
+  },
+  "dataConflictNoDiffs": {
+    "message": "編集可能なフィールドに差分はありません"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "アーカイブされたコピーが存在しないか切り詰められているため、適用できません"
+  },
+  "dataConflictTargetMissing": {
+    "message": "このボックスは存在しないため、再作成されません"
+  },
+  "dataConflictStale": {
+    "message": "この比較の後で現在のコンテンツが変更されました。更新後の差分を確認し、再度確定してください"
+  },
+  "dataConflictApplied": {
+    "message": "$1$ 件のフィールドを適用しました"
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "大ボックス"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "小ボックス"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "ブックマーク"
+  },
+  "dataConflictFieldTitle": {
+    "message": "タイトル"
+  },
+  "dataConflictFieldPosition": {
+    "message": "位置"
+  },
+  "dataConflictFieldSize": {
+    "message": "サイズ"
+  },
+  "dataConflictFieldPinned": {
+    "message": "ピン留め"
+  },
+  "dataConflictFieldStar": {
+    "message": "星マーク"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
   }
 }

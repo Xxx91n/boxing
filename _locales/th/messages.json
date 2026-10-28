@@ -1034,5 +1034,62 @@
   },
   "aboutViewReleases": {
     "message": "ดูหน้าเผยแพร่"
+  },
+  "dataConflictCompareBtn": {
+    "message": "เปรียบเทียบ"
+  },
+  "dataConflictDiffHeading": {
+    "message": "ส่วนต่างกับเนื้อหาปัจจุบัน"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "เก็บปัจจุบันไว้"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "ใช้ตามสำเนา"
+  },
+  "dataConflictApplyBtn": {
+    "message": "ใช้สิ่งที่เลือก"
+  },
+  "dataConflictNoDiffs": {
+    "message": "ไม่มีส่วนต่างในฟิลด์ที่แก้ไขได้"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "ไม่พบสำเนาที่บันทึกไว้หรือถูกตัดทอน จึงใช้สิ่งใดไม่ได้"
+  },
+  "dataConflictTargetMissing": {
+    "message": "กล่องนี้ไม่มีอยู่อีกต่อไป - จะไม่ถูกสร้างใหม่"
+  },
+  "dataConflictStale": {
+    "message": "เนื้อหาปัจจุบันเปลี่ยนไปหลังการเทียบนี้ - ตรวจดูส่วนต่างที่ปรับปรุงแล้วแล้วยืนยันอีกครั้ง"
+  },
+  "dataConflictApplied": {
+    "message": "ใช้แล้ว $1$ ฟิลด์"
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "กล่องใหญ่"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "กล่องเล็ก"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "ที่คั่นหน้า"
+  },
+  "dataConflictFieldTitle": {
+    "message": "ชื่อ"
+  },
+  "dataConflictFieldPosition": {
+    "message": "ตำแหน่ง"
+  },
+  "dataConflictFieldSize": {
+    "message": "ขนาด"
+  },
+  "dataConflictFieldPinned": {
+    "message": "ปักหมุดแล้ว"
+  },
+  "dataConflictFieldStar": {
+    "message": "เครื่องหมายดาว"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
   }
 }

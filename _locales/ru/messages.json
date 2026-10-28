@@ -1034,5 +1034,62 @@
   },
   "aboutViewReleases": {
     "message": "Смотреть релизы"
+  },
+  "dataConflictCompareBtn": {
+    "message": "Сравнить"
+  },
+  "dataConflictDiffHeading": {
+    "message": "Отличия от текущего содержимого"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "Оставить текущее"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "Взять из копии"
+  },
+  "dataConflictApplyBtn": {
+    "message": "Применить выбранное"
+  },
+  "dataConflictNoDiffs": {
+    "message": "Отличий в редактируемых полях нет"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "Архивная копия отсутствует или обрезана - применить ничего нельзя"
+  },
+  "dataConflictTargetMissing": {
+    "message": "Этот контейнер больше не существует - он не будет воссоздан"
+  },
+  "dataConflictStale": {
+    "message": "Текущее содержимое изменилось после сравнения - проверьте обновлённые отличия и подтвердите снова"
+  },
+  "dataConflictApplied": {
+    "message": "Применено полей: $1$"
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "Большой контейнер"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "Малый контейнер"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "Закладка"
+  },
+  "dataConflictFieldTitle": {
+    "message": "Название"
+  },
+  "dataConflictFieldPosition": {
+    "message": "Положение"
+  },
+  "dataConflictFieldSize": {
+    "message": "Размер"
+  },
+  "dataConflictFieldPinned": {
+    "message": "Закреплено"
+  },
+  "dataConflictFieldStar": {
+    "message": "Отметка звёздочкой"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
   }
 }
