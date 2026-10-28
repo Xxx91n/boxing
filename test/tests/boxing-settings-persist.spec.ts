@@ -40,8 +40,9 @@ async function clickDarkToggle(page) {
   });
 }
 
-// Paint-critical first-paint cache key (ntp/persist.js BOOT_THEME_KEY). Shared by the
-// file:// cases below and the issue #60 real-build lane, which read the same bytes.
+// Paint-critical first-paint cache key (ntp/persist.js BOOT_THEME_KEY). Passed in as an
+// argument wherever a helper crosses into page.evaluate — a serialized callback cannot
+// reach this module scope, which is why the older in-file literals stay as literals.
 const BOOT_MIRROR_KEY = 'boxingBootTheme.v1';
 
 // Init script: record every write to the ntp--dark token together with the resulting
