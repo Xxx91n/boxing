@@ -6,13 +6,13 @@
 // facade (saveLayout/saveLayoutDebounced), never chrome.storage directly. Moved verbatim from
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
-import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
+import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, groupStar, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
 import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, readDrBodies } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref, diffConflictArchive, planConflictApply, largeKey, smallKey } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyDarkMode, applyTheme, nextDarkModePreference } from './persist.js';
-import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox, commit } from './render.js';
-import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
+import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
+import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections, toggleStarMark } from './conn-layer.js';
 import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
 import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
 
@@ -68,6 +68,13 @@ export function initSettingsUiFacade(deps) {
     if (n < 1024) return n + ' B';
     return (Math.round(n / 102.4) / 10) + ' KB';
   }
+
+  // ── Issue #54 (#53 D2/D3): open conflict comparisons ─────
+  // One entry per open panel: the fingerprint of the CURRENT side the user actually looked
+  // at (`signature`) plus the fields they moved to "adopt copy". Applying re-compares and
+  // refuses when the signature moved, so a stale verdict is refreshed with every choice back
+  // on keep-current instead of being written over content nobody has re-reviewed.
+  const conflictPanels = new Map();
 
   // ── settings modal ─────────────────────────────────────
   // Ticket 43 (spec D3): data-health surface — snapshot count / latest snapshot time /
@@ -341,13 +348,6 @@ export function initSettingsUiFacade(deps) {
   // keep-current / adopt-copy per differing field, and writes only what was picked.
   // Opening a comparison changes nothing; applying never deletes the archive row —
   // deleting a copy is a separate action, and copy-only objects belong to #55.
-  //
-  // `signature` is the fingerprint of the CURRENT side at the moment the user saw the
-  // diff. Applying re-compares and refuses when it moved (another tab edited the target,
-  // a later edit landed): the stale verdict is replaced by a fresh one with every choice
-  // back on keep-current, so nothing is written over content the user has not reviewed.
-  const conflictPanels = new Map();
-
   function conflictPanelNode(ts) {
     return document.querySelector('#data-conflict-list .data-conflict-diff[data-ts="' + ts + '"]');
   }
@@ -370,7 +370,7 @@ export function initSettingsUiFacade(deps) {
     row.className = 'data-conflict-diff-field';
     row.dataset.path = field.path;
     row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:2px 0;font-size:var(--fs-xs);';
-    row.append(conflictSpan(i18n(field.labelKey), 'data-conflict-diff-label'));
+    row.append(conflictSpan(i18n(field.labelKey)));
     // Each option carries the value it stands for: the radio labels are the comparison,
     // so there is no need for the user to read the payload itself.
     for (const side of ['keep', 'copy']) {
@@ -401,7 +401,6 @@ export function initSettingsUiFacade(deps) {
 
   function buildConflictObjectBlock(obj, ts, depth) {
     const wrap = document.createElement('div');
-    wrap.className = 'data-conflict-diff-object';
     wrap.style.cssText = 'margin:2px 0 2px ' + (depth * 14) + 'px;';
     const head = document.createElement('div');
     head.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;font-size:var(--fs-xs);opacity:0.75;';
@@ -420,7 +419,7 @@ export function initSettingsUiFacade(deps) {
     panel.dataset.ts = String(ts);
     panel.style.cssText = 'margin:4px 0 10px;padding:6px 8px;border-left:2px solid var(--color-hairline);font-size:var(--fs-xs);';
     if (notice) {
-      const noticeEl = conflictSpan(notice, 'data-conflict-diff-notice');
+      const noticeEl = conflictSpan(notice);
       noticeEl.style.cssText = 'display:block;margin:0 0 6px;';
       panel.append(noticeEl);
     }
@@ -430,7 +429,7 @@ export function initSettingsUiFacade(deps) {
       panel.append(conflictSpan(i18n('dataConflictBodyUnavailable')));
       return panel;
     }
-    panel.append(conflictSpan(i18n('dataConflictDiffHeading'), 'data-conflict-diff-head'));
+    panel.append(conflictSpan(i18n('dataConflictDiffHeading')));
     if (!diff.stats.fieldDiffs) panel.append(conflictSpan(i18n('dataConflictNoDiffs')));
     for (const group of diff.groups || []) if (conflictBlockHasContent(group)) panel.append(buildConflictObjectBlock(group, ts, 0));
     if (diff.stats.fieldDiffs) {
@@ -451,15 +450,8 @@ export function initSettingsUiFacade(deps) {
 
   function toggleConflictCompare(ts) {
     const open = conflictPanelNode(ts);
-    if (open) { open.remove(); conflictPanels.delete(ts); setConflictCompareLabel(ts, false); return; }
+    if (open) { open.remove(); conflictPanels.delete(ts); return; }
     void openConflictCompare(ts);
-  }
-
-  // The toggle reuses the row it belongs to, so the button carries the action the next
-  // click performs (repo tooltip/label convention).
-  function setConflictCompareLabel(ts, open) {
-    const btn = document.querySelector('#data-conflict-list .data-conflict-compare-btn[data-ts="' + ts + '"]');
-    if (btn) btn.textContent = open ? i18n('closeSettings') : i18n('dataConflictCompareBtn');
   }
 
   async function openConflictCompare(ts, notice) {
@@ -469,7 +461,6 @@ export function initSettingsUiFacade(deps) {
     const row = document.querySelector('#data-conflict-list .data-conflict-row-item[data-ts="' + ts + '"]');
     if (row) row.after(panel);
     else document.getElementById('data-conflict-list')?.appendChild(panel);
-    setConflictCompareLabel(ts, true);
     if (diff.applicable) conflictPanels.set(ts, { signature: diff.signature, selected: new Set() });
     else conflictPanels.delete(ts);
   }
@@ -482,9 +473,12 @@ export function initSettingsUiFacade(deps) {
     if (btn) btn.disabled = state.selected.size === 0;
   }
 
-  // Field writes follow the existing per-field mutation shape (title/pin/hover writes in
-  // render.js): assign the field, then one saveLayout for the whole batch. The star is the
-  // exception — isParent is the DSU leader truth, so it goes through commit().
+  // Scalar field writes follow the shape the canvas controls themselves use (title/pin/
+  // hover-expand assign + one save): the layout-bypass contract governs collection
+  // membership, and the sibling external-payload paths (import merge / overwrite restore)
+  // take archived geometry verbatim rather than re-snapping it, so this stays value-faithful
+  // too. The star is different — isParent is the DSU leader truth — so it goes through the
+  // public wrapper, which owns ensureConnArrays + commit('toggleStar') + the button sync.
   function writeConflictOp(op) {
     const lb = getLargeBox(op.largeId);
     if (!lb) return false;
@@ -500,8 +494,12 @@ export function initSettingsUiFacade(deps) {
       if (!target) return false;
     }
     if (op.field === 'isParent') {
-      if (Boolean(target.isParent) === Boolean(op.value)) return false;
-      commit('toggleStar', { parentId: tieredKey });
+      // toggleStar reads the field OR the runtime star mirror, so "already starred" has to
+      // be tested the same way — otherwise the toggle would un-star a live box while the
+      // user asked to adopt its star, and report it as an applied field.
+      const starred = Boolean(target.isParent) || groupStar.has(tieredKey);
+      if (starred === Boolean(op.value)) return false;
+      toggleStarMark(tieredKey);
       return true;
     }
     target[op.field] = op.value;
