@@ -1190,22 +1190,14 @@ body.box-resizing {
 }
 
 /* Icon-only, like the header buttons: the localized name lives in the .sr-only text and the
-   tooltip, so four copy controls cannot stuff long strings into the link grid. */
+   tooltip, so four copy controls cannot stuff long strings into the link grid. Sizing only —
+   the fill/border/color come from .btn--ghost, which is what every other header and inner
+   action button uses (docs/DESIGN.md §2/§2b is normative for the rest). */
 .about-copy-btn {
   padding: 1px 6px;
   font-size: var(--fs-sm);
   line-height: 1;
-  cursor: pointer;
-  background: var(--color-surface);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
-  color: var(--color-ink);
   vertical-align: middle;
-}
-
-.about-copy-btn:hover {
-  background: var(--color-hover);
-  color: var(--color-ink);
 }
 
 .about-copy-status {
@@ -1225,6 +1217,13 @@ body.box-resizing {
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
+}
+
+/* docs/css-dual-write-convention.md "hidden override pairing": a rule that sets a layout
+   display value must ship its [hidden] fallback pair, even for containers nothing hides today. */
+.about-link-row[hidden],
+.about-entries[hidden] {
+  display: none;
 }
 
 /* Jump-target confirmation for the About > diagnostics shortcut: the section is the one that

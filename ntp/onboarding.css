@@ -179,10 +179,14 @@
    A card, not an overlay: fixed to one corner, no backdrop and nothing behind it, so a pointer
    gesture that lands anywhere else reaches the canvas while it is open. Sits under the modals
    (z-index 100) and above the canvas layers (0–5); same surface recipe as .search-results so
-   dark mode comes from the tokens alone. */
+   dark mode comes from the tokens alone.
+   Bottom-LEFT on purpose: .zoom-controls owns the bottom-right of both surfaces
+   (#canvas-zoom / #inner-zoom) and its height follows --font-size-base, so a bottom-right card
+   would cover a live canvas control at some font sizes. The sheet must never block an operation
+   it is explaining. */
 .quick-help {
   position: fixed;
-  right: 16px;
+  left: 16px;
   bottom: 44px;
   z-index: 40;
   max-width: 340px;
@@ -201,8 +205,13 @@
   color: var(--color-ink);
 }
 
-/* .quick-help sets display, which outranks the UA [hidden] rule — the pair is required. */
-#quick-help[hidden] {
+/* docs/css-dual-write-convention.md: any rule that sets a layout display value ships its
+   [hidden] fallback pair. For .quick-help it is load-bearing — the element is toggled with the
+   hidden attribute, and display:flex alone would override it. */
+.quick-help[hidden],
+.quick-help__head[hidden],
+.quick-help__list[hidden],
+.quick-help__item[hidden] {
   display: none;
 }
 
