@@ -412,9 +412,17 @@ test.describe('quick reference stays out of the canvas way', () => {
     await expect(page.locator('#about-show-tour'), 'the replay entry stays hidden on the demo').toBeHidden();
     await expect(page.locator('#about-quick-help'), 'the new entry must not be a dead control').toBeVisible();
 
-    await jsClick(page, '#about-quick-help');
+    // Poll the click rather than assert it once: __boxingDebug is assigned at module scope, long
+    // before init() has awaited loadLayout/loadSettings and reached initQuickHelpEntry()
+    // (ntp.js:1211) where this listener is attached. A click that lands first is a no-op and the
+    // poll retries, so readiness is waited for at the behavior level. The other cases get this
+    // for free through resetNtp() -> dismissOnboarding(), which waits on the tour decision that
+    // init() settles as its last step.
+    await expect.poll(async () => {
+      await jsClick(page, '#about-quick-help');
+      return page.locator('#quick-help').isVisible();
+    }, { timeout: 15000 }).toBe(true);
     await expect(page.locator('#settings-modal')).toBeHidden();
-    await expect(page.locator('#quick-help')).toBeVisible();
     await assertPointerReaches(page, '.large-box');
     await page.locator('.large-box').click();
     await expect.poll(() => currentBox(page))
