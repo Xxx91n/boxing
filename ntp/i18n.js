@@ -261,6 +261,27 @@ I18N_FALLBACK.dataConflictArchived = 'Conflict copies archived';
 // Ticket 79 (spec): conflict-copy readout list + single export (BX-I18N-005)
 I18N_FALLBACK.dataConflictList = 'Conflict copies';
 I18N_FALLBACK.dataConflictExportBtn = 'Export';
+// Issue #54 (#53 D2/D3): same-id conflict comparison + per-field apply (BX-I18N-005)
+I18N_FALLBACK.dataConflictCompareBtn = 'Compare';
+I18N_FALLBACK.dataConflictDiffHeading = 'Differences with current content';
+I18N_FALLBACK.dataConflictKeepCurrent = 'Keep current';
+I18N_FALLBACK.dataConflictAdoptCopy = 'Adopt copy';
+I18N_FALLBACK.dataConflictApplyBtn = 'Apply selected';
+I18N_FALLBACK.dataConflictNoDiffs = 'No editable-field differences with the current content';
+I18N_FALLBACK.dataConflictBodyUnavailable = 'The archived copy is missing or truncated - nothing can be applied';
+I18N_FALLBACK.dataConflictTargetMissing = 'This box no longer exists - it will not be rebuilt';
+I18N_FALLBACK.dataConflictStale = 'The current content changed after this comparison - review the refreshed differences and confirm again';
+I18N_FALLBACK.dataConflictNoChange = 'Nothing was changed - the values you selected already match your content';
+I18N_FALLBACK.dataConflictApplied = 'Applied $1$ field(s)';
+I18N_FALLBACK.dataConflictLevelLargeBox = 'Large box';
+I18N_FALLBACK.dataConflictLevelSmallBox = 'Small box';
+I18N_FALLBACK.dataConflictLevelBookmark = 'Bookmark';
+I18N_FALLBACK.dataConflictFieldTitle = 'Title';
+I18N_FALLBACK.dataConflictFieldPosition = 'Position';
+I18N_FALLBACK.dataConflictFieldSize = 'Size';
+I18N_FALLBACK.dataConflictFieldPinned = 'Pinned';
+I18N_FALLBACK.dataConflictFieldStar = 'Star mark';
+I18N_FALLBACK.dataConflictFieldUrl = 'URL';
 // Ticket 50 (spec ticket 50): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
 I18N_FALLBACK.dataTimeMachine = 'Time Machine';
 I18N_FALLBACK.dataRollbackBtn = 'Roll back';

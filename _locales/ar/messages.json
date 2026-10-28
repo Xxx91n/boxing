@@ -1034,5 +1034,70 @@
   },
   "aboutViewReleases": {
     "message": "عرض الإصدارات"
+  },
+  "dataConflictCompareBtn": {
+    "message": "قارن"
+  },
+  "dataConflictDiffHeading": {
+    "message": "الفروق مع المحتوى الحالي"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "احتفظ بالحالي"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "اعتمد النسخة"
+  },
+  "dataConflictApplyBtn": {
+    "message": "طبّق المحدد"
+  },
+  "dataConflictNoDiffs": {
+    "message": "لا فروق في الحقول القابلة للتحرير"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "النسخة المؤرشفة مفقودة أو مبتورة، لذا لا يمكن تطبيق أي شيء"
+  },
+  "dataConflictTargetMissing": {
+    "message": "هذا الصندوق لم يعد موجودًا - لن يُعاد إنشاؤه"
+  },
+  "dataConflictStale": {
+    "message": "تغيّر المحتوى الحالي بعد هذه المقارنة - راجع الفروق المحدَّثة وأكِّد من جديد"
+  },
+  "dataConflictNoChange": {
+    "message": "لم يتغيّر شيء - القيم المحددة تطابق محتواك الحالي"
+  },
+  "dataConflictApplied": {
+    "message": "طُبِّق $count$ من الحقول",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "صندوق كبير"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "صندوق صغير"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "إشارة مرجعية"
+  },
+  "dataConflictFieldTitle": {
+    "message": "العنوان"
+  },
+  "dataConflictFieldPosition": {
+    "message": "الموضع"
+  },
+  "dataConflictFieldSize": {
+    "message": "الحجم"
+  },
+  "dataConflictFieldPinned": {
+    "message": "مثبَّت"
+  },
+  "dataConflictFieldStar": {
+    "message": "علامة النجمة"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
   }
 }

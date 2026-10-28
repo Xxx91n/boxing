@@ -547,4 +547,209 @@ function mergeLayoutThreeWay(cloud, local, base) {
   return { merged, conflicts: boxConflicts, childConflicts, stats: { boxes: merged.boxes.length, boxConflicts: boxConflicts.length, childConflicts: childConflicts.length, base: hasBase } };
 }
 
-export { mergeChildrenById, mergeLayoutThreeWay };
+// ── Issue #54 (#53 D2/D3): same-id conflict comparison ───────────────────────
+// The archive stores the losing subtree verbatim (storage.archiveConflictLayouts ->
+// raw.boxes) while the canvas keeps its own version of those same ids. This is the
+// read half of "keep current / adopt copy": for objects BOTH sides still have, report
+// only the user-editable fields that actually differ, and carry the exact writes that
+// adopting the copy would produce. Pure — never touches layout, storage or the DOM.
+//
+// Field map (the N2 detail #53 left to this ticket, derived from what the UI can
+// already edit: inline title, drag/resize, pin, hover-expand and the star):
+//   boxes    — title, position (x+y), size (width+height), pinned, collapseHover, isParent
+//   bookmarks — title, url
+// Geometry is grouped x/y and width/height because a half-adopted box would land on top
+// of its neighbours. Internal state stays out: ids, nextSmallIndex/nextLargeIndex
+// counters, children/bookmarks membership (adding copy-only objects is #55), _meta,
+// per-box view state and settings. Nothing here can express "edit raw JSON".
+const CONFLICT_BOX_FIELDS = [
+  { key: 'title', kind: 'text', labelKey: 'dataConflictFieldTitle' },
+  { key: 'position', kind: 'num', fields: ['x', 'y'], labelKey: 'dataConflictFieldPosition' },
+  { key: 'size', kind: 'num', fields: ['width', 'height'], labelKey: 'dataConflictFieldSize' },
+  { key: 'pinned', kind: 'bool', labelKey: 'dataConflictFieldPinned' },
+  // collapseHover stores the negation of the user-facing switch, so the displayed value
+  // is flipped while the write stays on the real field.
+  { key: 'autoExpand', kind: 'bool', field: 'collapseHover', negate: true, labelKey: 'autoExpand' },
+  { key: 'star', kind: 'bool', field: 'isParent', labelKey: 'dataConflictFieldStar' },
+];
+const CONFLICT_BOOKMARK_FIELDS = [
+  { key: 'title', kind: 'text', labelKey: 'dataConflictFieldTitle' },
+  { key: 'url', kind: 'url', labelKey: 'dataConflictFieldUrl' },
+];
+
+function conflictSymbolValue(bool, negate) {
+  const shown = negate ? !bool : bool;
+  return shown ? '✓' : '–';
+}
+
+// Geometry is only adoptable when BOTH sides hold a real finite number. Number(null),
+// Number(true) and Number('') are 0/1, so a payload carrying null or a leftover flag would
+// otherwise be offered as a size and written as 0 — an unwritten-by-design box dimension.
+function conflictNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+  if (typeof value === 'string' && value.trim() !== '') return Number(value);
+  return NaN;
+}
+
+// One descriptor -> { token, entry }. The token describes the CURRENT side, so it feeds the
+// staleness signature; a group with nothing to compare (a side without finite geometry) pins
+// 'n/a', because nothing can ever be written for it and its drift needs no re-confirmation.
+// The entry only exists when the two sides differ.
+function probeConflictField(cur, copy, spec, basePath) {
+  const path = basePath + '#' + spec.key;
+  const field = spec.field || spec.key;
+  if (spec.kind === 'bool') {
+    const cv = Boolean(cur[field]);
+    const pv = Boolean(copy[field]);
+    const entry = cv === pv ? null : {
+      key: spec.key, labelKey: spec.labelKey, path,
+      current: conflictSymbolValue(cv, spec.negate),
+      copy: conflictSymbolValue(pv, spec.negate),
+      writes: [{ field, value: pv }],
+    };
+    return { token: path + '=' + cv, entry };
+  }
+  if (spec.kind === 'num') {
+    const keys = spec.fields || [field];
+    const curVals = keys.map((k) => conflictNumber(cur[k]));
+    const copyVals = keys.map((k) => conflictNumber(copy[k]));
+    if (!curVals.every(Number.isFinite) || !copyVals.every(Number.isFinite)) {
+      return { token: path + '=n/a', entry: null };
+    }
+    const changed = curVals.some((v, i) => v !== copyVals[i]);
+    // The displayed numbers are the compared ones: rounding here would show two different
+    // coordinates as identical while adoption still moved the box.
+    const entry = changed ? {
+      key: spec.key, labelKey: spec.labelKey, path,
+      current: curVals.join(', '),
+      copy: copyVals.join(', '),
+      writes: keys.map((k, i) => ({ field: k, value: copyVals[i] })),
+    } : null;
+    return { token: keys.map((k, i) => path + '.' + k + '=' + curVals[i]).join(','), entry };
+  }
+  if (spec.kind === 'url') {
+    // Every url the app itself writes goes through normalizeBookmarkUrl (popup add/edit),
+    // and the importer treats an un-normalizable url as corruption — so adopting a url from
+    // an archived file has to land in that same canonical form, and a value that cannot be
+    // normalized is not adoptable at all. The row shows the value that will be stored.
+    const adopt = normalizeBookmarkUrl(copy[field]);
+    const curRaw = typeof cur[field] === 'string' ? cur[field] : '';
+    if (!adopt) return { token: path + '=' + curRaw, entry: null };
+    // Compared canonical-to-canonical: the import path validates a url but keeps the bytes it
+    // read, so two identical "HTTPS://Example.com/" values must not be reported as a conflict.
+    const curCanonical = normalizeBookmarkUrl(cur[field]) || curRaw;
+    const entry = curCanonical === adopt ? null : {
+      key: spec.key, labelKey: spec.labelKey, path, current: curRaw, copy: adopt,
+      writes: [{ field, value: adopt }],
+    };
+    return { token: path + '=' + curCanonical, entry };
+  }
+  const pv = copy[field];
+  if (typeof pv !== 'string') return { token: path + '=n/a', entry: null };
+  const cv = typeof cur[field] === 'string' ? cur[field] : '';
+  const entry = cv === pv ? null : {
+    key: spec.key, labelKey: spec.labelKey, path, current: cv, copy: pv,
+    writes: [{ field, value: pv }],
+  };
+  return { token: path + '=' + cv, entry };
+}
+
+function collectConflictFields(cur, copy, specs, basePath, sig, stats) {
+  const fields = [];
+  for (const spec of specs) {
+    const probed = probeConflictField(cur, copy, spec, basePath);
+    sig.push(probed.token);
+    if (probed.entry) { fields.push(probed.entry); stats.fieldDiffs++; }
+  }
+  return fields;
+}
+
+function conflictObjectLabel(obj) {
+  return obj && typeof obj.title === 'string' ? obj.title : '';
+}
+
+// entry: a verbatim conflict body ({ ts, raw, truncated? } as stored by the facade).
+// layout: the live layout the comparison runs against.
+function diffConflictArchive(entry, layout) {
+  const result = { applicable: false, reason: null, groups: [], stats: { objects: 0, fieldDiffs: 0, missing: 0 }, signature: '' };
+  if (!entry || typeof entry !== 'object') { result.reason = 'unavailable'; return result; }
+  // #53 D3: a body that was over the byte cap (truncated) or already pruned by rotation
+  // never carries the archive content, so it must not be presented as applicable.
+  if (entry.truncated) { result.reason = 'truncated'; return result; }
+  if (!entry.raw || !Array.isArray(entry.raw.boxes)) { result.reason = 'unavailable'; return result; }
+  result.applicable = true;
+  const currentBoxes = Array.isArray(layout && layout.boxes) ? layout.boxes : [];
+  const sig = [];
+  for (const archived of entry.raw.boxes) {
+    if (!archived || typeof archived.id !== 'string') continue;
+    const basePath = largeKey(archived.id);
+    const cur = currentBoxes.find((b) => b && b.id === archived.id) || null;
+    // Target gone: report it, offer nothing. Rebuilding a box the user deleted is out of
+    // scope for adjudication (#53 D3), and the archive row itself is never touched.
+    if (!cur) {
+      sig.push(basePath + '=missing');
+      result.stats.missing++;
+      result.groups.push({ level: 'large', id: archived.id, title: conflictObjectLabel(archived), status: 'missing', fields: [], children: [] });
+      continue;
+    }
+    const group = { level: 'large', id: archived.id, title: conflictObjectLabel(archived), status: 'matched', fields: [], children: [] };
+    group.fields = collectConflictFields(cur, archived, CONFLICT_BOX_FIELDS, basePath, sig, result.stats);
+    result.stats.objects++;
+    const currentChildren = Array.isArray(cur.children) ? cur.children : [];
+    for (const archivedChild of (Array.isArray(archived.children) ? archived.children : [])) {
+      if (!archivedChild || typeof archivedChild.id !== 'string') continue;
+      const childBase = smallKey(archived.id, archivedChild.id);
+      const curChild = currentChildren.find((s) => s && s.id === archivedChild.id) || null;
+      // A child the canvas does not have is either copy-only (#55 adds it) or deleted
+      // later; neither is a field adjudication, so it stays off the list entirely.
+      if (!curChild) continue;
+      const child = { level: 'small', id: archivedChild.id, title: conflictObjectLabel(archivedChild), status: 'matched', fields: [], bookmarks: [] };
+      child.fields = collectConflictFields(curChild, archivedChild, CONFLICT_BOX_FIELDS, childBase, sig, result.stats);
+      result.stats.objects++;
+      const currentBookmarks = Array.isArray(curChild.bookmarks) ? curChild.bookmarks : [];
+      for (const archivedBm of (Array.isArray(archivedChild.bookmarks) ? archivedChild.bookmarks : [])) {
+        if (!archivedBm || typeof archivedBm.id !== 'string') continue;
+        const bmBase = childBase + ':' + archivedBm.id;
+        const curBm = currentBookmarks.find((b) => b && b.id === archivedBm.id) || null;
+        if (!curBm) continue;
+        const bm = { level: 'bookmark', id: archivedBm.id, title: conflictObjectLabel(archivedBm), status: 'matched', fields: [] };
+        bm.fields = collectConflictFields(curBm, archivedBm, CONFLICT_BOOKMARK_FIELDS, bmBase, sig, result.stats);
+        result.stats.objects++;
+        child.bookmarks.push(bm);
+      }
+      group.children.push(child);
+    }
+    result.groups.push(group);
+  }
+  result.signature = sig.join('|');
+  return result;
+}
+
+// Selections are the field paths the user moved to "adopt copy"; everything else keeps
+// the current value by construction (no write is emitted for it).
+function planConflictApply(diff, selectedPaths) {
+  const selected = new Set(selectedPaths || []);
+  const ops = [];
+  if (!diff || !Array.isArray(diff.groups)) return ops;
+  for (const group of diff.groups) {
+    if (group.status !== 'matched') continue;
+    const push = (target, fields, level, smallId, bmId) => {
+      for (const field of fields || []) {
+        if (!selected.has(field.path)) continue;
+        for (const write of field.writes) {
+          // path rides along so the caller can report fields, not raw key writes: one
+          // adopted position is a field the user chose, even though it sets x and y.
+          ops.push({ path: field.path, level, largeId: group.id, smallId: smallId || null, bmId: bmId || null, field: write.field, value: write.value });
+        }
+      }
+    };
+    push(group, group.fields, 'large');
+    for (const child of group.children || []) {
+      push(child, child.fields, 'small', child.id);
+      for (const bm of child.bookmarks || []) push(bm, bm.fields, 'bookmark', child.id, bm.id);
+    }
+  }
+  return ops;
+}
+
+export { mergeChildrenById, mergeLayoutThreeWay, diffConflictArchive, planConflictApply };

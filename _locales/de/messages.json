@@ -1034,5 +1034,70 @@
   },
   "aboutViewReleases": {
     "message": "Releases anzeigen"
+  },
+  "dataConflictCompareBtn": {
+    "message": "Vergleichen"
+  },
+  "dataConflictDiffHeading": {
+    "message": "Unterschiede zum aktuellen Inhalt"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "Aktuell behalten"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "Kopie übernehmen"
+  },
+  "dataConflictApplyBtn": {
+    "message": "Auswahl anwenden"
+  },
+  "dataConflictNoDiffs": {
+    "message": "Keine Unterschiede bei den bearbeitbaren Feldern"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "Die archivierte Kopie fehlt oder ist abgeschnitten - nichts kann angewendet werden"
+  },
+  "dataConflictTargetMissing": {
+    "message": "Diese Box existiert nicht mehr - sie wird nicht neu angelegt"
+  },
+  "dataConflictStale": {
+    "message": "Der aktuelle Inhalt hat sich nach dem Vergleich geändert - bitte die aktualisierten Unterschiede prüfen und erneut bestätigen"
+  },
+  "dataConflictNoChange": {
+    "message": "Nichts wurde geändert - die gewählten Werte entsprechen bereits Ihrem Inhalt"
+  },
+  "dataConflictApplied": {
+    "message": "$count$ Feld(er) angewendet",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "Große Box"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "Kleine Box"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "Lesezeichen"
+  },
+  "dataConflictFieldTitle": {
+    "message": "Titel"
+  },
+  "dataConflictFieldPosition": {
+    "message": "Position"
+  },
+  "dataConflictFieldSize": {
+    "message": "Größe"
+  },
+  "dataConflictFieldPinned": {
+    "message": "Angeheftet"
+  },
+  "dataConflictFieldStar": {
+    "message": "Sternmarkierung"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
   }
 }
