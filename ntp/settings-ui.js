@@ -522,8 +522,13 @@ export function initSettingsUiFacade(deps) {
       debug('Conflict comparison refreshed before apply (target changed since it was compared): ts=' + ts);
       return;
     }
-    let applied = 0;
-    for (const op of planConflictApply(fresh, state.selected)) if (writeConflictOp(op)) applied++;
+    // Count fields the user chose, not raw key writes — one adopted position sets x and y.
+    const done = new Set();
+    for (const op of planConflictApply(fresh, state.selected)) {
+      if (!writeConflictOp(op)) continue;
+      if (!done.has(op.path)) { done.add(op.path); }
+    }
+    const applied = done.size;
     conflictPanels.delete(ts);
     if (!applied) {
       conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh));

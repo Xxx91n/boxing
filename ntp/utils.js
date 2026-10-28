@@ -574,7 +574,7 @@ const CONFLICT_BOX_FIELDS = [
 ];
 const CONFLICT_BOOKMARK_FIELDS = [
   { key: 'title', kind: 'text', labelKey: 'dataConflictFieldTitle' },
-  { key: 'url', kind: 'text', labelKey: 'dataConflictFieldUrl' },
+  { key: 'url', kind: 'url', labelKey: 'dataConflictFieldUrl' },
 ];
 
 function conflictSymbolValue(bool, negate) {
@@ -613,6 +613,22 @@ function probeConflictField(cur, copy, spec, basePath) {
       writes: keys.map((k) => ({ field: k, value: Number(copy[k]) })),
     } : null;
     return { token: keys.map((k) => path + '.' + k + '=' + Number(cur[k])).join(','), entry };
+  }
+  if (spec.kind === 'url') {
+    // Every url the app itself writes goes through normalizeBookmarkUrl (popup add/edit,
+    // and the importer treats an un-normalizable url as corruption). A conflict copy can
+    // carry a url from an imported file, so adopting one has to land in the same canonical
+    // form — and a value that cannot be normalized is not adoptable at all rather than a
+    // blank or a scheme the app would refuse on the next import.
+    const adopt = normalizeBookmarkUrl(copy[field]);
+    if (!adopt) return { token: path + '=n/a', entry: null };
+    const shown = typeof copy[field] === 'string' ? copy[field] : '';
+    const curText = typeof cur[field] === 'string' ? cur[field] : '';
+    const entry = curText === shown ? null : {
+      key: spec.key, labelKey: spec.labelKey, path, current: curText, copy: shown,
+      writes: [{ field, value: adopt }],
+    };
+    return { token: path + '=' + curText, entry };
   }
   const pv = copy[field];
   if (typeof pv !== 'string') return { token: path + '=n/a', entry: null };
@@ -707,7 +723,9 @@ function planConflictApply(diff, selectedPaths) {
       for (const field of fields || []) {
         if (!selected.has(field.path)) continue;
         for (const write of field.writes) {
-          ops.push({ level, largeId: group.id, smallId: smallId || null, bmId: bmId || null, field: write.field, value: write.value });
+          // path rides along so the caller can report fields, not raw key writes: one
+          // adopted position is a field the user chose, even though it sets x and y.
+          ops.push({ path: field.path, level, largeId: group.id, smallId: smallId || null, bmId: bmId || null, field: write.field, value: write.value });
         }
       }
     };

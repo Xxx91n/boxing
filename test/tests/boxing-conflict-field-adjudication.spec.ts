@@ -21,8 +21,9 @@
 // LANES ARE NOT INTERCHANGEABLE (#53 T3): AC1-AC7 run on the file:// mock lane, the same
 // seam the ticket-79 conflict-copy readout spec uses. The real-build lane is a
 // separate describe that launches its own persistent Chromium on dist/ — a file:// pass is
-// never evidence of extension behavior and is not reported as one. Input is JS-dispatched
-// because native pointer input stalls on the firefox lane (playwright#16095 class); seeding
+// never evidence of extension behavior and is not reported as one. Input is JS-dispatched,
+// matching the sibling data-tab specs (boxing-debug, boxing-webdav) — real pointer input is
+// the native-input specs' job, not this flow. seeding
 // happens before the first navigation (addInitScript, the import-merge harness discipline).
 // Storage goes through __boxingDebug.storageGet/Set — the existing facade seam; no new
 // test-only production interface.
@@ -255,9 +256,12 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     const body = JSON.parse(await storedValue(page, 'boxingLayout.conflict.' + CONFLICT_TS));
     expect(body.raw.boxes[0].title).toBe('Cloud Root');
     expect(body.truncated).toBeUndefined();
-    // The panel says what it did, and the diff is now empty.
+    // The panel says what it did, and only the chosen field left the diff: the box's own
+    // five differences are still on the table because the user never adopted them.
     await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/Applied 1 field/);
-    expect(await fieldPaths(page)).toEqual([]);
+    expect(await fieldPaths(page)).toEqual([
+      'large:L1#title', 'large:L1#position', 'large:L1#pinned', 'large:L1#autoExpand', 'large:L1#star',
+    ]);
   });
 
   test('AC6: the star verdict goes through the mutation entry and groups stay unpersisted', async ({ page }) => {
@@ -269,11 +273,12 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     expect(await clickApply(page)).toBe(true);
 
     const after = await memoryLayout(page);
-    expect(after.boxes[0].isParent).toBe(true);              // star adopted via commit('toggleStar')
+    expect(after.boxes[0].isParent).toBe(true);              // star adopted via toggleStarMark
     expect(after.boxes[0].title).toBe('Cloud Root');         // second selected field lands too
     expect(after.boxes[0].pinned).toBe(false);               // unselected fields stay current
     const stored = JSON.parse(await storedValue(page));
-    expect(stored.groups).toEqual([]);                       // runtime mirror never persists
+    // The runtime groups mirror is stripped before persisting, so it is absent entirely.
+    expect(stored.groups).toBeUndefined();
     expect(stored.settings.selectedLanguage).toBe('en');
     // Star truth stays isParent, and the group mirror is derived, not authored.
     expect(await page.evaluate(() => (window as any).__boxingDebug.state().boxes)).toBe(2);
@@ -324,7 +329,7 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     await bootFileLane(page, archivedEntry());
 
     // AC5: comparing and closing is read-only — none of the user's data moves.
-    const bytesBefore = await storedData(page);
+    const dataBefore = await storedData(page);
     await openCompare(page);
     expect(await confirmModalHidden(page)).toBe(true);
     await closeCompare(page);
@@ -450,7 +455,7 @@ test.describe('Issue #54 — golden path in the real Chrome extension build', ()
       expect(stored.boxes[0].children[0].bookmarks[0].url).toBe('https://cloud.test/b1');
       expect(stored.boxes[0].x).toBe(40);                    // unselected fields unchanged
       expect(stored.boxes[1].title).toBe('Other Root');
-      expect(stored.groups).toEqual([]);
+      expect(stored.groups).toBeUndefined();                 // runtime mirror never persists
       // Applying kept the archive: still one index row, still the verbatim body.
       expect(JSON.parse(await storedValue(page, 'boxingLayout.conflict.index'))).toHaveLength(1);
       const body = JSON.parse(await storedValue(page, 'boxingLayout.conflict.' + CONFLICT_TS));
