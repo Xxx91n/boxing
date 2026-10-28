@@ -312,10 +312,31 @@ function paintFaviconPixel(img, host, pixel) {
 function applyDecodedFavicon(img, host, src) {
   const probe = new Image();
   probe.src = src;
-  probe.decode().then(() => paintProbeImage(img, host, probe)).catch(() => {
+  return probe.decode().then(() => {
+    paintProbeImage(img, host, probe);
+    return true;
+  }).catch(() => {
     img.classList.remove('is-loading');
     img.style.display = 'none';
+    return false;
   });
+}
+
+// Start the capture only after the row's own image has settled. A fetch racing the display
+// load for the same URL can make a delayed response skip the decoded-image cache and leave
+// the row incomplete, so the accelerator waits (bounded) instead of competing with the paint.
+function scheduleFaviconCapture(img, host, url) {
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    clearTimeout(fallback);
+    captureFaviconPixelOnce(host, url);
+  };
+  const fallback = setTimeout(start, 3000);
+  if (img.complete) { setTimeout(start, 0); return; }
+  img.addEventListener('load', start, { once: true });
+  img.addEventListener('error', start, { once: true });
 }
 
 async function loadFavicon(img, url, opts) {
@@ -422,10 +443,12 @@ async function loadFavicon(img, url, opts) {
     // the URL path keeps its existing hide-on-failure behaviour.
     if (!(img.src && img.src.startsWith('data:image/'))) img.style.display = 'none';
   } else {
-    applyDecodedFavicon(img, host, winner);
-    // Detached on purpose: capture never gates the paint that just happened, and a
-    // failed or refused capture leaves the URL display exactly as it was.
-    captureFaviconPixelOnce(host, winner);
+    // Detached on purpose: capture starts after the display image settles, never gates it,
+    // and a failed or refused capture leaves the URL display exactly as it was.
+    applyDecodedFavicon(img, host, winner).then((painted) => {
+      if (painted) scheduleFaviconCapture(img, host, winner);
+      else captureFaviconPixelOnce(host, winner);
+    });
   }
 }
 
