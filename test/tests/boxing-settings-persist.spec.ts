@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { chromium, expect, test } from '@playwright/test';
+import fs from 'fs';
+import os from 'os';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import { dismissOnboarding } from '../helpers/onboarding';
@@ -701,5 +703,153 @@ test.describe('dark mode has one host and one apply path', () => {
     });
     expect(r.setting).toBe('dark');
     expect(r.persisted).toBe('dark');
+  });
+});
+
+// Issue #60 (spec #53 T3): every case above runs on the file:// mock lane. That lane
+// proves the product logic but is NOT extension evidence — the Playwright projects are
+// named "*-extension" while these pages are plain file:// documents, which is exactly
+// the substitution the ticket forbids. The describe below drives the same confirmed
+// control surface (#dark-mode-group radios, #dark-mode-btn quick toggle) inside the
+// ACTUAL built extension, on the seam ticket-54's AC-real lane opened: its own persistent
+// Chromium over dist/boxing-chrome with a throwaway profile, real chrome.storage.local
+// bytes, the OS theme value emulated at context launch so the first tab already paints
+// with it, and a browser close/reopen between the two sessions so "the OS changed while
+// Boxing was closed" is a real restart instead of an in-page media flip. It skips visibly
+// when the build is absent and never falls back to the file:// page.
+// The recorder is the __darkTrace shape this file already uses: every write to the
+// ntp--dark token, with the resulting state and whether hydration had taken over yet.
+// Mask timing and boot-variable witnesses stay in boxing-boot-pending.spec.ts.
+test.describe('Issue #60 — three-state theme in the real Chrome extension build', () => {
+  const BOOT_MIRROR = 'boxingBootTheme.v1';
+  const DIST_CHROME = path.resolve(__dirname, '..', '..', 'dist', 'boxing-chrome');
+
+  function darkTraceRecorder(): void {
+    const w = window as any;
+    w.__darkTrace = [];
+    for (const op of ['add', 'remove', 'toggle'] as const) {
+      const orig = DOMTokenList.prototype[op];
+      DOMTokenList.prototype[op] = function (...tokens: string[]) {
+        const res = (orig as any).apply(this, tokens);
+        const root = document.documentElement;
+        if (root && this === root.classList && tokens.indexOf('ntp--dark') !== -1) {
+          w.__darkTrace.push({
+            op,
+            on: root.classList.contains('ntp--dark'),
+            booted: Boolean(w.__boxingDebug),
+          });
+        }
+        return res;
+      };
+    }
+  }
+
+  const launch = (profile: string, scheme: 'light' | 'dark') =>
+    chromium.launchPersistentContext(profile, {
+      headless: false,
+      colorScheme: scheme,
+      args: [
+        `--load-extension=${DIST_CHROME}`,
+        `--disable-extensions-except=${DIST_CHROME}`,
+        '--no-first-run',
+        '--no-default-browser-check',
+      ],
+    });
+
+  async function openExtensionTab(ctx) {
+    const page = await ctx.newPage();
+    await page.goto('chrome://newtab', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    // Lane proof: the page is served by the extension, not from disk.
+    expect(page.url()).toContain('chrome-extension://');
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageSet)),
+      { timeout: 30000 }).toBe(true);
+    // Gates on init() settling its first-run decision, so every real click below lands
+    // after the settings listeners are bound (the macOS race recorded in issue #54).
+    await dismissOnboarding(page);
+    return page;
+  }
+
+  const darkTrace = (page) => page.evaluate(() => (window as any).__darkTrace || []);
+  const appliedDark = (page) => page.evaluate(() => document.documentElement.classList.contains('ntp--dark'));
+  const livePref = (page) => page.evaluate(() => (window as any).__boxingDebug.layout.settings.darkMode);
+
+  // The bytes the extension persisted itself: the layout through the storage facade
+  // (chrome.storage.local in this lane) and the first-paint cache beside it.
+  const persisted = (page) => page.evaluate(async (mirrorKey) => {
+    const dbg = (window as any).__boxingDebug;
+    const stored = await dbg.storageGet('boxingLayout');
+    let mirror = null;
+    try { mirror = JSON.parse(localStorage.getItem(mirrorKey) || 'null'); } catch (_) { mirror = null; }
+    return { pref: stored?.boxingLayout?.settings?.darkMode, mirrorPref: mirror?.darkMode };
+  }, BOOT_MIRROR);
+
+  async function openAppearance(page) {
+    await page.click('#settings-btn', { timeout: 15000 });
+    await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 15000 });
+    await page.click('.settings-nav__item[data-tab="appearance"]', { timeout: 15000 });
+    await expect(page.locator('#dark-mode-group')).toBeVisible({ timeout: 15000 });
+  }
+
+  test('AC-real: first paint, the three-state control, quick toggle and the persisted preference in dist/boxing-chrome', async ({}, testInfo) => {
+    test.setTimeout(240000);
+    test.skip(testInfo.project.name !== 'chromium-extension', 'the loaded build is a chromium lane');
+    test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
+      'dist/boxing-chrome is not built - run npm run build first');
+
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-issue60-ext-'));
+    let ctx = null;
+    try {
+      // Session 1 — OS dark, nothing stored yet. boot-theme has no mirror, so the real
+      // build must fall back to the live OS at first paint and then let hydration apply
+      // the authoritative default (light) without ever persisting the OS value.
+      ctx = await launch(profile, 'dark');
+      await ctx.addInitScript(darkTraceRecorder);
+      let page = await openExtensionTab(ctx);
+      let trace = await darkTrace(page);
+      expect(trace.find((t) => t.on === true && t.booted === false),
+        'boot-theme must fall back to prefers-color-scheme when the mirror is absent').toBeTruthy();
+      expect(trace.find((t) => t.on === false && t.booted === true),
+        'loadSettings must re-apply the authoritative setting after the boot fallback').toBeTruthy();
+      await expect.poll(() => appliedDark(page), { timeout: 15000 }).toBe(false);
+      await expect.poll(() => livePref(page), { timeout: 15000 }).toBe('light');
+
+      // Follow system through the real control: the page goes dark with the live OS, and
+      // what lands in chrome.storage.local + the first-paint cache is the preference.
+      await openAppearance(page);
+      await page.click('#dark-mode-group input[value="system"]', { timeout: 15000 });
+      await expect.poll(() => appliedDark(page), { timeout: 15000 }).toBe(true);
+      await expect.poll(async () => (await persisted(page)).pref, { timeout: 15000 }).toBe('system');
+      // The mirror rides the same persist path but is written after the storage write,
+      // so it is polled rather than read once.
+      await expect.poll(async () => (await persisted(page)).mirrorPref, { timeout: 15000,
+        message: 'the first-paint cache stores the preference, never the resolved OS value' }).toBe('system');
+      await ctx.close();
+      ctx = null;
+
+      // Session 2 — same profile, OS light. The stored preference is 'system', so first
+      // paint resolves the NEW OS value; a cache that had kept the last displayed dark
+      // would show up here as an early on:true.
+      ctx = await launch(profile, 'light');
+      await ctx.addInitScript(darkTraceRecorder);
+      page = await openExtensionTab(ctx);
+      trace = await darkTrace(page);
+      expect(trace.some((t) => t.on === true && t.booted === false),
+        'a tab opened after the OS changed must not replay the previous OS value').toBe(false);
+      expect(trace.find((t) => t.on === false && t.booted === false),
+        'boot-theme must resolve the stored system preference against the live OS').toBeTruthy();
+      await expect.poll(() => appliedDark(page), { timeout: 15000 }).toBe(false);
+      await expect.poll(async () => (await persisted(page)).pref, { timeout: 15000 }).toBe('system');
+
+      // The quick toggle exits follow-system by making an explicit choice — the opposite
+      // of the effective light state — so the page goes dark while the OS stays light.
+      await page.click('#dark-mode-btn', { timeout: 15000 });
+      await expect.poll(() => appliedDark(page), { timeout: 15000 }).toBe(true);
+      await expect.poll(async () => (await persisted(page)).pref, { timeout: 15000 }).toBe('dark');
+      await expect.poll(async () => (await persisted(page)).mirrorPref, { timeout: 15000,
+        message: 'the cache keeps the explicit choice' }).toBe('dark');
+    } finally {
+      if (ctx) await ctx.close().catch(() => { /* lane teardown is best-effort */ });
+      fs.rmSync(profile, { recursive: true, force: true });
+    }
   });
 });
