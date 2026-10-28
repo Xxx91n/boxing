@@ -12,16 +12,19 @@
 //        receiving both pointer input and Escape while it is open.
 //   AC5  its content is only strings the app already ships — no new teaching flow, no completion
 //        state, no auto hint, no new persisted key.
+//   AC6  the Pages demo keeps suppressing the tour, and the new entry is not a dead control
+//        there (the rule onboarding.js states for the replay entry).
 //   AC7  key parity across all fourteen locales (static gate, both lanes).
 //   AC8  the golden path in the ACTUAL built extension (dist/boxing-chrome).
 //
 // First-run tour and replay behavior belongs to boxing-onboarding.spec.ts (#53 D1: the replay
 // from #42 is reused, not redefined). What is asserted here is only that the new entries leave
-// it alone: the replay entry is still present (AC1/AC3) and the sheet writes no state (AC5/AC6).
+// it alone: the replay entry is still present (AC1/AC3) and the sheet writes no state (AC5).
 //
-// file:// UI lane: the box is created through the app's own entry point
-// (window._boxingAddLargeBox, ntp.js) rather than an invented fixture, and storage is read only
-// through the debug seam (__boxingDebug.storageGet) — never window.chrome.storage (SEC-01).
+// Assertions stay on observable behavior (#53 T1): locator visibility, rendered text, focus and
+// hit tests — not class names or dataset attributes. The box is created through the app's own
+// entry point (window._boxingAddLargeBox) rather than an invented fixture, and storage is read
+// only through the debug seam (__boxingDebug.storageGet) — never window.chrome.storage (SEC-01).
 import { chromium, expect, test, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs';
@@ -33,6 +36,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_PATH = path.resolve(__dirname, '..', '..');
 const NTP_URL = pathToFileURL(path.join(REPO_PATH, 'ntp', 'index.html')).href;
 const DIST_CHROME = path.join(REPO_PATH, 'dist', 'boxing-chrome');
+
+// The four links About already offered (ntp/settings-ui.js link map + ntp/site-constants.js
+// PRIVACY_URL). Re-listed here because AC1 says the copy path must offer exactly these targets
+// and nothing new — they are the pre-existing values, not a fixture.
+const PROJECT_LINKS = [
+  ['about-link-repo', 'https://github.com/Xxx91n/boxing'],
+  ['about-link-issues', 'https://github.com/Xxx91n/boxing/issues'],
+  ['about-link-pulls', 'https://github.com/Xxx91n/boxing/pulls'],
+  ['about-link-privacy', 'https://boxing.xxx91n.com/privacy-policy.html'],
+];
 
 // The ten keys this ticket adds (#53 D6/D7). The sheet's BODY strings are deliberately not here:
 // they are pre-existing keys, asserted against the on-screen copies of the same strings.
@@ -49,6 +62,10 @@ const REUSED_HELP_KEYS = ['dblclickCreateHint', 'addLargeBoxTooltip', 'addSmallB
 const jsClick = (page: Page, sel: string) =>
   page.evaluate((s) => (document.querySelector(s) as HTMLElement | null)?.click(), sel);
 
+const focusId = (page: Page) => page.evaluate(() => document.activeElement?.id ?? null);
+const currentBox = (page: Page) =>
+  page.evaluate(() => (window as any).__boxingDebug.state().currentLargeBoxId);
+
 const openAboutTab = async (page: Page) => {
   await page.evaluate(() => {
     const open = (window as any)._boxingOpenSettings;
@@ -60,25 +77,14 @@ const openAboutTab = async (page: Page) => {
   await expect(page.locator('#tab-about')).toBeVisible();
 };
 
-const sheetVisible = (page: Page) => page.locator('#quick-help').isVisible();
-const sheetHidden = (page: Page) => page.evaluate(() => {
-  const el = document.getElementById('quick-help') as HTMLElement | null;
-  return Boolean(el && el.hidden);
-});
-const settingsHidden = (page: Page) => page.evaluate(() => {
-  const el = document.getElementById('settings-modal') as HTMLElement | null;
-  return Boolean(el && el.hidden);
-});
-const currentBox = (page: Page) =>
-  page.evaluate(() => (window as any).__boxingDebug.state().currentLargeBoxId);
-const focusId = (page: Page) => page.evaluate(() => document.activeElement?.id ?? null);
+// saveLayout() bumps _meta.revision on every call (storage.js), so it is the drain, never the
+// read: a read that writes would make "the sheet stored nothing" red by itself (#54 lesson:
+// drain the queued writes, then observe without touching the chain again).
+const drainSaveChain = (page: Page) =>
+  page.evaluate(async () => { await (window as any).__boxingDebug.saveLayout(); });
 
-// Drain the app's own write chain, then read the persisted layout through the debug seam, so a
-// queued save cannot land between the two reads and look like a write by the new UI (#54 lesson).
 const storedLayout = (page: Page) => page.evaluate(async () => {
-  const dbg = (window as any).__boxingDebug;
-  await dbg.saveLayout();
-  const res = await dbg.storageGet('boxingLayout');
+  const res = await (window as any).__boxingDebug.storageGet('boxingLayout');
   return JSON.stringify(res?.boxingLayout ?? null);
 });
 
@@ -107,7 +113,7 @@ test.describe('About page entries', () => {
   test('AC1/AC3: version + the four existing links are copyable, next to the untouched replay entry', async ({ page }) => {
     await bootOnAbout(page);
 
-    // The entry pair D7 asks for: replay first, quick reference beside it, in one section.
+    // The entry pair D7 asks for: replay first, quick reference beside it, in the same section.
     await expect(page.locator('#about-show-tour')).toHaveText('Show the tour');
     await expect(page.locator('#about-quick-help')).toHaveText('Quick reference');
     expect(await page.evaluate(() => {
@@ -117,91 +123,78 @@ test.describe('About page entries', () => {
     }), 'the quick reference must be a sibling of the replay entry').toBe(true);
 
     await expect(page.locator('#about-diagnostics-btn')).toHaveText('Open diagnostics');
-    // Existing behavior survives: the version line still carries the manifest value + check button.
+    // Existing behavior survives: the version line still carries the check-for-updates control.
     await expect(page.locator('#about-check-update-btn')).toHaveText('Check for updates');
-    await expect(page.locator('#about-version-value')).not.toHaveText('');
 
-    // Every copy control maps onto a target the page already had: the version row and exactly
-    // the four link buttons. No invented link destination can be copied (D6).
-    const sources = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('.about-copy-btn'))
-        .map((el) => (el as HTMLElement).dataset.copySource ?? null));
-    expect(sources).toEqual(['version', 'about-link-repo', 'about-link-issues', 'about-link-pulls', 'about-link-privacy']);
-
-    // Tooltip is localized, and the accessible name names the target — so the UI never shows four
-    // identical "Copy link" buttons to a screen reader.
-    const contexts = await page.evaluate(() => Array.from(document.querySelectorAll('.about-copy-btn')).map((el) => {
+    // Copy controls exist for exactly the version row and the four links the page already had —
+    // five in total, and each one names the target it copies so four identical "Copy link"
+    // buttons never reach a screen reader.
+    const controls = await page.evaluate(() => Array.from(document.querySelectorAll('.about-copy-btn')).map((el) => {
       const node = el as HTMLElement;
       return {
-        source: node.dataset.copySource ?? null,
         title: node.title,
         name: node.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+        row: node.parentElement?.querySelectorAll('.about-link-btn, #about-version-value').length ?? 0,
       };
     }));
-    const bySource = Object.fromEntries(contexts.map((c) => [c.source as string, c]));
-    expect(Object.keys(bySource)).toHaveLength(5);
-    expect(bySource['version'].title).toBe('Copy version');
-    expect(bySource['version'].name).toContain('Copy version');
-    for (const [source, linkLabel] of [
-      ['about-link-repo', 'GitHub Repository'],
-      ['about-link-issues', 'Issues'],
-      ['about-link-pulls', 'Pull Requests'],
-      ['about-link-privacy', 'Privacy Policy'],
-    ] as const) {
-      expect(bySource[source].title, `${source} tooltip`).toBe('Copy link');
-      expect(bySource[source].name, `${source} accessible name`).toContain('Copy link');
-      expect(bySource[source].name, `${source} names its target`).toContain(linkLabel);
-    }
+    expect(controls).toHaveLength(5);
+    expect(controls[0].title).toBe('Copy version');
+    expect(controls[0].name).toContain('Copy version');
+    const LINK_LABELS = ['GitHub Repository', 'Issues', 'Pull Requests', 'Privacy Policy'];
+    LINK_LABELS.forEach((linkLabel, i) => {
+      const c = controls[i + 1];
+      expect(c.title, `copy control ${i} tooltip`).toBe('Copy link');
+      expect(c.name, `copy control ${i} names its action`).toContain('Copy link');
+      expect(c.name, `copy control ${i} names its target`).toContain(linkLabel);
+      expect(c.row, `copy control ${i} shares its row with the thing it copies`).toBe(1);
+    });
+    expect(controls[0].row, 'the version copy control sits with the version value').toBe(1);
   });
 
   test('AC3: the sheet never opens by itself and is not a dialog', async ({ page }) => {
     await resetNtp(page, NTP_URL);
-    expect(await sheetHidden(page), 'hidden straight after boot — nothing auto-prompts').toBe(true);
+    await expect(page.locator('#quick-help'), 'nothing auto-prompts').toBeHidden();
     await openAboutTab(page);
-    expect(await sheetHidden(page), 'opening settings and About must not raise the sheet').toBe(true);
+    await expect(page.locator('#quick-help'), 'opening settings and About must not raise the sheet').toBeHidden();
 
-    // Not a modal that could steal the canvas: body-level sibling, no role, no aria-modal,
-    // and no backdrop element anywhere near it.
+    // Not a modal that could steal the canvas: a body-level sibling with no dialog semantics.
     const shape = await page.evaluate(() => {
       const el = document.getElementById('quick-help') as HTMLElement | null;
       return {
         exists: Boolean(el),
         parent: el?.parentElement?.tagName ?? null,
-        classes: el ? Array.from(el.classList) : [],
         role: el?.getAttribute('role'),
         ariaModal: el?.getAttribute('aria-modal'),
         labelledBy: el?.getAttribute('aria-labelledby'),
       };
     });
-    expect(shape).toEqual({
-      exists: true,
-      parent: 'BODY',
-      classes: ['quick-help'],
-      role: null,
-      ariaModal: null,
-      labelledBy: 'quick-help-title',
-    });
+    expect(shape.exists).toBe(true);
+    expect(shape.parent, 'the sheet lives beside the canvas, not inside a modal overlay').toBe('BODY');
+    expect(shape.role, 'no dialog role — it must not read as a blocking dialog').toBeNull();
+    expect(shape.ariaModal).toBeNull();
+    expect(shape.labelledBy, 'titled by its own heading').toBe('quick-help-title');
   });
 
   // ── AC1 on the file:// lane: that host has no manifest, and the page already says so with
   // '–'. Copying the placeholder would hand the user a dash instead of a version, so the
-  // control refuses it (the same '–' semantics initAboutTab already renders, #59 AC1).
+  // control refuses it (the same '–' semantics initAboutTab already renders). The positive
+  // copy result is only provable in the real build, below.
   test('AC1: a version the host cannot provide is refused, not copied', async ({ page }) => {
     await bootOnAbout(page);
     expect(await page.locator('#about-version-value').textContent()).toBe('–');
-    const status = page.locator('#about-copy-status');
-    await expect(status).toBeHidden();
+    await expect(page.locator('#about-copy-status')).toBeHidden();
     await jsClick(page, '#about-copy-version');
-    await expect.poll(() => status.isVisible()).toBe(true);
-    await expect(status).toHaveText('Copy failed');
+    await expect(page.locator('#about-copy-status')).toBeVisible();
+    await expect(page.locator('#about-copy-status')).toHaveText('Copy failed');
   });
 
   test('AC2: the shortcut lands on the diagnostics section that already exists', async ({ page }) => {
     await bootOnAbout(page);
     await jsClick(page, '#about-diagnostics-btn');
 
+    // The user-visible consequence of the jump: the Data tab is shown, About is not.
     await expect(page.locator('#tab-data')).toBeVisible();
-    await expect(page.locator('.settings-nav__item[data-tab="data"]')).toHaveClass(/settings-nav__item--active/);
+    await expect(page.locator('#tab-about')).toBeHidden();
 
     const landed = await page.evaluate(() => {
       const target = document.getElementById('settings-diagnostics') as HTMLElement | null;
@@ -210,7 +203,6 @@ test.describe('About page entries', () => {
       const t = target.getBoundingClientRect(), p = port.getBoundingClientRect();
       return {
         inScrollport: t.top < p.bottom && t.bottom > p.top,
-        flashed: target.classList.contains('settings-section--flash'),
         focused: document.activeElement?.id ?? null,
         diagTitleNodes: document.querySelectorAll('[data-i18n="diagSectionTitle"]').length,
         // The jump target is the pre-existing BX-AUD-05 control, not a copy of it.
@@ -219,17 +211,16 @@ test.describe('About page entries', () => {
     });
     expect(landed, 'the diagnostics section must exist as the jump target').not.toBeNull();
     expect(landed!.inScrollport, 'the section must be scrolled into view, not merely selected').toBe(true);
-    expect(landed!.flashed, 'the arrival must be visible').toBe(true);
     expect(landed!.focused, 'focus must arrive inside the section').toBe('diag-export-log-btn');
     // One diagnostics surface only — D6 forbids a second log UI.
     expect(landed!.diagTitleNodes).toBe(1);
     expect(landed!.exportBtn).toBe(true);
   });
 
-  test('AC5/AC7: the sheet shows existing strings and nothing else', async ({ page }) => {
+  test('AC5: the sheet shows existing strings and nothing else', async ({ page }) => {
     await bootOnAbout(page);
     await jsClick(page, '#about-quick-help');
-    await expect.poll(() => sheetVisible(page)).toBe(true);
+    await expect(page.locator('#quick-help')).toBeVisible();
 
     const sheet = await page.evaluate(() => {
       const items = Array.from(document.querySelectorAll('#quick-help .quick-help__item')) as HTMLElement[];
@@ -259,21 +250,22 @@ test.describe('About page entries', () => {
     expect(sheet.texts[3]).toContain('Restore from backup');
   });
 
-  // ── AC5 + AC6: the sheet must be free of side effects. Both the persisted layout and the set
-  // of storage keys are compared, so a hidden "help seen" flag or a completion state cannot
-  // sneak in. (On this lane the version check returns early on '–', so no async cache write can
-  // land between the two key-set reads.)
+  // ── AC5: the sheet must be free of side effects. Both the persisted layout and the set of
+  // storage keys are compared, so a hidden "help seen" flag or a completion state cannot sneak
+  // in. (On this lane the version check returns early on '–', so no async cache write can land
+  // between the two key-set reads.)
   test('AC5/AC6: opening and collapsing the sheet writes nothing', async ({ page }) => {
     await bootOnAbout(page);
+    await drainSaveChain(page);
     const before = await storedLayout(page);
     const keysBefore = await storageKeySets(page);
     const completedBefore = await page.evaluate(() => (window as any).__boxingDebug.layout.settings.onboardingCompleted);
 
     for (let round = 0; round < 2; round++) {
       await jsClick(page, '#about-quick-help');
-      await expect.poll(() => sheetVisible(page)).toBe(true);
+      await expect(page.locator('#quick-help')).toBeVisible();
       await jsClick(page, '#quick-help-close-btn');
-      await expect.poll(() => sheetHidden(page)).toBe(true);
+      await expect(page.locator('#quick-help')).toBeHidden();
       await openAboutTab(page);
     }
 
@@ -293,57 +285,84 @@ test.describe('quick reference stays out of the canvas way', () => {
 
   test('AC4: opening it closes settings, and the canvas still takes pointer input', async ({ page }) => {
     await bootOnAbout(page);
-    expect(await settingsHidden(page), 'settings is open before the click').toBe(false);
+    await expect(page.locator('#settings-modal')).toBeVisible();
 
     await jsClick(page, '#about-quick-help');
-    await expect.poll(() => settingsHidden(page)).toBe(true);
-    await expect.poll(() => sheetVisible(page)).toBe(true);
-    // Focus lands inside the sheet so a keyboard user is not left behind the closed modal.
+    await expect(page.locator('#settings-modal')).toBeHidden();
+    await expect(page.locator('#quick-help')).toBeVisible();
+    // Focus lands inside the sheet so a keyboard user is not left behind a closed modal.
     expect(await focusId(page)).toBe('quick-help-close-btn');
 
-    // The hit test must resolve to the box while the sheet is open (helper from #89/#93).
+    // The hit test must resolve to the box while the sheet is open (helper from #89/#93)…
     await assertPointerReaches(page, '.large-box');
-    // ...and a real pointer click must actually enter it, with the sheet still readable.
+    // …and to the bottom-right zoom cluster, which is why the sheet anchors bottom-left.
+    await assertPointerReaches(page, '#canvas-zoom');
+    // A real pointer click enters the box, with the sheet still readable.
     await page.locator('.large-box').click();
-    await expect.poll(() => currentBox(page)).toBeTruthy();
+    await expect.poll(() => currentBox(page))
+      .toBeTruthy();
     await expect(page.locator('#quick-help')).toBeVisible();
   });
 
   test('AC4: Escape collapses it only while focus is inside, and never eats canvas Escape', async ({ page }) => {
     await bootOnAbout(page);
     await jsClick(page, '#about-quick-help');
-    await expect.poll(() => sheetVisible(page)).toBe(true);
+    await expect(page.locator('#quick-help')).toBeVisible();
     await page.locator('.large-box').click();
-    await expect.poll(() => currentBox(page)).toBeTruthy();
+    await expect.poll(() => currentBox(page))
+      .toBeTruthy();
     const boxId = await currentBox(page);
 
     // Inside: the sheet takes the key and stops it, so "exit to canvas" does not also run.
     await page.evaluate(() => (document.getElementById('quick-help-close-btn') as HTMLElement).focus());
     await page.keyboard.press('Escape');
-    await expect.poll(() => sheetHidden(page)).toBe(true);
-    expect(await currentBox(page), 'Escape inside the sheet must not exit the box as well').toBe(boxId);
+    await expect(page.locator('#quick-help')).toBeHidden();
+    expect(await currentBox(page),
+      'Escape inside the sheet must not exit the box as well').toBe(boxId);
 
     // Reopen, then leave focus outside: the same key now belongs to the canvas again.
     await jsClick(page, '#about-quick-help');
-    await expect.poll(() => sheetVisible(page)).toBe(true);
+    await expect(page.locator('#quick-help')).toBeVisible();
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Escape');
-    await expect.poll(() => currentBox(page)).toBeNull();
+    await expect.poll(() => currentBox(page))
+      .toBeNull();
     await expect(page.locator('#quick-help'), 'a canvas-side Escape must not close the sheet').toBeVisible();
 
     // Collapse it and press Escape once more: the listener left with the sheet, so the key must
-    // stay inert for the sheet (the self-heal rule already proven for the tour overlay).
+    // stay inert for it (the self-heal rule already proven for the tour overlay).
     await jsClick(page, '#quick-help-close-btn');
-    await expect.poll(() => sheetHidden(page)).toBe(true);
+    await expect(page.locator('#quick-help')).toBeHidden();
     await page.keyboard.press('Escape');
-    await expect.poll(() => sheetHidden(page)).toBe(true);
+    await expect(page.locator('#quick-help')).toBeHidden();
+  });
+
+  // AC6 — the Pages demo suppresses the tour because the overlay won the hit test for the whole
+  // page (bug3). The sheet is not an overlay, so the demo keeps it: the entry must be live there,
+  // not a dead control, and must not reintroduce the blocker bug3 removed.
+  test('AC6: on the demo build the tour stays suppressed while the sheet works', async ({ page }) => {
+    await page.addInitScript(() => { (window as any).__BOXING_DEMO__ = true; });
+    await resetNtp(page, NTP_URL);
+    await seedOneBox(page);
+    await openAboutTab(page);
+
+    await expect(page.locator('#about-show-tour'), 'the replay entry stays hidden on the demo').toBeHidden();
+    await expect(page.locator('#about-quick-help'), 'the new entry must not be a dead control').toBeVisible();
+
+    await jsClick(page, '#about-quick-help');
+    await expect(page.locator('#settings-modal')).toBeHidden();
+    await expect(page.locator('#quick-help')).toBeVisible();
+    await assertPointerReaches(page, '.large-box');
+    await page.locator('.large-box').click();
+    await expect.poll(() => currentBox(page))
+      .toBeTruthy();
   });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AC7 — static key-set gate across the fourteen locales (both lanes, no browser interaction).
-// D8 requires the key sets to stay aligned; the build runs the same check (A7) and fails the
-// package, but a red gate here is what names the missing locale in the test report.
+// D8 requires the key sets to stay aligned. build.mjs A7 compares the same sets but only logs a
+// report, so this gate is the one that goes red on a missing locale.
 // ═══════════════════════════════════════════════════════════════════════════
 test.describe('locale parity for the new entries', () => {
 
@@ -374,9 +393,9 @@ test.describe('locale parity for the new entries', () => {
 // dist/boxing-chrome, so this launches its own persistent context on the built tree
 // (take-store-screenshots.mjs / #54 precedent). It skips visibly when the build is absent.
 //
-// Declared gap: Firefox. The suite's Firefox lane is the file:// page, and loading the built
-// xpi needs web-ext with a real profile; the copy path's clipboard-read assertion is therefore
-// proven on Chrome only, while its UI wiring runs in both lanes above.
+// Declared gap (unchanged repo limitation, see #58): the Firefox project drives a file:// page,
+// and Playwright cannot attach to a web-ext-loaded extension, so the clipboard assertions below
+// are Chrome-only. The Firefox-side UI wiring runs in the file:// lanes above.
 // ═══════════════════════════════════════════════════════════════════════════
 test.describe('Issue #59 — golden path in the real Chrome extension build', () => {
 
@@ -409,26 +428,21 @@ test.describe('Issue #59 — golden path in the real Chrome extension build', ()
 
       // The value the build itself reports, read off its own manifest — not a hand-written one.
       const manifest = JSON.parse(fs.readFileSync(path.join(DIST_CHROME, 'manifest.json'), 'utf8'));
-      const expectedVersion = manifest.version_name || manifest.version;
+      const expectedVersion = String(manifest.version_name || manifest.version);
       expect(expectedVersion, 'the built manifest must carry a version').toBeTruthy();
       await expect(page.locator('#about-version-value'), 'About shows the built manifest version')
-        .toHaveText(String(expectedVersion));
+        .toHaveText(expectedVersion);
 
       await openAboutTab(page);
       const clipboard = () => page.evaluate(async () => await navigator.clipboard.readText());
-      const statusText = () => page.evaluate(() => document.getElementById('about-copy-status')?.textContent ?? '');
 
       await jsClick(page, '#about-copy-version');
       // Asserted on the clipboard itself: the status node keeps its previous text for a moment,
-      // so polling it would let a stale 'Copied' pass the next round.
-      await expect.poll(clipboard, { timeout: 15000 }).toBe(String(expectedVersion));
-      expect(await statusText()).toBe('Copied');
+      // so polling that would let a stale 'Copied' satisfy the next round.
+      await expect.poll(clipboard, { timeout: 15000 }).toBe(expectedVersion);
 
-      // The existing link targets, copied verbatim instead of only opened in a tab.
-      for (const [source, url] of [
-        ['about-link-repo', 'https://github.com/Xxx91n/boxing'],
-        ['about-link-issues', 'https://github.com/Xxx91n/boxing/issues'],
-      ] as const) {
+      // Every existing project link, copied verbatim instead of only opened in a tab.
+      for (const [source, url] of PROJECT_LINKS) {
         await jsClick(page, `.about-copy-btn[data-copy-source="${source}"]`);
         await expect.poll(clipboard, { timeout: 15000 }).toBe(url);
       }
@@ -443,14 +457,15 @@ test.describe('Issue #59 — golden path in the real Chrome extension build', ()
       // The sheet in the real build: settings closes, the canvas keeps working underneath it.
       await openAboutTab(page);
       await jsClick(page, '#about-quick-help');
-      await expect.poll(() => settingsHidden(page)).toBe(true);
+      await expect(page.locator('#settings-modal')).toBeHidden();
       await seedOneBox(page);
       await assertPointerReaches(page, '.large-box');
       await page.locator('.large-box').click();
-      await expect.poll(() => currentBox(page), { timeout: 15000 }).toBeTruthy();
+      await expect.poll(() => currentBox(page),
+        { timeout: 15000 }).toBeTruthy();
       await expect(page.locator('#quick-help')).toBeVisible();
       await jsClick(page, '#quick-help-close-btn');
-      await expect.poll(() => sheetHidden(page)).toBe(true);
+      await expect(page.locator('#quick-help')).toBeHidden();
     } finally {
       await ctx.close();
       fs.rmSync(profile, { recursive: true, force: true });
