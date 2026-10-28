@@ -18,7 +18,6 @@ const DIST_CHROME = path.resolve(__dirname, '..', '..', 'dist', 'boxing-chrome')
 const DIST_FIREFOX = path.resolve(__dirname, '..', '..', 'dist', 'boxing-firefox');
 
 const FIXTURE_HOST = 'pixel-fixture.test';
-const FIXTURE_URL = `https://${FIXTURE_HOST}/page`;
 const CDN_URL = `https://icons.duckduckgo.com/ip3/${FIXTURE_HOST}.ico`;
 const EXTERNAL_FAVICON_RE = /https:\/\/(ico\.bytecook\.io|icons\.duckduckgo\.com|www\.google\.com|favicon\.im)\//;
 const PIXEL_KEY = 'boxingFaviconPixels.v1';
@@ -209,6 +208,9 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
       // The probe really did succeed; only the capture's response was bad.
       await expect.poll(async () => (await readStore(page, URL_KEY))?.entries?.[FIXTURE_HOST]?.url, { timeout: 20000 }).toBe(CDN_URL);
       await expect.poll(() => capture!.fetches, { timeout: 15000 }).toBeGreaterThan(0);
+      // Outlast the 400 ms pixel-persist debounce, so a build that wrongly accepted this
+      // response would have had time to write it and fail here.
+      await page.waitForTimeout(800);
       expect((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]).toBeUndefined();
       expect((await rowState(page)).src).toContain('icons.duckduckgo.com');
     });
@@ -540,6 +542,7 @@ test.describe('#58 favicon pixel layer — real Chrome build restart', () => {
           body: PNG_1x1,
         }),
       );
+      await page.route(`https://${FIXTURE_HOST}/**`, (route) => route.abort());
       await page.goto('chrome://newtab', { waitUntil: 'domcontentloaded', timeout: 30000 });
       await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.loadFavicon)), { timeout: 30000 }).toBe(true);
       expect(page.url()).toContain('chrome-extension://');
