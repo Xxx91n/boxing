@@ -336,15 +336,15 @@ async function loadFavicon(img, url, opts) {
     const entry = faviconCache.get(host);
     const pixel = faviconPixels.get(host);
     // #58: a usable pixel paints first and returns; a missing or failing pixel falls through
-    // to the URL cache. A negative probe NEWER than the pixel outranks it — never resurrect an
-    // icon a later probe failed to confirm — while a newer pixel still outranks an old miss.
-    // The 7d/90d SWR clock decides when a painted pixel is refreshed; capture is detached.
-    const missNewerThanPixel = !!(pixel && entry && entry.url === null && Number(entry.ts) >= pixel.ts);
-    if (pixel && !missNewerThanPixel) {
+    // to the URL cache. A negative URL entry governs re-probing, not the pixel's own success
+    // window — one failed offline revalidation must not blank a pixel that is still inside its
+    // 90-day ceiling. The 7d/90d clock decides when a painted pixel is refreshed, and capture
+    // is detached from this paint.
+    if (pixel) {
       if (Date.now() - pixel.ts <= FAV_HIT_SWR_TTL && await paintFaviconPixel(img, host, pixel)) {
-        // Refresh off the newer of the pixel and the URL hit: a probe that refreshed the URL
-        // entry must not trigger another full probe just because its capture was refused.
-        const refreshedAt = Math.max(pixel.ts, entry && entry.url !== null ? entry.ts : 0);
+        // Refresh off the newer of the pixel and the URL entry (a negative refresh still
+        // spaces probes out): a refused capture must not add a probe on every load.
+        const refreshedAt = Math.max(pixel.ts, entry ? Number(entry.ts) : 0);
         if (Date.now() - refreshedAt > FAV_HIT_TTL && !inflight.has(host)) {
           loadFavicon(img, url, { background: true });
         }

@@ -285,29 +285,36 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     expect(raw.length).toBeLessThanOrEqual(1024 * 1024);
   });
 
-  test('a negative probe newer than the pixel outranks it', async ({ page }) => {
-    const now = Date.now();
-    await boot(page, {
-      seed: (p) => seedStores(p, {
-        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 60_000 } },
-        urls: { [FIXTURE_HOST]: { url: null, ts: now } },
-      }),
-    });
-    await seedAndEnterSmallBox(page);
-    // A later probe found no source; the pixel must not resurrect an icon.
-    await expect.poll(async () => (await rowState(page)).display, { timeout: 5000 }).toBe('none');
-    expect((await rowState(page)).cached).toBe(false);
-  });
-
-  test('a pixel newer than an old negative entry still paints', async ({ page }) => {
+  test('a negative URL entry does not suppress a valid pixel', async ({ page }) => {
     const now = Date.now();
     await boot(page, {
       seed: (p) => seedStores(p, {
         pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 5 * 24 * 3600 * 1000 } },
-        urls: { [FIXTURE_HOST]: { url: null, ts: now - 100 * 24 * 3600 * 1000 } },
+        urls: { [FIXTURE_HOST]: { url: null, ts: now } },
       }),
     });
     await seedAndEnterSmallBox(page);
+    // A miss governs re-probing; the pixel's own 90-day ceiling governs painting.
+    await expectRowPainted(page);
+    expect((await rowState(page)).src.startsWith(PIXEL_PREFIX)).toBe(true);
+  });
+
+  test('an offline revalidation failure does not blank the pixel on the next load', async ({ page }) => {
+    const now = Date.now();
+    await boot(page, {
+      seed: (p) => seedStores(p, {
+        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 8 * 24 * 3600 * 1000 } },
+      }),
+    });
+    await seedAndEnterSmallBox(page);
+    await expectRowPainted(page);
+    // The failed background probe records a fresh miss.
+    await expect.poll(async () => (await readStore(page, URL_KEY))?.entries?.[FIXTURE_HOST]?.url, { timeout: 20000 }).toBe(null);
+    await page.evaluate(() => (window as any).__boxingDebug.saveLayout());
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 15000 }).toBe(true);
+    await dismissOnboarding(page);
+    await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
     await expectRowPainted(page);
     expect((await rowState(page)).src.startsWith(PIXEL_PREFIX)).toBe(true);
   });
