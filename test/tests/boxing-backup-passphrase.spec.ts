@@ -330,9 +330,15 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect((await passphraseDialogState(page)).open).toBe(false);
     expect(await downloadCount(page)).toBe(0);
 
-    // focus goes in with the dialog and comes back out to the opener (a real click would have
-    // left it on the export button; the harness clicks programmatically, so it is set here)
+    // focus goes in with the dialog and comes back out to the opener. Reaching the button the
+    // way a user does matters here: a display:none subtree swallows focus(), so the panel must
+    // be open on the data tab before it can be focused and handed back.
+    await click(page, '#settings-btn');
+    await expect.poll(() => page.evaluate(() => !document.getElementById('settings-modal')!.hidden), { timeout: 10000 }).toBe(true);
+    await click(page, '.settings-nav__item[data-tab="data"]');
+    await expect.poll(() => page.evaluate(() => !document.getElementById('tab-data')!.hidden), { timeout: 10000 }).toBe(true);
     await page.evaluate(() => (document.getElementById('export-data-btn') as HTMLElement).focus());
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe('export-data-btn');
     await click(page, '#export-data-btn');
     await expect.poll(() => page.evaluate(() => !document.getElementById('passphrase-modal')!.hidden), { timeout: 15000 }).toBe(true);
     expect(await page.evaluate(() => document.activeElement?.id)).toBe('passphrase-input');
