@@ -492,6 +492,13 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     await expect.poll(() => alerts(page), { timeout: 20000 }).toMatch(/too large/i);
     expect((await passphraseDialogState(page)).open).toBe(false);
     expect(await titles(page)).toEqual(['Too Fat To Seal']);
+
+    // the same refusal once a FULL package has dropped every snapshot body it could trim
+    await setEncryptOption(page, true);
+    await click(page, '#export-full-dr-btn');
+    await typePassphrase(page, 'refuse-me-too', 'refuse-me-too');
+    await expect.poll(() => alerts(page), { timeout: 30000 }).toMatch(/too large to encrypt/i);
+    expect(await downloadCount(page)).toBe(1); // only the plain export above ever downloaded
     expect(errors).toEqual([]);
     await context.close();
   });
