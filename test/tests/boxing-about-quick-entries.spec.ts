@@ -399,7 +399,13 @@ test.describe('quick reference stays out of the canvas way', () => {
   // not a dead control, and must not reintroduce the blocker bug3 removed.
   test('AC6: on the demo build the tour stays suppressed while the sheet works', async ({ page }) => {
     await page.addInitScript(() => { (window as any).__BOXING_DEMO__ = true; });
-    await resetNtp(page, NTP_URL);
+    // Not resetNtp(): its dismissOnboarding() gates on init() having made a tour decision, and on
+    // the demo there is no decision to settle — suppression returns before the overlay is touched.
+    // Same boot the existing demo case in boxing-onboarding.spec.ts uses.
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
     await seedOneBox(page);
     await openAboutTab(page);
 
@@ -413,6 +419,9 @@ test.describe('quick reference stays out of the canvas way', () => {
     await page.locator('.large-box').click();
     await expect.poll(() => currentBox(page))
       .toBeTruthy();
+    // The card is still not a blocker behind the wheel: dismissing it is one click.
+    await jsClick(page, '#quick-help-close-btn');
+    await expect(page.locator('#quick-help')).toBeHidden();
   });
 });
 
