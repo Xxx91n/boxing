@@ -1035,6 +1035,71 @@
   "aboutViewReleases": {
     "message": "릴리스 보기"
   },
+  "dataConflictCompareBtn": {
+    "message": "비교"
+  },
+  "dataConflictDiffHeading": {
+    "message": "현재 내용과의 차이"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "현재 유지"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "사본 채택"
+  },
+  "dataConflictApplyBtn": {
+    "message": "선택 적용"
+  },
+  "dataConflictNoDiffs": {
+    "message": "편집 가능한 항목에 차이가 없습니다"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "보관 사본이 없거나 잘려 있어 적용할 수 없습니다"
+  },
+  "dataConflictTargetMissing": {
+    "message": "이 박스는 더 이상 존재하지 않으니 다시 만들어지지 않습니다"
+  },
+  "dataConflictStale": {
+    "message": "비교 이후 현재 내용이 변경되었습니다. 새로 바뀐 차이를 확인하고 다시 확정하세요"
+  },
+  "dataConflictNoChange": {
+    "message": "변경되지 않았습니다 - 선택한 값이 이미 현재 내용과 같습니다"
+  },
+  "dataConflictApplied": {
+    "message": "$count$개 항목을 적용했습니다",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "큰 박스"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "작은 박스"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "북마크"
+  },
+  "dataConflictFieldTitle": {
+    "message": "제목"
+  },
+  "dataConflictFieldPosition": {
+    "message": "위치"
+  },
+  "dataConflictFieldSize": {
+    "message": "크기"
+  },
+  "dataConflictFieldPinned": {
+    "message": "고정됨"
+  },
+  "dataConflictFieldStar": {
+    "message": "별 표시"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
+  },
   "dataConflictDeleteBtn": {
     "message": "삭제",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

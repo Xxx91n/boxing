@@ -82,6 +82,10 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **safe copy** — The verbatim payload of a conflict copy, written into the snapshot subsystem as its own `snap.guard.v1.<ts>` key (metadata in `snap.guard.v1.index`) before that archive is deleted, and re-inserted into the conflict store on its own to restore it. Never a layout snapshot: it stays out of `snap.v1.index`, so Time Machine listing and layout restore never receive it. Rotation runs on its own namespace — the snapshots' 2MB/8MB ceilings plus the conflict store's own count cap, with tier dedup off — so a safe copy is bounded and can be pruned; it is not promised to survive forever, and it is not a recycle bin.
 
+**conflict field path** — Address of one adjudicable field inside a conflict comparison: the object's box key (plus the bookmark id for bookmark fields) and the field-group name, joined with `#` — `large:L1#title`, `small:L1:S1:bm1#url`. It is a UI address only; it never becomes a stored id.
+
+**staleness signature** — Fingerprint of the current side of a conflict comparison, taken when the user saw the diff. Applying re-compares and refuses when the signature moved, so an unreviewed verdict can never overwrite a later edit.
+
 **autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
 
 **MAX_SNAPSHOT_COUNT** — Hard ceiling of 30 snapshots; older snapshots are physically deleted beyond it.

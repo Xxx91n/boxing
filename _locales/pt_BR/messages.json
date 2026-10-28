@@ -1035,6 +1035,71 @@
   "aboutViewReleases": {
     "message": "Ver lançamentos"
   },
+  "dataConflictCompareBtn": {
+    "message": "Comparar"
+  },
+  "dataConflictDiffHeading": {
+    "message": "Diferenças em relação ao conteúdo atual"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "Manter o atual"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "Adotar a cópia"
+  },
+  "dataConflictApplyBtn": {
+    "message": "Aplicar a seleção"
+  },
+  "dataConflictNoDiffs": {
+    "message": "Nenhuma diferença nos campos editáveis"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "A cópia arquivada está ausente ou truncada - nada pode ser aplicado"
+  },
+  "dataConflictTargetMissing": {
+    "message": "Esta caixa não existe mais - ela não será recriada"
+  },
+  "dataConflictStale": {
+    "message": "O conteúdo atual mudou depois desta comparação - revise as diferenças atualizadas e confirme novamente"
+  },
+  "dataConflictNoChange": {
+    "message": "Nada foi alterado - os valores selecionados já correspondem ao seu conteúdo"
+  },
+  "dataConflictApplied": {
+    "message": "$count$ campo(s) aplicado(s)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "Caixa grande"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "Caixa pequena"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "Marcador"
+  },
+  "dataConflictFieldTitle": {
+    "message": "Título"
+  },
+  "dataConflictFieldPosition": {
+    "message": "Posição"
+  },
+  "dataConflictFieldSize": {
+    "message": "Tamanho"
+  },
+  "dataConflictFieldPinned": {
+    "message": "Fixada"
+  },
+  "dataConflictFieldStar": {
+    "message": "Marca de estrela"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
+  },
   "dataConflictDeleteBtn": {
     "message": "Excluir",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

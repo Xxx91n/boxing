@@ -272,6 +272,27 @@ I18N_FALLBACK.conflictDeleteConfirmAction = 'Save safe copy and delete';
 I18N_FALLBACK.conflictDeleteNoSafety = 'The archived copy could not be saved as a safe copy, so nothing was deleted. Boxing deletes a conflict copy only once its archived content is safely stored.';
 I18N_FALLBACK.conflictDeleteFailed = 'Deleting the conflict copy did not complete. Nothing was changed.';
 I18N_FALLBACK.conflictGuardRestoreFailed = 'That safe copy could not be restored - nothing was changed.';
+// Issue #54 (#53 D2/D3): same-id conflict comparison + per-field apply (BX-I18N-005)
+I18N_FALLBACK.dataConflictCompareBtn = 'Compare';
+I18N_FALLBACK.dataConflictDiffHeading = 'Differences with current content';
+I18N_FALLBACK.dataConflictKeepCurrent = 'Keep current';
+I18N_FALLBACK.dataConflictAdoptCopy = 'Adopt copy';
+I18N_FALLBACK.dataConflictApplyBtn = 'Apply selected';
+I18N_FALLBACK.dataConflictNoDiffs = 'No editable-field differences with the current content';
+I18N_FALLBACK.dataConflictBodyUnavailable = 'The archived copy is missing or truncated - nothing can be applied';
+I18N_FALLBACK.dataConflictTargetMissing = 'This box no longer exists - it will not be rebuilt';
+I18N_FALLBACK.dataConflictStale = 'The current content changed after this comparison - review the refreshed differences and confirm again';
+I18N_FALLBACK.dataConflictNoChange = 'Nothing was changed - the values you selected already match your content';
+I18N_FALLBACK.dataConflictApplied = 'Applied $1$ field(s)';
+I18N_FALLBACK.dataConflictLevelLargeBox = 'Large box';
+I18N_FALLBACK.dataConflictLevelSmallBox = 'Small box';
+I18N_FALLBACK.dataConflictLevelBookmark = 'Bookmark';
+I18N_FALLBACK.dataConflictFieldTitle = 'Title';
+I18N_FALLBACK.dataConflictFieldPosition = 'Position';
+I18N_FALLBACK.dataConflictFieldSize = 'Size';
+I18N_FALLBACK.dataConflictFieldPinned = 'Pinned';
+I18N_FALLBACK.dataConflictFieldStar = 'Star mark';
+I18N_FALLBACK.dataConflictFieldUrl = 'URL';
 // Ticket 50 (spec ticket 50): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
 I18N_FALLBACK.dataTimeMachine = 'Time Machine';
 I18N_FALLBACK.dataRollbackBtn = 'Roll back';

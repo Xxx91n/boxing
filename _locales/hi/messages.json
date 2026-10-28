@@ -1035,6 +1035,71 @@
   "aboutViewReleases": {
     "message": "रिलीज़ देखें"
   },
+  "dataConflictCompareBtn": {
+    "message": "तुलना करें"
+  },
+  "dataConflictDiffHeading": {
+    "message": "वर्तमान सामग्री से अंतर"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "वर्तमान रखें"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "प्रति अपनाएँ"
+  },
+  "dataConflictApplyBtn": {
+    "message": "चयन लागू करें"
+  },
+  "dataConflictNoDiffs": {
+    "message": "संपादन योग्य फ़ील्ड में कोई अंतर नहीं"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "संग्रहीत प्रति अनुपलब्ध या कटी हुई है, इसलिए कुछ भी लागू नहीं किया जा सकता"
+  },
+  "dataConflictTargetMissing": {
+    "message": "यह बॉक्स अब मौजूद नहीं है - इसे दोबारा नहीं बनाया जाएगा"
+  },
+  "dataConflictStale": {
+    "message": "इस तुलना के बाद वर्तमान सामग्री बदल गई - ताज़ा अंतर देखें और दोबारा पुष्टि करें"
+  },
+  "dataConflictNoChange": {
+    "message": "कुछ नहीं बदला - चुने गए मान आपकी वर्तमान सामग्री से मेल खाते हैं"
+  },
+  "dataConflictApplied": {
+    "message": "$count$ फ़ील्ड लागू किए गए",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "बड़ा बॉक्स"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "छोटा बॉक्स"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "बुकमार्क"
+  },
+  "dataConflictFieldTitle": {
+    "message": "शीर्षक"
+  },
+  "dataConflictFieldPosition": {
+    "message": "स्थिति"
+  },
+  "dataConflictFieldSize": {
+    "message": "आकार"
+  },
+  "dataConflictFieldPinned": {
+    "message": "पिन किया गया"
+  },
+  "dataConflictFieldStar": {
+    "message": "सितारा चिह्न"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
+  },
   "dataConflictDeleteBtn": {
     "message": "हटाएँ",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

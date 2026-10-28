@@ -6,13 +6,13 @@
 // facade (saveLayout/saveLayoutDebounced), never chrome.storage directly. Moved verbatim from
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
-import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
+import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, groupStar, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
 import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, listConflictGuards, saveConflictGuard, deleteConflictArchive, discardConflictGuard, restoreConflictGuard, readDrBodies } from './storage.js';
-import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref } from './utils.js';
+import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref, diffConflictArchive, planConflictApply, largeKey, smallKey } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyDarkMode, applyTheme, nextDarkModePreference } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
-import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections } from './conn-layer.js';
+import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections, toggleStarMark } from './conn-layer.js';
 import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
 import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
 
@@ -68,6 +68,13 @@ export function initSettingsUiFacade(deps) {
     if (n < 1024) return n + ' B';
     return (Math.round(n / 102.4) / 10) + ' KB';
   }
+
+  // ── Issue #54 (#53 D2/D3): open conflict comparisons ─────
+  // One entry per open panel: the fingerprint of the CURRENT side the user actually looked
+  // at (`signature`) plus the fields they moved to "adopt copy". Applying re-compares and
+  // refuses when the signature moved, so a stale verdict is refreshed with every choice back
+  // on keep-current instead of being written over content nobody has re-reviewed.
+  const conflictPanels = new Map();
 
   // ── settings modal ─────────────────────────────────────
   // Ticket 43 (spec D3): data-health surface — snapshot count / latest snapshot time /
@@ -126,9 +133,13 @@ export function initSettingsUiFacade(deps) {
       if (cWrapEl && cListEl) {
         const cRows = conflicts.slice(-SNAPSHOT_LIST_MAX).reverse();
         cListEl.textContent = '';
+        // Rows are rebuilt wholesale, so any open comparison goes with them: panel state
+        // the user has not seen in this list must not survive into the next render.
+        conflictPanels.clear();
         for (const e of cRows) {
           const row = document.createElement('div');
           row.className = 'data-conflict-row-item';
+          row.dataset.ts = String((e && e.ts) || '');
           row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:var(--fs-xs);';
           const when = document.createElement('span');
           when.textContent = (e && e.ts) ? new Date(e.ts).toLocaleString() : '-';
@@ -140,19 +151,29 @@ export function initSettingsUiFacade(deps) {
           size.textContent = formatSnapshotSize(e && e.size);
           const actions = document.createElement('span');
           actions.style.cssText = 'margin-left:auto;display:flex;gap:6px;';
+          // Issue #54 (#53 D2): the same row is the entry point for the comparison — no
+          // second conflict surface, and the ticket-79 verbatim export keeps working as is.
+          const cmpBtn = document.createElement('button');
+          cmpBtn.type = 'button';
+          cmpBtn.className = 'btn btn--ghost data-conflict-compare-btn';
+          cmpBtn.style.cssText = 'padding:2px 10px;font-size:var(--fs-xs);';
+          cmpBtn.dataset.ts = String((e && e.ts) || '');
+          cmpBtn.textContent = i18n('dataConflictCompareBtn');
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'btn data-conflict-export-btn';
           btn.style.cssText = 'padding:2px 10px;font-size:var(--fs-xs);';
           btn.dataset.ts = String((e && e.ts) || '');
           btn.textContent = i18n('dataConflictExportBtn');
+          // Ticket 56 (#53 D3): the same row also carries Delete, gated by a secondary
+          // confirm and a safe copy of THIS archive's payload taken first.
           const delBtn = document.createElement('button');
           delBtn.type = 'button';
           delBtn.className = 'btn btn--ghost data-conflict-delete-btn';
           delBtn.style.cssText = 'padding:2px 10px;font-size:var(--fs-xs);';
           delBtn.dataset.ts = String((e && e.ts) || '');
           delBtn.textContent = i18n('dataConflictDeleteBtn');
-          actions.append(btn, delBtn);
+          actions.append(cmpBtn, btn, delBtn);
           row.append(when, reason, side, size, actions);
           cListEl.appendChild(row);
         }
@@ -412,6 +433,232 @@ export function initSettingsUiFacade(deps) {
     }
     debug('Conflict archive restored from safe copy: origin ts=' + restored);
     await refreshDataHealth();
+  }
+
+  // ── Issue #54 (#53 D2/D3): per-field adjudication of one conflict copy ─────────
+  // Compares the archived subtree against what the canvas holds for the SAME ids today
+  // (never the archive-time content as a source of truth), lets the user pick
+  // keep-current / adopt-copy per differing field, and writes only what was picked.
+  // Opening a comparison changes nothing; applying never deletes the archive row —
+  // deleting a copy is a separate action, and copy-only objects belong to #55.
+  function conflictPanelNode(ts) {
+    return document.querySelector('#data-conflict-list .data-conflict-diff[data-ts="' + ts + '"]');
+  }
+
+  function conflictLevelLabel(level) {
+    if (level === 'small') return i18n('dataConflictLevelSmallBox');
+    if (level === 'bookmark') return i18n('dataConflictLevelBookmark');
+    return i18n('dataConflictLevelLargeBox');
+  }
+
+  function conflictSpan(text, className) {
+    const el = document.createElement('span');
+    if (className) el.className = className;
+    el.textContent = text;
+    return el;
+  }
+
+  function buildConflictFieldRow(field, ts) {
+    const row = document.createElement('div');
+    row.className = 'data-conflict-diff-field';
+    row.dataset.path = field.path;
+    row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:2px 0;font-size:var(--fs-xs);';
+    row.append(conflictSpan(i18n(field.labelKey)));
+    // Each option carries the value it stands for: the radio labels are the comparison,
+    // so there is no need for the user to read the payload itself.
+    for (const side of ['keep', 'copy']) {
+      const label = document.createElement('label');
+      label.style.cssText = 'display:flex;gap:4px;align-items:center;';
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'conflict-' + ts + '-' + field.path;
+      radio.value = side;
+      radio.dataset.ts = String(ts);
+      radio.dataset.path = field.path;
+      radio.checked = side === 'keep'; // #53 D2: default is always keep-current
+      label.append(radio, conflictSpan(
+        (side === 'keep' ? i18n('dataConflictKeepCurrent') : i18n('dataConflictAdoptCopy')) + ': ' +
+        (side === 'keep' ? field.current : field.copy)));
+      row.append(label);
+    }
+    return row;
+  }
+
+  // An object shows up only when there is something to decide about it: differing fields,
+  // or a descendant with them. Identical subtrees stay out of the way of the real choice.
+  function conflictBlockHasContent(obj) {
+    if (obj.status === 'missing') return true;
+    if ((obj.fields || []).length) return true;
+    return (obj.children || []).some(conflictBlockHasContent) || (obj.bookmarks || []).some(conflictBlockHasContent);
+  }
+
+  function buildConflictObjectBlock(obj, ts, depth) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin:2px 0 2px ' + (depth * 14) + 'px;';
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;font-size:var(--fs-xs);opacity:0.75;';
+    head.append(conflictSpan(conflictLevelLabel(obj.level) + ' · ' + (obj.title || obj.id)));
+    if (obj.status === 'missing') head.append(conflictSpan(i18n('dataConflictTargetMissing')));
+    wrap.append(head);
+    for (const field of obj.fields || []) wrap.append(buildConflictFieldRow(field, ts));
+    for (const child of obj.children || []) if (conflictBlockHasContent(child)) wrap.append(buildConflictObjectBlock(child, ts, depth + 1));
+    for (const bm of obj.bookmarks || []) if (conflictBlockHasContent(bm)) wrap.append(buildConflictObjectBlock(bm, ts, depth + 1));
+    return wrap;
+  }
+
+  function buildConflictPanel(ts, diff, notice) {
+    const panel = document.createElement('div');
+    panel.className = 'data-conflict-diff';
+    panel.dataset.ts = String(ts);
+    panel.style.cssText = 'margin:4px 0 10px;padding:6px 8px;border-left:2px solid var(--color-hairline);font-size:var(--fs-xs);';
+    if (notice) {
+      const noticeEl = conflictSpan(notice);
+      noticeEl.style.cssText = 'display:block;margin:0 0 6px;';
+      panel.append(noticeEl);
+    }
+    if (!diff.applicable) {
+      // #53 D3: missing or truncated archive bytes are not recoverable content, so the
+      // row stays listed and exportable but offers no apply control at all.
+      panel.append(conflictSpan(i18n('dataConflictBodyUnavailable')));
+      return panel;
+    }
+    panel.append(conflictSpan(i18n('dataConflictDiffHeading')));
+    if (!diff.stats.fieldDiffs) panel.append(conflictSpan(i18n('dataConflictNoDiffs')));
+    for (const group of diff.groups || []) if (conflictBlockHasContent(group)) panel.append(buildConflictObjectBlock(group, ts, 0));
+    if (diff.stats.fieldDiffs) {
+      const foot = document.createElement('div');
+      foot.style.cssText = 'margin-top:6px;';
+      const applyBtn = document.createElement('button');
+      applyBtn.type = 'button';
+      applyBtn.className = 'btn data-conflict-apply-btn';
+      applyBtn.dataset.ts = String(ts);
+      applyBtn.style.cssText = 'padding:2px 10px;font-size:var(--fs-xs);';
+      applyBtn.textContent = i18n('dataConflictApplyBtn');
+      applyBtn.disabled = true; // nothing adopted yet
+      foot.append(applyBtn);
+      panel.append(foot);
+    }
+    return panel;
+  }
+
+  function toggleConflictCompare(ts) {
+    const open = conflictPanelNode(ts);
+    if (open) { open.remove(); conflictPanels.delete(ts); return; }
+    void openConflictCompare(ts);
+  }
+
+  async function openConflictCompare(ts, notice) {
+    const entry = await getConflictArchive(ts);
+    const diff = diffConflictArchive(entry, layout);
+    const panel = buildConflictPanel(ts, diff, notice);
+    const row = document.querySelector('#data-conflict-list .data-conflict-row-item[data-ts="' + ts + '"]');
+    if (row) row.after(panel);
+    else document.getElementById('data-conflict-list')?.appendChild(panel);
+    if (diff.applicable) conflictPanels.set(ts, { signature: diff.signature, selected: new Set() });
+    else conflictPanels.delete(ts);
+  }
+
+  function setConflictSelection(ts, path, adopt) {
+    const state = conflictPanels.get(ts);
+    if (!state) return;
+    if (adopt) state.selected.add(path); else state.selected.delete(path);
+    const btn = conflictPanelNode(ts)?.querySelector('.data-conflict-apply-btn');
+    if (btn) btn.disabled = state.selected.size === 0;
+  }
+
+  // Scalar field writes follow the shape the canvas controls themselves use (title/pin/
+  // hover-expand assign + one save): the layout-bypass contract governs collection
+  // membership, and the sibling external-payload paths (import merge / overwrite restore)
+  // take archived geometry verbatim rather than re-snapping it, so this stays value-faithful
+  // too. The star is different — isParent is the DSU leader truth — so it goes through the
+  // public wrapper, which owns ensureConnArrays + commit('toggleStar') + the button sync.
+  function writeConflictOp(op) {
+    const lb = getLargeBox(op.largeId);
+    if (!lb) return false;
+    let target = lb;
+    let tieredKey = largeKey(lb.id);
+    if (op.level !== 'large') {
+      target = (lb.children || []).find((s) => s && s.id === op.smallId) || null;
+      if (!target) return false;
+      tieredKey = smallKey(lb.id, target.id);
+    }
+    if (op.level === 'bookmark') {
+      target = (target.bookmarks || []).find((b) => b && b.id === op.bmId) || null;
+      if (!target) return false;
+    }
+    if (op.field === 'isParent') {
+      // toggleStar reads the field OR the runtime star mirror, so "already starred" has to
+      // be tested the same way — otherwise the toggle would un-star a live box while the
+      // user asked to adopt its star, and report it as an applied field.
+      const starred = Boolean(target.isParent) || groupStar.has(tieredKey);
+      if (starred === Boolean(op.value)) return false;
+      toggleStarMark(tieredKey);
+      return true;
+    }
+    target[op.field] = op.value;
+    return true;
+  }
+
+  async function applyConflictCompare(ts) {
+    const state = conflictPanels.get(ts);
+    if (!state || !state.selected.size) return;
+    const entry = await getConflictArchive(ts);
+    const fresh = diffConflictArchive(entry, layout);
+    if (!fresh.applicable) {
+      conflictPanels.delete(ts);
+      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh, i18n('dataConflictBodyUnavailable')));
+      return;
+    }
+    if (fresh.signature !== state.signature) {
+      conflictPanels.set(ts, { signature: fresh.signature, selected: new Set() });
+      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh, i18n('dataConflictStale')));
+      debug('Conflict comparison refreshed before apply (target changed since it was compared): ts=' + ts);
+      return;
+    }
+    // Count fields the user chose, not raw key writes — one adopted position sets x and y.
+    const done = new Set();
+    for (const op of planConflictApply(fresh, state.selected)) {
+      if (writeConflictOp(op)) done.add(op.path);
+    }
+    const applied = done.size;
+    conflictPanels.delete(ts);
+    if (!applied) {
+      // Nothing to write: every selected value already matches what the box has (the star
+      // is the reachable case — the runtime mirror can hold it while isParent does not).
+      // Targets vanishing cannot land here: that moves the signature and the refresh above
+      // catches it. Say exactly that nothing changed, instead of reusing the staleness notice.
+      conflictPanels.set(ts, { signature: fresh.signature, selected: new Set() });
+      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh, i18n('dataConflictNoChange')));
+      debug('Conflict apply wrote nothing: ts=' + ts + ' (selected values already match the current content)');
+      return;
+    }
+    await saveLayout();
+    // renderCanvas() hides the inner wrapper — it repaints the OUTER canvas — so applying
+    // while the user is drilled into a box must repaint that box instead of silently kicking
+    // them back to the canvas. exitToCanvas() repaints the outer surface on the way out, so
+    // the not-yet-visible layer cannot go stale from skipping renderCanvas here.
+    if (currentLargeBoxId) {
+      const lb = getLargeBox(currentLargeBoxId);
+      if (lb) {
+        renderInnerSurface(lb);
+        renderCrumbs(lb);
+      } else {
+        renderCanvas();
+        applyCanvasTransform();
+      }
+    } else {
+      renderCanvas();
+      applyCanvasTransform();
+      applyInnerTransform();
+    }
+    updateCaption();
+    // The archive row and its body stay exactly as they were (applying is not deleting):
+    // the panel is re-compared so the adopted fields now read as the current values, while
+    // the copy itself stays listed for export or a later verdict.
+    const after = diffConflictArchive(entry, layout);
+    conflictPanels.set(ts, { signature: after.signature, selected: new Set() });
+    conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, after, i18n('dataConflictApplied', [applied])));
+    debug('Conflict copy applied field-by-field: ts=' + ts + ' fields=' + applied);
   }
 
 function openLink(url) {
@@ -1072,16 +1319,32 @@ export function bindSettingsUi() {
     });
 
     // Ticket 79: delegated export click for the rebuilt conflict-copy rows.
-    // Ticket 56: the same rows carry the delete action, so one delegated listener covers both
+    // Issue #54: the same rows carry the compare toggle and, inside the opened panel, the
+    // apply control — rows and panels are rebuilt together, so one listener still covers it.
+    // Ticket 56: and the delete action, so the same single listener covers every row button
     // (rows are rebuilt on every modal open, so per-row listeners would leak).
     const conflictListEl = document.getElementById('data-conflict-list');
     conflictListEl?.addEventListener('click', (e) => {
-      const btn = e.target && e.target.closest ? e.target.closest('.data-conflict-export-btn, .data-conflict-delete-btn') : null;
+      const btn = e.target && e.target.closest ? e.target.closest(
+        '.data-conflict-compare-btn, .data-conflict-apply-btn, .data-conflict-export-btn, .data-conflict-delete-btn'
+      ) : null;
       if (!btn) return;
       const ts = Number(btn.dataset.ts);
       if (!Number.isFinite(ts) || ts <= 0) return;
-      if (btn.classList.contains('data-conflict-delete-btn')) performConflictDelete(ts);
+      if (btn.classList.contains('data-conflict-compare-btn')) toggleConflictCompare(ts);
+      else if (btn.classList.contains('data-conflict-apply-btn')) void applyConflictCompare(ts);
+      else if (btn.classList.contains('data-conflict-delete-btn')) performConflictDelete(ts);
       else exportConflictCopy(ts);
+    });
+
+    // Issue #54: the per-field radios live inside the rebuilt panel, so one delegated
+    // change listener tracks the selections instead of per-field listeners.
+    conflictListEl?.addEventListener('change', (e) => {
+      const input = e.target;
+      if (!input || input.type !== 'radio' || !input.dataset.path) return;
+      const ts = Number(input.dataset.ts);
+      if (!Number.isFinite(ts) || ts <= 0) return;
+      setConflictSelection(ts, input.dataset.path, input.value === 'copy');
     });
 
     // Ticket 56: delegated restore click for the safe-copy rows

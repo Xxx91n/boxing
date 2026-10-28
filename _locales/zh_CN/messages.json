@@ -1038,6 +1038,71 @@
   "aboutViewReleases": {
     "message": "查看发布页面"
   },
+  "dataConflictCompareBtn": {
+    "message": "比较"
+  },
+  "dataConflictDiffHeading": {
+    "message": "与当前内容的差异"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "保留当前"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "采用副本"
+  },
+  "dataConflictApplyBtn": {
+    "message": "应用所选项"
+  },
+  "dataConflictNoDiffs": {
+    "message": "可编辑字段与当前内容没有差异"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "归档副本缺失或被截断，无法应用"
+  },
+  "dataConflictTargetMissing": {
+    "message": "该盒子已不存在，不会自动重建"
+  },
+  "dataConflictStale": {
+    "message": "比较之后当前内容已变化，请查看刷新后的差异并重新确认"
+  },
+  "dataConflictNoChange": {
+    "message": "未做改动 - 所选项与当前内容一致"
+  },
+  "dataConflictApplied": {
+    "message": "已应用 $count$ 个字段",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "大盒子"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "小盒子"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "书签"
+  },
+  "dataConflictFieldTitle": {
+    "message": "标题"
+  },
+  "dataConflictFieldPosition": {
+    "message": "位置"
+  },
+  "dataConflictFieldSize": {
+    "message": "大小"
+  },
+  "dataConflictFieldPinned": {
+    "message": "固定"
+  },
+  "dataConflictFieldStar": {
+    "message": "星标"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
+  },
   "dataConflictDeleteBtn": {
     "message": "删除",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

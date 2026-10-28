@@ -1038,6 +1038,71 @@
   "aboutViewReleases": {
     "message": "查看發布頁面"
   },
+  "dataConflictCompareBtn": {
+    "message": "比較"
+  },
+  "dataConflictDiffHeading": {
+    "message": "與目前內容的差異"
+  },
+  "dataConflictKeepCurrent": {
+    "message": "保留目前"
+  },
+  "dataConflictAdoptCopy": {
+    "message": "採用副本"
+  },
+  "dataConflictApplyBtn": {
+    "message": "套用所選項目"
+  },
+  "dataConflictNoDiffs": {
+    "message": "可編輯欄位與目前內容沒有差異"
+  },
+  "dataConflictBodyUnavailable": {
+    "message": "歸檔副本缺失或被截斷，無法套用"
+  },
+  "dataConflictTargetMissing": {
+    "message": "該盒子已不存在，不會自動重建"
+  },
+  "dataConflictStale": {
+    "message": "比較之後目前內容已變更，請檢視重新整理的差異並再次確認"
+  },
+  "dataConflictNoChange": {
+    "message": "未做變更 - 所選項與目前內容一致"
+  },
+  "dataConflictApplied": {
+    "message": "已套用 $count$ 個欄位",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dataConflictLevelLargeBox": {
+    "message": "大盒子"
+  },
+  "dataConflictLevelSmallBox": {
+    "message": "小盒子"
+  },
+  "dataConflictLevelBookmark": {
+    "message": "書籤"
+  },
+  "dataConflictFieldTitle": {
+    "message": "標題"
+  },
+  "dataConflictFieldPosition": {
+    "message": "位置"
+  },
+  "dataConflictFieldSize": {
+    "message": "大小"
+  },
+  "dataConflictFieldPinned": {
+    "message": "固定"
+  },
+  "dataConflictFieldStar": {
+    "message": "星標"
+  },
+  "dataConflictFieldUrl": {
+    "message": "URL"
+  },
   "dataConflictDeleteBtn": {
     "message": "刪除",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
