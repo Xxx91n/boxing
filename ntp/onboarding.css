@@ -187,10 +187,12 @@
 .quick-help {
   position: fixed;
   left: 16px;
-  /* Roughly clears the .foot band (space-3 padding + one hint line). The band grows with
-     --font-size-base and can exceed this offset at the top of the font slider, and the card is
-     height-bounded rather than chasing it: the worst case is the always-visible hint text sliding
-     behind a sheet that restates exactly that hint, never a canvas control. */
+  /* Roughly clears the .foot band (space-3 padding + one hint line, plus the .ntp bottom
+     padding the band sits inside). The band grows with --font-size-base and can exceed this
+     offset at the top of the font slider, and the card is height-bounded rather than chasing
+     it: the worst case is the operation hint text sliding behind a sheet that restates exactly
+     that hint, never a canvas control. (In the autohide state the band collapses to zero
+     height, so there is nothing to clear at all.) */
   bottom: 44px;
   z-index: 40;
   max-width: 340px;
