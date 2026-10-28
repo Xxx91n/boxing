@@ -586,19 +586,25 @@ export function registerStorageOnChanged() {
 
   // Fail-closed by construction: any path that cannot land the verbatim payload returns
   // null, and deleteConflictArchive refuses to run without a returned ts. A `truncated`
-  // archive (metadata only, SEC-06) and an over-cap payload both fail — saving a stub
-  // would not be a safe copy of what is actually about to be deleted.
+  // archive (metadata only, SEC-06), a missing or null payload and an over-cap body all fail —
+  // saving a stub would not be a safe copy of what is actually about to be deleted, and a
+  // null-valued raw would sail through the save only to make the archive undeletable-then-
+  // unrestorable later on.
   //
   // guard.size is the length of the ARCHIVED PAYLOAD, not of the guard envelope, so a restore
   // re-registers the conflict row with the exact size it had before the deletion (the readout
   // shows the same bytes either way). The stored body is then measured separately, because
-  // the ceiling that matters for storage is the whole body.
+  // the ceiling that matters for storage is the whole body. Like the sibling stores
+  // (saveSnapshot, archiveConflictLayouts), every ceiling here counts `String.length` — UTF-16
+  // code units, not UTF-8 bytes — so a non-ASCII payload is under-counted against the browser's
+  // byte-based quota. That is the repo's existing convention for all three stores; changing it
+  // for one namespace would make the guard's numbers disagree with the rows it protects.
   export async function saveConflictGuard(ts) {
     try {
       await _migrateSnapshots();
       const originTs = Number(ts);
       const entry = await getConflictArchive(originTs);
-      if (!entry || entry.truncated || entry.raw === undefined) {
+      if (!entry || entry.truncated || entry.raw === undefined || entry.raw === null) {
         debug('Conflict guard skipped: archive ' + originTs + ' carries no verbatim payload');
         return null;
       }
@@ -657,7 +663,7 @@ export function registerStorageOnChanged() {
     try {
       await _migrateSnapshots();
       const guard = await getConflictGuard(ts);
-      if (!guard || guard.raw === undefined) {
+      if (!guard || guard.raw === undefined || guard.raw === null) {
         debug('restoreConflictGuard: no safe copy at ts=' + ts);
         return null;
       }
@@ -671,27 +677,57 @@ export function registerStorageOnChanged() {
         size: Number(guard.size) || 0
       };
       if (Array.isArray(guard.raw.boxes)) entry.boxes = guard.raw.boxes.length;
+      // Restoring onto the original ts is the point of the safe copy — but every new-tab page
+      // keeps its own monotonic _lastConflictTs, so an unrelated archive can already occupy
+      // originTs with different bytes. Overwriting it would destroy a payload the user never
+      // agreed to lose, so a conflicting occupant moves the restore elsewhere: reuse the row an
+      // earlier restore of this same guard already created, otherwise a fresh ts. The occupant
+      // stays untouched either way, and a second click never duplicates the content.
+      const occupant = await getConflictArchive(originTs);
+      if (occupant && JSON.stringify(occupant.raw) !== JSON.stringify(guard.raw)) {
+        const guardJson = JSON.stringify(guard.raw);
+        const rows = await _readConflictIndex();
+        let alreadyTs = 0;
+        for (const row of rows) {
+          if (!row || !row.ts) continue;
+          const body = await getConflictArchive(row.ts);
+          if (body && JSON.stringify(body.raw) === guardJson) { alreadyTs = Number(row.ts); break; }
+        }
+        if (alreadyTs) {
+          debug('Conflict archive already restored from this safe copy @ts=' + alreadyTs);
+          return alreadyTs;
+        }
+        let freshTs = Date.now();
+        if (freshTs <= _lastConflictTs) freshTs = _lastConflictTs + 1;
+        _lastConflictTs = freshTs;
+        entry.ts = freshTs;
+      }
       await _writeConflictEntry(entry);
       // The conflict store's count cap prunes by oldest ts, so restoring an archive older than
       // every row already held can drop the row this call just wrote. Report that as a failure:
       // the archive would not be readable through the conflict list, and the store is back to
       // the rows it held before this call, so "nothing was changed" stays true for the user.
       const after = await _readConflictIndex();
-      if (!after.some(e => e && e.ts === originTs)) {
-        debug('restoreConflictGuard: restored row pruned by the archive cap (ts=' + originTs + ')');
+      if (!after.some(e => e && e.ts === entry.ts)) {
+        debug('restoreConflictGuard: restored row pruned by the archive cap (ts=' + entry.ts + ')');
         return null;
       }
-      debug('Conflict archive restored from safe copy @' + new Date(originTs).toISOString() + ' (guard=' + Number(ts) + ')');
-      return originTs;
+      debug('Conflict archive restored from safe copy @' + new Date(entry.ts).toISOString() + ' (guard=' + Number(ts) + ')');
+      return entry.ts;
     } catch (e) { debugErr('restoreConflictGuard', e); return null; }
   }
 
   // D3's proof obligation lives in the facade, not only in the caller: without a stored safe
   // copy of THIS archive there is nothing to delete, so a caller that skipped or lost the save
-  // can never reach the removal. The body key goes first and the index row second: a row whose
-  // body was lost (a storage error in between, or an upgrade that pruned bodies) is a state the
-  // readout already handles fail-soft, while a live body whose row is gone would hide an
-  // archive the user never agreed to lose.
+  // can never reach the removal — and the safe copy must still describe the bytes about to be
+  // removed, so a same-timestamp rewrite between the save and this delete cannot let a newer
+  // payload be erased while the guard holds only the older one.
+  //
+  // The body key goes first and the index row second: a row whose body was lost (a storage error
+  // in between, or an upgrade that pruned bodies) is a state the readout already handles
+  // fail-soft, while a live body whose row is gone would hide an archive the user never agreed
+  // to lose. If the index write itself fails, the body is put back before returning false, so
+  // "nothing was deleted" is literally true and the deletion stays retryable.
   export async function deleteConflictArchive(ts, guardTs) {
     try {
       const originTs = Number(ts);
@@ -703,8 +739,21 @@ export function registerStorageOnChanged() {
       }
       const index = await _readConflictIndex();
       if (!index.some(e => e && e.ts === originTs)) return false;
+      const current = await getConflictArchive(originTs);
+      if (!current || JSON.stringify(current.raw) !== JSON.stringify(guard.raw)) {
+        debug('deleteConflictArchive refused: archive at ' + originTs + ' no longer matches its safe copy');
+        return false;
+      }
+      const bodyJson = JSON.stringify(current);
       await layoutStorage.remove(CONFLICT_PREFIX + originTs);
-      await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index.filter(e => e && e.ts !== originTs) });
+      try {
+        await layoutStorage.set({ [CONFLICT_INDEX_KEY]: index.filter(e => e && e.ts !== originTs) });
+      } catch (indexErr) {
+        debugErr('deleteConflictArchive: index write failed, putting the archive body back', indexErr);
+        try { await layoutStorage.set({ [CONFLICT_PREFIX + originTs]: JSON.parse(bodyJson) }); }
+        catch (restoreErr) { debugErr('deleteConflictArchive: archive body could not be restored', restoreErr); }
+        return false;
+      }
       debug('Conflict copy deleted @' + new Date(originTs).toISOString() + ' (safe copy kept)');
       return true;
     } catch (e) { debugErr('deleteConflictArchive', e); return false; }

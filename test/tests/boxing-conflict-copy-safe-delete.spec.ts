@@ -4,7 +4,8 @@
 //       dialog is open, and dismissing it changes nothing.
 //   AC2 the archived payload itself is saved into the snapshot subsystem BEFORE the archive
 //       is deleted; a failed safe save (metadata-only/truncated archive, or a storage error)
-//       leaves the original archive in place — a current-layout snapshot is NOT the proof.
+//       leaves the original archive in place — a current-layout snapshot is NOT the proof. A
+//       delete that fails midway puts the archive body back, so it stays listed and retryable.
 //   AC3 the deleted archive is restored individually: the existing conflict list/readout
 //       returns the same verbatim payload (same ts, reason, side, size, boxes) under its
 //       original ts, and the canvas plus any work done after the deletion is not rolled back.
@@ -373,6 +374,56 @@ test.describe('Ticket 56 — conflict-copy safe delete + individual restore', ()
     expect(idx.map(e => e.ts).sort((a, b) => a - b)).toEqual(Array.from({ length: 20 }, (_, i) => 1000 + i));
     expect(await canvasTitles(page)).toEqual(['Kept Box']);         // and still no canvas change
     await expect(guardRows(page)).toHaveCount(1, { timeout: 10000 }); // the safe copy survives a retry
+  });
+
+  test('AC2-fail: a failed index write puts the archive back, so the delete stays retryable', async ({ page }) => {
+    test.setTimeout(60000);
+    await bootFresh(page);
+    await seedCanvas(page);
+    await seedConflict(page);
+    await armAlertCapture(page);
+    // Fail ONLY the conflict index write, and only once: the safe copy lands, the body key is
+    // removed, then the index write throws and the facade must restore the body it just took.
+    await page.evaluate(() => {
+      const orig = Storage.prototype.setItem;
+      (window as any).__faulted = false;
+      (window as any).__restoreSetItem = () => { Storage.prototype.setItem = orig; };
+      Storage.prototype.setItem = function (this: Storage, k: string, v: string) {
+        if (!window.__faulted && String(k) === 'bxstore:boxingLayout.conflict.index') {
+          window.__faulted = true;
+          throw new Error('QuotaExceeded (injected)');
+        }
+        return orig.apply(this, [k, v] as any);
+      };
+    });
+    await openSettingsDataTab(page);
+    await expect(conflictRows(page)).toHaveCount(1, { timeout: 15000 });
+
+    await clickDelete(page);
+    await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
+    await confirmAction(page);
+    await expect.poll(async () => (await alerts(page)).length, { timeout: 8000 }).toBe(1);
+    expect((await alerts(page))[0]).toMatch(/did not complete/i);
+    const idx = await conflictIndex(page);
+    expect(idx.length).toBe(1);                                   // row still listed
+    expect(idx[0].ts).toBe(CONFLICT_TS);
+    const survived = await readKey(page, CONFLICT_PREFIX + CONFLICT_TS);
+    expect(JSON.stringify(survived.raw)).toBe(JSON.stringify(CONFLICT_RAW)); // body put back
+    expect((await guardIndex(page))?.length).toBe(1);             // the safe copy it earned stays
+    expect(await canvasTitles(page)).toEqual(['Kept Box']);
+
+    // Clear the fault and retry the same row: the delete now completes.
+    await page.evaluate(() => (window as any).__restoreSetItem());
+    await openSettingsDataTab(page);
+    await expect(conflictRows(page)).toHaveCount(1, { timeout: 15000 });
+    await clickDelete(page);
+    await expect.poll(() => confirmVisible(page), { timeout: 3000 }).toBe(true);
+    await confirmAction(page);
+    await expect.poll(async () => (await guardIndex(page))?.length, { timeout: 8000 }).toBe(2);
+    expect((await conflictIndex(page))?.length ?? 0).toBe(0);
+    expect(await readKey(page, CONFLICT_PREFIX + CONFLICT_TS)).toBeUndefined();
+    expect((await alerts(page)).length).toBe(1);                  // no second failure notice
+    await expect(guardRows(page)).toHaveCount(2, { timeout: 15000 });
   });
 
   test('AC3-fail: a safe copy whose body was later pruned reports failure instead of fabricating an archive', async ({ page }) => {
