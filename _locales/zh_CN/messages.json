@@ -1103,4 +1103,50 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   }
+,
+  "exportEncryptLabel": {
+    "message": "用口令加密导出文件"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing 不会保存该口令：一旦遗失，文件将无法再读取。在另一台安装上还原后，仍需重新填写 WebDAV/GitHub 同步凭据。"
+  },
+  "passphraseExportTitle": {
+    "message": "用口令加密备份"
+  },
+  "passphraseExportBody": {
+    "message": "请两次输入同一口令。Boxing 不保存口令，也无法找回——遗失后文件将永久无法读取。"
+  },
+  "passphraseExportAction": {
+    "message": "加密并导出"
+  },
+  "passphraseImportTitle": {
+    "message": "输入备份口令"
+  },
+  "passphraseImportBody": {
+    "message": "该文件已用口令保护。成功解密之前，画布上的内容不会有任何改动。"
+  },
+  "passphraseImportAction": {
+    "message": "解密并导入"
+  },
+  "passphraseFieldLabel": {
+    "message": "口令"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "再次输入口令"
+  },
+  "passphraseRequired": {
+    "message": "请先输入口令。"
+  },
+  "passphraseMismatch": {
+    "message": "两次输入的口令不一致。"
+  },
+  "passphraseWrong": {
+    "message": "口令错误或文件已损坏——未导入任何内容。"
+  },
+  "importEncryptedInvalid": {
+    "message": "导入失败：Boxing 无法打开该口令文件（可能需要更新版本）。现有数据未被改动。"
+  },
+  "exportEncryptedTooLarge": {
+    "message": "导出失败：备份过大，加密后将超出 5MB 恢复上限。未导出任何内容。"
+  }
 }

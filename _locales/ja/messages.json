@@ -1100,4 +1100,50 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   }
+,
+  "exportEncryptLabel": {
+    "message": "書き出しファイルをパスフレーズで暗号化"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing はパスフレーズを保存しません。失うとファイルは読み込めなくなります。別の環境で復元した場合も、WebDAV/GitHub の認証情報は再入力が必要です。"
+  },
+  "passphraseExportTitle": {
+    "message": "パスフレーズでバックアップを暗号化"
+  },
+  "passphraseExportBody": {
+    "message": "パスフレーズは2回入力してください。Boxing はこれを保存せず、紛失すると解読できません。ないままではファイルは永久に読めません。"
+  },
+  "passphraseExportAction": {
+    "message": "暗号化して書き出す"
+  },
+  "passphraseImportTitle": {
+    "message": "バックアップのパスフレーズを入力"
+  },
+  "passphraseImportBody": {
+    "message": "このファイルはパスフレーズで保護されています。正常に開けるまでキャンバスは変更されません。"
+  },
+  "passphraseImportAction": {
+    "message": "復号して読み込む"
+  },
+  "passphraseFieldLabel": {
+    "message": "パスフレーズ"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "パスフレーズ（確認）"
+  },
+  "passphraseRequired": {
+    "message": "先にパスフレーズを入力してください。"
+  },
+  "passphraseMismatch": {
+    "message": "パスフレーズが一致しません。"
+  },
+  "passphraseWrong": {
+    "message": "パスフレーズが違うかファイルが壊れています — 読み込みは行っていません。"
+  },
+  "importEncryptedInvalid": {
+    "message": "読み込み失敗：このパスフレーズファイルを開けません（より新しいバージョンが必要な可能性があります）。既存データは変更されていません。"
+  },
+  "exportEncryptedTooLarge": {
+    "message": "書き出し失敗：バックアップが大きすぎ、暗号化すると 5MB の復元上限を超えます。何も書き出されていません。"
+  }
 }
