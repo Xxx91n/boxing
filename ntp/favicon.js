@@ -140,6 +140,23 @@ const faviconPixels = new Map(); // host -> { d: dataUri, ts: write time }
 const pixelInflight = new Map(); // host -> Promise<void>; dedupes captures, never awaited by display
 let __favPixelPersistPending = false;
 
+function serializeFaviconPixels(pairs) {
+  const entries = {};
+  for (const [host, e] of pairs) entries[host] = { d: e.d, ts: e.ts };
+  return JSON.stringify({ entries, savedAt: Date.now() });
+}
+// Pairs arrive oldest-write first. Drop from that end until the SERIALIZED layer (entries,
+// host keys, timestamps and envelope) fits the budget, so a newer entry is never evicted
+// while an older one survives. The order is write time, not last read: not an LRU.
+function fitFaviconPixelsToBudget(pairs) {
+  const kept = pairs.slice();
+  let payload = serializeFaviconPixels(kept);
+  while (kept.length && payload.length > FAV_PIXEL_MAX_TOTAL) {
+    kept.shift();
+    payload = serializeFaviconPixels(kept);
+  }
+  return { kept, payload };
+}
 function loadFaviconPixelsFromStorage() {
   try {
     const raw = localStorage.getItem(FAV_PIXEL_KEY);
@@ -148,10 +165,8 @@ function loadFaviconPixelsFromStorage() {
     const now = Date.now();
     const entries = (obj && obj.entries) || {};
     let changed = false;
-    // Keep only successful PNG entries inside the hit SWR ceiling, then fill the byte
-    // budget newest-first — the oldest write is what gets evicted, not the least recently
-    // read (this is not an access-ordered LRU).
-    const kept = [];
+    const candidates = [];
+    // Keep only successful PNG entries inside the hit SWR ceiling.
     for (const host of Object.keys(entries)) {
       const e = entries[host];
       if (!e || typeof e.d !== 'string' || !e.d.startsWith(FAV_PIXEL_PREFIX) ||
@@ -160,37 +175,26 @@ function loadFaviconPixelsFromStorage() {
         changed = true;
         continue;
       }
-      kept.push([host, { d: e.d, ts: e.ts }]);
+      candidates.push([host, { d: e.d, ts: e.ts }]);
     }
-    kept.sort((a, b) => b[1].ts - a[1].ts);
-    let total = 0;
-    for (const [host, e] of kept) {
-      if (total + e.d.length > FAV_PIXEL_MAX_TOTAL) { changed = true; continue; }
-      total += e.d.length;
-      faviconPixels.set(host, e);
-    }
+    candidates.sort((a, b) => a[1].ts - b[1].ts);
+    const { kept } = fitFaviconPixelsToBudget(candidates);
+    if (kept.length !== candidates.length) changed = true;
+    for (const [host, e] of kept) faviconPixels.set(host, e);
     if (changed) persistFaviconPixelsNow();
   } catch (_) { /* corrupt pixel layer — ignore; captures rebuild it lazily */ }
 }
 function persistFaviconPixelsNow() {
   try {
-    const pairs = Array.from(faviconPixels.entries()).sort((a, b) => a[1].ts - b[1].ts);
-    const kept = [];
-    let total = 0;
-    for (let i = pairs.length - 1; i >= 0; i--) { // newest first; budget outranks age
-      const [host, e] = pairs[i];
-      if (e.d.length > FAV_PIXEL_MAX_ENTRY) continue;
-      if (total + e.d.length > FAV_PIXEL_MAX_TOTAL) continue;
-      total += e.d.length;
-      kept.push([host, e]);
-    }
+    const candidates = Array.from(faviconPixels.entries())
+      .filter(([, e]) => e.d.length <= FAV_PIXEL_MAX_ENTRY)
+      .sort((a, b) => a[1].ts - b[1].ts);
+    const { kept, payload } = fitFaviconPixelsToBudget(candidates);
     const keptHosts = new Set(kept.map((p) => p[0]));
     for (const host of Array.from(faviconPixels.keys())) {
       if (!keptHosts.has(host)) faviconPixels.delete(host);
     }
-    const entries = {};
-    for (const [host, e] of kept) entries[host] = { d: e.d, ts: e.ts };
-    localStorage.setItem(FAV_PIXEL_KEY, JSON.stringify({ entries, savedAt: Date.now() }));
+    localStorage.setItem(FAV_PIXEL_KEY, payload);
   } catch (_) {
     // Quota or serialization failure: drop the whole pixel layer (it is discardable) so
     // it can never hold space the user's other saves need. The URL cache is untouched.
@@ -252,7 +256,9 @@ async function encodePixelPng(blob) {
 async function captureFaviconPixel(host, url) {
   try {
     if (!isValidPublicUrl(url)) return;
-    const resp = await fetch(url, { credentials: 'omit', cache: 'no-store' });
+    // Default cache mode: the winning probe just loaded this URL, so the browser can reuse
+    // those bytes instead of paying a second network transfer for the same icon.
+    const resp = await fetch(url, { credentials: 'omit' });
     if (!resp || !resp.ok) return; // 404 HTML is a successful fetch, not a pixel
     const mime = (resp.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
     if (!mime.startsWith('image/')) return;
@@ -317,10 +323,13 @@ async function loadFavicon(img, url, opts) {
   }
   const host = new URL(url).hostname;
   if (!background) {
-    // #58: a valid pixel paints first; it never blocks the URL probe below and the same
-    // 7d/90d SWR clock still decides when the image is refreshed.
+    const entry = faviconCache.get(host);
     const pixel = faviconPixels.get(host);
-    if (pixel) {
+    // #58: a usable pixel paints first and returns; a missing or failing pixel falls through
+    // to the URL cache. A fresh probe that found no source outranks an older pixel — never
+    // resurrect an icon the URL cache has just failed to confirm. The 7d/90d SWR clock still
+    // decides when a painted pixel is refreshed, and capture is detached from this paint.
+    if (pixel && !(entry && entry.url === null)) {
       if (Date.now() - pixel.ts <= FAV_HIT_SWR_TTL && await paintFaviconPixel(img, host, pixel)) {
         if (Date.now() - pixel.ts > FAV_HIT_TTL && !inflight.has(host)) {
           loadFavicon(img, url, { background: true });
@@ -331,7 +340,6 @@ async function loadFavicon(img, url, opts) {
       faviconPixels.delete(host);
       persistFaviconPixelsDebounced();
     }
-    const entry = faviconCache.get(host);
     if (entry) {
       // Cache hit — instant render, zero network. Stale hits paint too (SWR), refreshed below.
       if (entry.url === null) {

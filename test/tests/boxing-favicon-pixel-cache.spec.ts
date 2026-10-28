@@ -184,7 +184,10 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     await expect.poll(async () => Boolean((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.d), { timeout: 15000 }).toBe(true);
     const stored = String((await readStore(page, PIXEL_KEY))!.entries![FIXTURE_HOST].d);
     expect(stored.startsWith(PIXEL_PREFIX)).toBe(true);
-    expect(stored).not.toContain('svg');
+    // Deterministic "not the raw SVG": PNG magic decides, and no stored byte can be the
+    // '<' that opens an SVG document.
+    const bytes = Buffer.from(stored.slice(PIXEL_PREFIX.length), 'base64');
+    expect(bytes[0]).not.toBe(0x3c);
     const meta = pngMeta(stored);
     expect(meta.width).toBe(32);
     expect(meta.height).toBe(32);
@@ -215,6 +218,27 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     expect(stored['h69.test']).toBeDefined();
     const total = Object.values(stored).reduce((sum: number, e: any) => sum + String(e.d).length, 0);
     expect(total).toBeLessThanOrEqual(1024 * 1024);
+    // The budget covers the whole serialized layer, not just the image payloads.
+    const raw = await page.evaluate((k) => localStorage.getItem(k) || '', PIXEL_KEY);
+    expect(raw.length).toBeGreaterThan(0);
+    expect(raw.length).toBeLessThanOrEqual(1024 * 1024);
+  });
+
+  test('a fresh negative URL entry outranks an older pixel', async ({ page }) => {
+    await boot(page, {
+      seed: async () => {
+        localStorage.setItem(PIXEL_KEY, JSON.stringify({
+          entries: { [FIXTURE_HOST]: { d: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() } },
+        }));
+        localStorage.setItem(URL_KEY, JSON.stringify({
+          entries: { [FIXTURE_HOST]: { url: null, ts: Date.now() } }, savedAt: Date.now(),
+        }));
+      },
+    });
+    await seedAndEnterSmallBox(page);
+    // The URL cache says "no source"; the pixel must not resurrect an icon.
+    await expect.poll(async () => (await rowState(page)).display, { timeout: 5000 }).toBe('none');
+    expect((await rowState(page)).cached).toBe(false);
   });
 
   test('a corrupt pixel is discarded and the existing URL icon still paints', async ({ page }) => {
@@ -282,11 +306,13 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
   });
 
   test('a hanging capture never delays the URL paint', async ({ page }) => {
+    let captureFetches = 0;
     await boot(page, {
       route: async (p) => {
         await p.route(EXTERNAL_FAVICON_RE, async (route) => {
           // Image probes answer immediately; the capture's fetch hangs.
           if (route.request().resourceType() === 'fetch') {
+            captureFetches++;
             await new Promise((r) => setTimeout(r, 2000));
             await route.abort().catch(() => { /* teardown race is not the assertion */ });
             return;
@@ -304,21 +330,29 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
     expect(Date.now() - started).toBeLessThan(15000);
+    // The paint landed while the capture fetch was still sleeping, and the capture did start.
+    await expect.poll(() => captureFetches, { timeout: 5000 }).toBeGreaterThan(0);
     expect((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]).toBeUndefined();
   });
 
   test('a refused pixel write neither hides the icon nor blocks the core save', async ({ page }) => {
     await page.addInitScript(() => {
+      (globalThis as any).__pixelWriteAttempts = 0;
       const original = Storage.prototype.setItem;
       Storage.prototype.setItem = function (key: string, value: string) {
-        if (key === 'boxingFaviconPixels.v1') throw new DOMException('quota', 'QuotaExceededError');
+        if (key === 'boxingFaviconPixels.v1') {
+          (globalThis as any).__pixelWriteAttempts++;
+          throw new DOMException('quota', 'QuotaExceededError');
+        }
         return original.call(this, key, value);
       };
     });
     await boot(page, { route: (p) => serveEverySource(p, PNG_1x1, 'image/png') });
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
-    await expect.poll(async () => (await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST], { timeout: 15000 }).toBeUndefined();
+    // The write was actually attempted (after the persist debounce) and refused.
+    await expect.poll(() => page.evaluate(() => (globalThis as any).__pixelWriteAttempts), { timeout: 15000 }).toBeGreaterThan(0);
+    expect((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]).toBeUndefined();
 
     const persisted = await page.evaluate(async () => {
       await (window as any).__boxingDebug.saveLayout();
@@ -327,7 +361,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     expect(persisted?.boxes?.length).toBe(1);
   });
 
-  test('built manifests keep the existing authorization boundary', ({}, testInfo) => {
+  test('built manifests keep the existing authorization boundary', () => {
     test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')) && !fs.existsSync(path.join(DIST_FIREFOX, 'manifest.json')),
       'dist is not built - run npm run build first');
     const chromeManifest = path.join(DIST_CHROME, 'manifest.json');
@@ -341,7 +375,6 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
       const m = JSON.parse(fs.readFileSync(firefoxManifest, 'utf8'));
       expect(m.host_permissions || []).toContain('https://*/*');
     }
-    expect(testInfo.project.name).toBeTruthy();
   });
 });
 
