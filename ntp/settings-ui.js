@@ -15,7 +15,7 @@ import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAuto
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections, toggleStarMark } from './conn-layer.js';
 import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
 import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
-import { isPassphraseBackupFile, encryptBackupFile, decryptBackupFile, maxInnerBytes, utf8ByteLength, MAX_PASSPHRASE_CHARS, MAX_BACKUP_FILE_BYTES, BACKUP_ERROR_PASSPHRASE } from './backup-crypto.js';
+import { isPassphraseBackupFile, validateBackupEnvelope, encryptBackupFile, decryptBackupFile, maxInnerBytes, utf8ByteLength, MAX_PASSPHRASE_CHARS, MAX_BACKUP_FILE_BYTES, BACKUP_ERROR_PASSPHRASE } from './backup-crypto.js';
 
 let debug, debugErr, debugWarn, updateCaption;
 let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeGroup, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
@@ -280,7 +280,15 @@ export function initSettingsUiFacade(deps) {
   // would seal the file shut); mode 'decrypt' asks once and can reopen with `initialError`
   // after a failed open. Fields are cleared on every settle: the passphrase lives only as
   // long as the click that asked for it, and never reaches storage, a log or the sync payload.
+  // One dialog at a time. The overlay does not trap Tab (neither does the confirm modal), so
+  // focus can leave it; a second export click while the first dialog is still open would
+  // otherwise stack a new listener set on the same buttons and leave the FIRST promise with no
+  // way to settle. A re-request therefore resolves 'dismiss' immediately and leaves the open
+  // dialog exactly as it was.
+  let passphraseDialogOpen = false;
+
   function askPassphraseModal(mode, initialError) {
+    if (passphraseDialogOpen) return Promise.resolve({ dismiss: true });
     return new Promise(resolve => {
       const modal = document.getElementById('passphrase-modal');
       const titleEl = document.getElementById('passphrase-title');
@@ -291,11 +299,13 @@ export function initSettingsUiFacade(deps) {
       const actionEl = document.getElementById('passphrase-action-btn');
       const cancelEl = document.getElementById('passphrase-cancel-btn');
       const isExport = mode === 'export';
+      passphraseDialogOpen = true;
       let settled = false;
       const showError = (message) => { errorEl.textContent = message; errorEl.hidden = false; };
       const hideError = () => { errorEl.textContent = ''; errorEl.hidden = true; };
       const settle = (result) => {
         if (settled) return; settled = true;
+        passphraseDialogOpen = false;
         inputEl.removeEventListener('keydown', onKey);
         repeatEl.removeEventListener('keydown', onKey);
         modal.removeEventListener('keydown', onModalKey);
@@ -355,10 +365,17 @@ export function initSettingsUiFacade(deps) {
   // Passphrase file -> the plain backup text the existing importer already understands.
   // Returns the text, or null when the user cancelled or the envelope cannot be opened at all.
   // Both exits stop the caller BEFORE any layout write, so a wrong guess can never change the
-  // canvas (spec #53 D4). Only the tagged "does not open" failure re-prompts: an envelope this
-  // build cannot read at all (unknown version, wrong parameter shape, unparsable payload) is
-  // reported once instead of looping the dialog forever on a file that will never open.
+  // canvas (spec #53 D4). The envelope is validated before the first prompt — asking someone to
+  // type a secret for a file this build cannot read at all is a bait-and-switch — and only the
+  // tagged "does not open" failure re-prompts, so the loop cannot trap the dialog.
   async function openPassphraseBackup(envelope) {
+    try {
+      validateBackupEnvelope(envelope);
+    } catch (e) {
+      debugErr('openPassphraseBackup: envelope rejected', e);
+      try { alert(i18n('importEncryptedInvalid')); } catch (e2) { /* silent: alert may be blocked */ }
+      return null;
+    }
     let initialError = null;
     for (;;) {
       const answer = await askPassphraseModal('decrypt', initialError);

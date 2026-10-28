@@ -117,6 +117,16 @@ async function passphraseDialogState(page) {
   });
 }
 
+// A failed decrypt re-opens the dialog only after a real PBKDF2 derive (tens of ms in Node,
+// slower on a CI browser), and settle() clears the fields in between — so the error is polled,
+// never read once, exactly like every other asynchronous consequence in this file.
+async function expectDialogError(page, pattern: RegExp) {
+  await expect.poll(async () => {
+    const s = await passphraseDialogState(page);
+    return s.open && s.errorShown && pattern.test(s.errorText);
+  }, { timeout: 25000 }).toBe(true);
+}
+
 // Types into the dialog and submits it. A rejected typing keeps the dialog open by design, so
 // callers assert on passphraseDialogState() afterwards instead of waiting for it to disappear.
 async function typePassphrase(page, passphrase: string, repeat: string | null, useEnter = false) {
@@ -184,7 +194,8 @@ function unb64(text: string) {
 // Node-side v1 seal/open. Used only to build files the product UI cannot produce, and to read
 // back what the browser sealed — the passphrases here are test fixtures, never user data.
 async function nodeKey(passphrase: string, salt: Uint8Array, usage: 'encrypt' | 'decrypt') {
-  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+  // NFC to match the product's v1 contract (see deriveFileKey in ntp/backup-crypto.js).
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: salt as BufferSource, iterations: V1.iterations, hash: V1.hash },
     base,
@@ -382,7 +393,7 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     await armExportCapture(pageC);
     await runImport(pageC, 'sealed.json', sealedText!);
     await typePassphrase(pageC, 'wrong on purpose', null);
-    expect((await passphraseDialogState(pageC)).errorText).toMatch(/wrong passphrase|damaged/i);
+    await expectDialogError(pageC, /wrong passphrase|damaged/i);
     expect(await confirmOpen(pageC)).toBe(false);
     expect(await titles(pageC)).toEqual(['Local Kept']);
     await typePassphrase(pageC, 'open sesame 会话', null);
@@ -409,7 +420,7 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     damaged.payload = damaged.payload.slice(0, at) + (damaged.payload[at] === 'A' ? 'B' : 'A') + damaged.payload.slice(at + 1);
     await runImport(page, 'damaged.json', damaged);
     await typePassphrase(page, 'seal-me', null);
-    expect((await passphraseDialogState(page)).errorShown).toBe(true);
+    await expectDialogError(page, /wrong passphrase|damaged/i);
     expect(await alerts(page)).toBe('');
     expect(await titles(page)).toEqual(['Still Mine']);
 

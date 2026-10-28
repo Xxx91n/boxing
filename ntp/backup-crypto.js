@@ -158,6 +158,12 @@ export function maxInnerBytes() {
   return Math.floor(usable / 4) * 3 - GCM_TAG_BYTES;
 }
 
+// Public so a caller can tell "you cannot open this file" from "your passphrase was wrong"
+// BEFORE it asks anyone to type a secret. No crypto runs here.
+export function validateBackupEnvelope(value) {
+  return readEnvelope(value);
+}
+
 export async function encryptBackupFile(innerJson, passphrase) {
   requirePassphrase(passphrase);
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
