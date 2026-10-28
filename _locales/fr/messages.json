@@ -1100,4 +1100,58 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   }
+,
+  "exportEncryptLabel": {
+    "message": "Chiffrer les exports avec une phrase secrète"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing ne stocke jamais cette phrase secrète : perdue, le fichier reste illisible. Après restauration sur une autre installation, les identifiants WebDAV/GitHub doivent être resaisis."
+  },
+  "passphraseExportTitle": {
+    "message": "Chiffrer la sauvegarde avec une phrase secrète"
+  },
+  "passphraseExportBody": {
+    "message": "Saisissez la phrase secrète deux fois. Boxing ne la stocke pas et ne peut pas la récupérer : sans elle, le fichier reste illisible."
+  },
+  "passphraseExportAction": {
+    "message": "Chiffrer et exporter"
+  },
+  "passphraseImportTitle": {
+    "message": "Saisir la phrase secrète de la sauvegarde"
+  },
+  "passphraseImportBody": {
+    "message": "Ce fichier est protégé par une phrase secrète. Rien n'est modifié sur le canevas tant qu'il ne s'ouvre pas."
+  },
+  "passphraseImportAction": {
+    "message": "Déchiffrer et importer"
+  },
+  "passphraseFieldLabel": {
+    "message": "Phrase secrète"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "Retapez la phrase secrète"
+  },
+  "passphraseRequired": {
+    "message": "Saisissez d'abord une phrase secrète."
+  },
+  "passphraseMismatch": {
+    "message": "Les deux phrases secrètes ne correspondent pas."
+  },
+  "passphraseWrong": {
+    "message": "Phrase secrète incorrecte ou fichier endommagé - rien n'a été importé."
+  },
+  "importEncryptedInvalid": {
+    "message": "Import échoué : Boxing ne peut pas ouvrir ce fichier chiffré (une version plus récente est peut-être nécessaire). Aucune donnée modifiée."
+  },
+  "exportEncryptedTooLarge": {
+    "message": "Export échoué : la sauvegarde est trop volumineuse pour être chiffrée sous la limite de 5 Mo. Rien n'a été exporté."
+  }
+,
+  "passphraseTooLong": {
+    "message": "Cette phrase secrète est trop longue pour que Boxing l'utilise."
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Export échoué : le canevas de cette sauvegarde dépasse ce que Boxing peut restaurer (2 000 000 de caractères de layout). Rien n'a été exporté."
+  }
 }

@@ -1100,4 +1100,58 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   }
+,
+  "exportEncryptLabel": {
+    "message": "निर्यात फ़ाइलों को पासफ़्रेज़ से एन्क्रिप्ट करें"
+  },
+  "exportEncryptHint": {
+    "message": "Boxing यह पासफ़्रेज़ संग्रहित नहीं करता: खोने पर फ़ाइल अपठनीय रहती है। दूसरी इंस्टॉलेशन पर बहाल करने के बाद भी WebDAV/GitHub क्रेडियल्स दोबारा भरने होंगे।"
+  },
+  "passphraseExportTitle": {
+    "message": "बैकअप को पासफ़्रेज़ से एन्क्रिप्ट करें"
+  },
+  "passphraseExportBody": {
+    "message": "पासफ़्रेज़ दो बार दर्ज करें। Boxing इसे संग्रहित नहीं करता और न ही बहाल कर सकता है—इसके बिना फ़ाइल अपठनीय रहेगी।"
+  },
+  "passphraseExportAction": {
+    "message": "एन्क्रिप्ट करके निर्यात करें"
+  },
+  "passphraseImportTitle": {
+    "message": "बैकअप पासफ़्रेज़ दर्ज करें"
+  },
+  "passphraseImportBody": {
+    "message": "यह फ़ाइल पासफ़्रेज़ से सुरक्षित है। सफलतापूर्वक खुलने तक कैनवस पर कुछ नहीं बदलता।"
+  },
+  "passphraseImportAction": {
+    "message": "डिक्रिप्ट करके आयात करें"
+  },
+  "passphraseFieldLabel": {
+    "message": "पासफ़्रेज़"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "पासफ़्रेज़ दोहराएँ"
+  },
+  "passphraseRequired": {
+    "message": "पहले पासफ़्रेज़ दर्ज करें।"
+  },
+  "passphraseMismatch": {
+    "message": "दोनों पासफ़्रेज़ मेल नहीं खाते।"
+  },
+  "passphraseWrong": {
+    "message": "गलत पासफ़्रेज़ या फ़ाइल क्षतिग्रस्त—कुछ आयात नहीं हुआ।"
+  },
+  "importEncryptedInvalid": {
+    "message": "आयात विफल: Boxing इस एन्क्रिप्टेड फ़ाइल को खोल नहीं सकता (शायद नए संस्करण की ज़रूरत हो)। कोई डेटा नहीं बदला।"
+  },
+  "exportEncryptedTooLarge": {
+    "message": "निर्यात विफल: बैकअप इतना बड़ा है कि 5MB बहाली सीमा में एन्क्रिप्ट नहीं हो सकता। कुछ निर्यात नहीं हुआ।"
+  }
+,
+  "passphraseTooLong": {
+    "message": "यह पासफ़्रेज़ इतना लंबा है कि Boxing इसे इस्तेमाल नहीं कर सकता।"
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "निर्यात विफल: इस बैकअप का कैनवस Boxing की बहाल सीमा (layout के 20,00,000 वर्ण) से बड़ा है। कुछ निर्यात नहीं हुआ।"
+  }
 }

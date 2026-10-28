@@ -1100,4 +1100,58 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   }
+,
+  "exportEncryptLabel": {
+    "message": "Criptografar exportações com frase secreta"
+  },
+  "exportEncryptHint": {
+    "message": "O Boxing nunca guarda esta frase secreta: perdê-la deixa o arquivo ilegível. Ao restaurar em outra instalação, as credenciais WebDAV/GitHub ainda precisam ser digitadas de novo."
+  },
+  "passphraseExportTitle": {
+    "message": "Criptografar o backup com uma frase secreta"
+  },
+  "passphraseExportBody": {
+    "message": "Digite a frase secreta duas vezes. O Boxing não a guarda nem pode recuperá-la: sem ela o arquivo fica ilegível."
+  },
+  "passphraseExportAction": {
+    "message": "Criptografar e exportar"
+  },
+  "passphraseImportTitle": {
+    "message": "Digite a frase secreta do backup"
+  },
+  "passphraseImportBody": {
+    "message": "Este arquivo é protegido por frase secreta. Nada muda no canvas até ele abrir com sucesso."
+  },
+  "passphraseImportAction": {
+    "message": "Descriptografar e importar"
+  },
+  "passphraseFieldLabel": {
+    "message": "Frase secreta"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "Repita a frase secreta"
+  },
+  "passphraseRequired": {
+    "message": "Digite uma frase secreta primeiro."
+  },
+  "passphraseMismatch": {
+    "message": "As duas frases secretas não coincidem."
+  },
+  "passphraseWrong": {
+    "message": "Frase secreta incorreta ou arquivo danificado - nada foi importado."
+  },
+  "importEncryptedInvalid": {
+    "message": "Falha na importação: o Boxing não consegue abrir este arquivo criptografado (talvez exija uma versão mais nova). Nada foi alterado."
+  },
+  "exportEncryptedTooLarge": {
+    "message": "Falha na exportação: o backup é grande demais para criptografar dentro do limite de 5 MB de restauração. Nada foi exportado."
+  }
+,
+  "passphraseTooLong": {
+    "message": "Essa frase secreta é longa demais para o Boxing usá-la."
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Falha na exportação: o canvas deste backup excede o que o Boxing consegue restaurar (2.000.000 caracteres de layout). Nada foi exportado."
+  }
 }

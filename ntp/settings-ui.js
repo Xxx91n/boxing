@@ -15,6 +15,7 @@ import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAuto
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections, toggleStarMark } from './conn-layer.js';
 import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
 import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
+import { isPassphraseBackupFile, validateBackupEnvelope, encryptBackupFile, decryptBackupFile, maxInnerBytes, utf8ByteLength, MAX_PASSPHRASE_CHARS, MAX_BACKUP_FILE_BYTES, BACKUP_ERROR_PASSPHRASE } from './backup-crypto.js';
 
 let debug, debugErr, debugWarn, updateCaption;
 let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeGroup, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
@@ -270,6 +271,161 @@ export function initSettingsUiFacade(deps) {
       confirmModal.addEventListener('click', onBackdrop);
       confirmModal.hidden = false;
     });
+  }
+
+  // ── Issue #57 (spec #53 D4): passphrase dialog for manual backup files ──────────
+  // Same in-page surface and one-shot-listener shape as askConfirmModal. Resolves
+  // { dismiss: true } on cancel/backdrop/Escape, or { passphrase } once the typing passes the
+  // dialog's own input bounds. mode 'export' asks for the passphrase twice (a mistyped key
+  // would seal the file shut); mode 'decrypt' asks once and can reopen with `initialError`
+  // after a failed open. Fields are cleared on every settle: the passphrase lives only as
+  // long as the click that asked for it, and never reaches storage, a log or the sync payload.
+  // One dialog at a time. The overlay does not trap Tab (neither does the confirm modal), so
+  // focus can leave it; a second export click while the first dialog is still open would
+  // otherwise stack a new listener set on the same buttons and leave the FIRST promise with no
+  // way to settle. A re-request therefore resolves 'dismiss' immediately and leaves the open
+  // dialog exactly as it was.
+  let passphraseDialogOpen = false;
+
+  function askPassphraseModal(mode, initialError) {
+    if (passphraseDialogOpen) return Promise.resolve({ dismiss: true });
+    return new Promise(resolve => {
+      const modal = document.getElementById('passphrase-modal');
+      const titleEl = document.getElementById('passphrase-title');
+      const bodyEl = document.getElementById('passphrase-body');
+      const inputEl = document.getElementById('passphrase-input');
+      const repeatEl = document.getElementById('passphrase-repeat-input');
+      const errorEl = document.getElementById('passphrase-error');
+      const actionEl = document.getElementById('passphrase-action-btn');
+      const cancelEl = document.getElementById('passphrase-cancel-btn');
+      // Where the user was standing before this dialog steals focus — keyboard and
+      // screen-reader users get their place back when it closes, instead of a hidden
+      // focused control dropping focus to the body.
+      const opener = document.activeElement;
+      const isExport = mode === 'export';
+      let settled = false;
+      const showError = (message) => { errorEl.textContent = message; errorEl.hidden = false; };
+      const hideError = () => { errorEl.textContent = ''; errorEl.hidden = true; };
+      const settle = (result) => {
+        if (settled) return; settled = true;
+        passphraseDialogOpen = false;
+        inputEl.removeEventListener('keydown', onKey);
+        repeatEl.removeEventListener('keydown', onKey);
+        modal.removeEventListener('keydown', onModalKey);
+        actionEl.removeEventListener('click', onAction);
+        cancelEl.removeEventListener('click', onDismiss);
+        modal.removeEventListener('click', onBackdrop);
+        inputEl.value = ''; repeatEl.value = '';
+        hideError();
+        modal.hidden = true;
+        if (opener && typeof opener.focus === 'function' && document.contains(opener)) opener.focus();
+        resolve(result);
+      };
+      const onDismiss = () => settle({ dismiss: true });
+      const onAction = () => {
+        const passphrase = inputEl.value;
+        if (!passphrase) { showError(i18n('passphraseRequired')); return; }
+        // No maxLength on the fields: the browser would truncate both halves identically, so a
+        // pasted over-long passphrase would pass the mismatch check and seal a phrase the user
+        // never typed — an unrecoverable file. Reject it in words instead.
+        if (passphrase.length > MAX_PASSPHRASE_CHARS) { showError(i18n('passphraseTooLong')); return; }
+        if (isExport && passphrase !== repeatEl.value) { showError(i18n('passphraseMismatch')); return; }
+        settle({ passphrase });
+      };
+      const onBackdrop = (e) => { if (e.target === modal) onDismiss(); };
+      const onKey = (e) => {
+        // Enter from either field submits; Escape cancels and must not reach the document
+        // handler, which would also close the settings panel behind this dialog.
+        if (e.key === 'Enter') { e.preventDefault(); onAction(); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onDismiss(); }
+      };
+      // Escape is also honored with focus on one of the dialog's own buttons; Enter is not
+      // handled here because the button's click already fires for it.
+      const onModalKey = (e) => {
+        if (e.key !== 'Escape') return;
+        e.preventDefault();
+        e.stopPropagation();
+        onDismiss();
+      };
+      titleEl.textContent = i18n(isExport ? 'passphraseExportTitle' : 'passphraseImportTitle');
+      bodyEl.textContent = i18n(isExport ? 'passphraseExportBody' : 'passphraseImportBody');
+      actionEl.textContent = i18n(isExport ? 'passphraseExportAction' : 'passphraseImportAction');
+      repeatEl.hidden = !isExport;
+      // 'off' in both modes: a password-manager prompt would offer to keep a copy of a phrase
+      // this feature promises is unrecoverable, and export cannot autofill what it just minted.
+      inputEl.autocomplete = 'off';
+      repeatEl.autocomplete = 'off';
+      inputEl.value = ''; repeatEl.value = '';
+      if (initialError) showError(initialError); else hideError();
+      actionEl.addEventListener('click', onAction);
+      cancelEl.addEventListener('click', onDismiss);
+      modal.addEventListener('click', onBackdrop);
+      inputEl.addEventListener('keydown', onKey);
+      repeatEl.addEventListener('keydown', onKey);
+      modal.addEventListener('keydown', onModalKey);
+      // Marked open only now that setup ran: a throw before this point must not leave the
+      // re-entry guard stuck on, or every later export and encrypted import would silently
+      // resolve as a dismissal forever.
+      passphraseDialogOpen = true;
+      modal.hidden = false;
+      inputEl.focus();
+    });
+  }
+
+  // Passphrase file -> the plain backup text the existing importer already understands.
+  // Returns the text, or null when the user cancelled or the envelope cannot be opened at all.
+  // Both exits stop the caller BEFORE any layout write, so a wrong guess can never change the
+  // canvas (spec #53 D4). The envelope is validated before the first prompt — asking someone to
+  // type a secret for a file this build cannot read at all is a bait-and-switch — and only the
+  // tagged "does not open" failure re-prompts, so the loop cannot trap the dialog.
+  async function openPassphraseBackup(envelope) {
+    try {
+      validateBackupEnvelope(envelope);
+    } catch (e) {
+      debugErr('openPassphraseBackup: envelope rejected', e);
+      try { alert(i18n('importEncryptedInvalid')); } catch (e2) { /* silent: alert may be blocked */ }
+      return null;
+    }
+    let initialError = null;
+    for (;;) {
+      const answer = await askPassphraseModal('decrypt', initialError);
+      if (answer.dismiss) { debug('Import aborted — passphrase file left closed'); return null; }
+      try {
+        return await decryptBackupFile(envelope, answer.passphrase);
+      } catch (e) {
+        if (e.code !== BACKUP_ERROR_PASSPHRASE) {
+          debugErr('openPassphraseBackup: envelope rejected', e);
+          try { alert(i18n('importEncryptedInvalid')); } catch (e2) { /* silent: alert may be blocked */ }
+          return null;
+        }
+        initialError = i18n('passphraseWrong');
+      }
+    }
+  }
+
+
+  // Envelope -> sealed file text, or a reason it cannot be written. Two DIFFERENT limits can
+  // stop a seal, and blaming the wrong one sends the user off to shrink the wrong thing:
+  //   layout — the importer lands at most 2,000,000 characters of LAYOUT (the same SEC-06 cap
+  //            the plain path applies); no file, sealed or not, can bring that back.
+  //   file   — the sealed bytes must still clear the importer's 5MB file gate, and base64
+  //            inflates non-ASCII payloads roughly threefold. Snapshot bodies trim first (the
+  //            same oldest-first drop the plain path uses), measured in BYTES here.
+  // Refusing is the only alternative in both cases: falling back to a plain file would hand out
+  // exactly the content the user asked to protect, and raising either limit would trade an
+  // existing protection for a round trip (spec #53 D4 / AC7).
+  async function sealForDownload(env, text, passphrase) {
+    if (JSON.stringify(env.layout).length > 2_000_000) return { ok: false, reason: 'layout' };
+    const allowed = maxInnerBytes();
+    if (env._bodies) {
+      while (utf8ByteLength(text) > allowed && env._bodies.snapshots.length > 0) {
+        env._bodies.snapshots.shift();
+        env.meta.bodyTrimmed = (env.meta.bodyTrimmed || 0) + 1;
+        text = JSON.stringify(env, null, 2);
+      }
+    }
+    if (utf8ByteLength(text) > allowed) return { ok: false, reason: 'file' };
+    return { ok: true, text: JSON.stringify(await encryptBackupFile(text, passphrase)) };
   }
 
 
@@ -1032,7 +1188,16 @@ export function bindSettingsUi() {
     }
     async function doExportEnvelope(fullPackage) {
       try {
-        const env = await buildExportEnvelope();
+        // Issue #57 (spec #53 D4): the data-tab checkbox is the only thing that changes this
+        // path — unchecked, it stays the ticket-51 plain export. Dismissing the dialog
+        // downloads nothing at all.
+        let passphrase = null;
+        if (document.getElementById('export-encrypt-cb')?.checked) {
+          const answer = await askPassphraseModal('export', null);
+          if (answer.dismiss) return;
+          passphrase = answer.passphrase;
+        }
+        let env = await buildExportEnvelope();
         let text = JSON.stringify(env, null, 2);
         if (fullPackage) {
           env.meta.fullPackage = true;
@@ -1040,21 +1205,30 @@ export function bindSettingsUi() {
           // Size estimate + 5MB handling (SEC-06 parity: the importer rejects
           // payloads it cannot land; a full package must stay restorable, not
           // maximal).
-          const CAP = 5 * 1024 * 1024;
           text = JSON.stringify(env, null, 2);
-          while (text.length > CAP && env._bodies.snapshots.length > 0) {
+          while (text.length > MAX_BACKUP_FILE_BYTES && env._bodies.snapshots.length > 0) {
             env._bodies.snapshots.shift(); // oldest body drops first
             env.meta.bodyTrimmed = (env.meta.bodyTrimmed || 0) + 1;
             text = JSON.stringify(env, null, 2);
           }
-          if (text.length > CAP) {
+          if (text.length > MAX_BACKUP_FILE_BYTES) {
             // even metadata-only is too big (huge live layout) — fall back to the
             // standard envelope so the user still gets a clean, importable export.
             debug('Full DR package exceeds 5MB after trim — falling back to standard envelope');
             try { alert(i18n('exportFullOverflow')); } catch (_) { /* alert may be blocked */ }
-            const plain = await buildExportEnvelope();
-            text = JSON.stringify(plain, null, 2);
+            env = await buildExportEnvelope();
+            text = JSON.stringify(env, null, 2);
           }
+        }
+        if (passphrase) {
+          const sealed = await sealForDownload(env, text, passphrase);
+          if (!sealed.ok) {
+            try { alert(i18n(sealed.reason === 'layout' ? 'exportEncryptedLayoutTooLarge' : 'exportEncryptedTooLarge')); } catch (_) { /* alert may be blocked */ }
+            return;
+          }
+          downloadJson(sealed.text, 'boxing-backup-' + _ymd() + '.json');
+          debug('Export done — fullPackage=' + Boolean(fullPackage) + ' encrypted=true len=' + sealed.text.length);
+          return;
         }
         downloadJson(text, 'boxing-backup-' + _ymd() + '.json');
         debug('Export done — fullPackage=' + Boolean(fullPackage) + ' bytes=' + text.length);
@@ -1069,13 +1243,27 @@ export function bindSettingsUi() {
       if (!importPending) return; importPending = false;
       const file = importFile.files[0];
       if (!file) return;
-      // File size sanity check — reject imports > 5MB
-      if (file.size > 5 * 1024 * 1024) { try { alert(i18n('importTooLarge')); } catch (e) { /* silent: alert may be blocked */ } importFile.value = ''; return; }
+      // File size sanity check — reject imports > 5MB. Export keeps a sealed file inside this
+      // same gate (maxInnerBytes()), so sealing can never produce a file the gate would refuse;
+      // the caps BEHIND the gate (structure checks, the 2,000,000-char layout payload) still
+      // apply to the decrypted bytes exactly as they do to a plain file.
+      if (file.size > MAX_BACKUP_FILE_BYTES) { try { alert(i18n('importTooLarge')); } catch (e) { /* silent: alert may be blocked */ } importFile.value = ''; return; }
       try {
         const text = await file.text();
         // Strip UTF-8 BOM if present
         const cleanText = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
-        let data = JSON.parse(cleanText);
+        // Issue #57 (spec #53 D4): a passphrase-protected file is opened back into the plain
+        // backup text it was sealed from, then rides the UNCHANGED validation / confirm /
+        // merge pipeline below — file encryption never bypasses the existing data protections.
+        // Cancelling the dialog or a file the app cannot open at all stops here, before any
+        // layout write, so the canvas stays exactly as it was.
+        let data = null;
+        try { data = JSON.parse(cleanText); } catch (e) { /* unparsable: the structure checks below reject it */ }
+        if (isPassphraseBackupFile(data)) {
+          const inner = await openPassphraseBackup(data);
+          if (inner === null) { importFile.value = ''; return; }
+          data = JSON.parse(inner);
+        }
         // Ticket 51 (spec ticket 51): unwrap the export envelope — { _exportedAt, meta,
         // layout[, _bodies] } lands as the bare layout, so a default-envelope or
         // full-DR-package export round-trips back through the unchanged merge /

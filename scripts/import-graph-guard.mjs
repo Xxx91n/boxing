@@ -406,7 +406,9 @@ const isolationSources = files.map((file) => ({ rel: `ntp/${file}`, text: linesB
 isolationSources.push({ rel: 'background.js', text: fs.readFileSync(path.join(root, 'background.js'), 'utf8') });
 for (const violation of analyzeIsolation(isolationSources)) add(violation.rule, violation.file, violation.line, violation.message);
 
-const leaves = new Set(['state.js', 'utils.js', 'credentials.js', 'favicon.js', 'i18n.js', 'storage.js', 'site-constants.js', 'url-title.js']);
+// backup-crypto.js (issue #57) is a leaf for the same reason credentials.js is one: a crypto
+// module that must import nothing, so no install secret or storage facade can reach it.
+const leaves = new Set(['state.js', 'utils.js', 'credentials.js', 'backup-crypto.js', 'favicon.js', 'i18n.js', 'storage.js', 'site-constants.js', 'url-title.js']);
 for (const file of leaves) for (const target of edges.get(file) || []) {
   if (file === 'storage.js' && target === 'utils.js') continue;
   add('B-1', `ntp/${file}`, 0, `leaf module imports sibling module ${target}`);
@@ -465,7 +467,7 @@ for (const file of facades) {
   if (!entry.includes(`${fn}(`)) add('B-7', 'ntp/ntp.js', 1, `entry does not invoke ${fn}`);
 }
 
-const featureLeaves = new Set(['state.js', 'utils.js', 'credentials.js', 'favicon.js', 'i18n.js', 'storage.js', 'site-constants.js', 'url-title.js']);
+const featureLeaves = new Set(['state.js', 'utils.js', 'credentials.js', 'backup-crypto.js', 'favicon.js', 'i18n.js', 'storage.js', 'site-constants.js', 'url-title.js']);
 const entryModule = 'ntp.js';
 const acceptedFeatureSiblingEdges = new Set([
   'onboarding.js->render.js',

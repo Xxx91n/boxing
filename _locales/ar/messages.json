@@ -1100,4 +1100,58 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   }
+,
+  "exportEncryptLabel": {
+    "message": "تشفير الملفات المُصدَّرة بعبارة مرور"
+  },
+  "exportEncryptHint": {
+    "message": "لا يحفظ Boxing عبارة المرور أبدًا؛ إذا فُقدت يبقى الملف غير قابل للقراءة. عند الاستعادة على تثبيت آخر ما زالت بيانات اعتماد WebDAV/GitHub تحتاج إلى إعادة إدخال."
+  },
+  "passphraseExportTitle": {
+    "message": "تشفير النسخة الاحتياطية بعبارة مرور"
+  },
+  "passphraseExportBody": {
+    "message": "أدخل عبارة المرور مرتين. لا يحفظها Boxing ولا يستطيع استرجاعها: بدونها يبقى الملف غير قابل للقراءة."
+  },
+  "passphraseExportAction": {
+    "message": "التشفير والتصدير"
+  },
+  "passphraseImportTitle": {
+    "message": "أدخل عبارة مرور النسخة الاحتياطية"
+  },
+  "passphraseImportBody": {
+    "message": "هذا الملف محمي بعبارة مرور. لن يتغير شيء على اللوحة قبل فتحه بنجاح."
+  },
+  "passphraseImportAction": {
+    "message": "فك التشفير والاستيراد"
+  },
+  "passphraseFieldLabel": {
+    "message": "عبارة المرور"
+  },
+  "passphraseRepeatFieldLabel": {
+    "message": "أعد إدخال عبارة المرور"
+  },
+  "passphraseRequired": {
+    "message": "أدخل عبارة المرور أولاً."
+  },
+  "passphraseMismatch": {
+    "message": "عبارتا المرور غير متطابقتين."
+  },
+  "passphraseWrong": {
+    "message": "عبارة المرور خاطئة أو الملف تالف — لم يُستورد شيء."
+  },
+  "importEncryptedInvalid": {
+    "message": "فشل الاستيراد: لا يستطيع Boxing فتح هذا الملف المشفر (قد يتطلب إصدارًا أحدث). لم يتغير شيء."
+  },
+  "exportEncryptedTooLarge": {
+    "message": "فشل التصدير: النسخة الاحتياطية أكبر من أن تُشفَّر داخل حد الاستعادة 5 ميغابايت. لم يُصدَّر شيء."
+  }
+,
+  "passphraseTooLong": {
+    "message": "عبارة المرور طويلة جدًا بحيث لا يستطيع Boxing استخدامها."
+  }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "فشل التصدير: لوحة المحتوى في هذه النسخة تتجاوز ما يستطيع Boxing استعادته (2,000,000 محرف من layout). لم يُصدَّر شيء."
+  }
 }
