@@ -963,6 +963,36 @@
   "aboutLinkPrivacy": {
     "message": "Datenschutzerklärung"
   },
+  "aboutCopyVersion": {
+    "message": "Version kopieren"
+  },
+  "aboutCopyLink": {
+    "message": "Link kopieren"
+  },
+  "aboutCopied": {
+    "message": "Kopiert"
+  },
+  "aboutCopyFailed": {
+    "message": "Kopieren fehlgeschlagen"
+  },
+  "aboutDiagnostics": {
+    "message": "Diagnose öffnen"
+  },
+  "aboutQuickHelp": {
+    "message": "Kurzübersicht"
+  },
+  "quickHelpCreateBox": {
+    "message": "Boxen hinzufügen"
+  },
+  "quickHelpBookmarks": {
+    "message": "Lesezeichen"
+  },
+  "quickHelpPanZoom": {
+    "message": "Verschieben & Zoom"
+  },
+  "quickHelpSyncRestore": {
+    "message": "Sync & Wiederherstellung"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },

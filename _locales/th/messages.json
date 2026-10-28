@@ -963,6 +963,36 @@
   "aboutLinkPrivacy": {
     "message": "นโยบายความเป็นส่วนตัว"
   },
+  "aboutCopyVersion": {
+    "message": "คัดลอกเวอร์ชัน"
+  },
+  "aboutCopyLink": {
+    "message": "คัดลอกลิงก์"
+  },
+  "aboutCopied": {
+    "message": "คัดลอกแล้ว"
+  },
+  "aboutCopyFailed": {
+    "message": "คัดลอกไม่สำเร็จ"
+  },
+  "aboutDiagnostics": {
+    "message": "เปิดการวินิจฉัย"
+  },
+  "aboutQuickHelp": {
+    "message": "อ้างอิงด่วน"
+  },
+  "quickHelpCreateBox": {
+    "message": "เพิ่มกล่อง"
+  },
+  "quickHelpBookmarks": {
+    "message": "บุ๊กมาร์ก"
+  },
+  "quickHelpPanZoom": {
+    "message": "เลื่อนและซูม"
+  },
+  "quickHelpSyncRestore": {
+    "message": "ซิงค์และกู้คืน"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },

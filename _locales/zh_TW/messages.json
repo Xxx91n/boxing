@@ -966,6 +966,36 @@
   "aboutLinkPrivacy": {
     "message": "隱私權政策"
   },
+  "aboutCopyVersion": {
+    "message": "複製版本號"
+  },
+  "aboutCopyLink": {
+    "message": "複製連結"
+  },
+  "aboutCopied": {
+    "message": "已複製"
+  },
+  "aboutCopyFailed": {
+    "message": "複製失敗"
+  },
+  "aboutDiagnostics": {
+    "message": "開啟診斷"
+  },
+  "aboutQuickHelp": {
+    "message": "操作速查"
+  },
+  "quickHelpCreateBox": {
+    "message": "添加盒子"
+  },
+  "quickHelpBookmarks": {
+    "message": "管理書籤"
+  },
+  "quickHelpPanZoom": {
+    "message": "平移與縮放"
+  },
+  "quickHelpSyncRestore": {
+    "message": "同步與恢復"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },

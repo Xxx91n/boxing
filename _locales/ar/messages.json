@@ -963,6 +963,36 @@
   "aboutLinkPrivacy": {
     "message": "سياسة الخصوصية"
   },
+  "aboutCopyVersion": {
+    "message": "نسخ الإصدار"
+  },
+  "aboutCopyLink": {
+    "message": "نسخ الرابط"
+  },
+  "aboutCopied": {
+    "message": "تم النسخ"
+  },
+  "aboutCopyFailed": {
+    "message": "فشل النسخ"
+  },
+  "aboutDiagnostics": {
+    "message": "فتح التشخيص"
+  },
+  "aboutQuickHelp": {
+    "message": "مرجع سريع"
+  },
+  "quickHelpCreateBox": {
+    "message": "إضافة صناديق"
+  },
+  "quickHelpBookmarks": {
+    "message": "الإشارات المرجعية"
+  },
+  "quickHelpPanZoom": {
+    "message": "التحريك والتكبير"
+  },
+  "quickHelpSyncRestore": {
+    "message": "المزامنة والاستعادة"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },
