@@ -1150,4 +1150,8 @@
   "passphraseTooLong": {
     "message": "패스프레이즈가 너무 길어 Boxing이 암호화할 수 없습니다."
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "내보내기 실패: 이 백업의 캔버스 데이터가 Boxing이 복원할 수 있는 한도(layout 2,000,000자)를 넘습니다. 내보낸 항목이 없습니다."
+  }
 }

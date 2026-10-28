@@ -1150,4 +1150,8 @@
   "passphraseTooLong": {
     "message": "Diese Passphrase ist zu lang, als dass Boxing sie verwenden könnte."
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Export fehlgeschlagen: Die Canvas-Daten dieser Sicherung überschreiten das Wiederherstellungslimit von Boxing (2.000.000 Zeichen Layout). Nichts exportiert."
+  }
 }

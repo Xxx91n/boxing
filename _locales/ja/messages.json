@@ -1150,4 +1150,8 @@
   "passphraseTooLong": {
     "message": "そのパスフレーズは長すぎて、Boxing は暗号化できません。"
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "書き出し失敗：このバックアップのキャンバスデータは Boxing が復元できる上限（layout 2,000,000 文字）を超えています。何も書き出されていません。"
+  }
 }

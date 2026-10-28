@@ -311,6 +311,7 @@ I18N_FALLBACK.passphraseMismatch = 'The two passphrases do not match.';
 I18N_FALLBACK.passphraseWrong = 'Wrong passphrase or damaged file - nothing was imported.';
 I18N_FALLBACK.importEncryptedInvalid = 'Import failed: Boxing cannot open this passphrase file (it may need a newer version). Nothing was changed.';
 I18N_FALLBACK.exportEncryptedTooLarge = 'Export failed: the backup is too large to encrypt inside the 5MB restore limit. Nothing was exported.';
+I18N_FALLBACK.exportEncryptedLayoutTooLarge = 'Export failed: the canvas inside this backup is larger than Boxing can restore (2,000,000 characters of layout). Nothing was exported.';
 
 // Wave 2026.10.16 keys
 I18N_FALLBACK.aboutUpdateAvailable = 'New version available: ';

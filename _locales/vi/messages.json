@@ -1150,4 +1150,8 @@
   "passphraseTooLong": {
     "message": "Mật khẩu này quá dài để Boxing có thể sử dụng."
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Xuất thất bại: dữ liệu Canvas trong bản sao lưu này vượt giới hạn Boxing có thể khôi phục (2.000.000 ký tự layout). Chưa xuất gì."
+  }
 }

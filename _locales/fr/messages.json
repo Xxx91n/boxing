@@ -1150,4 +1150,8 @@
   "passphraseTooLong": {
     "message": "Cette phrase secrète est trop longue pour que Boxing l'utilise."
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Export échoué : le canevas de cette sauvegarde dépasse ce que Boxing peut restaurer (2 000 000 de caractères de layout). Rien n'a été exporté."
+  }
 }

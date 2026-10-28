@@ -1153,4 +1153,8 @@
   "passphraseTooLong": {
     "message": "該口令過長，Boxing 無法用它加密。"
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "匯出失敗：此備份中的畫布資料超過 Boxing 可匯入的上限（layout 2,000,000 字元）。未匯出任何內容。"
+  }
 }

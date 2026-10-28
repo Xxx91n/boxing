@@ -1153,4 +1153,8 @@
   "passphraseTooLong": {
     "message": "该口令过长，Boxing 无法用它加密。"
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "导出失败：此备份中的画布数据超过 Boxing 可恢复的上限（layout 2,000,000 字符）。未导出任何内容。"
+  }
 }

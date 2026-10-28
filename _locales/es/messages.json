@@ -1150,4 +1150,8 @@
   "passphraseTooLong": {
     "message": "Esa frase de paso es demasiado larga para que Boxing la use."
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Exportación fallida: el lienzo de esta copia supera lo que Boxing puede restaurar (2.000.000 caracteres de layout). No se exportó nada."
+  }
 }

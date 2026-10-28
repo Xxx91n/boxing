@@ -1150,4 +1150,8 @@
   "passphraseTooLong": {
     "message": "यह पासफ़्रेज़ इतना लंबा है कि Boxing इसे इस्तेमाल नहीं कर सकता।"
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "निर्यात विफल: इस बैकअप का कैनवस Boxing की बहाल सीमा (layout के 20,00,000 वर्ण) से बड़ा है। कुछ निर्यात नहीं हुआ।"
+  }
 }

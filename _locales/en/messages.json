@@ -1203,4 +1203,9 @@
     "message": "That passphrase is too long for Boxing to seal.",
     "description": "Inline error when the typed passphrase exceeds the dialog input bound"
   }
+,
+  "exportEncryptedLayoutTooLarge": {
+    "message": "Export failed: the canvas inside this backup is larger than Boxing can restore (2,000,000 characters of layout). Nothing was exported.",
+    "description": "Alert when a layout is larger than the importer can ever restore, so sealing it would be pointless"
+  }
 }
