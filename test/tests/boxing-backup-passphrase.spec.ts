@@ -71,22 +71,29 @@ async function boot(page, seed?) {
 }
 
 // Captures the download blob text + anchor name and turns alert() into observable state.
+// Idempotent: the wrappers are installed once per page and each call only resets the state, so
+// a test can re-arm between phases. Wrapping the wrapper would double-count downloads, and a
+// phase that polls `alerts()` against a previous phase's alert would pass on stale text.
 async function armExportCapture(page) {
   await page.evaluate(() => {
-    (window as any).__cap = { text: null, name: null, count: 0 };
-    (window as any).__alerts = [];
-    (window as any).alert = (m: any) => { (window as any).__alerts.push(String(m)); };
-    const origUrl = URL.createObjectURL.bind(URL);
-    URL.createObjectURL = (blob: Blob) => {
-      (window as any).__cap.count += 1;
-      blob.text().then((t) => { (window as any).__cap.text = t; });
-      return origUrl(blob);
-    };
-    const origClick = HTMLAnchorElement.prototype.click;
-    HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
-      if (this.download) (window as any).__cap.name = this.download;
-      return origClick.apply(this, arguments as any);
-    };
+    const w = window as any;
+    if (!w.__capArmed) {
+      w.__capArmed = true;
+      w.alert = (m: any) => { w.__alerts.push(String(m)); };
+      const origUrl = URL.createObjectURL.bind(URL);
+      URL.createObjectURL = (blob: Blob) => {
+        w.__cap.count += 1;
+        blob.text().then((t) => { w.__cap.text = t; });
+        return origUrl(blob);
+      };
+      const origClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function (this: HTMLAnchorElement) {
+        if (this.download) w.__cap.name = this.download;
+        return origClick.apply(this, arguments as any);
+      };
+    }
+    w.__cap = { text: null, name: null, count: 0 };
+    w.__alerts = [];
   });
 }
 
@@ -447,7 +454,7 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     await boot(page, { layout: bareLayout('Guarded Root'), snapData: bareLayout('Snap'), ts: SNAP_TS });
     await armExportCapture(page);
 
-    // structurally invalid layout, correctly sealed -> the existing structure checks reject it
+// structurally invalid layout, correctly sealed -> the existing structure checks reject it
     const badShape = await seal(JSON.stringify({ version: 3.5, boxes: [{ id: 'L1', x: 'not-a-number', y: 0 }] }), 'cap-check');
     await runImport(page, 'bad-shape.json', badShape);
     await typePassphrase(page, 'cap-check', null);
@@ -455,7 +462,10 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect(await titles(page)).toEqual(['Guarded Root']);
     expect(await downloadCount(page)).toBe(0);
 
-    // over the 2,000,000-char SEC-06 payload cap while staying inside the 5MB file gate
+    // over the 2,000,000-char SEC-06 payload cap while staying inside the 5MB file gate.
+    // Captured state is reset first: both phases raise the SAME alert, so a poll over a
+    // cumulative list would pass on the previous phase's alert.
+    await armExportCapture(page);
     const huge = JSON.stringify({ version: 3.5, boxes: [], pad: 'x'.repeat(2000001) });
     expect(Buffer.byteLength(huge, 'utf8')).toBeLessThan(MAX_BACKUP_FILE_BYTES);
     await runImport(page, 'huge.json', await seal(huge, 'cap-check'));
@@ -500,9 +510,12 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect(bytes).toBeGreaterThan(maxInnerBytes());
     expect(bytes).toBeLessThanOrEqual(MAX_BACKUP_FILE_BYTES);
     expect(JSON.parse(plain.text!).boxes[0].children[0].bookmarks).toHaveLength(10000);
+    expect(await downloadCount(page)).toBe(1);
 
     // and the importer still gates a SEALED file by its own size: too big is rejected before
-    // the dialog ever opens, so no passphrase can be traded for an unimportable payload
+    // the dialog ever opens, so no passphrase can be traded for an unimportable payload.
+    // State is reset because the refusal alert above also contains "too large".
+    await armExportCapture(page);
     const overGate = await seal(JSON.stringify({ version: 3.5, boxes: [], pad: 'y'.repeat(4500000) }), 'over-gate');
     expect(Buffer.byteLength(JSON.stringify(overGate), 'utf8')).toBeGreaterThan(MAX_BACKUP_FILE_BYTES);
     await runImport(page, 'over-gate.json', overGate);
@@ -511,11 +524,12 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect(await titles(page)).toEqual(['Too Fat To Seal']);
 
     // the same refusal once a FULL package has dropped every snapshot body it could trim
+    await armExportCapture(page);
     await setEncryptOption(page, true);
     await click(page, '#export-full-dr-btn');
     await typePassphrase(page, 'refuse-me-too', 'refuse-me-too');
     await expect.poll(() => alerts(page), { timeout: 30000 }).toMatch(/too large to encrypt/i);
-    expect(await downloadCount(page)).toBe(1); // only the plain export above ever downloaded
+    expect(await downloadCount(page)).toBe(0);
     expect(errors).toEqual([]);
     await context.close();
   });
