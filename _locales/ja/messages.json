@@ -1063,7 +1063,12 @@
     "message": "この比較の後で現在のコンテンツが変更されました。更新後の差分を確認し、再度確定してください"
   },
   "dataConflictApplied": {
-    "message": "$1$ 件のフィールドを適用しました"
+    "message": "$count$ 件のフィールドを適用しました",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "大ボックス"

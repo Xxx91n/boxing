@@ -1063,7 +1063,12 @@
     "message": "เนื้อหาปัจจุบันเปลี่ยนไปหลังการเทียบนี้ - ตรวจดูส่วนต่างที่ปรับปรุงแล้วแล้วยืนยันอีกครั้ง"
   },
   "dataConflictApplied": {
-    "message": "ใช้แล้ว $1$ ฟิลด์"
+    "message": "ใช้แล้ว $count$ ฟิลด์",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "กล่องใหญ่"

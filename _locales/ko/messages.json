@@ -1063,7 +1063,12 @@
     "message": "비교 이후 현재 내용이 변경되었습니다. 새로 바뀐 차이를 확인하고 다시 확정하세요"
   },
   "dataConflictApplied": {
-    "message": "$1$개 항목을 적용했습니다"
+    "message": "$count$개 항목을 적용했습니다",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "큰 박스"

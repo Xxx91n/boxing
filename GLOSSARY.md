@@ -80,6 +80,10 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **conflict copy** — Losing subtree archived verbatim instead of being silently overwritten during import or sync merge.
 
+**conflict field path** — Address of one adjudicable field inside a conflict comparison: the object's box key (plus the bookmark id for bookmark fields) and the field-group name, joined with `#` — `large:L1#title`, `small:L1:S1:bm1#url`. It is a UI address only; it never becomes a stored id.
+
+**staleness signature** — Fingerprint of the current side of a conflict comparison, taken when the user saw the diff. Applying re-compares and refuses when the signature moved, so an unreviewed verdict can never overwrite a later edit.
+
 **autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
 
 **MAX_SNAPSHOT_COUNT** — Hard ceiling of 30 snapshots; older snapshots are physically deleted beyond it.

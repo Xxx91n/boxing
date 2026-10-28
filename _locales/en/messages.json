@@ -1089,8 +1089,13 @@
     "description": "Staleness notice that discards an unreviewed apply (issue #54, spec #53 D3)"
   },
   "dataConflictApplied": {
-    "message": "Applied $1$ field(s)",
-    "description": "Result line after an explicit conflict apply (issue #54)"
+    "message": "Applied $count$ field(s)",
+    "description": "Result line after an explicit conflict apply (issue #54)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "Large box",

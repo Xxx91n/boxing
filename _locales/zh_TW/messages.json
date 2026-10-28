@@ -1066,7 +1066,12 @@
     "message": "比較之後目前內容已變更，請檢視重新整理的差異並再次確認"
   },
   "dataConflictApplied": {
-    "message": "已套用 $1$ 個欄位"
+    "message": "已套用 $count$ 個欄位",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "大盒子"

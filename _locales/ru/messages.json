@@ -1063,7 +1063,12 @@
     "message": "Текущее содержимое изменилось после сравнения - проверьте обновлённые отличия и подтвердите снова"
   },
   "dataConflictApplied": {
-    "message": "Применено полей: $1$"
+    "message": "Применено полей: $count$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "Большой контейнер"

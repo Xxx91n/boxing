@@ -1063,7 +1063,12 @@
     "message": "Nội dung hiện tại đã đổi sau khi so sánh - hãy xem lại khác biệt mới và xác nhận lại"
   },
   "dataConflictApplied": {
-    "message": "Đã áp dụng $1$ trường"
+    "message": "Đã áp dụng $count$ trường",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "Hộp lớn"

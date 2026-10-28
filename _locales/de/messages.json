@@ -1063,7 +1063,12 @@
     "message": "Der aktuelle Inhalt hat sich nach dem Vergleich geändert - bitte die aktualisierten Unterschiede prüfen und erneut bestätigen"
   },
   "dataConflictApplied": {
-    "message": "$1$ Feld(er) angewendet"
+    "message": "$count$ Feld(er) angewendet",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "Große Box"

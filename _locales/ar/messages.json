@@ -1063,7 +1063,12 @@
     "message": "تغيّر المحتوى الحالي بعد هذه المقارنة - راجع الفروق المحدَّثة وأكِّد من جديد"
   },
   "dataConflictApplied": {
-    "message": "طُبِّق $1$ من الحقول"
+    "message": "طُبِّق $count$ من الحقول",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "صندوق كبير"

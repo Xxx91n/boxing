@@ -652,7 +652,7 @@ function diffConflictArchive(entry, layout) {
   const sig = [];
   for (const archived of entry.raw.boxes) {
     if (!archived || typeof archived.id !== 'string') continue;
-    const basePath = 'large:' + archived.id;
+    const basePath = largeKey(archived.id);
     const cur = currentBoxes.find((b) => b && b.id === archived.id) || null;
     // Target gone: report it, offer nothing. Rebuilding a box the user deleted is out of
     // scope for adjudication (#53 D3), and the archive row itself is never touched.
@@ -668,7 +668,7 @@ function diffConflictArchive(entry, layout) {
     const currentChildren = Array.isArray(cur.children) ? cur.children : [];
     for (const archivedChild of (Array.isArray(archived.children) ? archived.children : [])) {
       if (!archivedChild || typeof archivedChild.id !== 'string') continue;
-      const childBase = 'small:' + archived.id + ':' + archivedChild.id;
+      const childBase = smallKey(archived.id, archivedChild.id);
       const curChild = currentChildren.find((s) => s && s.id === archivedChild.id) || null;
       // A child the canvas does not have is either copy-only (#55 adds it) or deleted
       // later; neither is a field adjudication, so it stays off the list entirely.

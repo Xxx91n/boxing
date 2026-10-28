@@ -1063,7 +1063,12 @@
     "message": "इस तुलना के बाद वर्तमान सामग्री बदल गई - ताज़ा अंतर देखें और दोबारा पुष्टि करें"
   },
   "dataConflictApplied": {
-    "message": "$1$ फ़ील्ड लागू किए गए"
+    "message": "$count$ फ़ील्ड लागू किए गए",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
   },
   "dataConflictLevelLargeBox": {
     "message": "बड़ा बॉक्स"
