@@ -35,6 +35,16 @@ const SVG_ICON = Buffer.from(
 
 type Entries = { entries?: Record<string, any> } | null;
 
+async function seedStores(page: Page, data: {
+  pixels?: Record<string, { data: string; ts: number }>;
+  urls?: Record<string, { url: string | null; ts: number }>;
+}) {
+  await page.evaluate(({ pixelKey, urlKey, pixels, urls }) => {
+    if (pixels) localStorage.setItem(pixelKey, JSON.stringify({ entries: pixels, savedAt: Date.now() }));
+    if (urls) localStorage.setItem(urlKey, JSON.stringify({ entries: urls, savedAt: Date.now() }));
+  }, { pixelKey: PIXEL_KEY, urlKey: URL_KEY, pixels: data.pixels, urls: data.urls });
+}
+
 async function readStore(page: Page, key: string): Promise<Entries> {
   return page.evaluate((k) => {
     try {
@@ -254,7 +264,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
         for (let i = 0; i < 70; i++) entries[`h${i}.test`] = { data: prefix + 'A'.repeat(16000 - prefix.length), ts: base + i * 1000 };
         entries['oversize.test'] = { data: prefix + 'B'.repeat(17000), ts: base + 80_000 };
         entries['expired.test'] = { data: prefix + 'C'.repeat(100), ts: Date.now() - 100 * 24 * 3600 * 1000 };
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({ entries, savedAt: Date.now() }));
+        await seedStores(p, { pixels: entries });
       },
     });
 
@@ -278,14 +288,10 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
   test('a negative probe newer than the pixel outranks it', async ({ page }) => {
     const now = Date.now();
     await boot(page, {
-      seed: async () => {
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 60_000 } },
-        }));
-        localStorage.setItem(URL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { url: null, ts: now } }, savedAt: now,
-        }));
-      },
+      seed: (p) => seedStores(p, {
+        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 60_000 } },
+        urls: { [FIXTURE_HOST]: { url: null, ts: now } },
+      }),
     });
     await seedAndEnterSmallBox(page);
     // A later probe found no source; the pixel must not resurrect an icon.
@@ -296,14 +302,10 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
   test('a pixel newer than an old negative entry still paints', async ({ page }) => {
     const now = Date.now();
     await boot(page, {
-      seed: async () => {
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 5 * 24 * 3600 * 1000 } },
-        }));
-        localStorage.setItem(URL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { url: null, ts: now - 100 * 24 * 3600 * 1000 } }, savedAt: now,
-        }));
-      },
+      seed: (p) => seedStores(p, {
+        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 5 * 24 * 3600 * 1000 } },
+        urls: { [FIXTURE_HOST]: { url: null, ts: now - 100 * 24 * 3600 * 1000 } },
+      }),
     });
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
@@ -312,10 +314,10 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
 
   test('a corrupt pixel is discarded and the existing URL icon still paints', async ({ page }) => {
     await boot(page, {
-      seed: async (p) => {
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({ entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + 'AAAA', ts: Date.now() } } }));
-        localStorage.setItem(URL_KEY, JSON.stringify({ entries: { [FIXTURE_HOST]: { url: CDN_URL, ts: Date.now() } }, savedAt: Date.now() }));
-      },
+      seed: (p) => seedStores(p, {
+        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + 'AAAA', ts: Date.now() } },
+        urls: { [FIXTURE_HOST]: { url: CDN_URL, ts: Date.now() } },
+      }),
       route: (p) => serveControlledIcon(p, PNG_1x1, 'image/png'),
     });
     await seedAndEnterSmallBox(page);
@@ -328,11 +330,9 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
 
   test('a pixel past the 90-day ceiling is dropped and does not replace the fallback', async ({ page }) => {
     await boot(page, {
-      seed: async () => {
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() - 91 * 24 * 3600 * 1000 } },
-        }));
-      },
+      seed: (p) => seedStores(p, {
+        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() - 91 * 24 * 3600 * 1000 } },
+      }),
     });
     await seedAndEnterSmallBox(page);
 
@@ -344,11 +344,9 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
   test('a stale pixel still paints and its one revalidation refreshes the write time', async ({ page }) => {
     const oldTs = Date.now() - 8 * 24 * 3600 * 1000;
     await boot(page, {
-      seed: async () => {
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: oldTs } },
-        }));
-      },
+      seed: (p) => seedStores(p, {
+        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: oldTs } },
+      }),
       route: (p) => serveControlledIcon(p, PNG_1x1, 'image/png'),
     });
     await seedAndEnterSmallBox(page);
@@ -361,14 +359,10 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     const now = Date.now();
     let probes = 0;
     await boot(page, {
-      seed: async () => {
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 8 * 24 * 3600 * 1000 } },
-        }));
-        localStorage.setItem(URL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { url: CDN_URL, ts: now } }, savedAt: now,
-        }));
-      },
+      seed: (p) => seedStores(p, {
+        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 8 * 24 * 3600 * 1000 } },
+        urls: { [FIXTURE_HOST]: { url: CDN_URL, ts: now } },
+      }),
       route: async (p) => {
         await p.route(EXTERNAL_FAVICON_RE, (route) => { probes++; return route.abort(); });
       },
@@ -384,11 +378,9 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
 
   test('a failed revalidation keeps the already-painted stale pixel on screen', async ({ page }) => {
     await boot(page, {
-      seed: async () => {
-        localStorage.setItem(PIXEL_KEY, JSON.stringify({
-          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() - 8 * 24 * 3600 * 1000 } },
-        }));
-      },
+      seed: (p) => seedStores(p, {
+        pixels: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: Date.now() - 8 * 24 * 3600 * 1000 } },
+      }),
     });
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
@@ -458,7 +450,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
       await (window as any).__boxingDebug.saveLayout();
       return (window as any).__boxingDebug.storageGet('boxingLayout');
     });
-    expect(persisted?.boxes?.length).toBe(1);
+    expect(persisted?.boxingLayout?.boxes?.length).toBe(1);
   });
 
   test('the emergency layout snapshot reclaims the pixel layer when quota blocks it', async ({ page }) => {

@@ -227,15 +227,20 @@ function bytesToBase64(bytes) {
 // decode, so a 200 with an empty body or a 404 HTML page cannot become a pixel.
 async function encodePixelPng(blob) {
   let source = null;
-  let objectUrl = null;
   try {
     if (typeof createImageBitmap === 'function') {
       try { source = await createImageBitmap(blob); } catch (_) { source = null; } // SVG etc. — fall through
     }
+    if (source && (!source.width || !source.height)) { // some engines return an empty bitmap
+      if (typeof source.close === 'function') source.close();
+      source = null;
+    }
     if (!source) {
-      objectUrl = URL.createObjectURL(blob);
+      // Blob URLs are blocked by the NTP CSP (img-src has no blob:), so decode through a
+      // data: URL instead — the display path already allows data: images.
+      const bytes = new Uint8Array(await blob.arrayBuffer());
       const img = new Image();
-      img.src = objectUrl;
+      img.src = 'data:' + (blob.type || 'image/png') + ';base64,' + bytesToBase64(bytes);
       await (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; }));
       source = img;
     }
@@ -255,7 +260,6 @@ async function encodePixelPng(blob) {
   } catch (_) {
     return null;
   } finally {
-    if (objectUrl) URL.revokeObjectURL(objectUrl);
     if (source && typeof source.close === 'function') source.close();
   }
 }
