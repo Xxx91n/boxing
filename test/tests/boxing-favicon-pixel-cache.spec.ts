@@ -47,10 +47,10 @@ async function readStore(page: Page, key: string): Promise<Entries> {
   }, key);
 }
 
-function pngMeta(dataUri: string): { width: number; height: number; bytes: number } {
+function pngMeta(dataUri: string): { width: number; height: number } {
   const bytes = Buffer.from(dataUri.slice(PIXEL_PREFIX.length), 'base64');
   expect(bytes.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20), bytes: bytes.length };
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
 }
 
 async function boot(page: Page, opts: { seed?: (page: Page) => Promise<void>; route?: (page: Page) => Promise<void> } = {}) {
@@ -65,21 +65,58 @@ async function boot(page: Page, opts: { seed?: (page: Page) => Promise<void>; ro
   await dismissOnboarding(page);
 }
 
-// Serve the same controlled image for every existing source, so whichever token wins the
-// race exercises the same capture rules.
-function serveEverySource(page: Page, body: Buffer, contentType: string) {
+// Only the DuckDuckGo token answers, so Promise.any has one deterministic winner (the same
+// discipline as boxing-favicon-fixture.spec.ts). Other sources fail fast.
+function serveControlledIcon(page: Page, body: Buffer, contentType: string) {
   return page.route(EXTERNAL_FAVICON_RE, (route) =>
-    route.fulfill({
-      status: 200,
-      contentType,
-      headers: { 'access-control-allow-origin': '*' },
-      body,
-    }),
+    route.request().url() === CDN_URL
+      ? route.fulfill({
+        status: 200,
+        contentType,
+        headers: { 'access-control-allow-origin': '*' },
+        body,
+      })
+      : route.abort(),
   );
 }
 
-function serveEverySourceWith(page: Page, fulfill: () => { status: number; contentType: string; body: Buffer | string }) {
-  return page.route(EXTERNAL_FAVICON_RE, (route) => route.fulfill(fulfill()));
+// The image probe succeeds (so a display path exists) while the capture fetch receives a
+// different response. This exercises captureFaviconPixel's own ok/MIME/body/decode gate
+// instead of letting the probe failure hide it.
+async function serveIconWithBadCapture(page: Page, bad: () => { status: number; contentType: string; body: Buffer | string }) {
+  const state = { fetches: 0 };
+  await page.route(EXTERNAL_FAVICON_RE, async (route) => {
+    if (route.request().url() !== CDN_URL) return route.abort();
+    if (route.request().resourceType() === 'fetch') {
+      state.fetches++;
+      return route.fulfill(bad());
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      headers: { 'access-control-allow-origin': '*' },
+      body: PNG_1x1,
+    });
+  });
+  return state;
+}
+
+async function serveIconWithFailedCapture(page: Page) {
+  const state = { fetches: 0 };
+  await page.route(EXTERNAL_FAVICON_RE, async (route) => {
+    if (route.request().url() !== CDN_URL) return route.abort();
+    if (route.request().resourceType() === 'fetch') {
+      state.fetches++;
+      return route.abort();
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      headers: { 'access-control-allow-origin': '*' },
+      body: PNG_1x1,
+    });
+  });
+  return state;
 }
 
 async function seedAndEnterSmallBox(page: Page, host = FIXTURE_HOST) {
@@ -134,7 +171,7 @@ async function probeImage(page: Page) {
 
 test.describe('#58 favicon pixel layer — controlled responses', () => {
   test('captures a bounded 32×32 PNG and paints it after the network is gone', async ({ page }) => {
-    await boot(page, { route: (p) => serveEverySource(p, PNG_1x1, 'image/png') });
+    await boot(page, { route: (p) => serveControlledIcon(p, PNG_1x1, 'image/png') });
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
 
@@ -159,24 +196,40 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
 
   for (const [label, response] of [
     ['404 HTML', { status: 404, contentType: 'text/html', body: '<!DOCTYPE html><html><body>not found</body></html>' }],
-    ['200 empty body', { status: 200, contentType: 'image/png', body: '' }],
+    ['200 empty body', { status: 200, contentType: 'image/png', body: Buffer.alloc(0) }],
     ['200 undecodable body', { status: 200, contentType: 'image/png', body: 'this is not an image' }],
   ] as const) {
-    test(`${label} becomes neither a pixel nor a successful URL entry`, async ({ page }) => {
-      await boot(page, { route: (p) => serveEverySourceWith(p, () => ({ ...response })) });
+    test(`a ${label} capture response is refused while the URL icon still paints`, async ({ page }) => {
+      let capture: { fetches: number } | undefined;
+      await boot(page, {
+        route: async (p) => { capture = await serveIconWithBadCapture(p, () => ({ ...response })); },
+      });
       await seedAndEnterSmallBox(page);
-
-      // The existing negative cache records a miss only after every source failed.
-      await expect.poll(async () => (await readStore(page, URL_KEY))?.entries?.[FIXTURE_HOST]?.url, { timeout: 20000 }).toBe(null);
+      await expectRowPainted(page);
+      // The probe really did succeed; only the capture's response was bad.
+      await expect.poll(async () => (await readStore(page, URL_KEY))?.entries?.[FIXTURE_HOST]?.url, { timeout: 20000 }).toBe(CDN_URL);
+      await expect.poll(() => capture!.fetches, { timeout: 15000 }).toBeGreaterThan(0);
       expect((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]).toBeUndefined();
-
-      await expect.poll(async () => (await rowState(page)).display, { timeout: 5000 }).toBe('none');
-      expect((await rowState(page)).cached).toBe(false);
+      expect((await rowState(page)).src).toContain('icons.duckduckgo.com');
     });
   }
 
+  test('a refused capture fetch never disturbs the URL icon', async ({ page }) => {
+    let capture: { fetches: number } | undefined;
+    await boot(page, {
+      route: async (p) => { capture = await serveIconWithFailedCapture(p); },
+    });
+    await seedAndEnterSmallBox(page);
+    await expectRowPainted(page);
+    await expect.poll(() => capture!.fetches, { timeout: 15000 }).toBeGreaterThan(0);
+    const state = await rowState(page);
+    expect(state.src).toContain('icons.duckduckgo.com');
+    expect(state.display).not.toBe('none');
+    expect((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]).toBeUndefined();
+  });
+
   test('an SVG source is re-encoded as PNG and never stored as SVG', async ({ page }) => {
-    await boot(page, { route: (p) => serveEverySource(p, SVG_ICON, 'image/svg+xml') });
+    await boot(page, { route: (p) => serveControlledIcon(p, SVG_ICON, 'image/svg+xml') });
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
 
@@ -261,7 +314,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
         localStorage.setItem(PIXEL_KEY, JSON.stringify({ entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + 'AAAA', ts: Date.now() } } }));
         localStorage.setItem(URL_KEY, JSON.stringify({ entries: { [FIXTURE_HOST]: { url: CDN_URL, ts: Date.now() } }, savedAt: Date.now() }));
       },
-      route: (p) => serveEverySource(p, PNG_1x1, 'image/png'),
+      route: (p) => serveControlledIcon(p, PNG_1x1, 'image/png'),
     });
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
@@ -294,12 +347,37 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
           entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: oldTs } },
         }));
       },
-      route: (p) => serveEverySource(p, PNG_1x1, 'image/png'),
+      route: (p) => serveControlledIcon(p, PNG_1x1, 'image/png'),
     });
     await seedAndEnterSmallBox(page);
 
     await expect.poll(async () => Number((await readStore(page, PIXEL_KEY))?.entries?.[FIXTURE_HOST]?.ts || 0), { timeout: 20000 }).toBeGreaterThan(oldTs + 1000);
     await expect.poll(async () => (await readStore(page, URL_KEY))?.entries?.[FIXTURE_HOST]?.url, { timeout: 20000 }).toBe(CDN_URL);
+  });
+
+  test('a stale pixel with a fresh URL hit does not re-probe', async ({ page }) => {
+    const now = Date.now();
+    let probes = 0;
+    await boot(page, {
+      seed: async () => {
+        localStorage.setItem(PIXEL_KEY, JSON.stringify({
+          entries: { [FIXTURE_HOST]: { data: PIXEL_PREFIX + PNG_1x1.toString('base64'), ts: now - 8 * 24 * 3600 * 1000 } },
+        }));
+        localStorage.setItem(URL_KEY, JSON.stringify({
+          entries: { [FIXTURE_HOST]: { url: CDN_URL, ts: now } }, savedAt: now,
+        }));
+      },
+      route: async (p) => {
+        await p.route(EXTERNAL_FAVICON_RE, (route) => { probes++; return route.abort(); });
+      },
+    });
+    await seedAndEnterSmallBox(page);
+    await expectRowPainted(page);
+    await page.waitForTimeout(1000);
+    // The URL hit was refreshed more recently than the pixel; a refused capture must not
+    // make every load pay for another five-token probe.
+    expect(probes).toBe(0);
+    expect((await rowState(page)).src.startsWith(PIXEL_PREFIX)).toBe(true);
   });
 
   test('a failed revalidation keeps the already-painted stale pixel on screen', async ({ page }) => {
@@ -327,7 +405,8 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
       await boot(page, {
         route: async (p) => {
           await p.route(EXTERNAL_FAVICON_RE, async (route) => {
-            // Image probes answer immediately; the capture's fetch hangs on the gate.
+            if (route.request().url() !== CDN_URL) return route.abort();
+            // The image probe answers immediately; the capture's fetch hangs on the gate.
             if (route.request().resourceType() === 'fetch') {
               captureFetches++;
               await fetchGate;
@@ -366,7 +445,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
         return original.call(this, key, value);
       };
     });
-    await boot(page, { route: (p) => serveEverySource(p, PNG_1x1, 'image/png') });
+    await boot(page, { route: (p) => serveControlledIcon(p, PNG_1x1, 'image/png') });
     await seedAndEnterSmallBox(page);
     await expectRowPainted(page);
     // The write was actually attempted (after the persist debounce) and refused.

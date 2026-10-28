@@ -259,12 +259,16 @@ async function encodePixelPng(blob) {
     if (source && typeof source.close === 'function') source.close();
   }
 }
+const FAV_PIXEL_CAPTURE_TIMEOUT = 8000; // a stalled capture must not pin its single-flight slot
 async function captureFaviconPixel(host, url) {
+  let timer = null;
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  if (controller) timer = setTimeout(() => controller.abort(), FAV_PIXEL_CAPTURE_TIMEOUT);
   try {
     if (!isValidPublicUrl(url)) return;
     // Default cache mode: the winning probe just loaded this URL, so the browser can reuse
     // those bytes instead of paying a second network transfer for the same icon.
-    const resp = await fetch(url, { credentials: 'omit' });
+    const resp = await fetch(url, controller ? { credentials: 'omit', signal: controller.signal } : { credentials: 'omit' });
     if (!resp || !resp.ok) return; // 404 HTML is a successful fetch, not a pixel
     const mime = (resp.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
     if (!mime.startsWith('image/')) return;
@@ -274,7 +278,9 @@ async function captureFaviconPixel(host, url) {
     if (!dataUri || dataUri.length > FAV_PIXEL_MAX_ENTRY) return;
     faviconPixels.set(host, { data: dataUri, ts: Date.now() });
     persistFaviconPixelsDebounced();
-  } catch (_) { /* best effort — the URL cache stays authoritative */ }
+  } catch (_) { /* best effort — the URL cache stays authoritative */ } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 function captureFaviconPixelOnce(host, url) {
   if (pixelInflight.has(host)) return;
@@ -332,7 +338,10 @@ async function loadFavicon(img, url, opts) {
     const missNewerThanPixel = !!(pixel && entry && entry.url === null && Number(entry.ts) >= pixel.ts);
     if (pixel && !missNewerThanPixel) {
       if (Date.now() - pixel.ts <= FAV_HIT_SWR_TTL && await paintFaviconPixel(img, host, pixel)) {
-        if (Date.now() - pixel.ts > FAV_HIT_TTL && !inflight.has(host)) {
+        // Refresh off the newer of the pixel and the URL hit: a probe that refreshed the URL
+        // entry must not trigger another full probe just because its capture was refused.
+        const refreshedAt = Math.max(pixel.ts, entry && entry.url !== null ? entry.ts : 0);
+        if (Date.now() - refreshedAt > FAV_HIT_TTL && !inflight.has(host)) {
           loadFavicon(img, url, { background: true });
         }
         return;

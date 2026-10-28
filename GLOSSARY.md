@@ -96,7 +96,7 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **Auto-backup local mode** — With `syncProvider: local`, auto-backup only writes silent internal snapshots and never triggers a browser download.
 
-**favicon pixel layer** — Best-effort 32×32 PNG data URIs captured from the source that won a favicon probe. It is a discardable accelerator, never a second source of truth: at most 16 KiB per entry and 1 MiB for the whole serialized layer, evicting the oldest write first, refreshed on the same 7-day-fresh / 90-day-stale clock as favicon URLs, and falling back to the URL path on any failure.
+**favicon pixel layer** — Best-effort 32×32 PNG data URIs captured from the source that won the existing favicon source probe. It is a discardable accelerator, never a second source of truth: at most 16 KiB per entry and 1 MiB for the whole serialized layer, evicting the oldest write first, refreshed on the same 7-day-fresh / 90-day-stale clock as the URL cache, and falling back to the existing URL-based display path on any failure.
 
 ## Build and dev-load
 

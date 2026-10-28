@@ -100,6 +100,7 @@
       "boxing-architecture-acceptance.spec.ts",
       "boxing-audit.spec.ts",
       "boxing-data-golden.spec.ts",
+      "boxing-favicon-pixel-cache.spec.ts",
       "boxing-import-merge.spec.ts",
       "boxing-memory.spec.ts",
       "boxing-migration-golden.spec.ts",
