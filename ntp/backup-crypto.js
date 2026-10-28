@@ -16,6 +16,7 @@
 //     kdf:     { name:'PBKDF2', hash:'SHA-256', iterations:310000, salt:<b64, 16 B> },
 //     cipher:  { name:'AES-GCM', iv:<b64, 12 B> },
 //     payload: <b64 AES-GCM ciphertext of the plain backup file text> }
+// The key is PBKDF2 over the NFC-normalized UTF-8 of the passphrase (see deriveFileKey).
 // AES-GCM authenticates the payload, so a wrong passphrase or a flipped byte fails the open
 // instead of yielding garbage — the importer keeps its "failure changes no data" guarantee
 // without a second checksum field. The iteration count is the PBKDF2-SHA-256 range that
@@ -96,14 +97,17 @@ function requirePassphrase(passphrase) {
   if (passphrase.length > MAX_PASSPHRASE_CHARS) throw formatError('passphrase exceeds the input bound');
 }
 
-async function deriveFileKey(passphrase, salt) {
-  const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+async function deriveFileKey(passphrase, salt, usage) {
+  // NFC-normalized before derivation, and pinned to v1: macOS and mobile keyboards hand the
+  // same visible passphrase as different byte sequences (NFC vs NFD), which would otherwise
+  // seal a file shut on the very next typing of it.
+  const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt, iterations: KDF_ITERATIONS, hash: KDF_HASH },
     baseKey,
     { name: 'AES-GCM', length: KEY_BITS },
     false,
-    ['encrypt', 'decrypt'],
+    [usage],
   );
 }
 
@@ -151,7 +155,7 @@ export async function encryptBackupFile(innerJson, passphrase) {
   requirePassphrase(passphrase);
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-  const key = await deriveFileKey(passphrase, salt);
+  const key = await deriveFileKey(passphrase, salt, 'encrypt');
   const sealed = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(innerJson));
   return {
     boxingBackup: FORMAT_VERSION,
@@ -164,12 +168,19 @@ export async function encryptBackupFile(innerJson, passphrase) {
 export async function decryptBackupFile(value, passphrase) {
   const envelope = readEnvelope(value);
   requirePassphrase(passphrase);
+  const key = await deriveFileKey(passphrase, envelope.salt, 'decrypt');
   let plain;
   try {
-    const key = await deriveFileKey(passphrase, envelope.salt);
     plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: envelope.iv }, key, envelope.payload);
   } catch (e) {
+    // Only the AES-GCM open is attributed to the passphrase. A key-derivation or engine
+    // failure is NOT evidence about the user's typing, and the caller loops on this code —
+    // reporting those as PASSPHRASE would trap the dialog on a file that can never open.
     throw passphraseError();
   }
-  return new TextDecoder('utf-8', { fatal: true }).decode(plain);
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(plain);
+  } catch (e) {
+    throw formatError('payload is not UTF-8 text');
+  }
 }

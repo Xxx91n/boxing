@@ -322,6 +322,17 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     expect(after.open).toBe(false);
     expect(after.values).toEqual(['', '']);
     expect(await downloadCount(page)).toBe(0);
+
+    // Enter works from either field, so the confirmation box is not a dead end
+    await click(page, '#export-data-btn');
+    await expect.poll(() => page.evaluate(() => !document.getElementById('passphrase-modal')!.hidden), { timeout: 15000 }).toBe(true);
+    await page.evaluate(() => {
+      (document.getElementById('passphrase-input') as HTMLInputElement).value = 'typed-once';
+      (document.getElementById('passphrase-repeat-input') as HTMLInputElement).value = 'typed-once';
+      document.getElementById('passphrase-repeat-input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    const cap = await readExport(page);
+    expect(JSON.parse(cap.text).boxingBackup).toBe(1);
     expect(await titles(page)).toEqual(['Untouched Root']);
     expect(errors).toEqual([]);
     await context.close();
@@ -431,6 +442,56 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     await typePassphrase(page, 'cap-check', null);
     await expect.poll(() => alerts(page), { timeout: 30000 }).toMatch(/invalid data format|import failed/i);
     expect(await titles(page)).toEqual(['Guarded Root']);
+    expect(errors).toEqual([]);
+    await context.close();
+  });
+
+  test('AC7: sealing refuses instead of downgrading when the sealed file would exceed the gate', async ({ browser }) => {
+    test.setTimeout(120000);
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    // The bound itself comes from the module under test — the AC is about that public input
+    // boundary, so restating the number here would let the test and the code drift together.
+    const { maxInnerBytes } = await import(pathToFileURL(path.join(REPO_PATH, 'ntp', 'backup-crypto.js')).href);
+    // A layout that serializes PAST the sealed bound but still inside the plain 5MB cap, with
+    // no snapshot bodies left to trim. The only way "under" would be a plain fallback, which
+    // would hand out exactly the content the user just asked to protect.
+    const big = bareLayout('Too Fat To Seal');
+    (big.boxes[0] as any).children = [{
+      id: 'S1', title: 'bulk', x: 0, y: 0,
+      bookmarks: Array.from({ length: 10000 }, (_, i) => ({
+        id: 'B' + i, title: 'bookmark-' + i + '-' + 'x'.repeat(280), url: 'https://example.test/' + i,
+      })),
+    }];
+    await boot(page, { layout: big, snapData: bareLayout('Snap'), ts: SNAP_TS });
+    await armExportCapture(page);
+
+    await setEncryptOption(page, true);
+    await click(page, '#export-data-btn');
+    await typePassphrase(page, 'refuse-me', 'refuse-me');
+    await expect.poll(() => alerts(page), { timeout: 30000 }).toMatch(/too large to encrypt/i);
+    expect(await downloadCount(page)).toBe(0);
+    expect((await passphraseDialogState(page)).open).toBe(false);
+
+    // the plain path over the SAME data still exports: the tighter bound applies to sealing only
+    await setEncryptOption(page, false);
+    await click(page, '#export-data-btn');
+    const plain = await readExport(page);
+    const bytes = Buffer.byteLength(plain.text!, 'utf8');
+    expect(bytes).toBeGreaterThan(maxInnerBytes());
+    expect(bytes).toBeLessThanOrEqual(MAX_BACKUP_FILE_BYTES);
+    expect(JSON.parse(plain.text!).boxes[0].children[0].bookmarks).toHaveLength(10000);
+
+    // and the importer still gates a SEALED file by its own size: too big is rejected before
+    // the dialog ever opens, so no passphrase can be traded for an unimportable payload
+    const overGate = await seal(JSON.stringify({ version: 3.5, boxes: [], pad: 'y'.repeat(4500000) }), 'over-gate');
+    expect(Buffer.byteLength(JSON.stringify(overGate), 'utf8')).toBeGreaterThan(MAX_BACKUP_FILE_BYTES);
+    await runImport(page, 'over-gate.json', overGate);
+    await expect.poll(() => alerts(page), { timeout: 20000 }).toMatch(/too large/i);
+    expect((await passphraseDialogState(page)).open).toBe(false);
+    expect(await titles(page)).toEqual(['Too Fat To Seal']);
     expect(errors).toEqual([]);
     await context.close();
   });

@@ -15,7 +15,7 @@ import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAuto
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections, toggleStarMark } from './conn-layer.js';
 import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
 import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
-import { isPassphraseBackupFile, encryptBackupFile, decryptBackupFile, maxInnerBytes, utf8ByteLength, MAX_PASSPHRASE_CHARS, BACKUP_ERROR_PASSPHRASE } from './backup-crypto.js';
+import { isPassphraseBackupFile, encryptBackupFile, decryptBackupFile, maxInnerBytes, utf8ByteLength, MAX_PASSPHRASE_CHARS, MAX_BACKUP_FILE_BYTES, BACKUP_ERROR_PASSPHRASE } from './backup-crypto.js';
 
 let debug, debugErr, debugWarn, updateCaption;
 let settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeGroup, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect;
@@ -297,6 +297,7 @@ export function initSettingsUiFacade(deps) {
       const settle = (result) => {
         if (settled) return; settled = true;
         inputEl.removeEventListener('keydown', onKey);
+        repeatEl.removeEventListener('keydown', onKey);
         actionEl.removeEventListener('click', onAction);
         cancelEl.removeEventListener('click', onDismiss);
         modal.removeEventListener('click', onBackdrop);
@@ -314,8 +315,10 @@ export function initSettingsUiFacade(deps) {
       };
       const onBackdrop = (e) => { if (e.target === modal) onDismiss(); };
       const onKey = (e) => {
+        // Enter from either field submits; Escape cancels and must not reach the document
+        // handler, which would also close the settings panel behind this dialog.
         if (e.key === 'Enter') { e.preventDefault(); onAction(); }
-        else if (e.key === 'Escape') { e.preventDefault(); onDismiss(); }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onDismiss(); }
       };
       titleEl.textContent = i18n(isExport ? 'passphraseExportTitle' : 'passphraseImportTitle');
       bodyEl.textContent = i18n(isExport ? 'passphraseExportBody' : 'passphraseImportBody');
@@ -328,6 +331,11 @@ export function initSettingsUiFacade(deps) {
       repeatEl.maxLength = MAX_PASSPHRASE_CHARS;
       inputEl.value = ''; repeatEl.value = '';
       if (initialError) showError(initialError); else hideError();
+      actionEl.addEventListener('click', onAction);
+      cancelEl.addEventListener('click', onDismiss);
+      modal.addEventListener('click', onBackdrop);
+      inputEl.addEventListener('keydown', onKey);
+      repeatEl.addEventListener('keydown', onKey);
       modal.hidden = false;
       inputEl.focus();
     });
@@ -1130,21 +1138,23 @@ export function bindSettingsUi() {
         let text = JSON.stringify(env, null, 2);
         // Size estimate + 5MB handling (SEC-06 parity: the importer rejects
         // payloads it cannot land; a full package must stay restorable, not
-        // maximal). A sealed file measures against the tighter ENCRYPTED bound
-        // instead — base64 inflates it while the importer still gates on the
-        // same 5MB file size, so no input limit is traded away for a round trip.
-        const CAP = 5 * 1024 * 1024;
-        const allowed = passphrase ? maxInnerBytes() : CAP;
+        // maximal). The PLAIN path keeps ticket 51's char-length measure against
+        // the same 5MB cap. A sealed file instead measures BYTES against the
+        // tighter ENCRYPTED bound: base64 inflates the payload while the importer
+        // still gates on the same 5MB file size, so no input limit is traded away
+        // for a round trip.
+        const allowed = passphrase ? maxInnerBytes() : MAX_BACKUP_FILE_BYTES;
+        const sizeOf = passphrase ? utf8ByteLength : (s) => s.length;
         if (fullPackage) {
           env.meta.fullPackage = true;
           env._bodies = await readDrBodies();
           text = JSON.stringify(env, null, 2);
-          while (utf8ByteLength(text) > allowed && env._bodies.snapshots.length > 0) {
+          while (sizeOf(text) > allowed && env._bodies.snapshots.length > 0) {
             env._bodies.snapshots.shift(); // oldest body drops first
             env.meta.bodyTrimmed = (env.meta.bodyTrimmed || 0) + 1;
             text = JSON.stringify(env, null, 2);
           }
-          if (utf8ByteLength(text) > allowed) {
+          if (sizeOf(text) > allowed) {
             if (passphrase) {
               // FAIL CLOSED: falling back to a plain file would hand out exactly the
               // content the user asked to protect, so the export stops and says why.
@@ -1183,8 +1193,9 @@ export function bindSettingsUi() {
       if (!importPending) return; importPending = false;
       const file = importFile.files[0];
       if (!file) return;
-      // File size sanity check — reject imports > 5MB
-      if (file.size > 5 * 1024 * 1024) { try { alert(i18n('importTooLarge')); } catch (e) { /* silent: alert may be blocked */ } importFile.value = ''; return; }
+      // File size sanity check — reject imports > 5MB (the same bound a sealed file is kept
+      // inside at export time, so an encrypted export can never be an unimportable file).
+      if (file.size > MAX_BACKUP_FILE_BYTES) { try { alert(i18n('importTooLarge')); } catch (e) { /* silent: alert may be blocked */ } importFile.value = ''; return; }
       try {
         const text = await file.text();
         // Strip UTF-8 BOM if present
