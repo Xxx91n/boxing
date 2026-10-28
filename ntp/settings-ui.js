@@ -7,7 +7,7 @@
 // ntp.js (byte-exact except `export` prefixes, facade glue, and the bindSettingsUi() wrapper).
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, groupStar, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
-import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, readDrBodies } from './storage.js';
+import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, listConflictGuards, saveConflictGuard, deleteConflictArchive, discardConflictGuard, restoreConflictGuard, readDrBodies } from './storage.js';
 import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref, diffConflictArchive, planConflictApply, largeKey, smallKey } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyDarkMode, applyTheme, nextDarkModePreference } from './persist.js';
@@ -125,8 +125,10 @@ export function initSettingsUiFacade(deps) {
       // Ticket 79 (spec): conflict-copy readout list — one row per archived
       // conflict copy (ts / reason / side / size, newest first, same SNAPSHOT_LIST_MAX cap)
       // with a per-row verbatim JSON export. Rows are rebuilt on every modal open alongside
-      // the Time Machine list (refreshDataHealth is the single seam); read-only, no
-      // archive mutation (issue 79 AC3).
+      // the Time Machine list (refreshDataHealth is the single seam).
+      // Ticket 56 (#53 D3): the same rows gain a Delete action — secondary confirm, then a
+      // safe copy of THIS archive's payload into the snapshot subsystem, then the deletion.
+      // The rendering itself stays read-only (issue 79 AC3); only performConflictDelete writes.
       const cWrapEl = document.getElementById('data-conflict-list-wrap');
       const cListEl = document.getElementById('data-conflict-list');
       if (cWrapEl && cListEl) {
@@ -164,11 +166,51 @@ export function initSettingsUiFacade(deps) {
           btn.style.cssText = 'padding:2px 10px;font-size:var(--fs-xs);';
           btn.dataset.ts = String((e && e.ts) || '');
           btn.textContent = i18n('dataConflictExportBtn');
-          actions.append(cmpBtn, btn);
+          // Ticket 56 (#53 D3): the same row also carries Delete, gated by a secondary
+          // confirm and a safe copy of THIS archive's payload taken first.
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn btn--ghost data-conflict-delete-btn';
+          delBtn.style.cssText = 'padding:2px 10px;font-size:var(--fs-xs);';
+          delBtn.dataset.ts = String((e && e.ts) || '');
+          delBtn.textContent = i18n('dataConflictDeleteBtn');
+          actions.append(cmpBtn, btn, delBtn);
           row.append(when, reason, side, size, actions);
           cListEl.appendChild(row);
         }
         cWrapEl.hidden = cRows.length === 0;
+      }
+
+      // Ticket 56 (#53 D3): safe copies kept for conflict archives the user deleted. Same
+      // data tab, same list idiom — not a second conflict surface and not a recycle bin: the
+      // rows only exist because a deletion was confirmed, and each restores its own archived
+      // payload (never the canvas).
+      const gWrapEl = document.getElementById('data-conflict-guard-wrap');
+      const gListEl = document.getElementById('data-conflict-guard-list');
+      if (gWrapEl && gListEl) {
+        const guards = await listConflictGuards();
+        const gRows = guards.slice(-SNAPSHOT_LIST_MAX).reverse();
+        gListEl.textContent = '';
+        for (const e of gRows) {
+          const row = document.createElement('div');
+          row.className = 'data-conflict-guard-row-item';
+          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:var(--fs-xs);';
+          const when = document.createElement('span');
+          when.textContent = (e && e.originTs) ? new Date(e.originTs).toLocaleString() : '-';
+          const kind = document.createElement('span');
+          kind.textContent = i18n('dataConflictGuardArchived');
+          const size = document.createElement('span');
+          size.textContent = formatSnapshotSize(e && e.size);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn data-conflict-guard-restore-btn';
+          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:var(--fs-xs);';
+          btn.dataset.ts = String((e && e.ts) || '');
+          btn.textContent = i18n('dataConflictGuardRestoreBtn');
+          row.append(when, kind, size, btn);
+          gListEl.appendChild(row);
+        }
+        gWrapEl.hidden = gRows.length === 0;
       }
       // Ticket 50 (spec ticket 50): Time Machine list — one row per stored snapshot (ts /
       // schemaVersion / size, newest first, last SNAPSHOT_LIST_MAX) with a per-row rollback
@@ -496,6 +538,57 @@ export function initSettingsUiFacade(deps) {
       document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 4000);
       debug('Conflict copy exported: ts=' + ts + ' size=' + (entry.size || text.length));
     } catch (e) { debugErr('exportConflictCopy', e); }
+  }
+
+  // ── Ticket 56 (#53 D3): safe delete of one conflict archive ──────────────────
+  // Same in-page confirm surface as the Time Machine rollback (askConfirmModal), and the
+  // same fail-closed discipline with the opposite protection target: a layout rollback
+  // snapshots the CURRENT canvas, while this must snapshot the ARCHIVED payload that is
+  // about to be deleted. `saveSnapshot('pre-delete')` therefore does not satisfy this flow
+  // — a current-layout copy says nothing about the conflict content being removed. No guard
+  // ts, no deletion. A delete that fails after a successful guard is reported honestly: the
+  // archive it refused to remove keeps its safe copy, and a guard that protects content still
+  // present in the list is recycled instead of left to crowd out another archive's protection.
+  async function performConflictDelete(ts) {
+    const when = new Date(ts).toLocaleString();
+    closeSettingsModal(); // don't stack the decision modal behind the settings overlay
+    const decision = await askConfirmModal(
+      i18n('conflictDeleteConfirmTitle'),
+      i18n('conflictDeleteConfirmBody', [when]),
+      i18n('conflictDeleteConfirmAction')
+    );
+    if (decision !== 'action') { openSettingsModal(); return; }
+    const guardTs = await saveConflictGuard(ts);
+    if (!guardTs) {
+      try { alert(i18n('conflictDeleteNoSafety')); } catch (e) { /* silent: alert may be blocked */ }
+      openSettingsModal();
+      return;
+    }
+    if (!await deleteConflictArchive(ts, guardTs)) {
+      // Nothing was deleted, so this safe copy protects content that is still in the list.
+      // Leaving it behind would spend the guard store's shared count/byte budget on garbage and
+      // could evict a real safe copy of another archive.
+      await discardConflictGuard(guardTs);
+      try { alert(i18n('conflictDeleteFailed')); } catch (e) { /* silent: alert may be blocked */ }
+      openSettingsModal();
+      return;
+    }
+    debug('Conflict copy deleted after safe copy: ts=' + ts + ', guard ts=' + guardTs);
+    openSettingsModal(); // back on the data tab; the safe-copy row is the restore entry point
+  }
+
+  // Restore is archive-scoped: it re-inserts that one payload into the conflict store so the
+  // existing readout/export path returns it again. Deliberately no replaceLayoutFromRestored,
+  // no exitToCanvas, no re-render — the canvas and everything done on it since the deletion
+  // stay untouched (that distinction is the whole point of #53 D3).
+  async function performConflictRestore(guardTs) {
+    const restored = await restoreConflictGuard(guardTs);
+    if (!restored) {
+      try { alert(i18n('conflictGuardRestoreFailed')); } catch (e) { /* silent: alert may be blocked */ }
+      return;
+    }
+    debug('Conflict archive restored from safe copy: origin ts=' + restored);
+    await refreshDataHealth();
   }
 
   // ── Issue #54 (#53 D2/D3): per-field adjudication of one conflict copy ─────────
@@ -1416,15 +1509,20 @@ export function bindSettingsUi() {
     // Ticket 79: delegated export click for the rebuilt conflict-copy rows.
     // Issue #54: the same rows carry the compare toggle and, inside the opened panel, the
     // apply control — rows and panels are rebuilt together, so one listener still covers it.
+    // Ticket 56: and the delete action, so the same single listener covers every row button
+    // (rows are rebuilt on every modal open, so per-row listeners would leak).
     const conflictListEl = document.getElementById('data-conflict-list');
     conflictListEl?.addEventListener('click', (e) => {
-      const btn = e.target && e.target.closest ? e.target.closest('button') : null;
+      const btn = e.target && e.target.closest ? e.target.closest(
+        '.data-conflict-compare-btn, .data-conflict-apply-btn, .data-conflict-export-btn, .data-conflict-delete-btn'
+      ) : null;
       if (!btn) return;
       const ts = Number(btn.dataset.ts);
       if (!Number.isFinite(ts) || ts <= 0) return;
       if (btn.classList.contains('data-conflict-compare-btn')) toggleConflictCompare(ts);
       else if (btn.classList.contains('data-conflict-apply-btn')) void applyConflictCompare(ts);
-      else if (btn.classList.contains('data-conflict-export-btn')) exportConflictCopy(ts);
+      else if (btn.classList.contains('data-conflict-delete-btn')) performConflictDelete(ts);
+      else exportConflictCopy(ts);
     });
 
     // Issue #54: the per-field radios live inside the rebuilt panel, so one delegated
@@ -1435,6 +1533,15 @@ export function bindSettingsUi() {
       const ts = Number(input.dataset.ts);
       if (!Number.isFinite(ts) || ts <= 0) return;
       setConflictSelection(ts, input.dataset.path, input.value === 'copy');
+    });
+
+    // Ticket 56: delegated restore click for the safe-copy rows
+    const conflictGuardListEl = document.getElementById('data-conflict-guard-list');
+    conflictGuardListEl?.addEventListener('click', (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest('.data-conflict-guard-restore-btn') : null;
+      if (!btn) return;
+      const ts = Number(btn.dataset.ts);
+      if (Number.isFinite(ts) && ts > 0) performConflictRestore(ts);
     });
 
     // Confirm modal events

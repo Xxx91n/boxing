@@ -56,6 +56,7 @@
       "boxing-dr-export-envelope.spec.ts",
       "boxing-boot-pending.spec.ts",
       "boxing-merge-three-way.spec.ts",
+      "boxing-conflict-copy-safe-delete.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts"
     ],
     "ntp/render.js": [
@@ -117,9 +118,10 @@
       "boxing-time-machine-rollback.spec.ts",
       "boxing-dr-export-envelope.spec.ts",
       "boxing-conflict-copy-readout.spec.ts",
+      "boxing-conflict-copy-safe-delete.spec.ts",
+      "boxing-conflict-field-adjudication.spec.ts",
       "boxing-merge-three-way.spec.ts",
-      "boxing-wave11-1017.spec.ts",
-      "boxing-conflict-field-adjudication.spec.ts"
+      "boxing-wave11-1017.spec.ts"
     ],
     "ntp/persist.js": [
       "boxing-accent-theme.spec.ts",
@@ -159,10 +161,11 @@
       "data-recovery.spec.ts",
       "boxing-time-machine-rollback.spec.ts",
       "boxing-dr-export-envelope.spec.ts",
+      "boxing-conflict-copy-safe-delete.spec.ts",
+      "boxing-conflict-field-adjudication.spec.ts",
       "boxing-backup-passphrase.spec.ts",
       "boxing-wave10-1016.spec.ts",
-      "boxing-wave11-1017.spec.ts",
-      "boxing-conflict-field-adjudication.spec.ts"
+      "boxing-wave11-1017.spec.ts"
     ],
     "ntp/onboarding.js": [
       "boxing-debug.spec.ts",
@@ -177,6 +180,7 @@
       "boxing-onboarding.spec.ts",
       "boxing-v3.spec.ts",
       "boxing-time-machine-rollback.spec.ts",
+      "boxing-conflict-copy-safe-delete.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts"
     ],
     "ntp/state.js": [

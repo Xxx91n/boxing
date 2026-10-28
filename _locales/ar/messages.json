@@ -1099,6 +1099,52 @@
   },
   "dataConflictFieldUrl": {
     "message": "URL"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "حذف",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "نسخ آمنة",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "نسخة متعارَض عليها محذوفة",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "استعادة",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "هل تريد حذف هذه النسخة المتعارَض عليها؟",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "يحفظ Boxing أولاً النسخة المؤرشفة من $point$ كنسخة آمنة، ولا يحذفها إلا إذا نجح ذلك الحفظ. النسخ الآمنة ذات مدة احتفاظ محدودة، لذا قد تُزال لاحقًا.",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "احفظ النسخة الآمنة ثم احذف",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "تعذّر حفظ النسخة المؤرشفة كنسخة آمنة، لذا لم يُحذف أي شيء. يحذف Boxing النسخة المتعارَض عليها فقط بعد حفظ محتواها المؤرشف بأمان.",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "لم يكتمل حذف النسخة المتعارَض عليها. لم يتغيّر أي شيء.",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
+  },
+  "conflictGuardRestoreFailed": {
+    "message": "تعذّرت استعادة هذه النسخة الآمنة - لم يتغيّر أي شيء.",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 ,
   "exportEncryptLabel": {

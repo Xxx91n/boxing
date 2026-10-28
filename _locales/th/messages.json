@@ -1099,6 +1099,52 @@
   },
   "dataConflictFieldUrl": {
     "message": "URL"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "ลบ",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "สำเนาที่ปลอดภัย",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "สำเนาข้อขัดแย้งที่ลบไปแล้ว",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "คืนค่า",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "ลบสำเนาข้อขัดแย้งนี้?",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing จะเก็บสำเนาที่บันทึกไว้จาก $point$ เป็นสำเนาที่ปลอดภัยก่อน และจะลบเฉพาะเมื่อการเก็บนั้นสำเร็จ สำเนาที่ปลอดภัยมีขีดจำกัดการเก็บรักษา จึงอาจถูกลบในภายหลัง",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "บันทึกสำเนาที่ปลอดภัยแล้วลบ",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "ไม่สามารถเก็บสำเนาที่บันทึกไว้เป็นสำเนาที่ปลอดภัย จึงไม่ได้ลบสิ่งใดออก Boxing จะลบสำเนาข้อขัดแย้งก็ต่อเมื่อเนื้อหาที่บันทึกไว้ถูกเก็บอย่างปลอดภัยแล้ว",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "การลบสำเนาข้อขัดแย้งไม่เสร็จสมบูรณ์ ไม่มีสิ่งใดถูกเปลี่ยนแปลง",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
+  },
+  "conflictGuardRestoreFailed": {
+    "message": "ไม่สามารถคืนค่าสำเนาที่ปลอดภัยนั้นได้ ไม่มีสิ่งใดถูกเปลี่ยนแปลง",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 ,
   "exportEncryptLabel": {

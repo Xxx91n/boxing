@@ -1099,6 +1099,52 @@
   },
   "dataConflictFieldUrl": {
     "message": "URL"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "Supprimer",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "Copies de sécurité",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "copie de conflit supprimée",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "Restaurer",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "Supprimer cette copie de conflit ?",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing enregistre d'abord la copie archivée du $point$ comme copie de sécurité, puis ne la supprime que si cet enregistrement réussit. Les copies de sécurité ont une conservation bornée et peuvent être supprimées plus tard.",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "Enregistrer la copie de sécurité puis supprimer",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "La copie archivée n'a pas pu être enregistrée comme copie de sécurité - rien n'a été supprimé. Boxing ne supprime une copie de conflit que lorsque son contenu archivé est bien enregistré.",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "La suppression de la copie de conflit n'est pas allée au bout. Rien n'a été modifié.",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
+  },
+  "conflictGuardRestoreFailed": {
+    "message": "Cette copie de sécurité n'a pas pu être restaurée - rien n'a été modifié.",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 ,
   "exportEncryptLabel": {

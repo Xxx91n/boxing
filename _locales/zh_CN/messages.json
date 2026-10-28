@@ -1102,6 +1102,52 @@
   },
   "dataConflictFieldUrl": {
     "message": "URL"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "删除",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "安全副本",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "已删除的冲突副本",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "恢复",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "删除此冲突副本？",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing 会先把 $point$ 的归档副本保存为安全副本，只有保存成功后才会删除。安全副本的留存有上限，日后可能被淘汰。",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "保存安全副本并删除",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "无法把该归档副本保存为安全副本，因此未删除任何内容。Boxing 只有在归档内容安全保存后才会删除冲突副本。",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "删除冲突副本未完全成功。未更改任何内容。",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
+  },
+  "conflictGuardRestoreFailed": {
+    "message": "无法从该安全副本恢复 - 未更改任何内容。",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 ,
   "exportEncryptLabel": {
