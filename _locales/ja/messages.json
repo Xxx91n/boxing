@@ -1129,6 +1129,52 @@
   },
   "dataConflictFieldUrl": {
     "message": "URL"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "削除",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "セーフティコピー",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "削除済みの競合コピー",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "復元",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "この競合コピーを削除しますか？",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing はまず $point$ のアーカイブ済みコピーをセーフティコピーとして保存し、保存に成功した場合のみ削除します。セーフティコピーの保存には上限があり、後で削除される場合があります。",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "セーフティコピーを保存して削除",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "アーカイブ済みコピーをセーフティコピーとして保存できなかったため、何も削除しませんでした。Boxing はアーカイブ済み内容を確実に保存できた場合にのみ競合コピーを削除します。",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "競合コピーの削除を完了できませんでした。何も変更されていません。",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
+  },
+  "conflictGuardRestoreFailed": {
+    "message": "このセーフティコピーを復元できませんでした - 何も変更されていません。",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 ,
   "exportEncryptLabel": {

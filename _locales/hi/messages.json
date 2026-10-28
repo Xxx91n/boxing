@@ -1129,6 +1129,52 @@
   },
   "dataConflictFieldUrl": {
     "message": "URL"
+  },
+  "dataConflictDeleteBtn": {
+    "message": "हटाएँ",
+    "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"
+  },
+  "dataConflictGuardList": {
+    "message": "सुरक्षित प्रतियाँ",
+    "description": "Settings data tab: label of the safe-copy list for deleted conflict copies (ticket 56)"
+  },
+  "dataConflictGuardArchived": {
+    "message": "हटाई गई संघर्ष प्रति",
+    "description": "Settings data tab: row marker that this safe copy belongs to a deleted conflict copy (ticket 56)"
+  },
+  "dataConflictGuardRestoreBtn": {
+    "message": "पुनर्स्थापित करें",
+    "description": "Settings data tab: restores only that archived conflict copy, never the canvas (ticket 56)"
+  },
+  "conflictDeleteConfirmTitle": {
+    "message": "इस संघर्ष प्रति को हटाएँ?",
+    "description": "Conflict-copy deletion confirmation title (ticket 56)"
+  },
+  "conflictDeleteConfirmBody": {
+    "message": "Boxing पहले $point$ की संग्रहीत प्रति को सुरक्षित प्रति के रूप में सहेजता है और उसे केवल सहेजने के सफल होने पर ही हटाता है। सुरक्षित प्रतिों की प्रतिधारण सीमित है, इसलिए बाद में हटाई जा सकती हैं।",
+    "description": "Conflict-copy deletion confirmation body: the archived copy is saved as a safe copy first, deletion only follows a successful save (ticket 56)",
+    "placeholders": {
+      "point": {
+        "content": "$1",
+        "example": "2026-09-12 08:00"
+      }
+    }
+  },
+  "conflictDeleteConfirmAction": {
+    "message": "सुरक्षित प्रति सहेजें और हटाएँ",
+    "description": "Conflict-copy deletion confirmation action button (ticket 56)"
+  },
+  "conflictDeleteNoSafety": {
+    "message": "संग्रहीत प्रति को सुरक्षित प्रति के रूप में नहीं सहेजा जा सका, इसलिए कुछ भी नहीं हटाया गया। Boxing संघर्ष प्रति को केवल तभी हटाता है जब उसकी संग्रहीत सामग्री सुरक्षित रूप से सहेजी जाए।",
+    "description": "Shown when the conflict copy could not be saved as a safe copy; nothing was deleted (ticket 56)"
+  },
+  "conflictDeleteFailed": {
+    "message": "संघर्ष प्रति हटाना पूरा नहीं हुआ। कुछ भी नहीं बदला गया।",
+    "description": "Shown when a conflict copy could not be deleted after its safe copy was taken; the archive is left exactly as it was (ticket 56)"
+  },
+  "conflictGuardRestoreFailed": {
+    "message": "उस सुरक्षित प्रति को पुनर्स्थापित नहीं किया जा सका - कुछ भी नहीं बदला गया।",
+    "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
   }
 ,
   "exportEncryptLabel": {

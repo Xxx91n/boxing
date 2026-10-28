@@ -319,6 +319,15 @@
                 <label class="modal__label" data-i18n="dataConflictList" style="margin-top:6px;">Conflict copies</label>
                 <div id="data-conflict-list"></div>
               </div>
+              <!-- Ticket 56 (#53 D3): safe copies of conflict archives the user confirmed for
+                   deletion. Each row was written into the snapshot subsystem BEFORE its
+                   archive was removed, and restores only that archived payload — never the
+                   canvas. Bounded by the conflict-archive count cap and the snapshot byte
+                   ceiling, so a safe copy can be pruned later; it is not a recycle bin. -->
+              <div id="data-conflict-guard-wrap" hidden>
+                <label class="modal__label" data-i18n="dataConflictGuardList" style="margin-top:6px;">Safe copies</label>
+                <div id="data-conflict-guard-list"></div>
+              </div>
               <p class="modal__hint" data-i18n="dataHealthHint" style="margin:2px 0 0;font-size:11px;">Boxing keeps
                 time-layered snapshots of your layout. If the main storage is ever damaged, it is archived (never
                 silently overwritten) and rebuilt from the latest healthy snapshot.</p>

@@ -275,6 +275,17 @@ I18N_FALLBACK.dataConflictArchived = 'Conflict copies archived';
 // Ticket 79 (spec): conflict-copy readout list + single export (BX-I18N-005)
 I18N_FALLBACK.dataConflictList = 'Conflict copies';
 I18N_FALLBACK.dataConflictExportBtn = 'Export';
+// Ticket 56 (#53 D3): conflict-copy safe delete + individual restore (BX-I18N-005)
+I18N_FALLBACK.dataConflictDeleteBtn = 'Delete';
+I18N_FALLBACK.dataConflictGuardList = 'Safe copies';
+I18N_FALLBACK.dataConflictGuardArchived = 'deleted conflict copy';
+I18N_FALLBACK.dataConflictGuardRestoreBtn = 'Restore';
+I18N_FALLBACK.conflictDeleteConfirmTitle = 'Delete this conflict copy?';
+I18N_FALLBACK.conflictDeleteConfirmBody = 'Boxing first saves the archived copy from $1$ as a safe copy, and deletes it only if that save succeeds. Safe copies are kept under a bounded limit and can be pruned later.';
+I18N_FALLBACK.conflictDeleteConfirmAction = 'Save safe copy and delete';
+I18N_FALLBACK.conflictDeleteNoSafety = 'The archived copy could not be saved as a safe copy, so nothing was deleted. Boxing deletes a conflict copy only once its archived content is safely stored.';
+I18N_FALLBACK.conflictDeleteFailed = 'Deleting the conflict copy did not complete. Nothing was changed.';
+I18N_FALLBACK.conflictGuardRestoreFailed = 'That safe copy could not be restored - nothing was changed.';
 // Issue #54 (#53 D2/D3): same-id conflict comparison + per-field apply (BX-I18N-005)
 I18N_FALLBACK.dataConflictCompareBtn = 'Compare';
 I18N_FALLBACK.dataConflictDiffHeading = 'Differences with current content';
