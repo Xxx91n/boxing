@@ -187,10 +187,10 @@
 .quick-help {
   position: fixed;
   left: 16px;
-  /* Clears the .foot band (space-3 padding + one hint line). The band grows with
-     --font-size-base, so the card is height-bounded instead of chasing it: on a short or
-     narrow window the worst case is the always-visible hint text sliding behind a sheet the
-     user just opened, never a control it claims to explain. */
+  /* Roughly clears the .foot band (space-3 padding + one hint line). The band grows with
+     --font-size-base and can exceed this offset at the top of the font slider, and the card is
+     height-bounded rather than chasing it: the worst case is the always-visible hint text sliding
+     behind a sheet that restates exactly that hint, never a canvas control. */
   bottom: 44px;
   z-index: 40;
   max-width: 340px;
@@ -251,8 +251,6 @@
 .quick-help__label {
   font-size: var(--fs-xs);
   color: var(--color-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
   user-select: none; /* BX-SEL-01 */
 }
 

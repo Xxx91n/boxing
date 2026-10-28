@@ -56,9 +56,11 @@ const NEW_KEYS = ['aboutCopyVersion', 'aboutCopyLink', 'aboutCopied', 'aboutCopy
 const REUSED_HELP_KEYS = ['dblclickCreateHint', 'addLargeBoxTooltip', 'addSmallBoxTooltip',
   'addBookmarkPlaceholder', 'dragToReorder', 'footerHint', 'syncProviderHint', 'onboardingRestore'];
 
-// Synthetic activation: the Firefox lane stalls on native locator.click under load
-// (playwright#16095 class) — same reason as the onboarding siblings. A real pointer is used only
-// where the AC is about the pointer itself (AC4), always after assertPointerReaches.
+// Synthetic activation for the controls this ticket adds, in the file:// lanes: the Firefox lane
+// stalls on native locator.click under load (playwright#16095 class) — same reason as the
+// onboarding siblings. Real pointer clicks are used where the AC is about the pointer itself
+// (AC4 hit tests + the loaded-extension lane, where the clipboard also needs the activation a
+// dispatched click does not grant).
 const jsClick = (page: Page, sel: string) =>
   page.evaluate((s) => (document.querySelector(s) as HTMLElement | null)?.click(), sel);
 
@@ -138,6 +140,28 @@ test.describe('About page entries', () => {
     await expect(page.locator('#about-diagnostics-btn')).toHaveText('Open diagnostics');
     // Existing behavior survives: the version line still carries the check-for-updates control.
     await expect(page.locator('#about-check-update-btn')).toHaveText('Check for updates');
+
+    // D7 keeps the entries off the canvas: the toolbar is still exactly the three controls it had
+    // (add-box / settings / dark-mode), and none of the new entries moved into it.
+    const toolbar = await page.evaluate(() => ({
+      count: document.querySelectorAll('.actions .btn').length,
+      newEntries: document.querySelectorAll('.actions #about-quick-help, .actions #about-diagnostics-btn, .actions #quick-help').length,
+    }));
+    expect(toolbar.newEntries, 'no help or diagnostics button may appear on the canvas toolbar').toBe(0);
+    expect(toolbar.count, 'the toolbar must not have grown').toBe(3);
+
+    // AC1 keeps the open-in-tab behavior — the same click still goes to the same target, which is
+    // how the pre-existing link buttons worked on a host without chrome.tabs (settings-ui openLink).
+    const opened = await page.evaluate(async () => {
+      const calls: string[] = [];
+      const real = window.open;
+      (window as any).open = (url: string) => { calls.push(String(url)); return null; };
+      document.getElementById('about-link-repo')?.click();
+      document.getElementById('about-link-issues')?.click();
+      window.open = real;
+      return calls;
+    });
+    expect(opened).toEqual([PROJECT_LINKS[0][1], PROJECT_LINKS[1][1]]);
 
     // Copy controls exist for exactly the version row and the four links the page already had —
     // five in total, and each one names the target it copies so four identical "Copy link"
@@ -323,9 +347,13 @@ test.describe('quick reference stays out of the canvas way', () => {
   test('AC4: an empty canvas keeps its own action hittable while the sheet is open', async ({ page }) => {
     await resetNtp(page, NTP_URL);
     await openAboutTab(page);
-    await expect(page.locator('.canvas__empty-action')).toBeVisible();
+    // Precondition only: with no boxes the canvas shows its own create action. "Visible" would
+    // prove nothing here — the open settings modal paints over it and locator visibility has no
+    // occlusion component. assertPointerReaches is the claim that actually matters.
+    expect(await page.locator('.canvas__empty-action').count()).toBe(1);
 
     await jsClick(page, '#about-quick-help');
+    await expect(page.locator('#settings-modal')).toBeHidden();
     await expect(page.locator('#quick-help')).toBeVisible();
     await assertPointerReaches(page, '.canvas__empty-action');
     await page.locator('.canvas__empty-action').click();
