@@ -1062,6 +1062,9 @@
   "dataConflictStale": {
     "message": "इस तुलना के बाद वर्तमान सामग्री बदल गई - ताज़ा अंतर देखें और दोबारा पुष्टि करें"
   },
+  "dataConflictNoChange": {
+    "message": "कुछ नहीं बदला - चुने गए मान आपकी वर्तमान सामग्री से मेल खाते हैं"
+  },
   "dataConflictApplied": {
     "message": "$count$ फ़ील्ड लागू किए गए",
     "placeholders": {

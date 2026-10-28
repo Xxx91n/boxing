@@ -1062,6 +1062,9 @@
   "dataConflictStale": {
     "message": "비교 이후 현재 내용이 변경되었습니다. 새로 바뀐 차이를 확인하고 다시 확정하세요"
   },
+  "dataConflictNoChange": {
+    "message": "변경되지 않았습니다 - 선택한 값이 이미 현재 내용과 같습니다"
+  },
   "dataConflictApplied": {
     "message": "$count$개 항목을 적용했습니다",
     "placeholders": {

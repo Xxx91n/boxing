@@ -1062,6 +1062,9 @@
   "dataConflictStale": {
     "message": "تغيّر المحتوى الحالي بعد هذه المقارنة - راجع الفروق المحدَّثة وأكِّد من جديد"
   },
+  "dataConflictNoChange": {
+    "message": "لم يتغيّر شيء - القيم المحددة تطابق محتواك الحالي"
+  },
   "dataConflictApplied": {
     "message": "طُبِّق $count$ من الحقول",
     "placeholders": {

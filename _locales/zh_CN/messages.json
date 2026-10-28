@@ -1065,6 +1065,9 @@
   "dataConflictStale": {
     "message": "比较之后当前内容已变化，请查看刷新后的差异并重新确认"
   },
+  "dataConflictNoChange": {
+    "message": "未做改动 - 所选项与当前内容一致"
+  },
   "dataConflictApplied": {
     "message": "已应用 $count$ 个字段",
     "placeholders": {

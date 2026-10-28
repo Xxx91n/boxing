@@ -271,6 +271,7 @@ I18N_FALLBACK.dataConflictNoDiffs = 'No editable-field differences with the curr
 I18N_FALLBACK.dataConflictBodyUnavailable = 'The archived copy is missing or truncated - nothing can be applied';
 I18N_FALLBACK.dataConflictTargetMissing = 'This box no longer exists - it will not be rebuilt';
 I18N_FALLBACK.dataConflictStale = 'The current content changed after this comparison - review the refreshed differences and confirm again';
+I18N_FALLBACK.dataConflictNoChange = 'Nothing was changed - the values you selected already match your content';
 I18N_FALLBACK.dataConflictApplied = 'Applied $1$ field(s)';
 I18N_FALLBACK.dataConflictLevelLargeBox = 'Large box';
 I18N_FALLBACK.dataConflictLevelSmallBox = 'Small box';

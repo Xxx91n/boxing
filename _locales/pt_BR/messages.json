@@ -1062,6 +1062,9 @@
   "dataConflictStale": {
     "message": "O conteúdo atual mudou depois desta comparação - revise as diferenças atualizadas e confirme novamente"
   },
+  "dataConflictNoChange": {
+    "message": "Nada foi alterado - os valores selecionados já correspondem ao seu conteúdo"
+  },
   "dataConflictApplied": {
     "message": "$count$ campo(s) aplicado(s)",
     "placeholders": {

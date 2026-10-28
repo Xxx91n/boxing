@@ -530,12 +530,13 @@ export function initSettingsUiFacade(deps) {
     const applied = done.size;
     conflictPanels.delete(ts);
     if (!applied) {
-      // Nothing to write (the targets went away, or the values already match): keep the
-      // panel open on the refreshed diff so the user sees the current state, and say why
-      // the apply did nothing rather than leaving a silent no-op.
+      // Nothing to write: every selected value already matches what the box has (the star
+      // is the reachable case — the runtime mirror can hold it while isParent does not).
+      // Targets vanishing cannot land here: that moves the signature and the refresh above
+      // catches it. Say exactly that nothing changed, instead of reusing the staleness notice.
       conflictPanels.set(ts, { signature: fresh.signature, selected: new Set() });
-      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh, i18n('dataConflictStale')));
-      debug('Conflict apply wrote nothing: ts=' + ts + ' (no selected target could be written)');
+      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh, i18n('dataConflictNoChange')));
+      debug('Conflict apply wrote nothing: ts=' + ts + ' (selected values already match the current content)');
       return;
     }
     await saveLayout();

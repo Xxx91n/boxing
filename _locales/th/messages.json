@@ -1062,6 +1062,9 @@
   "dataConflictStale": {
     "message": "เนื้อหาปัจจุบันเปลี่ยนไปหลังการเทียบนี้ - ตรวจดูส่วนต่างที่ปรับปรุงแล้วแล้วยืนยันอีกครั้ง"
   },
+  "dataConflictNoChange": {
+    "message": "ไม่ได้เปลี่ยนสิ่งใด - ค่าที่เลือกตรงกับเนื้อหาปัจจุบันอยู่แล้ว"
+  },
   "dataConflictApplied": {
     "message": "ใช้แล้ว $count$ ฟิลด์",
     "placeholders": {

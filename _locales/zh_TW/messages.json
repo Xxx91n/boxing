@@ -1065,6 +1065,9 @@
   "dataConflictStale": {
     "message": "比較之後目前內容已變更，請檢視重新整理的差異並再次確認"
   },
+  "dataConflictNoChange": {
+    "message": "未做變更 - 所選項與目前內容一致"
+  },
   "dataConflictApplied": {
     "message": "已套用 $count$ 個欄位",
     "placeholders": {

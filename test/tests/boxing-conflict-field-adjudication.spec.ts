@@ -77,16 +77,16 @@ function liveLayout() {
 }
 
 // The archived losing side (the #53 D2 counterpart): same ids, divergent title / position /
-// size / pin / hover-expand / star, and a moved bookmark url. The small box and the bookmark
-// title are deliberately IDENTICAL so "only differing fields are offered" proves something,
-// and nextSmallIndex 99 vs 2 is the internal counter that must never show up.
+// size / pin / hover-expand / star, a small box pinned the other way, and a moved bookmark
+// url. The bookmark title is deliberately IDENTICAL so "only differing fields are offered"
+// proves something, and nextSmallIndex 99 vs 2 is the internal counter that must never show.
 function archivedBoxes(over: Record<string, unknown> = {}) {
   return [{
     id: 'L1', type: 'large', title: 'Cloud Root', x: 900, y: 900, width: 420, height: 300,
     pinned: true, collapseHover: true, isParent: true, nextSmallIndex: 99,
     children: [{
       id: 'S1', type: 'small', title: 'Local Small', x: 0, y: 0, width: 240, height: 180,
-      pinned: true, bookmarks: [{ id: 'b1', title: 'Shared Bookmark', url: 'https://cloud.test/b1' }],
+      pinned: false, bookmarks: [{ id: 'b1', title: 'Shared Bookmark', url: 'https://cloud.test/b1' }],
     }],
     ...over,
   }];
@@ -221,20 +221,20 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     expect(text).toContain('Differences with current content');
     expect(text).not.toContain('dataConflict'); // strings resolve; a raw key would leak the gap
 
-    // AC2: exactly the differing user-editable fields of the objects both sides have.
+    // AC2: exactly the differing user-editable fields of the objects both sides have, at
+    // each level (large box, then its small box, then the bookmark inside that).
     expect(await fieldPaths(page)).toEqual([
       'large:L1#title', 'large:L1#position', 'large:L1#size', 'large:L1#pinned',
-      'large:L1#autoExpand', 'large:L1#star',
-      'small:L1:S1:b1#url',
+      'large:L1#autoExpand', 'large:L1#star', 'small:L1:S1#pinned', 'small:L1:S1:b1#url',
     ]);
-    // Internal state and equal fields stay out: counters, writer ids, the small box.
+    // Internal state and equal fields stay out: counters, writer ids, the bookmark title.
     expect(text).not.toContain('nextSmallIndex');
     expect(text).not.toContain('schemaVersion');
     expect(text).not.toContain('writerId');
     expect(text).not.toContain('Other Root');                 // objects only one side has stay out
     // Default is always keep-current (#53 D2: comparing must not overwrite for the user).
     expect((await keepRadios(page)).every(Boolean)).toBe(true);
-    expect(await page.evaluate((p) => document.querySelectorAll(p + ' input[value="copy"]').length, PANEL)).toBe(7);
+    expect(await page.evaluate((p) => document.querySelectorAll(p + ' input[value="copy"]').length, PANEL)).toBe(8);
     // Applying waits for an explicit choice.
     expect(await hasApplyButton(page)).toBe(true);
     expect(await applyDisabled(page)).toBe(true);
@@ -269,12 +269,12 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     const body = JSON.parse(await storedValue(page, 'boxingLayout.conflict.' + CONFLICT_TS));
     expect(body.raw.boxes[0].title).toBe('Cloud Root');
     expect(body.truncated).toBeUndefined();
-    // The panel says what it did, and only the chosen field left the diff: the box's own
-    // six differences are still on the table because the user never adopted them.
+    // The panel says what it did, and only the chosen field left the diff: the seven other
+    // differences are still on the table because the user never adopted them.
     await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/Applied 1 field/);
     expect(await fieldPaths(page)).toEqual([
       'large:L1#title', 'large:L1#position', 'large:L1#size', 'large:L1#pinned',
-      'large:L1#autoExpand', 'large:L1#star',
+      'large:L1#autoExpand', 'large:L1#star', 'small:L1:S1#pinned',
     ]);
   });
 
@@ -310,6 +310,7 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     expect(await adoptField(page, P_TITLE)).toBe(true);
     expect(await adoptField(page, 'large:L1#position')).toBe(true);
     expect(await adoptField(page, 'large:L1#size')).toBe(true);
+    expect(await adoptField(page, 'small:L1:S1#pinned')).toBe(true);
     expect(await clickApply(page)).toBe(true);
 
     const after = await memoryLayout(page);
@@ -320,6 +321,10 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
     expect([after.boxes[0].width, after.boxes[0].height]).toEqual([420, 300]);
     expect(after.boxes[0].pinned).toBe(false);               // unselected fields stay current
     expect(after.boxes[0].collapseHover).toBe(false);
+    // The small-box tier writes too, and only where it was chosen.
+    expect(after.boxes[0].children[0].pinned).toBe(false);
+    expect(after.boxes[0].children[0].bookmarks[0].url).toBe('https://local.test/b1');
+    await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/Applied 5 field/);
     // Adjudication writes, it does not delete: no tombstone for anything it touched.
     const deleted = await page.evaluate(() => Object.keys((window as any).__boxingDebug.layout._meta?.deleted || {}));
     expect(deleted.filter((k: string) => k.startsWith('L1') || k.startsWith('S1') || k === 'b1' || k.includes(':L1'))).toEqual([]);
@@ -419,6 +424,7 @@ test.describe('Issue #54 — conflict comparison and per-field apply (file:// UI
       'dataConflictCompareBtn', 'dataConflictDiffHeading', 'dataConflictKeepCurrent',
       'dataConflictAdoptCopy', 'dataConflictApplyBtn', 'dataConflictNoDiffs',
       'dataConflictBodyUnavailable', 'dataConflictTargetMissing', 'dataConflictStale',
+      'dataConflictNoChange',
       'dataConflictApplied', 'dataConflictLevelLargeBox', 'dataConflictLevelSmallBox',
       'dataConflictLevelBookmark', 'dataConflictFieldTitle', 'dataConflictFieldPosition',
       'dataConflictFieldSize', 'dataConflictFieldPinned', 'dataConflictFieldStar', 'dataConflictFieldUrl',

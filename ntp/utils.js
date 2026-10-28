@@ -583,9 +583,9 @@ function conflictSymbolValue(bool, negate) {
 }
 
 // One descriptor -> { token, entry }. The token describes the CURRENT side, so it feeds the
-// staleness signature; a group that cannot be adopted at all (a side without finite
-// geometry) pins 'n/a' instead, because nothing can ever be written for it and its drift
-// needs no re-confirmation. The entry only exists when the two sides differ.
+// staleness signature; a group with nothing to compare (a side without finite geometry) pins
+// 'n/a', because nothing can ever be written for it and its drift needs no re-confirmation.
+// The entry only exists when the two sides differ.
 function probeConflictField(cur, copy, spec, basePath) {
   const path = basePath + '#' + spec.key;
   const field = spec.field || spec.key;

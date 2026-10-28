@@ -1088,6 +1088,10 @@
     "message": "The current content changed after this comparison - review the refreshed differences and confirm again",
     "description": "Staleness notice that discards an unreviewed apply (issue #54, spec #53 D3)"
   },
+  "dataConflictNoChange": {
+    "message": "Nothing was changed - the values you selected already match your content",
+    "description": "Shown when an explicit apply had nothing left to write (issue #54)"
+  },
   "dataConflictApplied": {
     "message": "Applied $count$ field(s)",
     "description": "Result line after an explicit conflict apply (issue #54)",

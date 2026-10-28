@@ -1062,6 +1062,9 @@
   "dataConflictStale": {
     "message": "この比較の後で現在のコンテンツが変更されました。更新後の差分を確認し、再度確定してください"
   },
+  "dataConflictNoChange": {
+    "message": "変更はありません - 選択した値は現在のコンテンツと同じです"
+  },
   "dataConflictApplied": {
     "message": "$count$ 件のフィールドを適用しました",
     "placeholders": {

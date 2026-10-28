@@ -1062,6 +1062,9 @@
   "dataConflictStale": {
     "message": "Nội dung hiện tại đã đổi sau khi so sánh - hãy xem lại khác biệt mới và xác nhận lại"
   },
+  "dataConflictNoChange": {
+    "message": "Không có gì thay đổi - các giá trị đã chọn trùng với nội dung hiện tại"
+  },
   "dataConflictApplied": {
     "message": "Đã áp dụng $count$ trường",
     "placeholders": {
