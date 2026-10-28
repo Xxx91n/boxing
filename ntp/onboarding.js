@@ -15,7 +15,7 @@ import { layout } from './state.js';
 import { saveLayout } from './storage.js';
 import { i18n, loadI18nStore, applyI18n, currentLang, SUPPORTED_LANGS } from './i18n.js';
 import { renderCanvas, updateAutohideUI } from './render.js';
-import { openSettingsModal } from './settings-ui.js';
+import { openSettingsModal, closeSettingsModal } from './settings-ui.js';
 
 let debug, debugErr, updateCaption, langSelect;
 // injected runtime-id probe (defensive demo detection). ntp.js holds the
@@ -272,4 +272,44 @@ function demoSuppressionReason() {
     }
     if (!btn) return;
     btn.addEventListener('click', () => { openTour('replay', null, btn); });
+  }
+
+  // ── Issue #59 (#53 D7): non-modal operation quick reference ──────────────
+  // Bound here for the same reason as the replay entry: B-9 keeps settings-ui.js from
+  // importing onboarding.js, so an About-page control that drives a surface outside the modal
+  // is wired in this module and called by ntp.js.
+  // This is deliberately NOT the tour and NOT a modal: no backdrop, no aria-modal, and the
+  // Escape handler lives ON the panel, so it can only fire while focus is inside it. Canvas
+  // Escape semantics (exit box / clear search) stay untouched — unlike the overlay's
+  // capture-phase handler above. Nothing here persists state, teaches a flow or auto-opens; the
+  // first-run tour and its replay keep their own contract (#42).
+  // The demo build keeps this entry: bug3 suppressed the TOUR there because the modal overlay
+  // wins the hit test for the whole page, and a plain card over the canvas cannot do that.
+  export function initQuickHelpEntry() {
+    const entry = document.getElementById('about-quick-help');
+    const panel = document.getElementById('quick-help');
+    if (!entry || !panel) return;
+    const closeBtn = document.getElementById('quick-help-close-btn');
+    const onPanelKeydown = (e) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      // Stopping propagation is safe BECAUSE this listener lives on the panel: it can only see
+      // an Escape whose target is inside the sheet. Focus on the canvas therefore still reaches
+      // ntp.js's own handler (clear search / exit box) untouched.
+      e.stopPropagation();
+      hideQuickHelp();
+    };
+    function hideQuickHelp() {
+      panel.hidden = true;
+      panel.removeEventListener('keydown', onPanelKeydown);
+    }
+    entry.addEventListener('click', () => {
+      // D7: the sheet is read while the canvas is used, so the settings panel closes instead of
+      // staying on top of it.
+      closeSettingsModal();
+      panel.hidden = false;
+      panel.addEventListener('keydown', onPanelKeydown);
+      closeBtn?.focus();
+    });
+    closeBtn?.addEventListener('click', hideQuickHelp);
   }

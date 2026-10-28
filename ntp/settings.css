@@ -1179,6 +1179,66 @@ body.box-resizing {
   color: var(--color-ink);
 }
 
+/* === Issue #59 (#53 D6): About copy affordances + diagnostics shortcut === */
+/* Each link sits with its own copy button in one grid cell, so the existing two-column
+   layout keeps pairing "open" with "copy" instead of doubling the row count. */
+.about-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+/* Icon-only, like the header buttons: the localized name lives in the .sr-only text and the
+   tooltip, so four copy controls cannot stuff long strings into the link grid. */
+.about-copy-btn {
+  padding: 1px 6px;
+  font-size: var(--fs-sm);
+  line-height: 1;
+  cursor: pointer;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  vertical-align: middle;
+}
+
+.about-copy-btn:hover {
+  background: var(--color-hover);
+  color: var(--color-ink);
+}
+
+.about-copy-status {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.about-copy-status[hidden] {
+  display: none;
+}
+
+.about-entries {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* Jump-target confirmation for the About > diagnostics shortcut: the section is the one that
+   already exists in Settings > Data, this only says "you arrived". */
+@keyframes settings-section-flash {
+  from { background: var(--color-hover); }
+  to { background: transparent; }
+}
+
+.settings-section--flash {
+  border-radius: var(--radius-sm);
+  animation: settings-section-flash var(--dur-slow) var(--ease-default) 2;
+}
+
 .rule-action-btn {
   display: inline-flex;
   align-items: center;
