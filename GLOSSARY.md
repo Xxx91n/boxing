@@ -84,6 +84,10 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **staleness signature** — Fingerprint of the current side of a conflict comparison, taken when the user saw the diff. Applying re-compares and refuses when the signature moved, so an unreviewed verdict can never overwrite a later edit.
 
+**passphrase backup file** — Manual export (standard envelope or full DR package) sealed with a user-typed passphrase in a versioned `boxingBackup: 1` envelope (PBKDF2-SHA-256 → AES-GCM). Keyed on the passphrase alone, never on the install key, so another install can open it; Boxing does not store the passphrase and cannot recover it. Distinct from the credential envelope, which is per-install obfuscation of sync secrets.
+
+**credential envelope** — Sync secrets (`_encWebdavPass` / `_encGistToken`) obfuscated at rest with the per-install key. It is not file encryption and never travels in usable form inside a backup file.
+
 **autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
 
 **MAX_SNAPSHOT_COUNT** — Hard ceiling of 30 snapshots; older snapshots are physically deleted beyond it.
