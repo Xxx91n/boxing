@@ -404,13 +404,18 @@ export function initSettingsUiFacade(deps) {
   }
 
 
-  // Envelope -> sealed file text, or null when it cannot be sealed inside the importer's own
-  // 5MB file gate. Snapshot bodies trim first (the same oldest-first drop the plain path
-  // uses), and the measure is BYTES here because base64 inflates the payload while the
-  // importer still gates on the file's size. Refusing is the only alternative: falling back to
-  // a plain file would hand out exactly the content the user asked to protect, and raising the
-  // import gate would trade an existing protection for a round trip (spec #53 D4 / AC7).
+  // Envelope -> sealed file text, or a reason it cannot be written. Two DIFFERENT limits can
+  // stop a seal, and blaming the wrong one sends the user off to shrink the wrong thing:
+  //   layout — the importer lands at most 2,000,000 characters of LAYOUT (the same SEC-06 cap
+  //            the plain path applies); no file, sealed or not, can bring that back.
+  //   file   — the sealed bytes must still clear the importer's 5MB file gate, and base64
+  //            inflates non-ASCII payloads roughly threefold. Snapshot bodies trim first (the
+  //            same oldest-first drop the plain path uses), measured in BYTES here.
+  // Refusing is the only alternative in both cases: falling back to a plain file would hand out
+  // exactly the content the user asked to protect, and raising either limit would trade an
+  // existing protection for a round trip (spec #53 D4 / AC7).
   async function sealForDownload(env, text, passphrase) {
+    if (JSON.stringify(env.layout).length > 2_000_000) return { ok: false, reason: 'layout' };
     const allowed = maxInnerBytes();
     if (env._bodies) {
       while (utf8ByteLength(text) > allowed && env._bodies.snapshots.length > 0) {
@@ -419,8 +424,8 @@ export function initSettingsUiFacade(deps) {
         text = JSON.stringify(env, null, 2);
       }
     }
-    if (utf8ByteLength(text) > allowed) return null;
-    return JSON.stringify(await encryptBackupFile(text, passphrase));
+    if (utf8ByteLength(text) > allowed) return { ok: false, reason: 'file' };
+    return { ok: true, text: JSON.stringify(await encryptBackupFile(text, passphrase)) };
   }
 
 
@@ -1216,13 +1221,13 @@ export function bindSettingsUi() {
           }
         }
         if (passphrase) {
-          const sealedText = await sealForDownload(env, text, passphrase);
-          if (sealedText === null) {
-            try { alert(i18n('exportEncryptedTooLarge')); } catch (_) { /* alert may be blocked */ }
+          const sealed = await sealForDownload(env, text, passphrase);
+          if (!sealed.ok) {
+            try { alert(i18n(sealed.reason === 'layout' ? 'exportEncryptedLayoutTooLarge' : 'exportEncryptedTooLarge')); } catch (_) { /* alert may be blocked */ }
             return;
           }
-          downloadJson(sealedText, 'boxing-backup-' + _ymd() + '.json');
-          debug('Export done — fullPackage=' + Boolean(fullPackage) + ' encrypted=true len=' + sealedText.length);
+          downloadJson(sealed.text, 'boxing-backup-' + _ymd() + '.json');
+          debug('Export done — fullPackage=' + Boolean(fullPackage) + ' encrypted=true len=' + sealed.text.length);
           return;
         }
         downloadJson(text, 'boxing-backup-' + _ymd() + '.json');

@@ -38,7 +38,7 @@ const NEW_I18N_KEYS = [
   'passphraseExportTitle', 'passphraseExportBody', 'passphraseExportAction',
   'passphraseImportTitle', 'passphraseImportBody', 'passphraseImportAction',
   'passphraseFieldLabel', 'passphraseRepeatFieldLabel',
-  'passphraseRequired', 'passphraseTooLong', 'passphraseMismatch', 'passphraseWrong',  'importEncryptedInvalid', 'exportEncryptedTooLarge',
+  'passphraseRequired', 'passphraseTooLong', 'passphraseMismatch', 'passphraseWrong',  'importEncryptedInvalid', 'exportEncryptedTooLarge', 'exportEncryptedLayoutTooLarge',
 ];
 
 function bareLayout(title: string, id = 'L1') {
@@ -505,15 +505,15 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     await context.close();
   });
 
-  test('AC7: sealing refuses instead of downgrading when the sealed file would exceed the gate', async ({ browser }) => {
+  test('AC7: sealing refuses with the layout reason when the canvas itself cannot be restored', async ({ browser }) => {
     test.setTimeout(120000);
     const context = await browser.newContext();
     const page = await context.newPage();
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(String(e)));
-    // A layout that serializes PAST the sealed bound but still inside the plain 5MB cap, with
-    // no snapshot bodies left to trim. The only way "under" would be a plain fallback, which
-    // would hand out exactly the content the user just asked to protect.
+    // ~3.5M characters of layout: past the importer's 2,000,000-character payload cap, so no
+    // file — sealed or plain — could ever bring this back. The refusal must name THAT limit,
+    // not the 5MB file gate, or the user shrinks the wrong thing.
     const big = bareLayout('Too Fat To Seal');
     (big.boxes[0] as any).children = [{
       id: 'S1', title: 'bulk', x: 0, y: 0,
@@ -521,13 +521,15 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
         id: 'B' + i, title: 'bookmark-' + i + '-' + 'x'.repeat(280), url: 'https://example.test/' + i,
       })),
     }];
+    expect(JSON.stringify(big).length).toBeGreaterThan(2000000);
     await boot(page, { layout: big, snapData: bareLayout('Snap'), ts: SNAP_TS });
     await armExportCapture(page);
 
     await setEncryptOption(page, true);
     await click(page, '#export-data-btn');
     await typePassphrase(page, 'refuse-me', 'refuse-me');
-    await expect.poll(() => alerts(page), { timeout: 30000 }).toMatch(/too large to encrypt/i);
+    await expect.poll(() => alerts(page), { timeout: 30000 }).toMatch(/larger than Boxing can restore/i);
+    expect(await alerts(page)).not.toMatch(/5MB restore limit/i);
     expect(await downloadCount(page)).toBe(0);
     expect((await passphraseDialogState(page)).open).toBe(false);
 
@@ -535,29 +537,94 @@ test.describe('Issue #57 — passphrase-protected manual backups', () => {
     await setEncryptOption(page, false);
     await click(page, '#export-data-btn');
     const plain = await readExport(page);
-    const bytes = Buffer.byteLength(plain.text!, 'utf8');
-    expect(bytes).toBeGreaterThan(maxInnerBytes());
-    expect(bytes).toBeLessThanOrEqual(MAX_BACKUP_FILE_BYTES);
     expect(JSON.parse(plain.text!).layout.boxes[0].children[0].bookmarks).toHaveLength(10000);
     expect(await downloadCount(page)).toBe(1);
+    expect(errors).toEqual([]);
+    await context.close();
+  });
 
-    // and the importer still gates a SEALED file by its own size: too big is rejected before
-    // the dialog ever opens, so no passphrase can be traded for an unimportable payload.
-    // State is reset because the refusal alert above also contains "too large".
+  test('AC7: sealing refuses with the file reason when encoding alone blows the 5MB gate', async ({ browser }) => {
+    test.setTimeout(120000);
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    // ~1.6M characters of layout — inside the 2,000,000-character cap — but CJK payloads cost
+    // three UTF-8 bytes each, so the sealed base64 crosses the file gate. This is the case the
+    // 5MB message is actually about.
+    const fat = bareLayout('Wide Bytes');
+    (fat.boxes[0] as any).children = [{
+      id: 'S1', title: 'cjk', x: 0, y: 0,
+      bookmarks: Array.from({ length: 4500 }, (_, i) => ({
+        id: 'B' + i, title: '密'.repeat(300), url: 'https://example.test/' + i,
+      })),
+    }];
+    const layoutChars = JSON.stringify(fat).length;
+    expect(layoutChars).toBeLessThan(2000000);
+    expect(Buffer.byteLength(JSON.stringify(fat), 'utf8')).toBeGreaterThan(maxInnerBytes());
+    await boot(page, { layout: fat, snapData: bareLayout('Snap'), ts: SNAP_TS });
     await armExportCapture(page);
+
+    await setEncryptOption(page, true);
+    await click(page, '#export-data-btn');
+    await typePassphrase(page, 'refuse-bytes', 'refuse-bytes');
+    await expect.poll(() => alerts(page), { timeout: 40000 }).toMatch(/too large to encrypt/i);
+    expect(await downloadCount(page)).toBe(0);
+    expect((await passphraseDialogState(page)).open).toBe(false);
+
+    // and the same data leaves fine as a plain file: only sealing pays the encoding inflation
+    await setEncryptOption(page, false);
+    await click(page, '#export-data-btn');
+    const plain = await readExport(page);
+    expect(Buffer.byteLength(plain.text!, 'utf8')).toBeGreaterThan(maxInnerBytes());
+    expect(Buffer.byteLength(plain.text!, 'utf8')).toBeLessThanOrEqual(MAX_BACKUP_FILE_BYTES);
+    expect(JSON.parse(plain.text!).layout.boxes[0].children[0].bookmarks).toHaveLength(4500);
+    expect(errors).toEqual([]);
+    await context.close();
+  });
+
+  test('AC7: a FULL package drops every body it can before it also refuses on the file bound', async ({ browser }) => {
+    test.setTimeout(120000);
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    const fat = bareLayout('Wide Package');
+    (fat.boxes[0] as any).children = [{
+      id: 'S1', title: 'cjk', x: 0, y: 0,
+      bookmarks: Array.from({ length: 4500 }, () => ({
+        id: 'B1' + Math.random(), title: '密'.repeat(300), url: 'https://example.test/x',
+      })),
+    }];
+    await boot(page, { layout: fat, snapData: bareLayout('Sealed Snap Body'), ts: SNAP_TS });
+    await armExportCapture(page);
+
+    // bodies are trimmed oldest-first; with none left the layout bytes still cross the bound,
+    // so this is the file reason again rather than a silent plain fallback
+    await setEncryptOption(page, true);
+    await click(page, '#export-full-dr-btn');
+    await typePassphrase(page, 'refuse-package', 'refuse-package');
+    await expect.poll(() => alerts(page), { timeout: 40000 }).toMatch(/too large to encrypt/i);
+    expect(await downloadCount(page)).toBe(0);
+    expect(errors).toEqual([]);
+    await context.close();
+  });
+
+  test('AC7: the importer still gates a sealed file by its own size, before asking anything', async ({ browser }) => {
+    test.setTimeout(120000);
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    await boot(page, { layout: bareLayout('Gate Root'), snapData: bareLayout('Snap'), ts: SNAP_TS });
+    await armExportCapture(page);
+
     const overGate = await seal(JSON.stringify({ version: 3.5, boxes: [], pad: 'y'.repeat(4500000) }), 'over-gate');
     expect(Buffer.byteLength(JSON.stringify(overGate), 'utf8')).toBeGreaterThan(MAX_BACKUP_FILE_BYTES);
     await runImport(page, 'over-gate.json', overGate);
     await expect.poll(() => alerts(page), { timeout: 20000 }).toMatch(/too large/i);
     expect((await passphraseDialogState(page)).open).toBe(false);
-    expect(await titles(page)).toEqual(['Too Fat To Seal']);
-
-    // the same refusal once a FULL package has dropped every snapshot body it could trim
-    await armExportCapture(page);
-    await setEncryptOption(page, true);
-    await click(page, '#export-full-dr-btn');
-    await typePassphrase(page, 'refuse-me-too', 'refuse-me-too');
-    await expect.poll(() => alerts(page), { timeout: 30000 }).toMatch(/too large to encrypt/i);
+    expect(await titles(page)).toEqual(['Gate Root']);
     expect(await downloadCount(page)).toBe(0);
     expect(errors).toEqual([]);
     await context.close();
