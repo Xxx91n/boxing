@@ -624,8 +624,9 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     expect(await clickApply(page)).toBe(true);
     await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/changed after this comparison/);
     expect((await tickedAdds(page)).every(Boolean)).toBe(false);   // every checkbox reset
-    // The discarded choice is what the refreshed panel can prove: with no selection the
-    // apply control is disabled again, so the earlier tick cannot be replayed.
+    // A refreshed panel always starts with the apply control disabled, so this corroborates
+    // the reset rather than proving it. The proof is above and below: the apply was refused
+    // with the staleness notice, and the content the other tab wrote survived untouched.
     expect(await applyDisabled(page)).toBe(true);
     const after = await memoryLayout(page);
     const s2 = after.boxes[0].children.find((s: any) => s.id === 'S2');
