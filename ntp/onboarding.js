@@ -222,6 +222,9 @@ function demoSuppressionReason() {
           if (langSelect) langSelect.value = onbLang.value;
           renderTour();
           if (typeof applyI18n === 'function') applyI18n();
+          // Same refresh the settings select reaches through __boxingRefreshQuickHelp; here the
+          // card is in this module, so it is a direct call.
+          renderQuickHelp();
           if (typeof updateAutohideUI === 'function') updateAutohideUI();
           saveLayout();
           debug('onboarding lang changed', onbLang.value);
@@ -291,8 +294,8 @@ function demoSuppressionReason() {
   // Filled through i18n() instead of data-i18n because applyI18n writes textContent per
   // [data-i18n] node: a second [data-i18n="footerHint"] would make every strict-mode locator on
   // the strings the rest of the UI owns ambiguous (boxing-i18n-module.spec.ts:74 went red that
-  // way in CI). Two refresh paths cover the language: re-render on each raise, and the observer
-  // in initQuickHelpEntry() for a change taken while the card is already open.
+  // way in CI). Two refresh paths cover the language: re-render on each raise, and the
+  // __boxingRefreshQuickHelp contract for a change taken while the card is already open.
   const QUICK_HELP_GROUPS = [
     ['quickHelpCreateBox', ['dblclickCreateHint', 'addLargeBoxTooltip', 'addSmallBoxTooltip']],
     ['quickHelpBookmarks', ['addBookmarkPlaceholder', 'dragToReorder']],
@@ -354,15 +357,10 @@ function demoSuppressionReason() {
     });
     closeBtn?.addEventListener('click', hideQuickHelp);
 
-    // A language change taken while the card is already open has to reach it too. The settings
-    // select lives in settings-ui.js, which B-9 forbids from importing this module, so the
-    // refresh signal is taken from the DOM instead: applyI18n() rewrites the footer's own hint
-    // text after the new store loads, and that string is the card's third line. renderQuickHelp()
-    // never writes into the observed node, so this cannot feed back into itself.
-    const footerHint = document.querySelector('.foot__txt');
-    if (footerHint && typeof MutationObserver === 'function') {
-      new MutationObserver(() => {
-        if (!panel.hidden) renderQuickHelp();
-      }).observe(footerHint, { childList: true, characterData: true, subtree: true });
-    }
+    // The card's text comes from i18n() rather than data-i18n (see QUICK_HELP_GROUPS), so it has
+    // to be refreshed by the same event that re-localizes everything else. settings-ui.js owns the
+    // language select and B-9 forbids it from importing this module, so the seam is the window
+    // contract it already uses for the credential flush: declared here, called after applyI18n().
+    // Rendering a hidden card is harmless and keeps it fresh whichever order the user acts in.
+    window.__boxingRefreshQuickHelp = renderQuickHelp;
   }

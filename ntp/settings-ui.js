@@ -1220,6 +1220,12 @@ export function bindSettingsUi() {
         updateCaption();
       } else { renderCanvas(); }
      applyI18n();
+     // The quick reference assembles its text from the store in onboarding.js instead of
+     // [data-i18n] nodes, so applyI18n() cannot reach it: refresh it through the same window
+     // contract idiom closeSettingsModal() uses for the credential flush (B-9 forbids this file
+     // from importing onboarding.js). Undefined until the entry is bound — same tolerance as
+     // __boxingFlushCredentials above.
+     try { const refresh = window.__boxingRefreshQuickHelp; if (typeof refresh === 'function') refresh(); } catch (e) { debugWarn('quick help refresh', e); }
      // Re-apply the action tooltip/aria-label in the new language (the header button
      // no longer carries a static data-i18n-title). Kept even though saveLayout above
      // already replays the apply path: a failed persist must not leave a stale label.
