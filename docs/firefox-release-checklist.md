@@ -10,16 +10,29 @@
 
 ## 执行准备
 
-- [ ] **构建与校验**：下载 CI `build` 工件中**将要上传的** `boxing-firefox-<ver>.zip`，
-      与工件随附 `SHA256SUMS.txt` 核对校验值并记录（证据绑定到实际产物，不是本地重建）。
+- [ ] **构建与校验**：从当次 **GitHub Release** 下载**将要上传商店的**
+      `boxing-firefox-<ver>.zip` 及同 Release 的 `SHA256SUMS.txt`，核对校验值并在发行票
+      记录（版本号＋sha256＋CI run URL；证据绑定到实际产物，不是本地重建）。
+      `SHA256SUMS.txt` 只随 Release 发布、不在 build 工件中；若 Release 尚未发布，
+      退取同一 CI run 的 build 工件 zip，本地 `sha256sum` 计算并记录。
       解压得到的目录即下文「构建目录」。
-- [ ] **安装**：第 4 步有重启核验，安装方式必须重启后仍在：
-      - AMO 候选 zip（unlisted 签名包或上一个 listed 版本同级安装）：**第 4 步的唯一方式**；
-      - `web-ext run --source-dir=<解压后的构建目录> --firefox-profile <持久 profile 目录> --keep-profile-changes`
-        **仅用于第 4 步以外的检查**——它装的是临时扩展，`--keep-profile-changes` 只保留
-        profile 数据，重启后扩展本身被卸载；
-      - `about:debugging` 手动临时加载（`manifest.json`）只做快速冒烟：同样**重启即卸载**，
-        不能用于第 4 步。
+- [ ] **安装**：按步骤选择加载方式——
+      - 第 4 步含**重启核验**：`web-ext run`／`about:debugging` 装的临时扩展重启即被
+        卸载，不能单独承担它；标准发行（`amo_sign=true`）下工件 `.xpi` 未签名，
+        普通发行版 Firefox 也无法持久安装未签名包。两种可行方式：
+        1. **Firefox Developer Edition／Nightly／ESR**：`about:config` 把
+           `xpinstall.signatures.required` 置 `false`，将上一步校验过的 zip
+           （改名 `.xpi`）装入持久 profile——核验的是将要上传的同一字节。
+        2. **两个连续 `web-ext run` 会话**共用同一持久 profile
+           （`--source-dir=<构建目录> --firefox-profile <目录> --keep-profile-changes`）：
+           manifest 的 gecko id 固定使扩展 ID 跨会话稳定、localStorage 跨进程持久；
+           会话 1 触发像素缓存后关闭浏览器，会话 2 断网启动完成核验。该路径验证的是
+           「新浏览器进程＋断网＋持久字节」断言本身，不覆盖 AMO 正式安装形态——
+           在结果记录里写明所用路径。
+      - `about:debugging` 手动临时加载（`manifest.json`）：仅用于第 1/2/3/5/6 步的
+        快速冒烟，**不能用于第 4 步**。
+      - 旧版本商店安装（如上一个 listed 版本）只可作非门禁冒烟，**不构成**本次
+        zip 的第 4 步证据——它核验的不是当前产物。
 - [ ] 打开新标签页（Boxing NTP），**关闭首次运行向导**一次（否则其遮罩会影响操作）。
 - [ ] **准备冲突归档种子**（第 1–3 步共用）。手工造一份归档：
 
@@ -48,7 +61,9 @@
 
   样例最小化自 spec 夹具（`boxing-conflict-field-adjudication.spec.ts` /
   `boxing-conflict-copy-additions.spec.ts`），未新拟数据；id 必须与当前布局中
-  仍存在的对象对应，独有项 id 必须为画布中不存在的新值。种子只新增归档、不改
+  仍存在的对象对应，独有项 id 必须为画布中不存在的新值。**全新 profile 的画布
+  可能没有书签**——先正常 UI 建一个小盒子加一个书签再执行本段，否则
+  `boxes[0].children[0].bookmarks[0]` 不存在。种子只新增归档、不改
   `boxingLayout` 布局本体；建议用**专用测试 profile**执行，避免测试条目留在
   日常使用 profile 的冲突列表里。
 
@@ -96,8 +111,10 @@
       `localStorage` 的 `boxingFaviconPixels.v1` 是否出现该域的持久条目。
       **未捕获不算失败**：#58 AC8/D5 为尽力而为，授权不可读的来源应原样回退
       URL 显示，不索取新权限；manifest 权限不得为此扩大。
-- [ ] 若出现条目：**完全关闭 Firefox，断开网络后重开同一 profile**，打开 NTP：
-      该图标仍显示（src 为 `data:image/png;base64,`，可点开看属性），不是空白。
+- [ ] 若出现条目：按所用安装方式进入**新进程＋断网**——签名豁免安装则完全关闭
+      Firefox 后断网重开同一 profile；双 `web-ext` 会话则关闭后断网重跑
+      `web-ext run` 到同一 profile。打开 NTP：该图标仍显示
+      （src 为 `data:image/png;base64,`，可点开看属性），不是空白。
 - [ ] 检查 manifest（`dist/boxing-firefox/manifest.json`）：未因像素层新增权限。
 
 ### 5. 关于页便捷入口与非模态速查（#59）
