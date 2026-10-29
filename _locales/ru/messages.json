@@ -963,6 +963,36 @@
   "aboutLinkPrivacy": {
     "message": "Политика конфиденциальности"
   },
+  "aboutCopyVersion": {
+    "message": "Копировать версию"
+  },
+  "aboutCopyLink": {
+    "message": "Копировать ссылку"
+  },
+  "aboutCopied": {
+    "message": "Скопировано"
+  },
+  "aboutCopyFailed": {
+    "message": "Не удалось скопировать"
+  },
+  "aboutDiagnostics": {
+    "message": "Открыть диагностику"
+  },
+  "aboutQuickHelp": {
+    "message": "Краткая справка"
+  },
+  "quickHelpCreateBox": {
+    "message": "Добавить боксы"
+  },
+  "quickHelpBookmarks": {
+    "message": "Закладки"
+  },
+  "quickHelpPanZoom": {
+    "message": "Перемещение и масштаб"
+  },
+  "quickHelpSyncRestore": {
+    "message": "Синхронизация и восстановление"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },

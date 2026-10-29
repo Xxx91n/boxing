@@ -980,6 +980,36 @@
   "aboutLinkPrivacy": {
     "message": "Privacy Policy"
   },
+  "aboutCopyVersion": {
+    "message": "Copy version"
+  },
+  "aboutCopyLink": {
+    "message": "Copy link"
+  },
+  "aboutCopied": {
+    "message": "Copied"
+  },
+  "aboutCopyFailed": {
+    "message": "Copy failed"
+  },
+  "aboutDiagnostics": {
+    "message": "Open diagnostics"
+  },
+  "aboutQuickHelp": {
+    "message": "Quick reference"
+  },
+  "quickHelpCreateBox": {
+    "message": "Add boxes"
+  },
+  "quickHelpBookmarks": {
+    "message": "Bookmarks"
+  },
+  "quickHelpPanZoom": {
+    "message": "Pan & zoom"
+  },
+  "quickHelpSyncRestore": {
+    "message": "Sync & restore"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },

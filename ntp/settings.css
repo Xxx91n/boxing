@@ -1179,6 +1179,77 @@ body.box-resizing {
   color: var(--color-ink);
 }
 
+/* === Issue #59 (#53 D6): About copy affordances + diagnostics shortcut === */
+/* Each link sits with its own copy button in one grid cell, so the existing two-column
+   layout keeps pairing "open" with "copy" instead of doubling the row count. The link keeps
+   the stretched width it had as a direct grid item, so the block stays a tidy 2×2. */
+.about-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.about-link-row .about-link-btn {
+  flex: 1 1 auto;
+}
+
+/* Icon-only, like the header buttons: the localized name lives in the .sr-only text and the
+   tooltip, so four copy controls cannot stuff long strings into the link grid.
+   Sizing only — fill, border and glyph color come from .btn, which docs/DESIGN.md §2 fixes as
+   the elevated/hairline/ink combination. .btn--ghost was tried first and is wrong here: §2b
+   makes the border the only affordance for a transparent button, and an icon-only control has
+   no text left to carry that 3:1 boundary. fs-xs matches the sibling check-for-updates button
+   in the same paragraph. */
+.about-copy-btn {
+  padding: 1px 6px;
+  font-size: var(--fs-xs);
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.about-copy-status {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.about-copy-status[hidden] {
+  display: none;
+}
+
+.about-entries {
+  display: flex;
+  /* .modal__section is column and sits on this very element, so the direction has to be
+     restated: without it the three entries stack vertically and "next to the replay entry"
+     (#53 D7, #59 AC3) is not what renders. */
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* docs/css-dual-write-convention.md "hidden override pairing": a rule that sets a layout
+   display value must ship its [hidden] fallback pair, even for containers nothing hides today. */
+.about-link-row[hidden],
+.about-entries[hidden] {
+  display: none;
+}
+
+/* Jump-target confirmation for the About > diagnostics shortcut: the section is the one that
+   already exists in Settings > Data, this only says "you arrived". */
+@keyframes settings-section-flash {
+  from { background: var(--color-hover); }
+  to { background: transparent; }
+}
+
+.settings-section--flash {
+  border-radius: var(--radius-sm);
+  animation: settings-section-flash var(--dur-slow) var(--ease-default) 2;
+}
+
 .rule-action-btn {
   display: inline-flex;
   align-items: center;

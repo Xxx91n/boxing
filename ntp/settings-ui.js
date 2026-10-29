@@ -1018,6 +1018,68 @@ export async function checkVersionUpdate(forceRefresh = false) {
   }
 }
 
+// ── Issue #59 (#53 D6): About-page copy + diagnostics shortcut ───────
+// Copying is the one thing About could not do: to file a bug you had to retype the version or
+// the issues URL out of a control that only ever opened a tab. Both copy paths read the SAME
+// value the open path uses — the manifest version above, the link map below — so what lands on
+// the clipboard can never disagree with what the page shows.
+// Neither manifest asks for clipboardWrite, so the async API is tried first and the textarea
+// path is the fallback: it works in an extension page on a user gesture in both browsers
+// without widening the permission set (D8 keeps the boundary as-is).
+async function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch (e) { debugWarn('clipboard writeText', e); }
+  let ta = null;
+  try {
+    ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    // Off-screen but still laid out: execCommand('copy') needs a selectable range, and the
+    // shared .sr-only utility (clip + 1px box) is the one thing a future a11y tweak could
+    // silently turn into visibility:hidden — which would break this path.
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(ta);
+    ta.select();
+    return document.execCommand('copy');
+  } catch (e) {
+    debugErr('clipboard fallback', e);
+    return false;
+  } finally {
+    // A throw from execCommand must not leave a stray textarea on the page forever.
+    ta?.remove();
+  }
+}
+
+let _copyStatusTimer = null;
+function showCopyFeedback(ok) {
+  const el = document.getElementById('about-copy-status');
+  if (!el) return;
+  el.textContent = ok ? i18n('aboutCopied') : i18n('aboutCopyFailed');
+  el.hidden = false;
+  if (_copyStatusTimer) clearTimeout(_copyStatusTimer);
+  _copyStatusTimer = setTimeout(() => { el.hidden = true; _copyStatusTimer = null; }, 2500);
+}
+
+// The shortcut reaches the diagnostics surface that already lives in Settings > Data — there is
+// no second log UI to land on. Driving the nav button reuses the existing tab switch (including
+// its lastSettingsTab bookkeeping) instead of duplicating it here.
+function showDiagnosticsSection() {
+  document.querySelector('.settings-nav__item[data-tab="data"]')?.click();
+  const section = document.getElementById('settings-diagnostics');
+  if (!section) return;
+  section.scrollIntoView({ block: 'start' });
+  // A repeat click must re-flash: removing and re-adding the class inside the same task would
+  // be coalesced by the browser and produce no animation.
+  section.classList.remove('settings-section--flash');
+  void section.offsetWidth;
+  section.classList.add('settings-section--flash');
+  document.getElementById('diag-export-log-btn')?.focus();
+}
+
 let _aboutTabInited = false;
 export function initAboutTab() {
   const versionEl = document.getElementById('about-version-value');
@@ -1044,6 +1106,18 @@ export function initAboutTab() {
     const btn = document.getElementById(id);
     if (btn) btn.addEventListener('click', () => openLink(url));
   }
+  document.querySelectorAll('.about-copy-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const value = btn.dataset.copySource === 'version'
+        ? (versionEl?.textContent || '').trim()
+        : links[btn.dataset.copySource];
+      // '–' is the placeholder for "this host has no manifest version" (the file:// lane).
+      // Copying it would hand the user a dash instead of a version.
+      if (!value || value === '–') { showCopyFeedback(false); return; }
+      showCopyFeedback(await copyToClipboard(value));
+    });
+  });
+  document.getElementById('about-diagnostics-btn')?.addEventListener('click', showDiagnosticsSection);
 }
 
 let _autoTitleInited = false;
@@ -1241,6 +1315,12 @@ export function bindSettingsUi() {
         updateCaption();
       } else { renderCanvas(); }
      applyI18n();
+     // The quick reference assembles its text from the store in onboarding.js instead of
+     // [data-i18n] nodes, so applyI18n() cannot reach it: refresh it through the same window
+     // contract idiom closeSettingsModal() uses for the credential flush (B-9 forbids this file
+     // from importing onboarding.js). Undefined until the entry is bound — same tolerance as
+     // __boxingFlushCredentials above.
+     try { const refresh = window.__boxingRefreshQuickHelp; if (typeof refresh === 'function') refresh(); } catch (e) { debugWarn('quick help refresh', e); }
      // Re-apply the action tooltip/aria-label in the new language (the header button
      // no longer carries a static data-i18n-title). Kept even though saveLayout above
      // already replays the apply path: a failed persist must not leave a stale label.

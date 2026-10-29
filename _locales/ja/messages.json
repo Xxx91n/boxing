@@ -963,6 +963,36 @@
   "aboutLinkPrivacy": {
     "message": "プライバシーポリシー"
   },
+  "aboutCopyVersion": {
+    "message": "バージョンをコピー"
+  },
+  "aboutCopyLink": {
+    "message": "リンクをコピー"
+  },
+  "aboutCopied": {
+    "message": "コピーしました"
+  },
+  "aboutCopyFailed": {
+    "message": "コピーに失敗しました"
+  },
+  "aboutDiagnostics": {
+    "message": "診断を開く"
+  },
+  "aboutQuickHelp": {
+    "message": "クイックリファレンス"
+  },
+  "quickHelpCreateBox": {
+    "message": "ボックスを追加"
+  },
+  "quickHelpBookmarks": {
+    "message": "ブックマーク"
+  },
+  "quickHelpPanZoom": {
+    "message": "移動とズーム"
+  },
+  "quickHelpSyncRestore": {
+    "message": "同期と復元"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },

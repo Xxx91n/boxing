@@ -211,6 +211,20 @@ I18N_FALLBACK.aboutLinkRepo = 'GitHub Repository';
 I18N_FALLBACK.aboutLinkIssues = 'Issues';
 I18N_FALLBACK.aboutLinkPulls = 'Pull Requests';
 I18N_FALLBACK.aboutLinkPrivacy = 'Privacy Policy';
+// Issue #59 (#53 D6/D7): About-page copy + diagnostics shortcut + quick reference labels.
+// The quick-help BODY text is not here on purpose — every line reuses an existing, already
+// translated key (dblclickCreateHint / addBookmarkPlaceholder / footerHint / syncProviderHint…),
+// so the panel adds labels only and cannot drift from the strings the UI actually shows.
+I18N_FALLBACK.aboutCopyVersion = 'Copy version';
+I18N_FALLBACK.aboutCopyLink = 'Copy link';
+I18N_FALLBACK.aboutCopied = 'Copied';
+I18N_FALLBACK.aboutCopyFailed = 'Copy failed';
+I18N_FALLBACK.aboutDiagnostics = 'Open diagnostics';
+I18N_FALLBACK.aboutQuickHelp = 'Quick reference';
+I18N_FALLBACK.quickHelpCreateBox = 'Add boxes';
+I18N_FALLBACK.quickHelpBookmarks = 'Bookmarks';
+I18N_FALLBACK.quickHelpPanZoom = 'Pan & zoom';
+I18N_FALLBACK.quickHelpSyncRestore = 'Sync & restore';
 I18N_FALLBACK.aboutLicense = 'Licensed under Apache-2.0 · © 2024–2026 Xxx91n';
 I18N_FALLBACK.lastPositionLabel = 'Last position';
 I18N_FALLBACK.lastZoomLabel = 'Last zoom';

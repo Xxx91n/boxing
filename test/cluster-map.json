@@ -58,7 +58,8 @@
       "boxing-merge-three-way.spec.ts",
       "boxing-conflict-copy-safe-delete.spec.ts",
       "boxing-conflict-copy-additions.spec.ts",
-      "boxing-conflict-field-adjudication.spec.ts"
+      "boxing-conflict-field-adjudication.spec.ts",
+      "boxing-about-quick-entries.spec.ts"
     ],
     "ntp/render.js": [
       "boxing-auto-expand.spec.ts",
@@ -103,6 +104,7 @@
       "boxing-architecture-acceptance.spec.ts",
       "boxing-audit.spec.ts",
       "boxing-data-golden.spec.ts",
+      "boxing-favicon-pixel-cache.spec.ts",
       "boxing-import-merge.spec.ts",
       "boxing-memory.spec.ts",
       "boxing-migration-golden.spec.ts",
@@ -169,12 +171,14 @@
       "boxing-conflict-field-adjudication.spec.ts",
       "boxing-backup-passphrase.spec.ts",
       "boxing-wave10-1016.spec.ts",
-      "boxing-wave11-1017.spec.ts"
+      "boxing-wave11-1017.spec.ts",
+      "boxing-about-quick-entries.spec.ts"
     ],
     "ntp/onboarding.js": [
       "boxing-debug.spec.ts",
       "boxing-onboarding.spec.ts",
-      "boxing-v3.spec.ts"
+      "boxing-v3.spec.ts",
+      "boxing-about-quick-entries.spec.ts"
     ],
     "ntp/i18n.js": [
       "boxing-accent-theme.spec.ts",
@@ -186,7 +190,8 @@
       "boxing-time-machine-rollback.spec.ts",
       "boxing-conflict-copy-safe-delete.spec.ts",
       "boxing-conflict-copy-additions.spec.ts",
-      "boxing-conflict-field-adjudication.spec.ts"
+      "boxing-conflict-field-adjudication.spec.ts",
+      "boxing-about-quick-entries.spec.ts"
     ],
     "ntp/state.js": [
       "boxing-architecture-acceptance.spec.ts",
@@ -216,6 +221,7 @@
     ],
     "ntp/favicon.js": [
       "boxing-favicon-fixture.spec.ts",
+      "boxing-favicon-pixel-cache.spec.ts",
       "boxing-memory.spec.ts",
       "boxing-popup-dragselect.spec.ts",
       "boxing-search.spec.ts"

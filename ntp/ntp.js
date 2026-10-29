@@ -47,7 +47,7 @@ import { initPopupsFacade } from './popups.js';
 import { initCredentialsFacade } from './credentials.js';
 import { initSyncEngineFacade, bindSyncBackupUi } from './sync-engine.js';
 import { initSettingsUiFacade, bindSettingsUi, syncSettingsDOM, openSettingsModal, openConfirmModal } from './settings-ui.js';
-import { initOnboardingFacade, initOnboarding, initTourReplayEntry } from './onboarding.js';
+import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHelpEntry } from './onboarding.js';
 (async () => {
   // ── cross-browser API ──────────────────────────────────
   let api = (typeof browser !== 'undefined' ? browser : typeof chrome !== 'undefined' ? chrome : null);
@@ -1207,6 +1207,8 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry } from './onb
     // Ticket 45: Settings > About tour replay entry (bound here so settings-ui.js
     // never imports onboarding.js — import-graph-guard B-9).
     try { initTourReplayEntry(); } catch (e) { debugErr('tour replay init', e); }
+    // Issue #59 (#53 D7): non-modal operation quick reference, same About-page seam.
+    try { initQuickHelpEntry(); } catch (e) { debugErr('quick help init', e); }
     try { initOnboarding({ reason: installReason }); } catch (e) { debugErr('onboarding init', e); }
     persistViewState(true);
     debug('init complete ' + __boxingVersion(), { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, headerPinned, darkMode: layout.settings.darkMode });

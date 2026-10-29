@@ -15,7 +15,7 @@ import { layout } from './state.js';
 import { saveLayout } from './storage.js';
 import { i18n, loadI18nStore, applyI18n, currentLang, SUPPORTED_LANGS } from './i18n.js';
 import { renderCanvas, updateAutohideUI } from './render.js';
-import { openSettingsModal } from './settings-ui.js';
+import { openSettingsModal, closeSettingsModal } from './settings-ui.js';
 
 let debug, debugErr, updateCaption, langSelect;
 // injected runtime-id probe (defensive demo detection). ntp.js holds the
@@ -222,6 +222,9 @@ function demoSuppressionReason() {
           if (langSelect) langSelect.value = onbLang.value;
           renderTour();
           if (typeof applyI18n === 'function') applyI18n();
+          // Same refresh the settings select reaches through __boxingRefreshQuickHelp; here the
+          // card is in this module, so it is a direct call.
+          renderQuickHelp();
           if (typeof updateAutohideUI === 'function') updateAutohideUI();
           saveLayout();
           debug('onboarding lang changed', onbLang.value);
@@ -272,4 +275,92 @@ function demoSuppressionReason() {
     }
     if (!btn) return;
     btn.addEventListener('click', () => { openTour('replay', null, btn); });
+  }
+
+  // ── Issue #59 (#53 D7): non-modal operation quick reference ──────────────
+  // Bound here for the same reason as the replay entry: B-9 keeps settings-ui.js from
+  // importing onboarding.js, so an About-page control that drives a surface outside the modal
+  // is wired in this module and called by ntp.js.
+  // This is deliberately NOT the tour and NOT a modal: no backdrop, no aria-modal, and the
+  // Escape handler lives ON the panel, so it can only fire while focus is inside it. Canvas
+  // Escape semantics (exit box / clear search) stay untouched — unlike the overlay's
+  // capture-phase handler above. Nothing here persists state, teaches a flow or auto-opens; the
+  // first-run tour and its replay keep their own contract (#42).
+  // The demo build keeps this entry: bug3 suppressed the TOUR there because the modal overlay
+  // wins the hit test for the whole page, and a plain card over the canvas cannot do that.
+  // The card's content, by key: group label + the existing strings it lists. Nothing here is
+  // new prose — every entry is a message the app already ships (#53 D7 "复用已有操作说明"), and
+  // the group names are the four operations D7 itself enumerates.
+  // Filled through i18n() instead of data-i18n because applyI18n writes textContent per
+  // [data-i18n] node: a second [data-i18n="footerHint"] would make every strict-mode locator on
+  // the strings the rest of the UI owns ambiguous (boxing-i18n-module.spec.ts:74 went red that
+  // way in CI). Two refresh paths cover the language: re-render on each raise, and the
+  // __boxingRefreshQuickHelp contract for a change taken while the card is already open.
+  const QUICK_HELP_GROUPS = [
+    ['quickHelpCreateBox', ['dblclickCreateHint', 'addLargeBoxTooltip', 'addSmallBoxTooltip']],
+    ['quickHelpBookmarks', ['addBookmarkPlaceholder', 'dragToReorder']],
+    ['quickHelpPanZoom', ['footerHint']],
+    ['quickHelpSyncRestore', ['syncProviderHint', 'onboardingRestore']],
+  ];
+
+  function renderQuickHelp() {
+    const list = document.getElementById('quick-help-list');
+    const title = document.getElementById('quick-help-title');
+    const closeLabel = document.getElementById('quick-help-close-label');
+    const closeBtn = document.getElementById('quick-help-close-btn');
+    if (!list || !title) return;
+    title.textContent = i18n('aboutQuickHelp');
+    if (closeLabel) closeLabel.textContent = i18n('closeSettings');
+    if (closeBtn) closeBtn.title = i18n('closeSettings');
+    list.innerHTML = '';
+    for (const [labelKey, textKeys] of QUICK_HELP_GROUPS) {
+      const item = document.createElement('li');
+      item.className = 'quick-help__item';
+      const label = document.createElement('span');
+      label.className = 'quick-help__label';
+      label.textContent = i18n(labelKey);
+      const text = document.createElement('span');
+      text.className = 'quick-help__text';
+      text.textContent = textKeys.map((k) => i18n(k)).join(' · ');
+      item.append(label, text);
+      list.appendChild(item);
+    }
+  }
+
+  export function initQuickHelpEntry() {
+    const entry = document.getElementById('about-quick-help');
+    const panel = document.getElementById('quick-help');
+    if (!entry || !panel) return;
+    const closeBtn = document.getElementById('quick-help-close-btn');
+    renderQuickHelp();
+    const onPanelKeydown = (e) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      // Stopping propagation is safe BECAUSE this listener lives on the panel: it can only see
+      // an Escape whose target is inside the sheet. Focus on the canvas therefore still reaches
+      // ntp.js's own handler (clear search / exit box) untouched.
+      e.stopPropagation();
+      hideQuickHelp();
+    };
+    function hideQuickHelp() {
+      panel.hidden = true;
+      panel.removeEventListener('keydown', onPanelKeydown);
+    }
+    entry.addEventListener('click', () => {
+      // D7: the sheet is read while the canvas is used, so the settings panel closes instead of
+      // staying on top of it.
+      closeSettingsModal();
+      renderQuickHelp();
+      panel.hidden = false;
+      panel.addEventListener('keydown', onPanelKeydown);
+      closeBtn?.focus();
+    });
+    closeBtn?.addEventListener('click', hideQuickHelp);
+
+    // The card's text comes from i18n() rather than data-i18n (see QUICK_HELP_GROUPS), so it has
+    // to be refreshed by the same event that re-localizes everything else. settings-ui.js owns the
+    // language select and B-9 forbids it from importing this module, so the seam is the window
+    // contract it already uses for the credential flush: declared here, called after applyI18n().
+    // Rendering a hidden card is harmless and keeps it fresh whichever order the user acts in.
+    window.__boxingRefreshQuickHelp = renderQuickHelp;
   }

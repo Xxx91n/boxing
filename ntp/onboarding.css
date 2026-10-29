@@ -174,3 +174,88 @@
 
 /* box-connections / star-mark UI (leader-line draws the actual SVG)
    color uses --color-ink so it adapts to dark mode automatically. */
+
+/* ═══ Issue #59 (#53 D7): non-modal operation quick reference ═══
+   A card, not an overlay: fixed to one corner, no backdrop and nothing behind it, so a pointer
+   gesture that lands anywhere else reaches the canvas while it is open. Sits under the modals
+   (z-index 100) and above the canvas layers (0–5); same surface recipe as .search-results so
+   dark mode comes from the tokens alone.
+   Bottom-LEFT on purpose: .zoom-controls owns the bottom-right of both surfaces
+   (#canvas-zoom / #inner-zoom) and its height follows --font-size-base, so a bottom-right card
+   would cover a live canvas control at some font sizes. The sheet must never block an operation
+   it is explaining. */
+.quick-help {
+  position: fixed;
+  left: 16px;
+  /* Roughly clears the .foot band (space-3 padding + one hint line, plus the .ntp bottom
+     padding the band sits inside). The band grows with --font-size-base and can exceed this
+     offset at the top of the font slider, and the card is height-bounded rather than chasing
+     it: the worst case is the operation hint text sliding behind a sheet that restates exactly
+     that hint, never a canvas control. (In the autohide state the band collapses to zero
+     height, so there is nothing to clear at all.) */
+  bottom: 44px;
+  z-index: 40;
+  max-width: 340px;
+  max-height: min(45vh, 300px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-sm);
+  color: var(--color-ink);
+}
+
+/* docs/css-dual-write-convention.md: any rule that sets a layout display value ships its
+   [hidden] fallback pair. For .quick-help it is load-bearing — the element is toggled with the
+   hidden attribute, and display:flex alone would override it. */
+.quick-help[hidden],
+.quick-help__head[hidden],
+.quick-help__list[hidden],
+.quick-help__item[hidden] {
+  display: none;
+}
+
+.quick-help__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.quick-help__title {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.quick-help__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quick-help__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quick-help__label {
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+  user-select: none; /* BX-SEL-01 */
+}
+
+.quick-help__text {
+  color: var(--color-ink);
+}
