@@ -1124,7 +1124,7 @@
     "message": "Dieses Element lässt sich nicht wie in der Kopie speichern - nichts zurückzuholen"
   },
   "dataConflictAddSkippedFull": {
-    "message": "Diese Box hat ihr Limit erreicht - nichts wurde zurückgeholt"
+    "message": "Diese Box hat ihr Limit bereits erreicht"
   },
   "dataConflictAddFailed": {
     "message": "Einige gewählte Elemente konnten nicht zurückgeholt werden"

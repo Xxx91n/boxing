@@ -1124,7 +1124,7 @@
     "message": "Este elemento no se puede guardar tal como lo guarda la copia - no hay nada que añadir"
   },
   "dataConflictAddSkippedFull": {
-    "message": "Esta caja alcanzó su límite de elementos - no se añadió nada"
+    "message": "Esta caja ya alcanz\u00f3 su l\u00edmite de elementos"
   },
   "dataConflictAddFailed": {
     "message": "Algunos de los elementos seleccionados no se pudieron añadir"

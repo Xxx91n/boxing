@@ -1124,7 +1124,7 @@
     "message": "Không thể lưu mục này nguyên như bản sao giữ - không có gì để thêm lại"
   },
   "dataConflictAddSkippedFull": {
-    "message": "Hộp này đã đạt giới hạn mục - không có gì được thêm lại"
+    "message": "H\u1ed9p n\u00e0y \u0111\u00e3 \u0111\u1ea1t gi\u1edbi h\u1ea1n m\u1ee5c"
   },
   "dataConflictAddFailed": {
     "message": "Một số mục bạn chọn đã không thể thêm lại"

@@ -1124,7 +1124,7 @@
     "message": "사본에 있는 그대로 저장할 수 없어 다시 추가할 수 없습니다"
   },
   "dataConflictAddSkippedFull": {
-    "message": "이 박스는 항목 한도에 도달해 다시 추가되지 않았습니다"
+    "message": "\uc774 \ubc15\uc2a4\ub294 \ud56d\ubaa9 \ud55c\ub3c4\uc5d0 \uc774\ubbf8 \ub3c4\ub2ec\ud588\uc2b5\ub2c8\ub2e4"
   },
   "dataConflictAddFailed": {
     "message": "선택한 항목 일부를 다시 추가할 수 없습니다"

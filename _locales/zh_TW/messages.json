@@ -1127,7 +1127,7 @@
     "message": "無法依副本中的原樣儲存該物件 - 無需補入"
   },
   "dataConflictAddSkippedFull": {
-    "message": "該盒子已達項目上限 - 未補入任何內容"
+    "message": "\u8a72\u76d2\u5b50\u5df2\u9054\u9805\u76ee\u4e0a\u9650"
   },
   "dataConflictAddFailed": {
     "message": "所選部分項目未能補入"

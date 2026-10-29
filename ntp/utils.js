@@ -754,7 +754,7 @@ function conflictAddPayload(obj, level, taken, deleted, tieredKey) {
 // entry: a verbatim conflict body ({ ts, raw, truncated? } as stored by the facade).
 // layout: the live layout the comparison runs against.
 function diffConflictArchive(entry, layout) {
-  const result = { applicable: false, reason: null, groups: [], stats: { objects: 0, fieldDiffs: 0, missing: 0, adds: 0, unaddable: 0 }, signature: '' };
+  const result = { applicable: false, reason: null, groups: [], stats: { objects: 0, fieldDiffs: 0, missing: 0, adds: 0 }, signature: '' };
   if (!entry || typeof entry !== 'object') { result.reason = 'unavailable'; return result; }
   // #53 D3: a body that was over the byte cap (truncated) or already pruned by rotation
   // never carries the archive content, so it must not be presented as applicable.
@@ -762,18 +762,18 @@ function diffConflictArchive(entry, layout) {
   if (!entry.raw || !Array.isArray(entry.raw.boxes)) { result.reason = 'unavailable'; return result; }
   result.applicable = true;
   const currentBoxes = Array.isArray(layout && layout.boxes) ? layout.boxes : [];
-  // `taken` starts as the ids the canvas already holds and grows with every add candidate
-  // accepted below, so a copy that lists the same id twice cannot plan two objects with it.
+  // Ids the canvas already holds. Kept separate from the cross-candidate claims below: a
+  // candidate never claims an id for the others, because an UNselected row would otherwise
+  // refuse a different row and make the offer depend on archive listing order.
   const taken = conflictCurrentIds(currentBoxes);
   const deleted = new Set(Object.keys((layout && layout._meta && layout._meta.deleted) || {}));
   const sig = [];
+  const candidates = [];
   const addCandidate = (obj, level, path) => {
     const check = conflictAddPayload(obj, level, taken, deleted, level === 'small' ? path : null);
-    sig.push(path + '=' + (check.reason || 'copyOnly'));
-    if (check.reason) { result.stats.unaddable++; return { path, reason: check.reason }; }
-    for (const id of check.ids) taken.add(id);
-    result.stats.adds++;
-    return { path, reason: null, obj: check.obj };
+    const node = { path, reason: check.reason || null, obj: check.obj || null };
+    candidates.push({ node, ids: check.reason ? null : check.ids });
+    return node;
   };
   for (const archived of entry.raw.boxes) {
     if (!archived || typeof archived.id !== 'string') continue;
@@ -831,6 +831,25 @@ function diffConflictArchive(entry, layout) {
       group.children.push(child);
     }
     result.groups.push(group);
+  }
+  // Cross-row identity claims, resolved after the walk so the answer does not depend on
+  // which duplicate the archive happened to list first: an id two candidates both bring
+  // (two same-id boxes, or a bookmark offered alone and again inside a copy-only box) would
+  // put two objects under one merge key if both landed, so every candidate touching it is
+  // refused as unusable rather than one being quietly preferred.
+  const claims = new Map();
+  for (const c of candidates) {
+    if (!c.ids) continue;
+    for (const id of c.ids) claims.set(id, (claims.get(id) || 0) + 1);
+  }
+  for (const c of candidates) {
+    if (c.ids) {
+      for (const id of c.ids) {
+        if (claims.get(id) > 1) { c.node.reason = 'unusable'; c.node.obj = null; break; }
+      }
+    }
+    sig.push(c.node.path + '=' + (c.node.reason || 'copyOnly'));
+    if (!c.node.reason) result.stats.adds++;
   }
   result.signature = sig.join('|');
   return result;

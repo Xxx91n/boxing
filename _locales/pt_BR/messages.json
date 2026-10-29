@@ -1124,7 +1124,7 @@
     "message": "Este item não pode ser guardado como a cópia o mantém - nada a readicionar"
   },
   "dataConflictAddSkippedFull": {
-    "message": "Esta caixa atingiu o limite de itens - nada foi readicionado"
+    "message": "Esta caixa j\u00e1 atingiu o limite de itens"
   },
   "dataConflictAddFailed": {
     "message": "Alguns dos itens selecionados não puderam ser readicionados"

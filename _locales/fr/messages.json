@@ -1124,7 +1124,7 @@
     "message": "Cet élément ne peut être enregistré tel que la copie le contient - rien à réajouter"
   },
   "dataConflictAddSkippedFull": {
-    "message": "Cette boîte a atteint sa limite d’éléments - rien n’a été réajouté"
+    "message": "Cette bo\u00eete a d\u00e9j\u00e0 atteint sa limite d\u2019\u00e9l\u00e9ments"
   },
   "dataConflictAddFailed": {
     "message": "Certains éléments sélectionnés n’ont pas pu être réajoutés"

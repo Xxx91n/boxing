@@ -515,7 +515,32 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     expect(stored.groups).toBeUndefined();
   });
 
-  test('AC4: the existing per-box small-box cap still binds an add', async ({ page }) => {
+  test('AC4: one id claimed by two candidate rows refuses both, not the later one', async ({ page }) => {
+    test.setTimeout(90000);
+    // b9 is offered twice by the same copy: as its own row inside S1, and again inside the
+    // copy-only box S2. Whichever the archive happened to list first, adding both would put
+    // two objects under one merge key, so NEITHER is offered — no listing-order winner.
+    const rival = copyEntry();
+    rival.raw.boxes[0].children[0].bookmarks.push({ id: 'b9', title: 'Rival B9', url: 'https://cloud.test/b9' });
+    rival.raw.boxes[0].children[1].bookmarks.push({ id: 'b9', title: 'Same B9 in the box', url: 'https://cloud.test/b9' });
+    await bootFileLane(page, rival);
+    await openCompare(page);
+    const rows = await addRows(page);
+    expect(rows.map((r: any) => r.path)).toEqual([P_BM, 'small:L1:S1:b9', P_BOX]);
+    expect(rows.filter((r: any) => r.tickable).map((r: any) => r.path)).toEqual([P_BM]);
+    expect(rows.find((r: any) => r.path === 'small:L1:S1:b9').text).toContain('cannot be stored as the copy holds it');
+    expect(rows.find((r: any) => r.path === P_BOX).text).toContain('cannot be stored as the copy holds it');
+    expect(await tickAdd(page, 'small:L1:S1:b9')).toBe(false);
+    expect(await tickAdd(page, P_BOX)).toBe(false);
+    // The unrelated copy-only bookmark is still a real choice.
+    expect(await tickAdd(page, P_BM)).toBe(true);
+    expect(await clickApply(page)).toBe(true);
+    await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/Added 1 item/);
+    expect(await childIds(page)).toEqual(['S1']);
+    expect(await bookmarkIds(page)).toEqual(['b1', 'b2']);
+  });
+
+  test('AC4: the existing per-small-box cap still binds an add', async ({ page }) => {
     test.setTimeout(90000);
     // L1 is exactly at the production cap (ntp/state.js MAX_SMALL_BOXES), so the add has to
     // be refused by the mutation entry rather than pushing the layout over its limit.
@@ -537,7 +562,7 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     expect(lb.children).toHaveLength(MAX_SMALL_BOXES);
   });
 
-  test('AC4: the existing per-box bookmark cap still binds an add', async ({ page }) => {
+  test('AC4: the existing per-small-box bookmark cap still binds an add', async ({ page }) => {
     test.setTimeout(90000);
     // S1 is already at the production cap, and the copy offers one more bookmark.
     const full = liveLayout();
@@ -593,8 +618,8 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     const s2 = after.boxes[0].children.find((s: any) => s.id === 'S2');
     expect(s2.title).toBe('Renamed Elsewhere');                    // the unseen content survived
     expect(s2.x).toBe(5);
-    // Now the fresh diff has nothing to add for that id.
-    expect((await addRows(page)).find((r: any) => r.path === P_BOX)).toBeUndefined();
+    // Now the fresh diff has nothing to add for that id: only the bookmark row survives.
+    expect((await addRows(page)).map((r: any) => r.path)).toEqual([P_BM]);
   });
 
   test('AC5: a missing or truncated body offers no add at all', async ({ page }) => {
