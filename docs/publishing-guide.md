@@ -120,6 +120,7 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 - [ ] 隐私政策 URL 可打开
 - [ ] 截图非透明占位（若商店要求实图）
 - [ ] GitHub Release 无 xpi/crx，安装链到商店
+- [ ] `docs/firefox-release-checklist.md` 已执行且全绿（Firefox 发行门禁）
 - [ ] 你知道人工黄金路径为强制豁免、CI 门禁以流水线为准
 
 ## 发版强制规程（2026-10-14 起，必须遵守）
@@ -133,6 +134,9 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
    gh workflow run build.yml --ref main -f make_release=true -f release_tag=v<ver> -f amo_sign=true
    ```
 6. **人工黄金路径声明**：构建产物变化（包括仅版本号变化）后，旧的声明对新产物失效，需要重新声明。
+7. **Firefox 人工核验（发行门禁，治理 #68 决议 B，#69 落地）**：上传 `boxing-firefox-<ver>.zip` 前，
+   执行并记录 `docs/firefox-release-checklist.md`；任一步失败 = 阻塞。
+   CI 绿**不构成 Firefox 证据**——CI 的 `firefox-extension` lane 不装插件。
 
 ## 附录 — 发行检查单模板（原 WORKFLOW §4.4）
 
@@ -143,6 +147,7 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 CI 门禁
 - [ ] main 全量 test.yml run URL: __________ → 全绿
 人工 zip 黄金路径 (Chrome 与 Firefox 各一遍, 用解包产物)
+- [ ] Firefox 腿另跑 docs/firefox-release-checklist.md（冲突/像素缓存/关于页/主题 lane, #69）
 - [ ] 全新安装 → 引导可走完 (Skip/Next), 关闭后主界面可点击, 零 console 错误
 - [ ] 建盒/改名/拖拽/缩放 → 重开后数据完整
 - [ ] 旧备份导入 → 合并或冲突副本可查, 无静默覆盖
