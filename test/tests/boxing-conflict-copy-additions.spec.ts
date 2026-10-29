@@ -623,7 +623,10 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
 
     expect(await clickApply(page)).toBe(true);
     await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/changed after this comparison/);
-    expect((await tickedAdds(page)).every(Boolean)).toBe(false);   // the choice was discarded
+    expect((await tickedAdds(page)).every(Boolean)).toBe(false);   // every checkbox reset
+    // The discarded choice is what the refreshed panel can prove: with no selection the
+    // apply control is disabled again, so the earlier tick cannot be replayed.
+    expect(await applyDisabled(page)).toBe(true);
     const after = await memoryLayout(page);
     const s2 = after.boxes[0].children.find((s: any) => s.id === 'S2');
     expect(s2.title).toBe('Renamed Elsewhere');                    // the unseen content survived

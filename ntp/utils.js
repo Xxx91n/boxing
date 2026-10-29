@@ -833,13 +833,15 @@ function diffConflictArchive(entry, layout) {
     result.groups.push(group);
   }
   // Cross-row identity claims, resolved after the walk so the answer does not depend on
-  // which duplicate the archive happened to list first. An id two candidates both bring
-  // (two same-id boxes, the same small id under two parents, or a bookmark offered alone and
-  // again inside a copy-only box) cannot both land: the BARE id, not the tiered key, is what
-  // mergeById filters on and what markDeleted writes, so a second object under it is dropped
-  // silently by the next cross-tab merge even when its tiered key is distinct. Refusing
-  // every candidate that touches it is the only order-independent answer — picking one would
-  // decide for the user from nothing but the archive's listing order.
+  // which duplicate the archive happened to list first. Two candidates bringing one id —
+  // two same-id boxes, the same small id under two parents, or a bookmark offered alone and
+  // again inside a copy-only box — cannot both land, because the BARE id is what the merge
+  // pairs objects on (storage.js builds remoteBoxMap/remoteChildMap by id and mergeById's
+  // `known` set rejects a remote item whose id is already present), what popups.js resolves
+  // a small box by, and one of the two keys deleteSmallBox hands to markDeleted: with the id
+  // duplicated, deleting either object tombstones both and the next merge drops both.
+  // Refusing every candidate that touches it is the only order-independent answer — picking
+  // one would decide for the user from nothing but the archive's listing order.
   const claims = new Map();
   for (const c of candidates) {
     if (!c.ids) continue;
