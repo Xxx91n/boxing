@@ -74,6 +74,8 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **Time Machine rotation** — Tiered retention: hourly within a day, daily within a month, weekly beyond, with a raw keep floor and a total-byte cap.
 
+**size cap unit** — The snapshot-family stores measure every size ceiling in UTF-16 code units (`String.length`), not UTF-8 bytes, and every index `size` field carries the same unit. `snap.v1.*` and `snap.guard.v1.*` enforce the 2MB single-body and 8MB total ceilings, plus entry-count caps of 30 and 20 respectively; `boxingLayout.conflict.*` and `boxingLayout.corrupt.*` enforce only the 2MB single-body ceiling plus a 20-entry count cap. Non-ASCII payloads therefore under-count real usage (pure BMP CJK measures roughly one-third of its UTF-8 byte size). Converting to UTF-8 byte metering is a cross-module contract change (rotation trigger points, index `size` semantics, backward compatibility), deferred until a real non-ASCII over-cap report or the next storage/DR round (issue #71).
+
 **pre-update snapshot** — Copy-on-write snapshot taken before any schema migration so the pre-update bytes remain recoverable.
 
 **needsMigration(raw)** — Detector for a layout that a migration would rewrite. A false positive only costs one extra snapshot.
