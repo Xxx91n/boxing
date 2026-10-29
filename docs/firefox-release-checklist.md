@@ -18,19 +18,21 @@
       解压得到的目录即下文「构建目录」。
 - [ ] **安装**：按步骤选择加载方式——
       - 第 4 步含**重启核验**：`web-ext run`／`about:debugging` 装的临时扩展重启即被
-        卸载，不能单独承担它；标准发行（`amo_sign=true`）下工件 `.xpi` 未签名，
-        普通发行版 Firefox 也无法持久安装未签名包。两种可行方式：
-        1. **Firefox Developer Edition／Nightly／ESR**：`about:config` 把
-           `xpinstall.signatures.required` 置 `false`，将上一步校验过的 zip
-           （改名 `.xpi`）装入持久 profile——核验的是将要上传的同一字节。
-        2. **两个连续 `web-ext run` 会话**共用同一持久 profile
-           （`--source-dir=<构建目录> --firefox-profile <目录> --keep-profile-changes`）：
-           manifest 的 gecko id 固定使扩展 ID 跨会话稳定、localStorage 跨进程持久；
-           会话 1 触发像素缓存后关闭浏览器，会话 2 断网启动完成核验。该路径验证的是
-           「新浏览器进程＋断网＋持久字节」断言本身，不覆盖 AMO 正式安装形态——
-           在结果记录里写明所用路径。
-      - `about:debugging` 手动临时加载（`manifest.json`）：仅用于第 1/2/3/5/6 步的
-        快速冒烟，**不能用于第 4 步**。
+        卸载；标准发行（`amo_sign=true`）下工件 `.xpi` 未签名，普通发行版 Firefox
+        无法持久安装未签名包。按下面两种方式之一执行，并在结果记录里写明所用路径：
+        1. **签名豁免的持久安装（推荐）**：Firefox Developer Edition／Nightly／ESR，
+           `about:config` 把 `xpinstall.signatures.required` 置 `false`，将上一步
+           校验过的 zip（改名 `.xpi`）装入持久 profile——核验的是将要上传的同一
+           字节，重启后扩展仍在。
+        2. **两个连续 `web-ext run` 会话**（无签名豁免环境时的替代）：共用同一持久
+           profile（`--source-dir=<构建目录> --firefox-profile <目录>
+           --keep-profile-changes`）。会话 1 触发像素缓存后，先在
+           `about:config` 设 `extensions.webextensions.keepStorageOnUninstall=true`
+           （可再设 `extensions.webextensions.keepUuidOnUninstall=true`）再完全
+           关闭——缺了它临时扩展卸载会清掉 localStorage，会话 2 会以空缓存「假通过」；
+           manifest 的固定 gecko id 保证扩展 ID 与存储按同一来源归属。会话 2 断网
+           启动后**先在控制台确认 `boxingFaviconPixels.v1` 条目仍在**再判图标。
+           该路径验证「新进程＋断网＋持久字节」断言本身，不覆盖 AMO 正式安装形态。
       - 旧版本商店安装（如上一个 listed 版本）只可作非门禁冒烟，**不构成**本次
         zip 的第 4 步证据——它核验的不是当前产物。
 - [ ] 打开新标签页（Boxing NTP），**关闭首次运行向导**一次（否则其遮罩会影响操作）。
@@ -113,9 +115,11 @@
       URL 显示，不索取新权限；manifest 权限不得为此扩大。
 - [ ] 若出现条目：按所用安装方式进入**新进程＋断网**——签名豁免安装则完全关闭
       Firefox 后断网重开同一 profile；双 `web-ext` 会话则关闭后断网重跑
-      `web-ext run` 到同一 profile。打开 NTP：该图标仍显示
-      （src 为 `data:image/png;base64,`，可点开看属性），不是空白。
-- [ ] 检查 manifest（`dist/boxing-firefox/manifest.json`）：未因像素层新增权限。
+      `web-ext run` 到同一 profile（先确认 `boxingFaviconPixels.v1` 条目仍在）。
+      打开 NTP：该图标仍显示（src 为 `data:image/png;base64,`，可点开看属性），
+      不是空白。
+- [ ] 检查 manifest（`<构建目录>/manifest.json`，即当前 ZIP 的解压目录）：未因像素层
+      新增权限。
 
 ### 5. 关于页便捷入口与非模态速查（#59）
 
