@@ -10,13 +10,16 @@
 
 ## 执行准备
 
-- [ ] **构建与安装**：取当次发行的 `dist/boxing-firefox`（即 CI `build` 工件解压出的
-      同名目录，与其将要上传的 `boxing-firefox-<ver>.zip` 同源）。用**安装型**方式
-      加载，保证第 4 步的重启核验有效：
-      - 首选：AMO 候选 zip（unlisted 签名包或上一个 listed 版本同级安装），重启后仍在；或
-      - `web-ext run --source-dir=dist/boxing-firefox --firefox-profile <持久 profile 目录> --keep-profile-changes`。
-      - `about:debugging` 手动临时加载（`manifest.json`）只做快速冒烟：**重启即卸载**，
-        不能用这种方式执行第 4 步。
+- [ ] **构建与校验**：下载 CI `build` 工件中**将要上传的** `boxing-firefox-<ver>.zip`，
+      与工件随附 `SHA256SUMS.txt` 核对校验值并记录（证据绑定到实际产物，不是本地重建）。
+      解压得到的目录即下文「构建目录」。
+- [ ] **安装**：第 4 步有重启核验，安装方式必须重启后仍在：
+      - AMO 候选 zip（unlisted 签名包或上一个 listed 版本同级安装）：**第 4 步的唯一方式**；
+      - `web-ext run --source-dir=<解压后的构建目录> --firefox-profile <持久 profile 目录> --keep-profile-changes`
+        **仅用于第 4 步以外的检查**——它装的是临时扩展，`--keep-profile-changes` 只保留
+        profile 数据，重启后扩展本身被卸载；
+      - `about:debugging` 手动临时加载（`manifest.json`）只做快速冒烟：同样**重启即卸载**，
+        不能用于第 4 步。
 - [ ] 打开新标签页（Boxing NTP），**关闭首次运行向导**一次（否则其遮罩会影响操作）。
 - [ ] **准备冲突归档种子**（第 1–3 步共用）。手工造一份归档：
 
@@ -34,15 +37,20 @@
   await dbg.storageSet({ ['boxingLayout.conflict.' + ts]:
     { ts, reason: 'import-merge', side: 'incoming', raw: { boxes: layout.boxes },
       size: JSON.stringify(layout.boxes).length, boxes: layout.boxes.length } });
-  await dbg.storageSet({ 'boxingLayout.conflict.index':
-    [{ ts, reason: 'import-merge', side: 'incoming',
-       size: JSON.stringify(layout.boxes).length, boxes: layout.boxes.length, truncated: false }] });
+  // 合入既有索引，不要整体覆写——否则 profile 中已有的归档行会从冲突列表中消失
+  const idxKey = 'boxingLayout.conflict.index';
+  const idx = ((await dbg.storageGet(idxKey))[idxKey]) || [];
+  idx.push({ ts, reason: 'import-merge', side: 'incoming',
+    size: JSON.stringify(layout.boxes).length, boxes: layout.boxes.length, truncated: false });
+  await dbg.storageSet({ [idxKey]: idx });
   location.reload();
   ```
 
   样例最小化自 spec 夹具（`boxing-conflict-field-adjudication.spec.ts` /
   `boxing-conflict-copy-additions.spec.ts`），未新拟数据；id 必须与当前布局中
-  仍存在的对象对应，独有项 id 必须为画布中不存在的新值。
+  仍存在的对象对应，独有项 id 必须为画布中不存在的新值。种子只新增归档、不改
+  `boxingLayout` 布局本体；建议用**专用测试 profile**执行，避免测试条目留在
+  日常使用 profile 的冲突列表里。
 
 ## 核验步骤（每步对应既有 spec 的头条断言）
 
