@@ -41,7 +41,9 @@ npm run test:debug
 
 - Config: `test/playwright.config.ts`
 - Specs: `test/tests/boxing-*.spec.ts`
-- Extension path: resolved from config via `__dirname/..` (repo root)
+- Extension path: the `chromium-extension` project loads the built extension
+  from `test/../dist/boxing-chrome` (issue #70); run `npm run build` before a
+  local run — CI builds first
 - Projects: `firefox-extension` and `chromium-extension` only; the Firefox lane runs
   headless (wave-2026.10.11) — native-input realness specs stay chromium-scoped.
 
