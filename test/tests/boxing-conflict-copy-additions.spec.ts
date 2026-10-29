@@ -250,6 +250,12 @@ const tickedAdds = (page: any) =>
 async function bootFileLane(page: any, entry: any, seedLayout?: any) {
   const layout = seedLayout || liveLayout();
   await page.addInitScript(({ layout, conflict }) => {
+    // addInitScript re-runs on EVERY navigation, including a reload. Seeding unconditionally
+    // would re-clobber the very layout the app just persisted (the file:// shim keeps the
+    // layout under the bare 'boxingLayout' key — ntp/ntp.js:89/116), so a durability check
+    // would compare the app's write against this fixture overwriting it. Seed once.
+    if (localStorage.getItem('bxspecSeeded') === String(conflict.ts)) return;
+    localStorage.setItem('bxspecSeeded', String(conflict.ts));
     localStorage.setItem('boxingLayout', JSON.stringify(layout));
     localStorage.setItem('bxstore:boxingLayout.conflict.' + conflict.ts, JSON.stringify(conflict));
     localStorage.setItem('bxstore:boxingLayout.conflict.index', JSON.stringify([{
@@ -350,7 +356,7 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     const stored = JSON.parse(await storedValue(page));
     const lb = stored.boxes.find((b: any) => b.id === 'L1');
     expect(lb.children.map((s: any) => s.id)).toEqual(['S1']);
-    expect(lb.children[0].bookmarks.map((b: any) => b.id)).toEqual(['b1', 'b2']);
+    expect(lb.children[0].bookmarks.map((b: any) => b.id)).toEqual(['b1', 'bLocal', 'b2']);
     // AC3: adding did not touch the matched bookmark's value — #54 owns that decision.
     expect(lb.children[0].bookmarks[0].url).toBe('https://local.test/b1');
   });
