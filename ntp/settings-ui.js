@@ -11,7 +11,7 @@ import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, sa
 import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref, diffConflictArchive, planConflictApply, largeKey, smallKey } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyDarkMode, applyTheme, nextDarkModePreference } from './persist.js';
-import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
+import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, commit, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
 import { disposeAllConns, ensureConnArrays, applyConnDeleteKeydoc, renderConnections, toggleStarMark } from './conn-layer.js';
 import { PRIVACY_URL, DEMO_URL } from './site-constants.js';
 import { DEFAULT_AUTO_TITLE_RULES, EXTRACTION_TYPES } from './url-title.js';
@@ -595,8 +595,10 @@ export function initSettingsUiFacade(deps) {
   // Compares the archived subtree against what the canvas holds for the SAME ids today
   // (never the archive-time content as a source of truth), lets the user pick
   // keep-current / adopt-copy per differing field, and writes only what was picked.
+  // Issue #55 adds the other half of the same panel: a small box or bookmark the canvas
+  // does not have at all is offered as a whole-object add, decided and applied here.
   // Opening a comparison changes nothing; applying never deletes the archive row —
-  // deleting a copy is a separate action, and copy-only objects belong to #55.
+  // deleting a copy is a separate action.
   function conflictPanelNode(ts) {
     return document.querySelector('#data-conflict-list .data-conflict-diff[data-ts="' + ts + '"]');
   }
@@ -641,11 +643,45 @@ export function initSettingsUiFacade(deps) {
   }
 
   // An object shows up only when there is something to decide about it: differing fields,
-  // or a descendant with them. Identical subtrees stay out of the way of the real choice.
+  // a copy-only add on the table, or a descendant with either. Identical subtrees stay out
+  // of the way of the real choice.
   function conflictBlockHasContent(obj) {
     if (obj.status === 'missing') return true;
+    if (obj.add) return true;
     if ((obj.fields || []).length) return true;
     return (obj.children || []).some(conflictBlockHasContent) || (obj.bookmarks || []).some(conflictBlockHasContent);
+  }
+
+  const CONFLICT_ADD_REASONS = {
+    exists: 'dataConflictAddSkippedExists',
+    deleted: 'dataConflictAddSkippedDeleted',
+    unusable: 'dataConflictAddSkippedUnusable',
+  };
+
+  // Issue #55: a copy-only object is one decision, not one per field — there is no current
+  // value to keep. Unchecked by default, because adding is something the user has to ask
+  // for (#53 D2). An object that cannot be added says which rule refused it and offers no
+  // control at all, so a refusal can never be clicked past.
+  function buildConflictAddRow(node, ts) {
+    const row = document.createElement('div');
+    row.className = 'data-conflict-add-row';
+    row.dataset.path = node.add.path;
+    row.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:2px 0;font-size:var(--fs-xs);';
+    if (node.add.reason) {
+      row.append(conflictSpan(i18n(CONFLICT_ADD_REASONS[node.add.reason])));
+      return row;
+    }
+    const label = document.createElement('label');
+    label.style.cssText = 'display:flex;gap:4px;align-items:center;';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.value = 'add';
+    box.dataset.ts = String(ts);
+    box.dataset.path = node.add.path;
+    box.checked = false;
+    label.append(box, conflictSpan(i18n('dataConflictAddBtn')));
+    row.append(label);
+    return row;
   }
 
   function buildConflictObjectBlock(obj, ts, depth) {
@@ -656,6 +692,9 @@ export function initSettingsUiFacade(deps) {
     head.append(conflictSpan(conflictLevelLabel(obj.level) + ' · ' + (obj.title || obj.id)));
     if (obj.status === 'missing') head.append(conflictSpan(i18n('dataConflictTargetMissing')));
     wrap.append(head);
+    // A copy-only object is decided as a whole; it has no fields, and the bookmarks it
+    // carries come with it rather than opening as separate rows.
+    if (obj.add) { wrap.append(buildConflictAddRow(obj, ts)); return wrap; }
     for (const field of obj.fields || []) wrap.append(buildConflictFieldRow(field, ts));
     for (const child of obj.children || []) if (conflictBlockHasContent(child)) wrap.append(buildConflictObjectBlock(child, ts, depth + 1));
     for (const bm of obj.bookmarks || []) if (conflictBlockHasContent(bm)) wrap.append(buildConflictObjectBlock(bm, ts, depth + 1));
@@ -679,9 +718,9 @@ export function initSettingsUiFacade(deps) {
       return panel;
     }
     panel.append(conflictSpan(i18n('dataConflictDiffHeading')));
-    if (!diff.stats.fieldDiffs) panel.append(conflictSpan(i18n('dataConflictNoDiffs')));
+    if (!diff.stats.fieldDiffs && !diff.stats.adds) panel.append(conflictSpan(i18n('dataConflictNoDiffs')));
     for (const group of diff.groups || []) if (conflictBlockHasContent(group)) panel.append(buildConflictObjectBlock(group, ts, 0));
-    if (diff.stats.fieldDiffs) {
+    if (diff.stats.fieldDiffs || diff.stats.adds) {
       const foot = document.createElement('div');
       foot.style.cssText = 'margin-top:6px;';
       const applyBtn = document.createElement('button');
@@ -755,6 +794,52 @@ export function initSettingsUiFacade(deps) {
     return true;
   }
 
+  // Issue #55: an add is the one conflict write that changes collection membership, so it
+  // goes through the same unified mutation entry the canvas controls use — commit('addBookmark')
+  // and commit('addSmallBox'). The object's id is the archive's own; nothing here invents
+  // one or exposes a counter. Neither handler saves, so a multi-object add is written once,
+  // by applyConflictCompare, and repainted once — except a starred added box, whose star
+  // goes through toggleStarMark and therefore queues its own save first (the same thing a
+  // #54 field verdict on the star does). The write chain serialises, so the final awaited
+  // save still lands the complete selection.
+  // Returns null on success, or the reason the entry refused.
+  function applyConflictAdd(op) {
+    const res = op.level === 'bookmark'
+      ? commit('addBookmark', { largeId: op.largeId, smallId: op.smallId, bookmark: op.add })
+      : commit('addSmallBox', { largeId: op.largeId, smallBox: op.add });
+    if (!res || res.skipped) return (res && res.reason) || 'failed';
+    // addBookmark returns addedBookmark and addSmallBox returns addedSmall: the star only
+    // ever belongs to the box tier, so the key is read from the shape that has it.
+    // Same rule as a field verdict on the star (writeConflictOp): the runtime groupStar
+    // mirror can already hold this key, and toggleStar UNSTARS when it does — so the star is
+    // applied only when it is actually missing, never toggled blind.
+    if (op.level === 'small' && op.add.isParent) {
+      const key = smallKey(op.largeId, res.addedSmall.smallId);
+      if (!groupStar.has(key)) toggleStarMark(key);
+    }
+    return null;
+  }
+
+  // Which rule the unified mutation entry held. Codes come from the handlers in
+  // ntp/render.js: the two caps are the existing per-box limits, anything else is a
+  // refusal the user has to be told about rather than being counted as an add.
+  const CONFLICT_ADD_REFUSAL_KEYS = {
+    'max-small-boxes': 'dataConflictAddSkippedFull',
+    'max-bookmarks': 'dataConflictAddSkippedFull',
+  };
+
+  // One result line for both kinds of write: #54 counts adopted fields, #55 counts the
+  // objects added back. A refusal is said out loud instead of quietly counted as an add.
+  function conflictRefusedNotice(reason) {
+    if (!reason) return '';
+    return ' · ' + i18n(CONFLICT_ADD_REFUSAL_KEYS[reason] || 'dataConflictAddFailed');
+  }
+
+  function conflictApplyNotice(applied, added, refusedReason) {
+    const text = added ? i18n('dataConflictAddApplied', [added, applied]) : i18n('dataConflictApplied', [applied]);
+    return text + conflictRefusedNotice(refusedReason);
+  }
+
   async function applyConflictCompare(ts) {
     const state = conflictPanels.get(ts);
     if (!state || !state.selected.size) return;
@@ -772,19 +857,29 @@ export function initSettingsUiFacade(deps) {
       return;
     }
     // Count fields the user chose, not raw key writes — one adopted position sets x and y.
+    // An added object is counted separately: it is a whole object, not a field verdict.
     const done = new Set();
+    let added = 0;
+    let refused = null;
     for (const op of planConflictApply(fresh, state.selected)) {
+      if (op.add) {
+        const reason = applyConflictAdd(op);
+        if (reason) { if (!refused) refused = reason; continue; }
+        added++;
+        continue;
+      }
       if (writeConflictOp(op)) done.add(op.path);
     }
     const applied = done.size;
     conflictPanels.delete(ts);
-    if (!applied) {
+    if (!applied && !added) {
       // Nothing to write: every selected value already matches what the box has (the star
       // is the reachable case — the runtime mirror can hold it while isParent does not).
       // Targets vanishing cannot land here: that moves the signature and the refresh above
-      // catches it. Say exactly that nothing changed, instead of reusing the staleness notice.
+      // catches it. Say exactly that nothing changed, instead of reusing the staleness
+      // notice — plus which rule refused an add, so a cap is never mistaken for a success.
       conflictPanels.set(ts, { signature: fresh.signature, selected: new Set() });
-      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh, i18n('dataConflictNoChange')));
+      conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, fresh, i18n('dataConflictNoChange') + conflictRefusedNotice(refused)));
       debug('Conflict apply wrote nothing: ts=' + ts + ' (selected values already match the current content)');
       return;
     }
@@ -813,8 +908,8 @@ export function initSettingsUiFacade(deps) {
     // the copy itself stays listed for export or a later verdict.
     const after = diffConflictArchive(entry, layout);
     conflictPanels.set(ts, { signature: after.signature, selected: new Set() });
-    conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, after, i18n('dataConflictApplied', [applied])));
-    debug('Conflict copy applied field-by-field: ts=' + ts + ' fields=' + applied);
+    conflictPanelNode(ts)?.replaceWith(buildConflictPanel(ts, after, conflictApplyNotice(applied, added, refused)));
+    debug('Conflict copy applied field-by-field: ts=' + ts + ' fields=' + applied + ' added=' + added);
   }
 
 function openLink(url) {
@@ -1607,12 +1702,14 @@ export function bindSettingsUi() {
 
     // Issue #54: the per-field radios live inside the rebuilt panel, so one delegated
     // change listener tracks the selections instead of per-field listeners.
+    // Issue #55: a copy-only object is a checkbox in that same panel (there is no current
+    // value to keep), so the same listener covers both — checked means "add it back".
     conflictListEl?.addEventListener('change', (e) => {
       const input = e.target;
-      if (!input || input.type !== 'radio' || !input.dataset.path) return;
+      if (!input || !input.dataset.path || (input.type !== 'radio' && input.type !== 'checkbox')) return;
       const ts = Number(input.dataset.ts);
       if (!Number.isFinite(ts) || ts <= 0) return;
-      setConflictSelection(ts, input.dataset.path, input.value === 'copy');
+      setConflictSelection(ts, input.dataset.path, input.type === 'checkbox' ? input.checked : input.value === 'copy');
     });
 
     // Ticket 56: delegated restore click for the safe-copy rows

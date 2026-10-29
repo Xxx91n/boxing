@@ -1130,6 +1130,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "Readicionar este item"
+  },
+  "dataConflictAddApplied": {
+    "message": "$added$ item(ns) readicionados, $fields$ campo(s) aplicados",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "Já existe um objeto com este id no seu quadro - nada a readicionar"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "Este item foi excluído depois que a cópia foi arquivada - não será readicionado"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "Este item não pode ser guardado como a cópia o mantém - nada a readicionar"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "Esta caixa j\u00e1 atingiu o limite de itens"
+  },
+  "dataConflictAddFailed": {
+    "message": "Alguns dos itens selecionados não puderam ser readicionados"
+  },
   "dataConflictDeleteBtn": {
     "message": "Excluir",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

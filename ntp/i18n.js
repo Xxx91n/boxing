@@ -307,6 +307,15 @@ I18N_FALLBACK.dataConflictFieldSize = 'Size';
 I18N_FALLBACK.dataConflictFieldPinned = 'Pinned';
 I18N_FALLBACK.dataConflictFieldStar = 'Star mark';
 I18N_FALLBACK.dataConflictFieldUrl = 'URL';
+// Issue #55 (spec #53 D2): the copy-only half of the same comparison panel — one explicit
+// add per object, plus what refuses to be added.
+I18N_FALLBACK.dataConflictAddBtn = 'Add this item back';
+I18N_FALLBACK.dataConflictAddApplied = 'Added $1$ item(s) back, applied $2$ field(s)';
+I18N_FALLBACK.dataConflictAddSkippedExists = 'An object with this id is already on your canvas - nothing to add back';
+I18N_FALLBACK.dataConflictAddSkippedDeleted = 'This object was deleted after the copy was archived - it will not be added back';
+I18N_FALLBACK.dataConflictAddSkippedUnusable = 'This object cannot be stored as the copy holds it - nothing to add back';
+I18N_FALLBACK.dataConflictAddSkippedFull = 'This box has already reached its item limit';
+I18N_FALLBACK.dataConflictAddFailed = 'Some of the items you selected could not be added back';
 // Ticket 50 (spec ticket 50): Time Machine rollback UI + pre-restore safety snapshot (BX-I18N-005)
 I18N_FALLBACK.dataTimeMachine = 'Time Machine';
 I18N_FALLBACK.dataRollbackBtn = 'Roll back';

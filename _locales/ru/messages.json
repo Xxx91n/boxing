@@ -1130,6 +1130,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "Вернуть этот элемент"
+  },
+  "dataConflictAddApplied": {
+    "message": "Возвращено элементов: $added$, применено полей: $fields$",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "Объект с таким id уже есть на вашем холсте - возвращать нечего"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "Этот элемент был удалён после архивирования копии - он не будет возвращён"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "Этот элемент нельзя сохранить так, как его хранит копия - возвращать нечего"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "\u042d\u0442\u043e\u0442 \u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440 \u0443\u0436\u0435 \u0434\u043e\u0441\u0442\u0438\u0433 \u043f\u0440\u0435\u0434\u0435\u043b\u0430 \u044d\u043b\u0435\u043c\u0435\u043d\u0442\u043e\u0432"
+  },
+  "dataConflictAddFailed": {
+    "message": "Некоторые выбранные элементы не удалось вернуть"
+  },
   "dataConflictDeleteBtn": {
     "message": "Удалить",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

@@ -1130,6 +1130,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "इस आइटम को वापस जोड़ें"
+  },
+  "dataConflictAddApplied": {
+    "message": "$added$ आइटम वापस जोड़े गए, $fields$ फ़ील्ड लागू किए गए",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "इस आईडी की वस्तु आपके कैनवस पर पहले से है - वापस जोड़ने को कुछ नहीं"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "इस प्रति को संग्रहीत करने के बाद यह वस्तु हटाई गई थी - यह वापस नहीं जोड़ी जाएगी"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "इस वस्तु को प्रति में जैसा है वैसा संग्रहीत नहीं किया जा सकता - वापस जोड़ने को कुछ नहीं"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "\u0907\u0938 \u092c\u0949\u0915\u094d\u0938 \u0928\u0947 \u0906\u0907\u091f\u092e \u0938\u0940\u092e\u093e \u092a\u0939\u0932\u0947 \u0939\u0940 \u092a\u093e \u0932\u0940 \u0939\u0948"
+  },
+  "dataConflictAddFailed": {
+    "message": "आपके चुने कुछ आइटम वापस नहीं जोड़े जा सके"
+  },
   "dataConflictDeleteBtn": {
     "message": "हटाएँ",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

@@ -1130,6 +1130,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "Volver a añadir este elemento"
+  },
+  "dataConflictAddApplied": {
+    "message": "$added$ elemento(s) añadidos de nuevo, $fields$ campo(s) aplicados",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "Ya existe un objeto con este id en su lienzo - no hay nada que añadir"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "Este elemento se eliminó después de archivar la copia - no se volverá a añadir"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "Este elemento no se puede guardar tal como lo guarda la copia - no hay nada que añadir"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "Esta caja ya alcanz\u00f3 su l\u00edmite de elementos"
+  },
+  "dataConflictAddFailed": {
+    "message": "Algunos de los elementos seleccionados no se pudieron añadir"
+  },
   "dataConflictDeleteBtn": {
     "message": "Eliminar",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

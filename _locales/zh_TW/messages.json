@@ -1133,6 +1133,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "補入該項"
+  },
+  "dataConflictAddApplied": {
+    "message": "已補入 $added$ 項、套用 $fields$ 個欄位",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "畫面上已存在相同 id 的物件 - 無需補入"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "該物件在副本封存後被刪除 - 不會補入"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "無法依副本中的原樣儲存該物件 - 無需補入"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "\u8a72\u76d2\u5b50\u5df2\u9054\u9805\u76ee\u4e0a\u9650"
+  },
+  "dataConflictAddFailed": {
+    "message": "所選部分項目未能補入"
+  },
   "dataConflictDeleteBtn": {
     "message": "刪除",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

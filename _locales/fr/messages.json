@@ -1130,6 +1130,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "Réajouter cet élément"
+  },
+  "dataConflictAddApplied": {
+    "message": "$added$ élément(s) réajouté(s), $fields$ champ(s) appliqué(s)",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "Un objet portant cet id se trouve déjà dans votre canevas - rien à réajouter"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "Cet élément a été supprimé après l’archivage de la copie - il ne sera pas réajouté"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "Cet élément ne peut être enregistré tel que la copie le contient - rien à réajouter"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "Cette bo\u00eete a d\u00e9j\u00e0 atteint sa limite d\u2019\u00e9l\u00e9ments"
+  },
+  "dataConflictAddFailed": {
+    "message": "Certains éléments sélectionnés n’ont pas pu être réajoutés"
+  },
   "dataConflictDeleteBtn": {
     "message": "Supprimer",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

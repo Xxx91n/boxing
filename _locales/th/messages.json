@@ -1130,6 +1130,35 @@
   "dataConflictFieldUrl": {
     "message": "URL"
   },
+  "dataConflictAddBtn": {
+    "message": "เพิ่มรายการนี้กลับ"
+  },
+  "dataConflictAddApplied": {
+    "message": "เพิ่มกลับแล้ว $added$ รายการ ใช้แล้ว $fields$ ฟิลด์",
+    "placeholders": {
+      "added": {
+        "content": "$1"
+      },
+      "fields": {
+        "content": "$2"
+      }
+    }
+  },
+  "dataConflictAddSkippedExists": {
+    "message": "มีอ็อบเจ็กต์ id นี้อยู่บนผืนผ้าใบของคุณแล้ว - ไม่มีอะไรให้เพิ่มกลับ"
+  },
+  "dataConflictAddSkippedDeleted": {
+    "message": "รายการนี้ถูกลบหลังเก็บสำเนาแล้ว - จะไม่ถูกเพิ่มกลับ"
+  },
+  "dataConflictAddSkippedUnusable": {
+    "message": "ไม่สามารถบันทึกรายการนี้ตามรูปที่อยู่ในสำเนา - ไม่มีอะไรให้เพิ่มกลับ"
+  },
+  "dataConflictAddSkippedFull": {
+    "message": "\u0e01\u0e25\u0e48\u0e2d\u0e07\u0e19\u0e35\u0e49\u0e16\u0e36\u0e07\u0e08\u0e33\u0e19\u0e27\u0e19\u0e08\u0e33\u0e01\u0e31\u0e14\u0e41\u0e25\u0e49\u0e27"
+  },
+  "dataConflictAddFailed": {
+    "message": "บางรายการที่คุณเลือกไม่สามารถเพิ่มกลับได้"
+  },
   "dataConflictDeleteBtn": {
     "message": "ลบ",
     "description": "Settings data tab: per-row delete button on a conflict copy (ticket 56)"

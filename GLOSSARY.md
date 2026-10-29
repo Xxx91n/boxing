@@ -84,6 +84,8 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **conflict field path** — Address of one adjudicable field inside a conflict comparison: the object's box key (plus the bookmark id for bookmark fields) and the field-group name, joined with `#` — `large:L1#title`, `small:L1:S1:bm1#url`. It is a UI address only; it never becomes a stored id.
 
+**copy-only object** — A small box or bookmark inside an archived conflict copy whose id the canvas does not have (the archive holds the losing side, and `sync-engine.js` archives a diverged child parent-wrapped). It is decided as a whole object, addressed by its box key without the `#field` suffix — `small:L1:S2`, `small:L1:S1:bm1` — and added only when the user asks. Never a large box: rebuilding a deleted target is out of adjudication. An object whose id is already on the canvas, already tombstoned, or not storable as the copy holds it is reported instead of added, and its bookmarks come with it rather than opening as separate rows. One id is offered at most once — a copy that lists the same id in two candidates refuses both, because picking one would let the archive's listing order decide for the user.
+
 **staleness signature** — Fingerprint of the current side of a conflict comparison, taken when the user saw the diff. Applying re-compares and refuses when the signature moved, so an unreviewed verdict can never overwrite a later edit.
 
 **export envelope** — The plain JSON a manual export writes: `{ _exportedAt, meta, layout[, _bodies] }` (ticket 51). "Envelope" in this repo means this structure, the credential envelope below, or a passphrase backup file — say which one.

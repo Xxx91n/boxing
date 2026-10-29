@@ -223,6 +223,30 @@ export function initRenderFacade(deps) {
         parentLargeId: largeId
       };
     },
+    // Issue #55 (#53 D2): adding a copy-only small box from a conflict copy changes
+    // collection membership, so it enters through this table like every other layout
+    // mutation. The id is the archive's own — object identity is carried in, never invented
+    // here — and isParent is forced off: the star is DSU leader truth, so the caller
+    // applies it through the star entry point instead of writing the field onto the object.
+    addSmallBox(state, { largeId, smallBox }) {
+      const lb = getLargeBox(largeId);
+      if (!lb) return { skipped: true, reason: "no-parent" };
+      if (!smallBox || typeof smallBox.id !== "string" || !smallBox.id) return { skipped: true, reason: "no-id" };
+      lb.children = lb.children || [];
+      if (lb.children.length >= MAX_SMALL_BOXES) return { skipped: true, reason: "max-small-boxes" };
+      if (lb.children.some(s => s && s.id === smallBox.id)) return { skipped: true, reason: "duplicate-id" };
+      // The bookmarks come with the box, so they have to respect the same cap the popup add
+      // enforces — otherwise an archived box would land on the canvas over the limit.
+      const bookmarks = Array.isArray(smallBox.bookmarks) ? smallBox.bookmarks : [];
+      if (bookmarks.length > MAX_BOOKMARKS) return { skipped: true, reason: "max-bookmarks" };
+      const entry = { ...smallBox, type: "small", isParent: false, bookmarks };
+      lb.children.push(entry);
+      smallBoxById.set(largeId + ":" + entry.id, entry);
+      return {
+        addedSmall: { largeId, smallId: entry.id },
+        parentLargeId: largeId
+      };
+    },
     // Ticket 107: single-bookmark delete is a first-class mutation op. The old
     // popups.js path spliced the array and fire-and-forgot saveLayout, so no tombstone was
     // written; a stale remote copy then re-adopted the bookmark through the cross-tab merge
