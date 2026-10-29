@@ -963,6 +963,36 @@
   "aboutLinkPrivacy": {
     "message": "개인정보 처리방침"
   },
+  "aboutCopyVersion": {
+    "message": "버전 복사"
+  },
+  "aboutCopyLink": {
+    "message": "링크 복사"
+  },
+  "aboutCopied": {
+    "message": "복사됨"
+  },
+  "aboutCopyFailed": {
+    "message": "복사 실패"
+  },
+  "aboutDiagnostics": {
+    "message": "진단 열기"
+  },
+  "aboutQuickHelp": {
+    "message": "빠른 참고"
+  },
+  "quickHelpCreateBox": {
+    "message": "박스 추가"
+  },
+  "quickHelpBookmarks": {
+    "message": "북마크"
+  },
+  "quickHelpPanZoom": {
+    "message": "이동 및 확대"
+  },
+  "quickHelpSyncRestore": {
+    "message": "동기화 및 복원"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },

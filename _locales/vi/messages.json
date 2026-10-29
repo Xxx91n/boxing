@@ -963,6 +963,36 @@
   "aboutLinkPrivacy": {
     "message": "Chính sách quyền riêng tư"
   },
+  "aboutCopyVersion": {
+    "message": "Sao chép phiên bản"
+  },
+  "aboutCopyLink": {
+    "message": "Sao chép liên kết"
+  },
+  "aboutCopied": {
+    "message": "Đã sao chép"
+  },
+  "aboutCopyFailed": {
+    "message": "Sao chép thất bại"
+  },
+  "aboutDiagnostics": {
+    "message": "Mở chuẩn đoán"
+  },
+  "aboutQuickHelp": {
+    "message": "Tham chiếu nhanh"
+  },
+  "quickHelpCreateBox": {
+    "message": "Thêm hộp"
+  },
+  "quickHelpBookmarks": {
+    "message": "Dấu trang"
+  },
+  "quickHelpPanZoom": {
+    "message": "Di chuyển và thu phóng"
+  },
+  "quickHelpSyncRestore": {
+    "message": "Đồng bộ và khôi phục"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },

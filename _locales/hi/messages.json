@@ -963,6 +963,36 @@
   "aboutLinkPrivacy": {
     "message": "गोपनीयता नीति"
   },
+  "aboutCopyVersion": {
+    "message": "संस्करण कॉपी करें"
+  },
+  "aboutCopyLink": {
+    "message": "लिंक कॉपी करें"
+  },
+  "aboutCopied": {
+    "message": "कॉपी हुआ"
+  },
+  "aboutCopyFailed": {
+    "message": "कॉपी विफल"
+  },
+  "aboutDiagnostics": {
+    "message": "निदान खोलें"
+  },
+  "aboutQuickHelp": {
+    "message": "त्वरित संदर्भ"
+  },
+  "quickHelpCreateBox": {
+    "message": "बॉक्स जोड़ें"
+  },
+  "quickHelpBookmarks": {
+    "message": "बुकमार्क"
+  },
+  "quickHelpPanZoom": {
+    "message": "पैन और ज़ूम"
+  },
+  "quickHelpSyncRestore": {
+    "message": "सिंक और पुनर्स्थापना"
+  },
   "aboutLicense": {
     "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
   },
