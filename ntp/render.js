@@ -303,6 +303,12 @@ export function initRenderFacade(deps) {
       if (!sb) return { skipped: true };
       sb.bookmarks = sb.bookmarks || [];
       if (sb.bookmarks.length >= MAX_BOOKMARKS) return { skipped: true, reason: "max-bookmarks" };
+      // The bookmark id is the merge and tombstone key (GLOSSARY "Small box"), so one list
+      // can never hold it twice: the popup path mints a fresh id and cannot collide, but an
+      // external payload can, and the conflict add carries the archive's id by design.
+      if (bookmark && bookmark.id && sb.bookmarks.some(b => b && b.id === bookmark.id)) {
+        return { skipped: true, reason: "duplicate-id" };
+      }
       const entry = bookmark && bookmark.id
         ? { id: bookmark.id, title: bookmark.title, url: bookmark.url }
         : { id: "bm-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6), title: (bookmark && bookmark.title) || "", url: (bookmark && bookmark.url) || "" };

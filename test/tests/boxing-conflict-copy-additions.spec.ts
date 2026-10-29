@@ -213,6 +213,11 @@ const hasApplyButton = (page: any) =>
 
 const clickApply = (page: any) => jsClick(page, LIST + ' .data-conflict-apply-btn');
 
+// #53 D2 keeps this after-the-fact: neither comparing nor adding may put a decision dialog
+// in front of the canvas the user is working on (import and sync keep their own specs).
+const confirmModalHidden = (page: any) =>
+  page.evaluate(() => Boolean(document.getElementById('confirm-modal')?.hidden));
+
 const memoryLayout = (page: any) =>
   page.evaluate(() => JSON.parse(JSON.stringify((window as any).__boxingDebug.layout)));
 
@@ -294,6 +299,7 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     expect(await tickAdd(page, P_BOX)).toBe(true);
     expect(await applyDisabled(page)).toBe(false);
     expect(await clickApply(page)).toBe(true);
+    expect(await confirmModalHidden(page)).toBe(true);        // no modal in front of the canvas
     await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/Added 1 item/);
 
     const after = await memoryLayout(page);
@@ -328,14 +334,18 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     expect(body.raw.boxes[0].children[1].title).toBe('Cloud Small');
   });
 
-  test('AC1: choosing only the bookmark adds only the bookmark — the copy-only box stays out', async ({ page }) => {
+  test('AC1+AC3: choosing only the bookmark adds only it, and a bookmark the copy lacks survives', async ({ page }) => {
     test.setTimeout(90000);
-    await bootFileLane(page, copyEntry());
+    // bLocal exists only on the canvas: an incomplete copy must not read as a delete order
+    // (#53 D2 — 副本缺项不自动删除当前内容).
+    const seeded = liveLayout();
+    seeded.boxes[0].children[0].bookmarks.push({ id: 'bLocal', title: 'Only On Canvas', url: 'https://local.test/bLocal' });
+    await bootFileLane(page, copyEntry(), seeded);
     await openCompare(page);
     expect(await tickAdd(page, P_BM)).toBe(true);
     expect(await clickApply(page)).toBe(true);
     await expect.poll(() => panelText(page), { timeout: 10000 }).toMatch(/Added 1 item/);
-    expect(await bookmarkIds(page)).toEqual(['b1', 'b2']);
+    expect(await bookmarkIds(page)).toEqual(['b1', 'bLocal', 'b2']);
     expect(await childIds(page)).toEqual(['S1']);
     const stored = JSON.parse(await storedValue(page));
     const lb = stored.boxes.find((b: any) => b.id === 'L1');
@@ -618,8 +628,12 @@ test.describe('Issue #55 — explicit add of copy-only small boxes and bookmarks
     const s2 = after.boxes[0].children.find((s: any) => s.id === 'S2');
     expect(s2.title).toBe('Renamed Elsewhere');                    // the unseen content survived
     expect(s2.x).toBe(5);
-    // Now the fresh diff has nothing to add for that id: only the bookmark row survives.
-    expect((await addRows(page)).map((r: any) => r.path)).toEqual([P_BM]);
+    // The box row is gone — that id is on the canvas now — and its own bookmarks became the
+    // copy-only items: the externally added S2 is empty, so the copy's b3/b4 are what is
+    // missing from the subtree, and the refreshed diff offers them instead.
+    expect((await addRows(page)).map((r: any) => r.path)).toEqual([
+      'small:L1:S1:b2', 'small:L1:S2:b3', 'small:L1:S2:b4',
+    ]);
   });
 
   test('AC5: a missing or truncated body offers no add at all', async ({ page }) => {

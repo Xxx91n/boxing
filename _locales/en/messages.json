@@ -1163,7 +1163,7 @@
   },
   "dataConflictAddSkippedUnusable": {
     "message": "This object cannot be stored as the copy holds it - nothing to add back",
-    "description": "A copy-only object the archive cannot add as it stands: no usable id, a non-string title, geometry that cannot be placed, a url the app refuses to store, or an id this copy lists twice (issue #55)"
+    "description": "A copy-only object the archive cannot add as it stands: no usable id, a non-string title, geometry that cannot be placed, a url the app refuses to store, or an id that collides with another object this copy brings or with one the canvas already holds (issue #55)"
   },
   "dataConflictAddSkippedFull": {
     "message": "This box has already reached its item limit",
