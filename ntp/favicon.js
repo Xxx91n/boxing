@@ -124,19 +124,219 @@ function persistFaviconCacheDebounced() {
 // hydrate the mem cache on first script load.
 try { loadFaviconCacheFromStorage(); } catch (e) { /* silent: favicon cache hydration, regenerates on demand */ }
 
+// ── #58: bounded pixel layer ───────────────────────────────────────────────
+// Best-effort 32×32 PNG data URIs captured from the SAME winning URL, within the
+// authorization the browser already grants. This is a discardable accelerator for the
+// URL cache above, never a second source of truth: a corrupt, expired, unreadable,
+// undecodable, oversized or quota-blocked pixel always falls back to the URL/SWR path.
+// It shares localStorage with the favicon URL cache and is capped at 1 MiB; the layout
+// itself lives in chrome.storage.local, and the emergency localStorage layout snapshot
+// reclaims this layer first when a quota failure blocks its own write.
+const FAV_PIXEL_KEY = 'boxingFaviconPixels.v1';
+const FAV_PIXEL_SIZE = 32;
+const FAV_PIXEL_MAX_ENTRY = 16 * 1024;    // stored data-URI bytes for one host
+const FAV_PIXEL_MAX_TOTAL = 1024 * 1024;  // whole serialized layer (discardable)
+const FAV_PIXEL_PREFIX = 'data:image/png;base64,';
+const faviconPixels = new Map(); // host -> { data: dataUri, ts: write time }
+const pixelInflight = new Map(); // host -> Promise<void>; dedupes captures, never awaited by display
+let __favPixelPersistPending = false;
+
+function serializeFaviconPixels(pairs) {
+  const entries = {};
+  for (const [host, e] of pairs) entries[host] = { data: e.data, ts: e.ts };
+  return JSON.stringify({ entries, savedAt: Date.now() });
+}
+// Pairs arrive oldest-write first. The budget covers the whole serialized layer; measure
+// each exact entry chunk once and keep the newest contiguous run, so eviction is strictly
+// oldest-write-first and a newer entry never loses to an older one. Not an LRU.
+function fitFaviconPixelsToBudget(pairs) {
+  const chunks = pairs.map(([host, e]) => JSON.stringify(host) + ':' + JSON.stringify(e));
+  const envelope = '{"entries":{},"savedAt":' + Date.now() + '}';
+  let total = envelope.length;
+  let keepFrom = pairs.length;
+  for (let i = pairs.length - 1; i >= 0; i--) {
+    const cost = chunks[i].length + (keepFrom < pairs.length ? 1 : 0); // comma between entries
+    if (total + cost > FAV_PIXEL_MAX_TOTAL) break;
+    total += cost;
+    keepFrom = i;
+  }
+  const kept = pairs.slice(keepFrom);
+  return { kept, payload: serializeFaviconPixels(kept) };
+}
+function loadFaviconPixelsFromStorage() {
+  try {
+    const raw = localStorage.getItem(FAV_PIXEL_KEY);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    const now = Date.now();
+    const entries = (obj && obj.entries) || {};
+    let changed = false;
+    const candidates = [];
+    // Keep only successful PNG entries inside the hit SWR ceiling.
+    for (const host of Object.keys(entries)) {
+      const e = entries[host];
+      if (!e || typeof e.data !== 'string' || !e.data.startsWith(FAV_PIXEL_PREFIX) ||
+          typeof e.ts !== 'number' || !Number.isFinite(e.ts) ||
+          e.data.length > FAV_PIXEL_MAX_ENTRY || now - e.ts > FAV_HIT_SWR_TTL) {
+        changed = true;
+        continue;
+      }
+      candidates.push([host, { data: e.data, ts: e.ts }]);
+    }
+    candidates.sort((a, b) => a[1].ts - b[1].ts);
+    const { kept } = fitFaviconPixelsToBudget(candidates);
+    if (kept.length !== candidates.length) changed = true;
+    for (const [host, e] of kept) faviconPixels.set(host, e);
+    if (changed) persistFaviconPixelsNow();
+  } catch (_) { /* corrupt pixel layer — ignore; captures rebuild it lazily */ }
+}
+function persistFaviconPixelsNow() {
+  try {
+    const candidates = Array.from(faviconPixels.entries())
+      .filter(([, e]) => e.data.length <= FAV_PIXEL_MAX_ENTRY)
+      .sort((a, b) => a[1].ts - b[1].ts);
+    const { kept, payload } = fitFaviconPixelsToBudget(candidates);
+    const keptHosts = new Set(kept.map((p) => p[0]));
+    for (const host of Array.from(faviconPixels.keys())) {
+      if (!keptHosts.has(host)) faviconPixels.delete(host);
+    }
+    localStorage.setItem(FAV_PIXEL_KEY, payload);
+  } catch (_) {
+    // Quota or serialization failure: drop the whole pixel layer (it is discardable) so
+    // it can never hold space the user's other saves need. The URL cache is untouched.
+    faviconPixels.clear();
+    try { localStorage.removeItem(FAV_PIXEL_KEY); } catch (_) { /* storage unavailable — nothing else to release */ }
+  }
+}
+function persistFaviconPixelsDebounced() {
+  if (__favPixelPersistPending) return;
+  __favPixelPersistPending = true;
+  setTimeout(() => { __favPixelPersistPending = false; persistFaviconPixelsNow(); }, 400);
+}
+try { loadFaviconPixelsFromStorage(); } catch (e) { /* silent: pixel hydrate, captures rebuild it */ }
+
+function bytesToBase64(bytes) {
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(bin);
+}
+// Decode + downscale to one uniform 32×32 PNG. Returns null for anything that does not
+// decode, so a 200 with an empty body or a 404 HTML page cannot become a pixel.
+async function encodePixelPng(blob) {
+  let source = null;
+  try {
+    if (typeof createImageBitmap === 'function') {
+      try { source = await createImageBitmap(blob); } catch (_) { source = null; } // SVG etc. — fall through
+    }
+    if (source && (!source.width || !source.height)) { // some engines return an empty bitmap
+      if (typeof source.close === 'function') source.close();
+      source = null;
+    }
+    if (!source) {
+      // Blob URLs are blocked by the NTP CSP (img-src has no blob:), so decode through a
+      // data: URL instead — the display path already allows data: images.
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const img = new Image();
+      img.src = 'data:' + (blob.type || 'image/png') + ';base64,' + bytesToBase64(bytes);
+      await (img.decode ? img.decode() : new Promise((res, rej) => { img.onload = res; img.onerror = rej; }));
+      source = img;
+    }
+    if (!source || !source.width || !source.height) return null;
+    const canvas = typeof OffscreenCanvas === 'function'
+      ? new OffscreenCanvas(FAV_PIXEL_SIZE, FAV_PIXEL_SIZE)
+      : Object.assign(document.createElement('canvas'), { width: FAV_PIXEL_SIZE, height: FAV_PIXEL_SIZE });
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.clearRect(0, 0, FAV_PIXEL_SIZE, FAV_PIXEL_SIZE);
+    ctx.drawImage(source, 0, 0, FAV_PIXEL_SIZE, FAV_PIXEL_SIZE);
+    const out = canvas.convertToBlob
+      ? await canvas.convertToBlob({ type: 'image/png' })
+      : await new Promise((res) => canvas.toBlob(res, 'image/png'));
+    if (!out || !out.size) return null;
+    return FAV_PIXEL_PREFIX + bytesToBase64(new Uint8Array(await out.arrayBuffer()));
+  } catch (_) {
+    return null;
+  } finally {
+    if (source && typeof source.close === 'function') source.close();
+  }
+}
+const FAV_PIXEL_CAPTURE_TIMEOUT = 8000; // a stalled capture must not pin its single-flight slot
+async function captureFaviconPixel(host, url) {
+  let timer = null;
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  if (controller) timer = setTimeout(() => controller.abort(), FAV_PIXEL_CAPTURE_TIMEOUT);
+  try {
+    if (!isValidPublicUrl(url)) return;
+    // Default cache mode: the winning probe just loaded this URL, so the browser can reuse
+    // those bytes instead of paying a second network transfer for the same icon.
+    const resp = await fetch(url, controller ? { credentials: 'omit', signal: controller.signal } : { credentials: 'omit' });
+    if (!resp || !resp.ok) return; // 404 HTML is a successful fetch, not a pixel
+    const mime = (resp.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!mime.startsWith('image/')) return;
+    const blob = await resp.blob();
+    if (!blob || blob.size === 0) return; // 200 with an empty body is not a pixel
+    const dataUri = await encodePixelPng(blob);
+    if (!dataUri || dataUri.length > FAV_PIXEL_MAX_ENTRY) return;
+    faviconPixels.set(host, { data: dataUri, ts: Date.now() });
+    persistFaviconPixelsDebounced();
+  } catch (_) { /* best effort — the URL cache stays authoritative */ } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+function captureFaviconPixelOnce(host, url) {
+  if (pixelInflight.has(host)) return;
+  const task = captureFaviconPixel(host, url);
+  pixelInflight.set(host, task);
+  const forget = () => { if (pixelInflight.get(host) === task) pixelInflight.delete(host); };
+  task.then(forget, forget);
+}
+function paintProbeImage(img, host, probe) {
+  img.src = probe.src;
+  img.style.display = '';
+  img.classList.remove('is-loading');
+  img.classList.add('is-cached');
+  _faviconHotPool.set(host, probe);
+}
+function paintFaviconPixel(img, host, pixel) {
+  return new Promise((resolve) => {
+    const probe = new Image();
+    probe.onload = () => { paintProbeImage(img, host, probe); resolve(true); };
+    probe.onerror = () => resolve(false);
+    probe.src = pixel.data;
+  });
+}
+
 function applyDecodedFavicon(img, host, src) {
   const probe = new Image();
   probe.src = src;
-  probe.decode().then(() => {
-    img.src = probe.src;
-    img.style.display = '';
-    img.classList.remove('is-loading');
-    img.classList.add('is-cached');
-    _faviconHotPool.set(host, probe);
+  return probe.decode().then(() => {
+    paintProbeImage(img, host, probe);
+    return true;
   }).catch(() => {
     img.classList.remove('is-loading');
     img.style.display = 'none';
+    return false;
   });
+}
+
+// Start the capture only after the row's own image has settled. A fetch racing the display
+// load for the same URL can make a delayed response skip the decoded-image cache and leave
+// the row incomplete, so the accelerator waits (bounded) instead of competing with the paint.
+function scheduleFaviconCapture(img, host, url) {
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    clearTimeout(fallback);
+    captureFaviconPixelOnce(host, url);
+  };
+  const fallback = setTimeout(start, 3000);
+  if (img.complete) { setTimeout(start, 0); return; }
+  img.addEventListener('load', start, { once: true });
+  img.addEventListener('error', start, { once: true });
 }
 
 async function loadFavicon(img, url, opts) {
@@ -155,6 +355,26 @@ async function loadFavicon(img, url, opts) {
   const host = new URL(url).hostname;
   if (!background) {
     const entry = faviconCache.get(host);
+    const pixel = faviconPixels.get(host);
+    // #58: a usable pixel paints first and returns; a missing or failing pixel falls through
+    // to the URL cache. A negative URL entry governs re-probing, not the pixel's own success
+    // window — one failed offline revalidation must not blank a pixel that is still inside its
+    // 90-day ceiling. The 7d/90d clock decides when a painted pixel is refreshed, and capture
+    // is detached from this paint.
+    if (pixel) {
+      if (Date.now() - pixel.ts <= FAV_HIT_SWR_TTL && await paintFaviconPixel(img, host, pixel)) {
+        // Refresh off the newer of the pixel and the URL entry (a negative refresh still
+        // spaces probes out): a refused capture must not add a probe on every load.
+        const refreshedAt = Math.max(pixel.ts, entry ? Number(entry.ts) : 0);
+        if (Date.now() - refreshedAt > FAV_HIT_TTL && !inflight.has(host)) {
+          loadFavicon(img, url, { background: true });
+        }
+        return;
+      }
+      // Corrupt, undecodable or past the ceiling: discard and use the existing URL path.
+      faviconPixels.delete(host);
+      persistFaviconPixelsDebounced();
+    }
     if (entry) {
       // Cache hit — instant render, zero network. Stale hits paint too (SWR), refreshed below.
       if (entry.url === null) {
@@ -219,9 +439,16 @@ async function loadFavicon(img, url, opts) {
   const winner = await task;
   if (winner === null) {
     img.classList.remove('is-loading');
-    img.style.display = 'none';
+    // #58: a stale pixel already on screen stays usable when its revalidation fails;
+    // the URL path keeps its existing hide-on-failure behaviour.
+    if (!(img.src && img.src.startsWith('data:image/'))) img.style.display = 'none';
   } else {
-    applyDecodedFavicon(img, host, winner);
+    // Detached on purpose: capture starts after the display image settles, never gates it,
+    // and a failed or refused capture leaves the URL display exactly as it was.
+    applyDecodedFavicon(img, host, winner).then((painted) => {
+      if (painted) scheduleFaviconCapture(img, host, winner);
+      else captureFaviconPixelOnce(host, winner);
+    });
   }
 }
 

@@ -102,6 +102,7 @@
       "boxing-architecture-acceptance.spec.ts",
       "boxing-audit.spec.ts",
       "boxing-data-golden.spec.ts",
+      "boxing-favicon-pixel-cache.spec.ts",
       "boxing-import-merge.spec.ts",
       "boxing-memory.spec.ts",
       "boxing-migration-golden.spec.ts",
@@ -214,6 +215,7 @@
     ],
     "ntp/favicon.js": [
       "boxing-favicon-fixture.spec.ts",
+      "boxing-favicon-pixel-cache.spec.ts",
       "boxing-memory.spec.ts",
       "boxing-popup-dragselect.spec.ts",
       "boxing-search.spec.ts"
