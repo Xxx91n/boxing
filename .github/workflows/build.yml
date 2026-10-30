@@ -57,6 +57,14 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      - name: Install locked dependencies
+        # D3 (ticket 78, finding V-03): signing/packing must never pull
+        # un-locked versions from the registry. npm ci installs exactly the
+        # audited crx3/web-ext versions from the lockfile into
+        # node_modules/.bin; the steps below call them via `npx --no-install`,
+        # which refuses to fetch anything when a tool is missing.
+        run: npm ci
+
       - name: Copy curated brand icons (icons/ from docs/brand)
         # icons/ in git is committed byte-identical to the curated docs/brand
         # set. Re-copy from docs/brand on every build as a drift guard and to
@@ -142,7 +150,9 @@ jobs:
             echo "CRX_PRIVATE_KEY_PEM secret not set -> boxing-chrome.crx stays a placeholder (zip-copy)."
           else
             node -e "require('fs').writeFileSync(process.env.RUNNER_TEMP + '/crx.pem', Buffer.from(process.env.CRX_KEY, 'base64'))"
-            npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing -o "dist/boxing-chrome-${VER}.crx" -p "${RUNNER_TEMP}/crx.pem"
+            # D3 (ticket 78): crx3 comes from the lockfile (npm ci above);
+            # --no-install never falls back to a registry download.
+            npx --no-install crx3 pack dist/boxing-chrome/release/chrome/boxing -o "dist/boxing-chrome-${VER}.crx" -p "${RUNNER_TEMP}/crx.pem" || { echo "::error::crx3 missing from lockfile after npm ci"; exit 1; }
             rm -f "${RUNNER_TEMP}/crx.pem"
             echo "CRX3 signed OK"
           fi
@@ -171,7 +181,10 @@ jobs:
             echo "AMO_API_KEY/AMO_API_SECRET secrets not set -> boxing-firefox.xpi stays unsigned (dev XPI)."
           else
             rm -f dist/*.xpi
-            if npx --yes web-ext sign --api-key "$AMO_KEY" --api-secret "$AMO_SECRET" --source-dir dist/boxing-firefox/release/firefox/boxing --channel unlisted --artifacts-dir dist; then
+            # D3 (ticket 78): web-ext must come from the lockfile (npm ci
+            # above); fail hard when it is missing, never download it.
+            test -x node_modules/.bin/web-ext || { echo "::error::web-ext missing from lockfile after npm ci"; exit 1; }
+            if npx --no-install web-ext sign --api-key "$AMO_KEY" --api-secret "$AMO_SECRET" --source-dir dist/boxing-firefox/release/firefox/boxing --channel unlisted --artifacts-dir dist; then
               SIGNED=$(ls dist/*.xpi 2>/dev/null | head -1)
               if [ -n "$SIGNED" ]; then
                 cp "$SIGNED" "dist/boxing-firefox-${VER}.xpi"

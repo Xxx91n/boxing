@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // CI workflow input guard (ticket 76 / spec D1, finding V-01), extended by
 // ticket 77 / spec D2 (finding V-02) with "uses pinned to commit SHA" and
-// "explicit workflow permissions".
+// "explicit workflow permissions", and by ticket 78 / spec D3 (finding V-03)
+// with "release signing uses lockfile tools only" (npm ci first, then
+// crx3/web-ext via npx --no-install or node_modules/.bin; no npx --yes).
 //
 // Contracts checked here:
 //   - No `run:` block may interpolate a workflow_dispatch input expression
@@ -16,6 +18,10 @@
 //     job-level override) and must not use the blanket `write-all` scope
 //     (spec D2). An empty permissions map is GitHub's explicit deny-all and
 //     is allowed.
+//   - No `run:` block may use `npx --yes`, and any job calling crx3/web-ext
+//     must run `npm ci` first and invoke the tools via `npx --no-install` or
+//     the local node_modules/.bin (spec D3). Signing steps must never pull
+//     un-pinned tool versions from the registry.
 //
 // Usage: node scripts/workflow-input-guard.mjs [--file extra.yml ...]
 // Exit 0 when the contracts hold, exit 1 with named violations otherwise.
@@ -189,6 +195,52 @@ function checkPermissions(doc, base) {
   return violations;
 }
 
+// Tools that release signing must source from the lockfile (spec D3).
+const LOCKFILE_TOOLS = ['crx3', 'web-ext'];
+const LOCKFILE_TOOL_PATTERN = LOCKFILE_TOOLS.join('|');
+
+/**
+ * Verify spec D3 contracts: no `npx --yes` anywhere in a run block, and any
+ * job that calls crx3/web-ext must have run `npm ci` in an earlier step and
+ * must invoke the tools via `npx --no-install` or the local node_modules/.bin
+ * — never a bare `npx <tool>` that would fall back to downloading an
+ * un-pinned version from the registry at signing time.
+ *
+ * @param {object} doc - Parsed workflow YAML document.
+ * @param {string} base - Workflow base name for violation messages.
+ * @returns {string[]} Violation messages (empty when the contract holds).
+ */
+function checkLockfileTools(doc, base) {
+  const violations = [];
+  for (const [jobName, job] of Object.entries(doc.jobs || {})) {
+    if (!job || !Array.isArray(job.steps)) continue;
+    const steps = job.steps;
+    let ciIdx = -1;
+    let firstToolIdx = -1;
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (!step || typeof step.run !== 'string') continue;
+      const name = step.name || `<unnamed step ${i + 1}>`;
+      if (/\bnpx\s+--yes\b/.test(step.run)) {
+        violations.push(`${base} :: ${name} :: run block uses "npx --yes" (spec D3: lockfile tools only, no registry download)`);
+      }
+      // A bare `npx <tool>` (without --no-install) would also fall back to a
+      // registry fetch; the tool must come from the lockfile's .bin.
+      if (new RegExp(`\\bnpx\\s+(?!--no-install\\b)(?:--yes\\s+)?(${LOCKFILE_TOOL_PATTERN})\\b`).test(step.run)) {
+        violations.push(`${base} :: ${name} :: invokes ${step.run.match(new RegExp(`\\bnpx\\s+(?!--no-install\\b)(?:--yes\\s+)?(${LOCKFILE_TOOL_PATTERN})\\b`))[1]} without "npx --no-install" (spec D3: lockfile tools only)`);
+      }
+      if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(step.run) && firstToolIdx === -1) firstToolIdx = i;
+      if (/\bnpm\s+ci\b/.test(step.run) && ciIdx === -1) ciIdx = i;
+    }
+    if (firstToolIdx !== -1 && ciIdx === -1) {
+      violations.push(`${base} :: job "${jobName}" calls crx3/web-ext but has no "npm ci" step (spec D3: locked deps first)`);
+    } else if (firstToolIdx !== -1 && ciIdx > firstToolIdx) {
+      violations.push(`${base} :: job "${jobName}" calls crx3/web-ext before its "npm ci" step (spec D3: locked deps first)`);
+    }
+  }
+  return violations;
+}
+
 /**
  * Run every guard contract against a single workflow file.
  *
@@ -208,6 +260,7 @@ function checkWorkflow(file) {
   }
   violations.push(...checkUsesPinned(doc, base));
   violations.push(...checkPermissions(doc, base));
+  violations.push(...checkLockfileTools(doc, base));
   return { file: base, violations };
 }
 
@@ -231,7 +284,8 @@ const report = {
   contracts: [
     'no dispatch input expression (${{ github.event.inputs.* }} / ${{ inputs.* }}) inside any run: block',
     'every remote uses: reference (step-level and reusable-workflow job-level) pinned to a full 40-char commit SHA',
-    'every workflow declares explicit permissions at top level and per job (never write-all)'
+    'every workflow declares explicit permissions at top level and per job (never write-all)',
+    'no npx --yes in any run: block; crx3/web-ext jobs run npm ci first and invoke tools via npx --no-install or node_modules/.bin (spec D3)'
   ],
   violations
 };
