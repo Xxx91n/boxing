@@ -704,11 +704,11 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
     if (!h || !h.largeId) return;
     // Ticket 82 (spec D6 / finding V-09): search-hit bookmark URLs go through
     // the same normalizeBookmarkUrl gate as bookmark rows, before any view
-    // switch or navigation. Invalid schemes and protocol-relative URLs are
-    // rejected here and produce no navigation / tabs.create side effect.
+    // switch or navigation. Invalid schemes, empty URLs, and protocol-relative
+    // URLs are rejected here and produce no navigation / tabs.create side effect.
     let hitUrl = null;
-    if (h.bm && h.bm.url) {
-      hitUrl = normalizeBookmarkUrl(h.bm.url);
+    if (h.bm) {
+      hitUrl = normalizeBookmarkUrl(h.bm.url || '');
       if (!hitUrl) { debugWarn('blocked invalid bookmark URL from search', h.bm.url); return; }
     }
     saveLargeBoxViewState(currentLargeBoxId);

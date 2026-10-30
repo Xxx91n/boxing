@@ -165,9 +165,9 @@ test.describe('Boxing bookmark search ', () => {
 
   // ── Ticket 82 (spec D6 / finding V-09) ─────────────────────────────────
   // Search-hit bookmark open must go through the same normalizeBookmarkUrl
-  // gate as bookmark rows: invalid schemes / protocol-relative URLs are
-  // rejected with no navigation side effects, valid http(s) targets keep the
-  // sameTab / newTab behavior.
+  // gate as bookmark rows: invalid schemes, empty URLs, and protocol-relative
+  // URLs are rejected with no navigation side effects, valid http(s) targets
+  // keep the sameTab / newTab behavior.
   async function seedSearchBookmark(page, boxId, bmId, bmUrl) {
     await page.evaluate(({ boxId, bmId, bmUrl }) => {
       const dbg = (window as any).__boxingDebug;
@@ -190,6 +190,7 @@ test.describe('Boxing bookmark search ', () => {
       'vbscript:msgbox(1)',
       'file:///etc/passwd',
       '//evil.example.test/protocol-relative',
+      '',
     ];
     for (const [i, url] of invalid.entries()) {
       await seedSearchBookmark(page, `reject-box-${i}`, `reject-bm-${i}`, url);
