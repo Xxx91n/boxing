@@ -210,6 +210,41 @@ const LOCKFILE_TOOL_PATTERN = LOCKFILE_TOOLS.join('|');
  * @param {string} base - Workflow base name for violation messages.
  * @returns {string[]} Violation messages (empty when the contract holds).
  */
+
+/**
+ * Split a run block into shell command segments. Backslash-continued lines
+ * are joined first because the shell treats them as a single command
+ * (otherwise `npx \` + `--yes crx3@2.0.0` would hide both halves from the
+ * per-segment checks).
+ */
+function splitRunSegments(run) {
+  const joined = [];
+  let cur = "";
+  for (const line of run.split(/\r?\n/)) {
+    const continued = /(?<!\\)\\\s*$/.test(line);
+    const cleaned = continued ? line.replace(/\\\s*$/, "") : line;
+    cur = cur ? `${cur}${cleaned}` : cleaned;
+    if (continued) continue; // backslash continuation
+    joined.push(cur);
+    cur = "";
+  }
+  if (cur) joined.push(cur);
+  return joined.flatMap((line) => line.split(/\s*(?:&&|\|\||;|\|)\s*/));
+}
+
+/**
+ * Return the shell verb of a command segment after stripping environment
+ * assignments (FOO=1 BAR="x" CMD ...) and common leading keywords (if, then,
+ * else, elif, fi, time, sudo, env). Used to decide whether a segment really
+ * invokes a release tool instead of merely mentioning it (e.g. `echo crx3`).
+ */
+function segmentVerb(segment) {
+  let cmd = segment.trim();
+  cmd = cmd.replace(/^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+/, "");
+  cmd = cmd.replace(/^(?:if|then|else|elif|fi|time|sudo|env)\s+/, "");
+  return cmd.split(/\s+/)[0] || "";
+}
+
 function checkLockfileTools(doc, base) {
   const violations = [];
   for (const [jobName, job] of Object.entries(doc.jobs || {})) {
@@ -223,31 +258,42 @@ function checkLockfileTools(doc, base) {
       const name = step.name || `<unnamed step ${i + 1}>`;
       // Inspect each shell command segment so a permitted `npx --no-install
       // <tool>` cannot mask a later bare `npx <tool>`, alternate options
-      // (e.g. `npx -y crx3`) cannot hide the tool name, and `npm exec
-      // --package=<tool>` cannot bypass the npx-only filter.
-      const segments = step.run.split(/\r?\n/).flatMap((line) => line.split(/\s*(?:&&|\|\||;|\|)\s*/));
+      // (e.g. `npx -y crx3`) cannot hide the tool name, `npm exec
+      // --package=<tool>` cannot bypass the npx-only filter, and
+      // informational text (e.g. `echo crx3`) cannot count as an invocation.
+      const segments = splitRunSegments(step.run);
+      let toolInvoked = false;
       for (const segment of segments) {
         if (!segment.trim()) continue;
-        if (/\bnpx\b/.test(segment)) {
+        const verb = segmentVerb(segment);
+        if (verb === "npx") {
           // -y is the short form of --yes; both must never appear (spec D3).
           if (/\bnpx\s+(?:--yes|-y)\b/.test(segment)) {
             violations.push(`${base} :: ${name} :: "npx --yes" / "npx -y" used (spec D3: lockfile tools only, no registry download)`);
           }
           // A bare `npx <tool>` (without --no-install) would fall back to a
           // registry fetch; the tool must come from the lockfile's .bin.
-          if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment) && !/\bnpx\s+--no-install\b/.test(segment)) {
-            violations.push(`${base} :: ${name} :: invokes crx3/web-ext without "npx --no-install" (spec D3: lockfile tools only)`);
+          if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment)) {
+            toolInvoked = true;
+            if (!/\bnpx\s+--no-install\b/.test(segment)) {
+              violations.push(`${base} :: ${name} :: invokes crx3/web-ext without "npx --no-install" (spec D3: lockfile tools only)`);
+            }
           }
+        } else if (verb === "npm") {
+          // npm exec always resolves/installs packages from the registry; a
+          // crx3/web-ext package there can never be the lockfile's audited
+          // version (spec D3).
+          if (/\bnpm\s+exec\b/.test(segment) && new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment)) {
+            violations.push(`${base} :: ${name} :: uses "npm exec" with crx3/web-ext (spec D3: lockfile tools only, no registry download)`);
+            toolInvoked = true;
+          }
+        } else if (/^node_modules\/\.bin\/(?:crx3|web-ext)$/.test(verb) || verb === "crx3" || verb === "web-ext") {
+          // Local binary invocation (node_modules/.bin or PATH) is allowed.
+          toolInvoked = true;
         }
-        // npm exec always resolves/installs packages from the registry; a
-        // crx3/web-ext package there can never be the lockfile's audited
-        // version (spec D3).
-        if (/\bnpm\s+exec\b/.test(segment) && new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment)) {
-          violations.push(`${base} :: ${name} :: uses "npm exec" with crx3/web-ext (spec D3: lockfile tools only, no registry download)`);
-        }
+        if (verb === "npm" && /\bnpm\s+ci\b/.test(segment) && ciIdx === -1) ciIdx = i;
       }
-      if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(step.run) && firstToolIdx === -1) firstToolIdx = i;
-      if (/\bnpm\s+ci\b/.test(step.run) && ciIdx === -1) ciIdx = i;
+      if (toolInvoked && firstToolIdx === -1) firstToolIdx = i;
     }
     // npm ci must run strictly before any crx3/web-ext invocation (spec D3);
     // a run block doing both (ciIdx === firstToolIdx) still violates it.
