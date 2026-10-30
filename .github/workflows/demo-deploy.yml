@@ -16,6 +16,8 @@ on:
         default: ""
 
 permissions:
+  # D2 (ticket 77): Pages deployment needs pages: write + id-token: write
+  # (configure/upload/deploy actions); contents: read suffices for checkout.
   contents: read
   pages: write
   id-token: write
@@ -32,14 +34,14 @@ jobs:
     steps:
       - name: Checkout release tag
         if: github.event_name == 'release'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event.release.tag_name }}
       - name: Checkout main
         if: github.event_name != 'release'
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
       - name: Generate ntp.css (ticket 47, single build entry)
@@ -57,9 +59,9 @@ jobs:
         id: version
         run: echo "value=$(node -p "require('./pages-artifact/demo/version.json').version")" >> "$GITHUB_OUTPUT"
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
         with:
           path: pages-artifact
 
@@ -72,16 +74,16 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
       # Ticket 109: a green deploy is not proof that Pages serves the new
       # build. Poll demo/version.json with a cache-buster until it reports the
       # version we just deployed; not converged inside 180s = red.
       - name: Checkout (verify script lives in the repo)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
       - name: Verify Pages freshness (deploy tail, <=180s)

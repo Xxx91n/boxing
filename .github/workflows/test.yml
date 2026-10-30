@@ -25,6 +25,11 @@ on:
 concurrency:
   group: test-${{ github.ref }}
   cancel-in-progress: true
+permissions:
+  # D2 (ticket 77): contents: read for checkout/npm ci; actions: write is
+  # required by actions/upload-artifact (test result upload).
+  contents: read
+  actions: write
 
 jobs:
   test:
@@ -36,14 +41,14 @@ jobs:
     # Ticket 20: hard ceiling so a hung browser can never queue forever.
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: |
             ${{ runner.os == 'Linux' && '~/.cache/ms-playwright' || '' }}
@@ -71,8 +76,10 @@ jobs:
       - name: Layout bypass guard (ticket 108)
         run: node scripts/layout-bypass-guard.mjs
 
-      - name: Workflow input guard (ticket 76)
-        # Dispatch inputs must never be interpolated into a run: block.
+      - name: Workflow input guard (ticket 76 + 77)
+        # Dispatch inputs must never be interpolated into a run: block; remote
+        # uses: must be pinned to full commit SHAs; every workflow must declare
+        # explicit permissions (never write-all).
         run: node scripts/workflow-input-guard.mjs
 
       - name: Run tests
@@ -92,7 +99,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: playwright-report-${{ matrix.os }}
           path: |
@@ -112,9 +119,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
 
@@ -131,7 +138,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: data-golden-report
           path: |
