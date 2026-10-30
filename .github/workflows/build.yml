@@ -94,20 +94,35 @@ jobs:
 
       - name: Get version for artifact naming
         id: ver
+        # Ticket 76 / spec D1: dispatch input enters via env, never into the
+        # shell source. Validate against a strict calver whitelist so a value
+        # containing shell metacharacters fails before any command runs.
+        # bash [[ =~ ]] matches the whole value (unlike grep's per-line match,
+        # which would let an embedded newline through on its first segment).
+        env:
+          DISPATCH_VERSION: ${{ github.event.inputs.version }}
         run: |
-          v=${{ github.event.inputs.version }}
-          if [ -z "$v" ]; then v=$(node -e "console.log(require('./manifest.json').version)"); fi
+          v="$DISPATCH_VERSION"
+          if [ -z "$v" ]; then
+            v=$(node -e "console.log(require('./manifest.json').version)")
+          elif ! [[ "$v" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+            echo "::error::Invalid version input: must match ^[0-9]+(\.[0-9]+)*$"
+            exit 1
+          fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
 
       - name: Rename artifacts with browser + version prefix
         working-directory: dist
+        # Ticket 76: read the already-validated output via env and quote it.
+        env:
+          VER: ${{ steps.ver.outputs.version }}
         run: |
           # Chrome: dist/boxing-chrome/release/chrome/boxing-<ver>.zip -> boxing-chrome-<ver>.zip
-          cp boxing-chrome/release/chrome/boxing-${{ steps.ver.outputs.version }}.zip boxing-chrome-${{ steps.ver.outputs.version }}.zip
-          cp boxing-chrome/release/chrome/boxing-${{ steps.ver.outputs.version }}.crx boxing-chrome-${{ steps.ver.outputs.version }}.crx
+          cp "boxing-chrome/release/chrome/boxing-${VER}.zip" "boxing-chrome-${VER}.zip"
+          cp "boxing-chrome/release/chrome/boxing-${VER}.crx" "boxing-chrome-${VER}.crx"
           # Firefox: dist/boxing-firefox/release/firefox/boxing-<ver>.zip -> boxing-firefox-<ver>.zip
-          cp boxing-firefox/release/firefox/boxing-${{ steps.ver.outputs.version }}.zip boxing-firefox-${{ steps.ver.outputs.version }}.zip
-          cp boxing-firefox/release/firefox/boxing-${{ steps.ver.outputs.version }}.xpi boxing-firefox-${{ steps.ver.outputs.version }}.xpi
+          cp "boxing-firefox/release/firefox/boxing-${VER}.zip" "boxing-firefox-${VER}.zip"
+          cp "boxing-firefox/release/firefox/boxing-${VER}.xpi" "boxing-firefox-${VER}.xpi"
 
       - name: Pack CRX3 (signed when CRX_PRIVATE_KEY_PEM secret present)
         # CRX3 packing is deterministic per private key: sign once on ubuntu so
@@ -116,12 +131,13 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         env:
           CRX_KEY: ${{ secrets.CRX_PRIVATE_KEY_PEM }}
+          VER: ${{ steps.ver.outputs.version }}
         run: |
           if [ -z "$CRX_KEY" ]; then
             echo "CRX_PRIVATE_KEY_PEM secret not set -> boxing-chrome.crx stays a placeholder (zip-copy)."
           else
             node -e "require('fs').writeFileSync(process.env.RUNNER_TEMP + '/crx.pem', Buffer.from(process.env.CRX_KEY, 'base64'))"
-            npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing -o dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx -p "${RUNNER_TEMP}/crx.pem"
+            npx --yes crx3 pack dist/boxing-chrome/release/chrome/boxing -o "dist/boxing-chrome-${VER}.crx" -p "${RUNNER_TEMP}/crx.pem"
             rm -f "${RUNNER_TEMP}/crx.pem"
             echo "CRX3 signed OK"
           fi
@@ -144,6 +160,7 @@ jobs:
         env:
           AMO_KEY: ${{ secrets.AMO_API_KEY }}
           AMO_SECRET: ${{ secrets.AMO_API_SECRET }}
+          VER: ${{ steps.ver.outputs.version }}
         run: |
           if [ -z "$AMO_KEY" ] || [ -z "$AMO_SECRET" ]; then
             echo "AMO_API_KEY/AMO_API_SECRET secrets not set -> boxing-firefox.xpi stays unsigned (dev XPI)."
@@ -152,7 +169,7 @@ jobs:
             if npx --yes web-ext sign --api-key "$AMO_KEY" --api-secret "$AMO_SECRET" --source-dir dist/boxing-firefox/release/firefox/boxing --channel unlisted --artifacts-dir dist; then
               SIGNED=$(ls dist/*.xpi 2>/dev/null | head -1)
               if [ -n "$SIGNED" ]; then
-                cp "$SIGNED" dist/boxing-firefox-${{ steps.ver.outputs.version }}.xpi
+                cp "$SIGNED" "dist/boxing-firefox-${VER}.xpi"
                 echo "AMO signed XPI OK"
               else
                 echo "WARN: web-ext sign reported success but produced no XPI"
@@ -163,8 +180,10 @@ jobs:
           fi
 
       - name: Verify all 4 artifacts exist
+        env:
+          VER: ${{ steps.ver.outputs.version }}
         run: |
-          ls -l dist/boxing-chrome-${{ steps.ver.outputs.version }}.zip dist/boxing-chrome-${{ steps.ver.outputs.version }}.crx dist/boxing-firefox-${{ steps.ver.outputs.version }}.zip dist/boxing-firefox-${{ steps.ver.outputs.version }}.xpi
+          ls -l "dist/boxing-chrome-${VER}.zip" "dist/boxing-chrome-${VER}.crx" "dist/boxing-firefox-${VER}.zip" "dist/boxing-firefox-${VER}.xpi"
 
       - name: Upload all 4 artifacts
         uses: actions/upload-artifact@v4
