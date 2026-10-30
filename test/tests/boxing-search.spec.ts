@@ -252,4 +252,51 @@ test.describe('Boxing bookmark search ', () => {
     await expect.poll(() => page.evaluate(() => (window as any).__searchHitOpened || []), { timeout: 5000 }).toContain('https://search-hit.example.test/bookmark2');
     expect(page.url()).toBe(before);
   });
+
+  // ── Ticket 85 (spec D9 / finding I-02) ─────────────────────────────────
+  // Identifier DOM queries must CSS.escape box/small-box ids. A small-box id
+  // containing `"`, `]`, or whitespace must still be located by the chip
+  // click without throwing and without mis-matching a different element.
+  async function seedSpecialIdBox(page) {
+    await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes.push({
+        id: 'loc-lb-special', type: 'large', title: 'SpecialIdBox', x: 0, y: 0, width: 320, height: 220,
+        children: [
+          { id: 'we"ird ]id 1', type: 'small', title: 'SpecialSB', x: 0, y: 0, width: 140, height: 100, bookmarks: [] },
+          { id: 'plain-sb-1', type: 'small', title: 'PlainSB', x: 160, y: 0, width: 140, height: 100, bookmarks: [] },
+        ],
+      });
+      dbg.renderCanvas();
+    });
+  }
+
+  test('special-character small-box id is located via chip without throwing or mis-matching', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (e) => pageErrors.push(String(e)));
+    await resetBoxing(page);
+    await seedSpecialIdBox(page);
+    // Click the chip whose data-small-id holds quotes/brackets/whitespace.
+    await page.evaluate(() => {
+      const chips = Array.from(document.querySelectorAll('.large-box__chip'));
+      const chip = chips.find((c) => c.getAttribute('data-small-id') === 'we"ird ]id 1');
+      if (chip) (chip as HTMLElement).click();
+    });
+    await page.waitForTimeout(400);
+    const located = await page.evaluate(() => {
+      const special = document.querySelector('.small-box[data-id="' + CSS.escape('we"ird ]id 1') + '"]');
+      const plain = document.querySelector('.small-box[data-id="plain-sb-1"]');
+      return {
+        specialFound: Boolean(special),
+        specialLocated: Boolean(special && special.classList.contains('small-box--located')),
+        plainLocated: Boolean(plain && plain.classList.contains('small-box--located')),
+        locatedCount: document.querySelectorAll('.small-box--located').length,
+      };
+    });
+    expect(pageErrors).toEqual([]);
+    expect(located.specialFound).toBe(true);
+    expect(located.specialLocated).toBe(true);
+    expect(located.plainLocated).toBe(false);
+    expect(located.locatedCount).toBe(1);
+  });
 });

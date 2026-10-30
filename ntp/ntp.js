@@ -771,7 +771,7 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
           applyInnerTransform();
           if (currentLargeBoxId) saveLargeBoxViewState(currentLargeBoxId);
           // Highlight pulse via outline (escapes contain:layout clipping)
-          var targetEl = innerSurface.querySelector('[data-id="' + smallId + '"]') || innerCanvas.querySelector('[data-id="' + smallId + '"]');
+          var targetEl = innerSurface.querySelector('[data-id="' + CSS.escape(smallId) + '"]') || innerCanvas.querySelector('[data-id="' + CSS.escape(smallId) + '"]');
           if (targetEl) {
             targetEl.classList.add('small-box--located');
             setTimeout(function () { targetEl.classList.remove('small-box--located'); }, 2000);
