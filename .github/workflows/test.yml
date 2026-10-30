@@ -8,7 +8,8 @@ on:
       - 'background.js'
       - 'manifest.json'
       - 'test/**'
-      - '.github/workflows/test.yml'
+      - '.github/workflows/**'
+      - 'scripts/workflow-input-guard.mjs'
   push:
     branches: [main, master]
     paths:
@@ -16,7 +17,8 @@ on:
       - 'background.js'
       - 'manifest.json'
       - 'test/**'
-      - '.github/workflows/test.yml'
+      - '.github/workflows/**'
+      - 'scripts/workflow-input-guard.mjs'
 
 # Ticket 20 (architecture-recovery): repeated pushes supersede each other —
 # cancel the stale run instead of queueing it behind the fresh one.
@@ -68,6 +70,10 @@ jobs:
 
       - name: Layout bypass guard (ticket 108)
         run: node scripts/layout-bypass-guard.mjs
+
+      - name: Workflow input guard (ticket 76)
+        # Dispatch inputs must never be interpolated into a run: block.
+        run: node scripts/workflow-input-guard.mjs
 
       - name: Run tests
         run: xvfb-run --auto-servernum npm test
