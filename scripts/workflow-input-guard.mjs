@@ -240,8 +240,23 @@ function splitRunSegments(run) {
  */
 function segmentVerb(segment) {
   let cmd = segment.trim();
-  cmd = cmd.replace(/^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+/, "");
-  cmd = cmd.replace(/^(?:if|then|else|elif|fi|time|sudo|env|command)\s+/, "");
+  const envRe = /^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+/;
+  const wrapperRe = /^(?:(?:if|then|else|elif|fi|time|sudo|env|command|!)\s+)+/;
+  // Wrappers may chain (command command npx, if ! npx) and env assignments
+  // may precede them (FOO=1 command npx); strip repeatedly so the verb is
+  // always the real command that would run.
+  let changed = true;
+  while (changed) {
+    changed = false;
+    if (envRe.test(cmd)) {
+      cmd = cmd.replace(envRe, "");
+      changed = true;
+    }
+    if (wrapperRe.test(cmd)) {
+      cmd = cmd.replace(wrapperRe, "");
+      changed = true;
+    }
+  }
   return cmd.split(/\s+/)[0] || "";
 }
 
