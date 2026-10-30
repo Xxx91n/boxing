@@ -221,18 +221,29 @@ function checkLockfileTools(doc, base) {
       const step = steps[i];
       if (!step || typeof step.run !== 'string') continue;
       const name = step.name || `<unnamed step ${i + 1}>`;
-      // Inspect each npx invocation per line so alternate option forms
-      // (e.g. `npx -y crx3`) cannot hide the tool name behind an option.
-      for (const line of step.run.split(/\r?\n/)) {
-        if (!/\bnpx\b/.test(line)) continue;
-        // -y is the short form of --yes; both must never appear (spec D3).
-        if (/\bnpx\s+(?:--yes|-y)\b/.test(line)) {
-          violations.push(`${base} :: ${name} :: run block uses "npx --yes" / "npx -y" (spec D3: lockfile tools only, no registry download)`);
+      // Inspect each shell command segment so a permitted `npx --no-install
+      // <tool>` cannot mask a later bare `npx <tool>`, alternate options
+      // (e.g. `npx -y crx3`) cannot hide the tool name, and `npm exec
+      // --package=<tool>` cannot bypass the npx-only filter.
+      const segments = step.run.split(/\r?\n/).flatMap((line) => line.split(/\s*(?:&&|\|\||;|\|)\s*/));
+      for (const segment of segments) {
+        if (!segment.trim()) continue;
+        if (/\bnpx\b/.test(segment)) {
+          // -y is the short form of --yes; both must never appear (spec D3).
+          if (/\bnpx\s+(?:--yes|-y)\b/.test(segment)) {
+            violations.push(`${base} :: ${name} :: "npx --yes" / "npx -y" used (spec D3: lockfile tools only, no registry download)`);
+          }
+          // A bare `npx <tool>` (without --no-install) would fall back to a
+          // registry fetch; the tool must come from the lockfile's .bin.
+          if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment) && !/\bnpx\s+--no-install\b/.test(segment)) {
+            violations.push(`${base} :: ${name} :: invokes crx3/web-ext without "npx --no-install" (spec D3: lockfile tools only)`);
+          }
         }
-        // A bare `npx <tool>` (without --no-install) would fall back to a
-        // registry fetch; the tool must come from the lockfile's .bin.
-        if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(line) && !/\bnpx\s+--no-install\b/.test(line)) {
-          violations.push(`${base} :: ${name} :: invokes crx3/web-ext without "npx --no-install" (spec D3: lockfile tools only)`);
+        // npm exec always resolves/installs packages from the registry; a
+        // crx3/web-ext package there can never be the lockfile's audited
+        // version (spec D3).
+        if (/\bnpm\s+exec\b/.test(segment) && new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment)) {
+          violations.push(`${base} :: ${name} :: uses "npm exec" with crx3/web-ext (spec D3: lockfile tools only, no registry download)`);
         }
       }
       if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(step.run) && firstToolIdx === -1) firstToolIdx = i;
