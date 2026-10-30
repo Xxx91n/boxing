@@ -69,6 +69,13 @@ export function parseDomain(hostname) {
 
 // D8 (ticket 84): a malformed percent-encoding (e.g. `%zz`) makes decodeURIComponent
 // throw URIError; degrade to hostname/domain instead of surfacing an uncaught exception.
+/**
+ * Decode a single percent-encoded path segment.
+ * Returns an empty string when the encoding is malformed (decodeURIComponent throws),
+ * letting callers fall back to the domain instead of surfacing an uncaught URIError.
+ * @param {string} segment raw percent-encoded segment
+ * @returns {string} decoded segment, or '' on malformed input
+ */
 function safeDecode(segment) {
   try {
     return decodeURIComponent(segment);
@@ -77,6 +84,14 @@ function safeDecode(segment) {
   }
 }
 
+/**
+ * Extract an auto-title from a parsed URL for the given extraction type.
+ * Path decoding failures and empty path segments fall back to the domain main
+ * (or hostname when no domain main is available).
+ * @param {URL} url parsed URL object
+ * @param {string} type one of EXTRACTION_TYPES
+ * @returns {string} extracted title or fallback value
+ */
 export function extractTitleByType(url, type) {
   const domainInfo = parseDomain(url.hostname);
   const segments = url.pathname.split('/').filter(Boolean);
@@ -176,6 +191,15 @@ export function matchPattern(pattern, urlStr) {
   return new RegExp(regexStr).test(url.pathname);
 }
 
+/**
+ * Derive an auto-title from a URL string using the supplied rules.
+ * Falls back to DEFAULT_AUTO_TITLE_RULES when rules are empty, and to the
+ * domain main / hostname when no rule yields a non-empty title.
+ * @param {string} urlStr candidate URL string
+ * @param {Array<{pattern: string, type: string}>} rules ordered title rules
+ * @param {boolean} enabled whether auto-title derivation is enabled
+ * @returns {string} derived title, or '' for invalid input
+ */
 export function deriveTitleFromUrl(urlStr, rules, enabled = true) {
   if (!urlStr || typeof urlStr !== 'string') return '';
   let url;
@@ -198,6 +222,14 @@ export function deriveTitleFromUrl(urlStr, rules, enabled = true) {
   return extractTitleByType(url, 'domain-main') || url.hostname;
 }
 
+/**
+ * Wire URL/title inputs to derive auto-titles on input (debounced) and blur.
+ * Tracks user edits so manually typed titles are not overwritten.
+ * @param {HTMLElement} urlInput URL input element
+ * @param {HTMLElement} titleInput title input element
+ * @param {() => object} getSettings function returning current settings
+ * @returns {void}
+ */
 export function attachAutoTitleHelper(urlInput, titleInput, getSettings) {
   if (!urlInput || !titleInput) return;
   let lastAutoTitle = '';
@@ -238,6 +270,13 @@ export function attachAutoTitleHelper(urlInput, titleInput, getSettings) {
   });
 }
 // Submit-time / shared call-site helper: derived title, else hostname, else raw string.
+/**
+ * Shared call-site helper: return the derived title, else the hostname, else the raw string.
+ * Never throws on invalid URLs.
+ * @param {string} urlStr candidate URL string
+ * @param {object} settings settings object carrying autoTitleRules / autoTitleEnabled
+ * @returns {string} derived title, hostname, or raw string
+ */
 export function deriveTitleOrHostname(urlStr, settings) {
   const s = settings || {};
   try {
