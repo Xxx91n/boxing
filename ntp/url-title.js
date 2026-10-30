@@ -36,6 +36,12 @@ export const DEFAULT_AUTO_TITLE_RULES = [
   { pattern: 'https://*/*', type: 'domain-main' }
 ];
 
+// D8 (ticket 84): rule-engine boundaries. Wildcards expand to `.*`, so cap both
+// total pattern length and wildcard count: over-limit rules are rejected by
+// matchPattern and the engine predictably degrades to the next rule / fallback.
+export const MAX_PATTERN_LENGTH = 256;
+export const MAX_PATTERN_WILDCARDS = 8;
+
 export function parseDomain(hostname) {
   if (!hostname || typeof hostname !== 'string') {
     return { fullHost: '', domainMain: '', subdomain: '' };
@@ -61,41 +67,56 @@ export function parseDomain(hostname) {
   return { fullHost: host, domainMain: host, subdomain: '' };
 }
 
+// D8 (ticket 84): a malformed percent-encoding (e.g. `%zz`) makes decodeURIComponent
+// throw URIError; degrade to hostname/domain instead of surfacing an uncaught exception.
+function safeDecode(segment) {
+  try {
+    return decodeURIComponent(segment);
+  } catch (_) {
+    return '';
+  }
+}
+
 export function extractTitleByType(url, type) {
   const domainInfo = parseDomain(url.hostname);
   const segments = url.pathname.split('/').filter(Boolean);
+  const fallback = domainInfo.domainMain || url.hostname;
 
   switch (type) {
     case 'domain-main':
-      return domainInfo.domainMain || url.hostname;
+      return fallback;
     case 'full-host':
       return domainInfo.fullHost || url.hostname;
     case 'subdomain':
-      return domainInfo.subdomain || domainInfo.domainMain || url.hostname;
-    case 'first-path':
-      return segments.length > 0 ? decodeURIComponent(segments[0]) : (domainInfo.domainMain || url.hostname);
+      return domainInfo.subdomain || fallback;
+    case 'first-path': {
+      if (segments.length === 0) return fallback;
+      return safeDecode(segments[0]) || fallback;
+    }
     case 'last-path': {
-      if (segments.length === 0) return domainInfo.domainMain || url.hostname;
-      let last = decodeURIComponent(segments[segments.length - 1]);
+      if (segments.length === 0) return fallback;
+      let last = safeDecode(segments[segments.length - 1]);
       last = last.replace(/\.(html?|php|aspx?|jsp)$/i, '');
-      return last || domainInfo.domainMain || url.hostname;
+      return last || fallback;
     }
     case 'first-two-paths': {
-      if (segments.length === 0) return domainInfo.domainMain || url.hostname;
-      if (segments.length === 1) return decodeURIComponent(segments[0]);
-      return `${decodeURIComponent(segments[0])}/${decodeURIComponent(segments[1])}`;
+      if (segments.length === 0) return fallback;
+      const first = safeDecode(segments[0]);
+      if (!first) return fallback;
+      if (segments.length === 1) return first;
+      const second = safeDecode(segments[1]);
+      if (!second) return fallback;
+      return `${first}/${second}`;
     }
     case 'domain-first-path': {
-      const dm = domainInfo.domainMain || url.hostname;
-      if (segments.length > 0) {
-        return `${dm}/${decodeURIComponent(segments[0])}`;
-      }
-      return dm;
+      if (segments.length === 0) return fallback;
+      const first = safeDecode(segments[0]);
+      return first ? `${fallback}/${first}` : fallback;
     }
     case 'full-url':
       return url.href;
     default:
-      return domainInfo.domainMain || url.hostname;
+      return fallback;
   }
 }
 
@@ -109,6 +130,13 @@ export function matchPattern(pattern, urlStr) {
   if (!pattern || typeof pattern !== 'string') return false;
   pattern = pattern.trim();
   if (pattern === '<all_urls>') return true;
+  // D8: reject pathological rules before they can compile into an expensive matcher.
+  if (pattern.length > MAX_PATTERN_LENGTH) return false;
+  let wildcardCount = 0;
+  for (const ch of pattern) {
+    if (ch === '*') wildcardCount++;
+  }
+  if (wildcardCount > MAX_PATTERN_WILDCARDS) return false;
 
   const schemeSep = pattern.indexOf('://');
   if (schemeSep === -1) return false;
