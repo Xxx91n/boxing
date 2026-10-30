@@ -63,10 +63,20 @@ function extractExpressions(run) {
   return exprs;
 }
 
+// Drop single-quoted string literals (with '' escapes) before testing, but
+// keep bracketed property names such as github.event['inputs']['version'].
+function withoutStringLiterals(expr) {
+  return expr.replace(/'(?:''|[^'])*'/g, (literal, offset, source) => {
+    const before = source.slice(0, offset).trimEnd();
+    const after = source.slice(offset + literal.length).trimStart();
+    return before.endsWith('[') && after.startsWith(']') ? literal : "''";
+  });
+}
+
 function findInputRefs(run) {
   const hits = [];
   for (const expr of extractExpressions(run)) {
-    if (INPUT_REF_RE.test(expr)) hits.push(expr);
+    if (INPUT_REF_RE.test(withoutStringLiterals(expr))) hits.push(expr);
   }
   return hits;
 }
