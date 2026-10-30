@@ -42,6 +42,13 @@ export const DEFAULT_AUTO_TITLE_RULES = [
 export const MAX_PATTERN_LENGTH = 256;
 export const MAX_PATTERN_WILDCARDS = 8;
 
+/**
+ * Parse a hostname into full host, eTLD+1 domain main, and subdomain parts.
+ * IP literals, bracketed forms, and host:port inputs are treated as a single
+ * host with no subdomain; multi-part TLDs (e.g. co.uk) keep their public suffix.
+ * @param {string} hostname hostname string (may include brackets or port)
+ * @returns {{fullHost: string, domainMain: string, subdomain: string}} parsed parts
+ */
 export function parseDomain(hostname) {
   if (!hostname || typeof hostname !== 'string') {
     return { fullHost: '', domainMain: '', subdomain: '' };
