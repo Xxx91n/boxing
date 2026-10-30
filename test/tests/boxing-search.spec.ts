@@ -162,4 +162,93 @@ test.describe('Boxing bookmark search ', () => {
     });
     expect(items).toBe(1);
   });
+
+  // ── Ticket 82 (spec D6 / finding V-09) ─────────────────────────────────
+  // Search-hit bookmark open must go through the same normalizeBookmarkUrl
+  // gate as bookmark rows: invalid schemes / protocol-relative URLs are
+  // rejected with no navigation side effects, valid http(s) targets keep the
+  // sameTab / newTab behavior.
+  async function seedSearchBookmark(page, boxId, bmId, bmUrl) {
+    await page.evaluate(({ boxId, bmId, bmUrl }) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.boxes.push({
+        id: boxId, type: 'large', title: 'SearchHitBox', x: 0, y: 0, width: 320, height: 220,
+        children: [{
+          id: boxId + '-sm', type: 'small', title: 'HitSB', x: 0, y: 0, width: 300, height: 200,
+          bookmarks: [{ id: bmId, title: 'HitBookmark', url: bmUrl }],
+        }],
+      });
+      dbg.renderCanvas();
+    }, { boxId, bmId, bmUrl });
+  }
+
+  test('search-hit with invalid bookmark URLs is rejected with no navigation side effects', async ({ page }) => {
+    await resetBoxing(page);
+    const invalid = [
+      'javascript:alert(1)',
+      'data:text/html,<script>1</script>',
+      'vbscript:msgbox(1)',
+      'file:///etc/passwd',
+      '//evil.example.test/protocol-relative',
+    ];
+    for (const [i, url] of invalid.entries()) {
+      await seedSearchBookmark(page, `reject-box-${i}`, `reject-bm-${i}`, url);
+    }
+    const input = page.locator('#q');
+    await input.fill('HitBookmark');
+    await input.press('Enter');
+    await expect.poll(() => page.evaluate(() => document.querySelectorAll('.search-results__item').length)).toBe(invalid.length);
+    const before = page.url();
+    await page.evaluate(() => {
+      (window as any).__searchHitOpened = [];
+      window.open = ((u?: any) => { (window as any).__searchHitOpened.push(String(u)); return null; }) as any;
+      const items = Array.from(document.querySelectorAll('.search-results__item')) as HTMLElement[];
+      for (const item of items) item.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    });
+    await page.waitForTimeout(150);
+    expect(page.url()).toBe(before);
+    const opened = await page.evaluate(() => (window as any).__searchHitOpened || []);
+    expect(opened).toEqual([]);
+  });
+
+  test('search-hit with a valid http URL navigates via the normalized path (sameTab)', async ({ page }) => {
+    await resetBoxing(page);
+    await page.route('https://search-hit.example.test/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<html><body>hit</body></html>' }));
+    await seedSearchBookmark(page, 'ok-box-1', 'ok-bm-1', 'https://search-hit.example.test/bookmark');
+    const input = page.locator('#q');
+    await input.fill('HitBookmark');
+    await input.press('Enter');
+    await expect.poll(() => page.evaluate(() => document.querySelectorAll('.search-results__item').length)).toBe(1);
+    await page.evaluate(() => {
+      (window as any).__searchHitOpened = [];
+      window.open = ((u?: any) => { (window as any).__searchHitOpened.push(String(u)); return null; }) as any;
+      const item = document.querySelector('.search-results__item') as HTMLElement | null;
+      item?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    });
+    await expect.poll(() => page.url(), { timeout: 5000 }).toContain('search-hit.example.test/bookmark');
+    const opened = await page.evaluate(() => (window as any).__searchHitOpened || []);
+    expect(opened).toEqual([]);
+  });
+
+  test('search-hit with a valid http URL opens a NEW tab via the normalized path (newTab)', async ({ page }) => {
+    await resetBoxing(page);
+    await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.urlOpenMode = 'newTab';
+    });
+    await seedSearchBookmark(page, 'ok-box-2', 'ok-bm-2', 'https://search-hit.example.test/bookmark2');
+    const input = page.locator('#q');
+    await input.fill('HitBookmark');
+    await input.press('Enter');
+    await expect.poll(() => page.evaluate(() => document.querySelectorAll('.search-results__item').length)).toBe(1);
+    const before = page.url();
+    await page.evaluate(() => {
+      (window as any).__searchHitOpened = [];
+      window.open = ((u?: any) => { (window as any).__searchHitOpened.push(String(u)); return null; }) as any;
+      const item = document.querySelector('.search-results__item') as HTMLElement | null;
+      item?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    });
+    await expect.poll(() => page.evaluate(() => (window as any).__searchHitOpened || []), { timeout: 5000 }).toContain('https://search-hit.example.test/bookmark2');
+    expect(page.url()).toBe(before);
+  });
 });
