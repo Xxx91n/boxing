@@ -702,14 +702,23 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
   // bookmark type: also resolve bookmark editor/open behavior (current vs new tab).
   function openSearchHit(h) {
     if (!h || !h.largeId) return;
+    // Ticket 82 (spec D6 / finding V-09): search-hit bookmark URLs go through
+    // the same normalizeBookmarkUrl gate as bookmark rows, before any view
+    // switch or navigation. Invalid schemes, empty URLs, and protocol-relative
+    // URLs are rejected here and produce no navigation / tabs.create side effect.
+    let hitUrl = null;
+    if (h.bm) {
+      hitUrl = normalizeBookmarkUrl(h.bm.url || '');
+      if (!hitUrl) { debugWarn('blocked invalid bookmark URL from search', h.bm.url); return; }
+    }
     saveLargeBoxViewState(currentLargeBoxId);
     // If we're already inside a large box and it's NOT the same, exit first.
     if (currentLargeBoxId && currentLargeBoxId !== h.largeId) { exitToCanvas(); }
     // Enter target large box (skipPosRestore=true keeps current zoom/pan for snappy locate).
     if (currentLargeBoxId !== h.largeId) enterLargeBox(h.largeId, true);
     if (h.bm && h.bm.url) {
-      // Open the bookmark URL — respect urlOpenMode setting if it exists.
-      try { openBookmarkUrl(h.bm.url); } catch (_) { /* background or fallback */ }
+      // Open the normalized bookmark URL — respect urlOpenMode setting if it exists.
+      try { openBookmarkUrl(hitUrl); } catch (_) { /* background or fallback */ }
       searchInput.value = '';
       hideSearchResults();
       updateCaption();
