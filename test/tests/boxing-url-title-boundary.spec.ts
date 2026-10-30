@@ -81,6 +81,11 @@ test('malformed percent-encoding falls back to hostname/domain instead of throwi
   // A malformed segment in the first slot does not poison the second segment path.
   const second = new URL('https://example.com/%zz/good');
   expect(extractTitleByType(second, 'first-two-paths')).toBe(fallback);
+
+  // A malformed second segment also falls back without throwing.
+  const malformedSecond = new URL('https://example.com/good/%zz');
+  expect(() => extractTitleByType(malformedSecond, 'first-two-paths')).not.toThrow();
+  expect(extractTitleByType(malformedSecond, 'first-two-paths')).toBe(fallback);
 });
 
 test('valid percent-encoding still decodes as before', async () => {
