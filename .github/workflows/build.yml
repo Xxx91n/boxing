@@ -87,11 +87,6 @@ jobs:
           }
           JS
 
-      - name: Build browser-specific trees + release subdirs
-        env:
-          BOXING_BUILD_VERSION: ${{ github.event.inputs.version }}
-        run: node .github/scripts/build.mjs
-
       - name: Get version for artifact naming
         id: ver
         # Ticket 76 / spec D1: dispatch input enters via env, never into the
@@ -110,6 +105,13 @@ jobs:
             exit 1
           fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Build browser-specific trees + release subdirs
+        # Validation runs first (step above), so an invalid dispatch version
+        # is rejected before build.mjs consumes the raw input.
+        env:
+          BOXING_BUILD_VERSION: ${{ github.event.inputs.version }}
+        run: node .github/scripts/build.mjs
 
       - name: Rename artifacts with browser + version prefix
         working-directory: dist

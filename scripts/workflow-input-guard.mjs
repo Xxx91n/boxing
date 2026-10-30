@@ -21,8 +21,22 @@ import yaml from 'js-yaml';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WORKFLOWS_DIR = path.join(ROOT, '.github', 'workflows');
 
-// `${{ github.event.inputs.version }}` and the `${{ inputs.version }}` shorthand.
-const DISPATCH_INPUT_RE = /\$\{\{\s*(?:github\.event\.inputs|inputs)\./;
+// Any reference to a workflow_dispatch input inside an expression, regardless
+// of dot/bracket indexing or surrounding functions:
+//   ${{ github.event.inputs.version }}      (dot)
+//   ${{ inputs['version'] }}                (bracket)
+//   ${{ format('{0}', inputs.version) }}    (function-wrapped)
+//   ${{ fromJSON(github.event.inputs.obj).field }}
+const EXPRESSION_RE = /\$\{\{(.*?)\}\}/gs;
+const INPUT_REF_RE = /(?:github\.event\.)?inputs(?![A-Za-z0-9_])/;
+
+function findInputRefs(run) {
+  const hits = [];
+  for (const m of run.matchAll(EXPRESSION_RE)) {
+    if (INPUT_REF_RE.test(m[1])) hits.push(m[0]);
+  }
+  return hits;
+}
 
 function collectRunScripts(doc) {
   const scripts = [];
@@ -42,8 +56,9 @@ function checkWorkflow(file) {
   const doc = yaml.load(text);
   const violations = [];
   for (const { stepName, run } of collectRunScripts(doc)) {
-    if (DISPATCH_INPUT_RE.test(run)) {
-      violations.push(`${path.basename(file)} :: ${stepName} :: run block interpolates a dispatch input expression`);
+    const hits = findInputRefs(run);
+    if (hits.length) {
+      violations.push(`${path.basename(file)} :: ${stepName} :: run block interpolates a dispatch input expression (${hits.join(', ')})`);
     }
   }
   return { file: path.basename(file), violations };
