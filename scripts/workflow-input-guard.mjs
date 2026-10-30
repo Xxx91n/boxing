@@ -221,21 +221,27 @@ function checkLockfileTools(doc, base) {
       const step = steps[i];
       if (!step || typeof step.run !== 'string') continue;
       const name = step.name || `<unnamed step ${i + 1}>`;
-      if (/\bnpx\s+--yes\b/.test(step.run)) {
-        violations.push(`${base} :: ${name} :: run block uses "npx --yes" (spec D3: lockfile tools only, no registry download)`);
-      }
-      // A bare `npx <tool>` (without --no-install) would also fall back to a
-      // registry fetch; the tool must come from the lockfile's .bin.
-      if (new RegExp(`\\bnpx\\s+(?!--no-install\\b)(?:--yes\\s+)?(${LOCKFILE_TOOL_PATTERN})\\b`).test(step.run)) {
-        violations.push(`${base} :: ${name} :: invokes ${step.run.match(new RegExp(`\\bnpx\\s+(?!--no-install\\b)(?:--yes\\s+)?(${LOCKFILE_TOOL_PATTERN})\\b`))[1]} without "npx --no-install" (spec D3: lockfile tools only)`);
+      // Inspect each npx invocation per line so alternate option forms
+      // (e.g. `npx -y crx3`) cannot hide the tool name behind an option.
+      for (const line of step.run.split(/\r?\n/)) {
+        if (!/\bnpx\b/.test(line)) continue;
+        // -y is the short form of --yes; both must never appear (spec D3).
+        if (/\bnpx\s+(?:--yes|-y)\b/.test(line)) {
+          violations.push(`${base} :: ${name} :: run block uses "npx --yes" / "npx -y" (spec D3: lockfile tools only, no registry download)`);
+        }
+        // A bare `npx <tool>` (without --no-install) would fall back to a
+        // registry fetch; the tool must come from the lockfile's .bin.
+        if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(line) && !/\bnpx\s+--no-install\b/.test(line)) {
+          violations.push(`${base} :: ${name} :: invokes crx3/web-ext without "npx --no-install" (spec D3: lockfile tools only)`);
+        }
       }
       if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(step.run) && firstToolIdx === -1) firstToolIdx = i;
       if (/\bnpm\s+ci\b/.test(step.run) && ciIdx === -1) ciIdx = i;
     }
-    if (firstToolIdx !== -1 && ciIdx === -1) {
-      violations.push(`${base} :: job "${jobName}" calls crx3/web-ext but has no "npm ci" step (spec D3: locked deps first)`);
-    } else if (firstToolIdx !== -1 && ciIdx > firstToolIdx) {
-      violations.push(`${base} :: job "${jobName}" calls crx3/web-ext before its "npm ci" step (spec D3: locked deps first)`);
+    // npm ci must run strictly before any crx3/web-ext invocation (spec D3);
+    // a run block doing both (ciIdx === firstToolIdx) still violates it.
+    if (firstToolIdx !== -1 && (ciIdx === -1 || ciIdx >= firstToolIdx)) {
+      violations.push(`${base} :: job "${jobName}" calls crx3/web-ext without a strictly preceding "npm ci" step (spec D3: locked deps first)`);
     }
   }
   return violations;
