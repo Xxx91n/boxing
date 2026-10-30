@@ -318,14 +318,14 @@ test.describe('WebDAV transport hardening (ticket 83)', () => {
   }
 
   async function seedWebDAVCreds(page: Page) {
-    await page.evaluate(() => {
+    await page.evaluate((url) => {
       const dbg = (window as any).__boxingDebug;
-      dbg.layout.settings.webdavUrl = WEBDAV_URL;
+      dbg.layout.settings.webdavUrl = url;
       dbg.layout.settings.webdavUser = 'test@example.com';
       dbg.layout.settings._encWebdavPass = null;
       const pass = document.getElementById('webdav-pass') as HTMLInputElement | null;
       if (pass) pass.value = 'testpass';
-    });
+    }, WEBDAV_URL);
   }
 
   test('direct GET fallback refuses opaque redirect (V-10)', async ({ page }) => {
