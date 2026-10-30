@@ -136,6 +136,7 @@
     ],
     "ntp/sync-engine.js": [
       "boxing-cred-encrypt.spec.ts",
+      "boxing-credential-flush.spec.ts",
       "boxing-import-merge.spec.ts",
       "boxing-sync-level.spec.ts",
       "boxing-sync.spec.ts",
@@ -147,6 +148,7 @@
     ],
     "ntp/credentials.js": [
       "boxing-cred-encrypt.spec.ts",
+      "boxing-credential-flush.spec.ts",
       "boxing-sync.spec.ts",
       "boxing-webdav.spec.ts"
     ],

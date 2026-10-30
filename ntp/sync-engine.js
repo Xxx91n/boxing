@@ -780,14 +780,28 @@ export function bindSyncBackupUi() {
     // (Bug16): sync level + filename (shared across all remote providers)
     if (syncLevelSelect) syncLevelSelect.value = layout.settings.syncLevel || 'full';
     if (syncFilenameInput) syncFilenameInput.value = layout.settings.syncFileName || '';
+    // Ticket 81 / spec D5 (finding V-08): per-secret decrypt baselines gate all envelope
+    // rewrites. An envelope is only written when its input actually changed (decrypt gate
+    // ready AND non-empty AND differing from the baseline); an empty input means "keep the
+    // stored envelope", so editing URL/user can never null out _encWebdavPass /
+    // _encGistToken again. While decryption is still in flight (gate not ready), a
+    // pagehide / visibilitychange / beforeunload / modal-close flush is a no-op for the
+    // envelopes (D5 AC3). No stored envelope → ready with an empty baseline.
+    let webdavPassBaseline = '';
+    let webdavPassReady = !layout.settings._encWebdavPass;
+    let gistTokenBaseline = '';
+    let gistTokenReady = !layout.settings._encGistToken;
     // Decrypt and fill sensitive fields — awaited so test button waits for password
     if (webdavTestBtn) webdavTestBtn.disabled = true; // disable until password is ready
     (async () => {
       try {
         let migrated = false;
         if (layout.settings._encWebdavPass && webdavPassInput) {
+          webdavPassReady = false;
           webdavPassInput.value = await decryptCredential(layout.settings._encWebdavPass);
-          // Ticket 81  lazy migration: rewrite legacy v1/v2/string envelopes as v3
+          webdavPassBaseline = webdavPassInput.value;
+          webdavPassReady = true;
+          // Ticket 81 lazy migration: rewrite legacy v1/v2/string envelopes as v3
           // (per-install key) so stored records converge without a one-shot pass.
           if (webdavPassInput.value) {
             const upgraded = await encryptCredential(webdavPassInput.value);
@@ -795,7 +809,10 @@ export function bindSyncBackupUi() {
           }
         }
         if (layout.settings._encGistToken && gistTokenInput) {
+          gistTokenReady = false;
           gistTokenInput.value = await decryptCredential(layout.settings._encGistToken);
+          gistTokenBaseline = gistTokenInput.value;
+          gistTokenReady = true;
           if (gistTokenInput.value) {
             const upgraded = await encryptCredential(gistTokenInput.value);
             if (upgraded && layout.settings._encGistToken !== upgraded) { layout.settings._encGistToken = upgraded; migrated = true; }
@@ -806,6 +823,11 @@ export function bindSyncBackupUi() {
       } catch (e) {
         debugErr('WebDAV: credential decrypt failed', e);
       } finally {
+        // A field whose decryption threw is ready with an empty baseline: an empty
+        // input still means "keep", never "clear" (D5); a freshly typed value may
+        // overwrite the unreadable envelope.
+        webdavPassReady = true;
+        gistTokenReady = true;
         if (webdavTestBtn) webdavTestBtn.disabled = false;
       }
     })();
@@ -837,6 +859,10 @@ export function bindSyncBackupUi() {
       saveLayout();
     });
 
+    // Ticket 81 / D5: __credDirty marks plain fields committed to layout.settings but not
+    // yet persisted, so the debounced flush (which runs on pagehide / modal close) can
+    // tell a URL/user-only edit apart from "nothing changed" and still save it.
+    let __credDirty = false;
     // Persist + encrypt on blur
     [webdavUrlInput, webdavUserInput].forEach(inp => inp?.addEventListener('blur', () => {
       // Ticket 59 (42R leftover): empty-credential no-change guard — blur used to
@@ -847,6 +873,7 @@ export function bindSyncBackupUi() {
       if (urlChanged) layout.settings.webdavUrl = webdavUrlInput.value.trim();
       if (userChanged) layout.settings.webdavUser = webdavUserInput.value.trim();
       saveLayout();
+      __credDirty = false;
     }));
     // debounced input listeners — survive close without blur (browser close, tab close).
     let __credDebounceTimer = null;
@@ -855,9 +882,16 @@ export function bindSyncBackupUi() {
       __credDebounceTimer = setTimeout(() => { __credDebounceTimer = null; flushUnsavedCredentials(); }, 800);
     }
     // Commit synchronous plain fields instantly (cheap), defer the async encryption via debounce.
+    // Ticket 81 / D5: __credDirty is set here because urlChanged is already false by the
+    // time the debounced flush runs (the listener committed the value to layout.settings) —
+    // without the flag a URL/user-only edit would early-return in flushUnsavedCredentials
+    // and be lost.
     [webdavUrlInput, webdavUserInput].forEach(inp => inp?.addEventListener('input', () => {
+      const prevUrl = layout.settings.webdavUrl || '';
+      const prevUser = layout.settings.webdavUser || '';
       if (webdavUrlInput) layout.settings.webdavUrl = webdavUrlInput.value.trim();
       if (webdavUserInput) layout.settings.webdavUser = webdavUserInput.value.trim();
+      if ((layout.settings.webdavUrl || '') !== prevUrl || (layout.settings.webdavUser || '') !== prevUser) __credDirty = true;
       __scheduleCredFlush();
     }));
     webdavPassInput?.addEventListener('input', __scheduleCredFlush);
@@ -881,25 +915,36 @@ export function bindSyncBackupUi() {
         // runs on pagehide/beforeunload/visibilitychange/closeSettingsModal; with no
         // credentials it used to write layout.settings._enc* = null unconditionally and
         // saveLayout() — a redundant boxingLayout write on every page teardown (the 42R
-        // unload write-back root cause). Skip when nothing diverged AND no credential
-        // text is present (an existing stored credential with empty inputs is NOT cleared —
-        // blank inputs no longer wipe _enc*).
+        // unload write-back root cause).
+        // Ticket 81 / spec D5 (finding V-08): a secret envelope is written ONLY when the
+        // corresponding input actually changed (decrypt gate ready AND non-empty AND
+        // differing from the decrypt baseline) — so editing URL/user with empty password /
+        // token boxes keeps the stored envelopes, and a pagehide while credential
+        // decryption is still in flight is a no-op for the envelopes. Blank inputs are
+        // never treated as "delete credential" (a delete entry is spec Q2).
         const urlChanged = webdavUrlInput && webdavUrlCur !== (layout.settings.webdavUrl || '');
         const userChanged = webdavUserInput && webdavUserCur !== (layout.settings.webdavUser || '');
-        const passChanged = webdavPassInput && passCur && passCur !== (layout.settings.webdavPass || '');
-        const gistChanged = gistTokenInput && gistCur && gistCur !== (layout.settings.gistToken || '');
-        if (!urlChanged && !userChanged && !passChanged && !gistChanged) return;
+        const passChanged = webdavPassInput && webdavPassReady && passCur !== '' && passCur !== (webdavPassBaseline || '');
+        const gistChanged = gistTokenInput && gistTokenReady && gistCur !== '' && gistCur !== (gistTokenBaseline || '');
+        if (!urlChanged && !userChanged && !passChanged && !gistChanged && !__credDirty) return;
         if (urlChanged) layout.settings.webdavUrl = webdavUrlCur;
         if (userChanged) layout.settings.webdavUser = webdavUserCur;
-        const encPass = passCur ? await encryptCredential(passCur) : null;
-        const encGist = gistCur ? await encryptCredential(gistCur) : null;
-        layout.settings._encWebdavPass = encPass;
-        layout.settings._encGistToken = encGist;
+        if (passChanged) layout.settings._encWebdavPass = await encryptCredential(passCur);
+        if (gistChanged) layout.settings._encGistToken = await encryptCredential(gistCur);
+        // Update the baselines so a later flush with the same inputs does not re-encrypt
+        // a fresh ciphertext every time (AC2: only genuinely changed secrets are written).
+        if (passChanged) webdavPassBaseline = passCur;
+        if (gistChanged) gistTokenBaseline = gistCur;
+        __credDirty = false;
         saveLayout();
         debug('flushUnsavedCredentials: committed', { webdavUrl: webdavUrlCur ? '(set)' : '(empty)', pass: passCur ? '(set)' : '(empty)', gist: gistCur ? '(set)' : '(empty)' });
       } catch (e) { debugErr('flushUnsavedCredentials failed', e); }
     }
     window.__boxingFlushCredentials = flushUnsavedCredentials;
+    // Ticket 81 test seam (mirrors the __boxingFlushCredentials pattern): lets a spec
+    // deterministically pin the "pagehide while credential decryption is still in
+    // flight" state (D5 AC3) — the boot-time decrypt window is too short to race in CI.
+    window.__boxingSetCredentialDecryptPending = (pending) => { webdavPassReady = !pending; gistTokenReady = !pending; };
     // WebDAV test connection button
     webdavTestBtn?.addEventListener('click', async () => {
       webdavTestBtn.textContent = i18n('webdavTesting');
