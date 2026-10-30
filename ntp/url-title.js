@@ -142,6 +142,14 @@ export function extractTitleByType(url, type) {
   }
 }
 
+/**
+ * Match a Chrome match-pattern subset against a URL string.
+ * Patterns longer than MAX_PATTERN_LENGTH or containing more than
+ * MAX_PATTERN_WILDCARDS wildcards are rejected before matching.
+ * @param {string} pattern rule pattern, e.g. 'https://github.com/<*>/<*>'
+ * @param {string} urlStr candidate URL string
+ * @returns {boolean} true when the pattern matches the URL
+ */
 export function matchPattern(pattern, urlStr) {
   let url;
   try {
