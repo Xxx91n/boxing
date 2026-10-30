@@ -202,8 +202,28 @@ export function matchPattern(pattern, urlStr) {
   // Path
   if (pathPart === '/*') return true;
 
-  const regexStr = '^' + pathPart.split('*').map(s => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$';
-  return new RegExp(regexStr).test(url.pathname);
+  // Bounded matcher: '*' matches zero or more characters, other characters match
+  // literally. Runs in O(pattern.length * pathname.length) without regex
+  // backtracking, so separated wildcards cannot stall title derivation.
+  const pathname = url.pathname;
+  let prev = new Array(pathname.length + 1).fill(false);
+  prev[0] = true;
+  for (const ch of pathPart) {
+    const next = new Array(pathname.length + 1).fill(false);
+    if (ch === '*') {
+      let run = false;
+      for (let i = 0; i <= pathname.length; i++) {
+        if (prev[i]) run = true;
+        if (run) next[i] = true;
+      }
+    } else {
+      for (let i = 0; i < pathname.length; i++) {
+        if (prev[i] && pathname[i] === ch) next[i + 1] = true;
+      }
+    }
+    prev = next;
+  }
+  return prev[pathname.length];
 }
 
 /**
