@@ -796,25 +796,32 @@ export function bindSyncBackupUi() {
     (async () => {
       try {
         let migrated = false;
+        // CodeRabbit D5 follow-up: snapshot each secret input before decryption starts so
+        // a user edit made while decryptCredential is pending is not overwritten on
+        // completion (the decrypt baseline still tracks the stored secret).
+        const webdavPassInputAtStart = webdavPassInput ? webdavPassInput.value : '';
+        const gistTokenInputAtStart = gistTokenInput ? gistTokenInput.value : '';
         if (layout.settings._encWebdavPass && webdavPassInput) {
           webdavPassReady = false;
-          webdavPassInput.value = await decryptCredential(layout.settings._encWebdavPass);
-          webdavPassBaseline = webdavPassInput.value;
+          const decryptedWebdavPass = await decryptCredential(layout.settings._encWebdavPass);
+          if (webdavPassInput.value === webdavPassInputAtStart) webdavPassInput.value = decryptedWebdavPass;
+          webdavPassBaseline = decryptedWebdavPass;
           webdavPassReady = true;
           // Ticket 81 lazy migration: rewrite legacy v1/v2/string envelopes as v3
           // (per-install key) so stored records converge without a one-shot pass.
-          if (webdavPassInput.value) {
-            const upgraded = await encryptCredential(webdavPassInput.value);
+          if (decryptedWebdavPass) {
+            const upgraded = await encryptCredential(decryptedWebdavPass);
             if (upgraded && layout.settings._encWebdavPass !== upgraded) { layout.settings._encWebdavPass = upgraded; migrated = true; }
           }
         }
         if (layout.settings._encGistToken && gistTokenInput) {
           gistTokenReady = false;
-          gistTokenInput.value = await decryptCredential(layout.settings._encGistToken);
-          gistTokenBaseline = gistTokenInput.value;
+          const decryptedGistToken = await decryptCredential(layout.settings._encGistToken);
+          if (gistTokenInput.value === gistTokenInputAtStart) gistTokenInput.value = decryptedGistToken;
+          gistTokenBaseline = decryptedGistToken;
           gistTokenReady = true;
-          if (gistTokenInput.value) {
-            const upgraded = await encryptCredential(gistTokenInput.value);
+          if (decryptedGistToken) {
+            const upgraded = await encryptCredential(decryptedGistToken);
             if (upgraded && layout.settings._encGistToken !== upgraded) { layout.settings._encGistToken = upgraded; migrated = true; }
           }
         }
@@ -929,12 +936,17 @@ export function bindSyncBackupUi() {
         if (!urlChanged && !userChanged && !passChanged && !gistChanged && !__credDirty) return;
         if (urlChanged) layout.settings.webdavUrl = webdavUrlCur;
         if (userChanged) layout.settings.webdavUser = webdavUserCur;
-        if (passChanged) layout.settings._encWebdavPass = await encryptCredential(passCur);
-        if (gistChanged) layout.settings._encGistToken = await encryptCredential(gistCur);
-        // Update the baselines so a later flush with the same inputs does not re-encrypt
-        // a fresh ciphertext every time (AC2: only genuinely changed secrets are written).
-        if (passChanged) webdavPassBaseline = passCur;
-        if (gistChanged) gistTokenBaseline = gistCur;
+        // CodeRabbit D5 follow-up: store a new envelope and advance the baseline only when
+        // encryption succeeds — a null result keeps the stored envelope and lets a later
+        // flush retry with the same inputs (each secret handled independently).
+        if (passChanged) {
+          const encPass = await encryptCredential(passCur);
+          if (encPass) { layout.settings._encWebdavPass = encPass; webdavPassBaseline = passCur; }
+        }
+        if (gistChanged) {
+          const encGist = await encryptCredential(gistCur);
+          if (encGist) { layout.settings._encGistToken = encGist; gistTokenBaseline = gistCur; }
+        }
         __credDirty = false;
         saveLayout();
         debug('flushUnsavedCredentials: committed', { webdavUrl: webdavUrlCur ? '(set)' : '(empty)', pass: passCur ? '(set)' : '(empty)', gist: gistCur ? '(set)' : '(empty)' });

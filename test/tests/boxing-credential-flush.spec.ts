@@ -36,7 +36,7 @@ test.describe('Ticket 81 D5: credential flush keeps stored envelopes ', () => {
     await resetFresh(page);
     // Seed a stored sync config whose secrets were never filled into the inputs
     // (cleared password box / decrypt never populated the field).
-    const seeded = await page.evaluate(async () => {
+    const seeded = await page.evaluate(async ({ url, user }) => {
       const dbg = (window as any).__boxingDebug;
       const enc = (window as any).__boxingEncryptCredential;
       dbg.layout.settings.webdavUrl = 'https://old.invalid/dav/';
@@ -47,14 +47,14 @@ test.describe('Ticket 81 D5: credential flush keeps stored envelopes ', () => {
       const userInput = document.getElementById('webdav-user');
       const passInput = document.getElementById('webdav-pass');
       const gistInput = document.getElementById('gist-token');
-      if (urlInput) urlInput.value = WEBDAV_URL;
-      if (userInput) userInput.value = WEBDAV_USER;
+      if (urlInput) urlInput.value = url;
+      if (userInput) userInput.value = user;
       if (passInput) passInput.value = '';
       if (gistInput) gistInput.value = '';
       const modal = document.getElementById('settings-modal');
       if (modal) modal.hidden = false;
       return { envPass: dbg.layout.settings._encWebdavPass, envToken: dbg.layout.settings._encGistToken };
-    });
+    }, { url: WEBDAV_URL, user: WEBDAV_USER });
     await page.evaluate(() => (window as any).__boxingFlushCredentials?.());
     await page.waitForTimeout(50);
     const after = await page.evaluate(async () => {
@@ -79,7 +79,7 @@ test.describe('Ticket 81 D5: credential flush keeps stored envelopes ', () => {
 
   test('a genuinely changed password is re-encrypted exactly once', async ({ page }) => {
     await resetFresh(page);
-    const before = await page.evaluate(async () => {
+    const before = await page.evaluate(async ({ url }) => {
       const dbg = (window as any).__boxingDebug;
       const enc = (window as any).__boxingEncryptCredential;
       const seeded = await enc('spec-pass');
@@ -87,9 +87,9 @@ test.describe('Ticket 81 D5: credential flush keeps stored envelopes ', () => {
       const passInput = document.getElementById('webdav-pass');
       if (passInput) passInput.value = 'brand-new-pass';
       const urlInput = document.getElementById('webdav-url');
-      if (urlInput) urlInput.value = WEBDAV_URL;
+      if (urlInput) urlInput.value = url;
       return seeded;
-    });
+    }, { url: WEBDAV_URL });
     await page.evaluate(() => (window as any).__boxingFlushCredentials?.());
     await page.waitForTimeout(50);
     const first = await page.evaluate(async () => {
@@ -99,18 +99,18 @@ test.describe('Ticket 81 D5: credential flush keeps stored envelopes ', () => {
       return { env, plain: await dec(env) };
     });
     // The changed secret got a fresh envelope with the new plaintext…
-    expect(first.env).not.toBe(before);
+    expect(first.env).not.toEqual(before);
     expect(first.plain).toBe('brand-new-pass');
     // …and a second flush with the same inputs does NOT re-encrypt (no ciphertext churn).
     await page.evaluate(() => (window as any).__boxingFlushCredentials?.());
     await page.waitForTimeout(50);
     const second = await page.evaluate(() => (window as any).__boxingDebug.layout.settings._encWebdavPass);
-    expect(second).toBe(first.env);
+    expect(second).toEqual(first.env);
   });
 
   test('flush while credential decryption is pending keeps the stored envelopes', async ({ page }) => {
     await resetFresh(page);
-    const seeded = await page.evaluate(async () => {
+    const seeded = await page.evaluate(async ({ url, user }) => {
       const dbg = (window as any).__boxingDebug;
       const enc = (window as any).__boxingEncryptCredential;
       const envPass = await enc('spec-pass');
@@ -121,13 +121,13 @@ test.describe('Ticket 81 D5: credential flush keeps stored envelopes ', () => {
       dbg.layout.settings._encGistToken = envToken;
       const urlInput = document.getElementById('webdav-url');
       const userInput = document.getElementById('webdav-user');
-      if (urlInput) urlInput.value = WEBDAV_URL;
-      if (userInput) userInput.value = WEBDAV_USER;
+      if (urlInput) urlInput.value = url;
+      if (userInput) userInput.value = user;
       // Pin the boot-time window where the decrypt IIFE has not completed: inputs are
       // not yet filled with the secrets, and the decrypt gate is still pending.
       (window as any).__boxingSetCredentialDecryptPending(true);
       return { envPass, envToken };
-    });
+    }, { url: WEBDAV_URL, user: WEBDAV_USER });
     await page.evaluate(() => (window as any).__boxingFlushCredentials?.());
     await page.waitForTimeout(50);
     const after = await page.evaluate(() => {
@@ -143,8 +143,8 @@ test.describe('Ticket 81 D5: credential flush keeps stored envelopes ', () => {
     expect(after.url).toBe(WEBDAV_URL);
     expect(after.user).toBe(WEBDAV_USER);
     // …but the envelopes are never cleared while decryption is in flight (D5 AC3).
-    expect(after.pass).toBe(seeded.envPass);
-    expect(after.token).toBe(seeded.envToken);
+    expect(after.pass).toEqual(seeded.envPass);
+    expect(after.token).toEqual(seeded.envToken);
     // Once decryption is considered complete, an empty input still keeps the envelope
     // while a genuinely new secret is re-encrypted.
     await page.evaluate(async () => {
@@ -162,7 +162,7 @@ test.describe('Ticket 81 D5: credential flush keeps stored envelopes ', () => {
         token: await dec(dbg.layout.settings._encGistToken),
       };
     });
-    expect(final.pass).toBe('updated-pass');
-    expect(final.token).toBe('spec-token');
+    expect(final.pass).toEqual('updated-pass');
+    expect(final.token).toEqual('spec-token');
   });
 });
