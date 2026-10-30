@@ -36,6 +36,19 @@ export const DEFAULT_AUTO_TITLE_RULES = [
   { pattern: 'https://*/*', type: 'domain-main' }
 ];
 
+// D8 (ticket 84): rule-engine boundaries. Wildcards expand to `.*`, so cap both
+// total pattern length and wildcard count: over-limit rules are rejected by
+// matchPattern and the engine predictably degrades to the next rule / fallback.
+export const MAX_PATTERN_LENGTH = 256;
+export const MAX_PATTERN_WILDCARDS = 8;
+
+/**
+ * Parse a hostname into full host, eTLD+1 domain main, and subdomain parts.
+ * IP literals, bracketed forms, and host:port inputs are treated as a single
+ * host with no subdomain; multi-part TLDs (e.g. co.uk) keep their public suffix.
+ * @param {string} hostname hostname string (may include brackets or port)
+ * @returns {{fullHost: string, domainMain: string, subdomain: string}} parsed parts
+ */
 export function parseDomain(hostname) {
   if (!hostname || typeof hostname !== 'string') {
     return { fullHost: '', domainMain: '', subdomain: '' };
@@ -61,44 +74,82 @@ export function parseDomain(hostname) {
   return { fullHost: host, domainMain: host, subdomain: '' };
 }
 
+// D8 (ticket 84): a malformed percent-encoding (e.g. `%zz`) makes decodeURIComponent
+// throw URIError; degrade to hostname/domain instead of surfacing an uncaught exception.
+/**
+ * Decode a single percent-encoded path segment.
+ * Returns an empty string when the encoding is malformed (decodeURIComponent throws),
+ * letting callers fall back to the domain instead of surfacing an uncaught URIError.
+ * @param {string} segment raw percent-encoded segment
+ * @returns {string} decoded segment, or '' on malformed input
+ */
+function safeDecode(segment) {
+  try {
+    return decodeURIComponent(segment);
+  } catch (_) {
+    return '';
+  }
+}
+
+/**
+ * Extract an auto-title from a parsed URL for the given extraction type.
+ * Path decoding failures and empty path segments fall back to the domain main
+ * (or hostname when no domain main is available).
+ * @param {URL} url parsed URL object
+ * @param {string} type one of EXTRACTION_TYPES
+ * @returns {string} extracted title or fallback value
+ */
 export function extractTitleByType(url, type) {
   const domainInfo = parseDomain(url.hostname);
   const segments = url.pathname.split('/').filter(Boolean);
+  const fallback = domainInfo.domainMain || url.hostname;
 
   switch (type) {
     case 'domain-main':
-      return domainInfo.domainMain || url.hostname;
+      return fallback;
     case 'full-host':
       return domainInfo.fullHost || url.hostname;
     case 'subdomain':
-      return domainInfo.subdomain || domainInfo.domainMain || url.hostname;
-    case 'first-path':
-      return segments.length > 0 ? decodeURIComponent(segments[0]) : (domainInfo.domainMain || url.hostname);
+      return domainInfo.subdomain || fallback;
+    case 'first-path': {
+      if (segments.length === 0) return fallback;
+      return safeDecode(segments[0]) || fallback;
+    }
     case 'last-path': {
-      if (segments.length === 0) return domainInfo.domainMain || url.hostname;
-      let last = decodeURIComponent(segments[segments.length - 1]);
+      if (segments.length === 0) return fallback;
+      let last = safeDecode(segments[segments.length - 1]);
       last = last.replace(/\.(html?|php|aspx?|jsp)$/i, '');
-      return last || domainInfo.domainMain || url.hostname;
+      return last || fallback;
     }
     case 'first-two-paths': {
-      if (segments.length === 0) return domainInfo.domainMain || url.hostname;
-      if (segments.length === 1) return decodeURIComponent(segments[0]);
-      return `${decodeURIComponent(segments[0])}/${decodeURIComponent(segments[1])}`;
+      if (segments.length === 0) return fallback;
+      const first = safeDecode(segments[0]);
+      if (!first) return fallback;
+      if (segments.length === 1) return first;
+      const second = safeDecode(segments[1]);
+      if (!second) return fallback;
+      return `${first}/${second}`;
     }
     case 'domain-first-path': {
-      const dm = domainInfo.domainMain || url.hostname;
-      if (segments.length > 0) {
-        return `${dm}/${decodeURIComponent(segments[0])}`;
-      }
-      return dm;
+      if (segments.length === 0) return fallback;
+      const first = safeDecode(segments[0]);
+      return first ? `${fallback}/${first}` : fallback;
     }
     case 'full-url':
       return url.href;
     default:
-      return domainInfo.domainMain || url.hostname;
+      return fallback;
   }
 }
 
+/**
+ * Match a Chrome match-pattern subset against a URL string.
+ * Patterns longer than MAX_PATTERN_LENGTH or containing more than
+ * MAX_PATTERN_WILDCARDS wildcards are rejected before matching.
+ * @param {string} pattern rule pattern, e.g. 'https://github.com/<*>/<*>'
+ * @param {string} urlStr candidate URL string
+ * @returns {boolean} true when the pattern matches the URL
+ */
 export function matchPattern(pattern, urlStr) {
   let url;
   try {
@@ -109,6 +160,13 @@ export function matchPattern(pattern, urlStr) {
   if (!pattern || typeof pattern !== 'string') return false;
   pattern = pattern.trim();
   if (pattern === '<all_urls>') return true;
+  // D8: reject pathological rules before they can compile into an expensive matcher.
+  if (pattern.length > MAX_PATTERN_LENGTH) return false;
+  let wildcardCount = 0;
+  for (const ch of pattern) {
+    if (ch === '*') wildcardCount++;
+  }
+  if (wildcardCount > MAX_PATTERN_WILDCARDS) return false;
 
   const schemeSep = pattern.indexOf('://');
   if (schemeSep === -1) return false;
@@ -144,10 +202,39 @@ export function matchPattern(pattern, urlStr) {
   // Path
   if (pathPart === '/*') return true;
 
-  const regexStr = '^' + pathPart.split('*').map(s => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$';
-  return new RegExp(regexStr).test(url.pathname);
+  // Bounded matcher: '*' matches zero or more characters, other characters match
+  // literally. Runs in O(pattern.length * pathname.length) without regex
+  // backtracking, so separated wildcards cannot stall title derivation.
+  const pathname = url.pathname;
+  let prev = new Array(pathname.length + 1).fill(false);
+  prev[0] = true;
+  for (const ch of pathPart) {
+    const next = new Array(pathname.length + 1).fill(false);
+    if (ch === '*') {
+      let run = false;
+      for (let i = 0; i <= pathname.length; i++) {
+        if (prev[i]) run = true;
+        if (run) next[i] = true;
+      }
+    } else {
+      for (let i = 0; i < pathname.length; i++) {
+        if (prev[i] && pathname[i] === ch) next[i + 1] = true;
+      }
+    }
+    prev = next;
+  }
+  return prev[pathname.length];
 }
 
+/**
+ * Derive an auto-title from a URL string using the supplied rules.
+ * Falls back to DEFAULT_AUTO_TITLE_RULES when rules are empty, and to the
+ * domain main / hostname when no rule yields a non-empty title.
+ * @param {string} urlStr candidate URL string
+ * @param {Array<{pattern: string, type: string}>} rules ordered title rules
+ * @param {boolean} enabled whether auto-title derivation is enabled
+ * @returns {string} derived title, or '' for invalid input
+ */
 export function deriveTitleFromUrl(urlStr, rules, enabled = true) {
   if (!urlStr || typeof urlStr !== 'string') return '';
   let url;
@@ -170,6 +257,14 @@ export function deriveTitleFromUrl(urlStr, rules, enabled = true) {
   return extractTitleByType(url, 'domain-main') || url.hostname;
 }
 
+/**
+ * Wire URL/title inputs to derive auto-titles on input (debounced) and blur.
+ * Tracks user edits so manually typed titles are not overwritten.
+ * @param {HTMLElement} urlInput URL input element
+ * @param {HTMLElement} titleInput title input element
+ * @param {() => object} getSettings function returning current settings
+ * @returns {void}
+ */
 export function attachAutoTitleHelper(urlInput, titleInput, getSettings) {
   if (!urlInput || !titleInput) return;
   let lastAutoTitle = '';
@@ -210,6 +305,13 @@ export function attachAutoTitleHelper(urlInput, titleInput, getSettings) {
   });
 }
 // Submit-time / shared call-site helper: derived title, else hostname, else raw string.
+/**
+ * Shared call-site helper: return the derived title, else the hostname, else the raw string.
+ * Never throws on invalid URLs.
+ * @param {string} urlStr candidate URL string
+ * @param {object} settings settings object carrying autoTitleRules / autoTitleEnabled
+ * @returns {string} derived title, hostname, or raw string
+ */
 export function deriveTitleOrHostname(urlStr, settings) {
   const s = settings || {};
   try {

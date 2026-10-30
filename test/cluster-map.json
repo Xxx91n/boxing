@@ -229,7 +229,8 @@
       "boxing-search.spec.ts"
     ],
     "ntp/url-title.js": [
-      "boxing-wave10-1016.spec.ts"
+      "boxing-wave10-1016.spec.ts",
+      "boxing-url-title-boundary.spec.ts"
     ]
   }
 }
