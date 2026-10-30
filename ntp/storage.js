@@ -172,6 +172,17 @@ export function registerStorageOnChanged() {
   // Compatible with the schemaVersion field; sync transport unchanged.
   const SNAP_KEY_PREFIX = 'snap.v1.';
   const SNAP_INDEX_KEY = 'snap.v1.index';
+  // Measurement basis (issue 71, deferred): every size ceiling here and every index
+  // `size` field compares String.length — UTF-16 code units, not UTF-8 bytes — so
+  // non-ASCII payloads under-count real usage (pure BMP CJK measures roughly
+  // one-third of its UTF-8 byte size). The same unit governs every store reusing
+  // these constants (snap.v1.*, boxingLayout.conflict.*, snap.guard.v1.*,
+  // boxingLayout.corrupt.*); the 8MB total cap itself applies only to the snapshot
+  // and guard namespaces, which additionally cap entry count (30 and 20
+  // respectively) — the conflict/corrupt stores cap by count only.
+  // Converting to UTF-8 byte metering is a cross-module contract change (rotation
+  // trigger points, index size semantics, backward compat) — deferred, never
+  // unilateral.
   const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;
   const MAX_SNAPSHOTS_TOTAL_BYTES = 8 * 1024 * 1024;
   const HOUR_MS = 3600000;
