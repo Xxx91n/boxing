@@ -331,6 +331,32 @@ export function initSyncEngineFacade(deps) {
       return catastrophic || significant;
     }
 
+    // Ticket 83 (V-10/V-11): the page-direct fallback uses the same transport policy
+    // as the background proxy — redirects stay manual (opaque redirects are refused)
+    // and GET bodies are read with a byte cap so a hostile server cannot flood the
+    // extension process through the fallback path either.
+    const WEBDAV_GET_MAX_BYTES = 2 * 1024 * 1024; // 2 MiB; same budget as the BG PUT guard.
+    async function readWebDAVBodyCapped(resp) {
+      if (!resp || !resp.body) return resp ? await resp.text() : '';
+      const reader = resp.body.getReader();
+      const chunks = [];
+      let total = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.byteLength;
+        if (total > WEBDAV_GET_MAX_BYTES) {
+          try { await reader.cancel(); } catch (_) {}
+          throw new Error('webdav-get response too large');
+        }
+        chunks.push(value);
+      }
+      const joined = new Uint8Array(total);
+      let offset = 0;
+      for (const chunk of chunks) { joined.set(chunk, offset); offset += chunk.byteLength; }
+      return new TextDecoder().decode(joined);
+    }
+
     async function webdavGetCloud(fileUrl, user, pass) {
       let status, body;
       try {
@@ -340,8 +366,9 @@ export function initSyncEngineFacade(deps) {
         debug('WebDAV GET via BG failed, trying direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
         const h = new Headers();
         if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
-        const resp = await fetch(fileUrl, { method: 'GET', headers: h, redirect: 'follow' });
-        status = resp.status; body = resp.ok ? await resp.text() : null;
+        const resp = await fetch(fileUrl, { method: 'GET', headers: h, redirect: 'manual' });
+        if (resp.type === 'opaqueredirect') throw new Error(i18n('webdavErrNetwork'));
+        status = resp.status; body = resp.ok ? await readWebDAVBodyCapped(resp) : null;
       }
       debug('WebDAV GET cloud:', { status, bodyLen: body?.length || 0 });
       if (status === 404) return null;
@@ -360,7 +387,8 @@ export function initSyncEngineFacade(deps) {
         debug('WebDAV PUT via BG failed, trying direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
         const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
         if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
-        const resp = await fetch(fileUrl, { method: 'PUT', headers: h, body, redirect: 'follow' });
+        const resp = await fetch(fileUrl, { method: 'PUT', headers: h, body, redirect: 'manual' });
+        if (resp.type === 'opaqueredirect') throw new Error(i18n('webdavErrNetwork'));
         status = resp.status; ok = resp.ok;
       }
       if (status === 401 || status === 403) throw new Error(i18n('webdavErrAuth', [status]));
