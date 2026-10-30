@@ -30,6 +30,9 @@ on:
         type: boolean
 
 permissions:
+  # D2 (ticket 77): least privilege for a release workflow — contents: write
+  # is required to publish the GitHub Release + artifacts; actions: write is
+  # required by the final step to dispatch demo-deploy via workflow_dispatch.
   contents: write
   actions: write
 
@@ -47,10 +50,10 @@ jobs:
         shell: bash
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
 
@@ -188,7 +191,7 @@ jobs:
           ls -l "dist/boxing-chrome-${VER}.zip" "dist/boxing-chrome-${VER}.crx" "dist/boxing-firefox-${VER}.zip" "dist/boxing-firefox-${VER}.xpi"
 
       - name: Upload all 4 artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           # v4 artifact names are global per run: three matrix legs sharing one
           # name collide, so each leg uploads under its own name.
@@ -229,7 +232,7 @@ jobs:
 
       - name: Publish GitHub Release (store zips only)
         if: matrix.os == 'ubuntu-latest' && github.event.inputs.make_release == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
           tag_name: ${{ github.event.inputs.release_tag != '' && github.event.inputs.release_tag || format('v{0}', steps.ver.outputs.version) }}
           name: Boxing ${{ steps.ver.outputs.version }}
