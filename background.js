@@ -72,6 +72,10 @@ try {
   // SECURITY (BX-AUD-01/02/03) — v3.7.10: harden the background WebDAV proxy against abuse.
   const BG_MAX_URL = 2048;
   const BG_MAX_BODY = 2 * 1024 * 1024; // 2 MiB; Service Worker memory-budget safe.
+  // Ticket 83 (V-11): the WebDAV GET response is read with the same byte budget as
+  // PUT — an oversized or hostile server response must abort instead of filling the
+  // service worker's memory.
+  const BG_MAX_GET_BODY = 2 * 1024 * 1024; // 2 MiB; same budget as BG_MAX_BODY.
   // BX-AUD-01: refuse hostnames that resolve to private / loopback / link-local addresses.
   const BG_PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fe80:|fc00:|fd00:)/i;
 
@@ -209,6 +213,31 @@ try {
     return { status: resp.status, ok: resp.ok };
   }
 
+  // Ticket 83 (V-11): stream the GET body with a byte cap. When the cap is exceeded
+  // the response is cancelled and a recognizable error is thrown instead of buffering
+  // unbounded data into the service worker. Same policy as the page-direct fallback
+  // in ntp/sync-engine.js so both WebDAV paths agree.
+  async function readCappedBody(resp, capBytes) {
+    if (!resp || !resp.body) return resp ? await resp.text() : '';
+    const reader = resp.body.getReader();
+    const chunks = [];
+    let total = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > capBytes) {
+        try { await reader.cancel(); } catch (_) {}
+        throw new Error('webdav-get response too large');
+      }
+      chunks.push(value);
+    }
+    const joined = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) { joined.set(chunk, offset); offset += chunk.byteLength; }
+    return new TextDecoder().decode(joined);
+  }
+
   // GET cloud backup file for sync comparison. Returns status + body text on success.
   async function handleWebDAVGet(msg) {
     const { url, user, pass } = msg;
@@ -223,7 +252,7 @@ try {
     }
     if (resp.status === 404) { return { status: 404, ok: false, body: null }; }
     if (resp.status === 401 || resp.status === 403) { return { status: resp.status, ok: false, body: null }; }
-    const body = await resp.text();
+    const body = await readCappedBody(resp, BG_MAX_GET_BODY);
     return { status: resp.status, ok: resp.ok, body };
   }
 

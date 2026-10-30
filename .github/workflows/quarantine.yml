@@ -17,6 +17,11 @@ on:
 concurrency:
   group: quarantine-patrol
   cancel-in-progress: true
+permissions:
+  # D2 (ticket 77): checkout + setup-node need contents: read; the Playwright
+  # cache action needs actions: read.
+  contents: read
+  actions: read
 
 jobs:
   quarantine:
@@ -24,14 +29,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: .nvmrc
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: ~/.cache/ms-playwright
           key: playwright-quarantine-${{ hashFiles('package-lock.json') }}

@@ -281,3 +281,98 @@ test.describe('WebDAV private-host opt-in propagation (ticket 90)', () => {
     expect(err).toBeNull();
   });
 });
+
+// Ticket 83 (V-10/V-11): WebDAV transport hardening — the page-direct fallback must
+// refuse opaque redirects (same manual-redirect policy as the background proxy) and
+// cap GET response bodies with a recognizable oversized-response error instead of
+// buffering an unbounded body into the extension process.
+test.describe('WebDAV transport hardening (ticket 83)', () => {
+  // Simulates the direct fetch used when the background path is forced offline.
+  // 'opaqueredirect' -> a redirect that manual mode surfaces as an opaque response;
+  // 'too-large' -> a 3 MiB body (exceeds the 2 MiB GET cap). Other requests pass
+  // through to the real fetch.
+  async function bootWithFetchMock(page: Page, mode: 'opaqueredirect' | 'too-large') {
+    await page.addInitScript(({ mode }) => {
+      const realFetch = window.fetch.bind(window);
+      (window as any).__fetchCalls = [];
+      (window as any).fetch = (input: any, init: any) => {
+        const url = typeof input === 'string' ? input : (input && input.url) || '';
+        (window as any).__fetchCalls.push({ url: String(url), init });
+        if (String(url).includes('webdav.invalid')) {
+          if (mode === 'opaqueredirect') {
+            return Promise.resolve({ type: 'opaqueredirect', status: 0, ok: false });
+          }
+          if (mode === 'too-large') {
+            const payload = new Uint8Array(3 * 1024 * 1024); // 3 MiB > 2 MiB cap
+            return Promise.resolve({
+              type: 'default',
+              status: 200,
+              ok: true,
+              body: new ReadableStream({ start(controller) { controller.enqueue(payload); controller.close(); } }),
+            });
+          }
+        }
+        return realFetch(input, init);
+      };
+    }, { mode });
+  }
+
+  async function seedWebDAVCreds(page: Page) {
+    await page.evaluate((url) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.webdavUrl = url;
+      dbg.layout.settings.webdavUser = 'test@example.com';
+      dbg.layout.settings._encWebdavPass = null;
+      const pass = document.getElementById('webdav-pass') as HTMLInputElement | null;
+      if (pass) pass.value = 'testpass';
+    }, WEBDAV_URL);
+  }
+
+  test('direct GET fallback refuses opaque redirect (V-10)', async ({ page }) => {
+    await bootWithFetchMock(page, 'opaqueredirect');
+    await bootWithMockRuntime(page, (msg) => ({ success: false, error: 'bg down' }));
+    await resetBoxing(page);
+    await seedWebDAVCreds(page);
+    const err = await page.evaluate(async () => {
+      try { await (window as any).__boxingDebug.syncWebDAV({ bypassLossGuard: true }); return null; }
+      catch (e) { return e.message; }
+    });
+    expect(err).toBe('Cannot reach WebDAV server — check URL or network');
+    const calls = await page.evaluate(() => (window as any).__fetchCalls);
+    const getCall = calls.find((c: any) => c.init && c.init.method === 'GET');
+    expect(getCall).toBeTruthy();
+    expect(getCall.init.redirect).toBe('manual');
+  });
+
+  test('direct PUT fallback refuses opaque redirect (V-10)', async ({ page }) => {
+    await bootWithFetchMock(page, 'opaqueredirect');
+    await bootWithMockRuntime(page, (msg) => ({ success: false, error: 'bg down' }));
+    await resetBoxing(page);
+    await seedWebDAVCreds(page);
+    const err = await page.evaluate(async () => {
+      try { await (window as any).__boxingDebug.backupWebDAV(); return null; }
+      catch (e) { return e.message; }
+    });
+    expect(err).toBe('Cannot reach WebDAV server — check URL or network');
+    const calls = await page.evaluate(() => (window as any).__fetchCalls);
+    const putCall = calls.find((c: any) => c.init && c.init.method === 'PUT');
+    expect(putCall).toBeTruthy();
+    expect(putCall.init.redirect).toBe('manual');
+  });
+
+  test('direct GET fallback caps oversized response (V-11)', async ({ page }) => {
+    await bootWithFetchMock(page, 'too-large');
+    await bootWithMockRuntime(page, (msg) => ({ success: false, error: 'bg down' }));
+    await resetBoxing(page);
+    await seedWebDAVCreds(page);
+    const err = await page.evaluate(async () => {
+      try { await (window as any).__boxingDebug.syncWebDAV({ bypassLossGuard: true }); return null; }
+      catch (e) { return e.message; }
+    });
+    expect(err).toContain('webdav-get response too large');
+    const calls = await page.evaluate(() => (window as any).__fetchCalls);
+    const getCall = calls.find((c: any) => c.init && c.init.method === 'GET');
+    expect(getCall).toBeTruthy();
+    expect(getCall.init.redirect).toBe('manual');
+  });
+});
