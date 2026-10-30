@@ -241,7 +241,7 @@ function splitRunSegments(run) {
 function segmentVerb(segment) {
   let cmd = segment.trim();
   cmd = cmd.replace(/^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+/, "");
-  cmd = cmd.replace(/^(?:if|then|else|elif|fi|time|sudo|env)\s+/, "");
+  cmd = cmd.replace(/^(?:if|then|else|elif|fi|time|sudo|env|command)\s+/, "");
   return cmd.split(/\s+/)[0] || "";
 }
 
