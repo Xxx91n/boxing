@@ -5,7 +5,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const EXTENSION_PATH = path.resolve(__dirname, '..');
+// Issue #70: the chromium-extension lane loads the built extension from
+// dist/boxing-chrome/ (AGENTS.md loading rule: Chrome loads from dist/, never
+// the repo root). The path is consumed only by this project's launch args.
+// CI builds before running tests; a local run needs `npm run build` first.
+const EXTENSION_PATH = path.resolve(__dirname, '..', 'dist', 'boxing-chrome');
 
 export default defineConfig({
   testDir: './tests',

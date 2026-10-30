@@ -5,7 +5,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const EXTENSION_PATH = path.resolve(__dirname, '..');
+// Issue #70: load the built extension (dist/boxing-chrome/), matching the main
+// config and the AGENTS.md loading rule — never the repo root. Requires
+// `npm run build` first when running locally (the quarantine workflow does not
+// build); the lane currently selects 0 tests (ticket 27).
+const EXTENSION_PATH = path.resolve(__dirname, '..', 'dist', 'boxing-chrome');
 
 // Quarantine lane (ticket 01, architecture-recovery): runs ONLY tests tagged
 // @quarantine in their titles. The main config (playwright.config.ts) excludes
