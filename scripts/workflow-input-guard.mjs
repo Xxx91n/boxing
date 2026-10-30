@@ -22,18 +22,51 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WORKFLOWS_DIR = path.join(ROOT, '.github', 'workflows');
 
 // Any reference to a workflow_dispatch input inside an expression, regardless
-// of dot/bracket indexing or surrounding functions:
+// of dot/bracket indexing, surrounding functions, or casing:
 //   ${{ github.event.inputs.version }}      (dot)
 //   ${{ inputs['version'] }}                (bracket)
 //   ${{ format('{0}', inputs.version) }}    (function-wrapped)
 //   ${{ fromJSON(github.event.inputs.obj).field }}
-const EXPRESSION_RE = /\$\{\{(.*?)\}\}/gs;
-const INPUT_REF_RE = /(?:github\.event\.)?inputs(?![A-Za-z0-9_])/;
+//   ${{ Inputs.version }}                   (context names are case-insensitive)
+const INPUT_REF_RE = /(?:github\.event\.)?inputs(?![A-Za-z0-9_])/i;
+
+// Extract `${{ ... }}` expressions, skipping `}}` inside single-quoted
+// string literals (e.g. format('{{ {0} }}', ...)) and `''` escapes.
+function extractExpressions(run) {
+  const exprs = [];
+  let i = 0;
+  while (i < run.length) {
+    const start = run.indexOf('${{', i);
+    if (start === -1) break;
+    let j = start + 3;
+    let inStr = false;
+    let end = -1;
+    while (j < run.length) {
+      const c = run[j];
+      if (inStr) {
+        if (c === "'") {
+          if (run[j + 1] === "'") { j += 2; continue; }
+          inStr = false;
+        }
+      } else if (c === "'") {
+        inStr = true;
+      } else if (c === '}' && run[j + 1] === '}') {
+        end = j + 2;
+        break;
+      }
+      j++;
+    }
+    exprs.push(end === -1 ? run.slice(start) : run.slice(start, end));
+    if (end === -1) break;
+    i = end;
+  }
+  return exprs;
+}
 
 function findInputRefs(run) {
   const hits = [];
-  for (const m of run.matchAll(EXPRESSION_RE)) {
-    if (INPUT_REF_RE.test(m[1])) hits.push(m[0]);
+  for (const expr of extractExpressions(run)) {
+    if (INPUT_REF_RE.test(expr)) hits.push(expr);
   }
   return hits;
 }
