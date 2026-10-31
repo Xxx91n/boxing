@@ -143,8 +143,8 @@ npm run build
 
 ### Prerequisites
 
-- Node.js >= 18
-- npm
+- Node.js ^20.17.0 || >=22.9.0
+- npm >= 11.10.0 (required so the 7-day release-age guard in .npmrc takes effect; see .nvmrc)
 
 ### Setup
 
