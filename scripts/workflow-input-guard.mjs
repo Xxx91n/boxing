@@ -281,6 +281,26 @@ function splitOutsideSubstitutions(line) {
 }
 
 /**
+ * Extract the bodies of all `$(...)` command substitutions in a shell line,
+ * tracking nesting so a `)` inside a nested substitution does not truncate
+ * the match. Returns inner texts without the `$(` / `)` delimiters.
+ */
+function extractSubstitutions(text) {
+  const out = [];
+  for (let i = 0; i < text.length - 1; i++) {
+    if (text[i] !== "$" || text[i + 1] !== "(") continue;
+    let depth = 1;
+    let j = i + 2;
+    for (; j < text.length && depth > 0; j++) {
+      if (text[j] === "(") depth += 1;
+      else if (text[j] === ")") depth -= 1;
+    }
+    if (depth === 0) out.push(text.slice(i + 2, j - 1));
+  }
+  return out;
+}
+
+/**
  * Strip leading environment assignments (FOO=1 BAR="x" CMD ...) and common
  * shell wrappers (if, then, else, elif, fi, time, sudo, env, command, !) so
  * the remainder starts with the real command. Wrappers may chain (command
@@ -384,10 +404,19 @@ function checkLockfileTools(doc, base) {
         if (res.toolInvoked) toolInvoked = true;
         // Command substitutions run in a subshell; check the inner command
         // too so `SIGNED=$(npx --yes crx3@latest ...)` cannot bypass D3.
-        for (const m of segment.matchAll(/\$\(([^)]+)\)/g)) {
-          const sub = checkCommandText(m[1]);
-          for (const v of sub.violations) violations.push(v);
-          if (sub.toolInvoked) toolInvoked = true;
+        // Substitutions may nest and may contain separators; extract balanced
+        // $(...) bodies, split each body with the same nesting-aware splitter
+        // as top-level commands, and recurse into nested substitutions so
+        // every inner command is checked.
+        const pending = extractSubstitutions(segment);
+        while (pending.length) {
+          const part = pending.pop();
+          for (const piece of splitOutsideSubstitutions(part)) {
+            const sub = checkCommandText(piece);
+            for (const v of sub.violations) violations.push(v);
+            if (sub.toolInvoked) toolInvoked = true;
+            pending.push(...extractSubstitutions(piece));
+          }
         }
         if (segmentVerb(segment) === "npm" && /\bnpm\s+ci\b/.test(segment) && ciIdx === -1) ciIdx = i;
       }
@@ -399,7 +428,7 @@ function checkLockfileTools(doc, base) {
       violations.push(`${base} :: job "${jobName}" calls crx3/web-ext without a strictly preceding "npm ci" step (spec D3: locked deps first)`);
     }
   }
-  return violations;
+  return [...new Set(violations)];
 }
 
 /**
