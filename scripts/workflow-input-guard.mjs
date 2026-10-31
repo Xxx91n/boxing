@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // CI workflow input guard (ticket 76 / spec D1, finding V-01), extended by
 // ticket 77 / spec D2 (finding V-02) with "uses pinned to commit SHA" and
-// "explicit workflow permissions".
+// "explicit workflow permissions", and by ticket 78 / spec D3 (finding V-03)
+// with "release signing uses lockfile tools only" (npm ci first, then
+// crx3/web-ext via npx --no-install or node_modules/.bin; no npx --yes).
 //
 // Contracts checked here:
 //   - No `run:` block may interpolate a workflow_dispatch input expression
@@ -16,6 +18,10 @@
 //     job-level override) and must not use the blanket `write-all` scope
 //     (spec D2). An empty permissions map is GitHub's explicit deny-all and
 //     is allowed.
+//   - No `run:` block may use `npx --yes`, and any job calling crx3/web-ext
+//     must run `npm ci` first and invoke the tools via `npx --no-install` or
+//     the local node_modules/.bin (spec D3). Signing steps must never pull
+//     un-pinned tool versions from the registry.
 //
 // Usage: node scripts/workflow-input-guard.mjs [--file extra.yml ...]
 // Exit 0 when the contracts hold, exit 1 with named violations otherwise.
@@ -189,6 +195,354 @@ function checkPermissions(doc, base) {
   return violations;
 }
 
+// Tools that release signing must source from the lockfile (spec D3).
+const LOCKFILE_TOOLS = ['crx3', 'web-ext'];
+const LOCKFILE_TOOL_PATTERN = LOCKFILE_TOOLS.join('|');
+
+/**
+ * Verify spec D3 contracts: no `npx --yes` anywhere in a run block, and any
+ * job that calls crx3/web-ext must have run `npm ci` in an earlier step and
+ * must invoke the tools via `npx --no-install` or the local node_modules/.bin
+ * — never a bare `npx <tool>` that would fall back to downloading an
+ * un-pinned version from the registry at signing time.
+ *
+ * @param {object} doc - Parsed workflow YAML document.
+ * @param {string} base - Workflow base name for violation messages.
+ * @returns {string[]} Violation messages (empty when the contract holds).
+ */
+
+/**
+ * Split a run block into shell command segments. Backslash-continued lines
+ * are joined first because the shell treats them as a single command
+ * (otherwise `npx \` + `--yes crx3@2.0.0` would hide both halves from the
+ * per-segment checks).
+ */
+function splitRunSegments(run) {
+  const joined = [];
+  let cur = "";
+  for (const line of run.split(/\r?\n/)) {
+    const continued = /(?<!\\)\\\s*$/.test(line);
+    const cleaned = continued ? line.replace(/\\\s*$/, "") : line;
+    cur = cur ? `${cur}${cleaned}` : cleaned;
+    if (continued) continue; // backslash continuation
+    joined.push(cur);
+    cur = "";
+  }
+  if (cur) joined.push(cur);
+  return joined.flatMap(splitOutsideSubstitutions);
+}
+
+/**
+ * Quote-aware scanner for shell command substitutions. Returns all balanced
+ * `$(...)` ranges (with `start` pointing at `$(`), ignoring parentheses inside
+ * single/double quotes and after `\`, while still recognising `$(` inside
+ * double quotes. Each substitution gets its own quote context so nested
+ * commands stay fully inspectable.
+ */
+function findSubstitutionRanges(text) {
+  const ranges = [];
+  function scanFrom(i) {
+    let quote = null;
+    let escaped = false;
+    while (i < text.length) {
+      const ch = text[i];
+      if (escaped) {
+        escaped = false;
+        i++;
+        continue;
+      }
+      if (ch === "\\" && quote !== "'") {
+        escaped = true;
+        i++;
+        continue;
+      }
+      if (quote) {
+        if (ch === quote) quote = null;
+        else if (quote === '"' && ch === "$" && text[i + 1] === "(") {
+          i = scanSubstitution(i + 2);
+          continue;
+        }
+        i++;
+        continue;
+      }
+      if (ch === "'" || ch === '"') {
+        quote = ch;
+        i++;
+        continue;
+      }
+      if (ch === "$" && text[i + 1] === "(") {
+        i = scanSubstitution(i + 2);
+        continue;
+      }
+      i++;
+    }
+  }
+  function scanSubstitution(bodyStart) {
+    let quote = null;
+    let escaped = false;
+    let i = bodyStart;
+    while (i < text.length) {
+      const ch = text[i];
+      if (escaped) {
+        escaped = false;
+        i++;
+        continue;
+      }
+      if (ch === "\\" && quote !== "'") {
+        escaped = true;
+        i++;
+        continue;
+      }
+      if (quote) {
+        if (ch === quote) quote = null;
+        else if (quote === '"' && ch === "$" && text[i + 1] === "(") {
+          i = scanSubstitution(i + 2);
+          continue;
+        }
+        i++;
+        continue;
+      }
+      if (ch === "'" || ch === '"') {
+        quote = ch;
+        i++;
+        continue;
+      }
+      if (ch === "$" && text[i + 1] === "(") {
+        i = scanSubstitution(i + 2);
+        continue;
+      }
+      if (ch === ")") {
+        ranges.push({ start: bodyStart - 2, bodyStart, bodyEnd: i });
+        return i + 1;
+      }
+      i++;
+    }
+    return text.length;
+  }
+  scanFrom(0);
+  return ranges;
+}
+
+/**
+ * Split a shell line on top-level separators (`|`, `||`, `&&`, `;`), keeping
+ * `$(...)` substitutions (including nested and quoted ones) intact.
+ */
+function splitOutsideSubstitutions(line) {
+  const parts = [];
+  const ranges = findSubstitutionRanges(line).sort((a, b) => a.start - b.start);
+  let ri = 0;
+  let cur = "";
+  let quote = null;
+  let escaped = false;
+  for (let i = 0; i < line.length; i++) {
+    while (ri < ranges.length && ranges[ri].start < i) ri++;
+    if (ri < ranges.length && ranges[ri].start === i) {
+      const r = ranges[ri];
+      cur += line.slice(i, r.bodyEnd + 1);
+      i = r.bodyEnd;
+      ri++;
+      continue;
+    }
+    const ch = line[i];
+    if (escaped) {
+      escaped = false;
+      cur += ch;
+      continue;
+    }
+    if (ch === "\\" && quote !== "'") {
+      escaped = true;
+      cur += ch;
+      continue;
+    }
+    if (quote) {
+      if (ch === quote) quote = null;
+      cur += ch;
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      quote = ch;
+      cur += ch;
+      continue;
+    }
+    if (ch === "|") {
+      if (line[i + 1] === "|") i += 1;
+      parts.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    if (ch === "&" && line[i + 1] === "&") {
+      parts.push(cur.trim());
+      cur = "";
+      i += 1;
+      continue;
+    }
+    if (ch === ";") {
+      parts.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
+}
+
+/**
+ * Extract the bodies of all `$(...)` command substitutions in a shell line,
+ * tracking nesting and quotes so a quoted `)` or `(` does not truncate or
+ * desync the match. Returns inner texts without the `$(` / `)` delimiters.
+ */
+function extractSubstitutions(text) {
+  return findSubstitutionRanges(text).map((r) => text.slice(r.bodyStart, r.bodyEnd));
+}
+
+/**
+ * Strip leading environment assignments (FOO=1 BAR="x" CMD ...) and common
+ * shell wrappers (if, then, else, elif, fi, time, sudo, env, command, !) so
+ * the remainder starts with the real command. Wrappers may chain (command
+ * command npx, if ! npx) and env assignments may precede them (FOO=1 command
+ * npx), so stripping repeats until nothing changes.
+ */
+function stripShellPrefixes(segment) {
+  let cmd = segment.trim();
+  const envRe = /^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\$\([^)]*\)|[^\s]*)\s+)+/;
+  const wrapperRe = /^(?:(?:if|then|else|elif|fi|time|sudo|env|command|!|\{|do|while|until)\s+|timeout\s+(?:-\S+\s+)*\S+\s+|\(\s*)+/;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    if (envRe.test(cmd)) {
+      cmd = cmd.replace(envRe, "");
+      changed = true;
+    }
+    if (wrapperRe.test(cmd)) {
+      cmd = cmd.replace(wrapperRe, "");
+      changed = true;
+    }
+  }
+  return cmd;
+}
+
+/**
+ * Return the shell verb of a command segment after stripping environment
+ * assignments and common leading keywords. Used to decide whether a segment
+ * really invokes a release tool instead of merely mentioning it (e.g.
+ * `echo crx3`).
+ */
+function segmentVerb(segment) {
+  return stripShellPrefixes(segment).split(/\s+/)[0] || "";
+}
+
+function checkLockfileTools(doc, base) {
+  const violations = [];
+  for (const [jobName, job] of Object.entries(doc.jobs || {})) {
+    if (!job || !Array.isArray(job.steps)) continue;
+    const steps = job.steps;
+    let ciIdx = -1;
+    let firstToolIdx = -1;
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (!step || typeof step.run !== 'string') continue;
+      const name = step.name || `<unnamed step ${i + 1}>`;
+      // Inspect each shell command segment so a permitted `npx --no-install
+      // <tool>` cannot mask a later bare `npx <tool>`, alternate options
+      // (e.g. `npx -y crx3`) cannot hide the tool name, `npm exec
+      // --package=<tool>` cannot bypass the npx-only filter, and
+      // informational text (e.g. `echo crx3`) cannot count as an invocation.
+      const segments = splitRunSegments(step.run);
+      let toolInvoked = false;
+      // Check one command text against the D3 contract. Reused for top-level
+      // segments and for commands inside `$(...)` command substitutions, so
+      // `SIGNED=$(npx --yes crx3 ...)` cannot hide the invocation behind an
+      // env assignment that stripShellPrefixes removes.
+      const checkCommandText = (text) => {
+        const res = { violations: [], toolInvoked: false };
+        if (!text.trim()) return res;
+        const verb = segmentVerb(text);
+        if (verb === "npx") {
+          // -y is the short form of --yes; both must never appear anywhere
+          // among npx's own options, not just the first one (spec D3).
+          // Parse from the prefix-stripped command so `command npx`, `if
+          // npx`, `FOO=1 npx` and indented if/else blocks behave alike.
+          const stripped = stripShellPrefixes(text);
+          const afterNpx = stripped.replace(/^npx\s+/, "");
+          const optZoneMatch = afterNpx.match(/^(?:(?:-p|--package|-c|--call)\s+\S+(?:\s+|$)|-\S+(?:\s+|$))*/);
+          const optZone = optZoneMatch ? optZoneMatch[0] : "";
+          if (/(?:^|\s)(?:--yes|-y)(?=\s|$)/.test(optZone)) {
+            res.violations.push(`${base} :: ${name} :: "npx --yes" / "npx -y" used (spec D3: lockfile tools only, no registry download)`);
+          }
+          // A bare `npx <tool>` (without --no-install) would fall back to a
+          // registry fetch; the tool must come from the lockfile's .bin.
+          if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(text)) {
+            res.toolInvoked = true;
+            if (!/\bnpx\s+--no-install\b/.test(text)) {
+              res.violations.push(`${base} :: ${name} :: invokes crx3/web-ext without "npx --no-install" (spec D3: lockfile tools only)`);
+            }
+          }
+        } else if (verb === "npm") {
+          // npm install / npm i / npm add / npm update of crx3/web-ext pulls
+          // a registry package; even after a valid npm ci this replacement
+          // would not be the lockfile's audited binary (spec D3).
+          if (
+            /\bnpm\s+(?:install|i|add|update)\b/.test(text) &&
+            new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(text)
+          ) {
+            res.violations.push(`${base} :: ${name} :: installs crx3/web-ext outside "npm ci" (spec D3: lockfile tools only)`);
+            res.toolInvoked = true;
+          }
+          // npm exec (alias: npm x) always resolves/installs packages from
+          // the registry; a crx3/web-ext package there can never be the
+          // lockfile's audited version (spec D3).
+          if (/\bnpm\s+(?:exec|x)\b/.test(text) && new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(text)) {
+            res.violations.push(`${base} :: ${name} :: uses "npm exec" with crx3/web-ext (spec D3: lockfile tools only, no registry download)`);
+            res.toolInvoked = true;
+          }
+        } else if (/^(?:\.\/)?node_modules\/\.bin\/(?:crx3|web-ext)$/.test(verb)) {
+          // Local binary invocation (node_modules/.bin or
+          // ./node_modules/.bin) is allowed; npm ci must still run strictly
+          // before it.
+          res.toolInvoked = true;
+        } else if (verb === "crx3" || verb === "web-ext") {
+          // Bare `crx3` / `web-ext` relies on a PATH-provided binary, which
+          // is not the lockfile binary (spec D3: lockfile tools only).
+          res.violations.push(`${base} :: ${name} :: invokes bare crx3/web-ext from PATH (spec D3: lockfile tools only)`);
+          res.toolInvoked = true;
+        }
+        return res;
+      };
+      for (const segment of segments) {
+        if (!segment.trim()) continue;
+        const res = checkCommandText(segment);
+        for (const v of res.violations) violations.push(v);
+        if (res.toolInvoked) toolInvoked = true;
+        // Command substitutions run in a subshell; check the inner command
+        // too so `SIGNED=$(npx --yes crx3@latest ...)` cannot bypass D3.
+        // Substitutions may nest and may contain separators; extract balanced
+        // $(...) bodies, split each body with the same nesting-aware splitter
+        // as top-level commands, and recurse into nested substitutions so
+        // every inner command is checked.
+        const pending = extractSubstitutions(segment);
+        while (pending.length) {
+          const part = pending.pop();
+          for (const piece of splitOutsideSubstitutions(part)) {
+            const sub = checkCommandText(piece);
+            for (const v of sub.violations) violations.push(v);
+            if (sub.toolInvoked) toolInvoked = true;
+            pending.push(...extractSubstitutions(piece));
+          }
+        }
+        if (segmentVerb(segment) === "npm" && /\bnpm\s+ci\b/.test(segment) && ciIdx === -1) ciIdx = i;
+      }
+      if (toolInvoked && firstToolIdx === -1) firstToolIdx = i;
+    }
+    // npm ci must run strictly before any crx3/web-ext invocation (spec D3);
+    // a run block doing both (ciIdx === firstToolIdx) still violates it.
+    if (firstToolIdx !== -1 && (ciIdx === -1 || ciIdx >= firstToolIdx)) {
+      violations.push(`${base} :: job "${jobName}" calls crx3/web-ext without a strictly preceding "npm ci" step (spec D3: locked deps first)`);
+    }
+  }
+  return [...new Set(violations)];
+}
+
 /**
  * Run every guard contract against a single workflow file.
  *
@@ -208,6 +562,7 @@ function checkWorkflow(file) {
   }
   violations.push(...checkUsesPinned(doc, base));
   violations.push(...checkPermissions(doc, base));
+  violations.push(...checkLockfileTools(doc, base));
   return { file: base, violations };
 }
 
@@ -231,7 +586,8 @@ const report = {
   contracts: [
     'no dispatch input expression (${{ github.event.inputs.* }} / ${{ inputs.* }}) inside any run: block',
     'every remote uses: reference (step-level and reusable-workflow job-level) pinned to a full 40-char commit SHA',
-    'every workflow declares explicit permissions at top level and per job (never write-all)'
+    'every workflow declares explicit permissions at top level and per job (never write-all)',
+    'no npx --yes in any run: block; crx3/web-ext jobs run npm ci first and invoke tools via npx --no-install or node_modules/.bin (spec D3)'
   ],
   violations
 };
