@@ -329,12 +329,13 @@ function findSubstitutionRanges(text) {
  */
 function splitOutsideSubstitutions(line) {
   const parts = [];
-  const ranges = findSubstitutionRanges(line);
+  const ranges = findSubstitutionRanges(line).sort((a, b) => a.start - b.start);
   let ri = 0;
   let cur = "";
   let quote = null;
   let escaped = false;
   for (let i = 0; i < line.length; i++) {
+    while (ri < ranges.length && ranges[ri].start < i) ri++;
     if (ri < ranges.length && ranges[ri].start === i) {
       const r = ranges[ri];
       cur += line.slice(i, r.bodyEnd + 1);
