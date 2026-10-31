@@ -229,7 +229,55 @@ function splitRunSegments(run) {
     cur = "";
   }
   if (cur) joined.push(cur);
-  return joined.flatMap((line) => line.split(/\s*(?:&&|\|\||;|\|)\s*/));
+  return joined.flatMap(splitOutsideSubstitutions);
+}
+
+/**
+ * Split a shell line on `&&`, `||`, `|`, and `;` only when those separators
+ * sit outside a `$(...)` command substitution. Splitting inside a
+ * substitution would cut `X=$(npx --yes crx3 pack | tail -1)` into pieces,
+ * hide the tool invocation, and defeat the D3 guard.
+ */
+function splitOutsideSubstitutions(line) {
+  const parts = [];
+  let cur = "";
+  let depth = 0;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === "$" && line[i + 1] === "(") {
+      depth += 1;
+      cur += "$(";
+      i += 1;
+      continue;
+    }
+    if (ch === ")" && depth > 0) {
+      depth -= 1;
+      cur += ")";
+      continue;
+    }
+    if (depth === 0) {
+      if (ch === "|") {
+        if (line[i + 1] === "|") i += 1;
+        parts.push(cur.trim());
+        cur = "";
+        continue;
+      }
+      if (ch === "&" && line[i + 1] === "&") {
+        parts.push(cur.trim());
+        cur = "";
+        i += 1;
+        continue;
+      }
+      if (ch === ";") {
+        parts.push(cur.trim());
+        cur = "";
+        continue;
+      }
+    }
+    cur += ch;
+  }
+  if (cur.trim()) parts.push(cur.trim());
+  return parts;
 }
 
 /**
@@ -241,7 +289,7 @@ function splitRunSegments(run) {
  */
 function stripShellPrefixes(segment) {
   let cmd = segment.trim();
-  const envRe = /^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+/;
+  const envRe = /^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\$\([^)]*\)|[^\s]*)\s+)+/;
   const wrapperRe = /^(?:(?:if|then|else|elif|fi|time|sudo|env|command|!|\{|do|while|until)\s+|\(\s*)+/;
   let changed = true;
   while (changed) {
