@@ -233,46 +233,152 @@ function splitRunSegments(run) {
 }
 
 /**
- * Split a shell line on `&&`, `||`, `|`, and `;` only when those separators
- * sit outside a `$(...)` command substitution. Splitting inside a
- * substitution would cut `X=$(npx --yes crx3 pack | tail -1)` into pieces,
- * hide the tool invocation, and defeat the D3 guard.
+ * Quote-aware scanner for shell command substitutions. Returns all balanced
+ * `$(...)` ranges (with `start` pointing at `$(`), ignoring parentheses inside
+ * single/double quotes and after `\`, while still recognising `$(` inside
+ * double quotes. Each substitution gets its own quote context so nested
+ * commands stay fully inspectable.
+ */
+function findSubstitutionRanges(text) {
+  const ranges = [];
+  function scanFrom(i) {
+    let quote = null;
+    let escaped = false;
+    while (i < text.length) {
+      const ch = text[i];
+      if (escaped) {
+        escaped = false;
+        i++;
+        continue;
+      }
+      if (ch === "\\") {
+        escaped = true;
+        i++;
+        continue;
+      }
+      if (quote) {
+        if (ch === quote) quote = null;
+        else if (quote === '"' && ch === "$" && text[i + 1] === "(") {
+          i = scanSubstitution(i + 2);
+          continue;
+        }
+        i++;
+        continue;
+      }
+      if (ch === "'" || ch === '"') {
+        quote = ch;
+        i++;
+        continue;
+      }
+      if (ch === "$" && text[i + 1] === "(") {
+        i = scanSubstitution(i + 2);
+        continue;
+      }
+      i++;
+    }
+  }
+  function scanSubstitution(bodyStart) {
+    let quote = null;
+    let escaped = false;
+    let i = bodyStart;
+    while (i < text.length) {
+      const ch = text[i];
+      if (escaped) {
+        escaped = false;
+        i++;
+        continue;
+      }
+      if (ch === "\\") {
+        escaped = true;
+        i++;
+        continue;
+      }
+      if (quote) {
+        if (ch === quote) quote = null;
+        else if (quote === '"' && ch === "$" && text[i + 1] === "(") {
+          i = scanSubstitution(i + 2);
+          continue;
+        }
+        i++;
+        continue;
+      }
+      if (ch === "'" || ch === '"') {
+        quote = ch;
+        i++;
+        continue;
+      }
+      if (ch === "$" && text[i + 1] === "(") {
+        i = scanSubstitution(i + 2);
+        continue;
+      }
+      if (ch === ")") {
+        ranges.push({ start: bodyStart - 2, bodyStart, bodyEnd: i });
+        return i + 1;
+      }
+      i++;
+    }
+    return text.length;
+  }
+  scanFrom(0);
+  return ranges;
+}
+
+/**
+ * Split a shell line on top-level separators (`|`, `||`, `&&`, `;`), keeping
+ * `$(...)` substitutions (including nested and quoted ones) intact.
  */
 function splitOutsideSubstitutions(line) {
   const parts = [];
+  const ranges = findSubstitutionRanges(line);
+  let ri = 0;
   let cur = "";
-  let depth = 0;
+  let quote = null;
+  let escaped = false;
   for (let i = 0; i < line.length; i++) {
+    if (ri < ranges.length && ranges[ri].start === i) {
+      const r = ranges[ri];
+      cur += line.slice(i, r.bodyEnd + 1);
+      i = r.bodyEnd;
+      ri++;
+      continue;
+    }
     const ch = line[i];
-    if (ch === "$" && line[i + 1] === "(") {
-      depth += 1;
-      cur += "$(";
+    if (escaped) {
+      escaped = false;
+      cur += ch;
+      continue;
+    }
+    if (ch === "\\") {
+      escaped = true;
+      cur += ch;
+      continue;
+    }
+    if (quote) {
+      if (ch === quote) quote = null;
+      cur += ch;
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      quote = ch;
+      cur += ch;
+      continue;
+    }
+    if (ch === "|") {
+      if (line[i + 1] === "|") i += 1;
+      parts.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    if (ch === "&" && line[i + 1] === "&") {
+      parts.push(cur.trim());
+      cur = "";
       i += 1;
       continue;
     }
-    if (ch === ")" && depth > 0) {
-      depth -= 1;
-      cur += ")";
+    if (ch === ";") {
+      parts.push(cur.trim());
+      cur = "";
       continue;
-    }
-    if (depth === 0) {
-      if (ch === "|") {
-        if (line[i + 1] === "|") i += 1;
-        parts.push(cur.trim());
-        cur = "";
-        continue;
-      }
-      if (ch === "&" && line[i + 1] === "&") {
-        parts.push(cur.trim());
-        cur = "";
-        i += 1;
-        continue;
-      }
-      if (ch === ";") {
-        parts.push(cur.trim());
-        cur = "";
-        continue;
-      }
     }
     cur += ch;
   }
@@ -282,22 +388,11 @@ function splitOutsideSubstitutions(line) {
 
 /**
  * Extract the bodies of all `$(...)` command substitutions in a shell line,
- * tracking nesting so a `)` inside a nested substitution does not truncate
- * the match. Returns inner texts without the `$(` / `)` delimiters.
+ * tracking nesting and quotes so a quoted `)` or `(` does not truncate or
+ * desync the match. Returns inner texts without the `$(` / `)` delimiters.
  */
 function extractSubstitutions(text) {
-  const out = [];
-  for (let i = 0; i < text.length - 1; i++) {
-    if (text[i] !== "$" || text[i + 1] !== "(") continue;
-    let depth = 1;
-    let j = i + 2;
-    for (; j < text.length && depth > 0; j++) {
-      if (text[j] === "(") depth += 1;
-      else if (text[j] === ")") depth -= 1;
-    }
-    if (depth === 0) out.push(text.slice(i + 2, j - 1));
-  }
-  return out;
+  return findSubstitutionRanges(text).map((r) => text.slice(r.bodyStart, r.bodyEnd));
 }
 
 /**
