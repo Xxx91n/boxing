@@ -4,9 +4,11 @@
 // developer installs without the 7-day supply-chain filter. Refuse to install
 // with an unsupported npm instead of silently skipping the protection.
 //
-// This guard deliberately does not change the declared Node line (Q5 remains
-// an open product decision); it only enforces the npm floor required for the
-// ticket's own setting to take effect.
+// This guard deliberately does not pick a future Node line (Q5 remains an open
+// product decision); it enforces the npm floor required for the ticket's own
+// setting to take effect. package.json engines now mirrors npm 11.10.0's own
+// Node requirement (^20.17.0 || >=22.9.0) so the declared floor and the guard
+// cannot disagree (CodeRabbit PR #94 review round 2).
 import { execSync } from "node:child_process";
 
 const MIN = [11, 10, 0];
@@ -25,9 +27,13 @@ function isAtLeast(v, min) {
   return true;
 }
 
+// npm_execpath points at the npm instance that started this install; a bare
+// `npm --version` through PATH can resolve a different version (e.g. when npm
+// was invoked by absolute path). Ask the active instance for its own version.
+const npmEntry = process.env.npm_execpath;
 let raw;
 try {
-  raw = execSync("npm --version", {
+  raw = execSync(`node "${npmEntry}" --version`, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();
@@ -45,7 +51,8 @@ if (!version) {
 if (!isAtLeast(version, MIN)) {
   console.error(
     `[guard] npm ${raw} ignores .npmrc "min-release-age=7" (requires npm >= ${MIN.join(".")}). ` +
-      "Upgrade npm (e.g. `npm install -g npm@latest`) to keep the 7-day release-age protection."
+      "Use a supported toolchain (Node ^20.17.0 || >=22.9.0, e.g. the repository's .nvmrc Node 24) " +
+      "or upgrade npm on the current Node to keep the 7-day release-age protection."
   );
   process.exit(1);
 }
