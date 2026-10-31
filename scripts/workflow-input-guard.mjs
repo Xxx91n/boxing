@@ -286,42 +286,62 @@ function checkLockfileTools(doc, base) {
       // informational text (e.g. `echo crx3`) cannot count as an invocation.
       const segments = splitRunSegments(step.run);
       let toolInvoked = false;
-      for (const segment of segments) {
-        if (!segment.trim()) continue;
-        const verb = segmentVerb(segment);
+      // Check one command text against the D3 contract. Reused for top-level
+      // segments and for commands inside `$(...)` command substitutions, so
+      // `SIGNED=$(npx --yes crx3 ...)` cannot hide the invocation behind an
+      // env assignment that stripShellPrefixes removes.
+      const checkCommandText = (text) => {
+        const res = { violations: [], toolInvoked: false };
+        if (!text.trim()) return res;
+        const verb = segmentVerb(text);
         if (verb === "npx") {
           // -y is the short form of --yes; both must never appear anywhere
           // among npx's own options, not just the first one (spec D3).
           // Parse from the prefix-stripped command so `command npx`, `if
           // npx`, `FOO=1 npx` and indented if/else blocks behave alike.
-          const stripped = stripShellPrefixes(segment);
+          const stripped = stripShellPrefixes(text);
           const afterNpx = stripped.replace(/^npx\s+/, "");
           const optZoneMatch = afterNpx.match(/^(?:-\S+(?:\s+|$))*/);
           const optZone = optZoneMatch ? optZoneMatch[0] : "";
           if (/(?:^|\s)(?:--yes|-y)(?=\s|$)/.test(optZone)) {
-            violations.push(`${base} :: ${name} :: "npx --yes" / "npx -y" used (spec D3: lockfile tools only, no registry download)`);
+            res.violations.push(`${base} :: ${name} :: "npx --yes" / "npx -y" used (spec D3: lockfile tools only, no registry download)`);
           }
           // A bare `npx <tool>` (without --no-install) would fall back to a
           // registry fetch; the tool must come from the lockfile's .bin.
-          if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment)) {
-            toolInvoked = true;
-            if (!/\bnpx\s+--no-install\b/.test(segment)) {
-              violations.push(`${base} :: ${name} :: invokes crx3/web-ext without "npx --no-install" (spec D3: lockfile tools only)`);
+          if (new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(text)) {
+            res.toolInvoked = true;
+            if (!/\bnpx\s+--no-install\b/.test(text)) {
+              res.violations.push(`${base} :: ${name} :: invokes crx3/web-ext without "npx --no-install" (spec D3: lockfile tools only)`);
             }
           }
         } else if (verb === "npm") {
           // npm exec (alias: npm x) always resolves/installs packages from
           // the registry; a crx3/web-ext package there can never be the
           // lockfile's audited version (spec D3).
-          if (/\bnpm\s+(?:exec|x)\b/.test(segment) && new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment)) {
-            violations.push(`${base} :: ${name} :: uses "npm exec" with crx3/web-ext (spec D3: lockfile tools only, no registry download)`);
-            toolInvoked = true;
+          if (/\bnpm\s+(?:exec|x)\b/.test(text) && new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(text)) {
+            res.violations.push(`${base} :: ${name} :: uses "npm exec" with crx3/web-ext (spec D3: lockfile tools only, no registry download)`);
+            res.toolInvoked = true;
           }
-        } else if (/^node_modules\/\.bin\/(?:crx3|web-ext)$/.test(verb) || verb === "crx3" || verb === "web-ext") {
-          // Local binary invocation (node_modules/.bin or PATH) is allowed.
-          toolInvoked = true;
+        } else if (/^(?:\.\/)?node_modules\/\.bin\/(?:crx3|web-ext)$/.test(verb) || verb === "crx3" || verb === "web-ext") {
+          // Local binary invocation (node_modules/.bin, ./node_modules/.bin
+          // or PATH) is allowed; npm ci must still run strictly before it.
+          res.toolInvoked = true;
         }
-        if (verb === "npm" && /\bnpm\s+ci\b/.test(segment) && ciIdx === -1) ciIdx = i;
+        return res;
+      };
+      for (const segment of segments) {
+        if (!segment.trim()) continue;
+        const res = checkCommandText(segment);
+        for (const v of res.violations) violations.push(v);
+        if (res.toolInvoked) toolInvoked = true;
+        // Command substitutions run in a subshell; check the inner command
+        // too so `SIGNED=$(npx --yes crx3@latest ...)` cannot bypass D3.
+        for (const m of segment.matchAll(/\$\(([^)]+)\)/g)) {
+          const sub = checkCommandText(m[1]);
+          for (const v of sub.violations) violations.push(v);
+          if (sub.toolInvoked) toolInvoked = true;
+        }
+        if (segmentVerb(segment) === "npm" && /\bnpm\s+ci\b/.test(segment) && ciIdx === -1) ciIdx = i;
       }
       if (toolInvoked && firstToolIdx === -1) firstToolIdx = i;
     }
