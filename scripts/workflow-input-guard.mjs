@@ -282,8 +282,12 @@ function checkLockfileTools(doc, base) {
         if (!segment.trim()) continue;
         const verb = segmentVerb(segment);
         if (verb === "npx") {
-          // -y is the short form of --yes; both must never appear (spec D3).
-          if (/\bnpx\s+(?:--yes|-y)\b/.test(segment)) {
+          // -y is the short form of --yes; both must never appear anywhere
+          // among npx's own options, not just the first one (spec D3).
+          const afterNpx = segment.replace(/^\S+\s+/, "");
+          const optZoneMatch = afterNpx.match(/^(?:-\S+(?:\s+|$))*/);
+          const optZone = optZoneMatch ? optZoneMatch[0] : "";
+          if (/(?:^|\s)(?:--yes|-y)(?=\s|$)/.test(optZone)) {
             violations.push(`${base} :: ${name} :: "npx --yes" / "npx -y" used (spec D3: lockfile tools only, no registry download)`);
           }
           // A bare `npx <tool>` (without --no-install) would fall back to a
@@ -295,10 +299,10 @@ function checkLockfileTools(doc, base) {
             }
           }
         } else if (verb === "npm") {
-          // npm exec always resolves/installs packages from the registry; a
-          // crx3/web-ext package there can never be the lockfile's audited
-          // version (spec D3).
-          if (/\bnpm\s+exec\b/.test(segment) && new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment)) {
+          // npm exec (alias: npm x) always resolves/installs packages from
+          // the registry; a crx3/web-ext package there can never be the
+          // lockfile's audited version (spec D3).
+          if (/\bnpm\s+(?:exec|x)\b/.test(segment) && new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(segment)) {
             violations.push(`${base} :: ${name} :: uses "npm exec" with crx3/web-ext (spec D3: lockfile tools only, no registry download)`);
             toolInvoked = true;
           }
