@@ -33,12 +33,12 @@
     "verify:pages-gc": "node scripts/pages-gc-verify.mjs"
   },
   "devDependencies": {
-    "web-ext": "^8.10.0",
+    "web-ext": "^10.8.0",
     "@playwright/test": "^1.48.0",
     "crx3": "^1.0.0"
   },
   "engines": {
-    "node": "^20.17.0 || >=22.9.0",
+    "node": ">=22.9.0",
     "npm": ">=11.10.0"
   },
   "license": "Apache-2.0",
