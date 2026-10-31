@@ -242,7 +242,7 @@ function splitRunSegments(run) {
 function stripShellPrefixes(segment) {
   let cmd = segment.trim();
   const envRe = /^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+/;
-  const wrapperRe = /^(?:(?:if|then|else|elif|fi|time|sudo|env|command|!)\s+)+/;
+  const wrapperRe = /^(?:(?:if|then|else|elif|fi|time|sudo|env|command|!|\{|do|while|until)\s+|\(\s*)+/;
   let changed = true;
   while (changed) {
     changed = false;
