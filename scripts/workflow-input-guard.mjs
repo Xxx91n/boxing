@@ -233,18 +233,16 @@ function splitRunSegments(run) {
 }
 
 /**
- * Return the shell verb of a command segment after stripping environment
- * assignments (FOO=1 BAR="x" CMD ...) and common leading keywords (if, then,
- * else, elif, fi, time, sudo, env). Used to decide whether a segment really
- * invokes a release tool instead of merely mentioning it (e.g. `echo crx3`).
+ * Strip leading environment assignments (FOO=1 BAR="x" CMD ...) and common
+ * shell wrappers (if, then, else, elif, fi, time, sudo, env, command, !) so
+ * the remainder starts with the real command. Wrappers may chain (command
+ * command npx, if ! npx) and env assignments may precede them (FOO=1 command
+ * npx), so stripping repeats until nothing changes.
  */
-function segmentVerb(segment) {
+function stripShellPrefixes(segment) {
   let cmd = segment.trim();
   const envRe = /^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]*)\s+)+/;
   const wrapperRe = /^(?:(?:if|then|else|elif|fi|time|sudo|env|command|!)\s+)+/;
-  // Wrappers may chain (command command npx, if ! npx) and env assignments
-  // may precede them (FOO=1 command npx); strip repeatedly so the verb is
-  // always the real command that would run.
   let changed = true;
   while (changed) {
     changed = false;
@@ -257,7 +255,17 @@ function segmentVerb(segment) {
       changed = true;
     }
   }
-  return cmd.split(/\s+/)[0] || "";
+  return cmd;
+}
+
+/**
+ * Return the shell verb of a command segment after stripping environment
+ * assignments and common leading keywords. Used to decide whether a segment
+ * really invokes a release tool instead of merely mentioning it (e.g.
+ * `echo crx3`).
+ */
+function segmentVerb(segment) {
+  return stripShellPrefixes(segment).split(/\s+/)[0] || "";
 }
 
 function checkLockfileTools(doc, base) {
@@ -284,7 +292,10 @@ function checkLockfileTools(doc, base) {
         if (verb === "npx") {
           // -y is the short form of --yes; both must never appear anywhere
           // among npx's own options, not just the first one (spec D3).
-          const afterNpx = segment.replace(/^\S+\s+/, "");
+          // Parse from the prefix-stripped command so `command npx`, `if
+          // npx`, `FOO=1 npx` and indented if/else blocks behave alike.
+          const stripped = stripShellPrefixes(segment);
+          const afterNpx = stripped.replace(/^npx\s+/, "");
           const optZoneMatch = afterNpx.match(/^(?:-\S+(?:\s+|$))*/);
           const optZone = optZoneMatch ? optZoneMatch[0] : "";
           if (/(?:^|\s)(?:--yes|-y)(?=\s|$)/.test(optZone)) {

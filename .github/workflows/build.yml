@@ -150,9 +150,13 @@ jobs:
             echo "CRX_PRIVATE_KEY_PEM secret not set -> boxing-chrome.crx stays a placeholder (zip-copy)."
           else
             node -e "require('fs').writeFileSync(process.env.RUNNER_TEMP + '/crx.pem', Buffer.from(process.env.CRX_KEY, 'base64'))"
+            trap 'rm -f "${RUNNER_TEMP}/crx.pem"' EXIT
             # D3 (ticket 78): crx3 comes from the lockfile (npm ci above);
-            # --no-install never falls back to a registry download.
-            npx --no-install crx3 pack dist/boxing-chrome/release/chrome/boxing -o "dist/boxing-chrome-${VER}.crx" -p "${RUNNER_TEMP}/crx.pem" || { echo "::error::crx3 missing from lockfile after npm ci"; exit 1; }
+            # --no-install never falls back to a registry download. Fail
+            # hard only when the lockfile binary is missing; let any real
+            # crx3 error (bad key, invalid source dir) surface as-is.
+            test -x node_modules/.bin/crx3 || { echo "::error::crx3 missing from lockfile after npm ci"; exit 1; }
+            npx --no-install crx3 pack dist/boxing-chrome/release/chrome/boxing -o "dist/boxing-chrome-${VER}.crx" -p "${RUNNER_TEMP}/crx.pem"
             rm -f "${RUNNER_TEMP}/crx.pem"
             echo "CRX3 signed OK"
           fi
