@@ -251,7 +251,7 @@ function findSubstitutionRanges(text) {
         i++;
         continue;
       }
-      if (ch === "\\") {
+      if (ch === "\\" && quote !== "'") {
         escaped = true;
         i++;
         continue;
@@ -288,7 +288,7 @@ function findSubstitutionRanges(text) {
         i++;
         continue;
       }
-      if (ch === "\\") {
+      if (ch === "\\" && quote !== "'") {
         escaped = true;
         i++;
         continue;
@@ -349,7 +349,7 @@ function splitOutsideSubstitutions(line) {
       cur += ch;
       continue;
     }
-    if (ch === "\\") {
+    if (ch === "\\" && quote !== "'") {
       escaped = true;
       cur += ch;
       continue;
@@ -406,7 +406,7 @@ function extractSubstitutions(text) {
 function stripShellPrefixes(segment) {
   let cmd = segment.trim();
   const envRe = /^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\$\([^)]*\)|[^\s]*)\s+)+/;
-  const wrapperRe = /^(?:(?:if|then|else|elif|fi|time|sudo|env|command|!|\{|do|while|until)\s+|\(\s*)+/;
+  const wrapperRe = /^(?:(?:if|then|else|elif|fi|time|sudo|env|command|!|\{|do|while|until)\s+|timeout\s+(?:-\S+\s+)*\S+\s+|\(\s*)+/;
   let changed = true;
   while (changed) {
     changed = false;
@@ -465,7 +465,7 @@ function checkLockfileTools(doc, base) {
           // npx`, `FOO=1 npx` and indented if/else blocks behave alike.
           const stripped = stripShellPrefixes(text);
           const afterNpx = stripped.replace(/^npx\s+/, "");
-          const optZoneMatch = afterNpx.match(/^(?:-\S+(?:\s+|$))*/);
+          const optZoneMatch = afterNpx.match(/^(?:(?:-p|--package|-c|--call)\s+\S+(?:\s+|$)|-\S+(?:\s+|$))*/);
           const optZone = optZoneMatch ? optZoneMatch[0] : "";
           if (/(?:^|\s)(?:--yes|-y)(?=\s|$)/.test(optZone)) {
             res.violations.push(`${base} :: ${name} :: "npx --yes" / "npx -y" used (spec D3: lockfile tools only, no registry download)`);
@@ -479,6 +479,16 @@ function checkLockfileTools(doc, base) {
             }
           }
         } else if (verb === "npm") {
+          // npm install / npm i / npm add / npm update of crx3/web-ext pulls
+          // a registry package; even after a valid npm ci this replacement
+          // would not be the lockfile's audited binary (spec D3).
+          if (
+            /\bnpm\s+(?:install|i|add|update)\b/.test(text) &&
+            new RegExp(`\\b(${LOCKFILE_TOOL_PATTERN})\\b`).test(text)
+          ) {
+            res.violations.push(`${base} :: ${name} :: installs crx3/web-ext outside "npm ci" (spec D3: lockfile tools only)`);
+            res.toolInvoked = true;
+          }
           // npm exec (alias: npm x) always resolves/installs packages from
           // the registry; a crx3/web-ext package there can never be the
           // lockfile's audited version (spec D3).
@@ -486,9 +496,15 @@ function checkLockfileTools(doc, base) {
             res.violations.push(`${base} :: ${name} :: uses "npm exec" with crx3/web-ext (spec D3: lockfile tools only, no registry download)`);
             res.toolInvoked = true;
           }
-        } else if (/^(?:\.\/)?node_modules\/\.bin\/(?:crx3|web-ext)$/.test(verb) || verb === "crx3" || verb === "web-ext") {
-          // Local binary invocation (node_modules/.bin, ./node_modules/.bin
-          // or PATH) is allowed; npm ci must still run strictly before it.
+        } else if (/^(?:\.\/)?node_modules\/\.bin\/(?:crx3|web-ext)$/.test(verb)) {
+          // Local binary invocation (node_modules/.bin or
+          // ./node_modules/.bin) is allowed; npm ci must still run strictly
+          // before it.
+          res.toolInvoked = true;
+        } else if (verb === "crx3" || verb === "web-ext") {
+          // Bare `crx3` / `web-ext` relies on a PATH-provided binary, which
+          // is not the lockfile binary (spec D3: lockfile tools only).
+          res.violations.push(`${base} :: ${name} :: invokes bare crx3/web-ext from PATH (spec D3: lockfile tools only)`);
           res.toolInvoked = true;
         }
         return res;
