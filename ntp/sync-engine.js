@@ -739,7 +739,14 @@ export function initSyncEngineFacade(deps) {
         layout.settings.lastBackupAt = Date.now();
         updateLastBackupDisplay();
         saveLayout();
-      } catch (e) { debugErr('Backup failed', e); }
+      } catch (e) {
+        // PR #109 review round 2: keep the diagnostic log, then propagate — the
+        // Sync Now handler surfaces the localized failure, the alarm/catch-up
+        // callers log it, and the success-only bookkeeping above (snapshot,
+        // lastBackupAt) is skipped when the remote sync failed.
+        debugErr('Backup failed', e);
+        throw e;
+      }
     }
 
     // ── Auto-backup scheduler ──────────────────────
@@ -1065,7 +1072,20 @@ export function bindSyncBackupUi() {
       if (p === 'local') {
         backupToLocal();
       }
-      await performBackup();
+      try {
+        await performBackup();
+      } catch (e) {
+        // PR #109 review round 2: performBackup now propagates failures —
+        // display the localized error on the button (same contract as the
+        // WebDAV test button above: known i18n error verbatim, otherwise the
+        // friendly network message, never a raw transport error).
+        debugErr('Backup Now failed', e);
+        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork'];
+        const isKnown = knownErrors.some(k => e.message && i18n(k) === e.message);
+        backupNowBtn.textContent = isKnown ? e.message : i18n('webdavErrNetwork');
+      } finally {
+        setTimeout(() => { backupNowBtn.textContent = i18n('syncNow'); }, 4000);
+      }
     });
     // Listen for the background SW auto-backup trigger
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {

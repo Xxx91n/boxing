@@ -87,6 +87,55 @@ test.describe('Wave 2026.10.17 — Acceptance Tests', () => {
     expect(r.lastBackupUpdated).toBe(true);
   });
 
+  // ── Ticket 108 / PR #109 round 2: remote sync failure propagates ──
+  test('performBackup rejects on WebDAV failure, skips success bookkeeping, and Sync Now surfaces the error', async ({ page }) => {
+    await boot(page);
+
+    const r = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const bxSync = (window as any).__bxSync;
+
+      const providerSel = document.getElementById('sync-provider') as HTMLSelectElement;
+      if (providerSel) providerSel.value = 'webdav';
+      // Overlong base URL is refused by the front-end guard — no network needed.
+      await dbg.setWebDAVConfig('https://dav.example.net/dav/' + 'a'.repeat(2100), 'u', 'p');
+
+      const beforeSnaps = await dbg.listSnapshots();
+      const beforeLastBackup = dbg.layout.settings.lastBackupAt || 0;
+
+      let rejection = '';
+      let resolved = false;
+      try { await bxSync.performBackup(); resolved = true; }
+      catch (e: any) { rejection = e && e.message ? e.message : String(e); }
+
+      const afterSnaps = await dbg.listSnapshots();
+      const afterLastBackup = dbg.layout.settings.lastBackupAt || 0;
+
+      // Sync Now displays the localized failure on the button instead of resolving silently.
+      const backupNowBtn = document.getElementById('backup-now-btn') as HTMLButtonElement;
+      const labelBefore = backupNowBtn.textContent;
+      backupNowBtn.click();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const labelError = backupNowBtn.textContent;
+
+      return {
+        resolved,
+        rejectionLen: rejection.length,
+        snapshotSkipped: afterSnaps.length === beforeSnaps.length,
+        lastBackupSkipped: afterLastBackup === beforeLastBackup,
+        labelBefore,
+        labelError,
+      };
+    });
+
+    expect(r.resolved).toBe(false);
+    expect(r.rejectionLen).toBeGreaterThan(0);
+    expect(r.snapshotSkipped).toBe(true);
+    expect(r.lastBackupSkipped).toBe(true);
+    expect(r.labelError).toBeTruthy();
+    expect(r.labelError).not.toBe(r.labelBefore);
+  });
+
   // ── Version check authority direct connection & UI feedback ──
   test('checkVersionUpdate connects to GitHub API, supports force refresh, and shows low-profile hint', async ({ page }) => {
     // 1. Static contract
