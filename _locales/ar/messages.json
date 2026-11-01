@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "فشل التصدير: لوحة المحتوى في هذه النسخة تتجاوز ما يستطيع Boxing استعادته (2,000,000 محرف من layout). لم يُصدَّر شيء."
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "لم يتم تكوين هدف نسخ احتياطي عن بُعد — لم يتم حذف أي شيء. قم بإلغاء تحديد الخيار عن بُعد لحذف بيانات الاعتماد المحلية فقط.",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "فشل حفظ الإعدادات المنظفة — بقيت بيانات الاعتماد المخزنة كما هي. يرجى المحاولة مرة أخرى.",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

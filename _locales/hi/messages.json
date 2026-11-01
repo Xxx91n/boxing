@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "निर्यात विफल: इस बैकअप का कैनवस Boxing की बहाल सीमा (layout के 20,00,000 वर्ण) से बड़ा है। कुछ निर्यात नहीं हुआ।"
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "कोई रिमोट बैकअप लक्ष्य कॉन्फ़िगर नहीं है — कुछ भी नहीं हटाया गया। केवल स्थानीय क्रेडेंशियल हटाने के लिए रिमोट विकल्प अनचेक करें।",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "साफ़ की गई कॉन्फ़िगरेशन सहेजने में विफल — संग्रहीत क्रेडेंशियल यथावत रहे। कृपया पुनः प्रयास करें।",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

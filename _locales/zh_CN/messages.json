@@ -1313,5 +1313,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "导出失败：此备份中的画布数据超过 Boxing 可恢复的上限（layout 2,000,000 字符）。未导出任何内容。"
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "未配置远程备份目标 — 未删除任何内容。若只需删除本地凭据，请取消勾选远程选项。",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "保存清理后的配置失败 — 已存储的凭据保持不变。请重试。",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

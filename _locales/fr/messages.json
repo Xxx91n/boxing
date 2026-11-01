@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "Export échoué : le canevas de cette sauvegarde dépasse ce que Boxing peut restaurer (2 000 000 de caractères de layout). Rien n'a été exporté."
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "Aucune cible de sauvegarde distante configurée : rien n'a été supprimé. Décochez l'option distante pour supprimer uniquement les identifiants locaux.",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "Échec de l'enregistrement de la configuration nettoyée : les identifiants stockés ont été conservés. Veuillez réessayer.",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

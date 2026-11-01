@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "Export fehlgeschlagen: Die Canvas-Daten dieser Sicherung überschreiten das Wiederherstellungslimit von Boxing (2.000.000 Zeichen Layout). Nichts exportiert."
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "Kein entferntes Backup-Ziel konfiguriert – es wurde nichts gelöscht. Deaktivieren Sie die Option, um nur lokale Anmeldedaten zu löschen.",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "Speichern der bereinigten Konfiguration fehlgeschlagen – gespeicherte Anmeldedaten blieben erhalten. Bitte versuchen Sie es erneut.",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

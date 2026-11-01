@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "Xuất thất bại: dữ liệu Canvas trong bản sao lưu này vượt giới hạn Boxing có thể khôi phục (2.000.000 ký tự layout). Chưa xuất gì."
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "Không có mục tiêu sao lưu từ xa được cấu hình — không có gì bị xóa. Bỏ chọn tùy chọn từ xa để chỉ xóa thông tin đăng nhập cục bộ.",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "Không thể lưu cấu hình đã dọn — thông tin đăng nhập đã lưu vẫn giữ nguyên. Vui lòng thử lại.",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "Сбой экспорта: данные холста в этой копии превышают предел восстановления Boxing (2 000 000 символов layout). Ничего не экспортировано."
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "Удалённая цель резервного копирования не настроена — ничего не удалено. Снимите флажок, чтобы удалить только локальные учётные данные.",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "Не удалось сохранить очищенную конфигурацию — сохранённые учётные данные остались на месте. Повторите попытку.",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

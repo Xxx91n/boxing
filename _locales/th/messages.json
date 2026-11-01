@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "ส่งออกล้มเหลว: ข้อมูลผืนผ้าในไฟล์สำรองนี้เกินกว่าที่ Boxing จะกู้คืนได้ (layout 2,000,000 ตัวอักษร) ไม่ได้ส่งออกสิ่งใด"
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "ไม่ได้กำหนดค่าเป้าหมายการสำรองข้อมูลระยะไกล — ไม่ได้ลบสิ่งใด ยกเลิกการเลือกตัวเลือกระยะไกลเพื่อลบเฉพาะข้อมูลประจำตัวในเครื่อง",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "ไม่สามารถบันทึกการกำหนดค่าที่ล้างแล้ว — ข้อมูลประจำตัวที่เก็บไว้ยังคงอยู่ โปรดลองอีกครั้ง",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

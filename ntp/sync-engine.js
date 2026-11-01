@@ -832,6 +832,11 @@ export function bindSyncBackupUi() {
     // _encGistToken again. While decryption is still in flight (gate not ready), a
     // pagehide / visibilitychange / beforeunload / modal-close flush is a no-op for the
     // envelopes (D5 AC3). No stored envelope → ready with an empty baseline.
+    // Ticket 99 (T13) / CodeRabbit: once the danger zone deletes stored credentials, any
+    // in-flight decrypt/migrate or debounced flush must not write envelopes back into the
+    // reset config. Every async credential write captures the epoch at start and aborts
+    // when a deletion bumped it mid-flight.
+    let credentialsDeletionEpoch = 0;
     let webdavPassBaseline = '';
     let webdavPassReady = !layout.settings._encWebdavPass;
     let gistTokenBaseline = '';
@@ -841,6 +846,7 @@ export function bindSyncBackupUi() {
     (async () => {
       try {
         let migrated = false;
+        const deletionEpochAtStart = credentialsDeletionEpoch;
         // CodeRabbit D5 follow-up: snapshot each secret input before decryption starts so
         // a user edit made while decryptCredential is pending is not overwritten on
         // completion (the decrypt baseline still tracks the stored secret).
@@ -856,7 +862,10 @@ export function bindSyncBackupUi() {
           // (per-install key) so stored records converge without a one-shot pass.
           if (decryptedWebdavPass) {
             const upgraded = await encryptCredential(decryptedWebdavPass);
-            if (upgraded && layout.settings._encWebdavPass !== upgraded) { layout.settings._encWebdavPass = upgraded; migrated = true; }
+            if (upgraded && layout.settings._encWebdavPass !== upgraded) {
+              if (credentialsDeletionEpoch !== deletionEpochAtStart) return;
+              layout.settings._encWebdavPass = upgraded; migrated = true;
+            }
           }
         }
         if (layout.settings._encGistToken && gistTokenInput) {
@@ -867,7 +876,10 @@ export function bindSyncBackupUi() {
           gistTokenReady = true;
           if (decryptedGistToken) {
             const upgraded = await encryptCredential(decryptedGistToken);
-            if (upgraded && layout.settings._encGistToken !== upgraded) { layout.settings._encGistToken = upgraded; migrated = true; }
+            if (upgraded && layout.settings._encGistToken !== upgraded) {
+              if (credentialsDeletionEpoch !== deletionEpochAtStart) return;
+              layout.settings._encGistToken = upgraded; migrated = true;
+            }
           }
         }
         if (migrated) saveLayout();
@@ -956,6 +968,7 @@ export function bindSyncBackupUi() {
     let __credFlushInFlight = false;
     async function flushUnsavedCredentials() {
       if (__credFlushInFlight) return;
+      const deletionEpochAtStart = credentialsDeletionEpoch;
       const hasInputs = !!(webdavPassInput || webdavUrlInput || webdavUserInput || gistTokenInput);
       if (!hasInputs) return;
       try {
@@ -986,11 +999,17 @@ export function bindSyncBackupUi() {
         // flush retry with the same inputs (each secret handled independently).
         if (passChanged) {
           const encPass = await encryptCredential(passCur);
-          if (encPass) { layout.settings._encWebdavPass = encPass; webdavPassBaseline = passCur; }
+          if (encPass) {
+            if (credentialsDeletionEpoch !== deletionEpochAtStart) return;
+            layout.settings._encWebdavPass = encPass; webdavPassBaseline = passCur;
+          }
         }
         if (gistChanged) {
           const encGist = await encryptCredential(gistCur);
-          if (encGist) { layout.settings._encGistToken = encGist; gistTokenBaseline = gistCur; }
+          if (encGist) {
+            if (credentialsDeletionEpoch !== deletionEpochAtStart) return;
+            layout.settings._encGistToken = encGist; gistTokenBaseline = gistCur;
+          }
         }
         __credDirty = false;
         saveLayout();
@@ -1074,6 +1093,8 @@ export function bindSyncBackupUi() {
     //  remote data  : optional — WebDAV file / Gist (delete or keep)
     //  will keep    : local bookmarks and boxes (never touched)
     const dangerRemoteDeleteFailed = i18n('deleteSyncCredentialRemoteFailed');
+    const dangerRemoteDeleteNoTarget = i18n('deleteSyncCredentialNoRemoteTarget');
+    const dangerPersistFailed = i18n('deleteSyncCredentialPersistFailed');
     const dangerStatusDone = i18n('deleteSyncCredentialStatusDone');
 
     // Test seam: remote-delete stub (file:// lane has no runtime/network), so
@@ -1099,11 +1120,11 @@ export function bindSyncBackupUi() {
     // session), otherwise decrypt the stored envelope (same install key).
     async function deleteRemoteBackup() {
       const provider = syncProviderSelect ? syncProviderSelect.value : 'local';
-      if (provider === 'local') return { ok: true, skipped: true };
+      if (provider === 'local') return { ok: false, error: dangerRemoteDeleteNoTarget };
       if (remoteDeleteStub) return remoteDeleteStub(provider);
       if (provider === 'webdav') {
         const fileUrl = resolveWebDAVFileUrl((webdavUrlInput && webdavUrlInput.value.trim()) || layout.settings.webdavUrl || '').fileUrl;
-        if (!fileUrl) return { ok: true, skipped: true }; // no remote target configured
+        if (!fileUrl) return { ok: false, error: dangerRemoteDeleteNoTarget }; // no remote target configured
         const user = (webdavUserInput && webdavUserInput.value.trim()) || layout.settings.webdavUser || '';
         let pass = (webdavPassInput && webdavPassInput.value) || '';
         if (!pass && layout.settings._encWebdavPass) pass = (await decryptCredential(layout.settings._encWebdavPass)) || '';
@@ -1114,7 +1135,7 @@ export function bindSyncBackupUi() {
       }
       if (provider === 'gist') {
         const gistId = (gistIdInput && gistIdInput.value.trim()) || layout.settings.gistId || '';
-        if (!gistId) return { ok: true, skipped: true }; // no remote target configured
+        if (!gistId) return { ok: false, error: dangerRemoteDeleteNoTarget }; // no remote target configured
         let token = (gistTokenInput && gistTokenInput.value.trim()) || '';
         if (!token && layout.settings._encGistToken) token = (await decryptCredential(layout.settings._encGistToken)) || '';
         if (!token) return { ok: false, error: dangerRemoteDeleteFailed }; // cannot authenticate
@@ -1125,7 +1146,7 @@ export function bindSyncBackupUi() {
         if (!resp.ok) return { ok: false, error: dangerRemoteDeleteFailed };
         return { ok: true };
       }
-      return { ok: true, skipped: true };
+      return { ok: false, error: dangerRemoteDeleteNoTarget };
     }
 
     // Deletes stored sync credentials. Returns { ok, error? }.
@@ -1149,14 +1170,35 @@ export function bindSyncBackupUi() {
       // ancestor cleared. syncLevel / syncFileName are provider-agnostic and
       // deliberately kept; the auto-backup interval is a local behavior.
       if (syncProviderSelect) syncProviderSelect.value = 'local';
+      layout.settings.syncProvider = 'local'; // persist the provider too (CodeRabbit)
       for (const k of ['webdavUrl', 'webdavUser', '_encWebdavPass', 'webdavAllowPrivateHost', 'gistId', '_encGistToken']) delete layout.settings[k];
       for (const el of [webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput]) if (el) el.value = '';
       if (webdavAllowPrivateInput) webdavAllowPrivateInput.checked = false;
       // Reset the D5 decrypt baselines so a later reconnect with a freshly typed
       // secret is seen as a change and writes a new envelope.
       webdavPassBaseline = ''; gistTokenBaseline = ''; webdavPassReady = true; gistTokenReady = true;
+      // Fence any in-flight encrypt/decrypt/migrate writes (flushUnsavedCredentials,
+      // the boot decrypt task) so they cannot resurrect the deleted envelopes.
+      credentialsDeletionEpoch++;
       try { await setSyncBase(null); } catch (e) { debugWarn('deleteSyncCredentials: syncBase clear failed', e); }
-      saveLayout();
+      // Persist WITHOUT merge: saveLayout() merges the stored layout back and its
+      // settings spread would resurrect the just-deleted credential fields. The
+      // direct write path (same class as pull/restore) bypasses that merge; the
+      // revision/updatedAt still advance so peers order the write correctly.
+      const persisted = stripGroupsForPersist(layout);
+      persisted._meta = {
+        ...(persisted._meta || {}),
+        revision: (Number(layout._meta && layout._meta.revision) || 0) + 1,
+        updatedAt: Date.now()
+      };
+      try {
+        await directSetBoxingLayout(persisted);
+        layout._meta = persisted._meta;
+      } catch (e) {
+        debugErr('deleteSyncCredentials: persist failed', e);
+        setDeleteStatus(dangerPersistFailed, true);
+        return { ok: false, error: dangerPersistFailed };
+      }
       updateSyncConfigVisibility();
       updateLastBackupDisplay();
       showDeletePanel(false);

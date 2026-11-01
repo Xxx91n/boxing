@@ -1371,5 +1371,13 @@
   "exportEncryptedLayoutTooLarge": {
     "message": "Export failed: the canvas inside this backup is larger than Boxing can restore (2,000,000 characters of layout). Nothing was exported.",
     "description": "Alert when a layout is larger than the importer can ever restore, so sealing it would be pointless"
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "No remote backup target configured — nothing was deleted. Uncheck the remote option to delete only the local credentials.",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "Failed to save the cleaned configuration — stored credentials were kept. Please try again.",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

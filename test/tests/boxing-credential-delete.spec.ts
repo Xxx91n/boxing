@@ -24,6 +24,17 @@ async function resetFresh(page) {
     typeof (window as any).__boxingDeleteSyncCredentials === 'function' &&
     typeof (window as any).__boxingSetSyncRemoteDeleteStub === 'function'
   )).toBe(true);
+  await openSyncTab(page);
+}
+
+// Opens the settings modal on the Sync tab — the danger zone lives inside the
+// settings modal, so interaction tests must surface it first (CodeRabbit).
+async function openSyncTab(page) {
+  await page.evaluate(() => (document.getElementById('settings-btn') as HTMLElement | null)?.click());
+  await expect(page.locator('#settings-modal')).toBeVisible();
+  await page.evaluate(() =>
+    (document.querySelector('.settings-nav__item[data-tab="sync"]') as HTMLElement | null)?.click());
+  await expect(page.locator('#tab-sync')).toBeVisible();
 }
 
 // Seeds both credential envelopes and returns their ciphertexts so tests can
@@ -72,8 +83,8 @@ test.describe('Ticket 99 T13: delete stored sync credentials entry', () => {
     const initial = await zoneState(page);
     expect(initial.zoneHidden).toBe(true);
     // The danger zone is deliberately NOT a .sync-group card — the UI grouping
-    // spec (T-39) pins the sync tab to exactly 3 groups.
-    expect(initial.syncGroupCount).toBe(0);
+    // spec (T-39) pins the sync tab to exactly 3 provider cards.
+    expect(initial.syncGroupCount).toBe(3);
 
     const seeded = await seedStoredCredentials(page);
     const visible = await zoneState(page);
@@ -200,6 +211,42 @@ test.describe('Ticket 99 T13: delete stored sync credentials entry', () => {
     expect(s.panelHidden).toBe(false);
     expect(s.statusHidden).toBe(false);
     expect(s.status).toContain('nothing was changed');
+  });
+
+  test('remote-delete requested with no configured target aborts atomically (local provider)', async ({ page }) => {
+    await resetFresh(page);
+    const seeded = await seedStoredCredentials(page, { provider: 'local' });
+    await page.click('#delete-sync-credential-open');
+    await page.check('#delete-sync-credential-remote');
+    await page.click('#delete-sync-credential-confirm');
+
+    // No remote target exists for the local provider: the delete must abort with
+    // the explicit no-target error and leave every stored envelope untouched.
+    await expect.poll(() => page.evaluate(() =>
+      (document.getElementById('delete-sync-credential-status') as HTMLElement)?.textContent || ''
+    )).toContain('nothing was deleted');
+
+    const after = await page.evaluate(async (seeded) => {
+      const dbg = (window as any).__boxingDebug;
+      const dec = (window as any).__boxingDecryptCredential;
+      return {
+        pass: await dec(dbg.layout.settings._encWebdavPass),
+        token: await dec(dbg.layout.settings._encGistToken),
+        provider: dbg.layout.settings.syncProvider,
+        passEnvSame: dbg.layout.settings._encWebdavPass === seeded.envPass,
+        tokenEnvSame: dbg.layout.settings._encGistToken === seeded.envToken,
+      };
+    }, seeded);
+    expect(after.pass).toBe('spec-pass');
+    expect(after.token).toBe('spec-token');
+    expect(after.passEnvSame).toBe(true);
+    expect(after.tokenEnvSame).toBe(true);
+    expect(after.provider).toBe('local');
+
+    const s = await zoneState(page);
+    expect(s.zoneHidden).toBe(false);
+    expect(s.panelHidden).toBe(false);
+    expect(s.status).toContain('nothing was deleted');
   });
 
   test('remote-delete success with a gist provider clears local state and reports the provider', async ({ page }) => {

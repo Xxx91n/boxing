@@ -1313,5 +1313,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "匯出失敗：此備份中的畫布資料超過 Boxing 可匯入的上限（layout 2,000,000 字元）。未匯出任何內容。"
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "未設定遠端備份目標 — 未刪除任何內容。若只需刪除本機憑證，請取消勾選遠端選項。",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "儲存清理後的設定失敗 — 已儲存的憑證保持不變。請重試。",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

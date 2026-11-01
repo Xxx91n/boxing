@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "내보내기 실패: 이 백업의 캔버스 데이터가 Boxing이 복원할 수 있는 한도(layout 2,000,000자)를 넘습니다. 내보낸 항목이 없습니다."
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "구성된 원격 백업 대상이 없어 아무것도 삭제되지 않았습니다. 로컬 자격 증명만 삭제하려면 원격 옵션의 체크를 해제하세요.",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "정리된 구성을 저장하지 못했습니다 — 저장된 자격 증명은 그대로 남아 있습니다. 다시 시도해 주세요.",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }

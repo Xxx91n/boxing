@@ -1310,5 +1310,13 @@
 ,
   "exportEncryptedLayoutTooLarge": {
     "message": "書き出し失敗：このバックアップのキャンバスデータは Boxing が復元できる上限（layout 2,000,000 文字）を超えています。何も書き出されていません。"
+  },
+  "deleteSyncCredentialNoRemoteTarget": {
+    "message": "リモートのバックアップ先が設定されていないため、何も削除されませんでした。ローカルの認証情報のみを削除するには、リモートのオプションのチェックを外してください。",
+    "description": "Ticket 99 (T13): failure status message — no remote target configured, nothing deleted"
+  },
+  "deleteSyncCredentialPersistFailed": {
+    "message": "クリアした設定を保存できませんでした — 保存済みの認証情報はそのまま残っています。もう一度お試しください。",
+    "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   }
 }
