@@ -116,7 +116,7 @@ npm run build
 
 ### Requisitos
 
-- Node.js >= 18
+- Node.js 24.22.1
 - npm
 
 ### Configuracion

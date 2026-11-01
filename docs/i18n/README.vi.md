@@ -116,7 +116,7 @@ npm run build
 
 ### Điều kiện tiên quyết
 
-- Node.js >= 18
+- Node.js 24.22.1
 - npm
 
 ### Thiết lập

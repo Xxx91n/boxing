@@ -143,8 +143,8 @@ npm run build
 
 ### Prerequisites
 
-- Node.js >=22.9.0
-- npm >= 11.10.0 (required so the 7-day release-age guard in .npmrc takes effect; see .nvmrc)
+- Node.js 24.22.1 — pinned in `.nvmrc`; `engines.node` is `^24.22.1` and `.npmrc` sets `engine-strict=true`, so a runtime outside that range (below 24.22.1, or Node 25+) fails the install instead of silently running unsupported
+- npm >= 11.10.0 (required so the 7-day release-age guard in .npmrc takes effect; ships with the pinned Node line)
 
 ### Setup
 

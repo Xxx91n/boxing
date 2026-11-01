@@ -4,11 +4,10 @@
 // developer installs without the 7-day supply-chain filter. Refuse to install
 // with an unsupported npm instead of silently skipping the protection.
 //
-// This guard deliberately does not pick a future Node line (Q5 remains an open
-// product decision); it enforces the npm floor required for the ticket's own
-// setting to take effect. package.json engines now mirrors npm 11.10.0's own
-// Node requirement (^20.17.0 || >=22.9.0) so the declared floor and the guard
-// cannot disagree (CodeRabbit PR #94 review round 2).
+// The Node line is declared elsewhere: .nvmrc pins 24.22.1 and package.json
+// engines requires ^24.22.1 (>= 24.22.1 < 25), with engine-strict in .npmrc
+// refusing any runtime outside that range (spec #75 D12, ticket #98). This
+// guard only enforces the npm floor its own setting depends on.
 import { execSync } from "node:child_process";
 
 const MIN = [11, 10, 0];
@@ -51,7 +50,7 @@ if (!version) {
 if (!isAtLeast(version, MIN)) {
   console.error(
     `[guard] npm ${raw} ignores .npmrc "min-release-age=7" (requires npm >= ${MIN.join(".")}). ` +
-      "Use a supported toolchain (Node ^20.17.0 || >=22.9.0, e.g. the repository's .nvmrc Node 24) " +
+      "Use a supported toolchain (Node ^24.22.1, per package.json engines and .nvmrc) " +
       "or upgrade npm on the current Node to keep the 7-day release-age protection."
   );
   process.exit(1);
