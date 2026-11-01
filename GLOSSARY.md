@@ -100,6 +100,8 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **fileUrl** — The derived WebDAV request URL: the `resolveWebDAVFileUrl` output, i.e. the serialized base URL, with `/` appended when it does not end in `/`, plus the sanitized sync filename; a base URL that already ends in `.json` is used verbatim. The 2048 cap applies to both the raw string length and its percent-encoded serialized form (`fileUrlOverCap`), so a non-ASCII `syncFileName` can pass the raw check and still exceed the wire cap.
 
+**keyed WebDAV error** — Error thrown from the `ntp/sync-engine.js` sync paths via `webdavError(key, params)`: `e.key` carries the i18n key and `e.message` the already-interpolated localized text. Classification is key membership against the shared `WEBDAV_ERROR_KEYS` list (`isKnownWebDAVError`); the i18n-message comparison inside it is a legacy fallback for unkeyed errors and can only match unparameterized keys (issue #111).
+
 **autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
 
 **MAX_SNAPSHOT_COUNT** — Hard ceiling of 30 snapshots; older snapshots are physically deleted beyond it.
