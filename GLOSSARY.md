@@ -98,7 +98,7 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **syncFileName** — `layout.settings.syncFileName`, the user-configurable remote backup filename. Provider-agnostic: WebDAV and Gist both honor it, defaulting to `boxing-backup.json`. Sanitization trims leading/trailing whitespace, replaces `\` and `/` with `_`, and strips `\x00-\x1f` control characters; non-ASCII characters survive and percent-encode under URL serialization.
 
-**fileUrl** — The derived WebDAV request URL: the `resolveWebDAVFileUrl` output, i.e. the serialized base URL plus the sanitized sync filename; a base URL that already ends in `.json` is used verbatim. The 2048 cap applies to both the raw string length and its percent-encoded serialized form (`fileUrlOverCap`), so a non-ASCII `syncFileName` can pass the raw check and still exceed the wire cap.
+**fileUrl** — The derived WebDAV request URL: the `resolveWebDAVFileUrl` output, i.e. the serialized base URL, with `/` appended when it does not end in `/`, plus the sanitized sync filename; a base URL that already ends in `.json` is used verbatim. The 2048 cap applies to both the raw string length and its percent-encoded serialized form (`fileUrlOverCap`), so a non-ASCII `syncFileName` can pass the raw check and still exceed the wire cap.
 
 **autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
 
