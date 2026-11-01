@@ -110,7 +110,7 @@ npm run build
 
 - 所有資料保存在 `chrome.storage.local` — 除下列對外請求或你設定的可選雲端備份外，不會離開你的裝置
 - 對外流量僅限：網站圖示查詢（第三方圖示服務與直接 `favicon.ico` 探測）、匿名的 GitHub Releases API 版本檢查，以及可選的 WebDAV / GitHub Gist 備份
-- WebDAV 位址必須是公開 HTTPS 端點 — 預設拒絕私有／本地主機，自建區網服務可在 設定 → 同步 中選擇加入；規則與理由見[隱私政策](../../docs/privacy-policy.md)
+- WebDAV 位址預設必須是公開 HTTPS 端點 — 拒絕私有／本地主機名（僅檢查主機名，不做 DNS 解析）；在 設定 → 同步 中明確開啟的選項僅放寬私有主機拒絕（供自建區網服務），HTTPS 仍然必需；規則與理由見[隱私政策](../../docs/privacy-policy.md)
 - 同步憑證保存在混淆封裝中（非使用者金鑰加密）；手動匯出的備份檔案可另用密語加密 — 詳見[隱私政策](../../docs/privacy-policy.md)
 - 無分析、無追蹤、不執行第三方程式碼
 - 完整隱私政策：[docs/privacy-policy.md](../../docs/privacy-policy.md)

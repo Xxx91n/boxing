@@ -110,7 +110,7 @@ npm run build
 
 - Tất cả dữ liệu nằm trong `chrome.storage.local` — không có gì rời khỏi thiết bị của bạn ngoài các yêu cầu gửi ra liệt kê dưới đây hoặc bản sao lưu đám mây tùy chọn mà bạn tự cấu hình
 - Lưu lượng gửi ra chỉ gồm tra cứu favicon (các dịch vụ biểu tượng bên thứ ba và truy vấn `favicon.ico` trực tiếp), kiểm tra phiên bản ẩn danh qua GitHub Releases API, và sao lưu WebDAV / GitHub Gist tùy chọn
-- URL WebDAV phải là điểm cuối HTTPS công khai — các host riêng tư và nội bộ bị từ chối theo mặc định, với tùy chọn cho phép trong Cài đặt → Đồng bộ cho máy chủ LAN tự lưu trữ; quy tắc và lý do trong [chính sách quyền riêng tư](../../docs/privacy-policy.md)
+- URL WebDAV theo mặc định phải là điểm cuối HTTPS công khai — các tên host riêng tư và nội bộ bị từ chối (chỉ kiểm tra tên host, không phân giải DNS); tùy chọn bật rõ ràng trong Cài đặt → Đồng bộ chỉ nới lỏng việc từ chối này cho máy chủ LAN tự lưu trữ, HTTPS vẫn bắt buộc; quy tắc và lý do trong [chính sách quyền riêng tư](../../docs/privacy-policy.md)
 - Thông tin xác thực đồng bộ nằm trong lớp bọc làm rối (không phải mã hóa bằng khóa người dùng); các file sao lưu xuất thủ công có thể được đóng dấu bằng cụm mật khẩu riêng — chi tiết trong [chính sách quyền riêng tư](../../docs/privacy-policy.md)
 - Không phân tích, không theo dõi, không thực thi mã của bên thứ ba
 - Chính sách quyền riêng tư đầy đủ: [docs/privacy-policy.md](../../docs/privacy-policy.md)

@@ -109,10 +109,10 @@ npm run build
 ## Privacidade
 
 - Todos os dados permanecem em `chrome.storage.local` — nada sai do seu dispositivo alem das solicitacoes de saida listadas abaixo ou de um backup em nuvem opcional que voce configure
-- O trafego de saida se limita a busca de favicons (servicos de icones de terceiros e requisicoes diretas de `favicon.ico`), a uma verificacao de versao anonima na API do GitHub Releases e ao backup opcional WebDAV / GitHub Gist
-- URLs de WebDAV devem ser endpoints HTTPS publicos — hosts privados e locais sao recusados por padrao, com opcao explicita em Configuracoes → Sync para servidores LAN auto-hospedados; regras e justificativa na [politica de privacidade](../../docs/privacy-policy.md)
+- O trafego de saida se limita a busca de favicons (servicos de icones de terceiros e requisicoes diretas de `favicon.ico`), a uma verificacao de versao anonima na API do GitHub Releases (com fallback para o endpoint `version.json` da demo) e ao backup opcional WebDAV / GitHub Gist
+- URLs de WebDAV devem ser endpoints HTTPS publicos por padrao — nomes de host privados e locais sao recusados (somente verificacao do nome do host, sem resolucao de DNS); uma opcao explicita em Configuracoes → Sync relaxa apenas essa recusa para servidores LAN auto-hospedados, e HTTPS continua obrigatorio; regras e justificativa na [politica de privacidade](../../docs/privacy-policy.md)
 - As credenciais de sincronizacao ficam em um envelope ofuscado (nao cifrado com chave do usuario); backups exportados manualmente podem ser selados com uma frase-senha separada — detalhes na [politica de privacidade](../../docs/privacy-policy.md)
-- Sem analises, sem rastreamento, nenhum codigo de terceiros executado
+- Sem analises, sem rastreamento; nenhum codigo de terceiros é executado
 - Politica de privacidade completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Desenvolvimento

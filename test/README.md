@@ -49,8 +49,8 @@ filesystem lock so two test runs cannot overlap — a concurrent run exits 75
   from `dist/boxing-chrome/` (issue #70); run `npm run build` before a local
   run — CI builds first
 - Projects: `firefox-extension` and `chromium-extension` only; the Firefox lane
-  runs headless (wave-2026.10.11), so native-input realness specs stay
-  chromium-scoped
+  runs headless (wave-2026.10.11) and restores the 4 native-input tests in
+  place — Chromium stays headed and remains the headed native-input baseline
 
 ## CI
 
@@ -97,12 +97,14 @@ suite**, never a silent skip:
 - a changed file maps to zero clusters (entry surface: `ntp/ntp.js`,
   `background.js`, `manifest.json`, css, `index.html`) or to more than one.
 
-The import-graph gate fails on stale cluster entries, but it can only check
-that mapped spec files exist — cluster coverage stays a manual maintenance
-duty. CI itself still runs the full suite; the selector is the local/agent
-fast path. Known limitation: a file that maps to no cluster silently falls
-back to the full suite, so new source files need a `cluster-map.json` entry
-to get a bounded run.
+The import-graph gate fails on stale cluster entries: it validates cluster
+names, non-empty cluster lists, that every mapped spec file exists, and that
+no spec is left uncovered by any cluster. Semantic source-to-cluster coverage
+(whether a file's change should really run those specs) stays a manual
+maintenance duty. CI itself still runs the full suite; the selector is the
+local/agent fast path. Known limitation: a file that maps to no cluster falls
+back to the full suite (the fallback is logged, not silent), so new source
+files need a `cluster-map.json` entry to get a bounded run.
 
 **Hot-file single-agent convention**
 

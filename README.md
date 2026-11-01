@@ -124,7 +124,7 @@ npm run build
 
 - All data stays in `chrome.storage.local` — nothing leaves your device except the outbound requests listed here or an optional cloud backup you configure
 - Outbound traffic is limited to favicon lookup (third-party icon services and direct `favicon.ico` probes), an anonymous GitHub Releases API version check, and optional WebDAV / GitHub Gist backup
-- WebDAV URLs must be public HTTPS endpoints: private, loopback, and link-local hosts are refused, with a private-host opt-in under Settings → Sync for self-hosted LAN servers — rules and rationale in the [privacy policy](docs/privacy-policy.md)
+- WebDAV URLs must be public HTTPS endpoints by default: private, loopback, and link-local hostnames are refused (hostname checks only — they do not resolve DNS), and an explicit opt-in under Settings → Sync relaxes only the private-host refusal for self-hosted LAN servers — rules and rationale in the [privacy policy](docs/privacy-policy.md)
 - Sync credentials sit in an obfuscated (not user-keyed) envelope; a separate passphrase option can seal exported backup files — details in the [privacy policy](docs/privacy-policy.md)
 - No analytics, no tracking; no third-party code is executed
 

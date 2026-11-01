@@ -15,9 +15,11 @@ The local tree is never built either (CI only, see Verification).
   deploy time `.github/scripts/build-demo.mjs` (run by
   `.github/workflows/demo-deploy.yml`) copies the live `ntp/*` and
   `_locales/*` files from the checkout into the artifact `demo/` directory
-  and regenerates `index.html` from `ntp/index.html` with two insertions:
-  1. `<script src="chrome-stub.js"></script>` before the `ntp.js` module tag;
-  2. a fixed "web demo" banner after `<body>`.
+  and regenerates `index.html` from `ntp/index.html` with these changes:
+  1. `<script src="chrome-stub.js"></script>` and `<script src="demo-flag.js"></script>`
+     before the `ntp.js` module tag;
+  2. a `<meta name="boxing-version" content="<version>">` tag inside `<head>`;
+  3. a fixed "web demo" banner after `<body>`.
 - `chrome-stub.js` installs a localStorage-backed `chrome.*` mock
   (storage.local/sync/managed + onChanged, runtime.getURL, tabs.create →
   window.open) so the NTP boots without extension APIs. The NTP also carries
@@ -35,9 +37,9 @@ The local tree is never built either (CI only, see Verification).
   `build.mjs --css-only` before assembling and re-asserts both files exist
   before upload.
 - `version.json` is **generated**, not committed: the workflow writes the
-  release tag into the artifact, so the deployed demo is stamped with the
-  release it came from. Fallbacks for manual runs: `workflow_dispatch`
-  input `version`, then `manifest.json` version.
+  release it came from into the artifact, normalized to the bare calver
+  (`v2026.9.20` is stored as `2026.9.20`). Fallbacks for manual runs:
+  `workflow_dispatch` input `version`, then `manifest.json` version.
 
 ## Verification (CI-only build policy)
 

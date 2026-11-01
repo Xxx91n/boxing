@@ -16,9 +16,12 @@ tab: **Build & Package → Run workflow**.
 ## Inputs
 
 - `version` (optional): override `manifest.json` `version` for this build run.
-- `make_release` (optional, default `false`): when `true`, also create a draft
-  GitHub pre-release with `tag_name=v<version>` (or `v<run_id>` if version is
-  empty) and attach the 4 artifacts.
+- `release_tag` (optional): tag name for the release; defaults to `v<version>`.
+- `make_release` (optional, default `false`): when `true`, publish a
+  (non-draft, non-prerelease) GitHub Release named `Boxing <version>` and
+  attach `dist/boxing-chrome-<version>.zip`,
+  `dist/boxing-firefox-<version>.zip`, `dist/boxing-source-<version>.zip`,
+  and `dist/SHA256SUMS.txt`.
 
 ## Required repo secrets (optional)
 

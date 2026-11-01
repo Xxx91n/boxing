@@ -110,8 +110,8 @@ npm run build
 
 - Alle Daten bleiben in `chrome.storage.local` — nichts verlaesst Ihr Geraet ausser den unten aufgefuehrten ausgehenden Anfragen oder einem optionalen Cloud-Backup, das Sie konfigurieren
 - Ausgehender Verkehr ist auf Favicon-Abrufe (Icon-Dienste von Drittanbietern und direkte `favicon.ico`-Anfragen), eine anonyme Versionspruefung ueber die GitHub Releases API und das optionale WebDAV / GitHub Gist Backup beschraenkt
-- WebDAV-URLs muessen oeffentliche HTTPS-Endpunkte sein — private und lokale Hosts werden standardmaessig abgelehnt, mit einer Opt-in-Option unter Einstellungen → Sync fuer selbst gehostete LAN-Server; Regeln und Begruendung in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
-- Sync-Anmeldedaten liegen in einer verschleierten (nicht benutzerschluesselbasierten) Huellle; manuell exportierte Backupdateien koennen zusaetzlich mit einer Passphrase versiegelt werden — Details in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
+- WebDAV-URLs muessen standardmaessig oeffentliche HTTPS-Endpunkte sein — private und lokale Hostnamen werden abgelehnt (nur Hostnamen-Pruefung, keine DNS-Aufloesung); eine explizite Option unter Einstellungen → Sync lockert nur diese Ablehnung fuer selbst gehostete LAN-Server, HTTPS bleibt erforderlich; Regeln und Begruendung in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
+- Sync-Anmeldedaten liegen in einer verschleierten (nicht benutzerschluesselbasierten) Huelle; manuell exportierte Backupdateien koennen zusaetzlich mit einer Passphrase versiegelt werden — Details in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
 - Keine Analytik, kein Tracking, kein ausgefuehrter Drittanbieter-Code
 - Vollstaendige Datenschutzrichtlinie: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
