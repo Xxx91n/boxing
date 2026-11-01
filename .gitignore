@@ -114,3 +114,10 @@ ntp/ntp.css
 # Test process mutex lock directory
 .test-mutex/
 .test-mutex-*
+
+# Issue-driven scratch (ticket 100) — never commit
+temp_i*.json
+temp_pr*.json
+spec[0-9]*.txt
+pretest_out.txt
+.atomcode/
