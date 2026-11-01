@@ -1070,14 +1070,16 @@ export function bindSyncBackupUi() {
     let backupNowLabelReset = null;
     backupNowBtn?.addEventListener('click', async () => {
       const p = syncProviderSelect?.value || 'local';
-      if (p === 'local') {
-        backupToLocal();
-      }
       // Same contract as the WebDAV test button above: disabled while the
-      // request runs, previous label reset cancelled before scheduling a new one.
+      // request runs, previous label reset cancelled before scheduling a new
+      // one, and every failure — including a synchronous backupToLocal() throw —
+      // surfaces on the button instead of rejecting unhandled.
       if (backupNowLabelReset) { clearTimeout(backupNowLabelReset); backupNowLabelReset = null; }
       backupNowBtn.disabled = true;
       try {
+        if (p === 'local') {
+          backupToLocal();
+        }
         await performBackup();
       } catch (e) {
         // PR #109 review round 2: performBackup now propagates failures —
@@ -1086,7 +1088,9 @@ export function bindSyncBackupUi() {
         debugErr('Backup Now failed', e);
         const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork', 'webdavErrUrlTooLong'];
         const isKnown = knownErrors.some(k => e.message && i18n(k) === e.message);
-        backupNowBtn.textContent = isKnown ? e.message : i18n('webdavErrNetwork');
+        // Gist failures throw curated English strings ("GitHub API 401") — show
+        // those verbatim rather than the WebDAV-specific network message.
+        backupNowBtn.textContent = isKnown || p === 'gist' ? e.message : i18n('webdavErrNetwork');
       } finally {
         backupNowBtn.disabled = false;
         backupNowLabelReset = setTimeout(() => { backupNowBtn.textContent = i18n('syncNow'); }, 4000);
