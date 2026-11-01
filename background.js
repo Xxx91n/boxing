@@ -213,6 +213,23 @@ try {
     return { status: resp.status, ok: resp.ok };
   }
 
+  // Ticket 99 (T13): DELETE the cloud backup file when the user chooses to
+  // remove remote data while deleting stored sync credentials. Same guards as
+  // PUT/GET — no body, so guardWebDAVRequest(msg, false) applies.
+  async function handleWebDAVDelete(msg) {
+    const { url, user, pass } = msg;
+    bgLog('WebDAV DELETE via BG:', { url });
+    const h = new Headers();
+    const auth = makeAuthHeader(user, pass);
+    if (auth) h.set('Authorization', auth);
+    const resp = await fetch(url, { method: 'DELETE', headers: h, redirect: 'manual' });
+    bgLog('WebDAV DELETE response:', resp.status);
+    if (resp.status === 0 || resp.type === 'opaqueredirect') {
+      return { status: 0, ok: false, error: 'webdav redirect blocked' };
+    }
+    return { status: resp.status, ok: resp.ok };
+  }
+
   // Ticket 83 (V-11): stream the GET body with a byte cap. When the cap is exceeded
   // the response is cancelled and a recognizable error is thrown instead of buffering
   // unbounded data into the service worker. Same policy as the page-direct fallback
@@ -266,7 +283,7 @@ try {
       return { success: false, error: 'external sender blocked', blocked: true };
     }
     // BX-AUD-01/03: per-handler scheme + private-address + length guards.
-    if (msg.type === 'webdav-test' || msg.type === 'webdav-get') {
+    if (msg.type === 'webdav-test' || msg.type === 'webdav-get' || msg.type === 'webdav-delete') {
       const block = guardWebDAVRequest(msg, false);
       if (block) return block;
     } else if (msg.type === 'webdav-put') {
@@ -274,7 +291,7 @@ try {
       if (block) return block;
     }
     // A2: Chrome optional_host_permissions — verify origin access before fetch.
-    if (msg.type === 'webdav-test' || msg.type === 'webdav-put' || msg.type === 'webdav-get') {
+    if (msg.type === 'webdav-test' || msg.type === 'webdav-put' || msg.type === 'webdav-get' || msg.type === 'webdav-delete') {
       const perm = await ensureWebDAVPermission(msg.url);
       if (!perm.ok) return { success: false, needPermission: true, error: 'host permission not granted', origin: perm.origin };
     }
@@ -287,6 +304,9 @@ try {
         return { success: true, ...result };
       } else if (msg.type === 'webdav-get') {
         const result = await handleWebDAVGet(msg);
+        return { success: true, ...result };
+      } else if (msg.type === 'webdav-delete') {
+        const result = await handleWebDAVDelete(msg);
         return { success: true, ...result };
       }
       return { success: false, error: 'Unknown message type: ' + msg.type };

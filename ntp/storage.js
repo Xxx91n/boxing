@@ -389,6 +389,15 @@ export function registerStorageOnChanged() {
         return null;
       }
       const recovered = migrateLayout(snap.data);
+      // Ticket 99 (T13) / CodeRabbit (security): once stored sync credentials have
+      // been deleted (the in-memory layout carries none), a rollback to an older
+      // snapshot must not resurrect credentials the user explicitly removed. Snapshots
+      // taken before the deletion are thereby invalidated for those fields; the user
+      // re-enters them after a rollback.
+      if (recovered.settings && !layout.settings._encWebdavPass && !layout.settings._encGistToken) {
+        delete recovered.settings._encWebdavPass;
+        delete recovered.settings._encGistToken;
+      }
       debug('restoreFromSnapshot: recovered from ts=' + ts +
         ' @' + new Date(snap.ts).toISOString());
       return recovered;
