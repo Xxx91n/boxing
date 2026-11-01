@@ -1,6 +1,6 @@
 # Boxing Privacy Policy
 
-**Last updated:** 2026-09-12  
+**Last updated:** 2026-11-01  
 **Effective date:** 2026-08-08
 
 ## Introduction
@@ -27,7 +27,7 @@ The full source code is available at [https://github.com/Xxx91n/boxing](https://
 - We do NOT collect device information
 - We do NOT collect IP addresses
 - We do NOT use tracking pixels, cookies, or fingerprinting
-- We do NOT sell or share data with any third party
+- We do NOT sell your data. The automatic favicon and version-check requests described in Network Connections transmit only the technical data listed there (bookmark-site hostnames and an anonymous version check) to those third-party services.
 
 ## How We Use Your Data
 
@@ -37,7 +37,17 @@ Your data is used solely to provide the extension's functionality:
 - Canvas rendering and interaction
 - Settings persistence across sessions
 
-No data ever leaves your device unless you explicitly configure optional cloud backup (see below).
+No data ever leaves your device unless you explicitly configure optional cloud backup (see below), or as part of the automatic favicon and version-check requests disclosed in Network Connections.
+
+## Network Connections (Outbound)
+
+Boxing is local-first: your bookmarks, layout, and settings stay on your device unless you enable backup. The extension does, however, make the following automatic or user-triggered outbound requests:
+
+**Favicon retrieval (automatic, on by default).** When displaying bookmarks, Boxing fetches site icons from four third-party icon services: bytecook (`ico.bytecook.io`), DuckDuckGo (`icons.duckduckgo.com`), Google (`www.google.com/s2/favicons`), and favicon.im (`favicon.im`). On first use it races these services and locks onto the fastest one for the session. It may also request a bookmark site's own `https://<host>/favicon.ico` directly. These requests send only the bookmark site's hostname (domain) to the icon service or to the site itself; no bookmark titles, full URLs, or other data are included.
+
+**Version check (automatic).** The About screen periodically queries the GitHub Releases API (`api.github.com/repos/Xxx91n/boxing/releases/latest`) to show whether a newer version is available, with a fallback to `https://boxing.xxx91n.com/demo/version.json`. This request is anonymous and does not include any local data.
+
+**User-configured backup (optional, off by default).** If you enable cloud backup, Boxing contacts the WebDAV server you configure and/or the GitHub Gist API (`api.github.com/gists`) as described under Data Storage. These connections go directly from your browser to the servers you choose.
 
 ## Data Storage
 
@@ -59,12 +69,12 @@ In both cases, the data path is **directly from your browser to your chosen clou
 - **Credential storage is obfuscation, not user-keyed encryption:** WebDAV passwords and GitHub tokens are wrapped with AES-GCM using a key derived (PBKDF2) from a random per-install key plus a per-record salt. The per-install key is generated on first use, stored only in your browser's `chrome.storage.local`, and is never included in the layout, JSON exports, WebDAV/Gist backups, or snapshots — an export or backup file read in isolation cannot unlock your credentials. It does **not** protect them from anyone who can read your browser profile (the key sits in the same storage area as the ciphertext) or who has the running extension. There is no passphrase prompt on this path and no user-supplied key material in it; do not rely on this as strong encryption.
 - **Passphrase-protected backup files are user-keyed, and the key is only the passphrase:** you may tick *Passphrase-protect exports* in Settings → Data to seal a manually exported backup (standard envelope or full DR package) in a versioned `boxingBackup: 1` envelope — PBKDF2-SHA-256 (310,000 iterations, per-file 16-byte salt) → AES-GCM-256 with a per-file 12-byte IV. We never transmit or store that passphrase anywhere: it is not written to your profile, the layout, a snapshot, a sync payload or a log, and it is cleared from the dialog the moment it closes. Consequences we state rather than soften: lose the passphrase and the file stays unreadable (there is no recovery path and no passphrase sync), and the sealed file is readable by anyone who does hold it, so treat the file and the passphrase together as the secret. This protection covers exported files only — automatic backups and sync traffic keep their own existing protocol, and the per-install credential key above is never used to seal one, which is why restoring a backup on another install still asks you to re-enter your WebDAV/GitHub credentials.
 - All network connections use HTTPS (enforced by URL validation — HTTP is rejected).
-- No third-party libraries are loaded at runtime. The extension is 100% vanilla JavaScript with no external dependencies loaded from CDNs or remote servers.
+- No third-party JavaScript libraries or frameworks are loaded at runtime — the extension is vanilla JavaScript. The automatic favicon and version-check requests described in Network Connections contact third-party servers, but no third-party code is downloaded or executed from them.
 - The source code is publicly auditable.
 
 ## Data Sharing
 
-We do not share your data with anyone. Your data stays on your device unless you explicitly configure cloud backup to a service you control.
+We do not sell or share your data with anyone. Your bookmarks, layout, and settings stay on your device unless you explicitly configure cloud backup. The automatic favicon and version-check requests in Network Connections send only the minimal technical data described there (a bookmark site's hostname for favicon lookup, or an anonymous version-check request) to the third-party icon services and the GitHub Releases API.
 
 ## User Rights
 

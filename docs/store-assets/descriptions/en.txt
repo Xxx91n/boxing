@@ -35,7 +35,8 @@ Privacy first
 • All data stays on your device (browser local storage)
 • Optional WebDAV backup to a server you control
 • Optional GitHub Gist backup
-• No analytics, no tracking, no third-party services
+• No analytics, no tracking
+• Favicon lookup and update checks contact third-party icon services and the GitHub Releases API (see privacy policy)
 • Open source (Apache-2.0)
 
 Connections

@@ -45,10 +45,11 @@ See `descriptions/en.txt` for the **store-paste** version (plain text, no Markdo
 - Rounded corner option for boxes
 
 **Privacy First**
-- All data stored locally — nothing leaves your device
+- All data stored locally — nothing leaves your device except the requests below
 - Optional WebDAV cloud backup (your server, your control)
 - Optional GitHub Gist backup
-- No analytics, no tracking, no third-party services
+- No analytics, no tracking
+- Favicon lookup and update checks contact third-party icon services and the GitHub Releases API (see [privacy policy](https://boxing.xxx91n.com/privacy-policy.html))
 - 100% open source (Apache-2.0) — audit the code yourself
 
 **Connectivity**
@@ -76,7 +77,7 @@ See `descriptions/en.txt` for the **store-paste** version (plain text, no Markdo
 
 ### Technical
 
-- Vanilla JavaScript — no frameworks, no bundlers, no external runtime dependencies
+- Vanilla JavaScript — no frameworks, no bundlers, no third-party code is executed (see Privacy First for outbound connections)
 - Works on Chrome, Edge, Firefox, and other Chromium-based browsers
 - Manifest V3 compatible
 - Open source: [https://github.com/Xxx91n/boxing](https://github.com/Xxx91n/boxing)

@@ -47,7 +47,7 @@ URL: https://addons.mozilla.org/developers/addon/submit/
 | Screenshot | upload all 5 from docs/store-assets/screenshots/ (1280x800, AMO-recommended size) |
 | This add-on is experimental | leave UNCHECKED |
 | Privacy policy | CHECK, paste URL: https://boxing.xxx91n.com/privacy-policy.html (200 OK verified 2026-09-06, re-verify before submit) |
-| Notes for Reviewer | "New Tab override extension. All data stays local (storage.local); optional WebDAV/Gist backup only contacts servers the user configures themselves. Manifest declares host_permissions https://*/* solely so the optional WebDAV backup can reach the user's own server; no browsing data is read, transmitted, or shared. Source: https://github.com/Xxx91n/boxing (tag v2026.9.9)." |
+| Notes for Reviewer | "New Tab override extension. All data stays local (storage.local); optional WebDAV/Gist backup only contacts servers the user configures themselves. Manifest declares host_permissions https://*/* solely so the optional WebDAV backup can reach the user's own server; no browsing data is read, transmitted, or shared. Favicon retrieval contacts third-party icon services (bytecook, DuckDuckGo, Google, favicon.im) with bookmark-site hostnames only, and the About screen performs an anonymous GitHub Releases API version check; no third-party code is executed. Source: https://github.com/Xxx91n/boxing (tag v2026.9.9)." |
 
 **Summary (EN, 250-char limit — this is 236 chars):**
 
@@ -103,7 +103,7 @@ Microsoft developer account; free registration, no fee).
 | Permission justification: bookmarks | Read and write the browser bookmark tree the user asks to organize/import. |
 | Permission justification: unlimitedStorage | Bookmark layouts with favicons can exceed the default local-storage quota. |
 | Permission justification: alarms | Schedule optional periodic WebDAV/Gist backups the user opts into. |
-| Permission justification: host_permissions https://*/* | Used only at runtime for the user-configured WebDAV backup endpoint; no other hosts are contacted and no browsing data is read. |
+| Permission justification: host_permissions https://*/* | Used only at runtime for the user-configured WebDAV backup endpoint; no browsing data is read. Favicon and version-check connections (third-party icon services, GitHub Releases API) are made from the page context under the CSP, not via this host permission. |
 | Are you using remote code? | **No** (all code ships in the package) |
 | Data usage certifications | Does not collect any user data → answer "No" to all collection questions |
 | Privacy policy URL | https://boxing.xxx91n.com/privacy-policy.html |
@@ -125,7 +125,11 @@ Microsoft developer account; free registration, no fee).
 > This extension replaces the new tab page. It does not collect or transmit
 > user data; storage.local holds all bookmarks/settings locally. The
 > https://*/* host permission exists only so the user can optionally
-> configure their own WebDAV server for backups (off by default). Test:
+> configure their own WebDAV server for backups (off by default). Favicon
+> retrieval contacts third-party icon services (bytecook, DuckDuckGo,
+> Google, favicon.im) with bookmark-site hostnames only, and the About
+> screen performs an anonymous GitHub Releases API version check; no
+> third-party code is executed. Test:
 > install, open a new tab, double-click empty canvas to create a box, add a
 > bookmark, drag to connect two boxes, open Settings for theme/sync options.
 > Privacy policy: https://boxing.xxx91n.com/privacy-policy.html
