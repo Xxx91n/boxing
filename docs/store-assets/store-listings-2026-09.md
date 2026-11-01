@@ -47,7 +47,7 @@ URL: https://addons.mozilla.org/developers/addon/submit/
 | Screenshot | upload all 5 from docs/store-assets/screenshots/ (1280x800, AMO-recommended size) |
 | This add-on is experimental | leave UNCHECKED |
 | Privacy policy | CHECK, paste URL: https://boxing.xxx91n.com/privacy-policy.html (200 OK verified 2026-09-06, re-verify before submit) |
-| Notes for Reviewer | "New Tab override extension. All data stays local (storage.local); optional WebDAV/Gist backup only contacts servers the user configures themselves. Manifest declares host_permissions https://*/* solely so the optional WebDAV backup can reach the user's own server; no browsing data is read, transmitted, or shared. Source: https://github.com/Xxx91n/boxing (tag v2026.9.9)." |
+| Notes for Reviewer | "New Tab override extension. All data stays local (storage.local); optional WebDAV/Gist backup only contacts servers the user configures themselves. Manifest declares host_permissions https://*/* solely so the optional WebDAV backup can reach the user's own server; no browsing data is read, transmitted, or shared. Favicon retrieval contacts third-party icon services (bytecook, DuckDuckGo, Google, favicon.im) with bookmark-site hostnames only, and the About screen performs an anonymous GitHub Releases API version check; no third-party code is executed. Source: https://github.com/Xxx91n/boxing (tag v2026.9.9)." |
 
 **Summary (EN, 250-char limit — this is 236 chars):**
 
@@ -103,7 +103,7 @@ Microsoft developer account; free registration, no fee).
 | Permission justification: bookmarks | Read and write the browser bookmark tree the user asks to organize/import. |
 | Permission justification: unlimitedStorage | Bookmark layouts with favicons can exceed the default local-storage quota. |
 | Permission justification: alarms | Schedule optional periodic WebDAV/Gist backups the user opts into. |
-| Permission justification: host_permissions https://*/* | Used only at runtime for the user-configured WebDAV backup endpoint; no other hosts are contacted and no browsing data is read. |
+| Permission justification: host_permissions https://*/* | Used only at runtime for the user-configured WebDAV backup endpoint; no browsing data is read. Favicon and version-check connections (third-party icon services, GitHub Releases API) are made from the page context under the CSP, not via this host permission. |
 | Are you using remote code? | **No** (all code ships in the package) |
 | Data usage certifications | Does not collect any user data → answer "No" to all collection questions |
 | Privacy policy URL | https://boxing.xxx91n.com/privacy-policy.html |
@@ -125,7 +125,11 @@ Microsoft developer account; free registration, no fee).
 > This extension replaces the new tab page. It does not collect or transmit
 > user data; storage.local holds all bookmarks/settings locally. The
 > https://*/* host permission exists only so the user can optionally
-> configure their own WebDAV server for backups (off by default). Test:
+> configure their own WebDAV server for backups (off by default). Favicon
+> retrieval contacts third-party icon services (bytecook, DuckDuckGo,
+> Google, favicon.im) with bookmark-site hostnames only, and the About
+> screen performs an anonymous GitHub Releases API version check; no
+> third-party code is executed. Test:
 > install, open a new tab, double-click empty canvas to create a box, add a
 > bookmark, drag to connect two boxes, open Settings for theme/sync options.
 > Privacy policy: https://boxing.xxx91n.com/privacy-policy.html
@@ -149,7 +153,7 @@ and license. Paste it as-is.
 >
 > 【设计与主题】米色/奶油色极简美学，安静专注；浅色与深色模式，自动跟随系统；可调字号与缩放；平滑的 SVG 连线；圆角样式可选。
 >
-> 【隐私优先】所有数据存储在本地，不会离开你的设备；可选 WebDAV 云备份（用你自己的服务器，由你掌控）；可选 GitHub Gist 备份；无统计、无追踪、无第三方服务；100% 开源（Apache-2.0），代码随时可审计。
+> 【隐私优先】数据默认全部保存在本机；自动图标获取与版本检查会联系第三方图标服务与 GitHub Releases API（详见隐私政策）；可选 WebDAV 云备份（用你自己的服务器，由你掌控）；可选 GitHub Gist 备份；无统计、无追踪；100% 开源（Apache-2.0），代码随时可审计。
 >
 > 【权限说明】storage：本地保存书签、布局与设置；tabs：按配置在新标签页打开书签；bookmarks：读取/整理浏览器书签树；unlimitedStorage：书签布局与图标可能超过默认配额；alarms：按需执行定时备份；https://*/* 主机权限仅用于你自行配置的 WebDAV 备份服务器，不读取任何浏览记录。我们不请求历史记录、下载、剪贴板等任何涉及浏览活动的权限。
 >

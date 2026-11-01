@@ -20,6 +20,7 @@ const html = read('ntp/index.html');
 const utils = read('ntp/utils.js');
 const settingsUi = read('ntp/settings-ui.js');
 const render = read('ntp/render.js');
+const favicon = read('ntp/favicon.js');
 
 const violations = [];
 
@@ -40,9 +41,47 @@ if (pasteHandlers < 3) {
   violations.push(`ntp/render.js plain-text paste handlers: expected >=3, found ${pasteHandlers}`);
 }
 
+// D11: every outbound endpoint declared in the runtime source must be
+// disclosed in docs/privacy-policy.md. Adding a new CDN / service without
+// updating the policy fails here (the drift is mechanical, so the check is).
+const OUTBOUND_SCAN_FILES = ['ntp/favicon.js', 'ntp/settings-ui.js', 'ntp/sync-engine.js', 'ntp/site-constants.js'];
+// github.com appears in the UI only as repo/issue/release page links, not as API traffic.
+const IGNORED_OUTBOUND_HOSTS = new Set(['github.com']);
+const privacyPolicy = read('docs/privacy-policy.md').toLowerCase();
+
+/**
+ * Extract every unique https outbound host from a runtime source file.
+ * @param {string} src - Source text of a scanned runtime file.
+ * @returns {Set<string>} Normalized hostnames (www. stripped, github.com excluded).
+ */
+function extractOutboundHosts(src) {
+  const hosts = new Set();
+  const re = /https:\/\/([a-z0-9.-]+)(?::[0-9]+)?/gi;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    let h = m[1].toLowerCase();
+    if (h.startsWith('www.')) h = h.slice(4);
+    if (!IGNORED_OUTBOUND_HOSTS.has(h)) hosts.add(h);
+  }
+  return hosts;
+}
+
+const declaredHosts = new Set();
+for (const rel of OUTBOUND_SCAN_FILES) {
+  for (const h of extractOutboundHosts(read(rel))) declaredHosts.add(h);
+}
+for (const h of [...declaredHosts].sort()) {
+  if (!privacyPolicy.includes(h)) {
+    violations.push(`outbound endpoint ${h} is declared in runtime source but missing from docs/privacy-policy.md`);
+  }
+}
+if (favicon.includes('favicon.ico') && !privacyPolicy.includes('favicon.ico')) {
+  violations.push('direct /favicon.ico probing declared in ntp/favicon.js but missing from docs/privacy-policy.md');
+}
+
 const report = {
   ok: violations.length === 0,
-  checked: ['CSP meta', 'dangerous protocol rejection', '2MB import cap', 'plain-text paste handlers'],
+  checked: ['CSP meta', 'dangerous protocol rejection', '2MB import cap', 'plain-text paste handlers', 'outbound endpoints disclosed in privacy policy'],
   violations
 };
 console.log(JSON.stringify(report, null, 2));

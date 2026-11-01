@@ -2,10 +2,10 @@
 
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
-| 3.7.x   | Yes       |
-| < 3.7   | No        |
+| Version   | Supported |
+|-----------|-----------|
+| 2026.10.17 | Yes      |
+| < 2026.10.17 | No     |
 
 ## Reporting a Vulnerability
 
@@ -27,4 +27,10 @@ Include:
 
 ## Scope
 
-Boxing is a client-only browser extension. All data is stored locally. The only outbound network access is user-configured WebDAV or GitHub Gist backup. No analytics, no tracking, no third-party services.
+Boxing is a client-only browser extension. All data is stored locally. Outbound network access is limited to:
+
+- **Favicon retrieval** from four third-party icon services (bytecook `ico.bytecook.io`, DuckDuckGo `icons.duckduckgo.com`, Google `www.google.com/s2/favicons`, favicon.im) and direct `favicon.ico` requests to bookmark-site hosts;
+- **Version check** against the GitHub Releases API (`api.github.com`) with a fallback to `https://boxing.xxx91n.com/demo/version.json`;
+- **User-configured WebDAV or GitHub Gist backup** (off by default).
+
+No analytics, no tracking, no third-party code is executed. See [docs/privacy-policy.md](docs/privacy-policy.md) for the full outbound disclosure.

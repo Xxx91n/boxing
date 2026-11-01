@@ -110,9 +110,9 @@ npm run build
 
 ## Privacy
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device unless you configure optional cloud backup
-- Optional WebDAV / GitHub Gist backup is the only outbound network usage
-- No analytics, no tracking, no third-party services
+- All data stored locally in `chrome.storage.local` — nothing leaves your device except the favicon / version-check requests below or optional cloud backup
+- Outbound traffic is limited to favicon lookup (third-party icon services and direct `favicon.ico` probes), an anonymous GitHub Releases API version check, and optional WebDAV / GitHub Gist backup
+- No analytics, no tracking; no third-party code is executed
 - 100% open source (Apache-2.0) — audit every line
 - Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
