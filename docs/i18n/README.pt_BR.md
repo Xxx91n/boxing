@@ -25,6 +25,8 @@ Boxing transforma sua pagina de nova aba em um espaco de trabalho visual para ma
 - [Contribuir](#contribuir)
 - [Licenca](#licenca)
 
+> Fora do escopo desta traducao (out of scope): os detalhes tecnicos em profundidade estao no README em ingles e em `docs/`; esta traducao cobre instalacao, uso e o resumo de privacidade.
+
 ## Recursos
 
 **Tela infinita** — Pan e zoom livres (Ctrl+rolagem). Crie caixas ilimitadas em uma unica tela. Conecte caixas com linhas para mostrar relacionamentos. Defina relacionamentos pai-filho — mova um pai e seus filhos o seguem.
@@ -106,10 +108,11 @@ npm run build
 
 ## Privacidade
 
-- Todos os dados armazenados localmente em `chrome.storage.local` — nada sai do seu dispositivo a menos que voce configure o backup em nuvem opcional
-- O backup opcional WebDAV / GitHub Gist e o unico uso de rede de saida
-- Sem analises, sem rastreamento, sem servicos de terceiros
-- 100% codigo aberto (Apache-2.0) — audite cada linha
+- Todos os dados permanecem em `chrome.storage.local` — nada sai do seu dispositivo alem das solicitacoes de saida listadas abaixo ou de um backup em nuvem opcional que voce configure
+- O trafego de saida se limita a busca de favicons (servicos de icones de terceiros e requisicoes diretas de `favicon.ico`), a uma verificacao de versao anonima na API do GitHub Releases (com fallback para `https://boxing.xxx91n.com/demo/version.json` em caso de falha) e ao backup opcional WebDAV / GitHub Gist
+- URLs de WebDAV devem ser endpoints HTTPS publicos por padrao — nomes de host privados e locais sao recusados (somente verificacao do nome do host, sem resolucao de DNS); uma opcao explicita em Configuracoes → Sync relaxa apenas essa recusa para servidores LAN auto-hospedados, e HTTPS continua obrigatorio; regras e justificativa na [politica de privacidade](../../docs/privacy-policy.md)
+- As credenciais de sincronizacao ficam em um envelope ofuscado (nao cifrado com chave do usuario); backups exportados manualmente podem ser selados com uma frase-senha separada — detalhes na [politica de privacidade](../../docs/privacy-policy.md)
+- Sem analises, sem rastreamento; nenhum codigo de terceiros é executado
 - Politica de privacidade completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Desenvolvimento

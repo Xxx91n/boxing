@@ -5,7 +5,7 @@
 
 ## Introduction
 
-Boxing is an open-source browser extension that provides a hierarchical, infinite-canvas bookmark organizer. This privacy policy explains what data we collect, how we use it, and how we protect it.
+Boxing is an open-source browser extension that provides a hierarchical, infinite-canvas bookmark organizer. This privacy policy explains what data we collect, how we use it, and how we protect it. Its scope covers the Boxing extension and its demo mirror; services operated by third parties (icon providers, GitHub, your WebDAV host) are governed by their own policies and are out of scope of this document.
 
 **Boxing does not collect, transmit, or sell any personal data to any server operated by the developer.**
 
@@ -58,6 +58,10 @@ All primary data is stored locally using `chrome.storage.local`, which persists 
 Boxing supports **optional** cloud backup via WebDAV or GitHub Gist. These features are **disabled by default** and require explicit user configuration:
 
 - **WebDAV backup:** You provide a WebDAV server URL, username, and password. Your data is transmitted directly from your browser to your WebDAV server. We never proxy or intercept this connection. Credentials are stored locally in an obfuscated envelope, not under a user-supplied key (see Data Security). Use a dedicated WebDAV account or a narrowly scoped token.
+
+  **WebDAV URLs must be public HTTPS endpoints by default.** The extension refuses literal private, loopback, and link-local hostnames — `localhost`, `127.0.0.0/8`, `10.0.0.0/8`, `192.168.0.0/16`, `169.254.0.0/16` (including the cloud metadata address `169.254.169.254`), `172.16.0.0/12`, `*.local`, and `*.internal` — in the settings UI and again in the extension's background proxy before any request leaves the browser. These checks inspect the hostname string only; they do not resolve DNS, so a public-looking hostname that resolves to a private address is not covered by this rule. The reason for the default refusal: a WebDAV URL you enter is later fetched by the extension, and permitting private addresses would turn a mistyped or hand-supplied URL into a request originating from inside your network (SSRF-style exposure) — router admin pages, NAS interfaces, cloud metadata endpoints. Also refused: non-HTTPS URLs, URLs longer than 2048 characters (checked on the URL you enter — the derived backup-file URL is checked the same way; see the known gap tracked in issue #108), and URLs with an embedded username/password.
+
+  **Self-hosted WebDAV on your LAN or on `localhost` is refused by default and can be allowed by an explicit opt-in:** Settings → Sync → WebDAV → *Allow private / local network hosts (advanced)*. The checkbox ships off. Turning it on relaxes only the private-host refusal — HTTPS remains required, and the no-embedded-credentials rule and 2048-character URL limit still apply. Enable it only for a server you own, and prefer a name you control on a public HTTPS endpoint wherever that option exists.
 
 - **GitHub Gist backup:** You provide a GitHub personal access token. Your data is pushed directly to GitHub Gist API from your browser. We never see your token; it is stored locally in an obfuscated envelope.
 

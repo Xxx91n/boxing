@@ -11,7 +11,7 @@ npx playwright install firefox chromium
 
 > **Required:** You must run `npx playwright install firefox chromium` once after cloning.
 > The `postinstall` hook will remind you if you forget. Without the browser binaries,
-> tests will fail with "Executable doesn't exist" errors.
+> tests fail with "Executable doesn't exist" errors.
 
 ## Running tests
 
@@ -37,25 +37,32 @@ TEST_SURFACE_DRY_RUN=1 npm run test:changed   # print the command only
 npm run test:debug
 ```
 
+Local `test:*` runs go through `scripts/test-mutex.mjs`, which holds a
+filesystem lock so two test runs cannot overlap — a concurrent run exits 75
+(`EX_TEMPFAIL`) instead of racing the shared `dist/` and browser state. CI
+runs bypass the lock entirely (the mutex is skipped when `CI` is truthy).
+
 ## Configuration
 
 - Config: `test/playwright.config.ts`
 - Specs: `test/tests/boxing-*.spec.ts`
 - Extension path: the `chromium-extension` project loads the built extension
-  from `test/../dist/boxing-chrome` (issue #70); run `npm run build` before a
-  local run — CI builds first
-- Projects: `firefox-extension` and `chromium-extension` only; the Firefox lane runs
-  headless (wave-2026.10.11) — native-input realness specs stay chromium-scoped.
+  from `dist/boxing-chrome/` (issue #70); run `npm run build` before a local
+  run — CI builds first
+- Projects: `firefox-extension` and `chromium-extension` only; the Firefox lane
+  runs headless (wave-2026.10.11) and restores the 4 native-input tests in
+  place — Chromium stays headed and remains the headed native-input baseline
 
 ## CI
 
-Tests run on GitHub Actions via `.github/workflows/test.yml`. Browser binaries are
-cached via `actions/cache` keyed on `package-lock.json` hash.
+Tests run on GitHub Actions via `.github/workflows/test.yml`. Browser binaries
+are cached via `actions/cache` keyed on the `package-lock.json` hash.
 
 ## Test governance
 
-Model: file-level spec-cluster mapping + native Playwright filtering, full suite as
-the conservative fallback. No new runner, build system, or dependency.
+Model: file-level spec-cluster mapping + native Playwright filtering, with the
+full suite as the conservative fallback. No new runner, build system, or
+dependency.
 
 **Resource ceilings (explicit policy, not ad hoc flags)**
 
@@ -74,9 +81,9 @@ the conservative fallback. No new runner, build system, or dependency.
 `npm run test:failed` reruns only the last run's failures via Playwright's
 native `--last-failed` cache (`test-results/.last-run.json`, uploaded as a CI
 artifact). Convergence method: batch `--last-failed` rerun first, then a solo
-rerun for any straggler; a timeout-only failure must pass a solo run before being
-called environmental. Failure history is never used to *select* what runs on a
-change — only to *retry*.
+rerun for any straggler; a timeout-only failure must pass a solo run before
+being called environmental. Failure history is never used to *select* what
+runs on a change — only to *retry*.
 
 **Changed-surface selection**
 
@@ -89,14 +96,19 @@ suite**, never a silent skip:
 - the mapping file is missing or malformed;
 - a changed file is under `test/`, `.github/`, or is `package(.lock).json`;
 - a changed file maps to zero clusters (entry surface: `ntp/ntp.js`,
-  `background.js`, `manifest.json`, css, `index.html`) or to more than one.
+  `background.js`, `manifest.json`, css, `index.html`).
 
-The import-graph gate fails on stale cluster entries, but it can only check that
-mapped spec files exist — cluster coverage stays a manual maintenance duty. CI
-itself still runs the full suite; the selector is the local/agent fast path.
+The import-graph gate fails on stale cluster entries: it validates cluster
+names, non-empty cluster lists, that every mapped spec file exists, and that
+no spec is left uncovered by any cluster. Semantic source-to-cluster coverage
+(whether a file's change should really run those specs) stays a manual
+maintenance duty. CI itself still runs the full suite; the selector is the
+local/agent fast path. Known limitation: a file that maps to no cluster falls
+back to the full suite (the fallback is logged, not silent), so new source
+files need a `cluster-map.json` entry to get a bounded run.
 
 **Hot-file single-agent convention**
 
-When several agent windows are parallel, `ntp/ntp.js`, `ntp/render.js`, and
+When several agent windows run in parallel, `ntp/ntp.js`, `ntp/render.js`, and
 `ntp/sync-engine.js` are worked by at most one agent at a time (ticket 05
 hunk-claim lesson); other windows must not edit them concurrently.

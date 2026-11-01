@@ -1,8 +1,8 @@
 # Boxing — CI/CD Build Workflow
 
-Manual dispatch workflow that packages the Boxing extension into 4 release artifacts
-for Chrome and Firefox. It is intentionally NOT triggered on push or pull request — run it from
-the Actions tab: **Build & Package → Run workflow**.
+Manual-dispatch workflow that packages the Boxing extension into 4 release
+artifacts for Chrome and Firefox. It runs only on dispatch — from the Actions
+tab: **Build & Package → Run workflow**.
 
 ## Artifacts (one per browser, × 2 formats = 4 files)
 
@@ -15,9 +15,13 @@ the Actions tab: **Build & Package → Run workflow**.
 
 ## Inputs
 
-- `version` (optional): override `manifest.json` `version` for this build run (e.g. `3.7.10`).
-- `make_release` (optional, default `false`): when `true`, also create a draft GitHub pre-release
-  with `tag_name=v<version>` (or `v<run_id>` if version is empty) and attach the 4 artifacts.
+- `version` (optional): override `manifest.json` `version` for this build run.
+- `release_tag` (optional): tag name for the release; defaults to `v<version>`.
+- `make_release` (optional, default `false`): when `true`, publish a
+  (non-draft, non-prerelease) GitHub Release named `Boxing <version>` and
+  attach `dist/boxing-chrome-<version>.zip`,
+  `dist/boxing-firefox-<version>.zip`, `dist/boxing-source-<version>.zip`,
+  and `dist/SHA256SUMS.txt`.
 
 ## Required repo secrets (optional)
 
@@ -27,7 +31,7 @@ the Actions tab: **Build & Package → Run workflow**.
 
 ## Local repro
 
-```
+```bash
 node .github/scripts/build.mjs
 # -> dist/boxing-chrome/, dist/boxing-firefox/
 # then zip each: (cd dist/boxing-chrome && zip -r -X ../boxing-chrome.zip .)
@@ -36,8 +40,8 @@ node .github/scripts/build.mjs
 ## ⚠ AMO Signing Safety
 
 `web-ext sign` uploads to AMO and **permanently burns the version number**,
-even with `--channel unlisted`. Do NOT run it locally with real API keys
-just to "test" the pipeline.
+even with `--channel unlisted`. Do NOT run it locally with real API keys just
+to "test" the pipeline.
 
 - **Local validation**: use `npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing`
 - **End-to-end signing test**: use a throwaway version (e.g. `99.9.x`), then delete from AMO

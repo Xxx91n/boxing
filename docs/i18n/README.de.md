@@ -25,6 +25,8 @@ Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Leseze
 - [Mitwirken](#mitwirken)
 - [Lizenz](#lizenz)
 
+> Ausserhalb dieser Uebersetzung (out of scope): vertiefte technische Details stehen im englischen README und in `docs/`; diese Uebersetzung behandelt Installation, Verwendung und die Datenschutz-Zusammenfassung.
+
 ## Funktionen
 
 **Unendliche Leinwand** — Frei schwenken und zoomen (Strg+Scrollen). Unbegrenzt viele Boxen auf einer einzigen Leinwand erstellen. Boxen mit Linien verbinden, um Beziehungen darzustellen. Eltern-Kind-Beziehungen festlegen — eine Eltern-Box bewegen, und die Kinder folgen.
@@ -106,10 +108,11 @@ npm run build
 
 ## Datenschutz
 
-- Alle Daten werden lokal in `chrome.storage.local` gespeichert — nichts verlaesst Ihr Geraet, es sei denn, Sie konfigurieren optionales Cloud-Backup
-- Optionales WebDAV / GitHub Gist Backup ist die einzige ausgehende Netzwerkverwendung
-- Keine Analytik, kein Tracking, keine Drittanbieter-Dienste
-- 100% Open Source (Apache-2.0) — jede Zeile pruefbar
+- Alle Daten bleiben in `chrome.storage.local` — nichts verlaesst Ihr Geraet ausser den unten aufgefuehrten ausgehenden Anfragen oder einem optionalen Cloud-Backup, das Sie konfigurieren
+- Ausgehender Verkehr ist auf Favicon-Abrufe (Icon-Dienste von Drittanbietern und direkte `favicon.ico`-Anfragen), eine anonyme Versionspruefung ueber die GitHub Releases API (mit Fallback auf `https://boxing.xxx91n.com/demo/version.json` bei Fehlschlag) und das optionale WebDAV / GitHub Gist Backup beschraenkt
+- WebDAV-URLs muessen standardmaessig oeffentliche HTTPS-Endpunkte sein — private und lokale Hostnamen werden abgelehnt (nur Hostnamen-Pruefung, keine DNS-Aufloesung); eine explizite Option unter Einstellungen → Sync lockert nur diese Ablehnung fuer selbst gehostete LAN-Server, HTTPS bleibt erforderlich; Regeln und Begruendung in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
+- Sync-Anmeldedaten liegen in einer verschleierten (nicht benutzerschluesselbasierten) Huelle; manuell exportierte Backupdateien koennen zusaetzlich mit einer Passphrase versiegelt werden — Details in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
+- Keine Analytik, kein Tracking, kein ausgefuehrter Drittanbieter-Code
 - Vollstaendige Datenschutzrichtlinie: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Entwicklung

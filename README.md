@@ -49,17 +49,17 @@ Think Obsidian canvas meets bookmarks.
 
 ## What Makes It Different
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**Infinite canvas.** Pan and zoom freely (Ctrl+scroll, 30%–200%). Create as many boxes as you need, draw SVG connection lines between them, and mark parent boxes so children follow when the parent moves.
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**Two-level hierarchy.** Large boxes hold small boxes; small boxes hold bookmarks. Click a box to enter its sub-canvas — breadcrumbs track the path, and nesting goes as deep as you like.
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**Bookmark management.** Every box keeps its own bookmark collection in list or grid view: add, edit, delete, drag to reorder, and open links in the current tab or a new one (configurable).
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**Connections.** Drag from a box edge to link two boxes. Alt+Click removes a line — or remap the delete gesture to single- or double-click in settings. Child boxes stay inside their parent's bounds with elastic clamping.
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
+**Design.** Beige minimalist theme with light and dark modes (follows the system), adjustable font size and zoom, and a square/rounded corner toggle.
 
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 languages.** en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi — detected automatically from the browser locale.
 
 ## Screenshots
 
@@ -73,18 +73,12 @@ Think Obsidian canvas meets bookmarks.
 
 ## Brand Assets
 
-Light/dark logos, extension icons, favicons, store tiles, and the variants showcase are vendored in [`docs/brand/`](docs/brand/) (24 files, from the `box_png` asset kit). Reuse these for store listings, docs, and the GitHub social preview.
+Light/dark logos, extension icons, favicons, store tiles, and a variants showcase live in [`docs/brand/`](docs/brand/) — reuse them for store listings, docs, and the GitHub social preview.
 
 ## Install
 
 > [!IMPORTANT]
-> **Install from official store pages** (recommended). GitHub Releases are a **user-facing
-> changelog** and optional source/sideload zips — they **no longer ship `.xpi` / `.crx`**.
-> For the current published version see the store listings linked above
-> (single source of truth — this README deliberately does not restate a version literal,
-> so it cannot go stale; the badges above are workflow-backed and always live).
-> Gate background: CI gate ∧ manual store golden path ∧ Pages check. Publisher workflow:
-> [publishing guide](docs/publishing-guide.md) · [store plan](docs/store-publishing-plan.md).
+> Install from the **official store pages** below — that is the supported end-user path. GitHub Releases carries the user-facing changelog and source/sideload zips; it no longer ships `.xpi` / `.crx` builds. Store signing and rollout: [publishing guide](docs/publishing-guide.md) · [store plan](docs/store-publishing-plan.md).
 
 ### Firefox (official install)
 
@@ -94,7 +88,7 @@ Light/dark logos, extension icons, favicons, store tiles, and the variants showc
 ### Edge / Chromium (official install)
 
 1. Open [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-2. Click **Get** to install (Chromium browsers should use the Edge store page)
+2. Click **Get** to install — Chromium browsers, including Chrome, use the Edge store page for now; no Chrome Web Store listing exists yet (it is deferred until after the Edge rollout)
 
 ### Developers: build from source
 
@@ -128,16 +122,11 @@ npm run build
 
 ## Privacy
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device except the favicon / version-check requests below or optional cloud backup
-- Outbound traffic is limited to favicon lookup (third-party icon services and direct `favicon.ico` probes), an anonymous GitHub Releases API version check, and optional WebDAV / GitHub Gist backup
-- **WebDAV targets must be public HTTPS endpoints.** Private, loopback, and link-local hosts are refused by design: `localhost`, `127.0.0.0/8`, `10.0.0.0/8`, `192.168.0.0/16`, `169.254.0.0/16` (including the cloud metadata address `169.254.169.254`), `172.16.0.0/12`, `*.local`, and `*.internal`.
-  - **Why:** a WebDAV URL you enter is later fetched by the extension background proxy. Allowing private addresses would turn a mistyped or hand-supplied URL into a request originating from inside your network (SSRF-style exposure) — router admin pages, NAS interfaces, cloud metadata endpoints — so the refusal is unconditional rather than a warning.
-  - **Also refused:** non-HTTPS URLs, URLs longer than 2048 characters, and URLs with an embedded username/password. The check runs in the settings UI and again in the background proxy before any request leaves the browser.
-  - **Self-hosted WebDAV on your LAN or on `localhost` is refused by default and can be allowed by an explicit opt-in:** Settings → Sync → WebDAV → *Allow private / local network hosts (advanced)*. The checkbox ships off. Turning it on relaxes the private-host refusal above and nothing else — the HTTPS requirement, the no-embedded-credentials rule, and the 2048-character URL limit all still apply.
-  - **Why the opt-in is explicit:** enabling it removes the only barrier between a mistyped or hand-supplied URL and a request that Boxing issues from inside your network, addressed to router admin pages, NAS interfaces, or cloud metadata endpoints such as `169.254.169.254`. Enable it only for a server you own, and prefer a name you control on a public HTTPS endpoint wherever that option exists.
+- All data stays in `chrome.storage.local` — nothing leaves your device except the outbound requests listed here or an optional cloud backup you configure
+- Outbound traffic is limited to favicon lookup (third-party icon services and direct `favicon.ico` probes), an anonymous GitHub Releases API version check (falling back to `https://boxing.xxx91n.com/demo/version.json` when GitHub fails), and optional WebDAV / GitHub Gist backup
+- WebDAV URLs must be public HTTPS endpoints by default: private, loopback, and link-local hostnames are refused (hostname checks only — they do not resolve DNS), and an explicit opt-in under Settings → Sync relaxes only the private-host refusal for self-hosted LAN servers — rules and rationale in the [privacy policy](docs/privacy-policy.md)
+- Sync credentials sit in an obfuscated (not user-keyed) envelope; a separate passphrase option can seal exported backup files — details in the [privacy policy](docs/privacy-policy.md)
 - No analytics, no tracking; no third-party code is executed
-- **Credential storage is obfuscation, not user-keyed encryption:** WebDAV passwords and GitHub tokens are wrapped in an AES-GCM envelope whose key is derived from a **random per-install key** that is generated on first use and never leaves your browser profile — it is not part of the layout, JSON exports, WebDAV/Gist backups, or snapshots, so a copy of an export or backup read in isolation cannot unlock it. The key does live in `chrome.storage.local` next to the ciphertext, so anyone who can read your browser profile (or the running extension) can still recover your credentials. That credential path never asks for a passphrase, and the per-install key is never used to protect a backup file. The one place a passphrase is used is the optional **passphrase backup file**: Settings → Data → *Passphrase-protect exports* seals a manually exported backup with a passphrase you type, in a `boxingBackup: 1` envelope (PBKDF2-SHA-256 → AES-GCM). Boxing does not store that passphrase and cannot recover it — lose it and the file stays unreadable — and it is what makes the file openable on another install, where the sync credentials still have to be typed in again.
-- Full privacy policy: [docs/privacy-policy.md](docs/privacy-policy.md)
 
 ## Development
 
@@ -171,7 +160,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full development guide.
 
 ## Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and code style.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and code style.
 
 New to the repository? [docs/START-HERE.md](docs/START-HERE.md) routes users, contributors, and agents to the right entry point.
 

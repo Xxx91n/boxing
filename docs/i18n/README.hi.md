@@ -29,6 +29,8 @@ Boxing transforms your new tab page into a visual workspace for bookmarks. Inste
 - [Contributing](#contributing)
 - [License](#license)
 
+> Out of scope of this translation: deep technical detail lives in the English README and `docs/`; this file covers install, usage, and the privacy summary.
+
 ## Features
 
 **Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
@@ -110,10 +112,11 @@ npm run build
 
 ## Privacy
 
-- All data stored locally in `chrome.storage.local` — nothing leaves your device except the favicon / version-check requests below or optional cloud backup
-- Outbound traffic is limited to favicon lookup (third-party icon services and direct `favicon.ico` probes), an anonymous GitHub Releases API version check, and optional WebDAV / GitHub Gist backup
+- All data stays in `chrome.storage.local` — nothing leaves your device except the outbound requests listed here or an optional cloud backup you configure
+- Outbound traffic is limited to favicon lookup (third-party icon services and direct `favicon.ico` probes), an anonymous GitHub Releases API version check (falling back to `https://boxing.xxx91n.com/demo/version.json` when GitHub fails), and optional WebDAV / GitHub Gist backup
+- WebDAV URLs must be public HTTPS endpoints by default: private, loopback, and link-local hostnames are refused (hostname checks only — they do not resolve DNS), and an explicit opt-in under Settings → Sync relaxes only the private-host refusal for self-hosted LAN servers — rules and rationale in the [privacy policy](../../docs/privacy-policy.md)
+- Sync credentials sit in an obfuscated (not user-keyed) envelope; a separate passphrase option can seal exported backup files — details in the [privacy policy](../../docs/privacy-policy.md)
 - No analytics, no tracking; no third-party code is executed
-- 100% open source (Apache-2.0) — audit every line
 - Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Development

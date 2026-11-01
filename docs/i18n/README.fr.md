@@ -25,6 +25,8 @@ Boxing transforme votre page de nouvel onglet en espace de travail visuel pour v
 - [Contribuer](#contribuer)
 - [Licence](#licence)
 
+> Hors perimetre de cette traduction (out of scope) : les details techniques approfondis sont dans le README anglais et `docs/` ; cette traduction couvre l'installation, l'usage et le resume de confidentialite.
+
 ## Fonctionnalites
 
 **Canevas infini** — Pan et zoom libres (Ctrl+molette). Creez un nombre illimite de boites sur un seul canevas. Connectez les boites avec des lignes pour montrer les relations. Definissez des relations parent-enfant — deplacez un parent et ses enfants suivent.
@@ -106,10 +108,11 @@ npm run build
 
 ## Confidentialite
 
-- Toutes les donnees stockees localement dans `chrome.storage.local` — rien ne quitte votre appareil sauf si vous configurez la sauvegarde cloud optionnelle
-- La sauvegarde WebDAV / GitHub Gist optionnelle est la seule utilisation reseau sortante
-- Pas d analytics, pas de tracking, pas de services tiers
-- 100% open source (Apache-2.0) — auditez chaque ligne
+- Toutes les donnees restent dans `chrome.storage.local` — rien ne quitte votre appareil en dehors des requetes sortantes ci-dessous ou d une sauvegarde cloud optionnelle que vous configurez
+- Le trafic sortant se limite a la recherche de favicons (services d'icones tiers et sondes `favicon.ico` directes), a une verification de version anonyme via l'API GitHub Releases (avec repli vers `https://boxing.xxx91n.com/demo/version.json` en cas d'echec), et a la sauvegarde optionnelle WebDAV / GitHub Gist
+- Les URL WebDAV doivent etre des points d'acces HTTPS publics par defaut — les noms d'hotes prives et locaux sont refuses (verification du nom d'hote uniquement, sans resolution DNS) ; une option explicite sous Parametres → Sync assouplit uniquement ce refus pour les serveurs LAN auto-heberges, HTTPS restant requis ; regles et justification dans la [politique de confidentialite](../../docs/privacy-policy.md)
+- Les identifiants de synchronisation sont conserves dans une enveloppe obfusquee (pas de chiffrement par cle utilisateur) ; les fichiers de sauvegarde exportes manuellement peuvent etre scelles par une phrase de passe separee — details dans la [politique de confidentialite](../../docs/privacy-policy.md)
+- Pas d analytics, pas de tracking, aucun code tiers execute
 - Politique de confidentialite complete: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Developpement

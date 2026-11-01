@@ -25,6 +25,8 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 - [贡献](#贡献)
 - [许可证](#许可证)
 
+> 本译文范围外: 深入的技术细节以英文 README 与 `docs/` 为准; 本译文聚焦安装、使用与隐私概要。
+
 ## 功能
 
 **无限画布** — 自由平移和缩放(Ctrl+滚轮)。在单个画布上创建无限盒子。用连线表示盒子间的关系。设置父子关系 — 移动父盒子时子盒子跟随移动。
@@ -106,10 +108,11 @@ npm run build
 
 ## 隐私
 
-- 所有数据本地存储在 `chrome.storage.local` — 除非你配置了可选的云备份,否则不会离开你的设备
-- 可选的 WebDAV / GitHub Gist 备份是唯一的出站网络访问
-- 无分析、无追踪、无第三方服务
-- 100% 开源(Apache-2.0)— 可审计每一行代码
+- 所有数据保存在 `chrome.storage.local` — 除下列出站请求或你配置的可选云备份外,不会离开你的设备
+- 出站流量仅限: 网站图标查询(第三方图标服务与直接 `favicon.ico` 探测)、匿名的 GitHub Releases API 版本检查(GitHub 失败时回退到 `https://boxing.xxx91n.com/demo/version.json`),以及可选的 WebDAV / GitHub Gist 备份
+- WebDAV 地址默认必须是公网 HTTPS 端点 — 拒绝私有/本地主机名(仅检查主机名,不做 DNS 解析); 在 设置 → 同步 中显式开启的选项仅放宽私有主机拒绝(供自建局域网服务),HTTPS 仍然必需; 规则与理由见[隐私政策](../../docs/privacy-policy.md)
+- 同步凭据保存在混淆封装中(非用户密钥加密); 手动导出的备份文件可另用口令加密 — 详见[隐私政策](../../docs/privacy-policy.md)
+- 无分析、无追踪、不执行第三方代码
 - 完整隐私政策: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## 开发
