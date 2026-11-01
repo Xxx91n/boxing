@@ -1067,24 +1067,29 @@ export function bindSyncBackupUi() {
         setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 4000);
       }
     });
+    let backupNowLabelReset = null;
     backupNowBtn?.addEventListener('click', async () => {
       const p = syncProviderSelect?.value || 'local';
       if (p === 'local') {
         backupToLocal();
       }
+      // Same contract as the WebDAV test button above: disabled while the
+      // request runs, previous label reset cancelled before scheduling a new one.
+      if (backupNowLabelReset) { clearTimeout(backupNowLabelReset); backupNowLabelReset = null; }
+      backupNowBtn.disabled = true;
       try {
         await performBackup();
       } catch (e) {
         // PR #109 review round 2: performBackup now propagates failures —
-        // display the localized error on the button (same contract as the
-        // WebDAV test button above: known i18n error verbatim, otherwise the
-        // friendly network message, never a raw transport error).
+        // display the localized error on the button (known i18n error verbatim,
+        // otherwise the friendly network message, never a raw transport error).
         debugErr('Backup Now failed', e);
         const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork', 'webdavErrUrlTooLong'];
         const isKnown = knownErrors.some(k => e.message && i18n(k) === e.message);
         backupNowBtn.textContent = isKnown ? e.message : i18n('webdavErrNetwork');
       } finally {
-        setTimeout(() => { backupNowBtn.textContent = i18n('syncNow'); }, 4000);
+        backupNowBtn.disabled = false;
+        backupNowLabelReset = setTimeout(() => { backupNowBtn.textContent = i18n('syncNow'); }, 4000);
       }
     });
     // Listen for the background SW auto-backup trigger
