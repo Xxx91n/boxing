@@ -120,7 +120,7 @@ test.describe('Wave 2026.10.17 — Acceptance Tests', () => {
 
       return {
         resolved,
-        rejectionLen: rejection.length,
+        rejection,
         snapshotSkipped: afterSnaps.length === beforeSnaps.length,
         lastBackupSkipped: afterLastBackup === beforeLastBackup,
         labelBefore,
@@ -129,10 +129,12 @@ test.describe('Wave 2026.10.17 — Acceptance Tests', () => {
     });
 
     expect(r.resolved).toBe(false);
-    expect(r.rejectionLen).toBeGreaterThan(0);
+    expect(r.rejection.length).toBeGreaterThan(0);
     expect(r.snapshotSkipped).toBe(true);
     expect(r.lastBackupSkipped).toBe(true);
-    expect(r.labelError).toBeTruthy();
+    // The button must show the SPECIFIC localized failure, not a generic fallback —
+    // assert against the rejection text itself (locale-independent).
+    expect(r.labelError).toBe(r.rejection);
     expect(r.labelError).not.toBe(r.labelBefore);
   });
 

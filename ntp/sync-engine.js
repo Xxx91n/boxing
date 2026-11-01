@@ -1080,7 +1080,7 @@ export function bindSyncBackupUi() {
         // WebDAV test button above: known i18n error verbatim, otherwise the
         // friendly network message, never a raw transport error).
         debugErr('Backup Now failed', e);
-        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork'];
+        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork', 'webdavErrUrlTooLong'];
         const isKnown = knownErrors.some(k => e.message && i18n(k) === e.message);
         backupNowBtn.textContent = isKnown ? e.message : i18n('webdavErrNetwork');
       } finally {
