@@ -240,6 +240,10 @@ export function initSyncEngineFacade(deps) {
       }
       // Resolve file URL — reuse the shared helper (honors custom sync filename).
       const { fileUrl } = resolveWebDAVFileUrl(url);
+      // Ticket 108: the base URL passes the 2048 cap but the appended sync filename
+      // can push fileUrl over it — check the value that is actually sent, so the
+      // page-direct fetch fallback below can never see an overlong URL.
+      if (fileUrlOverCap(fileUrl)) throw new Error(i18n('webdavErrUrlTooLong'));
       debug('WebDAV backup: resolved file URL', fileUrl);
       if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
       const body = JSON.stringify(buildSyncPayload(), null, 2);
@@ -421,6 +425,15 @@ export function initSyncEngineFacade(deps) {
     window.__bxSync = window.__bxSync || {};
     window.__bxSync.resolveWebDAVFileUrl = resolveWebDAVFileUrl;
 
+    // Ticket 108 (PR #109 review): the 2048 budget applies to the URL actually sent.
+    // A non-ASCII syncFileName survives sanitization and percent-encodes during URL
+    // serialization, so the raw string can pass while its wire form exceeds the cap.
+    function fileUrlOverCap(fileUrl) {
+      if (typeof fileUrl !== 'string' || fileUrl.length > 2048) return true;
+      try { return new URL(fileUrl).href.length > 2048; } catch (_) { return true; }
+    }
+    window.__bxSync.fileUrlOverCap = fileUrlOverCap;
+
     // Two-way sync. Returns { direction: 'pull'|'push'|'merge'|'none', cloudBoxes, localBoxes }.
     // Outbox-style merge for concurrent WebDAV changes.
     // The big-box field heuristic is upgraded to an
@@ -454,6 +467,8 @@ export function initSyncEngineFacade(deps) {
       checkUrlValid(url);
       if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
       const { fileUrl } = resolveWebDAVFileUrl(url);
+      // Ticket 108: checkUrlValid caps the BASE url; the derived fileUrl needs its own cap.
+      if (fileUrlOverCap(fileUrl)) throw new Error(i18n('webdavErrUrlTooLong'));
 
       // Data-loss guard — blocks destructive upload unless user confirms restore-from-cloud.
       if (!bypassLossGuard && detectDataLoss()) {
@@ -724,7 +739,14 @@ export function initSyncEngineFacade(deps) {
         layout.settings.lastBackupAt = Date.now();
         updateLastBackupDisplay();
         saveLayout();
-      } catch (e) { debugErr('Backup failed', e); }
+      } catch (e) {
+        // PR #109 review round 2: keep the diagnostic log, then propagate — the
+        // Sync Now handler surfaces the localized failure, the alarm/catch-up
+        // callers log it, and the success-only bookkeeping above (snapshot,
+        // lastBackupAt) is skipped when the remote sync failed.
+        debugErr('Backup failed', e);
+        throw e;
+      }
     }
 
     // ── Auto-backup scheduler ──────────────────────
@@ -1045,12 +1067,34 @@ export function bindSyncBackupUi() {
         setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 4000);
       }
     });
+    let backupNowLabelReset = null;
     backupNowBtn?.addEventListener('click', async () => {
       const p = syncProviderSelect?.value || 'local';
-      if (p === 'local') {
-        backupToLocal();
+      // Same contract as the WebDAV test button above: disabled while the
+      // request runs, previous label reset cancelled before scheduling a new
+      // one, and every failure — including a synchronous backupToLocal() throw —
+      // surfaces on the button instead of rejecting unhandled.
+      if (backupNowLabelReset) { clearTimeout(backupNowLabelReset); backupNowLabelReset = null; }
+      backupNowBtn.disabled = true;
+      try {
+        if (p === 'local') {
+          backupToLocal();
+        }
+        await performBackup();
+      } catch (e) {
+        // PR #109 review round 2: performBackup now propagates failures —
+        // display the localized error on the button (known i18n error verbatim,
+        // otherwise the friendly network message, never a raw transport error).
+        debugErr('Backup Now failed', e);
+        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork', 'webdavErrUrlTooLong'];
+        const isKnown = knownErrors.some(k => e.message && i18n(k) === e.message);
+        // Gist failures throw curated English strings ("GitHub API 401") — show
+        // those verbatim rather than the WebDAV-specific network message.
+        backupNowBtn.textContent = isKnown || p === 'gist' ? e.message : i18n('webdavErrNetwork');
+      } finally {
+        backupNowBtn.disabled = false;
+        backupNowLabelReset = setTimeout(() => { backupNowBtn.textContent = i18n('syncNow'); }, 4000);
       }
-      await performBackup();
     });
     // Listen for the background SW auto-backup trigger
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
@@ -1130,6 +1174,9 @@ export function bindSyncBackupUi() {
       if (provider === 'webdav') {
         const fileUrl = resolveWebDAVFileUrl((webdavUrlInput && webdavUrlInput.value.trim()) || layout.settings.webdavUrl || '').fileUrl;
         if (!fileUrl) return { ok: false, error: dangerRemoteDeleteNoTarget }; // no remote target configured
+        // Ticket 108: same derived-URL cap — the background guard would reject this
+        // anyway; refuse here so the delete contract stays "no raw transport error".
+        if (fileUrlOverCap(fileUrl)) return { ok: false, error: dangerRemoteDeleteFailed };
         const user = (webdavUserInput && webdavUserInput.value.trim()) || layout.settings.webdavUser || '';
         let pass = (webdavPassInput && webdavPassInput.value) || '';
         if (!pass && layout.settings._encWebdavPass) pass = (await decryptCredential(layout.settings._encWebdavPass)) || '';
