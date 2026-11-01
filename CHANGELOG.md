@@ -7,6 +7,26 @@ and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) st
 
 ## [Unreleased]
 
+## [2026.11.1] - 2026-11-01
+
+User-facing notes for store listings and the GitHub Release body.
+
+### Added
+- **Hardened release pipeline** — Version inputs strictly validated, CI components pinned to immutable versions, and release steps restricted to audited lockfile tools.
+- **Unified Node line** — Development and CI aligned on the Node 24.22.1 fixed line.
+
+### Fixed
+- **Sync settings edits no longer wipe saved credentials** — Credential envelopes are only rewritten when the corresponding field genuinely changes.
+- **Unified safe bookmark navigation** — Search-result bookmark opens go through the same URL normalization as regular rows; only http(s) targets are navigated.
+- **Hardened WebDAV transfer path** — Transparent redirects refused and response reads capped on every path.
+- **Auto-title rule boundary protection** — Length/wildcard caps and malformed-encoding guards prevent pathological rules from freezing the new-tab page.
+
+### Internal
+- Privacy statement aligned with actual outbound behavior (favicon sources, update checks, site probing).
+- Repository-root cleanup and ignore rules landed.
+- CI supply-chain hardening: dispatch inputs decoupled from shell, actions pinned to full SHAs, lockfile-only release tooling, dependency age/cooldown policy.
+- Architecture decisions: Node version line; privacy disclosure alignment.
+
 ## [2026.10.17] - 2026-10-17
 
 User-facing notes for store listings and the GitHub Release body.
