@@ -120,7 +120,7 @@ npm run build
 
 ### Prerequisites
 
-- Node.js ^24.22.2 (.nvmrc: 24.22.2)
+- Node.js 24.22.1 (pinned in .nvmrc; engines ^24.22.1)
 - npm
 
 ### Setup
