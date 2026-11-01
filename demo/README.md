@@ -7,7 +7,7 @@ extension new-tab page that runs standalone at
 Scope and known limits: the mirror runs without real extension APIs — the
 stub only mocks the surfaces listed above, so anything that needs the MV3
 service worker (such as the WebDAV background proxy) is not supported here.
-Pages assembly and deployment are CI-only (see Verification).
+Pages deployment is CI-only (see Verification).
 
 ## How it works
 
@@ -41,12 +41,12 @@ Pages assembly and deployment are CI-only (see Verification).
   (`v2026.9.20` is stored as `2026.9.20`). Fallbacks for manual runs:
   `workflow_dispatch` input `version`, then `manifest.json` version.
 
-## Verification (CI-only Pages build policy)
+## Verification (CI-only Pages deployment policy)
 
-Pages assembly and deployment run in GitHub Actions. Local builds are still
-available: `.github/scripts/build.mjs` and `.github/scripts/build-demo.mjs`
-can be invoked directly and write generated files into the checkout. Static
-gates used at authoring time:
+Pages deployment runs in GitHub Actions. Artifact assembly also works
+locally: `.github/scripts/build.mjs` and `.github/scripts/build-demo.mjs`
+can be invoked directly and write generated files (`ntp/ntp.css`,
+`pages-artifact/`) into the checkout. Static gates used at authoring time:
 
 - `node --check` on `chrome-stub.js` and `.github/scripts/build-demo.mjs`
 - `js-yaml` parse of `demo-deploy.yml`

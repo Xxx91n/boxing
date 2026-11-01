@@ -39,7 +39,7 @@ An interactive, playable preview of the Boxing new tab page is deployed automati
 
 ## Privacy
 
-Boxing keeps all data on your device: bookmarks, canvas layout, and settings live in the browser's local extension storage. No analytics, no telemetry, no accounts. Outbound traffic is limited to favicon lookups, an anonymous version check (GitHub Releases API with a `version.json` fallback on this site), and optional WebDAV / GitHub Gist backup that only talks to servers you configure yourself.
+Boxing keeps all data on your device: bookmarks, canvas layout, and settings live in the browser's local extension storage. No analytics, no telemetry, no accounts. Outbound traffic is limited to favicon lookups, an anonymous version check (GitHub Releases API with a `version.json` fallback on this site), optional WebDAV backup to a server you configure, and optional GitHub Gist backup to the GitHub Gist API using credentials you provide.
 
 Full policy: [Boxing Privacy Policy](https://boxing.xxx91n.com/privacy-policy.html)
 
