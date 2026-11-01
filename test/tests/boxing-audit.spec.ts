@@ -121,6 +121,19 @@ test.describe('Boxing audit hardening (BX-AUD-01/03/04/05)', () => {
       (window as any).__boxingDebug.syncWebDAV().catch((e: Error) => e.message),
     );
     expect(syncErr).toBe(baseErr);
+    // Non-ASCII syncFileName survives sanitization and percent-encodes under URL
+    // serialization: the raw fileUrl stays under 2048 while the wire form exceeds
+    // it (PR #109 review round). 700 CJK chars → 729 raw vs ~6300 serialized.
+    await page.evaluate(
+      (u) => (window as any).__boxingDebug.setWebDAVConfig(u, 'u', 'p'),
+      'https://dav.example.net/dav/',
+    );
+    await page.evaluate(() => { (window as any).__boxingDebug.layout.settings.syncFileName = '中'.repeat(700); });
+    const serializedErr = await page.evaluate(() =>
+      (window as any).__boxingDebug.backupWebDAV().catch((e: Error) => e.message),
+    );
+    expect(serializedErr).toBe(baseErr);
+    await page.evaluate(() => { (window as any).__boxingDebug.layout.settings.syncFileName = ''; });
     await page.waitForTimeout(150);
     expect(requested).toEqual([]);
   });
