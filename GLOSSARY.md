@@ -96,6 +96,8 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **credential envelope** — Sync secrets (`_encWebdavPass` / `_encGistToken`) obfuscated at rest with the per-install key. It is not file encryption, and the per-install key never leaves the profile — so a **v3** envelope is unusable to whoever holds a backup file. Legacy **v1** envelopes bundled their own key and **v2** used a constant shipped in the source, so any of those still living in a profile do travel inside an exported file and can be recovered by its holder (see the version history in `ntp/credentials.js`). Treat every backup file, sealed or plain, as secret-bearing.
 
+**keyed WebDAV error** — Error thrown from the `ntp/sync-engine.js` sync paths via `webdavError(key, params)`: `e.key` carries the i18n key and `e.message` the already-interpolated localized text. Classification is key membership against the shared `WEBDAV_ERROR_KEYS` list (`isKnownWebDAVError`); the i18n-message comparison inside it is a legacy fallback for unkeyed errors and can only match unparameterized keys (issue #111).
+
 **autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
 
 **MAX_SNAPSHOT_COUNT** — Hard ceiling of 30 snapshots; older snapshots are physically deleted beyond it.

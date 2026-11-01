@@ -32,6 +32,31 @@ export function initSyncEngineFacade(deps) {
   lastBackupTimeVal = deps.lastBackupTimeVal; webdavTestBtn = deps.webdavTestBtn;
 }
 
+  // Ticket 111: keyed WebDAV error identity. Sync-path errors carry the i18n key on
+  // e.key (message stays the already-interpolated localized text), so classification
+  // is key membership. The old e.message === i18n(k) comparison silently failed for
+  // parameterized messages (webdavErrAuth/webdavErrPut/webdavErrStatus) and broke on
+  // translation collisions; the four per-site whitelists also drifted (ticket 108 /
+  // PR #109). The message comparison survives only inside isKnownWebDAVError as a
+  // legacy fallback for errors re-wrapped without a key.
+  const WEBDAV_ERROR_KEYS = [
+    'webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass',
+    'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut',
+    'webdavErrConflict', 'webdavErrNetwork', 'webdavErrUrlTooLong', 'webdavErrBlockedHost',
+  ];
+  function webdavError(key, params) {
+    const e = new Error(i18n(key, params));
+    e.key = key;
+    return e;
+  }
+  function isKnownWebDAVError(e) {
+    if (e && WEBDAV_ERROR_KEYS.includes(e.key)) return true;
+    // Legacy fallback: compares against the UNinterpolated i18n(k), so only
+    // unparameterized keys can match here — parameterized messages classify by
+    // key or not at all (that asymmetry is the defect this seam fixes).
+    return !!(e && e.message && WEBDAV_ERROR_KEYS.some(k => i18n(k) === e.message));
+  }
+
   // BX-AUD-01/03 — front-end WebDAV URL guard (mirrors the stricter guard in background.js).
   // Rejects private / host-only hostnames and oversized URLs so users never silently target a local network.
   // Ticket 82: that private-network refusal is now an explicit opt-in. It stays the default;
@@ -146,19 +171,19 @@ export function initSyncEngineFacade(deps) {
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
       const pass = webdavPassInput?.value || '';
       debug('WebDAV test: starting', { url, user: user ? '(set)' : '(empty)', pass: pass ? '(set)' : '(empty)' });
-      if (!url) throw new Error(i18n('webdavErrNoUrl'));
+      if (!url) throw webdavError('webdavErrNoUrl');
       // BX-AUD-01/03 front-end guard: private hosts, scheme, length, embedded creds
       if (!isSafeExtUrl(url)) {
-        if (url.length > 2048) throw new Error(i18n('webdavErrUrlTooLong'));
-        let _u; try { _u = new URL(url); } catch (_) { throw new Error(i18n('webdavErrNetwork')); }
-        if (_u.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
-        if (_u.username || _u.password) throw new Error(i18n('webdavErrEmbedded'));
-        throw new Error(i18n('webdavErrBlockedHost'));
+        if (url.length > 2048) throw webdavError('webdavErrUrlTooLong');
+        let _u; try { _u = new URL(url); } catch (_) { throw webdavError('webdavErrNetwork'); }
+        if (_u.protocol !== 'https:') throw webdavError('webdavErrHttps');
+        if (_u.username || _u.password) throw webdavError('webdavErrEmbedded');
+        throw webdavError('webdavErrBlockedHost');
       }
       const target = new URL(url);
       if (user && !pass) {
         debugErr('WebDAV test: password is empty — decrypt may not have completed');
-        throw new Error(i18n('webdavErrNoPass'));
+        throw webdavError('webdavErrNoPass');
       }
       try {
         let status, ok;
@@ -168,7 +193,7 @@ export function initSyncEngineFacade(deps) {
           if (resp.needPermission) {
             debug('WebDAV test: needPermission, requesting origin', resp.origin);
             const granted = await ensureWebDAVPermissionGranted(target.href);
-            if (!granted) throw new Error(i18n('webdavErrNetwork'));
+            if (!granted) throw webdavError('webdavErrNetwork');
             // Retry after permission granted
             const resp2 = await sendToBackground({ type: 'webdav-test', url: target.href, user, pass });
             status = resp2.status; ok = resp2.ok;
@@ -182,7 +207,7 @@ export function initSyncEngineFacade(deps) {
           const h = new Headers({ 'Depth': '0' });
           if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
           const resp = await fetch(target.href, { method: 'PROPFIND', headers: h, redirect: 'manual' });
-          if (resp.type === 'opaqueredirect') throw new Error(i18n('webdavErrNetwork'));
+          if (resp.type === 'opaqueredirect') throw webdavError('webdavErrNetwork');
           status = resp.status;
           ok = resp.status === 207 || resp.ok;
           debug('WebDAV test direct: PROPFIND', { status, ok });
@@ -190,24 +215,22 @@ export function initSyncEngineFacade(deps) {
         // Interpret response
         debug('WebDAV test: interpreting response', { status, ok });
         if (status === 401 || status === 403) {
-          throw new Error(i18n('webdavErrAuth', [status]));
+          throw webdavError('webdavErrAuth', [status]);
         }
         if (status === 404) {
-          throw new Error(i18n('webdavErrPath'));
+          throw webdavError('webdavErrPath');
         }
         if (status === 207 || status === 200 || (ok && status >= 200 && status < 300)) {
           debug('WebDAV test: connection OK');
           return true;
         }
-        throw new Error(i18n('webdavErrStatus', [status]));
+        throw webdavError('webdavErrStatus', [status]);
       } catch (netErr) {
         // If the error is already a known i18n message, re-throw it
-        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrNetwork'];
-        const isKnown = knownErrors.some(k => netErr.message && i18n(k) === netErr.message);
-        if (isKnown) throw netErr;
+        if (isKnownWebDAVError(netErr)) throw netErr;
         // Map network/fetch errors (TypeError, NetworkError, etc.) to the i18n message
         debugErr('WebDAV test: network-level error', netErr);
-        throw new Error(i18n('webdavErrNetwork'));
+        throw webdavError('webdavErrNetwork');
       }
     }
 
@@ -229,23 +252,23 @@ export function initSyncEngineFacade(deps) {
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
       const pass = webdavPassInput?.value || '';
       debug('WebDAV backup: starting', { url, user: user ? '(set)' : '(empty)' });
-      if (!url) throw new Error(i18n('webdavErrNoUrl'));
+      if (!url) throw webdavError('webdavErrNoUrl');
       // BX-AUD-01/03 front-end guard: private hosts, scheme, length, embedded creds
       if (!isSafeExtUrl(url)) {
-        if (url.length > 2048) throw new Error(i18n('webdavErrUrlTooLong'));
-        let _u; try { _u = new URL(url); } catch (_) { throw new Error(i18n('webdavErrNetwork')); }
-        if (_u.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
-        if (_u.username || _u.password) throw new Error(i18n('webdavErrEmbedded'));
-        throw new Error(i18n('webdavErrBlockedHost'));
+        if (url.length > 2048) throw webdavError('webdavErrUrlTooLong');
+        let _u; try { _u = new URL(url); } catch (_) { throw webdavError('webdavErrNetwork'); }
+        if (_u.protocol !== 'https:') throw webdavError('webdavErrHttps');
+        if (_u.username || _u.password) throw webdavError('webdavErrEmbedded');
+        throw webdavError('webdavErrBlockedHost');
       }
       // Resolve file URL — reuse the shared helper (honors custom sync filename).
       const { fileUrl } = resolveWebDAVFileUrl(url);
       // Ticket 108: the base URL passes the 2048 cap but the appended sync filename
       // can push fileUrl over it — check the value that is actually sent, so the
       // page-direct fetch fallback below can never see an overlong URL.
-      if (fileUrlOverCap(fileUrl)) throw new Error(i18n('webdavErrUrlTooLong'));
+      if (fileUrlOverCap(fileUrl)) throw webdavError('webdavErrUrlTooLong');
       debug('WebDAV backup: resolved file URL', fileUrl);
-      if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
+      if (user && !pass) throw webdavError('webdavErrNoPass');
       const body = JSON.stringify(buildSyncPayload(), null, 2);
       debug('WebDAV backup: sending PUT', { size: body.length });
       try {
@@ -256,7 +279,7 @@ export function initSyncEngineFacade(deps) {
           if (resp.needPermission) {
             debug('WebDAV backup: needPermission, requesting origin', resp.origin);
             const granted = await ensureWebDAVPermissionGranted(fileUrl);
-            if (!granted) throw new Error(i18n('webdavErrNetwork'));
+            if (!granted) throw webdavError('webdavErrNetwork');
             const resp2 = await sendToBackground({ type: 'webdav-put', url: fileUrl, user, pass, body });
             status = resp2.status; ok = resp2.ok;
           } else {
@@ -268,27 +291,25 @@ export function initSyncEngineFacade(deps) {
           const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
           if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
           const resp = await fetch(fileUrl, { method: 'PUT', headers: h, body, redirect: 'manual' });
-          if (resp.type === 'opaqueredirect') throw new Error(i18n('webdavErrNetwork'));
+          if (resp.type === 'opaqueredirect') throw webdavError('webdavErrNetwork');
           status = resp.status; ok = resp.ok;
           debug('WebDAV backup direct: PUT', { status, ok });
         }
         if (status === 401 || status === 403) {
-          throw new Error(i18n('webdavErrAuth', [status]));
+          throw webdavError('webdavErrAuth', [status]);
         }
         if (status === 409) {
-          throw new Error(i18n('webdavErrConflict'));
+          throw webdavError('webdavErrConflict');
         }
         if (!ok && status !== 201 && status !== 204) {
-          throw new Error(i18n('webdavErrPut', [status]));
+          throw webdavError('webdavErrPut', [status]);
         }
         debug('WebDAV backup: success');
         return true;
       } catch (netErr) {
-        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork'];
-        const isKnown = knownErrors.some(k => netErr.message && i18n(k) === netErr.message);
-        if (isKnown) throw netErr;
+        if (isKnownWebDAVError(netErr)) throw netErr;
         debugErr('WebDAV backup: network-level error', netErr);
-        throw new Error(i18n('webdavErrNetwork'));
+        throw webdavError('webdavErrNetwork');
       }
     }
     // expose for __boxingDebug (which runs in outer scope)
@@ -378,12 +399,12 @@ export function initSyncEngineFacade(deps) {
         const h = new Headers();
         if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
         const resp = await fetch(fileUrl, { method: 'GET', headers: h, redirect: 'manual' });
-        if (resp.type === 'opaqueredirect') throw new Error(i18n('webdavErrNetwork'));
+        if (resp.type === 'opaqueredirect') throw webdavError('webdavErrNetwork');
         status = resp.status; body = resp.ok ? await readWebDAVBodyCapped(resp) : null;
       }
       debug('WebDAV GET cloud:', { status, bodyLen: body?.length || 0 });
       if (status === 404) return null;
-      if (status === 401 || status === 403) throw new Error(i18n('webdavErrAuth', [status]));
+      if (status === 401 || status === 403) throw webdavError('webdavErrAuth', [status]);
       if (status >= 400) throw new Error(i18n('syncErrGetFailed', [status]));
       if (!body) return null;
       try { return JSON.parse(body); } catch (_) { throw new Error(i18n('syncErrParseFailed')); }
@@ -399,12 +420,12 @@ export function initSyncEngineFacade(deps) {
         const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
         if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
         const resp = await fetch(fileUrl, { method: 'PUT', headers: h, body, redirect: 'manual' });
-        if (resp.type === 'opaqueredirect') throw new Error(i18n('webdavErrNetwork'));
+        if (resp.type === 'opaqueredirect') throw webdavError('webdavErrNetwork');
         status = resp.status; ok = resp.ok;
       }
-      if (status === 401 || status === 403) throw new Error(i18n('webdavErrAuth', [status]));
-      if (status === 409) throw new Error(i18n('webdavErrConflict'));
-      if (!ok && status !== 201 && status !== 204) throw new Error(i18n('webdavErrPut', [status]));
+      if (status === 401 || status === 403) throw webdavError('webdavErrAuth', [status]);
+      if (status === 409) throw webdavError('webdavErrConflict');
+      if (!ok && status !== 201 && status !== 204) throw webdavError('webdavErrPut', [status]);
       return true;
     }
 
@@ -433,6 +454,10 @@ export function initSyncEngineFacade(deps) {
       try { return new URL(fileUrl).href.length > 2048; } catch (_) { return true; }
     }
     window.__bxSync.fileUrlOverCap = fileUrlOverCap;
+    // Ticket 111 test seam (mirrors the fileUrlOverCap pattern): lets specs pin
+    // keyed-error identity and classification without a live WebDAV server.
+    window.__bxSync.webdavError = webdavError;
+    window.__bxSync.isKnownWebDAVError = isKnownWebDAVError;
 
     // Two-way sync. Returns { direction: 'pull'|'push'|'merge'|'none', cloudBoxes, localBoxes }.
     // Outbox-style merge for concurrent WebDAV changes.
@@ -463,12 +488,12 @@ export function initSyncEngineFacade(deps) {
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
       const pass = webdavPassInput?.value || '';
       debug('WebDAV sync: starting', { url, user: user ? '(set)' : '(empty)' });
-      if (!url) throw new Error(i18n('webdavErrNoUrl'));
+      if (!url) throw webdavError('webdavErrNoUrl');
       checkUrlValid(url);
-      if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
+      if (user && !pass) throw webdavError('webdavErrNoPass');
       const { fileUrl } = resolveWebDAVFileUrl(url);
       // Ticket 108: checkUrlValid caps the BASE url; the derived fileUrl needs its own cap.
-      if (fileUrlOverCap(fileUrl)) throw new Error(i18n('webdavErrUrlTooLong'));
+      if (fileUrlOverCap(fileUrl)) throw webdavError('webdavErrUrlTooLong');
 
       // Data-loss guard — blocks destructive upload unless user confirms restore-from-cloud.
       if (!bypassLossGuard && detectDataLoss()) {
@@ -662,14 +687,14 @@ export function initSyncEngineFacade(deps) {
     }
 
     function checkUrlValid(urlStr) {
-      if (typeof urlStr !== 'string' || urlStr.length > 2048) throw new Error(i18n('webdavErrUrlTooLong'));
+      if (typeof urlStr !== 'string' || urlStr.length > 2048) throw webdavError('webdavErrUrlTooLong');
       const target = new URL(urlStr);
-      if (target.protocol !== 'https:') throw new Error(i18n('webdavErrHttps'));
-      if (target.username || target.password) throw new Error(i18n('webdavErrEmbedded'));
+      if (target.protocol !== 'https:') throw webdavError('webdavErrHttps');
+      if (target.username || target.password) throw webdavError('webdavErrEmbedded');
       // Ticket 90: share the exact predicate isSafeExtUrl uses, so the pull path denies
       // the same hosts the export/test paths deny. The old inline regex tested the raw hostname
       // (keeping the IPv6 brackets) and had no .local/.internal suffix rule.
-      if (isPrivateHost(normalizeHostname(target), layout.settings.webdavAllowPrivateHost === true)) throw new Error(i18n('webdavErrBlockedHost'));
+      if (isPrivateHost(normalizeHostname(target), layout.settings.webdavAllowPrivateHost === true)) throw webdavError('webdavErrBlockedHost');
     }
 
     // Expose sync for debug + tests.
@@ -1053,8 +1078,7 @@ export function bindSyncBackupUi() {
       } catch (e) {
         debugErr('WebDAV test failed', e);
         // Show i18n error if it's a known error, otherwise show the raw message
-        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrNetwork'];
-        const isKnown = knownErrors.some(k => e.message && i18n(k) === e.message);
+        const isKnown = isKnownWebDAVError(e);
         if (isKnown) {
           webdavTestBtn.textContent = e.message;
         } else {
@@ -1086,8 +1110,7 @@ export function bindSyncBackupUi() {
         // display the localized error on the button (known i18n error verbatim,
         // otherwise the friendly network message, never a raw transport error).
         debugErr('Backup Now failed', e);
-        const knownErrors = ['webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass', 'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut', 'webdavErrConflict', 'webdavErrNetwork', 'webdavErrUrlTooLong'];
-        const isKnown = knownErrors.some(k => e.message && i18n(k) === e.message);
+        const isKnown = isKnownWebDAVError(e);
         // Gist failures throw curated English strings ("GitHub API 401") — show
         // those verbatim rather than the WebDAV-specific network message.
         backupNowBtn.textContent = isKnown || p === 'gist' ? e.message : i18n('webdavErrNetwork');

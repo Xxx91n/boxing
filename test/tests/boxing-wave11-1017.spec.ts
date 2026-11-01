@@ -138,6 +138,84 @@ test.describe('Wave 2026.10.17 — Acceptance Tests', () => {
     expect(r.labelError).not.toBe(r.labelBefore);
   });
 
+  // ── Ticket 111: keyed WebDAV error identity ──
+  test('WebDAV errors carry i18n keys; parameterized messages classify by key, not message text', async ({ page }) => {
+    await boot(page);
+
+    const r = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const bxSync = (window as any).__bxSync;
+
+      // Parameterized keys (webdavErrAuth takes $status$) never matched the legacy
+      // e.message === i18n(k) comparison — key membership must classify them and the
+      // message must render with its interpolation.
+      const authErr = bxSync.webdavError('webdavErrAuth', [401]);
+      const authKeyed = authErr.key === 'webdavErrAuth';
+      const authInterpolated = authErr.message.includes('401');
+      const authClassified = bxSync.isKnownWebDAVError(authErr) === true;
+
+      // Legacy fallback: an unkeyed error carrying a bare i18n message still classifies.
+      const netMsg = bxSync.webdavError('webdavErrNetwork').message;
+      const legacyFallback = bxSync.isKnownWebDAVError({ message: netMsg }) === true;
+      // Transport errors stay unclassified (UI maps them to the generic network message).
+      const transportUnclassified = bxSync.isKnownWebDAVError(new Error('TypeError: NetworkError when attempting to fetch resource.')) === false;
+
+      // Real throw sites: both guards run before any network I/O, so the caught
+      // errors are safe to observe and must carry their keys.
+      await dbg.setWebDAVConfig('https://dav.example.net/dav/' + 'a'.repeat(2100), 'u', 'p');
+      const backupErr: any = await dbg.backupWebDAV().catch((e: any) => e);
+      await dbg.setWebDAVConfig('http://dav.example.net/dav/', 'u', 'p');
+      const testErr: any = await dbg.testWebDAV().catch((e: any) => e);
+
+      return {
+        authKeyed, authInterpolated, authClassified,
+        legacyFallback, transportUnclassified,
+        backupKey: backupErr instanceof Error ? backupErr.key : undefined,
+        testKey: testErr instanceof Error ? testErr.key : undefined,
+      };
+    });
+
+    expect(r.authKeyed).toBe(true);
+    expect(r.authInterpolated).toBe(true);
+    expect(r.authClassified).toBe(true);
+    expect(r.legacyFallback).toBe(true);
+    expect(r.transportUnclassified).toBe(true);
+    expect(r.backupKey).toBe('webdavErrUrlTooLong');
+    expect(r.testKey).toBe('webdavErrHttps');
+  });
+
+  // ── Ticket 111: parameterized error renders interpolated on the test button ──
+  test('a 401 from WebDAV shows the interpolated webdavErrAuth message on the test button', async ({ page }) => {
+    await boot(page);
+
+    const r = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      await dbg.setWebDAVConfig('https://dav.example.net/dav/', 'u', 'p');
+      // The spec boots from a file:// page — no extension runtime — so
+      // testWebDAVConnection falls back to a page-direct fetch. Patch it to
+      // answer 401 (same seam the version-check test uses for api.github.com);
+      // no real network involved.
+      const origFetch = window.fetch;
+      window.fetch = async () => new Response('', { status: 401 });
+      try {
+        let rejection = '';
+        try { await dbg.testWebDAV(); } catch (e: any) { rejection = e && e.message ? e.message : String(e); }
+        const btn = document.getElementById('webdav-test-btn') as HTMLButtonElement;
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return { rejection, text: btn.textContent };
+      } finally {
+        window.fetch = origFetch;
+      }
+    });
+
+    // webdavErrAuth takes $status$: the button must show the thrown interpolated
+    // message ("auth failed (401)") verbatim, not the generic network fallback
+    // as before ticket 111.
+    expect(r.text).toBe(r.rejection);
+    expect(r.text).toContain('401');
+  });
+
   // ── Version check authority direct connection & UI feedback ──
   test('checkVersionUpdate connects to GitHub API, supports force refresh, and shows low-profile hint', async ({ page }) => {
     // 1. Static contract
