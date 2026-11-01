@@ -116,7 +116,7 @@ npm run build
 
 ### Voraussetzungen
 
-- Node.js 24.22.1 (pinned in .nvmrc; engines ^24.22.1)
+- Node.js 24.22.1
 - npm
 
 ### Einrichtung

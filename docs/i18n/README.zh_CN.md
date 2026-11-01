@@ -116,7 +116,7 @@ npm run build
 
 ### 前置条件
 
-- Node.js 24.22.1 (pinned in .nvmrc; engines ^24.22.1)
+- Node.js 24.22.1
 - npm
 
 ### 设置

@@ -201,9 +201,7 @@ function unb64(text: string) {
 
 // Node-side v1 seal/open. Used only to build files the product UI cannot produce, and to read
 // back what the browser sealed — the passphrases here are test fixtures, never user data.
-// `webcrypto` is imported explicitly rather than taken from the global: the global only became
-// default on Node 19+, and this helper also runs under plain node outside the browser lane.
-// CI resolves Node from .nvmrc (24.22.1), where either form works.
+// `webcrypto` is imported explicitly: this node-side helper must not depend on the global being exposed.
 async function nodeKey(passphrase: string, salt: Uint8Array, usage: 'encrypt' | 'decrypt') {
   // NFC to match the product's v1 contract (see deriveFileKey in ntp/backup-crypto.js).
   const base = await webcrypto.subtle.importKey('raw', new TextEncoder().encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);

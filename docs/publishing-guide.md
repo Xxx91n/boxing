@@ -27,7 +27,7 @@
 | 源码审核包 | `git archive -o boxing-source-<ver>.zip v<ver>` 或 GitHub「Download ZIP」后去掉 `.git`/`node_modules` |
 | 商店文案 | `docs/store-assets/descriptions/` |
 
-构建：Node `24.22.1`（`.nvmrc` 固定，`engines` 为 `^24.22.1`，`.npmrc` 开启 `engine-strict`，更低版本安装即失败），`npm ci && npm run build`。
+构建：Node `24.22.1`（`.nvmrc` 固定，`engines` 为 `^24.22.1`，`.npmrc` 开启 `engine-strict`，该范围外——低于 24.22.1 或 Node 25+——安装即失败），`npm ci && npm run build`。
 
 ## Part 1 — Firefox AMO 新版本
 
