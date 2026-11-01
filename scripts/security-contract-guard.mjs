@@ -49,6 +49,11 @@ const OUTBOUND_SCAN_FILES = ['ntp/favicon.js', 'ntp/settings-ui.js', 'ntp/sync-e
 const IGNORED_OUTBOUND_HOSTS = new Set(['github.com']);
 const privacyPolicy = read('docs/privacy-policy.md').toLowerCase();
 
+/**
+ * Extract every unique https outbound host from a runtime source file.
+ * @param {string} src - Source text of a scanned runtime file.
+ * @returns {Set<string>} Normalized hostnames (www. stripped, github.com excluded).
+ */
 function extractOutboundHosts(src) {
   const hosts = new Set();
   const re = /https:\/\/([a-z0-9.-]+)(?::[0-9]+)?/gi;

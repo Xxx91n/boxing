@@ -4,8 +4,8 @@
 
 | Version   | Supported |
 |-----------|-----------|
-| 2026.11.1 | Yes       |
-| < 2026.11.1 | No      |
+| 2026.10.17 | Yes      |
+| < 2026.10.17 | No     |
 
 ## Reporting a Vulnerability
 
