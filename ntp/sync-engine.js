@@ -240,6 +240,10 @@ export function initSyncEngineFacade(deps) {
       }
       // Resolve file URL — reuse the shared helper (honors custom sync filename).
       const { fileUrl } = resolveWebDAVFileUrl(url);
+      // Ticket 108: the base URL passes the 2048 cap but the appended sync filename
+      // can push fileUrl over it — check the value that is actually sent, so the
+      // page-direct fetch fallback below can never see an overlong URL.
+      if (fileUrl.length > 2048) throw new Error(i18n('webdavErrUrlTooLong'));
       debug('WebDAV backup: resolved file URL', fileUrl);
       if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
       const body = JSON.stringify(buildSyncPayload(), null, 2);
@@ -454,6 +458,8 @@ export function initSyncEngineFacade(deps) {
       checkUrlValid(url);
       if (user && !pass) throw new Error(i18n('webdavErrNoPass'));
       const { fileUrl } = resolveWebDAVFileUrl(url);
+      // Ticket 108: checkUrlValid caps the BASE url; the derived fileUrl needs its own cap.
+      if (fileUrl.length > 2048) throw new Error(i18n('webdavErrUrlTooLong'));
 
       // Data-loss guard — blocks destructive upload unless user confirms restore-from-cloud.
       if (!bypassLossGuard && detectDataLoss()) {
@@ -1130,6 +1136,9 @@ export function bindSyncBackupUi() {
       if (provider === 'webdav') {
         const fileUrl = resolveWebDAVFileUrl((webdavUrlInput && webdavUrlInput.value.trim()) || layout.settings.webdavUrl || '').fileUrl;
         if (!fileUrl) return { ok: false, error: dangerRemoteDeleteNoTarget }; // no remote target configured
+        // Ticket 108: same derived-URL cap — the background guard would reject this
+        // anyway; refuse here so the delete contract stays "no raw transport error".
+        if (fileUrl.length > 2048) return { ok: false, error: dangerRemoteDeleteFailed };
         const user = (webdavUserInput && webdavUserInput.value.trim()) || layout.settings.webdavUser || '';
         let pass = (webdavPassInput && webdavPassInput.value) || '';
         if (!pass && layout.settings._encWebdavPass) pass = (await decryptCredential(layout.settings._encWebdavPass)) || '';
