@@ -116,7 +116,7 @@ npm run build
 
 ### 前提条件
 
-- Node.js >= 18
+- Node.js ^24.22.2 (.nvmrc: 24.22.2)
 - npm
 
 ### セットアップ
