@@ -8,6 +8,8 @@
 
 Boxing is a free, open-source browser extension for Chrome and Firefox that turns the new tab page into an infinite-canvas workspace. Think Obsidian canvas meets bookmarks: bookmarks live in labeled boxes, boxes hold their own bookmark collections with list and grid views, related boxes are linked with connection lines, and every box opens into its own sub-canvas. Local-first — no accounts, no tracking — with 14 interface languages, Apache-2.0 licensed.
 
+Out of scope of this page: deep technical detail stays in the repository [README](https://github.com/Xxx91n/boxing) and `docs/`; this page covers install paths, preview, and links.
+
 ## Screenshots
 
 Real screenshots from the extension (1280×800):
@@ -24,7 +26,7 @@ Real screenshots from the extension (1280×800):
 
 - **Firefox** — install from [Firefox Add-ons (AMO)](https://addons.mozilla.org/en-US/firefox/addon/boxing-newtab/)
 - **Microsoft Edge** — install from [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-- **Chrome & other Chromium browsers** — grab the latest package from [GitHub Releases](https://github.com/Xxx91n/boxing/releases) (a Chrome Web Store listing is deferred until after the Edge rollout)
+- **Chrome & other Chromium browsers** — no official store listing yet; the Chrome Web Store listing is deferred until after the Edge rollout. Use the [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) page, or [build from source](https://github.com/Xxx91n/boxing#install) — GitHub Releases does not ship an installable `.crx`.
 - **Build from source** — follow the [install guide in the README](https://github.com/Xxx91n/boxing#install)
 - Rollout plan and signing workflow: [publishing guide](https://github.com/Xxx91n/boxing/blob/main/docs/publishing-guide.md)
 
@@ -37,7 +39,7 @@ An interactive, playable preview of the Boxing new tab page is deployed automati
 
 ## Privacy
 
-Boxing keeps all data on your device: bookmarks, canvas layout, and settings live in the browser's local extension storage. No analytics, no telemetry, no accounts. The optional WebDAV / GitHub Gist backup only talks to servers you configure yourself.
+Boxing keeps all data on your device: bookmarks, canvas layout, and settings live in the browser's local extension storage. No analytics, no telemetry, no accounts. Outbound traffic is limited to favicon lookups, an anonymous version check (GitHub Releases API with a `version.json` fallback on this site), and optional WebDAV / GitHub Gist backup that only talks to servers you configure yourself.
 
 Full policy: [Boxing Privacy Policy](https://boxing.xxx91n.com/privacy-policy.html)
 

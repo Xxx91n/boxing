@@ -109,7 +109,7 @@ npm run build
 ## Datenschutz
 
 - Alle Daten bleiben in `chrome.storage.local` — nichts verlaesst Ihr Geraet ausser den unten aufgefuehrten ausgehenden Anfragen oder einem optionalen Cloud-Backup, das Sie konfigurieren
-- Ausgehender Verkehr ist auf Favicon-Abrufe (Icon-Dienste von Drittanbietern und direkte `favicon.ico`-Anfragen), eine anonyme Versionspruefung ueber die GitHub Releases API und das optionale WebDAV / GitHub Gist Backup beschraenkt
+- Ausgehender Verkehr ist auf Favicon-Abrufe (Icon-Dienste von Drittanbietern und direkte `favicon.ico`-Anfragen), eine anonyme Versionspruefung ueber die GitHub Releases API (mit Fallback auf `https://boxing.xxx91n.com/demo/version.json` bei Fehlschlag) und das optionale WebDAV / GitHub Gist Backup beschraenkt
 - WebDAV-URLs muessen standardmaessig oeffentliche HTTPS-Endpunkte sein — private und lokale Hostnamen werden abgelehnt (nur Hostnamen-Pruefung, keine DNS-Aufloesung); eine explizite Option unter Einstellungen → Sync lockert nur diese Ablehnung fuer selbst gehostete LAN-Server, HTTPS bleibt erforderlich; Regeln und Begruendung in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
 - Sync-Anmeldedaten liegen in einer verschleierten (nicht benutzerschluesselbasierten) Huelle; manuell exportierte Backupdateien koennen zusaetzlich mit einer Passphrase versiegelt werden — Details in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
 - Keine Analytik, kein Tracking, kein ausgefuehrter Drittanbieter-Code

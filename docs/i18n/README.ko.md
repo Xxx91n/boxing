@@ -109,7 +109,7 @@ npm run build
 ## 개인정보
 
 - 모든 데이터는 `chrome.storage.local`에 저장됩니다 — 아래의 아웃바운드 요청 또는 직접 설정한 선택적 클라우드 백업을 제외하고는 기기를 떠나지 않습니다
-- 아웃바운드 트래픽은 파비콘 조회(제3자 아이콘 서비스 및 직접 `favicon.ico` 요청), 익명 GitHub Releases API 버전 확인, 선택적 WebDAV / GitHub Gist 백업으로 제한됩니다
+- 아웃바운드 트래픽은 파비콘 조회(제3자 아이콘 서비스 및 직접 `favicon.ico` 요청), 익명 GitHub Releases API 버전 확인(GitHub 실패 시 `https://boxing.xxx91n.com/demo/version.json`으로 폴백), 선택적 WebDAV / GitHub Gist 백업으로 제한됩니다
 - WebDAV URL은 기본적으로 공개 HTTPS 엔드포인트여야 합니다 — 사설/로컬 호스트명은 거부됩니다(호스트명 검사만 수행, DNS 확인 없음). 설정 → 동기화의 명시적 옵션은 자체 호스팅 LAN 서버를 위해 이 거부만 완화하며 HTTPS는 계속 필수입니다. 규칙과 근거는 [개인정보 처리방침](../../docs/privacy-policy.md)을 참조하세요
 - 동기화 자격 증명은 난독화된(사용자 키 암호화가 아닌) 봉투에 저장되며, 수동으로 내보낸 백업 파일은 별도의 암호로 보호할 수 있습니다 — 자세한 내용은 [개인정보 처리방침](../../docs/privacy-policy.md)을 참조하세요
 - 분석 없음, 추적 없음, 제3자 코드 실행 없음

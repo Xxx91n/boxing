@@ -109,7 +109,7 @@ npm run build
 ## Confidentialite
 
 - Toutes les donnees restent dans `chrome.storage.local` — rien ne quitte votre appareil en dehors des requetes sortantes ci-dessous ou d une sauvegarde cloud optionnelle que vous configurez
-- Le trafic sortant se limite a la recherche de favicons (services d'icones tiers et sondes `favicon.ico` directes), a une verification de version anonyme via l'API GitHub Releases, et a la sauvegarde optionnelle WebDAV / GitHub Gist
+- Le trafic sortant se limite a la recherche de favicons (services d'icones tiers et sondes `favicon.ico` directes), a une verification de version anonyme via l'API GitHub Releases (avec repli vers `https://boxing.xxx91n.com/demo/version.json` en cas d'echec), et a la sauvegarde optionnelle WebDAV / GitHub Gist
 - Les URL WebDAV doivent etre des points d'acces HTTPS publics par defaut — les noms d'hotes prives et locaux sont refuses (verification du nom d'hote uniquement, sans resolution DNS) ; une option explicite sous Parametres → Sync assouplit uniquement ce refus pour les serveurs LAN auto-heberges, HTTPS restant requis ; regles et justification dans la [politique de confidentialite](../../docs/privacy-policy.md)
 - Les identifiants de synchronisation sont conserves dans une enveloppe obfusquee (pas de chiffrement par cle utilisateur) ; les fichiers de sauvegarde exportes manuellement peuvent etre scelles par une phrase de passe separee — details dans la [politique de confidentialite](../../docs/privacy-policy.md)
 - Pas d analytics, pas de tracking, aucun code tiers execute

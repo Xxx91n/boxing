@@ -37,9 +37,10 @@ TEST_SURFACE_DRY_RUN=1 npm run test:changed   # print the command only
 npm run test:debug
 ```
 
-All `test:*` scripts go through `scripts/test-mutex.mjs`, which holds a
+Local `test:*` runs go through `scripts/test-mutex.mjs`, which holds a
 filesystem lock so two test runs cannot overlap — a concurrent run exits 75
-(`EX_TEMPFAIL`) instead of racing the shared `dist/` and browser state.
+(`EX_TEMPFAIL`) instead of racing the shared `dist/` and browser state. CI
+runs bypass the lock entirely (the mutex is skipped when `CI` is truthy).
 
 ## Configuration
 
@@ -95,7 +96,7 @@ suite**, never a silent skip:
 - the mapping file is missing or malformed;
 - a changed file is under `test/`, `.github/`, or is `package(.lock).json`;
 - a changed file maps to zero clusters (entry surface: `ntp/ntp.js`,
-  `background.js`, `manifest.json`, css, `index.html`) or to more than one.
+  `background.js`, `manifest.json`, css, `index.html`).
 
 The import-graph gate fails on stale cluster entries: it validates cluster
 names, non-empty cluster lists, that every mapped spec file exists, and that
