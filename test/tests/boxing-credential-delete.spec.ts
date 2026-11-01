@@ -196,8 +196,11 @@ test.describe('Ticket 99 T13: delete stored sync credentials entry', () => {
         pass: await dec(dbg.layout.settings._encWebdavPass),
         token: await dec(dbg.layout.settings._encGistToken),
         provider: dbg.layout.settings.syncProvider,
-        passEnvSame: dbg.layout.settings._encWebdavPass === seeded.envPass,
-        tokenEnvSame: dbg.layout.settings._encGistToken === seeded.envToken,
+        // Playwright serializes evaluate return values across the page boundary,
+        // so object identity never survives; compare the serialized bytes instead
+        // (a v3 envelope is a plain {v,s,iv,d} record).
+        passEnvSame: JSON.stringify(dbg.layout.settings._encWebdavPass) === JSON.stringify(seeded.envPass),
+        tokenEnvSame: JSON.stringify(dbg.layout.settings._encGistToken) === JSON.stringify(seeded.envToken),
       };
     }, seeded);
     expect(after.pass).toBe('spec-pass');
@@ -233,8 +236,11 @@ test.describe('Ticket 99 T13: delete stored sync credentials entry', () => {
         pass: await dec(dbg.layout.settings._encWebdavPass),
         token: await dec(dbg.layout.settings._encGistToken),
         provider: dbg.layout.settings.syncProvider,
-        passEnvSame: dbg.layout.settings._encWebdavPass === seeded.envPass,
-        tokenEnvSame: dbg.layout.settings._encGistToken === seeded.envToken,
+        // Playwright serializes evaluate return values across the page boundary,
+        // so object identity never survives; compare the serialized bytes instead
+        // (a v3 envelope is a plain {v,s,iv,d} record).
+        passEnvSame: JSON.stringify(dbg.layout.settings._encWebdavPass) === JSON.stringify(seeded.envPass),
+        tokenEnvSame: JSON.stringify(dbg.layout.settings._encGistToken) === JSON.stringify(seeded.envToken),
       };
     }, seeded);
     expect(after.pass).toBe('spec-pass');
