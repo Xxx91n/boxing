@@ -25,6 +25,8 @@ Boxing transforma tu pagina de nueva pestana en un espacio de trabajo visual par
 - [Contribuir](#contribuir)
 - [Licencia](#licencia)
 
+> Fuera del alcance de esta traduccion (out of scope): los detalles tecnicos en profundidad estan en el README ingles y en `docs/`; esta traduccion cubre instalacion, uso y el resumen de privacidad.
+
 ## Funciones
 
 **Lienzo infinito** — Pan y zoom libres (Ctrl+rueda). Crea cajas ilimitadas en un solo lienzo. Conecta cajas con lineas para mostrar relaciones. Establece relaciones padre-hijo — mueve un padre y sus hijos lo siguen.
@@ -106,10 +108,11 @@ npm run build
 
 ## Privacidad
 
-- Todos los datos almacenados localmente en `chrome.storage.local` — nada sale de tu dispositivo a menos que configures la copia de seguridad en la nube opcional
-- La copia de seguridad WebDAV / GitHub Gist opcional es el unico uso de red saliente
-- Sin analiticas, sin seguimiento, sin servicios de terceros
-- 100% codigo abierto (Apache-2.0) — audita cada linea
+- Todos los datos permanecen en `chrome.storage.local` — nada sale de tu dispositivo salvo las solicitudes salientes indicadas abajo o una copia de seguridad en la nube opcional que configures
+- El trafico saliente se limita a la busqueda de favicons (servicios de iconos de terceros y solicitudes directas de `favicon.ico`), una comprobacion de version anonima contra la API de GitHub Releases, y la copia de seguridad opcional WebDAV / GitHub Gist
+- Las URL de WebDAV deben ser endpoints HTTPS publicos — los hosts privados y locales se rechazan por defecto, con una opcion explicita en Configuracion → Sync para servidores LAN autoalojados; reglas y justificacion en la [politica de privacidad](../../docs/privacy-policy.md)
+- Las credenciales de sincronizacion se guardan en un sobre ofuscado (no cifrado con clave de usuario); las copias de seguridad exportadas manualmente pueden sellarse con una frase de contrasena aparte — detalles en la [politica de privacidad](../../docs/privacy-policy.md)
+- Sin analiticas, sin seguimiento, sin codigo de terceros ejecutado
 - Politica de privacidad completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Desarrollo

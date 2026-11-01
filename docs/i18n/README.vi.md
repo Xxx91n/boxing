@@ -25,6 +25,8 @@ Boxing biến trang tab mới của bạn thành không gian làm việc trực 
 - [Đóng góp](#đóng-góp)
 - [Giấy phép](#giấy-phép)
 
+> Ngoài phạm vi của bản dịch này (out of scope): chi tiết kỹ thuật chuyên sâu nằm trong README tiếng Anh và `docs/`; bản dịch này tập trung vào cài đặt, sử dụng và phần tóm tắt quyền riêng tư.
+
 ## Tính năng
 
 **Khung vẽ vô hạn** — Pan và zoom tự do (Ctrl+lăn chuột). Tạo không giới hạn hộp trên một khung vẽ. Kết nối các hộp bằng đường thẳng để hiển thị mối quan hệ. Thiết lập quan hệ cha-con — di chuyển cha và các con theo sau.
@@ -106,10 +108,11 @@ npm run build
 
 ## Quyền riêng tư
 
-- Tất cả dữ liệu được lưu trữ cục bộ trong `chrome.storage.local` — không có gì rời khỏi thiết bị của bạn trừ khi bạn cấu hình sao lưu đám mây tùy chọn
-- Sao lưu WebDAV / GitHub Gist tùy chọn là sử dụng mạng ra duy nhất
-- Không phân tích, không theo dõi, không dịch vụ bên thứ ba
-- 100% mã nguồn mở (Apache-2.0) — kiểm toán từng dòng
+- Tất cả dữ liệu nằm trong `chrome.storage.local` — không có gì rời khỏi thiết bị của bạn ngoài các yêu cầu gửi ra liệt kê dưới đây hoặc bản sao lưu đám mây tùy chọn mà bạn tự cấu hình
+- Lưu lượng gửi ra chỉ gồm tra cứu favicon (các dịch vụ biểu tượng bên thứ ba và truy vấn `favicon.ico` trực tiếp), kiểm tra phiên bản ẩn danh qua GitHub Releases API, và sao lưu WebDAV / GitHub Gist tùy chọn
+- URL WebDAV phải là điểm cuối HTTPS công khai — các host riêng tư và nội bộ bị từ chối theo mặc định, với tùy chọn cho phép trong Cài đặt → Đồng bộ cho máy chủ LAN tự lưu trữ; quy tắc và lý do trong [chính sách quyền riêng tư](../../docs/privacy-policy.md)
+- Thông tin xác thực đồng bộ nằm trong lớp bọc làm rối (không phải mã hóa bằng khóa người dùng); các file sao lưu xuất thủ công có thể được đóng dấu bằng cụm mật khẩu riêng — chi tiết trong [chính sách quyền riêng tư](../../docs/privacy-policy.md)
+- Không phân tích, không theo dõi, không thực thi mã của bên thứ ba
 - Chính sách quyền riêng tư đầy đủ: [docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Phát triển

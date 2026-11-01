@@ -1,8 +1,14 @@
 # Store Listing Screenshots
 
-Real screenshots for Chrome Web Store and AMO listing.
+Screenshots for the Chrome Web Store and AMO listings. Prerequisite for
+regeneration: a built `dist/boxing-chrome/` (run `npm run build` first).
 
-All images are 1280x800 PNG screenshots taken from the Boxing new tab page via Playwright. To regenerate, run: node test/tests/take-store-screenshots.mjs (requires built dist/boxing-chrome/).
+All images are 1280x800 PNG captures of the Boxing new tab page, taken via
+Playwright. To regenerate:
+
+```bash
+node test/tests/take-store-screenshots.mjs
+```
 
 ## Required Screenshots
 
@@ -18,12 +24,12 @@ All images are 1280x800 PNG screenshots taken from the Boxing new tab page via P
 
 - **Size:** 1280x800 pixels (Chrome Web Store requirement)
 - **Format:** PNG with transparency
-- **Chrome Web Store:** Minimum 1, maximum 5 screenshots required
-- **AMO:** Minimum 1 screenshot required, up to 5 recommended
+- **Chrome Web Store:** minimum 1, maximum 5 screenshots
+- **AMO:** minimum 1 screenshot, up to 5 recommended
 
 ## How to Replace
 
 1. Take a screenshot of the extension in your browser
 2. Crop/resize to 1280x800
-3. Save with the same filename as the placeholder
+3. Save under the same filename
 4. `git add docs/store-assets/screenshots/ && git commit`
