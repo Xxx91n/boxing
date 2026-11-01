@@ -1121,7 +1121,12 @@ export function bindSyncBackupUi() {
     async function deleteRemoteBackup() {
       const provider = syncProviderSelect ? syncProviderSelect.value : 'local';
       if (provider === 'local') return { ok: false, error: dangerRemoteDeleteNoTarget };
-      if (remoteDeleteStub) return remoteDeleteStub(provider);
+      if (remoteDeleteStub) {
+        const r = remoteDeleteStub(provider);
+        // Never surface the raw stub/transport error to the UI — map any
+        // failure to the localized remote-delete failure text.
+        return r && r.ok ? { ok: true } : { ok: false, error: dangerRemoteDeleteFailed };
+      }
       if (provider === 'webdav') {
         const fileUrl = resolveWebDAVFileUrl((webdavUrlInput && webdavUrlInput.value.trim()) || layout.settings.webdavUrl || '').fileUrl;
         if (!fileUrl) return { ok: false, error: dangerRemoteDeleteNoTarget }; // no remote target configured
@@ -1157,10 +1162,10 @@ export function bindSyncBackupUi() {
         try {
           const remote = await deleteRemoteBackup();
           if (!remote.ok) {
-            // Surface the localized failure text, never the raw provider error
-            // (stub or transport detail) — the deletion stays atomic.
-            setDeleteStatus(dangerRemoteDeleteFailed, true);
-            return { ok: false, error: dangerRemoteDeleteFailed };
+            // deleteRemoteBackup() already maps failures to localized text;
+            // surfacing it here keeps the no-target vs failed distinction.
+            setDeleteStatus(remote.error || dangerRemoteDeleteFailed, true);
+            return remote;
           }
         } catch (e) {
           debugErr('deleteSyncCredentials: remote delete failed', e);
