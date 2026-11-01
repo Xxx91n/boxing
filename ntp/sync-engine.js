@@ -1157,8 +1157,10 @@ export function bindSyncBackupUi() {
         try {
           const remote = await deleteRemoteBackup();
           if (!remote.ok) {
-            setDeleteStatus(remote.error || dangerRemoteDeleteFailed, true);
-            return remote;
+            // Surface the localized failure text, never the raw provider error
+            // (stub or transport detail) — the deletion stays atomic.
+            setDeleteStatus(dangerRemoteDeleteFailed, true);
+            return { ok: false, error: dangerRemoteDeleteFailed };
           }
         } catch (e) {
           debugErr('deleteSyncCredentials: remote delete failed', e);

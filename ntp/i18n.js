@@ -74,6 +74,8 @@ const I18N_FALLBACK = {
   deleteSyncCredentialConfirm: 'Delete credentials',
   deleteSyncCredentialStatusDone: 'Sync credentials deleted. Sync is now off — choose a provider to reconnect.',
   deleteSyncCredentialRemoteFailed: 'Failed to delete the remote backup data — nothing was changed.',
+  deleteSyncCredentialNoRemoteTarget: 'No remote backup target configured — nothing was deleted. Uncheck the remote option to delete only the local credentials.',
+  deleteSyncCredentialPersistFailed: 'Failed to save the cleaned configuration — stored credentials were kept. Please try again.',
   squareCorners: 'Square Corners', squareCornersHint: 'Use sharp square corners instead of rounded',
   smallBoxCountLabel: '$1$ small boxes',
   autoExpand: 'Auto expand', autoExpandHover: 'Hover to expand',
