@@ -302,6 +302,58 @@
   "syncProviderHint": {
     "message": "Boxing 将你的布局存储在此浏览器的本地存储中。选择一个提供方即可跨设备同步。"
   },
+  "deleteSyncCredentialTitle": {
+    "message": "删除同步凭据",
+    "description": "Ticket 99 (T13): 删除已存同步凭据的危险区标题"
+  },
+  "deleteSyncCredentialHint": {
+    "message": "仅删除此浏览器中已存储的 WebDAV 密码 / GitHub 令牌。本地书签与盒子绝不会被改动。此操作无法撤销。",
+    "description": "Ticket 99 (T13): 危险区中的范围提示"
+  },
+  "deleteSyncCredentialOpen": {
+    "message": "删除同步凭据…",
+    "description": "Ticket 99 (T13): 打开两步删除面板的按钮"
+  },
+  "deleteSyncCredentialWillDelete": {
+    "message": "将删除",
+    "description": "Ticket 99 (T13): 范围清单标签"
+  },
+  "deleteSyncCredentialLocalCreds": {
+    "message": "此浏览器中已存储的同步凭据",
+    "description": "Ticket 99 (T13): 范围清单项"
+  },
+  "deleteSyncCredentialDeleteRemote": {
+    "message": "同时删除远端备份数据（WebDAV 文件 / Gist）",
+    "description": "Ticket 99 (T13): 可选远端删除的复选框标签"
+  },
+  "deleteSyncCredentialRemoteKeepHint": {
+    "message": "不勾选则保留远端备份（推荐）。",
+    "description": "Ticket 99 (T13): 远端删除复选框下方的提示"
+  },
+  "deleteSyncCredentialWillKeep": {
+    "message": "将保留",
+    "description": "Ticket 99 (T13): 范围清单标签"
+  },
+  "deleteSyncCredentialBookmarks": {
+    "message": "本地书签和盒子（保持不变）",
+    "description": "Ticket 99 (T13): 范围清单项"
+  },
+  "deleteSyncCredentialCancel": {
+    "message": "取消",
+    "description": "Ticket 99 (T13): 取消按钮——默认聚焦目标"
+  },
+  "deleteSyncCredentialConfirm": {
+    "message": "删除凭据",
+    "description": "Ticket 99 (T13): 两步删除的确认按钮"
+  },
+  "deleteSyncCredentialStatusDone": {
+    "message": "同步凭据已删除。同步现已关闭——请选择提供方重新连接。",
+    "description": "Ticket 99 (T13): 成功状态消息"
+  },
+  "deleteSyncCredentialRemoteFailed": {
+    "message": "远端备份数据删除失败——未做任何更改。",
+    "description": "Ticket 99 (T13): 失败状态消息——原子中止并保留原状态"
+  },
   "urlOpenModeLabel": {
     "message": "在以下位置打开书签",
     "description": ""

@@ -16,6 +16,9 @@ import { encryptCredential, decryptCredential } from './credentials.js';
 
 let debug, debugErr, debugWarn;
 let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput;
+// Ticket 99 (T13): stored-credential danger zone refs — assigned in bindSyncBackupUi
+// before updateSyncConfigVisibility() first runs so the visibility toggle is safe.
+let syncCredentialDangerZone, deleteOpenBtn, deletePanel, deleteCancelBtn, deleteConfirmBtn, deleteRemoteCheck, deleteStatusEl;
 
 // Ticket 10: inject ntp.js-scope deps (loggers + sync config DOM refs — the refs are declared
 // once in ntp.js; duplicate getElementById here would fork their null-ness).
@@ -78,6 +81,10 @@ export function initSyncEngineFacade(deps) {
       if (remoteBackupZone) remoteBackupZone.hidden = (p !== 'webdav' && p !== 'gist');
       if (webdavConfig) webdavConfig.hidden = p !== 'webdav';
       if (gistConfig) gistConfig.hidden = p !== 'gist';
+      // Ticket 99 (T13): the danger zone is reachable whenever stored sync
+      // credentials exist — even after the user switches the provider back to
+      // local (D5 keeps the envelopes in that case, so they must stay deletable).
+      if (syncCredentialDangerZone) syncCredentialDangerZone.hidden = !(layout.settings._encWebdavPass || layout.settings._encGistToken);
     }
 
     // Route WebDAV through background service worker to bypass CORS.
@@ -797,6 +804,16 @@ export function initSyncEngineFacade(deps) {
 // Init-time wiring, called from ntp.js init() at the exact positions these statements
 // originally occupied (after loadLayout/loadSettings — they read layout.settings).
 export function bindSyncBackupUi() {
+    // Ticket 99 (T13): grab danger-zone refs before updateSyncConfigVisibility()
+    // runs (it toggles the zone on stored-credential presence).
+    syncCredentialDangerZone = document.getElementById('sync-credential-danger-zone');
+    deleteOpenBtn = document.getElementById('delete-sync-credential-open');
+    deletePanel = document.getElementById('delete-sync-credential-panel');
+    deleteCancelBtn = document.getElementById('delete-sync-credential-cancel');
+    deleteConfirmBtn = document.getElementById('delete-sync-credential-confirm');
+    deleteRemoteCheck = document.getElementById('delete-sync-credential-remote');
+    deleteStatusEl = document.getElementById('delete-sync-credential-status');
+
     // Restore persisted config
     const syncProviderVal = layout.settings.syncProvider || 'local';
     if (syncProviderSelect) syncProviderSelect.value = syncProviderVal;
@@ -1046,4 +1063,124 @@ export function bindSyncBackupUi() {
       saveLayout();
     });
     if (layout.settings.autoBackupInterval && autoBackupSelect) autoBackupSelect.value = String(layout.settings.autoBackupInterval);
+
+    // ── Ticket 99 (T13): delete stored sync credentials — danger zone ──────
+    // Two-step confirm (open panel → explicit delete), optional remote data
+    // deletion, atomic local reset. After a successful deletion the sync config
+    // returns to "not configured" (provider local, credentials and the sync
+    // ancestor cleared) so the only reconnect path is the provider select.
+    // The three-layer scope list mirrors the research doc (Q2):
+    //  will delete  : stored sync credentials in this browser
+    //  remote data  : optional — WebDAV file / Gist (delete or keep)
+    //  will keep    : local bookmarks and boxes (never touched)
+    const dangerRemoteDeleteFailed = i18n('deleteSyncCredentialRemoteFailed');
+    const dangerStatusDone = i18n('deleteSyncCredentialStatusDone');
+
+    // Test seam: remote-delete stub (file:// lane has no runtime/network), so
+    // tests can simulate remote success/failure without hitting the network.
+    let remoteDeleteStub = null;
+    window.__boxingSetSyncRemoteDeleteStub = (fn) => { remoteDeleteStub = typeof fn === 'function' ? fn : null; };
+    window.__boxingHasStoredSyncCredentials = () => Boolean(layout.settings._encWebdavPass || layout.settings._encGistToken);
+
+    function setDeleteStatus(msg, isError) {
+      if (!deleteStatusEl) return;
+      deleteStatusEl.textContent = msg || '';
+      deleteStatusEl.hidden = !msg;
+      deleteStatusEl.dataset.kind = isError ? 'error' : 'ok';
+    }
+
+    function showDeletePanel(show) {
+      if (deleteOpenBtn) deleteOpenBtn.hidden = show;
+      if (deletePanel) deletePanel.hidden = !show;
+      if (show && deleteCancelBtn) deleteCancelBtn.focus(); // default focus on the safe action
+    }
+
+    // Resolve live credentials for the remote delete: input first (typed this
+    // session), otherwise decrypt the stored envelope (same install key).
+    async function deleteRemoteBackup() {
+      const provider = syncProviderSelect ? syncProviderSelect.value : 'local';
+      if (provider === 'local') return { ok: true, skipped: true };
+      if (remoteDeleteStub) return remoteDeleteStub(provider);
+      if (provider === 'webdav') {
+        const fileUrl = resolveWebDAVFileUrl((webdavUrlInput && webdavUrlInput.value.trim()) || layout.settings.webdavUrl || '').fileUrl;
+        if (!fileUrl) return { ok: true, skipped: true }; // no remote target configured
+        const user = (webdavUserInput && webdavUserInput.value.trim()) || layout.settings.webdavUser || '';
+        let pass = (webdavPassInput && webdavPassInput.value) || '';
+        if (!pass && layout.settings._encWebdavPass) pass = (await decryptCredential(layout.settings._encWebdavPass)) || '';
+        if (!pass) return { ok: false, error: dangerRemoteDeleteFailed }; // cannot authenticate
+        const delResp = await sendToBackground({ type: 'webdav-delete', url: fileUrl, user, pass });
+        if (!delResp || delResp.ok !== true) return { ok: false, error: dangerRemoteDeleteFailed };
+        return { ok: true };
+      }
+      if (provider === 'gist') {
+        const gistId = (gistIdInput && gistIdInput.value.trim()) || layout.settings.gistId || '';
+        if (!gistId) return { ok: true, skipped: true }; // no remote target configured
+        let token = (gistTokenInput && gistTokenInput.value.trim()) || '';
+        if (!token && layout.settings._encGistToken) token = (await decryptCredential(layout.settings._encGistToken)) || '';
+        if (!token) return { ok: false, error: dangerRemoteDeleteFailed }; // cannot authenticate
+        const resp = await fetch('https://api.github.com/gists/' + encodeURIComponent(gistId), {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!resp.ok) return { ok: false, error: dangerRemoteDeleteFailed };
+        return { ok: true };
+      }
+      return { ok: true, skipped: true };
+    }
+
+    // Deletes stored sync credentials. Returns { ok, error? }.
+    async function deleteSyncCredentials() {
+      setDeleteStatus('', false);
+      const deleteRemote = Boolean(deleteRemoteCheck && deleteRemoteCheck.checked);
+      if (deleteRemote) {
+        try {
+          const remote = await deleteRemoteBackup();
+          if (!remote.ok) {
+            setDeleteStatus(remote.error || dangerRemoteDeleteFailed, true);
+            return remote;
+          }
+        } catch (e) {
+          debugErr('deleteSyncCredentials: remote delete failed', e);
+          setDeleteStatus(dangerRemoteDeleteFailed, true);
+          return { ok: false, error: dangerRemoteDeleteFailed };
+        }
+      }
+      // Atomic local reset — provider back to local, credentials and the sync
+      // ancestor cleared. syncLevel / syncFileName are provider-agnostic and
+      // deliberately kept; the auto-backup interval is a local behavior.
+      if (syncProviderSelect) syncProviderSelect.value = 'local';
+      for (const k of ['webdavUrl', 'webdavUser', '_encWebdavPass', 'webdavAllowPrivateHost', 'gistId', '_encGistToken']) delete layout.settings[k];
+      for (const el of [webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput]) if (el) el.value = '';
+      if (webdavAllowPrivateInput) webdavAllowPrivateInput.checked = false;
+      // Reset the D5 decrypt baselines so a later reconnect with a freshly typed
+      // secret is seen as a change and writes a new envelope.
+      webdavPassBaseline = ''; gistTokenBaseline = ''; webdavPassReady = true; gistTokenReady = true;
+      try { await setSyncBase(null); } catch (e) { debugWarn('deleteSyncCredentials: syncBase clear failed', e); }
+      saveLayout();
+      updateSyncConfigVisibility();
+      updateLastBackupDisplay();
+      showDeletePanel(false);
+      setDeleteStatus(dangerStatusDone, false);
+      return { ok: true };
+    }
+    window.__boxingDeleteSyncCredentials = deleteSyncCredentials;
+
+    deleteOpenBtn?.addEventListener('click', () => {
+      setDeleteStatus('', false);
+      showDeletePanel(true);
+    });
+    deleteCancelBtn?.addEventListener('click', () => {
+      if (deleteRemoteCheck) deleteRemoteCheck.checked = false;
+      setDeleteStatus('', false);
+      showDeletePanel(false);
+    });
+    deleteConfirmBtn?.addEventListener('click', async () => {
+      if (deleteConfirmBtn.disabled) return;
+      deleteConfirmBtn.disabled = true;
+      try {
+        await deleteSyncCredentials();
+      } finally {
+        deleteConfirmBtn.disabled = false;
+      }
+    });
 }

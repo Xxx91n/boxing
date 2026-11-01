@@ -299,6 +299,58 @@
   "syncProviderHint": {
     "message": "Boxing आपका लेआउट इस ब्राउज़र के लोकल स्टोरेज में संग्रहीत करता है। डिवाइसों के बीच सिंक करने के लिए कोई प्रदाता चुनें।"
   },
+  "deleteSyncCredentialTitle": {
+    "message": "Delete sync credentials",
+    "description": "Ticket 99 (T13): danger-zone title for deleting stored sync credentials"
+  },
+  "deleteSyncCredentialHint": {
+    "message": "Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.",
+    "description": "Ticket 99 (T13): scope warning shown in the stored-credential danger zone"
+  },
+  "deleteSyncCredentialOpen": {
+    "message": "Delete sync credentials…",
+    "description": "Ticket 99 (T13): button that opens the two-step delete panel"
+  },
+  "deleteSyncCredentialWillDelete": {
+    "message": "Will delete",
+    "description": "Ticket 99 (T13): scope list label"
+  },
+  "deleteSyncCredentialLocalCreds": {
+    "message": "stored sync credentials in this browser",
+    "description": "Ticket 99 (T13): scope list item"
+  },
+  "deleteSyncCredentialDeleteRemote": {
+    "message": "Also delete the remote backup data (WebDAV file / Gist)",
+    "description": "Ticket 99 (T13): checkbox label for optional remote data deletion"
+  },
+  "deleteSyncCredentialRemoteKeepHint": {
+    "message": "Unchecked keeps the remote backup in place (recommended).",
+    "description": "Ticket 99 (T13): hint under the remote-delete checkbox"
+  },
+  "deleteSyncCredentialWillKeep": {
+    "message": "Will keep",
+    "description": "Ticket 99 (T13): scope list label"
+  },
+  "deleteSyncCredentialBookmarks": {
+    "message": "local bookmarks and boxes (unchanged)",
+    "description": "Ticket 99 (T13): scope list item"
+  },
+  "deleteSyncCredentialCancel": {
+    "message": "Cancel",
+    "description": "Ticket 99 (T13): cancel button — default focus target"
+  },
+  "deleteSyncCredentialConfirm": {
+    "message": "Delete credentials",
+    "description": "Ticket 99 (T13): confirm button of the two-step delete"
+  },
+  "deleteSyncCredentialStatusDone": {
+    "message": "Sync credentials deleted. Sync is now off — choose a provider to reconnect.",
+    "description": "Ticket 99 (T13): success status message"
+  },
+  "deleteSyncCredentialRemoteFailed": {
+    "message": "Failed to delete the remote backup data — nothing was changed.",
+    "description": "Ticket 99 (T13): failure status message — atomic abort keeps stored state"
+  },
   "urlOpenModeLabel": {
     "message": "बुकमार्क खोलें",
     "description": ""

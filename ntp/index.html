@@ -449,6 +449,28 @@
                 <input id="gist-id" class="modal__input" type="text" readonly placeholder="Created on first backup">
               </div>
             </div>
+            <!-- Ticket 99 (T13): delete stored sync credentials — danger zone.
+                 Shown only while stored sync credentials exist (any provider);
+                 two-step confirm, optional remote data deletion, atomic reset. -->
+            <div class="sync-danger" id="sync-credential-danger-zone" hidden>
+              <h4 class="sync-danger__title" data-i18n="deleteSyncCredentialTitle">Delete sync credentials</h4>
+              <p class="modal__hint" data-i18n="deleteSyncCredentialHint">Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.</p>
+              <button id="delete-sync-credential-open" class="btn sync-danger__btn" data-i18n="deleteSyncCredentialOpen">Delete sync credentials…</button>
+              <div id="delete-sync-credential-panel" class="sync-danger__panel" hidden>
+                <p class="modal__hint sync-danger__scope"><strong data-i18n="deleteSyncCredentialWillDelete">Will delete:</strong> <span data-i18n="deleteSyncCredentialLocalCreds">stored sync credentials in this browser</span></p>
+                <label class="checkbox-label sync-danger__option">
+                  <input type="checkbox" id="delete-sync-credential-remote">
+                  <span class="checkbox-label__text" data-i18n="deleteSyncCredentialDeleteRemote">Also delete the remote backup data (WebDAV file / Gist)</span>
+                </label>
+                <p class="modal__hint sync-danger__option-hint" data-i18n="deleteSyncCredentialRemoteKeepHint">Unchecked keeps the remote backup in place (recommended).</p>
+                <p class="modal__hint sync-danger__scope"><strong data-i18n="deleteSyncCredentialWillKeep">Will keep:</strong> <span data-i18n="deleteSyncCredentialBookmarks">local bookmarks and boxes (unchanged)</span></p>
+                <div class="sync-danger__actions">
+                  <button id="delete-sync-credential-cancel" class="btn" data-i18n="deleteSyncCredentialCancel">Cancel</button>
+                  <button id="delete-sync-credential-confirm" class="btn sync-danger__btn--confirm" data-i18n="deleteSyncCredentialConfirm">Delete credentials</button>
+                </div>
+                <p id="delete-sync-credential-status" class="modal__hint sync-danger__status" role="status" hidden></p>
+              </div>
+            </div>
           </div>
           <!-- About tab -->
           <div class="settings-tab" id="tab-about" hidden>

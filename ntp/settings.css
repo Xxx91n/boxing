@@ -1288,3 +1288,92 @@ body.box-resizing {
   color: var(--color-danger);
   border-color: var(--color-danger);
 }
+
+/* ── Ticket 99 (T13): stored-credential danger zone ────────────────────────
+   Settings-panel-only selectors — NOT subject to BX-CSS-DUAL-WRITE pairing.
+   Reuses the design-system danger ramp tokens (theme-aware --color-danger /
+   --color-danger-hover). The zone is a sibling of #remote-backup-zone and is
+   rendered only while stored sync credentials exist; it must NOT be a
+   .sync-group — #tab-sync .sync-group count is asserted by the T-39 UI tests.
+   Same [hidden] fallback-pair rule as .sync-group: layout display overrides
+   the hidden attribute otherwise. */
+.sync-danger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-card);
+  background: var(--color-elevated);
+}
+.sync-danger[hidden] {
+  display: none; /* hidden fallback pair — keeps the danger zone visually exclusive */
+}
+.sync-danger__title {
+  margin: 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-danger);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--color-danger);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.sync-danger__btn {
+  align-self: flex-start;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: transparent;
+}
+.sync-danger__btn:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-danger-hover);
+}
+.sync-danger__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-card);
+  background: var(--color-danger-hover);
+}
+.sync-danger__panel[hidden] {
+  display: none;
+}
+.sync-danger__scope {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+.sync-danger__option-hint {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+.sync-danger__actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.sync-danger__actions .btn {
+  margin: 0; /* mirror .sync-group .btn — no stray margin inside the danger panel */
+}
+.sync-danger__btn--confirm {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: transparent;
+}
+.sync-danger__btn--confirm:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-danger-hover);
+}
+.sync-danger__btn--confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.sync-danger__status {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
