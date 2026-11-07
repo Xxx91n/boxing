@@ -175,7 +175,7 @@
     "message": "Cỡ chữ"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "Chỉnh sửa dấu trang"
   },
   "bookmarkTitlePlaceholder": {
     "message": "Tiêu đề bookmark"
@@ -252,7 +252,7 @@
     "message": "Nhập thất bại: định dạng dữ liệu không hợp lệ"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "Nhập thất bại: tệp quá lớn (tối đa 5MB)"
   },
   "dblclickCreateHint": {
     "message": "Nhấp đúp để tạo"
@@ -300,55 +300,55 @@
     "message": "Boxing lưu bố cục của bạn trong bộ nhớ cục bộ của trình duyệt này. Chọn một nhà cung cấp để đồng bộ giữa các thiết bị."
   },
   "deleteSyncCredentialTitle": {
-    "message": "Delete sync credentials",
+    "message": "Xóa thông tin đăng nhập đồng bộ",
     "description": "Ticket 99 (T13): danger-zone title for deleting stored sync credentials"
   },
   "deleteSyncCredentialHint": {
-    "message": "Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.",
+    "message": "Chỉ xóa mật khẩu WebDAV / mã token GitHub đã lưu khỏi trình duyệt này. Dấu trang và hộp cục bộ không bao giờ bị ảnh hưởng. Thao tác này không thể hoàn tác.",
     "description": "Ticket 99 (T13): scope warning shown in the stored-credential danger zone"
   },
   "deleteSyncCredentialOpen": {
-    "message": "Delete sync credentials…",
+    "message": "Xóa thông tin đăng nhập đồng bộ…",
     "description": "Ticket 99 (T13): button that opens the two-step delete panel"
   },
   "deleteSyncCredentialWillDelete": {
-    "message": "Will delete",
+    "message": "Sẽ xóa",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialLocalCreds": {
-    "message": "stored sync credentials in this browser",
+    "message": "thông tin đăng nhập đồng bộ đã lưu trong trình duyệt này",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialDeleteRemote": {
-    "message": "Also delete the remote backup data (WebDAV file / Gist)",
+    "message": "Đồng thời xóa dữ liệu sao lưu từ xa (tệp WebDAV / Gist)",
     "description": "Ticket 99 (T13): checkbox label for optional remote data deletion"
   },
   "deleteSyncCredentialRemoteKeepHint": {
-    "message": "Unchecked keeps the remote backup in place (recommended).",
+    "message": "Bỏ chọn sẽ giữ lại bản sao lưu từ xa (khuyên dùng).",
     "description": "Ticket 99 (T13): hint under the remote-delete checkbox"
   },
   "deleteSyncCredentialWillKeep": {
-    "message": "Will keep",
+    "message": "Sẽ giữ lại",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialBookmarks": {
-    "message": "local bookmarks and boxes (unchanged)",
+    "message": "dấu trang và hộp cục bộ (không thay đổi)",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialCancel": {
-    "message": "Cancel",
+    "message": "Hủy",
     "description": "Ticket 99 (T13): cancel button — default focus target"
   },
   "deleteSyncCredentialConfirm": {
-    "message": "Delete credentials",
+    "message": "Xóa thông tin đăng nhập",
     "description": "Ticket 99 (T13): confirm button of the two-step delete"
   },
   "deleteSyncCredentialStatusDone": {
-    "message": "Sync credentials deleted. Sync is now off — choose a provider to reconnect.",
+    "message": "Đã xóa thông tin đăng nhập đồng bộ. Tính năng đồng bộ hiện đã tắt — hãy chọn nhà cung cấp để kết nối lại.",
     "description": "Ticket 99 (T13): success status message"
   },
   "deleteSyncCredentialRemoteFailed": {
-    "message": "Failed to delete the remote backup data — nothing was changed.",
+    "message": "Xóa dữ liệu sao lưu từ xa thất bại — không có gì bị thay đổi.",
     "description": "Ticket 99 (T13): failure status message — atomic abort keeps stored state"
   },
   "urlOpenModeLabel": {
@@ -376,59 +376,59 @@
     "description": "Hint for box drag interaction"
   },
   "searchShortcut": {
-    "message": "/ or Ctrl+F",
+    "message": "/ hoặc Ctrl+F",
     "description": "Search shortcut hint"
   },
   "addBoxShortcut": {
-    "message": "Double-click empty area",
+    "message": "Nhấp đúp vào vùng trống",
     "description": "Add box shortcut hint"
   },
   "zoomShortcut": {
-    "message": "Ctrl+scroll wheel",
+    "message": "Ctrl+con lăn chuột",
     "description": "Zoom shortcut hint"
   },
   "panShortcut": {
-    "message": "Left-drag empty area",
+    "message": "Kéo chuột trái vùng trống",
     "description": "Pan shortcut hint"
   },
   "returnShortcut": {
-    "message": "Right-click or Esc to return",
+    "message": "Nhấp chuột phải hoặc Esc để quay lại",
     "description": "Return shortcut hint"
   },
   "undoShortcut": {
-    "message": "Ctrl+Z to undo",
+    "message": "Ctrl+Z để hoàn tác",
     "description": "Undo shortcut hint"
   },
   "accessibilityLabel": {
-    "message": "Keyboard accessible · Screen reader friendly",
+    "message": "Hỗ trợ bàn phím · Thân thiện với trình đọc màn hình",
     "description": "A11y label"
   },
   "rightClickReturnHint": {
-    "message": "Right-click to go back to canvas",
+    "message": "Nhấp chuột phải để quay lại bảng vẽ",
     "description": "Right click return tooltip"
   },
   "escReturnHint": {
-    "message": "Press Esc to return to canvas",
+    "message": "Nhấn Esc để quay lại bảng vẽ",
     "description": "Esc return hint"
   },
   "ctrlScrollZoom": {
-    "message": "Ctrl+scroll to zoom",
+    "message": "Ctrl+cuộn để thu phóng",
     "description": "Zoom shortcut label"
   },
   "dragPanCanvas": {
-    "message": "Drag to pan canvas",
+    "message": "Kéo để di chuyển bảng vẽ",
     "description": "Pan canvas label"
   },
   "dblclickAddBox": {
-    "message": "Double-click to add box",
+    "message": "Nhấp đúp để thêm hộp",
     "description": "Add box shortcut label"
   },
   "searchSlash": {
-    "message": "/ to search",
+    "message": "/ để tìm kiếm",
     "description": "Search shortcut label"
   },
   "noBookmarksYet": {
-    "message": "No bookmarks yet. Click + to add one.",
+    "message": "Chưa có dấu trang nào. Nhấp vào + để thêm.",
     "description": "Empty bookmarks hint"
   },
   "emptyBoxDragHint": {
@@ -436,71 +436,71 @@
     "description": "Empty box action hint"
   },
   "bookmarkReorderHint": {
-    "message": "Drag the grip to reorder bookmarks",
+    "message": "Kéo tay cầm để sắp xếp lại dấu trang",
     "description": "Bookmark reorder hint"
   },
   "deleteConfirmMessage": {
-    "message": "This action cannot be undone. All bookmarks inside will be removed.",
+    "message": "Thao tác này không thể hoàn tác. Tất cả dấu trang bên trong sẽ bị xóa.",
     "description": "Delete confirmation detail"
   },
   "settingsCategoryGeneral": {
-    "message": "General",
+    "message": "Chung",
     "description": "Settings category"
   },
   "settingsCategoryAppearance": {
-    "message": "Appearance",
+    "message": "Giao diện",
     "description": "Settings category"
   },
   "settingsCategoryData": {
-    "message": "Data",
+    "message": "Dữ liệu",
     "description": "Settings category"
   },
   "settingsCategorySync": {
-    "message": "Sync & Backup",
+    "message": "Đồng bộ và sao lưu",
     "description": "Settings category"
   },
   "langAutoDetect": {
-    "message": "Auto-detect (browser language)",
+    "message": "Tự động phát hiện (ngôn ngữ trình duyệt)",
     "description": "Auto-detect language option"
   },
   "fontSizeSmall": {
-    "message": "Small",
+    "message": "Nhỏ",
     "description": "Font size label"
   },
   "fontSizeNormal": {
-    "message": "Normal",
+    "message": "Bình thường",
     "description": "Font size label"
   },
   "fontSizeLarge": {
-    "message": "Large",
+    "message": "Lớn",
     "description": "Font size label"
   },
   "debugModeOn": {
-    "message": "Debug: ON",
+    "message": "Gỡ lỗi: BẬT",
     "description": "Debug mode status"
   },
   "debugModeOff": {
-    "message": "Debug: OFF",
+    "message": "Gỡ lỗi: TẮT",
     "description": "Debug mode status"
   },
   "canvasBoundaryHint": {
-    "message": "Canvas has boundaries at 30% zoom level",
+    "message": "Bảng vẽ có ranh giới ở mức thu phóng 30%",
     "description": "Canvas boundary hint"
   },
   "lastOpenedBox": {
-    "message": "Last opened box",
+    "message": "Hộp mở gần nhất",
     "description": "Remember last position label"
   },
   "storedDataFound": {
-    "message": "Stored data found",
+    "message": "Đã tìm thấy dữ liệu đã lưu",
     "description": "Data status"
   },
   "backupSaved": {
-    "message": "Backup saved",
+    "message": "Đã lưu bản sao lưu",
     "description": "Backup confirmation"
   },
   "allLanguages": {
-    "message": "All 13 languages translated",
+    "message": "Đã dịch toàn bộ 13 ngôn ngữ",
     "description": "Locale completeness note"
   },
   "headerPinUsage": {
@@ -1049,7 +1049,7 @@
     "message": "Đồng bộ và khôi phục"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "Được cấp phép theo Apache-2.0 · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "Có phiên bản mới: "
@@ -1209,7 +1209,7 @@
     "message": "Không thể lưu mục này nguyên như bản sao giữ - không có gì để thêm lại"
   },
   "dataConflictAddSkippedFull": {
-    "message": "H\u1ed9p n\u00e0y \u0111\u00e3 \u0111\u1ea1t gi\u1edbi h\u1ea1n m\u1ee5c"
+    "message": "Hộp này đã đạt giới hạn mục"
   },
   "dataConflictAddFailed": {
     "message": "Một số mục bạn chọn đã không thể thêm lại"
@@ -1259,8 +1259,7 @@
   "conflictGuardRestoreFailed": {
     "message": "Không thể khôi phục bản sao an toàn đó - không có gì thay đổi.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "Mã hóa tệp xuất bằng mật khẩu"
   },
@@ -1305,12 +1304,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "Xuất thất bại: bản sao lưu quá lớn để mã hóa trong giới hạn khôi phục 5MB. Chưa xuất gì."
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "Mật khẩu này quá dài để Boxing có thể sử dụng."
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "Xuất thất bại: dữ liệu Canvas trong bản sao lưu này vượt giới hạn Boxing có thể khôi phục (2.000.000 ký tự layout). Chưa xuất gì."
   },

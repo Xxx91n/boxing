@@ -175,7 +175,7 @@
     "message": "字體大小"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "編輯書籤"
   },
   "bookmarkTitlePlaceholder": {
     "message": "書籤標題"
@@ -255,7 +255,7 @@
     "message": "導入失敗：數據格式無效"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "匯入失敗：檔案過大（最大 5MB）"
   },
   "dblclickCreateHint": {
     "message": "雙擊創建盒子"
@@ -1052,7 +1052,7 @@
     "message": "同步與恢復"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "基於 Apache-2.0 協議授權 · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "發現新版本："
@@ -1212,7 +1212,7 @@
     "message": "無法依副本中的原樣儲存該物件 - 無需補入"
   },
   "dataConflictAddSkippedFull": {
-    "message": "\u8a72\u76d2\u5b50\u5df2\u9054\u9805\u76ee\u4e0a\u9650"
+    "message": "該盒子已達項目上限"
   },
   "dataConflictAddFailed": {
     "message": "所選部分項目未能補入"
@@ -1262,8 +1262,7 @@
   "conflictGuardRestoreFailed": {
     "message": "無法從該安全副本還原 - 未變更任何內容。",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "用口令加密匯出檔案"
   },
@@ -1308,12 +1307,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "匯出失敗：備份過大，加密後將超出 5MB 還原上限。未匯出任何內容。"
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "該口令過長，Boxing 無法用它加密。"
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "匯出失敗：此備份中的畫布資料超過 Boxing 可匯入的上限（layout 2,000,000 字元）。未匯出任何內容。"
   },

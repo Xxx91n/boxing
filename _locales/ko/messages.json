@@ -175,7 +175,7 @@
     "message": "글꼴 크기"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "북마크 수정"
   },
   "bookmarkTitlePlaceholder": {
     "message": "북마크 제목"
@@ -252,7 +252,7 @@
     "message": "가져오기 실패: 잘못된 데이터 형식"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "가져오기 실패: 파일이 너무 큽니다 (최대 5MB)"
   },
   "dblclickCreateHint": {
     "message": "더블 클릭으로 만들기"
@@ -300,55 +300,55 @@
     "message": "Boxing은 레이아웃을 이 브라우저의 로컬 스토리지에 저장합니다. 기기 간 동기화하려면 공급자를 선학하세요."
   },
   "deleteSyncCredentialTitle": {
-    "message": "Delete sync credentials",
+    "message": "동기화 자격 증명 삭제",
     "description": "Ticket 99 (T13): danger-zone title for deleting stored sync credentials"
   },
   "deleteSyncCredentialHint": {
-    "message": "Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.",
+    "message": "현재 브라우저에 저장된 WebDAV 비밀번호 / GitHub 토큰만 삭제합니다. 로컬 북마크와 박스는 변경되지 않습니다. 이 작업은 취소할 수 없습니다.",
     "description": "Ticket 99 (T13): scope warning shown in the stored-credential danger zone"
   },
   "deleteSyncCredentialOpen": {
-    "message": "Delete sync credentials…",
+    "message": "동기화 자격 증명 삭제…",
     "description": "Ticket 99 (T13): button that opens the two-step delete panel"
   },
   "deleteSyncCredentialWillDelete": {
-    "message": "Will delete",
+    "message": "삭제 대상",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialLocalCreds": {
-    "message": "stored sync credentials in this browser",
+    "message": "현재 브라우저에 저장된 동기화 자격 증명",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialDeleteRemote": {
-    "message": "Also delete the remote backup data (WebDAV file / Gist)",
+    "message": "원격 백업 데이터(WebDAV 파일 / Gist)도 함께 삭제",
     "description": "Ticket 99 (T13): checkbox label for optional remote data deletion"
   },
   "deleteSyncCredentialRemoteKeepHint": {
-    "message": "Unchecked keeps the remote backup in place (recommended).",
+    "message": "선택 해제 시 원격 백업이 그대로 유지됩니다(권장).",
     "description": "Ticket 99 (T13): hint under the remote-delete checkbox"
   },
   "deleteSyncCredentialWillKeep": {
-    "message": "Will keep",
+    "message": "유지 대상",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialBookmarks": {
-    "message": "local bookmarks and boxes (unchanged)",
+    "message": "로컬 북마크 및 박스(변경 없음)",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialCancel": {
-    "message": "Cancel",
+    "message": "취소",
     "description": "Ticket 99 (T13): cancel button — default focus target"
   },
   "deleteSyncCredentialConfirm": {
-    "message": "Delete credentials",
+    "message": "자격 증명 삭제",
     "description": "Ticket 99 (T13): confirm button of the two-step delete"
   },
   "deleteSyncCredentialStatusDone": {
-    "message": "Sync credentials deleted. Sync is now off — choose a provider to reconnect.",
+    "message": "동기화 자격 증명이 삭제되었습니다. 동기화가 꺼졌습니다 — 다시 연결하려면 공급자를 선택하세요.",
     "description": "Ticket 99 (T13): success status message"
   },
   "deleteSyncCredentialRemoteFailed": {
-    "message": "Failed to delete the remote backup data — nothing was changed.",
+    "message": "원격 백업 데이터를 삭제하지 못했습니다 — 변경된 내용이 없습니다.",
     "description": "Ticket 99 (T13): failure status message — atomic abort keeps stored state"
   },
   "urlOpenModeLabel": {
@@ -376,59 +376,59 @@
     "description": "Hint for box drag interaction"
   },
   "searchShortcut": {
-    "message": "/ or Ctrl+F",
+    "message": "/ 또는 Ctrl+F",
     "description": "Search shortcut hint"
   },
   "addBoxShortcut": {
-    "message": "Double-click empty area",
+    "message": "빈 영역 더블 클릭",
     "description": "Add box shortcut hint"
   },
   "zoomShortcut": {
-    "message": "Ctrl+scroll wheel",
+    "message": "Ctrl+마우스 휠",
     "description": "Zoom shortcut hint"
   },
   "panShortcut": {
-    "message": "Left-drag empty area",
+    "message": "빈 영역 마우스 왼쪽 드래그",
     "description": "Pan shortcut hint"
   },
   "returnShortcut": {
-    "message": "Right-click or Esc to return",
+    "message": "우클릭 또는 Esc로 돌아가기",
     "description": "Return shortcut hint"
   },
   "undoShortcut": {
-    "message": "Ctrl+Z to undo",
+    "message": "Ctrl+Z 실행 취소",
     "description": "Undo shortcut hint"
   },
   "accessibilityLabel": {
-    "message": "Keyboard accessible · Screen reader friendly",
+    "message": "키보드 접근성 지원 · 화면 판독기 지원",
     "description": "A11y label"
   },
   "rightClickReturnHint": {
-    "message": "Right-click to go back to canvas",
+    "message": "우클릭하여 캔버스로 돌아가기",
     "description": "Right click return tooltip"
   },
   "escReturnHint": {
-    "message": "Press Esc to return to canvas",
+    "message": "Esc를 눌러 캔버스로 돌아가기",
     "description": "Esc return hint"
   },
   "ctrlScrollZoom": {
-    "message": "Ctrl+scroll to zoom",
+    "message": "Ctrl+스크롤하여 확대/축소",
     "description": "Zoom shortcut label"
   },
   "dragPanCanvas": {
-    "message": "Drag to pan canvas",
+    "message": "드래그하여 캔버스 이동",
     "description": "Pan canvas label"
   },
   "dblclickAddBox": {
-    "message": "Double-click to add box",
+    "message": "더블 클릭하여 박스 추가",
     "description": "Add box shortcut label"
   },
   "searchSlash": {
-    "message": "/ to search",
+    "message": "/ 키로 검색",
     "description": "Search shortcut label"
   },
   "noBookmarksYet": {
-    "message": "No bookmarks yet. Click + to add one.",
+    "message": "북마크가 없습니다. +를 클릭하여 추가하세요.",
     "description": "Empty bookmarks hint"
   },
   "emptyBoxDragHint": {
@@ -436,71 +436,71 @@
     "description": "Empty box action hint"
   },
   "bookmarkReorderHint": {
-    "message": "Drag the grip to reorder bookmarks",
+    "message": "손잡이를 드래그하여 북마크 순서 변경",
     "description": "Bookmark reorder hint"
   },
   "deleteConfirmMessage": {
-    "message": "This action cannot be undone. All bookmarks inside will be removed.",
+    "message": "이 작업은 취소할 수 없습니다. 내부의 모든 북마크가 삭제됩니다.",
     "description": "Delete confirmation detail"
   },
   "settingsCategoryGeneral": {
-    "message": "General",
+    "message": "일반",
     "description": "Settings category"
   },
   "settingsCategoryAppearance": {
-    "message": "Appearance",
+    "message": "디자인",
     "description": "Settings category"
   },
   "settingsCategoryData": {
-    "message": "Data",
+    "message": "데이터",
     "description": "Settings category"
   },
   "settingsCategorySync": {
-    "message": "Sync & Backup",
+    "message": "동기화 및 백업",
     "description": "Settings category"
   },
   "langAutoDetect": {
-    "message": "Auto-detect (browser language)",
+    "message": "자동 감지 (브라우저 언어)",
     "description": "Auto-detect language option"
   },
   "fontSizeSmall": {
-    "message": "Small",
+    "message": "작게",
     "description": "Font size label"
   },
   "fontSizeNormal": {
-    "message": "Normal",
+    "message": "보통",
     "description": "Font size label"
   },
   "fontSizeLarge": {
-    "message": "Large",
+    "message": "크게",
     "description": "Font size label"
   },
   "debugModeOn": {
-    "message": "Debug: ON",
+    "message": "디버그: 켜짐",
     "description": "Debug mode status"
   },
   "debugModeOff": {
-    "message": "Debug: OFF",
+    "message": "디버그: 꺼짐",
     "description": "Debug mode status"
   },
   "canvasBoundaryHint": {
-    "message": "Canvas has boundaries at 30% zoom level",
+    "message": "30% 축소 배율에서는 캔버스에 경계가 있습니다",
     "description": "Canvas boundary hint"
   },
   "lastOpenedBox": {
-    "message": "Last opened box",
+    "message": "마지막으로 연 박스",
     "description": "Remember last position label"
   },
   "storedDataFound": {
-    "message": "Stored data found",
+    "message": "저장된 데이터를 찾았습니다",
     "description": "Data status"
   },
   "backupSaved": {
-    "message": "Backup saved",
+    "message": "백업이 저장되었습니다",
     "description": "Backup confirmation"
   },
   "allLanguages": {
-    "message": "All 13 languages translated",
+    "message": "13개 언어 모두 번역됨",
     "description": "Locale completeness note"
   },
   "headerPinUsage": {
@@ -538,7 +538,7 @@
     "message": "GitHub Gist"
   },
   "webdavUrl": {
-    "message": "WebDAV URL"
+    "message": "WebDAV 주소"
   },
   "webdavUser": {
     "message": "사용자 이름"
@@ -1049,7 +1049,7 @@
     "message": "동기화 및 복원"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "Apache-2.0 라이선스 적용 · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "새 버전 사용 가능: "
@@ -1209,7 +1209,7 @@
     "message": "사본에 있는 그대로 저장할 수 없어 다시 추가할 수 없습니다"
   },
   "dataConflictAddSkippedFull": {
-    "message": "\uc774 \ubc15\uc2a4\ub294 \ud56d\ubaa9 \ud55c\ub3c4\uc5d0 \uc774\ubbf8 \ub3c4\ub2ec\ud588\uc2b5\ub2c8\ub2e4"
+    "message": "이 박스는 항목 한도에 이미 도달했습니다"
   },
   "dataConflictAddFailed": {
     "message": "선택한 항목 일부를 다시 추가할 수 없습니다"
@@ -1259,8 +1259,7 @@
   "conflictGuardRestoreFailed": {
     "message": "해당 안전 사본을 복원할 수 없습니다 - 아무것도 변경되지 않았습니다.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "내보내기 파일을 패스프레이즈로 암호화"
   },
@@ -1305,12 +1304,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "내보내기 실패: 백업이 커서 암호화하면 5MB 복원 한도를 넘습니다. 내보낸 항목이 없습니다."
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "패스프레이즈가 너무 길어 Boxing이 암호화할 수 없습니다."
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "내보내기 실패: 이 백업의 캔버스 데이터가 Boxing이 복원할 수 있는 한도(layout 2,000,000자)를 넘습니다. 내보낸 항목이 없습니다."
   },

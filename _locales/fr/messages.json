@@ -175,7 +175,7 @@
     "message": "Taille de police"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "Modifier le favori"
   },
   "bookmarkTitlePlaceholder": {
     "message": "Titre du favori"
@@ -252,7 +252,7 @@
     "message": "Échec de l'importation : format de données invalide"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "Échec de l'importation : fichier trop volumineux (5 Mo max)"
   },
   "dblclickCreateHint": {
     "message": "Double-clic pour créer"
@@ -300,55 +300,55 @@
     "message": "Boxing stocke votre disposition dans le stockage local de ce navigateur. Choisissez un fournisseur pour la synchroniser entre appareils."
   },
   "deleteSyncCredentialTitle": {
-    "message": "Delete sync credentials",
+    "message": "Supprimer les identifiants de synchronisation",
     "description": "Ticket 99 (T13): danger-zone title for deleting stored sync credentials"
   },
   "deleteSyncCredentialHint": {
-    "message": "Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.",
+    "message": "Supprime le mot de passe WebDAV / jeton GitHub stocké de ce navigateur uniquement. Les favoris et boîtes locaux ne sont jamais modifiés. Cette action est irréversible.",
     "description": "Ticket 99 (T13): scope warning shown in the stored-credential danger zone"
   },
   "deleteSyncCredentialOpen": {
-    "message": "Delete sync credentials…",
+    "message": "Supprimer les identifiants de synchronisation…",
     "description": "Ticket 99 (T13): button that opens the two-step delete panel"
   },
   "deleteSyncCredentialWillDelete": {
-    "message": "Will delete",
+    "message": "Sera supprimé",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialLocalCreds": {
-    "message": "stored sync credentials in this browser",
+    "message": "identifiants de synchronisation stockés dans ce navigateur",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialDeleteRemote": {
-    "message": "Also delete the remote backup data (WebDAV file / Gist)",
+    "message": "Supprimer également la sauvegarde distante (fichier WebDAV / Gist)",
     "description": "Ticket 99 (T13): checkbox label for optional remote data deletion"
   },
   "deleteSyncCredentialRemoteKeepHint": {
-    "message": "Unchecked keeps the remote backup in place (recommended).",
+    "message": "Décoché conserve la sauvegarde distante (recommandé).",
     "description": "Ticket 99 (T13): hint under the remote-delete checkbox"
   },
   "deleteSyncCredentialWillKeep": {
-    "message": "Will keep",
+    "message": "Sera conservé",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialBookmarks": {
-    "message": "local bookmarks and boxes (unchanged)",
+    "message": "favoris et boîtes locaux (inchangés)",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialCancel": {
-    "message": "Cancel",
+    "message": "Annuler",
     "description": "Ticket 99 (T13): cancel button — default focus target"
   },
   "deleteSyncCredentialConfirm": {
-    "message": "Delete credentials",
+    "message": "Supprimer les identifiants",
     "description": "Ticket 99 (T13): confirm button of the two-step delete"
   },
   "deleteSyncCredentialStatusDone": {
-    "message": "Sync credentials deleted. Sync is now off — choose a provider to reconnect.",
+    "message": "Identifiants de synchronisation supprimés. La synchronisation est désactivée — choisissez un fournisseur pour vous reconnecter.",
     "description": "Ticket 99 (T13): success status message"
   },
   "deleteSyncCredentialRemoteFailed": {
-    "message": "Failed to delete the remote backup data — nothing was changed.",
+    "message": "Échec de la suppression des données distantes — rien n'a été modifié.",
     "description": "Ticket 99 (T13): failure status message — atomic abort keeps stored state"
   },
   "urlOpenModeLabel": {
@@ -376,59 +376,59 @@
     "description": "Hint for box drag interaction"
   },
   "searchShortcut": {
-    "message": "/ or Ctrl+F",
+    "message": "/ ou Ctrl+F",
     "description": "Search shortcut hint"
   },
   "addBoxShortcut": {
-    "message": "Double-click empty area",
+    "message": "Double-cliquer sur une zone vide",
     "description": "Add box shortcut hint"
   },
   "zoomShortcut": {
-    "message": "Ctrl+scroll wheel",
+    "message": "Ctrl+molette",
     "description": "Zoom shortcut hint"
   },
   "panShortcut": {
-    "message": "Left-drag empty area",
+    "message": "Glisser avec le clic gauche sur une zone vide",
     "description": "Pan shortcut hint"
   },
   "returnShortcut": {
-    "message": "Right-click or Esc to return",
+    "message": "Clic droit ou Échap pour revenir",
     "description": "Return shortcut hint"
   },
   "undoShortcut": {
-    "message": "Ctrl+Z to undo",
+    "message": "Ctrl+Z pour annuler",
     "description": "Undo shortcut hint"
   },
   "accessibilityLabel": {
-    "message": "Keyboard accessible · Screen reader friendly",
+    "message": "Accessible au clavier · Compatible lecteur d'écran",
     "description": "A11y label"
   },
   "rightClickReturnHint": {
-    "message": "Right-click to go back to canvas",
+    "message": "Clic droit pour revenir à la toile",
     "description": "Right click return tooltip"
   },
   "escReturnHint": {
-    "message": "Press Esc to return to canvas",
+    "message": "Appuyez sur Échap pour revenir à la toile",
     "description": "Esc return hint"
   },
   "ctrlScrollZoom": {
-    "message": "Ctrl+scroll to zoom",
+    "message": "Ctrl+défilement pour zoomer",
     "description": "Zoom shortcut label"
   },
   "dragPanCanvas": {
-    "message": "Drag to pan canvas",
+    "message": "Glisser pour déplacer la toile",
     "description": "Pan canvas label"
   },
   "dblclickAddBox": {
-    "message": "Double-click to add box",
+    "message": "Double-cliquer pour ajouter une boîte",
     "description": "Add box shortcut label"
   },
   "searchSlash": {
-    "message": "/ to search",
+    "message": "/ pour rechercher",
     "description": "Search shortcut label"
   },
   "noBookmarksYet": {
-    "message": "No bookmarks yet. Click + to add one.",
+    "message": "Aucun favori pour le moment. Cliquez sur + pour en ajouter un.",
     "description": "Empty bookmarks hint"
   },
   "emptyBoxDragHint": {
@@ -436,71 +436,71 @@
     "description": "Empty box action hint"
   },
   "bookmarkReorderHint": {
-    "message": "Drag the grip to reorder bookmarks",
+    "message": "Glisser la poignée pour réorganiser les favoris",
     "description": "Bookmark reorder hint"
   },
   "deleteConfirmMessage": {
-    "message": "This action cannot be undone. All bookmarks inside will be removed.",
+    "message": "Cette action est irréversible. Tous les favoris contenus seront supprimés.",
     "description": "Delete confirmation detail"
   },
   "settingsCategoryGeneral": {
-    "message": "General",
+    "message": "Général",
     "description": "Settings category"
   },
   "settingsCategoryAppearance": {
-    "message": "Appearance",
+    "message": "Apparence",
     "description": "Settings category"
   },
   "settingsCategoryData": {
-    "message": "Data",
+    "message": "Données",
     "description": "Settings category"
   },
   "settingsCategorySync": {
-    "message": "Sync & Backup",
+    "message": "Synchronisation et sauvegarde",
     "description": "Settings category"
   },
   "langAutoDetect": {
-    "message": "Auto-detect (browser language)",
+    "message": "Détection automatique (langue du navigateur)",
     "description": "Auto-detect language option"
   },
   "fontSizeSmall": {
-    "message": "Small",
+    "message": "Petit",
     "description": "Font size label"
   },
   "fontSizeNormal": {
-    "message": "Normal",
+    "message": "Moyen",
     "description": "Font size label"
   },
   "fontSizeLarge": {
-    "message": "Large",
+    "message": "Grand",
     "description": "Font size label"
   },
   "debugModeOn": {
-    "message": "Debug: ON",
+    "message": "Débogage : activé",
     "description": "Debug mode status"
   },
   "debugModeOff": {
-    "message": "Debug: OFF",
+    "message": "Débogage : désactivé",
     "description": "Debug mode status"
   },
   "canvasBoundaryHint": {
-    "message": "Canvas has boundaries at 30% zoom level",
+    "message": "La toile a des limites à un niveau de zoom de 30 %",
     "description": "Canvas boundary hint"
   },
   "lastOpenedBox": {
-    "message": "Last opened box",
+    "message": "Dernière boîte ouverte",
     "description": "Remember last position label"
   },
   "storedDataFound": {
-    "message": "Stored data found",
+    "message": "Données enregistrées trouvées",
     "description": "Data status"
   },
   "backupSaved": {
-    "message": "Backup saved",
+    "message": "Sauvegarde enregistrée",
     "description": "Backup confirmation"
   },
   "allLanguages": {
-    "message": "All 13 languages translated",
+    "message": "Traduit dans les 13 langues",
     "description": "Locale completeness note"
   },
   "headerPinUsage": {
@@ -511,10 +511,10 @@
     "message": "Local uniquement"
   },
   "syncChrome": {
-    "message": "Chrome Sync"
+    "message": "Synchronisation Chrome"
   },
   "syncFirefox": {
-    "message": "Firefox Sync"
+    "message": "Synchronisation Firefox"
   },
   "backupDisabled": {
     "message": "Désactivé"
@@ -780,7 +780,7 @@
     "message": "Avertissement"
   },
   "diagLogLevelInfo": {
-    "message": "Info"
+    "message": "Information"
   },
   "diagLogLevelDebug": {
     "message": "Débogage"
@@ -1049,7 +1049,7 @@
     "message": "Synchronisation et restauration"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "Sous licence Apache-2.0 · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "Nouvelle version disponible : "
@@ -1209,7 +1209,7 @@
     "message": "Cet élément ne peut être enregistré tel que la copie le contient - rien à réajouter"
   },
   "dataConflictAddSkippedFull": {
-    "message": "Cette bo\u00eete a d\u00e9j\u00e0 atteint sa limite d\u2019\u00e9l\u00e9ments"
+    "message": "Cette boîte a déjà atteint sa limite d’éléments"
   },
   "dataConflictAddFailed": {
     "message": "Certains éléments sélectionnés n’ont pas pu être réajoutés"
@@ -1259,8 +1259,7 @@
   "conflictGuardRestoreFailed": {
     "message": "Cette copie de sécurité n'a pas pu être restaurée - rien n'a été modifié.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "Chiffrer les exports avec une phrase secrète"
   },
@@ -1305,12 +1304,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "Export échoué : la sauvegarde est trop volumineuse pour être chiffrée sous la limite de 5 Mo. Rien n'a été exporté."
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "Cette phrase secrète est trop longue pour que Boxing l'utilise."
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "Export échoué : le canevas de cette sauvegarde dépasse ce que Boxing peut restaurer (2 000 000 de caractères de layout). Rien n'a été exporté."
   },

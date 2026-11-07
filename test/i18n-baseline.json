@@ -1,0 +1,170 @@
+{
+  "_comment": "i18n ratchet baseline (ticket 118). Records the ceiling of untranslated (byte-identical to en) keys for each non-English locale. No locale may exceed its baseline count.",
+  "baselines": {
+    "ar": {
+      "maxAllowed": 6,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV"
+      ]
+    },
+    "de": {
+      "maxAllowed": 12,
+      "keys": [
+        "aboutVersion",
+        "brandName",
+        "dataConflictFieldPosition",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "newLargeBox",
+        "passphraseFieldLabel",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV",
+        "themeBeige",
+        "zoomLabel"
+      ]
+    },
+    "es": {
+      "maxAllowed": 11,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "diagLogLevelError",
+        "extensionName",
+        "settingsCategoryGeneral",
+        "settingsNavGeneral",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV",
+        "themeBeige",
+        "zoomLabel"
+      ]
+    },
+    "fr": {
+      "maxAllowed": 13,
+      "keys": [
+        "aboutVersion",
+        "brandName",
+        "dataConflictFieldPosition",
+        "dataConflictFieldUrl",
+        "diagSectionTitle",
+        "extensionName",
+        "ruleColActions",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV",
+        "themeBeige",
+        "themeGraphite",
+        "zoomLabel"
+      ]
+    },
+    "hi": {
+      "maxAllowed": 7,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV",
+        "webdavUrl"
+      ]
+    },
+    "ja": {
+      "maxAllowed": 7,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV",
+        "webdavUrl"
+      ]
+    },
+    "ko": {
+      "maxAllowed": 6,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV"
+      ]
+    },
+    "pt_BR": {
+      "maxAllowed": 8,
+      "keys": [
+        "aboutLinksTitle",
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV",
+        "zoomLabel"
+      ]
+    },
+    "ru": {
+      "maxAllowed": 6,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV"
+      ]
+    },
+    "th": {
+      "maxAllowed": 6,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV"
+      ]
+    },
+    "vi": {
+      "maxAllowed": 6,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV"
+      ]
+    },
+    "zh_CN": {
+      "maxAllowed": 6,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV"
+      ]
+    },
+    "zh_TW": {
+      "maxAllowed": 6,
+      "keys": [
+        "brandName",
+        "dataConflictFieldUrl",
+        "extensionName",
+        "syncFileNamePlaceholder",
+        "syncGitHubGist",
+        "syncWebDAV"
+      ]
+    }
+  }
+}

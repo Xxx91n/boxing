@@ -175,7 +175,7 @@
     "message": "フォントサイズ"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "ブックマークを編集"
   },
   "bookmarkTitlePlaceholder": {
     "message": "ブックマーク名"
@@ -252,7 +252,7 @@
     "message": "インポート失敗：データ形式が無効です"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "インポート失敗: ファイルが大きすぎます（最大 5MB）"
   },
   "dblclickCreateHint": {
     "message": "ダブルクリックで作成"
@@ -300,55 +300,55 @@
     "message": "Boxing はレイアウトをこのブラウザのローカルストレージに保存します。デバイス間で同期するにはプロバイダーを選択してください。"
   },
   "deleteSyncCredentialTitle": {
-    "message": "Delete sync credentials",
+    "message": "同期の認証情報を削除",
     "description": "Ticket 99 (T13): danger-zone title for deleting stored sync credentials"
   },
   "deleteSyncCredentialHint": {
-    "message": "Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.",
+    "message": "このブラウザに保存されている WebDAV パスワード / GitHub トークンのみを削除します。ローカルのブックマークやボックスには影響しません。この操作は取り消せません。",
     "description": "Ticket 99 (T13): scope warning shown in the stored-credential danger zone"
   },
   "deleteSyncCredentialOpen": {
-    "message": "Delete sync credentials…",
+    "message": "同期の認証情報を削除…",
     "description": "Ticket 99 (T13): button that opens the two-step delete panel"
   },
   "deleteSyncCredentialWillDelete": {
-    "message": "Will delete",
+    "message": "削除される項目",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialLocalCreds": {
-    "message": "stored sync credentials in this browser",
+    "message": "このブラウザに保存されている同期の認証情報",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialDeleteRemote": {
-    "message": "Also delete the remote backup data (WebDAV file / Gist)",
+    "message": "リモートのバックアップデータ（WebDAV ファイル / Gist）も削除する",
     "description": "Ticket 99 (T13): checkbox label for optional remote data deletion"
   },
   "deleteSyncCredentialRemoteKeepHint": {
-    "message": "Unchecked keeps the remote backup in place (recommended).",
+    "message": "チェックを外すとリモートのバックアップは保持されます（推奨）。",
     "description": "Ticket 99 (T13): hint under the remote-delete checkbox"
   },
   "deleteSyncCredentialWillKeep": {
-    "message": "Will keep",
+    "message": "保持される項目",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialBookmarks": {
-    "message": "local bookmarks and boxes (unchanged)",
+    "message": "ローカルのブックマークとボックス（変更なし）",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialCancel": {
-    "message": "Cancel",
+    "message": "キャンセル",
     "description": "Ticket 99 (T13): cancel button — default focus target"
   },
   "deleteSyncCredentialConfirm": {
-    "message": "Delete credentials",
+    "message": "認証情報を削除",
     "description": "Ticket 99 (T13): confirm button of the two-step delete"
   },
   "deleteSyncCredentialStatusDone": {
-    "message": "Sync credentials deleted. Sync is now off — choose a provider to reconnect.",
+    "message": "同期の認証情報を削除しました。同期はオフになっています — 再接続するにはプロバイダーを選択してください。",
     "description": "Ticket 99 (T13): success status message"
   },
   "deleteSyncCredentialRemoteFailed": {
-    "message": "Failed to delete the remote backup data — nothing was changed.",
+    "message": "リモートのバックアップデータの削除に失敗しました — 変更は行われませんでした。",
     "description": "Ticket 99 (T13): failure status message — atomic abort keeps stored state"
   },
   "urlOpenModeLabel": {
@@ -376,59 +376,59 @@
     "description": "Hint for box drag interaction"
   },
   "searchShortcut": {
-    "message": "/ or Ctrl+F",
+    "message": "/ または Ctrl+F",
     "description": "Search shortcut hint"
   },
   "addBoxShortcut": {
-    "message": "Double-click empty area",
+    "message": "余白をダブルクリック",
     "description": "Add box shortcut hint"
   },
   "zoomShortcut": {
-    "message": "Ctrl+scroll wheel",
+    "message": "Ctrl+マウスホイール",
     "description": "Zoom shortcut hint"
   },
   "panShortcut": {
-    "message": "Left-drag empty area",
+    "message": "余白を左ドラッグ",
     "description": "Pan shortcut hint"
   },
   "returnShortcut": {
-    "message": "Right-click or Esc to return",
+    "message": "右クリックまたは Esc で戻る",
     "description": "Return shortcut hint"
   },
   "undoShortcut": {
-    "message": "Ctrl+Z to undo",
+    "message": "Ctrl+Z で元に戻す",
     "description": "Undo shortcut hint"
   },
   "accessibilityLabel": {
-    "message": "Keyboard accessible · Screen reader friendly",
+    "message": "キーボード操作対応 · スクリーンリーダー対応",
     "description": "A11y label"
   },
   "rightClickReturnHint": {
-    "message": "Right-click to go back to canvas",
+    "message": "右クリックでキャンバスに戻る",
     "description": "Right click return tooltip"
   },
   "escReturnHint": {
-    "message": "Press Esc to return to canvas",
+    "message": "Esc キーでキャンバスに戻る",
     "description": "Esc return hint"
   },
   "ctrlScrollZoom": {
-    "message": "Ctrl+scroll to zoom",
+    "message": "Ctrl+スクロールでズーム",
     "description": "Zoom shortcut label"
   },
   "dragPanCanvas": {
-    "message": "Drag to pan canvas",
+    "message": "ドラッグでキャンバスを移動",
     "description": "Pan canvas label"
   },
   "dblclickAddBox": {
-    "message": "Double-click to add box",
+    "message": "ダブルクリックでボックスを追加",
     "description": "Add box shortcut label"
   },
   "searchSlash": {
-    "message": "/ to search",
+    "message": "/ キーで検索",
     "description": "Search shortcut label"
   },
   "noBookmarksYet": {
-    "message": "No bookmarks yet. Click + to add one.",
+    "message": "ブックマークはまだありません。+ をクリックして追加してください。",
     "description": "Empty bookmarks hint"
   },
   "emptyBoxDragHint": {
@@ -436,71 +436,71 @@
     "description": "Empty box action hint"
   },
   "bookmarkReorderHint": {
-    "message": "Drag the grip to reorder bookmarks",
+    "message": "つまみをドラッグしてブックマークを並べ替え",
     "description": "Bookmark reorder hint"
   },
   "deleteConfirmMessage": {
-    "message": "This action cannot be undone. All bookmarks inside will be removed.",
+    "message": "この操作は取り消せません。中のブックマークはすべて削除されます。",
     "description": "Delete confirmation detail"
   },
   "settingsCategoryGeneral": {
-    "message": "General",
+    "message": "一般",
     "description": "Settings category"
   },
   "settingsCategoryAppearance": {
-    "message": "Appearance",
+    "message": "外観",
     "description": "Settings category"
   },
   "settingsCategoryData": {
-    "message": "Data",
+    "message": "データ",
     "description": "Settings category"
   },
   "settingsCategorySync": {
-    "message": "Sync & Backup",
+    "message": "同期とバックアップ",
     "description": "Settings category"
   },
   "langAutoDetect": {
-    "message": "Auto-detect (browser language)",
+    "message": "自動検出（ブラウザの言語）",
     "description": "Auto-detect language option"
   },
   "fontSizeSmall": {
-    "message": "Small",
+    "message": "小",
     "description": "Font size label"
   },
   "fontSizeNormal": {
-    "message": "Normal",
+    "message": "標準",
     "description": "Font size label"
   },
   "fontSizeLarge": {
-    "message": "Large",
+    "message": "大",
     "description": "Font size label"
   },
   "debugModeOn": {
-    "message": "Debug: ON",
+    "message": "デバッグ: オン",
     "description": "Debug mode status"
   },
   "debugModeOff": {
-    "message": "Debug: OFF",
+    "message": "デバッグ: オフ",
     "description": "Debug mode status"
   },
   "canvasBoundaryHint": {
-    "message": "Canvas has boundaries at 30% zoom level",
+    "message": "キャンバスは縮小率 30% で境界が表示されます",
     "description": "Canvas boundary hint"
   },
   "lastOpenedBox": {
-    "message": "Last opened box",
+    "message": "前回開いたボックス",
     "description": "Remember last position label"
   },
   "storedDataFound": {
-    "message": "Stored data found",
+    "message": "保存されたデータが見つかりました",
     "description": "Data status"
   },
   "backupSaved": {
-    "message": "Backup saved",
+    "message": "バックアップを保存しました",
     "description": "Backup confirmation"
   },
   "allLanguages": {
-    "message": "All 13 languages translated",
+    "message": "全 13 言語対応",
     "description": "Locale completeness note"
   },
   "headerPinUsage": {
@@ -1010,7 +1010,7 @@
     "message": "GitHub リポジトリ"
   },
   "aboutLinkIssues": {
-    "message": "課題 (Issues)"
+    "message": "問題の報告"
   },
   "aboutLinkPulls": {
     "message": "プルリクエスト"
@@ -1049,7 +1049,7 @@
     "message": "同期と復元"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "Apache-2.0 ライセンスに基づく · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "新しいバージョンが利用可能です："
@@ -1209,7 +1209,7 @@
     "message": "コピーにあるままの形では保存できないため、戻せません"
   },
   "dataConflictAddSkippedFull": {
-    "message": "\u3053\u306e\u30dc\u30c3\u30af\u30b9\u306f\u9805\u76ee\u6570\u306e\u4e0a\u9650\u306b\u9054\u3057\u3066\u3044\u307e\u3059"
+    "message": "このボックスは項目数の上限に達しています"
   },
   "dataConflictAddFailed": {
     "message": "選択した項目の一部を戻せませんでした"
@@ -1259,8 +1259,7 @@
   "conflictGuardRestoreFailed": {
     "message": "このセーフティコピーを復元できませんでした - 何も変更されていません。",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "書き出しファイルをパスフレーズで暗号化"
   },
@@ -1305,12 +1304,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "書き出し失敗：バックアップが大きすぎ、暗号化すると 5MB の復元上限を超えます。何も書き出されていません。"
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "そのパスフレーズは長すぎて、Boxing は暗号化できません。"
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "書き出し失敗：このバックアップのキャンバスデータは Boxing が復元できる上限（layout 2,000,000 文字）を超えています。何も書き出されていません。"
   },

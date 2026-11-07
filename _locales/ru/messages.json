@@ -175,7 +175,7 @@
     "message": "Размер шрифта"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "Редактировать закладку"
   },
   "bookmarkTitlePlaceholder": {
     "message": "Название закладки"
@@ -252,7 +252,7 @@
     "message": "Ошибка импорта: неверный формат данных"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "Ошибка импорта: файл слишком большой (макс. 5 МБ)"
   },
   "dblclickCreateHint": {
     "message": "Двойной клик для создания"
@@ -300,55 +300,55 @@
     "message": "Boxing хранит ваш макет в локальном хранилище этого браузера. Выберите провайдера для синхронизации между устройствами."
   },
   "deleteSyncCredentialTitle": {
-    "message": "Delete sync credentials",
+    "message": "Удалить учётные данные синхронизации",
     "description": "Ticket 99 (T13): danger-zone title for deleting stored sync credentials"
   },
   "deleteSyncCredentialHint": {
-    "message": "Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.",
+    "message": "Удаляет сохранённый пароль WebDAV / токен GitHub только из этого браузера. Локальные закладки и контейнеры не затрагиваются. Это действие нельзя отменить.",
     "description": "Ticket 99 (T13): scope warning shown in the stored-credential danger zone"
   },
   "deleteSyncCredentialOpen": {
-    "message": "Delete sync credentials…",
+    "message": "Удалить учётные данные синхронизации…",
     "description": "Ticket 99 (T13): button that opens the two-step delete panel"
   },
   "deleteSyncCredentialWillDelete": {
-    "message": "Will delete",
+    "message": "Будет удалено",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialLocalCreds": {
-    "message": "stored sync credentials in this browser",
+    "message": "сохранённые учётные данные синхронизации в этом браузере",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialDeleteRemote": {
-    "message": "Also delete the remote backup data (WebDAV file / Gist)",
+    "message": "Также удалить данные удалённого бэкапа (файл WebDAV / Gist)",
     "description": "Ticket 99 (T13): checkbox label for optional remote data deletion"
   },
   "deleteSyncCredentialRemoteKeepHint": {
-    "message": "Unchecked keeps the remote backup in place (recommended).",
+    "message": "Если флажок снят, удалённый бэкап сохранится (рекомендуется).",
     "description": "Ticket 99 (T13): hint under the remote-delete checkbox"
   },
   "deleteSyncCredentialWillKeep": {
-    "message": "Will keep",
+    "message": "Будет сохранено",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialBookmarks": {
-    "message": "local bookmarks and boxes (unchanged)",
+    "message": "локальные закладки и контейнеры (без изменений)",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialCancel": {
-    "message": "Cancel",
+    "message": "Отмена",
     "description": "Ticket 99 (T13): cancel button — default focus target"
   },
   "deleteSyncCredentialConfirm": {
-    "message": "Delete credentials",
+    "message": "Удалить учётные данные",
     "description": "Ticket 99 (T13): confirm button of the two-step delete"
   },
   "deleteSyncCredentialStatusDone": {
-    "message": "Sync credentials deleted. Sync is now off — choose a provider to reconnect.",
+    "message": "Учётные данные синхронизации удалены. Синхронизация отключена — выберите провайдера для повторного подключения.",
     "description": "Ticket 99 (T13): success status message"
   },
   "deleteSyncCredentialRemoteFailed": {
-    "message": "Failed to delete the remote backup data — nothing was changed.",
+    "message": "Не удалось удалить данные удалённого бэкапа — ничего не изменено.",
     "description": "Ticket 99 (T13): failure status message — atomic abort keeps stored state"
   },
   "urlOpenModeLabel": {
@@ -376,59 +376,59 @@
     "description": "Hint for box drag interaction"
   },
   "searchShortcut": {
-    "message": "/ or Ctrl+F",
+    "message": "/ или Ctrl+F",
     "description": "Search shortcut hint"
   },
   "addBoxShortcut": {
-    "message": "Double-click empty area",
+    "message": "Двойной клик по пустой области",
     "description": "Add box shortcut hint"
   },
   "zoomShortcut": {
-    "message": "Ctrl+scroll wheel",
+    "message": "Ctrl+колёсико мыши",
     "description": "Zoom shortcut hint"
   },
   "panShortcut": {
-    "message": "Left-drag empty area",
+    "message": "Перетаскивание левой кнопкой по пустой области",
     "description": "Pan shortcut hint"
   },
   "returnShortcut": {
-    "message": "Right-click or Esc to return",
+    "message": "Правый клик или Esc для возврата",
     "description": "Return shortcut hint"
   },
   "undoShortcut": {
-    "message": "Ctrl+Z to undo",
+    "message": "Ctrl+Z для отмены",
     "description": "Undo shortcut hint"
   },
   "accessibilityLabel": {
-    "message": "Keyboard accessible · Screen reader friendly",
+    "message": "Доступно с клавиатуры · Поддержка программ чтения с экрана",
     "description": "A11y label"
   },
   "rightClickReturnHint": {
-    "message": "Right-click to go back to canvas",
+    "message": "Правый клик для возврата на холст",
     "description": "Right click return tooltip"
   },
   "escReturnHint": {
-    "message": "Press Esc to return to canvas",
+    "message": "Нажмите Esc для возврата на холст",
     "description": "Esc return hint"
   },
   "ctrlScrollZoom": {
-    "message": "Ctrl+scroll to zoom",
+    "message": "Ctrl+прокрутка для масштабирования",
     "description": "Zoom shortcut label"
   },
   "dragPanCanvas": {
-    "message": "Drag to pan canvas",
+    "message": "Перетащите для перемещения холста",
     "description": "Pan canvas label"
   },
   "dblclickAddBox": {
-    "message": "Double-click to add box",
+    "message": "Двойной клик для добавления контейнера",
     "description": "Add box shortcut label"
   },
   "searchSlash": {
-    "message": "/ to search",
+    "message": "/ для поиска",
     "description": "Search shortcut label"
   },
   "noBookmarksYet": {
-    "message": "No bookmarks yet. Click + to add one.",
+    "message": "Закладок пока нет. Нажмите ＋, чтобы добавить.",
     "description": "Empty bookmarks hint"
   },
   "emptyBoxDragHint": {
@@ -436,71 +436,71 @@
     "description": "Empty box action hint"
   },
   "bookmarkReorderHint": {
-    "message": "Drag the grip to reorder bookmarks",
+    "message": "Потяните за маркер, чтобы изменить порядок закладок",
     "description": "Bookmark reorder hint"
   },
   "deleteConfirmMessage": {
-    "message": "This action cannot be undone. All bookmarks inside will be removed.",
+    "message": "Это действие нельзя отменить. Все закладки внутри будут удалены.",
     "description": "Delete confirmation detail"
   },
   "settingsCategoryGeneral": {
-    "message": "General",
+    "message": "Общие",
     "description": "Settings category"
   },
   "settingsCategoryAppearance": {
-    "message": "Appearance",
+    "message": "Оформление",
     "description": "Settings category"
   },
   "settingsCategoryData": {
-    "message": "Data",
+    "message": "Данные",
     "description": "Settings category"
   },
   "settingsCategorySync": {
-    "message": "Sync & Backup",
+    "message": "Синхронизация и бэкап",
     "description": "Settings category"
   },
   "langAutoDetect": {
-    "message": "Auto-detect (browser language)",
+    "message": "Автоопределение (язык браузера)",
     "description": "Auto-detect language option"
   },
   "fontSizeSmall": {
-    "message": "Small",
+    "message": "Мелкий",
     "description": "Font size label"
   },
   "fontSizeNormal": {
-    "message": "Normal",
+    "message": "Обычный",
     "description": "Font size label"
   },
   "fontSizeLarge": {
-    "message": "Large",
+    "message": "Крупный",
     "description": "Font size label"
   },
   "debugModeOn": {
-    "message": "Debug: ON",
+    "message": "Отладка: ВКЛ",
     "description": "Debug mode status"
   },
   "debugModeOff": {
-    "message": "Debug: OFF",
+    "message": "Отладка: ВЫКЛ",
     "description": "Debug mode status"
   },
   "canvasBoundaryHint": {
-    "message": "Canvas has boundaries at 30% zoom level",
+    "message": "При масштабе 30% у холста есть границы",
     "description": "Canvas boundary hint"
   },
   "lastOpenedBox": {
-    "message": "Last opened box",
+    "message": "Последний открытый контейнер",
     "description": "Remember last position label"
   },
   "storedDataFound": {
-    "message": "Stored data found",
+    "message": "Обнаружены сохранённые данные",
     "description": "Data status"
   },
   "backupSaved": {
-    "message": "Backup saved",
+    "message": "Резервная копия сохранена",
     "description": "Backup confirmation"
   },
   "allLanguages": {
-    "message": "All 13 languages translated",
+    "message": "Переведено на все 13 языков",
     "description": "Locale completeness note"
   },
   "headerPinUsage": {
@@ -511,10 +511,10 @@
     "message": "Только локально"
   },
   "syncChrome": {
-    "message": "Chrome Sync"
+    "message": "Синхронизация Chrome"
   },
   "syncFirefox": {
-    "message": "Firefox Sync"
+    "message": "Синхронизация Firefox"
   },
   "backupDisabled": {
     "message": "Отключено"
@@ -1013,7 +1013,7 @@
     "message": "Задачи"
   },
   "aboutLinkPulls": {
-    "message": "Pull Requests"
+    "message": "Пул-реквесты"
   },
   "aboutLinkPrivacy": {
     "message": "Политика конфиденциальности"
@@ -1049,7 +1049,7 @@
     "message": "Синхронизация и восстановление"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "Лицензия Apache-2.0 · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "Доступна новая версия: "
@@ -1209,7 +1209,7 @@
     "message": "Этот элемент нельзя сохранить так, как его хранит копия - возвращать нечего"
   },
   "dataConflictAddSkippedFull": {
-    "message": "\u042d\u0442\u043e\u0442 \u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440 \u0443\u0436\u0435 \u0434\u043e\u0441\u0442\u0438\u0433 \u043f\u0440\u0435\u0434\u0435\u043b\u0430 \u044d\u043b\u0435\u043c\u0435\u043d\u0442\u043e\u0432"
+    "message": "Этот контейнер уже достиг предела элементов"
   },
   "dataConflictAddFailed": {
     "message": "Некоторые выбранные элементы не удалось вернуть"
@@ -1259,8 +1259,7 @@
   "conflictGuardRestoreFailed": {
     "message": "Эту безопасную копию не удалось восстановить - ничего не изменено.",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "Шифровать экспортные файлы парольной фразой"
   },
@@ -1305,12 +1304,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "Сбой экспорта: резервная копия слишком велика, чтобы уложиться в лимит 5 МБ после шифрования. Ничего не экспортировано."
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "Эта парольная фраза слишком длинная, чтобы Boxing мог её использовать."
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "Сбой экспорта: данные холста в этой копии превышают предел восстановления Boxing (2 000 000 символов layout). Ничего не экспортировано."
   },
