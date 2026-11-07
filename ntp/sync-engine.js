@@ -1305,11 +1305,15 @@ export function bindSyncBackupUi() {
           return { ok: false, reason: 'query-fragment', error: remoteDeleteFailureText('query-fragment') };
         }
         // resolveWebDAVFileUrl throws webdavErrEmbedded when the base carries
-        // userinfo (its origin+pathname derivation would strip it) — that throw is
-        // the only thing this call refuses, so it maps to that reason.
+        // userinfo (its origin+pathname derivation would strip it). Only that keyed
+        // error is a refusal we can name: new URL() also throws a bare TypeError for
+        // an unparsable base, and calling that "embedded credentials" would be a
+        // wrong reason. Rethrow anything else so deleteSyncCredentials falls back to
+        // the generic copy, exactly as it did before this ticket.
         let fileUrl;
         try { fileUrl = resolveWebDAVFileUrl(rawUrl).fileUrl; }
-        catch (_) {
+        catch (e) {
+          if (!e || e.key !== 'webdavErrEmbedded') throw e;
           return { ok: false, reason: 'embedded-credentials', error: remoteDeleteFailureText('embedded-credentials') };
         }
         if (!fileUrl) return { ok: false, error: dangerRemoteDeleteNoTarget }; // no remote target configured

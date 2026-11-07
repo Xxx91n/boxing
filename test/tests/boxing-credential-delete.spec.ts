@@ -403,6 +403,9 @@ test.describe('Ticket 116: remote-delete refusal reasons', () => {
     // The stub failure path is the "unidentified" case: transport details must never
     // be surfaced, so there is no reason and the wording is byte-identical to pre-116.
     await page.evaluate(() => {
+      // deleteRemoteBackup reads the provider off the select, so pin it explicitly
+      // rather than trusting a re-render from settings.
+      (document.getElementById('sync-provider') as HTMLSelectElement).value = 'webdav';
       (window as any).__boxingSetSyncRemoteDeleteStub(() => ({ ok: false, error: 'spec-remote-fail' }));
     });
     const out = await page.evaluate(async () => await (window as any).__boxingDeleteRemoteBackup());
@@ -415,12 +418,20 @@ test.describe('Ticket 116: remote-delete refusal reasons', () => {
     await resetFresh(page);
     await seedStoredCredentials(page);
     await seedCase(page, { url: 'https://webdav.invalid/dav/' });
-    // The background proxy rejects the DELETE. sendToBackground turns { success: false }
-    // into a throw, so the public entry point takes its catch branch: plain copy, no
-    // reason, and the raw proxy text never reaches the UI.
-    await page.evaluate(() => {
-      // The file:// lane has no extension runtime, so install the smallest chrome
-      // stub sendToBackground accepts (callback style) and have it reject.
+    // deleteSyncCredentials only runs the remote delete when the danger-zone
+    // checkbox is on — without it the call skips the delete entirely and reports a
+    // local success, which would make every assertion below meaningless.
+    await page.click('#delete-sync-credential-open');
+    await page.check('#delete-sync-credential-remote');
+
+    const out = await page.evaluate(async () => {
+      // The file:// lane has no extension runtime. Install the smallest chrome stub
+      // that sendToBackground accepts (callback style) and have the DELETE reject, so
+      // the public entry point takes its catch branch. Removed again immediately so
+      // the partial stub cannot enable unrelated chrome.* code paths for the rest of
+      // this test.
+      const had = Object.prototype.hasOwnProperty.call(window, 'chrome');
+      const prev = (window as any).chrome;
       (window as any).chrome = {
         runtime: {
           sendMessage: (msg: any, cb?: any) => {
@@ -431,17 +442,46 @@ test.describe('Ticket 116: remote-delete refusal reasons', () => {
           lastError: null,
         },
       };
+      try {
+        return await (window as any).__boxingDeleteSyncCredentials();
+      } finally {
+        if (had) (window as any).chrome = prev;
+        else delete (window as any).chrome;
+      }
     });
+
+    expect(out.ok).toBe(false);
+    expect(out.reason).toBeUndefined();
+    expect(out.error).toBe('Failed to delete the remote backup data — nothing was changed.');
+    // The raw proxy text never reaches the result or the status line.
+    expect(out.error).not.toContain('blocked unsafe');
+    const s = await zoneState(page);
+    expect(s.status).toBe('Failed to delete the remote backup data — nothing was changed.');
+    expect(s.status).not.toContain('blocked unsafe');
+    expect(await page.evaluate(() =>
+      (document.getElementById('delete-sync-credential-status') as HTMLElement)?.dataset.reason
+    )).toBeUndefined();
+    // A caught transport failure must still leave the stored credentials alone.
+    expect(s.provider).toBe('webdav');
+    expect(await page.evaluate(() =>
+      Boolean((window as any).__boxingDebug.layout.settings._encWebdavPass)
+    )).toBe(true);
+  });
+
+  test('a malformed base URL is not mislabelled as embedded credentials', async ({ page }) => {
+    await resetFresh(page);
+    await seedStoredCredentials(page);
+    await seedCase(page, { url: 'not a url' });
+    // resolveWebDAVFileUrl's new URL() throws a bare TypeError here, which is not a
+    // refusal this engine can name. It must fall through to the generic copy rather
+    // than claiming "embedded credentials" (PR #117 review). The rethrow lands in
+    // deleteSyncCredentials' catch, so drive the public entry point.
+    await page.click('#delete-sync-credential-open');
+    await page.check('#delete-sync-credential-remote');
     const out = await page.evaluate(async () => await (window as any).__boxingDeleteSyncCredentials());
     expect(out.ok).toBe(false);
     expect(out.reason).toBeUndefined();
     expect(out.error).toBe('Failed to delete the remote backup data — nothing was changed.');
-    expect(out.error).not.toContain('blocked unsafe');
-    const s = await zoneState(page);
-    expect(s.status).toBe('Failed to delete the remote backup data — nothing was changed.');
-    expect(await page.evaluate(() =>
-      (document.getElementById('delete-sync-credential-status') as HTMLElement)?.dataset.reason
-    )).toBeUndefined();
   });
 
   test('the composed texts are supersets of the pre-116 copy in every locale', () => {
