@@ -626,6 +626,9 @@
   "webdavErrEmbedded": {
     "message": "WebDAV URL must not contain embedded credentials"
   },
+  "webdavErrQuery": {
+    "message": "WebDAV URL must not contain a query string or fragment"
+  },
   "webdavErrNoPass": {
     "message": "WebDAV password is empty — re-enter and retry"
   },

@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "WebDAV-URL darf keine eingebetteten Anmeldedaten enthalten"
   },
+  "webdavErrQuery": {
+    "message": "WebDAV-URL darf weder Abfragezeichenfolge noch Fragment enthalten"
+  },
   "webdavErrNoPass": {
     "message": "WebDAV-Passwort ist leer — neu eingeben und erneut versuchen"
   },

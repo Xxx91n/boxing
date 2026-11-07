@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "URL WebDAV не должен содержать встроенные учётные данные"
   },
+  "webdavErrQuery": {
+    "message": "URL WebDAV не должен содержать строку запроса или фрагмент"
+  },
   "webdavErrNoPass": {
     "message": "Пароль WebDAV пуст — введите заново и повторите"
   },

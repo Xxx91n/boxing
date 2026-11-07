@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "WebDAV URLに認証情報を含めないでください"
   },
+  "webdavErrQuery": {
+    "message": "WebDAV URLにクエリ文字列やフラグメントを含めないでください"
+  },
   "webdavErrNoPass": {
     "message": "WebDAVパスワードが空です — 再入力してください"
   },

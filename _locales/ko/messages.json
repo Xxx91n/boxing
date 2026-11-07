@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "WebDAV URL에 인증 정보를 포함할 수 없습니다"
   },
+  "webdavErrQuery": {
+    "message": "WebDAV URL에는 쿼리 문자열이나 프래그먼트를 포함할 수 없습니다"
+  },
   "webdavErrNoPass": {
     "message": "WebDAV 비밀번호가 비어있습니다 — 다시 입력하세요"
   },

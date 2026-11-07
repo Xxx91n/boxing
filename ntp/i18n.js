@@ -203,6 +203,9 @@ I18N_FALLBACK.webdavTesting = 'Testing...';
 I18N_FALLBACK.webdavErrNoUrl = 'WebDAV URL not configured';
 I18N_FALLBACK.webdavErrHttps = 'WebDAV URL must use HTTPS';
 I18N_FALLBACK.webdavErrEmbedded = 'WebDAV URL must not contain embedded credentials';
+// Ticket 114: a WebDAV base URL carrying a query string or fragment corrupts the derived
+// fileUrl, so every WebDAV entry point (test / export / pull / remote delete) refuses it.
+I18N_FALLBACK.webdavErrQuery = 'WebDAV URL must not contain a query string or fragment';
 I18N_FALLBACK.webdavErrNoPass = 'WebDAV password is empty — re-enter and retry';
 I18N_FALLBACK.webdavErrAuth = 'WebDAV auth failed ($1$) — check credentials';
 I18N_FALLBACK.webdavErrPath = 'WebDAV path not found — check the URL';

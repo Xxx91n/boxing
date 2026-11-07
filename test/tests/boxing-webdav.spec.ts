@@ -1,8 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
+import fs from 'fs';
 import path from 'path';
 import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_PATH = path.resolve(__dirname, '..', '..');
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 // Ticket 95 (credential sweep): NO real credentials in source; the lane's
@@ -374,5 +376,200 @@ test.describe('WebDAV transport hardening (ticket 83)', () => {
     const getCall = calls.find((c: any) => c.init && c.init.method === 'GET');
     expect(getCall).toBeTruthy();
     expect(getCall.init.redirect).toBe('manual');
+  });
+});
+
+// Ticket 114 (PR #112 review thread): a WebDAV base URL with a query string (or a
+// fragment) corrupted the derived fileUrl — `https://dav.example.com/dir?token=abc`
+// produced `.../dir?token=abc/boxing-backup.json`, so the filename landed inside the
+// query value and the request degraded to `/dir`. The chosen behavior is refusal: every
+// WebDAV entry point (test / export / pull / remote delete) rejects the base up front.
+// Test / export / pull surface the keyed error `webdavErrQuery`; remote delete maps the
+// same refusal to its existing localized failure (that function never surfaces transport
+// errors). `resolveWebDAVFileUrl` additionally drops search/hash — and refuses embedded
+// credentials, which origin+pathname would silently strip — so a corrupted URL can never
+// reach the wire.
+test.describe('WebDAV base URL with a query string or fragment (ticket 114)', () => {
+  const QUERY_BASES = [
+    'https://dav.example.net/dav?token=abc',
+    'https://dav.example.net/dav/?token=abc',
+    'https://dav.example.net/dav#section',
+  ];
+
+  async function bootClean(page: Page) {
+    await bootWithMockRuntime(page, (msg) => {
+      if (msg.type === 'webdav-get') return { success: true, status: 200, ok: true, data: null };
+      if (msg.type === 'webdav-put') return { success: true, status: 201, ok: true };
+      if (msg.type === 'webdav-delete') return { success: true, status: 204, ok: true };
+      return { success: true, status: 207, ok: true };
+    });
+    await resetBoxing(page);
+  }
+
+  test('resolveWebDAVFileUrl keeps the filename in the path for a query-bearing base', async ({ page }) => {
+    await bootClean(page);
+    const r = await page.evaluate(() => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.syncFileName = 'my-backup.json';
+      return {
+        query: dbg.resolveWebDAVFileUrl('https://dav.example.net/dir?token=abc'),
+        fragment: dbg.resolveWebDAVFileUrl('https://dav.example.net/dir#frag'),
+        // The verbatim branch keys on the PATH: a query that merely ends in .json
+        // must not select it (that was the second half of the bug).
+        queryJson: dbg.resolveWebDAVFileUrl('https://dav.example.net/dir?file=x.json'),
+        // Accepted bases are unchanged by the fix.
+        plain: dbg.resolveWebDAVFileUrl('https://dav.example.net/dir'),
+        trailingSlash: dbg.resolveWebDAVFileUrl('https://dav.example.net/dir/'),
+        jsonPath: dbg.resolveWebDAVFileUrl('https://dav.example.net/dir/backup.json'),
+        emptyQuery: dbg.resolveWebDAVFileUrl('https://dav.example.net/dir/?'),
+        // PR #115 review: origin + pathname drops userinfo, so the derivation must
+        // refuse an embedded-credential base instead of returning a clean URL that
+        // silently sends the configured account's credentials.
+        embedded: (() => {
+          try {
+            const r = dbg.resolveWebDAVFileUrl('https://user:secret@dav.example.net/dir/');
+            return { threw: false, fileUrl: r.fileUrl };
+          } catch (e: any) { return { threw: true, key: e && e.key }; }
+        })(),
+      };
+    });
+    // No derived URL may carry a query or fragment at all.
+    expect(r.query.fileUrl).toBe('https://dav.example.net/dir/my-backup.json');
+    expect(r.fragment.fileUrl).toBe('https://dav.example.net/dir/my-backup.json');
+    expect(r.queryJson.fileUrl).toBe('https://dav.example.net/dir/my-backup.json');
+    expect(r.queryJson.fileUrl).not.toContain('?');
+    // The pre-existing contract for every query-less base is byte-identical.
+    expect(r.plain.fileUrl).toBe('https://dav.example.net/dir/my-backup.json');
+    expect(r.trailingSlash.fileUrl).toBe('https://dav.example.net/dir/my-backup.json');
+    expect(r.jsonPath.fileUrl).toBe('https://dav.example.net/dir/backup.json');
+    // An empty query serializes to no search component — not corruption, still accepted.
+    expect(r.emptyQuery.fileUrl).toBe('https://dav.example.net/dir/my-backup.json');
+    // Embedded credentials never survive into a derived URL (PR #115 review): the
+    // old derivation kept user:secret@ and was refused by the background guard;
+    // origin + pathname would strip them, so the seam itself must refuse.
+    expect(r.embedded.threw).toBe(true);
+    expect(r.embedded.key).toBe('webdavErrEmbedded');
+  });
+
+  // Locale contract (same shape as the ticket 57/99 key guards): the keyed error
+  // must exist in all 14 locales and in the en fallback, and must stay
+  // placeholder-free so it never renders a literal $1$.
+  test('webdavErrQuery exists in all 14 locales and in the en fallback', () => {
+    const localesDir = path.join(REPO_PATH, '_locales');
+    const langs = fs.readdirSync(localesDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+    expect(langs.length).toBe(14);
+    const i18nSrc = fs.readFileSync(path.join(REPO_PATH, 'ntp', 'i18n.js'), 'utf8');
+    expect(i18nSrc, 'I18N_FALLBACK.webdavErrQuery missing').toContain('I18N_FALLBACK.webdavErrQuery = ');
+    // The fallback is what file:// lanes and forced-fetch-failure boots render —
+    // it must match the en locale byte for byte.
+    const en = JSON.parse(fs.readFileSync(path.join(localesDir, 'en', 'messages.json'), 'utf8'));
+    expect(i18nSrc).toContain("I18N_FALLBACK.webdavErrQuery = '" + en.webdavErrQuery.message + "'");
+    expect(en.webdavErrQuery.message).not.toContain('$1$');
+    for (const lang of langs) {
+      const msgs = JSON.parse(fs.readFileSync(path.join(localesDir, lang, 'messages.json'), 'utf8'));
+      expect(msgs.webdavErrQuery, `Missing key "webdavErrQuery" in _locales/${lang}/messages.json`).toBeDefined();
+      expect(typeof msgs.webdavErrQuery.message).toBe('string');
+      expect(msgs.webdavErrQuery.message.length).toBeGreaterThan(0);
+      expect(msgs.webdavErrQuery.message, `unexpected placeholder in ${lang}`).not.toContain('$1$');
+    }
+  });
+
+  test('the guard predicate flags real query/fragment components only', async ({ page }) => {
+    await bootClean(page);
+    const r = await page.evaluate(() => {
+      const g = (window as any).__bxSync.webdavUrlHasQueryOrFragment;
+      return {
+        query: g('https://dav.example.net/dav?token=abc'),
+        fragment: g('https://dav.example.net/dav#x'),
+        emptyQuery: g('https://dav.example.net/dav/?'),
+        plain: g('https://dav.example.net/dav/'),
+        // A '?'/'#' inside the path is percent-encoded by the URL parser, not a component.
+        encoded: g('https://dav.example.net/dav%3Ftoken/'),
+        junk: g('not a url'),
+      };
+    });
+    expect(r.query).toBe(true);
+    expect(r.fragment).toBe(true);
+    expect(r.emptyQuery).toBe(false);
+    expect(r.plain).toBe(false);
+    expect(r.encoded).toBe(false);
+    expect(r.junk).toBe(false);
+  });
+
+  for (const base of QUERY_BASES) {
+    test('test / export / pull all refuse ' + base + ' with the keyed error and zero network calls', async ({ page }) => {
+      await bootClean(page);
+      const r = await page.evaluate(async (url) => {
+        const dbg = (window as any).__boxingDebug;
+        const bxSync = (window as any).__bxSync;
+        await dbg.setWebDAVConfig(url, 'u', 'p');
+        const grab = async (fn: () => Promise<unknown>) => {
+          try { await fn(); return { threw: false, key: '', message: '' }; }
+          catch (e: any) { return { threw: true, key: e && e.key, message: e && e.message, known: bxSync.isKnownWebDAVError(e) }; }
+        };
+        const backup = await grab(() => dbg.backupWebDAV());
+        const sync = await grab(() => dbg.syncWebDAV({ bypassLossGuard: true }));
+        const test = await grab(() => dbg.testWebDAV());
+        return {
+          backup, sync, test,
+          expected: bxSync.webdavError('webdavErrQuery').message,
+          calls: (window as any).__webdavCalls.length,
+        };
+      }, base);
+
+      for (const [name, out] of Object.entries({ backup: r.backup, sync: r.sync, test: r.test })) {
+        expect((out as any).threw, name + ' should refuse the base').toBe(true);
+        // Keyed identity (ticket 111 mechanism), not a message-text guess.
+        expect((out as any).key, name + ' key').toBe('webdavErrQuery');
+        expect((out as any).known, name + ' classified').toBe(true);
+        expect((out as any).message, name + ' message').toBe(r.expected);
+      }
+      // Refusal happens before any transport: no webdav-* message was ever sent.
+      expect(r.calls).toBe(0);
+    });
+  }
+
+  test('remote delete refuses a query-bearing base instead of deleting a corrupted target', async ({ page }) => {
+    await bootClean(page);
+    const r = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const sel = document.getElementById('sync-provider') as HTMLSelectElement;
+      const remote = document.getElementById('delete-sync-credential-remote') as HTMLInputElement;
+      const run = async (url: string) => {
+        dbg.layout.settings.webdavUrl = url;
+        dbg.layout.settings.webdavUser = 'spec-user';
+        const pass = document.getElementById('webdav-pass') as HTMLInputElement;
+        if (pass) pass.value = 'spec-pass';
+        sel.value = 'webdav';
+        remote.checked = true;
+        const before = (window as any).__webdavCalls.length;
+        const out = await (window as any).__boxingDeleteSyncCredentials();
+        // Read the status line right here: the control call below resets it.
+        const statusText = (document.getElementById('delete-sync-credential-status') as HTMLElement)?.textContent || '';
+        return { ok: out && out.ok, error: out && out.error, sent: (window as any).__webdavCalls.length - before, statusText };
+      };
+      const refused = await run('https://dav.example.net/dav?token=abc');
+      // PR #115 review (Data Integrity): a base with embedded credentials must not
+      // reach the transport — the derivation strips userinfo, so the DELETE would
+      // otherwise execute under the configured account against that host.
+      const embedded = await run('https://user:secret@dav.example.net/dav/');
+      const accepted = await run('https://dav.example.net/dav/');
+      return { refused, embedded, accepted };
+    });
+    expect(r.refused.ok).toBe(false);
+    // The delete contract maps every refusal to the localized remote-delete failure
+    // text — never a raw transport error, and never a DELETE at a corrupted URL.
+    expect(typeof r.refused.error).toBe('string');
+    expect(r.refused.error.length).toBeGreaterThan(0);
+    expect(r.refused.statusText).toBe(r.refused.error);
+    expect(r.refused.sent).toBe(0);
+    // Same contract for the embedded-credential base: refused, nothing deleted.
+    expect(r.embedded.ok).toBe(false);
+    expect(r.embedded.error).toBe(r.refused.error);
+    expect(r.embedded.statusText).toBe(r.embedded.error);
+    expect(r.embedded.sent).toBe(0);
+    // Control: the same call with a clean base does reach the transport.
+    expect(r.accepted.sent).toBe(1);
+    expect(r.accepted.ok).toBe(true);
   });
 });

@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "La URL de WebDAV no debe contener credenciales incrustadas"
   },
+  "webdavErrQuery": {
+    "message": "La URL de WebDAV no debe contener una cadena de consulta ni un fragmento"
+  },
   "webdavErrNoPass": {
     "message": "Contraseña de WebDAV vacía — reingrese y reintente"
   },
