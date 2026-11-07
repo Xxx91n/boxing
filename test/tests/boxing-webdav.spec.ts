@@ -383,9 +383,12 @@ test.describe('WebDAV transport hardening (ticket 83)', () => {
 // fragment) corrupted the derived fileUrl — `https://dav.example.com/dir?token=abc`
 // produced `.../dir?token=abc/boxing-backup.json`, so the filename landed inside the
 // query value and the request degraded to `/dir`. The chosen behavior is refusal: every
-// WebDAV entry point (test / export / pull / remote delete) rejects the base up front
-// with the keyed error `webdavErrQuery`, and `resolveWebDAVFileUrl` additionally drops
-// search/hash so the filename can never be appended after a query again.
+// WebDAV entry point (test / export / pull / remote delete) rejects the base up front.
+// Test / export / pull surface the keyed error `webdavErrQuery`; remote delete maps the
+// same refusal to its existing localized failure (that function never surfaces transport
+// errors). `resolveWebDAVFileUrl` additionally drops search/hash — and refuses embedded
+// credentials, which origin+pathname would silently strip — so a corrupted URL can never
+// reach the wire.
 test.describe('WebDAV base URL with a query string or fragment (ticket 114)', () => {
   const QUERY_BASES = [
     'https://dav.example.net/dav?token=abc',

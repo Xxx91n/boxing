@@ -102,10 +102,12 @@ export function initSyncEngineFacade(deps) {
   // value and the request itself degraded to `/dir`. A fragment corrupts
   // identically (`/dir#frag/boxing-backup.json` likewise requests `/dir`), and
   // neither form can be repaired without guessing whether the user meant a query
-  // or a path, so every WebDAV entry point refuses it up front with a keyed error
-  // (webdavErrQuery). Same "a guard applied inconsistently across request paths is
-  // equivalent to no guard" rule as ticket 90: test / export / pull / remote
-  // delete all run this one predicate.
+  // or a path, so every WebDAV entry point refuses it up front. Test / export /
+  // pull surface the keyed error webdavErrQuery; remote delete maps the same
+  // refusal to its existing localized failure, because that function's contract is
+  // to never surface a transport-level error. Same "a guard applied inconsistently
+  // across request paths is equivalent to no guard" rule as ticket 90: test /
+  // export / pull / remote delete all run this one predicate.
   function webdavUrlHasQueryOrFragment(urlStr) {
     if (typeof urlStr !== 'string') return false;
     let u;
