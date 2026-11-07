@@ -175,7 +175,7 @@
     "message": "字体大小"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "编辑书签"
   },
   "bookmarkTitlePlaceholder": {
     "message": "书签标题"
@@ -255,7 +255,7 @@
     "message": "导入失败：数据格式无效"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "导入失败：文件过大（最大 5MB）"
   },
   "dblclickCreateHint": {
     "message": "双击创建盒子"
@@ -820,7 +820,7 @@
     "description": "box connections / star-mark"
   },
   "connStart": {
-    "message": "Start a connection to another box",
+    "message": "开始连接到另一个盒子",
     "description": "box connections / star-mark"
   },
   "connDeleteActionLabel": {
@@ -1052,7 +1052,7 @@
     "message": "同步与恢复"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "基于 Apache-2.0 协议开源 · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "发现新版本："
@@ -1212,7 +1212,7 @@
     "message": "无法按副本中的原样保存该对象 - 无需补入"
   },
   "dataConflictAddSkippedFull": {
-    "message": "\u8be5\u76d2\u5b50\u5df2\u8fbe\u6761\u76ee\u4e0a\u9650"
+    "message": "该盒子已达条目上限"
   },
   "dataConflictAddFailed": {
     "message": "所选部分项目未能补入"
@@ -1262,8 +1262,7 @@
   "conflictGuardRestoreFailed": {
     "message": "无法从该安全副本恢复 - 未更改任何内容。",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "用口令加密导出文件"
   },
@@ -1308,12 +1307,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "导出失败：备份过大，加密后将超出 5MB 恢复上限。未导出任何内容。"
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "该口令过长，Boxing 无法用它加密。"
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "导出失败：此备份中的画布数据超过 Boxing 可恢复的上限（layout 2,000,000 字符）。未导出任何内容。"
   },

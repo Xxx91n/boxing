@@ -175,7 +175,7 @@
     "message": "फ़ॉन्ट आकार"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "बुकमार्क संपादित करें"
   },
   "bookmarkTitlePlaceholder": {
     "message": "बुकमार्क शीर्षक"
@@ -252,7 +252,7 @@
     "message": "आयात विफल: अमान्य डेटा प्रारूप"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "आयात विफल: फ़ाइल बहुत बड़ी है (अधिकतम 5MB)"
   },
   "dblclickCreateHint": {
     "message": "बनाने के लिए डबल-क्लिक करें"
@@ -300,55 +300,55 @@
     "message": "Boxing आपका लेआउट इस ब्राउज़र के लोकल स्टोरेज में संग्रहीत करता है। डिवाइसों के बीच सिंक करने के लिए कोई प्रदाता चुनें।"
   },
   "deleteSyncCredentialTitle": {
-    "message": "Delete sync credentials",
+    "message": "सिंक क्रेडेंशियल हटाएं",
     "description": "Ticket 99 (T13): danger-zone title for deleting stored sync credentials"
   },
   "deleteSyncCredentialHint": {
-    "message": "Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.",
+    "message": "केवल इस ब्राउज़र से संग्रहीत WebDAV पासवर्ड / GitHub टोकन को हटाता है। स्थानीय बुकमार्क और बॉक्स सुरक्षित रहेंगे। इसे पूर्ववत नहीं किया जा सकता।",
     "description": "Ticket 99 (T13): scope warning shown in the stored-credential danger zone"
   },
   "deleteSyncCredentialOpen": {
-    "message": "Delete sync credentials…",
+    "message": "सिंक क्रेडेंशियल हटाएं…",
     "description": "Ticket 99 (T13): button that opens the two-step delete panel"
   },
   "deleteSyncCredentialWillDelete": {
-    "message": "Will delete",
+    "message": "हटाया जाएगा",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialLocalCreds": {
-    "message": "stored sync credentials in this browser",
+    "message": "इस ब्राउज़र में संग्रहीत सिंक क्रेडेंशियल",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialDeleteRemote": {
-    "message": "Also delete the remote backup data (WebDAV file / Gist)",
+    "message": "रिमोट बैकअप डेटा भी हटाएं (WebDAV फ़ाइल / Gist)",
     "description": "Ticket 99 (T13): checkbox label for optional remote data deletion"
   },
   "deleteSyncCredentialRemoteKeepHint": {
-    "message": "Unchecked keeps the remote backup in place (recommended).",
+    "message": "अनचेक रहने पर रिमोट बैकअप सुरक्षित रहेगा (अनुशंसित)।",
     "description": "Ticket 99 (T13): hint under the remote-delete checkbox"
   },
   "deleteSyncCredentialWillKeep": {
-    "message": "Will keep",
+    "message": "सुरक्षित रहेगा",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialBookmarks": {
-    "message": "local bookmarks and boxes (unchanged)",
+    "message": "स्थानीय बुकमार्क और बॉक्स (अपरिवर्तित)",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialCancel": {
-    "message": "Cancel",
+    "message": "रद्द करें",
     "description": "Ticket 99 (T13): cancel button — default focus target"
   },
   "deleteSyncCredentialConfirm": {
-    "message": "Delete credentials",
+    "message": "क्रेडेंशियल हटाएं",
     "description": "Ticket 99 (T13): confirm button of the two-step delete"
   },
   "deleteSyncCredentialStatusDone": {
-    "message": "Sync credentials deleted. Sync is now off — choose a provider to reconnect.",
+    "message": "सिंक क्रेडेंशियल हटा दिए गए। सिंक अब बंद है — पुनः कनेक्ट करने के लिए प्रदाता चुनें।",
     "description": "Ticket 99 (T13): success status message"
   },
   "deleteSyncCredentialRemoteFailed": {
-    "message": "Failed to delete the remote backup data — nothing was changed.",
+    "message": "रिमोट बैकअप डेटा हटाने में विफल — कुछ भी नहीं बदला गया।",
     "description": "Ticket 99 (T13): failure status message — atomic abort keeps stored state"
   },
   "urlOpenModeLabel": {
@@ -376,59 +376,59 @@
     "description": "Hint for box drag interaction"
   },
   "searchShortcut": {
-    "message": "/ or Ctrl+F",
+    "message": "/ या Ctrl+F",
     "description": "Search shortcut hint"
   },
   "addBoxShortcut": {
-    "message": "Double-click empty area",
+    "message": "खाली जगह पर डबल-क्लिक करें",
     "description": "Add box shortcut hint"
   },
   "zoomShortcut": {
-    "message": "Ctrl+scroll wheel",
+    "message": "Ctrl+स्क्रॉल व्हील",
     "description": "Zoom shortcut hint"
   },
   "panShortcut": {
-    "message": "Left-drag empty area",
+    "message": "खाली जगह पर बायां-क्लिक करके खींचें",
     "description": "Pan shortcut hint"
   },
   "returnShortcut": {
-    "message": "Right-click or Esc to return",
+    "message": "वापस जाने के लिए राइट-क्लिक या Esc",
     "description": "Return shortcut hint"
   },
   "undoShortcut": {
-    "message": "Ctrl+Z to undo",
+    "message": "पूर्ववत करने के लिए Ctrl+Z",
     "description": "Undo shortcut hint"
   },
   "accessibilityLabel": {
-    "message": "Keyboard accessible · Screen reader friendly",
+    "message": "कीबोर्ड सुलभ · स्क्रीन रीडर अनुकूल",
     "description": "A11y label"
   },
   "rightClickReturnHint": {
-    "message": "Right-click to go back to canvas",
+    "message": "कैनवास पर वापस जाने के लिए राइट-क्लिक करें",
     "description": "Right click return tooltip"
   },
   "escReturnHint": {
-    "message": "Press Esc to return to canvas",
+    "message": "कैनवास पर वापस जाने के लिए Esc दबाएं",
     "description": "Esc return hint"
   },
   "ctrlScrollZoom": {
-    "message": "Ctrl+scroll to zoom",
+    "message": "ज़ूम करने के लिए Ctrl+स्क्रॉल",
     "description": "Zoom shortcut label"
   },
   "dragPanCanvas": {
-    "message": "Drag to pan canvas",
+    "message": "कैनवास खिसकाने के लिए खींचें",
     "description": "Pan canvas label"
   },
   "dblclickAddBox": {
-    "message": "Double-click to add box",
+    "message": "बॉक्स जोड़ने के लिए डबल-क्लिक करें",
     "description": "Add box shortcut label"
   },
   "searchSlash": {
-    "message": "/ to search",
+    "message": "खोजने के लिए / दबाएं",
     "description": "Search shortcut label"
   },
   "noBookmarksYet": {
-    "message": "No bookmarks yet. Click + to add one.",
+    "message": "अभी कोई बुकमार्क नहीं है। जोड़ने के लिए + पर क्लिक करें।",
     "description": "Empty bookmarks hint"
   },
   "emptyBoxDragHint": {
@@ -436,71 +436,71 @@
     "description": "Empty box action hint"
   },
   "bookmarkReorderHint": {
-    "message": "Drag the grip to reorder bookmarks",
+    "message": "बुकमार्क पुनर्व्यवस्थित करने के लिए हैंडल खींचें",
     "description": "Bookmark reorder hint"
   },
   "deleteConfirmMessage": {
-    "message": "This action cannot be undone. All bookmarks inside will be removed.",
+    "message": "यह क्रिया पूर्ववत नहीं की जा सकती। अंदर के सभी बुकमार्क हटा दिए जाएंगे।",
     "description": "Delete confirmation detail"
   },
   "settingsCategoryGeneral": {
-    "message": "General",
+    "message": "सामान्य",
     "description": "Settings category"
   },
   "settingsCategoryAppearance": {
-    "message": "Appearance",
+    "message": "दिखावट",
     "description": "Settings category"
   },
   "settingsCategoryData": {
-    "message": "Data",
+    "message": "डेटा",
     "description": "Settings category"
   },
   "settingsCategorySync": {
-    "message": "Sync & Backup",
+    "message": "सिंक और बैकअप",
     "description": "Settings category"
   },
   "langAutoDetect": {
-    "message": "Auto-detect (browser language)",
+    "message": "स्वचालित पहचान (ब्राउज़र भाषा)",
     "description": "Auto-detect language option"
   },
   "fontSizeSmall": {
-    "message": "Small",
+    "message": "छोटा",
     "description": "Font size label"
   },
   "fontSizeNormal": {
-    "message": "Normal",
+    "message": "सामान्य",
     "description": "Font size label"
   },
   "fontSizeLarge": {
-    "message": "Large",
+    "message": "बड़ा",
     "description": "Font size label"
   },
   "debugModeOn": {
-    "message": "Debug: ON",
+    "message": "डीबग: चालू",
     "description": "Debug mode status"
   },
   "debugModeOff": {
-    "message": "Debug: OFF",
+    "message": "डीबग: बंद",
     "description": "Debug mode status"
   },
   "canvasBoundaryHint": {
-    "message": "Canvas has boundaries at 30% zoom level",
+    "message": "30% ज़ूम स्तर पर कैनवास की सीमाएं होती हैं",
     "description": "Canvas boundary hint"
   },
   "lastOpenedBox": {
-    "message": "Last opened box",
+    "message": "अंतिम बार खोला गया बॉक्स",
     "description": "Remember last position label"
   },
   "storedDataFound": {
-    "message": "Stored data found",
+    "message": "संग्रहीत डेटा मिला",
     "description": "Data status"
   },
   "backupSaved": {
-    "message": "Backup saved",
+    "message": "बैकअप सहेजा गया",
     "description": "Backup confirmation"
   },
   "allLanguages": {
-    "message": "All 13 languages translated",
+    "message": "सभी 13 भाषाओं में अनुवादित",
     "description": "Locale completeness note"
   },
   "headerPinUsage": {
@@ -1049,7 +1049,7 @@
     "message": "सिंक और पुनर्स्थापना"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "Apache-2.0 के तहत लाइसेंस प्राप्त · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "नया संस्करण उपलब्ध है: "
@@ -1209,7 +1209,7 @@
     "message": "इस वस्तु को प्रति में जैसा है वैसा संग्रहीत नहीं किया जा सकता - वापस जोड़ने को कुछ नहीं"
   },
   "dataConflictAddSkippedFull": {
-    "message": "\u0907\u0938 \u092c\u0949\u0915\u094d\u0938 \u0928\u0947 \u0906\u0907\u091f\u092e \u0938\u0940\u092e\u093e \u092a\u0939\u0932\u0947 \u0939\u0940 \u092a\u093e \u0932\u0940 \u0939\u0948"
+    "message": "इस बॉक्स ने आइटम सीमा पहले ही पा ली है"
   },
   "dataConflictAddFailed": {
     "message": "आपके चुने कुछ आइटम वापस नहीं जोड़े जा सके"
@@ -1259,8 +1259,7 @@
   "conflictGuardRestoreFailed": {
     "message": "उस सुरक्षित प्रति को पुनर्स्थापित नहीं किया जा सका - कुछ भी नहीं बदला गया।",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "निर्यात फ़ाइलों को पासफ़्रेज़ से एन्क्रिप्ट करें"
   },
@@ -1305,12 +1304,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "निर्यात विफल: बैकअप इतना बड़ा है कि 5MB बहाली सीमा में एन्क्रिप्ट नहीं हो सकता। कुछ निर्यात नहीं हुआ।"
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "यह पासफ़्रेज़ इतना लंबा है कि Boxing इसे इस्तेमाल नहीं कर सकता।"
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "निर्यात विफल: इस बैकअप का कैनवस Boxing की बहाल सीमा (layout के 20,00,000 वर्ण) से बड़ा है। कुछ निर्यात नहीं हुआ।"
   },

@@ -175,7 +175,7 @@
     "message": "ขนาดตัวอักษร"
   },
   "editBookmarkLabel": {
-    "message": "Edit bookmark"
+    "message": "แก้ไขที่คั่นหน้า"
   },
   "bookmarkTitlePlaceholder": {
     "message": "ชื่อบุ๊กมาร์ก"
@@ -252,7 +252,7 @@
     "message": "นำเข้าล้มเหลว: รูปแบบข้อมูลไม่ถูกต้อง"
   },
   "importTooLarge": {
-    "message": "Import failed: file too large (max 5MB)"
+    "message": "การนำเข้าล้มเหลว: ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 5MB)"
   },
   "dblclickCreateHint": {
     "message": "ดับเบิลคลิกเพื่อสร้าง"
@@ -300,55 +300,55 @@
     "message": "Boxing จัดเก็บเลย์เอาต์ของคุณไว้ในพื้นที่จัดเก็บข้อมูลของเบราว์เซอร์นี้ เลือกผู้ให้บริการเพื่อซิงค์ข้ามอุปกรณ์"
   },
   "deleteSyncCredentialTitle": {
-    "message": "Delete sync credentials",
+    "message": "ลบข้อมูลประจำตัวการซิงค์",
     "description": "Ticket 99 (T13): danger-zone title for deleting stored sync credentials"
   },
   "deleteSyncCredentialHint": {
-    "message": "Removes the stored WebDAV password / GitHub token from this browser only. Local bookmarks and boxes are never touched. This cannot be undone.",
+    "message": "ลบรหัสผ่าน WebDAV / โทเค็น GitHub ที่เก็บไว้จากเบราว์เซอร์นี้เท่านั้น ที่คั่นหน้าและกล่องในเครื่องจะไม่ได้รับผลกระทบ การดำเนินการนี้ไม่สามารถยกเลิกได้",
     "description": "Ticket 99 (T13): scope warning shown in the stored-credential danger zone"
   },
   "deleteSyncCredentialOpen": {
-    "message": "Delete sync credentials…",
+    "message": "ลบข้อมูลประจำตัวการซิงค์…",
     "description": "Ticket 99 (T13): button that opens the two-step delete panel"
   },
   "deleteSyncCredentialWillDelete": {
-    "message": "Will delete",
+    "message": "จะถูกลบ",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialLocalCreds": {
-    "message": "stored sync credentials in this browser",
+    "message": "ข้อมูลประจำตัวการซิงค์ที่เก็บไว้ในเบราว์เซอร์นี้",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialDeleteRemote": {
-    "message": "Also delete the remote backup data (WebDAV file / Gist)",
+    "message": "ลบข้อมูลสำรองระยะไกลด้วย (ไฟล์ WebDAV / Gist)",
     "description": "Ticket 99 (T13): checkbox label for optional remote data deletion"
   },
   "deleteSyncCredentialRemoteKeepHint": {
-    "message": "Unchecked keeps the remote backup in place (recommended).",
+    "message": "หากไม่เลือก จะเก็บข้อมูลสำรองระยะไกลไว้ (แนะนำ)",
     "description": "Ticket 99 (T13): hint under the remote-delete checkbox"
   },
   "deleteSyncCredentialWillKeep": {
-    "message": "Will keep",
+    "message": "จะถูกเก็บไว้",
     "description": "Ticket 99 (T13): scope list label"
   },
   "deleteSyncCredentialBookmarks": {
-    "message": "local bookmarks and boxes (unchanged)",
+    "message": "ที่คั่นหน้าและกล่องในเครื่อง (ไม่เปลี่ยนแปลง)",
     "description": "Ticket 99 (T13): scope list item"
   },
   "deleteSyncCredentialCancel": {
-    "message": "Cancel",
+    "message": "ยกเลิก",
     "description": "Ticket 99 (T13): cancel button — default focus target"
   },
   "deleteSyncCredentialConfirm": {
-    "message": "Delete credentials",
+    "message": "ลบข้อมูลประจำตัว",
     "description": "Ticket 99 (T13): confirm button of the two-step delete"
   },
   "deleteSyncCredentialStatusDone": {
-    "message": "Sync credentials deleted. Sync is now off — choose a provider to reconnect.",
+    "message": "ลบข้อมูลประจำตัวการซิงค์แล้ว การซิงค์ปิดอยู่ — เลือกผู้ให้บริการเพื่อเชื่อมต่อใหม่",
     "description": "Ticket 99 (T13): success status message"
   },
   "deleteSyncCredentialRemoteFailed": {
-    "message": "Failed to delete the remote backup data — nothing was changed.",
+    "message": "ไม่สามารถลบข้อมูลสำรองระยะไกลได้ — ไม่มีการเปลี่ยนแปลงใดๆ",
     "description": "Ticket 99 (T13): failure status message — atomic abort keeps stored state"
   },
   "urlOpenModeLabel": {
@@ -376,59 +376,59 @@
     "description": "Hint for box drag interaction"
   },
   "searchShortcut": {
-    "message": "/ or Ctrl+F",
+    "message": "/ หรือ Ctrl+F",
     "description": "Search shortcut hint"
   },
   "addBoxShortcut": {
-    "message": "Double-click empty area",
+    "message": "ดับเบิลคลิกพื้นที่ว่าง",
     "description": "Add box shortcut hint"
   },
   "zoomShortcut": {
-    "message": "Ctrl+scroll wheel",
+    "message": "Ctrl+ล้อเลื่อนเมาส์",
     "description": "Zoom shortcut hint"
   },
   "panShortcut": {
-    "message": "Left-drag empty area",
+    "message": "คลิกซ้ายค้างแล้วลากพื้นที่ว่าง",
     "description": "Pan shortcut hint"
   },
   "returnShortcut": {
-    "message": "Right-click or Esc to return",
+    "message": "คลิกขวาหรือ Esc เพื่อย้อนกลับ",
     "description": "Return shortcut hint"
   },
   "undoShortcut": {
-    "message": "Ctrl+Z to undo",
+    "message": "Ctrl+Z เพื่อเลิกทำ",
     "description": "Undo shortcut hint"
   },
   "accessibilityLabel": {
-    "message": "Keyboard accessible · Screen reader friendly",
+    "message": "รองรับแป้นพิมพ์ · รองรับโปรแกรมอ่านหน้าจอ",
     "description": "A11y label"
   },
   "rightClickReturnHint": {
-    "message": "Right-click to go back to canvas",
+    "message": "คลิกขวาเพื่อกลับไปยังผืนผ้าใบ",
     "description": "Right click return tooltip"
   },
   "escReturnHint": {
-    "message": "Press Esc to return to canvas",
+    "message": "กด Esc เพื่อกลับไปยังผืนผ้าใบ",
     "description": "Esc return hint"
   },
   "ctrlScrollZoom": {
-    "message": "Ctrl+scroll to zoom",
+    "message": "Ctrl+เลื่อนเพื่อซูม",
     "description": "Zoom shortcut label"
   },
   "dragPanCanvas": {
-    "message": "Drag to pan canvas",
+    "message": "ลากเพื่อเลื่อนผืนผ้าใบ",
     "description": "Pan canvas label"
   },
   "dblclickAddBox": {
-    "message": "Double-click to add box",
+    "message": "ดับเบิลคลิกเพื่อเพิ่มกล่อง",
     "description": "Add box shortcut label"
   },
   "searchSlash": {
-    "message": "/ to search",
+    "message": "กด / เพื่อค้นหา",
     "description": "Search shortcut label"
   },
   "noBookmarksYet": {
-    "message": "No bookmarks yet. Click + to add one.",
+    "message": "ยังไม่มีที่คั่นหน้า คลิก + เพื่อเพิ่ม",
     "description": "Empty bookmarks hint"
   },
   "emptyBoxDragHint": {
@@ -436,71 +436,71 @@
     "description": "Empty box action hint"
   },
   "bookmarkReorderHint": {
-    "message": "Drag the grip to reorder bookmarks",
+    "message": "ลากที่จับเพื่อจัดลำดับที่คั่นหน้าใหม่",
     "description": "Bookmark reorder hint"
   },
   "deleteConfirmMessage": {
-    "message": "This action cannot be undone. All bookmarks inside will be removed.",
+    "message": "การดำเนินการนี้ไม่สามารถยกเลิกได้ ที่คั่นหน้าทั้งหมดข้างในจะถูกลบออก",
     "description": "Delete confirmation detail"
   },
   "settingsCategoryGeneral": {
-    "message": "General",
+    "message": "ทั่วไป",
     "description": "Settings category"
   },
   "settingsCategoryAppearance": {
-    "message": "Appearance",
+    "message": "รูปลักษณ์",
     "description": "Settings category"
   },
   "settingsCategoryData": {
-    "message": "Data",
+    "message": "ข้อมูล",
     "description": "Settings category"
   },
   "settingsCategorySync": {
-    "message": "Sync & Backup",
+    "message": "ซิงค์และสำรอง",
     "description": "Settings category"
   },
   "langAutoDetect": {
-    "message": "Auto-detect (browser language)",
+    "message": "ตรวจหาอัตโนมัติ (ภาษาของเบราว์เซอร์)",
     "description": "Auto-detect language option"
   },
   "fontSizeSmall": {
-    "message": "Small",
+    "message": "เล็ก",
     "description": "Font size label"
   },
   "fontSizeNormal": {
-    "message": "Normal",
+    "message": "ปกติ",
     "description": "Font size label"
   },
   "fontSizeLarge": {
-    "message": "Large",
+    "message": "ใหญ่",
     "description": "Font size label"
   },
   "debugModeOn": {
-    "message": "Debug: ON",
+    "message": "ดีบัก: เปิด",
     "description": "Debug mode status"
   },
   "debugModeOff": {
-    "message": "Debug: OFF",
+    "message": "ดีบัก: ปิด",
     "description": "Debug mode status"
   },
   "canvasBoundaryHint": {
-    "message": "Canvas has boundaries at 30% zoom level",
+    "message": "ผืนผ้าใบมีขอบเขตที่ระดับการซูม 30%",
     "description": "Canvas boundary hint"
   },
   "lastOpenedBox": {
-    "message": "Last opened box",
+    "message": "กล่องที่เปิดล่าสุด",
     "description": "Remember last position label"
   },
   "storedDataFound": {
-    "message": "Stored data found",
+    "message": "พบข้อมูลที่เก็บไว้",
     "description": "Data status"
   },
   "backupSaved": {
-    "message": "Backup saved",
+    "message": "บันทึกการสำรองข้อมูลแล้ว",
     "description": "Backup confirmation"
   },
   "allLanguages": {
-    "message": "All 13 languages translated",
+    "message": "แปลครบทั้ง 13 ภาษา",
     "description": "Locale completeness note"
   },
   "headerPinUsage": {
@@ -1049,7 +1049,7 @@
     "message": "ซิงค์และกู้คืน"
   },
   "aboutLicense": {
-    "message": "Licensed under Apache-2.0 · © 2024–2026 Xxx91n"
+    "message": "ได้รับอนุญาตภายใต้ Apache-2.0 · © 2024–2026 Xxx91n"
   },
   "aboutUpdateAvailable": {
     "message": "มีเวอร์ชันใหม่: "
@@ -1209,7 +1209,7 @@
     "message": "ไม่สามารถบันทึกรายการนี้ตามรูปที่อยู่ในสำเนา - ไม่มีอะไรให้เพิ่มกลับ"
   },
   "dataConflictAddSkippedFull": {
-    "message": "\u0e01\u0e25\u0e48\u0e2d\u0e07\u0e19\u0e35\u0e49\u0e16\u0e36\u0e07\u0e08\u0e33\u0e19\u0e27\u0e19\u0e08\u0e33\u0e01\u0e31\u0e14\u0e41\u0e25\u0e49\u0e27"
+    "message": "กล่องนี้ถึงจำนวนจำกัดแล้ว"
   },
   "dataConflictAddFailed": {
     "message": "บางรายการที่คุณเลือกไม่สามารถเพิ่มกลับได้"
@@ -1259,8 +1259,7 @@
   "conflictGuardRestoreFailed": {
     "message": "ไม่สามารถคืนค่าสำเนาที่ปลอดภัยนั้นได้ ไม่มีสิ่งใดถูกเปลี่ยนแปลง",
     "description": "Shown when a safe copy cannot be restored (pruned body, or the archive cap dropped the row again); nothing was changed (ticket 56)"
-  }
-,
+  },
   "exportEncryptLabel": {
     "message": "เข้ารหัสไฟล์ที่ส่งออกด้วยวลีรหัส"
   },
@@ -1305,12 +1304,10 @@
   },
   "exportEncryptedTooLarge": {
     "message": "ส่งออกล้มเหลว: ไฟล์สำรองใหญ่เกินกว่าจะเข้ารหัสให้อยู่ในขีดจำกัดการกู้คืน 5MB ไม่ได้ส่งออกสิ่งใด"
-  }
-,
+  },
   "passphraseTooLong": {
     "message": "วลีรหัสนี้ยาวเกินกว่าที่ Boxing จะใช้งานได้"
-  }
-,
+  },
   "exportEncryptedLayoutTooLarge": {
     "message": "ส่งออกล้มเหลว: ข้อมูลผืนผ้าในไฟล์สำรองนี้เกินกว่าที่ Boxing จะกู้คืนได้ (layout 2,000,000 ตัวอักษร) ไม่ได้ส่งออกสิ่งใด"
   },
