@@ -1,8 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
+import fs from 'fs';
 import path from 'path';
 import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_PATH = path.resolve(__dirname, '..', '..');
 
 const NTP_URL = pathToFileURL(path.resolve(__dirname, '..', '..', 'ntp', 'index.html')).href;
 
@@ -286,5 +288,166 @@ test.describe('Ticket 99 T13: delete stored sync credentials entry', () => {
     expect(after.envPass).toBeUndefined();
     expect(after.envToken).toBeUndefined();
     expect(after.provider).toBe('local');
+  });
+});
+
+// Ticket 116 (PR #115 review thread r4496619688): reason-specific feedback for
+// remote-delete refusals. The result keeps its { ok, error } shape and gains a
+// closed-allow-list `reason`; the status line prefixes that reason's localized
+// text to the unchanged failure copy, so the pinned "nothing was changed" promise
+// still holds. Transport/stub failures stay unidentified and keep the plain copy.
+test.describe('Ticket 116: remote-delete refusal reasons', () => {
+  const REASON_CASES = [
+    { reason: 'query-fragment', key: 'webdavErrQuery', setup: { url: 'https://webdav.invalid/dav?token=abc' } },
+    { reason: 'url-too-long', key: 'webdavErrUrlTooLong', setup: { url: 'https://webdav.invalid/dav/', longName: true } },
+    { reason: 'embedded-credentials', key: 'webdavErrEmbedded', setup: { url: 'https://user:secret@webdav.invalid/dav/' } },
+    { reason: 'missing-password', key: 'webdavErrNoPass', setup: { url: 'https://webdav.invalid/dav/', user: 'spec-user', noPass: true } },
+  ];
+
+  // Points the WebDAV config at a refusal case without ever reaching the network.
+  async function seedCase(page: Page, setup: any) {
+    await page.evaluate(({ url, longName, user, noPass }) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.webdavUrl = url;
+      dbg.layout.settings.webdavUser = user || '';
+      dbg.layout.settings.syncFileName = longName ? 'x'.repeat(2100) : '';
+      // missing-password needs "nothing to authenticate with": drop the stored
+      // envelope so the decrypt fallback cannot supply one.
+      if (noPass) delete dbg.layout.settings._encWebdavPass;
+      const sel = document.getElementById('sync-provider') as HTMLSelectElement;
+      sel.value = 'webdav';
+      const userInput = document.getElementById('webdav-user') as HTMLInputElement | null;
+      const passInput = document.getElementById('webdav-pass') as HTMLInputElement | null;
+      const urlInput = document.getElementById('webdav-url') as HTMLInputElement | null;
+      if (urlInput) urlInput.value = url;
+      if (userInput) userInput.value = user || '';
+      if (passInput) passInput.value = noPass ? '' : 'spec-pass';
+    }, setup);
+  }
+
+  for (const c of REASON_CASES) {
+    test('deleteRemoteBackup reports reason "' + c.reason + '" and a composed localized error', async ({ page }) => {
+      await resetFresh(page);
+      await seedCase(page, c.setup);
+      const r = await page.evaluate(async (key) => {
+        const del = (window as any).__boxingDeleteRemoteBackup;
+        const out = await del();
+        // The reason's own keyed text, straight from the ticket-111 mechanism, so the
+        // assertion is locale-independent.
+        const expectedWhy = (window as any).__bxSync.webdavError(key).message;
+        return { out, expectedWhy };
+      }, c.key);
+      expect(r.out.ok).toBe(false);
+      expect(r.out.reason).toBe(c.reason);
+      // Composed text = reason text + the unchanged failure copy.
+      // Composed with a sentence break (see sync-engine): no reason text ends in a
+      // period, and webdavErrNoPass already contains an em-dash, so an em-dash join
+      // would double it for that one reason.
+      expect(r.out.error.startsWith(r.expectedWhy + '. ')).toBe(true);
+      expect(r.out.error).toContain('nothing was changed');
+      // Contract: no raw transport strings leak into the reason copy.
+      expect(r.out.error).not.toContain('spec-remote-fail');
+      expect(r.out.error).not.toContain('Error:');
+    });
+
+    test('the danger-zone status line shows reason "' + c.reason + '" and still refuses to reset credentials', async ({ page }) => {
+      await resetFresh(page);
+      await seedStoredCredentials(page);
+      await seedCase(page, c.setup);
+      // Drain the 800ms credential-flush debounce before snapshotting, and again
+      // before comparing: seeding writes the URL/user inputs, so an in-flight flush
+      // could legitimately land on either side of the assertion and make it flaky.
+      // With the flush drained on both sides the comparison isolates what the delete
+      // itself touched.
+      const settle = async () => {
+        await page.evaluate(async () => { await (window as any).__boxingDebug.flushCredentials(); });
+        await page.waitForTimeout(50);
+      };
+      await settle();
+      // Snapshot every stored setting AFTER seeding: a refused remote delete must
+      // leave this object byte-identical (the AC "must not reset local credentials",
+      // asserted as a whole rather than field-by-field so envelopes, provider and
+      // the untouched sync config are all covered).
+      const before = await page.evaluate(() => JSON.stringify((window as any).__boxingDebug.layout.settings));
+      await page.click('#delete-sync-credential-open');
+      await page.check('#delete-sync-credential-remote');
+      await page.click('#delete-sync-credential-confirm');
+
+      await expect.poll(() => page.evaluate(() =>
+        (document.getElementById('delete-sync-credential-status') as HTMLElement)?.hidden
+      )).toBe(false);
+
+      const s = await zoneState(page);
+      expect(s.status).toContain('nothing was changed');
+      // data-reason is the machine-readable twin of the visible copy.
+      const attr = await page.evaluate(() =>
+        (document.getElementById('delete-sync-credential-status') as HTMLElement)?.dataset.reason
+      );
+      expect(attr).toBe(c.reason);
+
+      await settle();
+      const after = await page.evaluate(() => ({
+        settings: JSON.stringify((window as any).__boxingDebug.layout.settings),
+        provider: (window as any).__boxingDebug.layout.settings.syncProvider,
+      }));
+      expect(after.settings).toBe(before);
+      expect(after.provider).toBe('webdav');
+      expect(s.zoneHidden).toBe(false);
+      expect(s.panelHidden).toBe(false);
+    });
+  }
+
+  test('an unidentified failure keeps the plain copy and carries no reason', async ({ page }) => {
+    await resetFresh(page);
+    await seedStoredCredentials(page);
+    // The stub failure path is the "unidentified" case: transport details must never
+    // be surfaced, so there is no reason and the wording is byte-identical to pre-116.
+    await page.evaluate(() => {
+      // deleteRemoteBackup reads the provider off the select, so pin it explicitly
+      // rather than trusting a re-render from settings.
+      (document.getElementById('sync-provider') as HTMLSelectElement).value = 'webdav';
+      (window as any).__boxingSetSyncRemoteDeleteStub(() => ({ ok: false, error: 'spec-remote-fail' }));
+    });
+    const out = await page.evaluate(async () => await (window as any).__boxingDeleteRemoteBackup());
+    expect(out.ok).toBe(false);
+    expect(out.reason).toBeUndefined();
+    expect(out.error).toBe('Failed to delete the remote backup data — nothing was changed.');
+  });
+
+  test('a malformed base URL is not mislabelled as embedded credentials', async ({ page }) => {
+    await resetFresh(page);
+    await seedStoredCredentials(page);
+    await seedCase(page, { url: 'not a url' });
+    // resolveWebDAVFileUrl's new URL() throws a bare TypeError here, which is not a
+    // refusal this engine can name. It must fall through to the generic copy rather
+    // than claiming "embedded credentials" (PR #117 review).
+    //
+    // This also stands in for the "unidentified transport failure" case: the rethrow
+    // lands in deleteSyncCredentials' catch branch, which must produce the plain copy
+    // with no reason. It does so without mocking window.chrome, so the assertion holds
+    // identically in the file:// and extension lanes — a runtime chrome override would
+    // only be safe in one of them, and there is no code path that could surface the
+    // raw error text anyway (the catch ignores it).
+    await page.click('#delete-sync-credential-open');
+    await page.check('#delete-sync-credential-remote');
+    const out = await page.evaluate(async () => await (window as any).__boxingDeleteSyncCredentials());
+    expect(out.ok).toBe(false);
+    expect(out.reason).toBeUndefined();
+    expect(out.error).toBe('Failed to delete the remote backup data — nothing was changed.');
+  });
+
+  test('the composed texts are supersets of the pre-116 copy in every locale', () => {
+    // Vocabulary guard: each reason resolves to an existing webdavErr* key that is
+    // present in all 14 locales (no new keys were added for ticket 116).
+    const localesDir = path.join(REPO_PATH, '_locales');
+    const langs = fs.readdirSync(localesDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name);
+    expect(langs.length).toBe(14);
+    for (const c of REASON_CASES) {
+      for (const lang of langs) {
+        const msgs = JSON.parse(fs.readFileSync(path.join(localesDir, lang, 'messages.json'), 'utf8'));
+        expect(msgs[c.key], `reason ${c.reason} needs ${c.key} in ${lang}`).toBeDefined();
+        expect(msgs['deleteSyncCredentialRemoteFailed'], `tail key missing in ${lang}`).toBeDefined();
+      }
+    }
   });
 });

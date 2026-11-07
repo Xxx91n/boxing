@@ -1216,17 +1216,65 @@ export function bindSyncBackupUi() {
     const dangerPersistFailed = i18n('deleteSyncCredentialPersistFailed');
     const dangerStatusDone = i18n('deleteSyncCredentialStatusDone');
 
+    // Ticket 116 (PR #115 review thread r4496619688): reason-specific feedback for
+    // remote-delete refusals. The result keeps its existing { ok, error } shape; a
+    // failed delete now also carries a machine-readable `reason`, and the status
+    // line prefixes that reason's localized text to the unchanged failure copy
+    // ("Failed to delete the remote backup data — nothing was changed."), so the
+    // user learns WHY instead of only WHAT, without losing the "nothing changed"
+    // promise the ticket pins.
+    //
+    // The reason vocabulary is a closed allow-list: a reason names only a refusal
+    // this engine decided on, and only these reach the result. Transport/stub
+    // failures stay unidentified — they are mapped to the generic copy exactly as
+    // before (the ticket forbids exposing raw transport errors).
+    //   query-fragment    — ticket 114: a base URL with a query string or fragment
+    //   url-too-long      — ticket 108: the derived fileUrl exceeds the 2048 cap
+    //   embedded-credentials — the derivation would strip userinfo and delete under
+    //                          a different account, so it refuses instead
+    //   missing-password  — nothing to authenticate the DELETE with
+    // Each reason reuses an existing webdavErr* key, so the composed text stays in
+    // the same keyed-error vocabulary the sync buttons already show (ticket 111)
+    // and ticket 116 adds no new i18n keys.
+    const REMOTE_DELETE_REASONS = Object.freeze({
+      'query-fragment': 'webdavErrQuery',
+      'url-too-long': 'webdavErrUrlTooLong',
+      'embedded-credentials': 'webdavErrEmbedded',
+      'missing-password': 'webdavErrNoPass',
+    });
+    function remoteDeleteReasonMessage(reason) {
+      const key = REMOTE_DELETE_REASONS[reason];
+      return key ? i18n(key) : '';
+    }
+    // Compose the status line: "<reason>. <unchanged failure copy>". A sentence break,
+    // not an em-dash: webdavErrNoPass already reads "…is empty — re-enter and retry"
+    // in every locale, so an em-dash join produced a doubled "— … —" for that one
+    // reason. No reason text ends in a period, so ". " reads as two sentences in all
+    // 14 locales and needs no per-reason separator table.
+    // An unknown or absent reason returns the plain copy, so the pre-ticket-116
+    // wording, and every "nothing was changed" assertion that pins it, still holds
+    // for those failures.
+    function remoteDeleteFailureText(reason) {
+      const why = remoteDeleteReasonMessage(reason);
+      return why ? why + '. ' + dangerRemoteDeleteFailed : dangerRemoteDeleteFailed;
+    }
+
     // Test seam: remote-delete stub (file:// lane has no runtime/network), so
     // tests can simulate remote success/failure without hitting the network.
     let remoteDeleteStub = null;
     window.__boxingSetSyncRemoteDeleteStub = (fn) => { remoteDeleteStub = typeof fn === 'function' ? fn : null; };
     window.__boxingHasStoredSyncCredentials = () => Boolean(layout.settings._encWebdavPass || layout.settings._encGistToken);
 
-    function setDeleteStatus(msg, isError) {
+    // Ticket 116: an optional machine-readable reason rides along on the status
+    // line's data-reason attribute, so the visible copy stays locale-shaped while
+    // tests and future callers can distinguish the refusal without parsing text.
+    function setDeleteStatus(msg, isError, reason) {
       if (!deleteStatusEl) return;
       deleteStatusEl.textContent = msg || '';
       deleteStatusEl.hidden = !msg;
       deleteStatusEl.dataset.kind = isError ? 'error' : 'ok';
+      if (reason) deleteStatusEl.dataset.reason = reason;
+      else delete deleteStatusEl.dataset.reason;
     }
 
     function showDeletePanel(show) {
@@ -1253,21 +1301,36 @@ export function bindSyncBackupUi() {
         // embedded credentials (derivation strips userinfo, so the DELETE would
         // otherwise execute under the configured account) before touching the
         // network. Keeps the "no raw transport error" contract intact.
-        if (webdavUrlHasQueryOrFragment(rawUrl)) return { ok: false, error: dangerRemoteDeleteFailed };
-        // resolveWebDAVFileUrl throws for embedded credentials (its origin+pathname
-        // base would strip the userinfo) — map that to the same delete contract.
+        if (webdavUrlHasQueryOrFragment(rawUrl)) {
+          return { ok: false, reason: 'query-fragment', error: remoteDeleteFailureText('query-fragment') };
+        }
+        // resolveWebDAVFileUrl throws webdavErrEmbedded when the base carries
+        // userinfo (its origin+pathname derivation would strip it). Only that keyed
+        // error is a refusal we can name: new URL() also throws a bare TypeError for
+        // an unparsable base, and calling that "embedded credentials" would be a
+        // wrong reason. Rethrow anything else so deleteSyncCredentials falls back to
+        // the generic copy, exactly as it did before this ticket.
         let fileUrl;
         try { fileUrl = resolveWebDAVFileUrl(rawUrl).fileUrl; }
-        catch (_) { return { ok: false, error: dangerRemoteDeleteFailed }; }
+        catch (e) {
+          if (!e || e.key !== 'webdavErrEmbedded') throw e;
+          return { ok: false, reason: 'embedded-credentials', error: remoteDeleteFailureText('embedded-credentials') };
+        }
         if (!fileUrl) return { ok: false, error: dangerRemoteDeleteNoTarget }; // no remote target configured
         // Ticket 108: same derived-URL cap — the background guard would reject this
         // anyway; refuse here so the delete contract stays "no raw transport error".
-        if (fileUrlOverCap(fileUrl)) return { ok: false, error: dangerRemoteDeleteFailed };
+        if (fileUrlOverCap(fileUrl)) {
+          return { ok: false, reason: 'url-too-long', error: remoteDeleteFailureText('url-too-long') };
+        }
         const user = (webdavUserInput && webdavUserInput.value.trim()) || layout.settings.webdavUser || '';
         let pass = (webdavPassInput && webdavPassInput.value) || '';
         if (!pass && layout.settings._encWebdavPass) pass = (await decryptCredential(layout.settings._encWebdavPass)) || '';
-        if (!pass) return { ok: false, error: dangerRemoteDeleteFailed }; // cannot authenticate
+        if (!pass) {
+          return { ok: false, reason: 'missing-password', error: remoteDeleteFailureText('missing-password') };
+        }
         const delResp = await sendToBackground({ type: 'webdav-delete', url: fileUrl, user, pass });
+        // Server-side refusal: no reason — the transport result is deliberately not
+        // surfaced, so this keeps the generic copy (ticket 116 closed allow-list).
         if (!delResp || delResp.ok !== true) return { ok: false, error: dangerRemoteDeleteFailed };
         return { ok: true };
       }
@@ -1295,12 +1358,16 @@ export function bindSyncBackupUi() {
         try {
           const remote = await deleteRemoteBackup();
           if (!remote.ok) {
-            // deleteRemoteBackup() already maps failures to localized text;
-            // surfacing it here keeps the no-target vs failed distinction.
-            setDeleteStatus(remote.error || dangerRemoteDeleteFailed, true);
+            // deleteRemoteBackup() already composes the localized text (ticket 116:
+            // reason prefix + the unchanged failure copy when it knows the reason);
+            // surfacing it here keeps the no-target vs failed distinction. The
+            // reason, when present, is mirrored onto the status line for tests.
+            setDeleteStatus(remote.error || dangerRemoteDeleteFailed, true, remote.reason);
             return remote;
           }
         } catch (e) {
+          // A throw here is a transport/stub surprise, never one of the four
+          // refusals above — no reason, generic copy (ticket 116 allow-list).
           debugErr('deleteSyncCredentials: remote delete failed', e);
           setDeleteStatus(dangerRemoteDeleteFailed, true);
           return { ok: false, error: dangerRemoteDeleteFailed };
@@ -1346,6 +1413,10 @@ export function bindSyncBackupUi() {
       return { ok: true };
     }
     window.__boxingDeleteSyncCredentials = deleteSyncCredentials;
+    // Ticket 116 test seam: exposes the remote-delete result directly so specs can
+    // assert the returned `reason` (and the composed `error` text) without routing
+    // through the local-reset side effects of deleteSyncCredentials().
+    window.__boxingDeleteRemoteBackup = deleteRemoteBackup;
 
     deleteOpenBtn?.addEventListener('click', () => {
       setDeleteStatus('', false);
