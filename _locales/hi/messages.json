@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "WebDAV URL में एम्बेडेड क्रेडेंशियल नहीं होने चाहिए"
   },
+  "webdavErrQuery": {
+    "message": "WebDAV URL में क्वेरी स्ट्रिंग या फ़्रैगमेंट नहीं होना चाहिए"
+  },
   "webdavErrNoPass": {
     "message": "WebDAV पासवर्ड खाली है — दोबारा दर्ज करें और पुनः प्रयास करें"
   },

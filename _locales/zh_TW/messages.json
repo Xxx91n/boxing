@@ -612,6 +612,9 @@
   "webdavErrEmbedded": {
     "message": "WebDAV 地址不能包含內嵌憑據"
   },
+  "webdavErrQuery": {
+    "message": "WebDAV 地址不能包含查詢字串或片段"
+  },
   "webdavErrNoPass": {
     "message": "WebDAV 密碼為空 — 重新輸入後重試"
   },

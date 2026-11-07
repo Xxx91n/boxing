@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "URL ของ WebDAV ต้องไม่มีข้อมูลประจำตัวฝังอยู่"
   },
+  "webdavErrQuery": {
+    "message": "URL ของ WebDAV ต้องไม่มีสตริงคิวรีหรือแฟรกเมนต์"
+  },
   "webdavErrNoPass": {
     "message": "รหัสผ่าน WebDAV ว่างเปล่า — กรอกใหม่และลองอีกครั้ง"
   },

@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "L'URL WebDAV ne doit pas contenir d'identifiants intégrés"
   },
+  "webdavErrQuery": {
+    "message": "L'URL WebDAV ne doit pas contenir de chaîne de requête ni de fragment"
+  },
   "webdavErrNoPass": {
     "message": "Mot de passe WebDAV vide — re-saisissez et réessayez"
   },

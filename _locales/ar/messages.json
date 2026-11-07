@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "يجب ألا يحتوي عنوان WebDAV على بيانات اعتماد مضمنة"
   },
+  "webdavErrQuery": {
+    "message": "يجب ألا يحتوي عنوان WebDAV على سلسلة استعلام أو مقطع"
+  },
   "webdavErrNoPass": {
     "message": "كلمة مرور WebDAV فارغة — أعد إدخالها وحاول مرة أخرى"
   },

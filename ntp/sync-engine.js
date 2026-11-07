@@ -43,6 +43,7 @@ export function initSyncEngineFacade(deps) {
     'webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass',
     'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut',
     'webdavErrConflict', 'webdavErrNetwork', 'webdavErrUrlTooLong', 'webdavErrBlockedHost',
+    'webdavErrQuery',
   ];
   function webdavError(key, params) {
     const e = new Error(i18n(key, params));
@@ -93,6 +94,26 @@ export function initSyncEngineFacade(deps) {
     return !isPrivateHost(normalizeHostname(u), allowPrivateHost);
   }
   window.__boxingIsSafeExtUrl = isSafeExtUrl;
+
+  // Ticket 114 (PR #112 review thread): a WebDAV base URL that carries a query
+  // string corrupts the derived fileUrl. resolveWebDAVFileUrl appends the sync
+  // filename to the serialized base, so a base of `/dir?token=abc` derived
+  // `/dir?token=abc/boxing-backup.json`: the filename landed inside the query
+  // value and the request itself degraded to `/dir`. A fragment corrupts
+  // identically (`/dir#frag/boxing-backup.json` likewise requests `/dir`), and
+  // neither form can be repaired without guessing whether the user meant a query
+  // or a path, so every WebDAV entry point refuses it up front with a keyed error
+  // (webdavErrQuery). Same "a guard applied inconsistently across request paths is
+  // equivalent to no guard" rule as ticket 90: test / export / pull / remote
+  // delete all run this one predicate.
+  function webdavUrlHasQueryOrFragment(urlStr) {
+    if (typeof urlStr !== 'string') return false;
+    let u;
+    try { u = new URL(urlStr); } catch (_) { return false; } // malformed → the caller's own parse reports it
+    // An empty query (`.../dir?`) serializes to no search component at all, so it
+    // is not corruption and stays accepted.
+    return u.search !== '' || u.hash !== '';
+  }
 
     // Show last backup time
     function updateLastBackupDisplay() {
@@ -180,6 +201,9 @@ export function initSyncEngineFacade(deps) {
         if (_u.username || _u.password) throw webdavError('webdavErrEmbedded');
         throw webdavError('webdavErrBlockedHost');
       }
+      // Ticket 114: Test Connection is a WebDAV entry point too — a base URL this
+      // engine must refuse for backup/sync/delete cannot be reported as "OK" here.
+      if (webdavUrlHasQueryOrFragment(url)) throw webdavError('webdavErrQuery');
       const target = new URL(url);
       if (user && !pass) {
         debugErr('WebDAV test: password is empty — decrypt may not have completed');
@@ -261,6 +285,9 @@ export function initSyncEngineFacade(deps) {
         if (_u.username || _u.password) throw webdavError('webdavErrEmbedded');
         throw webdavError('webdavErrBlockedHost');
       }
+      // Ticket 114: the filename is appended to this base — a query/fragment would
+      // swallow it into the query value, so refuse before deriving fileUrl.
+      if (webdavUrlHasQueryOrFragment(url)) throw webdavError('webdavErrQuery');
       // Resolve file URL — reuse the shared helper (honors custom sync filename).
       const { fileUrl } = resolveWebDAVFileUrl(url);
       // Ticket 108: the base URL passes the 2048 cap but the appended sync filename
@@ -430,21 +457,41 @@ export function initSyncEngineFacade(deps) {
     }
 
     // Resolve the cloud file URL the same way backupToWebDAV does.
+    // Ticket 114: the derivation also drops any query/fragment, so a base that
+    // slipped past the entry-point guards can never place the filename inside a
+    // query value. For every accepted base (no search, no hash) this is
+    // byte-identical to the old `target.href` behavior — origin + pathname is the
+    // same serialization minus the components that are now refused.
     function resolveWebDAVFileUrl(urlInput) {
       const url = urlInput.trim();
       if (!url) return { url: '', fileUrl: '' };
       const target = new URL(url);
-      let basePath = target.href;
+      // PR #115 review (Data Integrity): origin + pathname DROPS embedded
+      // userinfo, so a base like `user:secret@host/dav/` used to keep the
+      // credentials in fileUrl (and be refused by the background guard in
+      // background.js) but would now derive a clean URL and go out with whatever
+      // credentials the caller passes. The remote-delete path derives straight
+      // from this function without running the entry-point guards, so refuse
+      // here — the same way every other WebDAV entry point does.
+      if (target.username || target.password) throw webdavError('webdavErrEmbedded');
+      const baseHref = target.origin + target.pathname;
+      let basePath = baseHref;
       if (!basePath.endsWith('/')) basePath += '/';
       // (Bug16): honor user-set sync filename; default boxing-backup.json.
       const customName = (layout.settings.syncFileName || '').trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
       const BACKUP_FILENAME = customName || 'boxing-backup.json';
       let fileUrl = basePath.endsWith(BACKUP_FILENAME) ? basePath : basePath + BACKUP_FILENAME;
-      if (target.href.endsWith('.json')) fileUrl = target.href;
+      // Ticket 114: the verbatim branch keys on the PATH ending in .json, not the
+      // whole href — a base whose query merely ends in `.json` (`.../dir?file=x.json`)
+      // must never select it.
+      if (target.pathname.endsWith('.json')) fileUrl = baseHref;
       return { url, fileUrl };
     }
     window.__bxSync = window.__bxSync || {};
     window.__bxSync.resolveWebDAVFileUrl = resolveWebDAVFileUrl;
+    // Ticket 114 test seam (mirrors the fileUrlOverCap / webdavError pattern): lets
+    // specs pin the query/fragment predicate without a live WebDAV server.
+    window.__bxSync.webdavUrlHasQueryOrFragment = webdavUrlHasQueryOrFragment;
 
     // Ticket 108 (PR #109 review): the 2048 budget applies to the URL actually sent.
     // A non-ASCII syncFileName survives sanitization and percent-encodes during URL
@@ -691,6 +738,9 @@ export function initSyncEngineFacade(deps) {
       const target = new URL(urlStr);
       if (target.protocol !== 'https:') throw webdavError('webdavErrHttps');
       if (target.username || target.password) throw webdavError('webdavErrEmbedded');
+      // Ticket 114: the pull/sync path derives the same fileUrl, so it refuses a
+      // base with a query/fragment exactly like the export and test paths do.
+      if (webdavUrlHasQueryOrFragment(urlStr)) throw webdavError('webdavErrQuery');
       // Ticket 90: share the exact predicate isSafeExtUrl uses, so the pull path denies
       // the same hosts the export/test paths deny. The old inline regex tested the raw hostname
       // (keeping the IPv6 brackets) and had no .local/.internal suffix rule.
@@ -1195,7 +1245,18 @@ export function bindSyncBackupUi() {
         return r && r.ok ? { ok: true } : { ok: false, error: dangerRemoteDeleteFailed };
       }
       if (provider === 'webdav') {
-        const fileUrl = resolveWebDAVFileUrl((webdavUrlInput && webdavUrlInput.value.trim()) || layout.settings.webdavUrl || '').fileUrl;
+        const rawUrl = (webdavUrlInput && webdavUrlInput.value.trim()) || layout.settings.webdavUrl || '';
+        // Ticket 114: the delete path derives the same fileUrl, so it applies the
+        // same base-URL rules — refuse a query/fragment (corrupted target) and
+        // embedded credentials (derivation strips userinfo, so the DELETE would
+        // otherwise execute under the configured account) before touching the
+        // network. Keeps the "no raw transport error" contract intact.
+        if (webdavUrlHasQueryOrFragment(rawUrl)) return { ok: false, error: dangerRemoteDeleteFailed };
+        // resolveWebDAVFileUrl throws for embedded credentials (its origin+pathname
+        // base would strip the userinfo) — map that to the same delete contract.
+        let fileUrl;
+        try { fileUrl = resolveWebDAVFileUrl(rawUrl).fileUrl; }
+        catch (_) { return { ok: false, error: dangerRemoteDeleteFailed }; }
         if (!fileUrl) return { ok: false, error: dangerRemoteDeleteNoTarget }; // no remote target configured
         // Ticket 108: same derived-URL cap — the background guard would reject this
         // anyway; refuse here so the delete contract stays "no raw transport error".

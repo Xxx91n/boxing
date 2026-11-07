@@ -609,6 +609,9 @@
   "webdavErrEmbedded": {
     "message": "URL WebDAV không được chứa thông tin xác thực nhúng"
   },
+  "webdavErrQuery": {
+    "message": "URL WebDAV không được chứa chuỗi truy vấn hoặc phân đoạn"
+  },
   "webdavErrNoPass": {
     "message": "Mật khẩu WebDAV trống — nhập lại và thử lại"
   },
