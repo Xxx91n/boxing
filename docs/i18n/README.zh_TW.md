@@ -4,9 +4,9 @@
 
 # Boxing
 
-層級化無限畫布書籤管理器，米白極簡設計。
+階層化無限畫布書籤管理器，米白極簡設計。
 
-Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資料夾，而是在無限畫布上用標籤盒子組織書籤 — 拖曳、連結、巢狀排列，按你的思維空間組織。可以理解為 Obsidian 畫布遇見書籤管理。
+Boxing 將瀏覽器新分頁轉變為視覺化書籤工作區。不再是扁平資料夾，而是在無限畫布上用標籤盒子組織書籤 — 拖曳、連接、嵌套，按你的思維空間排列。可以理解為 Obsidian 的書籤管理畫布。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
@@ -17,33 +17,30 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
 
 - [功能](#功能)
 - [截圖](#截圖)
-- [品牌資產](#品牌資產)
 - [安裝](#安裝)
 - [使用](#使用)
 - [隱私](#隱私)
 - [開發](#開發)
 - [貢獻](#貢獻)
-- [授權](#授權)
-
-> 本譯文範圍外 (out of scope)：深入的技術細節以英文 README 與 `docs/` 為準；本譯文聚焦安裝、使用與隱私概要。
+- [授權條款](#授權條款)
 
 ## 功能
 
-**無限畫布** — 自由平移和縮放（Ctrl+滾輪）。在單一畫布上建立無限盒子。用連線表示盒子間的關係。設定父子關係 — 移動父盒子時子盒子跟隨移動。
+**無限畫布** : 自由平移與縮放（Ctrl+滾輪）。在單個畫布上建立無限盒子。用連線表示盒子間的關係。設定父子關係 — 移動父盒子時子盒子隨之移動。
 
-**兩級層級** — 大盒子包含小盒子，小盒子包含書籤。點擊盒子進入其子畫布。麵包屑導航顯示路徑。可任意深度巢狀。
+**兩級階層** : 大盒子包含小盒子，小盒子包含書籤。點擊盒子進入其子畫布。階層路徑導覽（麵包屑）顯示路徑。可任意深度嵌套。
 
-**書籤管理** — 每個盒子有自己的書籤集合，支援列表和網格檢視。新增、編輯、刪除，操作簡潔。可在目前分頁或新分頁開啟（可設定）。拖曳排序。
+**書籤管理** : 每個盒子擁有自己的書籤集合，支援清單與網格檢視。新增、編輯、刪除，操作簡潔。可在目前分頁或新分頁開啟（可自訂）。拖曳排序。
 
-**連線** — 盒子間的視覺 SVG 連線。Alt+點擊連線刪除（可設定：單擊或雙擊）。父子移動傳播，帶彈性邊界約束。
+**連線** : 盒子間的視覺化 SVG 連線。Alt+點擊連線以刪除（可自訂：按一下或按兩下）。父子移動連動，帶有彈性邊界限制。
 
-**設計與主題** — 米白/奶油色極簡美學。深色模式，自動跟隨系統。可調字型和縮放。方角/圓角切換。
+**設計與主題** : 米白／奶油色極簡美學。深色模式，自動跟隨系統。可調整字型大小與縮放比例。方角／圓角切換。
 
-**14 種語言** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi，自動偵測瀏覽器語言。
+**14 種語言** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi，自動偵測瀏覽器語言。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="盒子層級與書籤" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="盒子階層與書籤" width="1280">
 </picture>
 
 ## 截圖
@@ -56,25 +53,21 @@ Boxing 將瀏覽器新分頁變為視覺化書籤工作區。不再是扁平資�
 |---|---|
 | ![設定](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![書籤編輯](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
-## 品牌資產
-
-淺色/深色 logo、擴充功能圖示、favicon、商店圖塊與變體展示均收錄於 [`docs/brand/`](../../docs/brand/)（24 個檔案，來自 `box_png` 資產套件），可直接複用於商店 listing、文件與 GitHub 社群預覽圖。
-
 ## 安裝
 
 > [!IMPORTANT]
-> **請透過官方商店頁面安裝**（推薦）。權威安裝步驟與目前已發布的商店版本維護於 [英文 README — Install](../../README.md#install)。
-> GitHub Releases 僅作為**面向使用者的更新日誌**：[最新版本](https://github.com/Xxx91n/boxing/releases/latest).
+> **請透過官方商店頁面安裝**（推薦）。權威安裝步驟與目前已發布的商店版本維護在 [英文 README — Install](../../README.md#install)。
+> GitHub Releases 僅作為**面向使用者的版本更新日誌**：[最新版本](https://github.com/Xxx91n/boxing/releases/latest)。
 
 ### Firefox（正式安裝）
 
-1. 開啟 [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
-2. 點擊 **Add to Firefox**，依瀏覽器指示完成安裝
+1. 開啟 [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-TW/firefox/addon/boxing-newtab/)
+2. 點擊 **Add to Firefox**，按瀏覽器提示完成安裝
 
 ### Edge / Chromium（正式安裝）
 
 1. 開啟 [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-2. 點擊 **Get** / **取得** 完成安裝（Chromium 系請使用 Edge 商店頁面）
+2. 點擊 **取得** / **Get** 完成安裝（Chromium 系列瀏覽器請使用 Edge 商店頁面）
 
 ### 開發者：從原始碼建置
 
@@ -85,39 +78,34 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge：`chrome://extensions` → 開發者模式 → **載入未封裝擴充功能** → 選擇 `dist/boxing-chrome/`
-- Firefox：`about:debugging#/runtime/this-firefox` → **暫時載入附加元件** → 選擇 `dist/boxing-firefox/manifest.json`
+- Chrome/Edge：`chrome://extensions` → 開發人員模式 → **載入未打包項目** → 選擇 `dist/boxing-chrome/`
+- Firefox：`about:debugging#/runtime/this-firefox` → **載入暫時附加元件** → 選擇 `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> 建置產物 zip 供**商店上傳或本機偵錯**，不是使用者正式安裝管道。正式安裝請走上方商店連結。
-> 簽名由商店完成；本倉 GitHub Release **不再**散佈 `.xpi` / `.crx`。
+> 建置產物 zip 供**商店上傳或本機偵錯**，不是面向使用者的正式安裝管道。正式安裝請走上方商店連結。
+> 簽章由應用程式商店完成；本儲存庫 GitHub Release **不再**分發 `.xpi` / `.crx`。
 
 ## 使用
 
-- **雙擊**空白畫布 → 建立新盒子
+- **按兩下**空白畫布 → 建立新盒子
 - **拖曳**盒子標題列 → 移動盒子
-- **Ctrl+滾輪** → 縮放畫布（30% 到 200%）
+- **Ctrl+滾輪** → 縮放畫布（30% 至 200%）
 - **拖曳**空白畫布 → 平移
-- **右鍵** → 返回父級畫布
-- **點擊**盒子 → 進入子畫布
-- 從盒子邊緣中點 **拖曳** → 連結到另一個盒子
-- **Alt+點擊**連線 → 刪除連線
-- 盒子上的 **星號** → 標記為父盒子（子盒子跟隨移動）
+- **按一下右鍵** → 返回父級畫布
+- **按一下**盒子 → 進入子畫布
+- 從盒子邊緣中點 **拖曳** → 連接到另一個盒子
+- **Alt+按一下**連線 → 刪除連線
+- 盒子上的 **星號** → 標記為父盒子（子盒子隨之移動）
 - **圖釘** → 鎖定盒子位置
-- 畫布右上角 **圓圈按鈕** → 取消固定進入全螢幕模式
+- 畫布右上角 **圓形按鈕** → 取消固定進入全螢幕模式
 
 ## 隱私
 
-- 所有資料保存在 `chrome.storage.local` — 除下列對外請求或你設定的可選雲端備份外，不會離開你的裝置
-- 對外流量僅限：網站圖示查詢（第三方圖示服務與直接 `favicon.ico` 探測）、匿名的 GitHub Releases API 版本檢查（GitHub 失敗時回退到 `https://boxing.xxx91n.com/demo/version.json`），以及可選的 WebDAV / GitHub Gist 備份
-- WebDAV 位址預設必須是公開 HTTPS 端點 — 拒絕私有／本地主機名（僅檢查主機名，不做 DNS 解析）；在 設定 → 同步 中明確開啟的選項僅放寬私有主機拒絕（供自建區網服務），HTTPS 仍然必需；規則與理由見[隱私政策](../../docs/privacy-policy.md)
-- 同步憑證保存在混淆封裝中（非使用者金鑰加密）；手動匯出的備份檔案可另用密語加密 — 詳見[隱私政策](../../docs/privacy-policy.md)
-- 無分析、無追蹤、不執行第三方程式碼
-- 完整隱私政策：[docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## 開發
 
-### 前置條件
+### 必要條件
 
 - Node.js 24.22.1
 - npm
@@ -136,15 +124,15 @@ npm run build
 
 ```bash
 npm run build     # 開發建置 → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright 測試（Chrome + Firefox）
+npm test          # Playwright 測試 (Chrome + Firefox)
 ```
 
 詳見 [CONTRIBUTING.md](../../CONTRIBUTING.md) 了解完整開發指南。
 
 ## 貢獻
 
-歡迎貢獻！詳見 [CONTRIBUTING.md](../../CONTRIBUTING.md) 了解環境設定、工作流程和程式碼風格。
+歡迎貢獻！詳見 [CONTRIBUTING.md](../../CONTRIBUTING.md) 了解環境設定、工作流程與程式碼風格。
 
-## 授權
+## 授權條款
 
-Apache-2.0 — 見 [LICENSE](../../LICENSE)
+[Apache-2.0](../../LICENSE)

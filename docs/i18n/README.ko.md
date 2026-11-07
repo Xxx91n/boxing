@@ -4,9 +4,9 @@
 
 # Boxing
 
-계층형 무한 캔버스 북마크 오거나이저. 베이지 미니멀리스트 디자인.
+계층형 무한 캔버스 북마크 관리자, 베이지 톤 미니멀 디자인.
 
-Boxing은 브라우저 새 탭 페이지를 시각적 북마크 워크스페이스로 변환합니다. 평면 폴더 대신 무한 캔버스에 라벨이 있는 박스로 북마크를 정리하세요 — 드래그, 연결, 중첩하여 당신의 사고 방식대로 공간에 배치합니다. Obsidian 캔버스와 북마크가 만났다고 생각하시면 됩니다.
+Boxing은 브라우저의 새 탭 페이지를 시각적인 북마크 작업 공간으로 바꿉니다. 단순한 폴더 구조에서 벗어나 무한 캔버스 위에서 라벨 상자로 북마크를 정리하세요 — 드래그, 연결, 중첩을 통해 내 생각의 흐름대로 공간을 배치할 수 있습니다. 북마크를 품은 Obsidian 캔버스처럼 사용해 보세요.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
@@ -17,66 +17,59 @@ Boxing은 브라우저 새 탭 페이지를 시각적 북마크 워크스페이�
 
 - [기능](#기능)
 - [스크린샷](#스크린샷)
-- [브랜드 에셋](#브랜드-에셋)
 - [설치](#설치)
 - [사용법](#사용법)
-- [개인정보](#개인정보)
+- [개인정보 보호](#개인정보-보호)
 - [개발](#개발)
 - [기여](#기여)
 - [라이선스](#라이선스)
 
-> 이 번역본의 범위 밖 (out of scope): 자세한 기술 내용은 영문 README와 `docs/`를 참조하세요. 이 번역본은 설치·사용법·개인정보 요약에 집중합니다.
-
 ## 기능
 
-**무한 캔버스** — 자유롭게 팬 및 줌 (Ctrl+스크롤). 단일 캔버스에 무제한 박스 생성. 선으로 연결하여 관계 표시. 부모-자식 관계 설정 — 부모 박스를 이동하면 자식도 따라 이동.
+**무한 캔버스** : 자유로운 화면 이동 및 확대/축소(Ctrl+스크롤). 하나의 캔버스에 무제한으로 상자 생성. 선으로 상자 간의 관계 표시. 부모-자식 관계를 설정하면 부모 상자 이동 시 자식 상자가 함께 이동.
 
-**2단계 계층** — 큰 박스 안에 작은 박스, 작은 박스 안에 북마크. 박스를 클릭하여 하위 캔버스 진입. 이동 경로 표시. 필요한 만큼 깊이 중첩 가능.
+**2단계 계층 구조** : 큰 상자 안에 작은 상자를, 작은 상자 안에 북마크를 보관. 상자를 클릭하여 하위 캔버스로 진입. 이동 경로는 브레드크럼으로 표시되며 원하는 만큼 깊이 중첩 가능.
 
-**북마크 관리** — 각 박스마다 고유한 북마크 컬렉션 (리스트 & 그리드 보기). 추가, 편집, 삭제를 깔끔한 대화상자로. 현재 탭 또는 새 탭에서 열기 (설정 가능). 드래그로 재정렬.
+**북마크 관리** : 상자마다 자체 북마크 모음을 가지며 목록 및 그리드 뷰 지원. 추가, 편집, 삭제가 간편. 현재 탭 또는 새 탭에서 열기 설정 가능(설정 가능). 드래그하여 순서 정렬.
 
-**연결** — 박스 간 시각적 SVG 연결선. Alt+클릭으로 선 삭제 (설정 가능: 단일 클릭 또는 더블 클릭). 부모-자식 이동 전파, 탄성 경계 클램프 포함.
+**연결선** : 상자 간의 시각적인 SVG 연결선. Alt+클릭으로 연결선 삭제(설정 가능: 클릭 또는 더블클릭). 부모-자식 이동 연동 및 유연한 경계 제한 적용.
 
-**디자인 & 테마** — 베이지/크림 미니멀 미학. 라이트/다크 모드, 시스템 자동 감지. 글꼴 크기 및 줌 조절 가능. 모서리 각/둥글기 전환.
+**디자인 및 테마** : 베이지/크림색의 미니멀 미학. 시스템 설정을 따르는 다크 모드. 글꼴 크기 및 확대/축소 비율 조절. 직각/둥근 모서리 전환.
 
-**14개 언어** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi, 브라우저 언어 자동 감지.
+**14개 언어 지원** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi (브라우저 언어 자동 감지).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="박스 계층 및 북마크" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="상자 계층 구조 및 북마크" width="1280">
 </picture>
 
 ## 스크린샷
 
-| 캔버스 | 박스 및 북마크 | 연결선 |
+| 캔버스 | 상자 및 북마크 | 연결선 |
 |---|---|---|
-| ![캔버스](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![박스 및 북마크](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![연결선](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+| ![캔버스](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![상자 및 북마크](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![연결선](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
 
 | 설정 | 북마크 편집 |
 |---|---|
 | ![설정](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![북마크 편집](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
-## 브랜드 에셋
-
-라이트/다크 로고, 확장 프로그램 아이콘, 파비콘, 스토어 타일과 변형 소개는 [`docs/brand/`](../../docs/brand/)에 포함되어 있습니다(`box_png` 에셋 키트 기반 24개 파일). 스토어 등록물, 문서, GitHub 소셜 미리보기에 그대로 재사용하세요.
-
 ## 설치
 
 > [!IMPORTANT]
-> **공식 스토어 페이지에서 설치하세요** (권장). 설치 절차와 현재 게시된 스토어 버전의 기준 정보는 [영문 README — Install](../../README.md#install)에 있습니다.
-> GitHub Releases는 **사용자용 변경 로그**입니다: [최신 릴리스](https://github.com/Xxx91n/boxing/releases/latest).
+> **공식 스토어 페이지를 통한 설치를 권장합니다** (추천). 정확한 설치 절차와 현재 배포된 스토어 버전은 [영문 README — Install](../../README.md#install)에서 관리됩니다.
+> GitHub Releases는 **사용자용 변경 기록(체인지로그)**으로만 활용됩니다: [최신 버전](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (공식 설치)
 
-1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) 열기
-2. **Firefox에 추가** 를 클릭하고 브라우저 안내에 따라 설치합니다
+1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/ko/firefox/addon/boxing-newtab/) 열기
+2. **Add to Firefox**를 클릭하고 브라우저 안내에 따라 설치 완료
 
 ### Edge / Chromium (공식 설치)
 
-1. [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) 열기
-2. **Get** 을 클릭해 설치합니다 (Chromium 계열은 Edge 스토어 페이지 이용)
+1. [Edge 추가 기능 — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) 열기
+2. **다운로드** / **Get**을 클릭하여 설치 완료 (Chromium 기반 브라우저는 Edge 스토어 페이지를 이용해 주세요)
 
-### 개발자: 소스에서 빌드
+### 개발자: 소스 코드에서 빌드
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -85,44 +78,39 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge: `chrome://extensions` → 개발자 모드 → **압축 해제된 확장 프로그램 로드** → `dist/boxing-chrome/` 선택
-- Firefox: `about:debugging#/runtime/this-firefox` → **임시 부가 기능 로드** → `dist/boxing-firefox/manifest.json` 선택
+- Chrome/Edge: `chrome://extensions` → 개발자 모드 켜기 → **압축해제된 확장 프로그램을 로드합니다** → `dist/boxing-chrome/` 선택
+- Firefox: `about:debugging#/runtime/this-firefox` → **임시 부가 기능 로드...** → `dist/boxing-firefox/manifest.json` 선택
 
 > [!NOTE]
-> 빌드 산출물 zip은 **스토어 업로드 또는 로컬 디버깅용**이며 공식 설치 경로가 아닙니다. 위 스토어 링크를 이용하세요.
-> 서명은 스토어가 수행하며, 이 저장소의 GitHub Releases는 `.xpi` / `.crx` 를 **더 이상 배포하지 않습니다**.
+> 빌드 결과물인 zip 파일은 **스토어 업로드 및 로컬 디버깅용**이며, 일반 사용자 공식 설치 채널이 아닙니다. 공식 설치는 상단 스토어 링크를 이용해 주세요.
+> 서명은 스토어에서 처리되며, 본 저장소의 GitHub Releases에서는 `.xpi` / `.crx`를 **더 이상 배포하지 않습니다**.
 
 ## 사용법
 
-- **더블 클릭** 빈 캔버스 → 새 박스 생성
-- **드래그** 박스 제목 표시줄 → 박스 이동
-- **Ctrl+스크롤** → 캔버스 줌 (30% ~ 200%)
-- **드래그** 빈 캔버스 → 팬
+- 빈 캔버스 **더블 클릭** → 새 상자 만들기
+- 상자 제목 표시줄 **드래그** → 상자 이동
+- **Ctrl+스크롤** → 캔버스 확대/축소 (30% ~ 200%)
+- 빈 캔버스 **드래그** → 평면 이동 (팬)
 - **우클릭** → 상위 캔버스로 돌아가기
-- **클릭** 박스 → 하위 캔버스 진입
-- 박스 가장자리 중점에서 **드래그** → 다른 박스에 연결
-- **Alt+클릭** 연결선 → 삭제
-- 박스의 **별표** → 부모 박스로 표시 (자식이 함께 이동)
-- **핀** → 박스 위치 잠금
-- 캔버스 우측 상단 **원형 버튼** → 헤더 고정 해제, 전체 화면 모드
+- 상자 **클릭** → 하위 캔버스로 들어가기
+- 상자 가장자리 중앙에서 **드래그** → 다른 상자와 연결
+- 연결선 **Alt+클릭** → 연결선 삭제
+- 상자의 **별표** → 부모 상자로 지정 (자식 상자가 함께 이동)
+- **고정 핀** → 상자 위치 고정
+- 캔버스 우측 상단 **원형 버튼** → 고정 해제 및 전체 화면 모드 전환
 
-## 개인정보
+## 개인정보 보호
 
-- 모든 데이터는 `chrome.storage.local`에 저장됩니다 — 아래의 아웃바운드 요청 또는 직접 설정한 선택적 클라우드 백업을 제외하고는 기기를 떠나지 않습니다
-- 아웃바운드 트래픽은 파비콘 조회(제3자 아이콘 서비스 및 직접 `favicon.ico` 요청), 익명 GitHub Releases API 버전 확인(GitHub 실패 시 `https://boxing.xxx91n.com/demo/version.json`으로 폴백), 선택적 WebDAV / GitHub Gist 백업으로 제한됩니다
-- WebDAV URL은 기본적으로 공개 HTTPS 엔드포인트여야 합니다 — 사설/로컬 호스트명은 거부됩니다(호스트명 검사만 수행, DNS 확인 없음). 설정 → 동기화의 명시적 옵션은 자체 호스팅 LAN 서버를 위해 이 거부만 완화하며 HTTPS는 계속 필수입니다. 규칙과 근거는 [개인정보 처리방침](../../docs/privacy-policy.md)을 참조하세요
-- 동기화 자격 증명은 난독화된(사용자 키 암호화가 아닌) 봉투에 저장되며, 수동으로 내보낸 백업 파일은 별도의 암호로 보호할 수 있습니다 — 자세한 내용은 [개인정보 처리방침](../../docs/privacy-policy.md)을 참조하세요
-- 분석 없음, 추적 없음, 제3자 코드 실행 없음
-- 전체 개인정보 처리방침: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## 개발
 
-### 필수 조건
+### 사전 요구사항
 
 - Node.js 24.22.1
 - npm
 
-### 설정
+### 환경 설정
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -139,12 +127,12 @@ npm run build     # 개발 빌드 → dist/boxing-chrome + dist/boxing-firefox
 npm test          # Playwright 테스트 (Chrome + Firefox)
 ```
 
-전체 개발 가이드는 [CONTRIBUTING.md](../../CONTRIBUTING.md)를 참조하세요.
+자세한 개발 가이드는 [CONTRIBUTING.md](../../CONTRIBUTING.md)를 참고하세요.
 
 ## 기여
 
-기여를 환영합니다! 설정, 워크플로우 및 코드 스타일은 [CONTRIBUTING.md](../../CONTRIBUTING.md)를 참조하세요.
+기여를 환영합니다! 환경 설정, 워크플로, 코드 스타일은 [CONTRIBUTING.md](../../CONTRIBUTING.md)에서 확인하실 수 있습니다.
 
 ## 라이선스
 
-Apache-2.0 — [LICENSE](../../LICENSE) 참조
+[Apache-2.0](../../LICENSE)

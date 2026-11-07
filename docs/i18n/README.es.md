@@ -4,77 +4,70 @@
 
 # Boxing
 
-Organizador jerarquico de marcadores en lienzo infinito, con diseno minimalista beige.
+Gestor de marcadores jerárquico en lienzo infinito con diseño minimalista beige.
 
-Boxing transforma tu pagina de nueva pestana en un espacio de trabajo visual para marcadores. En lugar de carpetas planas, organiza tus marcadores en cajas etiquetadas en un lienzo infinito — arrastra, conecta y anidalos espacialmente. Piensa en Obsidian canvas conociendo a los marcadores.
+Boxing convierte la página de nueva pestaña de tu navegador en un espacio de trabajo visual para tus marcadores. Olvídate de las carpetas planas: organiza tus marcadores en cajas etiquetadas sobre un lienzo infinito — arrastra, conecta y anida según tu forma de pensar. Imagínalo como el lienzo de Obsidian adaptado a la gestión de marcadores.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
   <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Vista general del lienzo de Boxing" width="1280">
 </picture>
 
-## Indice
+## Índice
 
-- [Funciones](#funciones)
+- [Funcionalidades](#funcionalidades)
 - [Capturas de pantalla](#capturas-de-pantalla)
-- [Recursos de marca](#recursos-de-marca)
-- [Instalacion](#instalacion)
+- [Instalación](#instalación)
 - [Uso](#uso)
 - [Privacidad](#privacidad)
 - [Desarrollo](#desarrollo)
 - [Contribuir](#contribuir)
 - [Licencia](#licencia)
 
-> Fuera del alcance de esta traduccion (out of scope): los detalles tecnicos en profundidad estan en el README ingles y en `docs/`; esta traduccion cubre instalacion, uso y el resumen de privacidad.
+## Funcionalidades
 
-## Funciones
+**Lienzo infinito** : Desplazamiento y zoom libres (Ctrl+rueda). Crea cajas ilimitadas en un único lienzo. Muestra relaciones entre cajas con líneas de conexión. Establece relaciones padre-hijo — las cajas hijas siguen automáticamente los movimientos de la caja padre.
 
-**Lienzo infinito** — Pan y zoom libres (Ctrl+rueda). Crea cajas ilimitadas en un solo lienzo. Conecta cajas con lineas para mostrar relaciones. Establece relaciones padre-hijo — mueve un padre y sus hijos lo siguen.
+**Jerarquía de dos niveles** : Las cajas grandes contienen cajas pequeñas, y las cajas pequeñas contienen marcadores. Haz clic en una caja para abrir su sublienzo. La barra de navegación (migas de pan) muestra la ruta actual. Anidamiento con profundidad ilimitada.
 
-**Jerarquia de dos niveles** — Las cajas grandes contienen cajas pequenas, las cajas pequenas contienen marcadores. Haz clic en una caja para entrar en su sub-lienzo. La navegacion de migas de pan muestra tu ruta. Anida tan profundo como necesites.
+**Gestión de marcadores** : Cada caja mantiene su propia colección de marcadores en vista de lista o cuadrícula. Añadir, editar y eliminar con total sencillez. Abre enlaces en la pestaña actual o en una nueva (configurable). Ordenación mediante arrastrar y soltar.
 
-**Gestion de marcadores** — Cada caja tiene su propia coleccion de marcadores con vistas de lista y cuadricula. Agregar, editar, eliminar con un dialogo limpio. Abrir en pestana actual o nueva pestana (configurable). Arrastrar para reordenar.
+**Líneas de conexión** : Conexiones SVG visuales entre cajas. Alt+clic en una línea para eliminarla (configurable: un clic o doble clic). Movimiento coordinado de padres a hijos con límites elásticos.
 
-**Conectividad** — Lineas de conexion SVG visuales entre cajas. Alt+Clic en una linea para eliminarla (configurable: clic simple o doble clic). Propagacion de movimiento padre-hijo con fijacion de limites elastica.
+**Diseño y temas** : Estética minimalista en color beige / crema. Modo oscuro con adaptación automática al sistema. Tamaño de fuente y escala ajustables. Alternancia entre esquinas rectas y redondeadas.
 
-**Diseno y tema** — Estetica minimalista beige/crema. Modo claro y oscuro con deteccion automatica del sistema. Tamano de fuente y zoom ajustables. Alternancia de esquinas cuadradas/redondeadas.
-
-**14 idiomas** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi con deteccion automatica del idioma del navegador.
+**14 idiomas** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi (detección automática según el idioma del navegador).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Jerarquia de cajas y marcadores" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Jerarquía de cajas y marcadores" width="1280">
 </picture>
 
 ## Capturas de pantalla
 
-| Lienzo | Cajas y marcadores | Conexiones |
+| Lienzo | Cajas y marcadores | Líneas de conexión |
 |---|---|---|
-| ![Lienzo](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Cajas y marcadores](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Conexiones](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+| ![Lienzo](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Cajas y marcadores](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Líneas de conexión](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
 
-| Ajustes | Edición de marcadores |
+| Configuración | Editar marcador |
 |---|---|
-| ![Ajustes](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Edición de marcadores](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+| ![Configuración](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Editar marcador](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
-## Recursos de marca
-
-Los logotipos claro/oscuro, iconos de extensión, faviconos, mosaicos de tienda y la galería de variantes están incluidos en [`docs/brand/`](../../docs/brand/) (24 archivos, del kit de recursos `box_png`). Reutilizables para fichas de tienda, documentación y la vista previa social de GitHub.
-
-## Instalacion
+## Instalación
 
 > [!IMPORTANT]
-> **Instala desde las páginas oficiales de las tiendas** (recomendado). Los pasos de instalación y la versión publicada en las tiendas están en el [README en inglés — Install](../../README.md#install).
-> Las GitHub Releases son un **registro de cambios para usuarios**: [última release](https://github.com/Xxx91n/boxing/releases/latest).
+> **Recomendamos instalar a través de las tiendas oficiales** (recomendado). Los pasos de instalación oficiales y las versiones actualmente publicadas se mantienen en el [README en inglés — Install](../../README.md#install).
+> Los GitHub Releases se usan únicamente como **registro de cambios para los usuarios**: [Última versión](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (instalación oficial)
 
-1. Abre [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
-2. Haz clic en **Añadir a Firefox** y sigue las indicaciones del navegador
+1. Abre [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/es/firefox/addon/boxing-newtab/)
+2. Haz clic en **Add to Firefox** y sigue las instrucciones del navegador para completar la instalación
 
 ### Edge / Chromium (instalación oficial)
 
 1. Abre [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-2. Haz clic en **Get** / **Obtener** para instalar (en Chromium usa la página de la tienda Edge)
+2. Haz clic en **Obtener** / **Get** para completar la instalación (los navegadores basados en Chromium deben usar la página de Edge)
 
 ### Desarrolladores: compilar desde el código fuente
 
@@ -85,44 +78,39 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge: `chrome://extensions` → Modo de desarrollador → **Cargar extensión sin empaquetar** → selecciona `dist/boxing-chrome/`
-- Firefox: `about:debugging#/runtime/this-firefox` → **Cargar complemento temporal** → selecciona `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → Modo de desarrollador → **Cargar extensión descomprimida** → seleccionar `dist/boxing-chrome/`
+- Firefox: `about:debugging#/runtime/this-firefox` → **Cargar complemento temporal...** → seleccionar `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> Los zip generados sirven **para subir a las tiendas o depurar localmente**, no son el canal de instalación oficial. Usa los enlaces de tienda de arriba.
-> La firma la realizan las tiendas; las GitHub Releases de este repositorio **ya no** distribuyen `.xpi` / `.crx`.
+> El archivo zip generado es para **subir a tiendas o depuración local**, no como canal de instalación oficial para usuarios finales. Para uso habitual, utiliza los enlaces a tiendas indicados arriba.
+> La firma digital la realizan las tiendas; este repositorio de GitHub **ya no distribuye** archivos `.xpi` / `.crx` en sus Releases.
 
 ## Uso
 
-- **Doble clic** en lienzo vacio → crear nueva caja
-- **Arrastrar** barra de titulo de caja → mover caja
-- **Ctrl+rueda** → zoom del lienzo (30% a 200%)
-- **Arrastrar** lienzo vacio → pan
-- **Clic derecho** → volver al nivel de lienzo padre
-- **Clic** en una caja → entrar en su sub-lienzo
-- **Arrastrar** desde el punto medio del borde de una caja → conectar a otra caja
-- **Alt+Clic** en linea de conexion → eliminarla
-- **Estrella** en una caja → marcar como padre (los hijos se mueven juntos)
-- **Alfiler** → bloquear posicion de caja
-- **Boton circular** arriba a la derecha del lienzo → desbloquear encabezado para modo pantalla completa
+- **Doble clic** en un espacio vacío del lienzo → Crear una nueva caja
+- **Arrastrar** la barra de título de la caja → Mover la caja
+- **Ctrl+rueda** → Zoom en el lienzo (de 30 % a 200 %)
+- **Arrastrar** en un espacio vacío del lienzo → Desplazar la vista (pan)
+- **Clic derecho** → Volver al lienzo padre
+- **Clic** en una caja → Entrar al sublienzo
+- **Arrastrar** desde el centro del borde de una caja → Conectar con otra caja
+- **Alt+clic** en una línea de conexión → Eliminar la línea
+- **Estrella** en una caja → Marcar como caja padre (las cajas hijas se mueven con ella)
+- **Chincheta / Pin** → Fijar la posición de la caja
+- **Botón circular** superior derecho del lienzo → Desanclar y entrar en modo pantalla completa
 
 ## Privacidad
 
-- Todos los datos permanecen en `chrome.storage.local` — nada sale de tu dispositivo salvo las solicitudes salientes indicadas abajo o una copia de seguridad en la nube opcional que configures
-- El trafico saliente se limita a la busqueda de favicons (servicios de iconos de terceros y solicitudes directas de `favicon.ico`), una comprobacion de version anonima contra la API de GitHub Releases (con respaldo en `https://boxing.xxx91n.com/demo/version.json` si falla), y la copia de seguridad opcional WebDAV / GitHub Gist
-- Las URL de WebDAV deben ser endpoints HTTPS publicos por defecto — los nombres de host privados y locales se rechazan (solo comprobacion del nombre de host, sin resolucion DNS); una opcion explicita en Configuracion → Sync relaja unicamente ese rechazo para servidores LAN autoalojados, y HTTPS sigue siendo obligatorio; reglas y justificacion en la [politica de privacidad](../../docs/privacy-policy.md)
-- Las credenciales de sincronizacion se guardan en un sobre ofuscado (no cifrado con clave de usuario); las copias de seguridad exportadas manualmente pueden sellarse con una frase de contrasena aparte — detalles en la [politica de privacidad](../../docs/privacy-policy.md)
-- Sin analiticas, sin seguimiento, sin codigo de terceros ejecutado
-- Politica de privacidad completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Desarrollo
 
-### Requisitos
+### Requisitos previos
 
 - Node.js 24.22.1
 - npm
 
-### Configuracion
+### Configuración
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -132,19 +120,19 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### Compilación
 
 ```bash
-npm run build     # Build de desarrollo → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Tests de Playwright (Chrome + Firefox)
+npm run build     # Compilación de desarrollo → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Pruebas con Playwright (Chrome + Firefox)
 ```
 
-Ver [CONTRIBUTING.md](../../CONTRIBUTING.md) para la guia de desarrollo completa.
+Consulta [CONTRIBUTING.md](../../CONTRIBUTING.md) para ver la guía completa de desarrollo.
 
 ## Contribuir
 
-Las contribuciones son bienvenidas! Ver [CONTRIBUTING.md](../../CONTRIBUTING.md) para configuracion, flujo de trabajo y estilo de codigo.
+¡Las contribuciones son bienvenidas! Consulta [CONTRIBUTING.md](../../CONTRIBUTING.md) para conocer los detalles sobre el entorno, el flujo de trabajo y el estilo de código.
 
 ## Licencia
 
-Apache-2.0 — ver [LICENSE](../../LICENSE)
+[Apache-2.0](../../LICENSE)

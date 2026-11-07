@@ -2,85 +2,74 @@
 **Languages:** [English](../../README.md) · [简体中文](README.zh_CN.md) · [繁體中文](README.zh_TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português (Brasil)](README.pt_BR.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · **हिन्दी** · [ไทย](README.th.md) · [Tiếng Việt](README.vi.md) — see [TRANSLATIONS.md](../../TRANSLATIONS.md)
 <!-- README-I18N:END -->
 
-> [!WARNING]
-> **Translation in progress.** This file currently mirrors the English README. If you can help translate to Hindi, see [TRANSLATIONS.md](../../TRANSLATIONS.md).
-
-
 # Boxing
 
-A hierarchical, infinite-canvas bookmark organizer with beige minimalist design.
+हायरार्किकल अनंत कैनवास बुकमार्क प्रबंधक, बेज मिनिमलिस्ट डिज़ाइन।
 
-Boxing transforms your new tab page into a visual workspace for bookmarks. Instead of flat folders, organize bookmarks into labeled boxes on an infinite canvas — drag, connect, and nest them spatially. Think Obsidian canvas meets bookmarks.
+Boxing आपके ब्राउज़र के नए टैब पेज को बुकमार्क के विज़ुअल वर्कस्पेस में बदल देता है। पारंपरिक फ़ोल्डरों के बजाय, अनंत कैनवास पर लेबल वाले बॉक्स में अपने बुकमार्क व्यवस्थित करें — अपनी सोच के अनुसार उन्हें ड्रैग करें, जोड़ें और नेस्ट करें। इसे बुकमार्क प्रबंधन के लिए बनाया गया Obsidian कैनवास समझें।
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing canvas overview" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing कैनवास अवलोकन" width="1280">
 </picture>
 
-## Table of Contents
+## सामग्री
 
-- [Features](#features)
-- [Screenshots](#screenshots)
-- [Brand Assets](#brand-assets)
-- [Install](#install)
-- [Usage](#usage)
-- [Privacy](#privacy)
-- [Development](#development)
-- [Contributing](#contributing)
-- [License](#license)
+- [विशेषताएँ](#विशेषताएँ)
+- [स्क्रीनशॉट](#स्क्रीनशॉट)
+- [इंस्टॉलेशन](#इंस्टॉलेशन)
+- [उपयोग](#उपयोग)
+- [गोपनीयता](#गोपनीयता)
+- [डेवलपमेंट](#डेवलपमेंट)
+- [योगदान](#योगदान)
+- [लाइसेंस](#लाइसेंस)
 
-> Out of scope of this translation: deep technical detail lives in the English README and `docs/`; this file covers install, usage, and the privacy summary.
+## विशेषताएँ
 
-## Features
+**अनंत कैनवास** : स्वतंत्र रूप से पैन और ज़ूम करें (Ctrl+स्क्रॉल)। एक ही कैनवास पर असीमित बॉक्स बनाएँ। बॉक्स के बीच संबंध दर्शाने के लिए कनेक्शन लाइन का उपयोग करें। पैरेंट-चाइल्ड संबंध सेट करें — पैरेंट बॉक्स को स्थानांतरित करने पर चाइल्ड बॉक्स भी साथ चलते हैं।
 
-**Infinite Canvas** — Pan and zoom freely (Ctrl+scroll). Create unlimited boxes on a single canvas. Connect boxes with lines to show relationships. Set parent-child relationships — move a parent and its children follow.
+**दो-स्तरीय पदानुक्रम** : बड़े बॉक्स में छोटे बॉक्स होते हैं, और छोटे बॉक्स में बुकमार्क। सब-कैनवास में जाने के लिए किसी बॉक्स पर क्लिक करें। ब्रेडक्रंब नेविगेशन वर्तमान पथ दिखाता है। किसी भी गहराई तक नेस्टिंग संभव।
 
-**Two-Level Hierarchy** — Large boxes hold small boxes. Small boxes hold bookmarks. Click into a box to enter its sub-canvas. Breadcrumb navigation shows your path. Nest as deep as needed.
+**बुकमार्क प्रबंधन** : प्रत्येक बॉक्स का अपना बुकमार्क संग्रह होता है, जो सूची और ग्रिड व्यू दोनों का समर्थन करता है। आसानी से जोड़ें, संपादित करें और हटाएँ। वर्तमान टैब या नए टैब में खोलने का विकल्प (कॉन्फ़िगर करने योग्य)। ड्रैग करके क्रम व्यवस्थित करें।
 
-**Bookmark Management** — Each box has its own bookmark collection with list and grid views. Add, edit, delete with a clean dialog. Open in current tab or new tab (configurable). Drag to reorder.
+**कनेक्शन लाइनें** : बॉक्स के बीच विज़ुअल SVG लाइनें। कनेक्शन लाइन हटाने के लिए Alt+क्लिक करें (कॉन्फ़िगर करने योग्य: सिंगल या डबल क्लिक)। लचीली सीमा सीमाओं के साथ पैरेंट-चाइल्ड मूवमेंट।
 
-**Connectivity** — Visual SVG connection lines between boxes. Alt+Click a line to delete it (configurable: single-click or double-click). Parent-child movement propagation with elastic boundary clamping.
+**डिज़ाइन और थीम** : बेज/क्रीम रंग की मिनिमलिस्ट शैली। सिस्टम के अनुसार स्वतः बदलने वाला डार्क मोड। फ़ॉन्ट आकार और ज़ूम समायोजन। चौकोर/गोल कोनों का विकल्प।
 
-**Design & Theme** — Beige/cream minimalist aesthetic. Light and dark mode with automatic system detection. Adjustable font size and zoom. Square or rounded corners toggle.
-
-**14 Languages** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi with auto browser-language detection.
+**14 भाषाएँ** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi (ब्राउज़र भाषा का स्वतः पता लगाना)।
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box hierarchy and bookmarks" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="बॉक्स पदानुक्रम और बुकमार्क" width="1280">
 </picture>
 
-## Screenshots
+## स्क्रीनशॉट
 
-| Canvas | Boxes & Bookmarks | Connections |
+| कैनवास | बॉक्स और बुकमार्क | कनेक्शन लाइनें |
 |---|---|---|
-| ![Canvas](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Boxes & Bookmarks](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Connections](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+| ![कैनवास](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![बॉक्स और बुकमार्क](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![कनेक्शन लाइनें](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
 
-| Settings | Bookmark Editing |
+| सेटिंग्स | बुकमार्क संपादन |
 |---|---|
-| ![Settings](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Bookmark Editing](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+| ![सेटिंग्स](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![बुकमार्क संपादन](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
-## Brand Assets
-
-Light/dark logos, extension icons, favicons, store tiles, and the variants showcase are vendored in [`docs/brand/`](../../docs/brand/) (24 files, from the `box_png` asset kit). Reuse these for store listings, docs, and the GitHub social preview.
-
-## Install
+## इंस्टॉलेशन
 
 > [!IMPORTANT]
-> **ऑफिशियल स्टोर पेज से इंस्टॉल करें** (अनुशंसित). इंस्टॉल चरण और वर्तमान में प्रकाशित स्टोर वर्शन का प्रामाणिक स्रोत [अंग्रेज़ी README — Install](../../README.md#install) है।
-> GitHub Releases एक **यूज़र-फेसिंग चेंजलॉग** है: [नवीनतम रिलीज़](https://github.com/Xxx91n/boxing/releases/latest)।
+> **कृपया आधिकारिक स्टोर पेज से इंस्टॉल करें** (अनुशंसित)। आधिकारिक इंस्टॉलेशन निर्देश और प्रकाशित स्टोर संस्करण [अंग्रेज़ी README — Install](../../README.md#install) में उपलब्ध हैं।
+> GitHub Releases केवल **उपयोगकर्ता चेंजलॉग** के रूप में कार्य करता है: [नवीनतम संस्करण](https://github.com/Xxx91n/boxing/releases/latest)।
 
-### Firefox (ऑफिशियल इंस्टॉल)
+### Firefox (आधिकारिक इंस्टॉलेशन)
 
-1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) खोलें
-2. **Add to Firefox** पर क्लिक करें और ब्राउज़र के निर्देशों का पालन करें
+1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/en-US/firefox/addon/boxing-newtab/) खोलें
+2. **Add to Firefox** पर क्लिक करें और ब्राउज़र निर्देशों का पालन करें
 
-### Edge / Chromium (ऑफिशियल इंस्टॉल)
+### Edge / Chromium (आधिकारिक इंस्टॉलेशन)
 
 1. [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) खोलें
-2. इंस्टॉल करने के लिए **Get** पर क्लिक करें (Chromium ब्राउज़र के लिए Edge स्टोर पेज का उपयोग करें)
+2. **Get** पर क्लिक करके इंस्टॉलेशन पूरा करें (Chromium आधारित ब्राउज़र Edge स्टोर पेज का उपयोग करें)
 
-### डेवलपर: स्रोत से बिल्ड करें
+### डेवलपर्स के लिए: सोर्स कोड से बिल्ड करें
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -89,44 +78,39 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge: `chrome://extensions` → डेवलपर मोड → **अनपैक्ड एक्सटेंशन लोड करें** → `dist/boxing-chrome/` चुनें
-- Firefox: `about:debugging#/runtime/this-firefox` → **अस्थायी ऐड-ऑन लोड करें** → `dist/boxing-firefox/manifest.json` चुनें
+- Chrome/Edge: `chrome://extensions` → डेवलपर मोड सक्षम करें → **Load unpacked** → `dist/boxing-chrome/` चुनें
+- Firefox: `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on...** → `dist/boxing-firefox/manifest.json` चुनें
 
 > [!NOTE]
-> बिल्ड आर्टिफैक्ट (zip) **स्टोर अपलोड या लोकल डिबगिंग** के लिए हैं, आधिकारिक इंस्टॉल चैनल नहीं। इंस्टॉल के लिए ऊपर दिए स्टोर लिंक का उपयोग करें।
-> साइनिंग स्टोर करते हैं; इस रिपॉजिटरी की GitHub Releases अब `.xpi` / `.crx` **वितरित नहीं करतीं**।
+> बिल्ड से बनी zip फ़ाइल **स्टोर अपलोड या स्थानीय डीबगिंग के लिए** है, यह अंतिम उपयोगकर्ताओं के लिए सामान्य इंस्टॉलेशन माध्यम नहीं है। सामान्य उपयोग के लिए ऊपर दिए गए स्टोर लिंक का उपयोग करें।
+> डिजिटल हस्ताक्षर स्टोर द्वारा किया जाता है; इस GitHub रिपॉजिटरी में अब `.xpi` / `.crx` फ़ाइलें वितरित **नहीं** की जाती हैं।
 
-## Usage
+## उपयोग
 
-- **Double-click** empty canvas → create a new box
-- **Drag** box title bar → move box
-- **Ctrl+scroll** → zoom canvas (30% to 200%)
-- **Drag** empty canvas → pan
-- **Right-click** → go back to parent canvas level
-- **Click** a box → enter its sub-canvas
-- **Drag** from box edge midpoint → connect to another box
-- **Alt+Click** a connection line → delete it
-- **Star icon** on a box → mark as parent (children move together)
-- **Pin icon** → lock box position
-- **Canvas top-right circle button** → unpin header for fullscreen mode
+- खाली कैनवास पर **डबल-क्लिक** करें → नया बॉक्स बनाएँ
+- बॉक्स के टाइटल बार को **ड्रैग** करें → बॉक्स को स्थानांतरित करें
+- **Ctrl+स्क्रॉल** → कैनवास ज़ूम करें (30% से 200%)
+- खाली कैनवास को **ड्रैग** करें → कैनवास पैन (स्थानांतरित) करें
+- **राइट-क्लिक** करें → पैरेंट कैनवास पर वापस जाएँ
+- बॉक्स पर **क्लिक** करें → सब-कैनवास में जाएँ
+- बॉक्स किनारे के केंद्र से **ड्रैग** करें → किसी अन्य बॉक्स से कनेक्ट करें
+- कनेक्शन लाइन पर **Alt+क्लिक** करें → कनेक्शन हटाएँ
+- बॉक्स पर **स्टार** आइकन → पैरेंट बॉक्स के रूप में चिह्नित करें (चाइल्ड बॉक्स साथ चलते हैं)
+- **पिन** आइकन → बॉक्स की स्थिति लॉक करें
+- कैनवास के ऊपरी दाएँ कोने में **सर्कल बटन** → अनपिन करें और फ़ुल-स्क्रीन मोड में जाएँ
 
-## Privacy
+## गोपनीयता
 
-- All data stays in `chrome.storage.local` — nothing leaves your device except the outbound requests listed here or an optional cloud backup you configure
-- Outbound traffic is limited to favicon lookup (third-party icon services and direct `favicon.ico` probes), an anonymous GitHub Releases API version check (falling back to `https://boxing.xxx91n.com/demo/version.json` when GitHub fails), and optional WebDAV / GitHub Gist backup
-- WebDAV URLs must be public HTTPS endpoints by default: private, loopback, and link-local hostnames are refused (hostname checks only — they do not resolve DNS), and an explicit opt-in under Settings → Sync relaxes only the private-host refusal for self-hosted LAN servers — rules and rationale in the [privacy policy](../../docs/privacy-policy.md)
-- Sync credentials sit in an obfuscated (not user-keyed) envelope; a separate passphrase option can seal exported backup files — details in the [privacy policy](../../docs/privacy-policy.md)
-- No analytics, no tracking; no third-party code is executed
-- Full privacy policy: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Development
+## डेवलपमेंट
 
-### Prerequisites
+### पूर्वापेक्षाएँ
 
 - Node.js 24.22.1
 - npm
 
-### Setup
+### सेटअप
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -136,19 +120,19 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### बिल्ड
 
 ```bash
-npm run build     # Dev build → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright tests (Chrome + Firefox)
+npm run build     # डेवलपमेंट बिल्ड → dist/boxing-chrome + dist/boxing-firefox
+npm test          # Playwright टेस्ट (Chrome + Firefox)
 ```
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for the full development guide.
+विस्तृत डेवलपमेंट गाइड के लिए [CONTRIBUTING.md](../../CONTRIBUTING.md) देखें।
 
-## Contributing
+## योगदान
 
-Contributions are welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for setup, workflow, and code style.
+योगदान का स्वागत है! परिवेश सेटअप, कार्यप्रवाह और कोड शैली के लिए [CONTRIBUTING.md](../../CONTRIBUTING.md) देखें।
 
-## License
+## लाइसेंस
 
-Apache-2.0 — see [LICENSE](../../LICENSE)
+[Apache-2.0](../../LICENSE)

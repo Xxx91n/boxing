@@ -4,9 +4,9 @@
 
 # Boxing
 
-階層型無限キャンバスのブックマークオーガナイザー。ベージュミニマリストデザイン。
+階層型の無限キャンバスブックマークマネージャー。ベージュ基調のミニマルデザイン。
 
-Boxing はブラウザの新しいタブページをビジュアルなブックマークワークスペースに変えます。フラットなフォルダの代わりに、無限キャンバス上にラベル付きボックスを作成し、ブックマークを整理します — ドラッグ、接続、ネストして、あなたの思考通りに配置できます。Obsidian キャンバスとブックマークが出会ったようなものです。
+Boxing は、ブラウザの新しいタブを視覚的なブックマークワークスペースに変えます。フラットなフォルダ管理ではなく、無限のキャンバス上にラベル付きのボックスを配置してブックマークを整理できます — ドラッグ、接続、入れ子構造により、思考の通りに空間配置できます。Obsidian のブックマーク管理キャンバスのような感覚です。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
@@ -17,7 +17,6 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
 
 - [機能](#機能)
 - [スクリーンショット](#スクリーンショット)
-- [ブランドアセット](#ブランドアセット)
 - [インストール](#インストール)
 - [使い方](#使い方)
 - [プライバシー](#プライバシー)
@@ -25,21 +24,19 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
 - [貢献](#貢献)
 - [ライセンス](#ライセンス)
 
-> 本訳の対象外 (out of scope)：詳細な技術情報は英語版 README と `docs/` を参照。本訳はインストール・使い方・プライバシーの概要に絞っています。
-
 ## 機能
 
-**無限キャンバス** — 自由にパンとズーム（Ctrl+スクロール）。1つのキャンバスに無制限のボックスを作成。線で接続して関係を表示。親子関係を設定 — 親ボックスを動かすと子ボックスも追従。
+**無限キャンバス** : 自由なパンとズーム（Ctrl+ホイール操作）。1つのキャンバスにボックスを無制限に作成。ボックス間の関係を接続線で表現。親子関係を設定 — 親ボックスの移動に合わせて子ボックスも追従。
 
-**2階層構造** — 大きなボックスの中に小さなボックス、小さなボックスの中にブックマーク。ボックスをクリックしてサブキャンバスに入る。パンくずナビでパスを表示。必要な深さまでネスト可能。
+**2段階の階層構造** : 大ボックスの中に小ボックス、小ボックスの中にブックマークを格納。ボックスをクリックするとそのサブキャンバスへ移動。パンくずリストで現在位置を表示。階層は何段階でもネスト可能。
 
-**ブックマーク管理** — 各ボックスに独自のブックマークコレクション（リスト＆グリッド表示）。追加、編集、削除がシンプルなダイアログで。現在のタブまたは新規タブで開く（設定可能）。ドラッグで並べ替え。
+**ブックマーク管理** : 各ボックスごとにブックマークを管理でき、リスト表示とグリッド表示に対応。追加、編集、削除もスムーズ。現在のタブまたは新しいタブで開く設定が可能（設定可能）。ドラッグによる並べ替え。
 
-**接続** — ボックス間のビジュアル SVG 接続線。Alt+クリックで線を削除（設定可能：シングルクリックまたはダブルクリック）。親子移動伝播、弾性境界クランプ付き。
+**接続線** : ボックス間を視覚的なSVGラインで接続。Alt+クリックで線を削除（設定可能：シングルクリックまたはダブルクリック）。親子間の移動連動と伸縮性のある境界制限。
 
-**デザイン＆テーマ** — ベージュ/クリームのミニマル美学。ライト/ダークモード、システム自動検出。フォントサイズとズーム調整可能。角丸/角張の切り替え。
+**デザインとテーマ** : ベージュ/クリーム色のミニマルなデザイン。ダークモード（システム設定に自動連動）。フォントサイズと拡大率の調整可能。角丸/直角の切り替え。
 
-**14言語対応** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi、ブラウザ言語の自動検出。
+**14言語対応** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi（ブラウザの言語設定を自動検出）。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
@@ -48,35 +45,31 @@ Boxing はブラウザの新しいタブページをビジュアルなブック�
 
 ## スクリーンショット
 
-| キャンバス | ボックスとブックマーク | 接続ライン |
+| キャンバス | ボックスとブックマーク | 接続線 |
 |---|---|---|
-| ![キャンバス](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![ボックスとブックマーク](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![接続ライン](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+| ![キャンバス](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![ボックスとブックマーク](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![接続線](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
 
 | 設定 | ブックマーク編集 |
 |---|---|
 | ![設定](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![ブックマーク編集](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
-## ブランドアセット
-
-ライト/ダークのロゴ、拡張機能アイコン、ファビコン、ストアタイル、バリエーション紹介は [`docs/brand/`](../../docs/brand/) に同梱されています（`box_png` アセットキット由来の 24 ファイル）。ストア掲載物、ドキュメント、GitHub ソーシャルプレビューにそのまま再利用できます。
-
 ## インストール
 
 > [!IMPORTANT]
-> **公式ストアページからインストールしてください**（推奨）。インストール手順と現在公開されているストアバージョンの一次情報は [英語版 README — Install](../../README.md#install) にあります。
-> GitHub Releases は**ユーザー向けの変更履歴**です：[最新リリース](https://github.com/Xxx91n/boxing/releases/latest).
+> **公式ストアページからのインストールを推奨します**。正確なインストール手順および現在公開されているストアの最新版情報は [英語版 README — Install](../../README.md#install) を参照してください。
+> GitHub Releases は**ユーザー向けの更新履歴（チェンジログ）**としてのみ利用されます: [最新バージョン](https://github.com/Xxx91n/boxing/releases/latest)。
 
 ### Firefox（正式インストール）
 
-1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/) を開く
-2. **Firefox に追加** をクリックし、画面の指示に従ってインストールします
+1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/ja/firefox/addon/boxing-newtab/) を開きます
+2. **Add to Firefox** をクリックし、ブラウザの案内に従ってインストールを完了します
 
 ### Edge / Chromium（正式インストール）
 
-1. [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) を開く
-2. **Get** をクリックしてインストールします（Chromium 系ブラウザーは Edge ストアページを使用）
+1. [Edge アドオン — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) を開きます
+2. **入手** / **Get** をクリックしてインストールを完了します（Chromium系ブラウザはEdgeストアページをご利用ください）
 
-### 開発者向け：ソースからビルド
+### 開発者向け: ソースコードからのビルド
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -86,34 +79,29 @@ npm run build
 ```
 
 - Chrome/Edge: `chrome://extensions` → デベロッパーモード → **パッケージ化されていない拡張機能を読み込む** → `dist/boxing-chrome/` を選択
-- Firefox: `about:debugging#/runtime/this-firefox` → **一時的なアドオンを読み込む** → `dist/boxing-firefox/manifest.json` を選択
+- Firefox: `about:debugging#/runtime/this-firefox` → **一時的なアドオンを読み込む...** → `dist/boxing-firefox/manifest.json` を選択
 
 > [!NOTE]
-> ビルド成果物の zip は**ストアへのアップロードまたはローカル検証用**であり、ユーザー向けの正式なインストール経路ではありません。インストールには上記のストアリンクを使用してください。
-> 署名はストアが行います。本リポジトリの GitHub Releases では `.xpi` / `.crx` を**配布していません**。
+> ビルド生成物の zip は**ストア公開またはローカルデバッグ用**です。一般ユーザー向けの正式なインストール手順ではありません。通常利用は上記のストアリンクからインストールしてください。
+> 署名は各ストアによって行われます。本リポジトリの GitHub Releases では `.xpi` / `.crx` の配布を**行っていません**。
 
 ## 使い方
 
-- **ダブルクリック** 空白キャンバス → 新規ボックス作成
-- **ドラッグ** ボックスタイトルバー → ボックス移動
-- **Ctrl+スクロール** → キャンバスズーム（30%〜200%）
-- **ドラッグ** 空白キャンバス → パン
-- **右クリック** → 親キャンバスレベルに戻る
-- **クリック** ボックス → サブキャンバスに入る
-- ボックスの辺の中点から **ドラッグ** → 別のボックスに接続
-- **Alt+クリック** 接続線 → 削除
-- ボックスの **スター** → 親ボックスとしてマーク（子が一緒に移動）
-- **ピン** → ボックス位置をロック
-- キャンバス右上の **丸いボタン** → ヘッダーのピン解除でフルスクリーン
+- 空白キャンバスを**ダブルクリック** → 新規ボックス作成
+- ボックスのタイトルバーを**ドラッグ** → ボックス移動
+- **Ctrl+ホイール** → キャンバスの拡大・縮小（30%〜200%）
+- 空白キャンバスを**ドラッグ** → 平行移動（パン）
+- **右クリック** → 親キャンバスに戻る
+- ボックスを**クリック** → 子キャンバスに入る
+- ボックスの端の中央から**ドラッグ** → 別のボックスと接続
+- 接続線を **Alt+クリック** → 接続線を削除
+- ボックス上の**星アイコン** → 親ボックスとしてマーク（子ボックスが連動して移動）
+- **ピン留め** → ボックスの位置を固定
+- キャンバス右上の**丸ボタン** → 固定を解除して全画面モードに移行
 
 ## プライバシー
 
-- すべてのデータは `chrome.storage.local` に保存されます — 以下の外部リクエストまたは設定したオプションのクラウドバックアップを除き、デバイスから出ません
-- 外部通信は、favicon 検索（サードパーティのアイコンサービスと直接の `favicon.ico` 取得）、匿名の GitHub Releases API バージョンチェック（GitHub 失敗時は `https://boxing.xxx91n.com/demo/version.json` にフォールバック）、オプションの WebDAV / GitHub Gist バックアップに限定されます
-- WebDAV URL は既定で公開 HTTPS エンドポイントのみ — プライベート／ローカルのホスト名は拒否されます（ホスト名のチェックのみ、DNS 解決なし）。設定 → 同期 の明示的オプトインはセルフホスト LAN サーバー向けにこの拒否のみを緩め、HTTPS は引き続き必須です。規則と理由は[プライバシーポリシー](../../docs/privacy-policy.md)を参照
-- 同期用の認証情報は難読化されたエンベロープに保存されます（ユーザーキーによる暗号化ではありません）。手動エクスポートしたバックアップファイルは別途パスフレーズで保護できます — 詳細は[プライバシーポリシー](../../docs/privacy-policy.md)へ
-- アナリティクスなし、トラッキングなし、サードパーティコードの実行なし
-- プライバシーポリシー：[docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## 開発
 
@@ -136,15 +124,15 @@ npm run build
 
 ```bash
 npm run build     # 開発ビルド → dist/boxing-chrome + dist/boxing-firefox
-npm test          # Playwright テスト（Chrome + Firefox）
+npm test          # Playwright テスト (Chrome + Firefox)
 ```
 
-完全な開発ガイドは [CONTRIBUTING.md](../../CONTRIBUTING.md) を参照してください。
+開発ガイドの詳細は [CONTRIBUTING.md](../../CONTRIBUTING.md) を参照してください。
 
 ## 貢献
 
-貢献を歓迎します！セットアップ、ワークフロー、コードスタイルは [CONTRIBUTING.md](../../CONTRIBUTING.md) を参照してください。
+貢献を歓迎します！環境構築、開発フロー、コードスタイルについては [CONTRIBUTING.md](../../CONTRIBUTING.md) を参照してください。
 
 ## ライセンス
 
-Apache-2.0 — [LICENSE](../../LICENSE) を参照
+[Apache-2.0](../../LICENSE)

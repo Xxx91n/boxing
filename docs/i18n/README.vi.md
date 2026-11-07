@@ -4,42 +4,39 @@
 
 # Boxing
 
-Trình tổ chức dấu trang phân cấp trên khung vẽ vô hạn, thiết kế tối giản màu be.
+Trình quản lý dấu trang phân cấp trên canvas vô cực, thiết kế tối giản màu be.
 
-Boxing biến trang tab mới của bạn thành không gian làm việc trực quan cho dấu trang. Thay vì các thư mục phẳng, hãy tổ chức dấu trang của bạn trong các hộp có nhãn trên khung vẽ vô hạn — kéo, kết nối và lồng chúng theo không gian. Hãy nghĩ về canvas Obsidian gặp gỡ dấu trang.
+Boxing biến trang tab mới của trình duyệt thành không gian làm việc trực quan cho các dấu trang. Không còn các thư mục phẳng: sắp xếp dấu trang vào các hộp có nhãn trên canvas vô cực — kéo thả, kết nối và lồng ghép linh hoạt theo tư duy của bạn. Tương tự như một canvas của Obsidian dành riêng cho việc quản lý dấu trang.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Tổng quan khung vẽ Boxing" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Tổng quan canvas Boxing" width="1280">
 </picture>
 
 ## Mục lục
 
 - [Tính năng](#tính-năng)
 - [Ảnh chụp màn hình](#ảnh-chụp-màn-hình)
-- [Tài nguyên thương hiệu](#tài-nguyên-thương-hiệu)
 - [Cài đặt](#cài-đặt)
-- [Sử dụng](#sử-dụng)
+- [Cách sử dụng](#cách-sử-dụng)
 - [Quyền riêng tư](#quyền-riêng-tư)
 - [Phát triển](#phát-triển)
 - [Đóng góp](#đóng-góp)
 - [Giấy phép](#giấy-phép)
 
-> Ngoài phạm vi của bản dịch này (out of scope): chi tiết kỹ thuật chuyên sâu nằm trong README tiếng Anh và `docs/`; bản dịch này tập trung vào cài đặt, sử dụng và phần tóm tắt quyền riêng tư.
-
 ## Tính năng
 
-**Khung vẽ vô hạn** — Pan và zoom tự do (Ctrl+lăn chuột). Tạo không giới hạn hộp trên một khung vẽ. Kết nối các hộp bằng đường thẳng để hiển thị mối quan hệ. Thiết lập quan hệ cha-con — di chuyển cha và các con theo sau.
+**Canvas vô cực** : Tự do di chuyển và thu phóng (Ctrl+cuộn chuột). Tạo không giới hạn các hộp trên một canvas duy nhất. Thể hiện mối quan hệ giữa các hộp bằng đường nối trực quan. Thiết lập quan hệ cha-con — khi di chuyển hộp cha, các hộp con sẽ di chuyển theo.
 
-**Phân cấp hai cấp** — Hộp lớn chứa hộp nhỏ, hộp nhỏ chứa dấu trang. Nhấp vào hộp để vào khung vẽ con. Điều hướng breadcrumb hiển thị đường đi. Lồng sâu bao nhiêu tùy ý.
+**Phân cấp hai cấp độ** : Hộp lớn chứa các hộp nhỏ, hộp nhỏ chứa các dấu trang. Nhấp vào hộp để mở canvas con. Thanh điều hướng đường dẫn (breadcrumbs) hiển thị vị trí hiện tại. Hỗ trợ lồng ghép với bất kỳ độ sâu nào.
 
-**Quản lý dấu trang** — Mỗi hộp có bộ sưu tập dấu trang riêng với chế độ xem danh sách và lưới. Thêm, chỉnh sửa, xóa bằng hộp thoại gọn gàng. Mở trong tab hiện tại hoặc tab mới (có thể cấu hình). Kéo để sắp xếp lại.
+**Quản lý dấu trang** : Mỗi hộp sở hữu bộ sưu tập dấu trang riêng, hỗ trợ chế độ xem danh sách và lưới. Thêm, sửa, xóa nhanh chóng và gọn gàng. Tùy chọn mở liên kết trong tab hiện tại hoặc tab mới (có thể cấu hình). Kéo thả để sắp xếp lại.
 
-**Kết nối** — Đường kết nối SVG trực quan giữa các hộp. Alt+nhấp vào đường kết nối để xóa (có thể cấu hình: nhấp đơn hoặc nhấp đôi). Truyền lan di chuyển cha-con với kẹp biên đàn hồi.
+**Đường nối** : Đường nối SVG trực quan giữa các hộp. Alt+nhấp vào đường nối để xóa (có thể cấu hình: nhấp một lần hoặc nhấp đúp). Truyền chuyển động từ cha sang con với ràng buộc ranh giới đàn hồi.
 
-**Thiết kế và chủ đề** — Thẩm mỹ tối giản be/cream. Chế độ sáng và tối với tự động phát hiện hệ thống. Cỡ chữ và zoom có thể điều chỉnh. Chuyển đổi góc vuông/bo tròn.
+**Thiết kế và chủ đề** : Phong cách tối giản màu be / kem. Chế độ tối tự động đồng bộ theo hệ thống. Điều chỉnh kích thước phông chữ và tỷ lệ thu phóng. Chuyển đổi giữa góc vuông và góc bo tròn.
 
-**14 ngôn ngữ** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi với tự động phát hiện ngôn ngữ trình duyệt.
+**14 ngôn ngữ** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi (tự động nhận diện ngôn ngữ trình duyệt).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
@@ -48,35 +45,31 @@ Boxing biến trang tab mới của bạn thành không gian làm việc trực 
 
 ## Ảnh chụp màn hình
 
-| Canvas | Hộp và dấu trang | Kết nối |
+| Canvas | Hộp và dấu trang | Đường nối |
 |---|---|---|
-| ![Canvas](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Hộp và dấu trang](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Kết nối](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+| ![Canvas](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Hộp và dấu trang](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Đường nối](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
 
-| Cài đặt | Sửa dấu trang |
+| Cài đặt | Chỉnh sửa dấu trang |
 |---|---|
-| ![Cài đặt](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Sửa dấu trang](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
-
-## Tài nguyên thương hiệu
-
-Logo sáng/tối, biểu tượng phần mở rộng, favicon, ô ảnh cửa hàng và trang giới thiệu biến thể đều có trong [`docs/brand/`](../../docs/brand/) (24 tệp, từ bộ tài nguyên `box_png`). Dùng lại cho danh sách cửa hàng, tài liệu và ảnh xem trước xã hội của GitHub.
+| ![Cài đặt](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Chỉnh sửa dấu trang](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
 ## Cài đặt
 
 > [!IMPORTANT]
-> **Cài đặt từ trang cửa hàng chính thức** (khuyến nghị). Các bước cài đặt và phiên bản đã phát hành trên cửa hàng được quy định tại [README tiếng Anh — Install](../../README.md#install).
-> GitHub Releases là **nhật ký thay đổi dành cho người dùng**: [bản phát hành mới nhất](https://github.com/Xxx91n/boxing/releases/latest).
+> **Khuyến nghị cài đặt qua các trang cửa hàng chính thức** (khuyến nghị). Các bước cài đặt chuẩn và phiên bản cửa hàng đã phát hành hiện tại được duy trì trong [README tiếng Anh — Install](../../README.md#install).
+> GitHub Releases chỉ đóng vai trò là **nhật ký thay đổi dành cho người dùng**: [Phiên bản mới nhất](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (cài đặt chính thức)
 
-1. Mở [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
-2. Nhấn **Add to Firefox** và làm theo hướng dẫn của trình duyệt
+1. Mở [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/vi/firefox/addon/boxing-newtab/)
+2. Nhấp vào **Add to Firefox** và làm theo hướng dẫn của trình duyệt để hoàn tất cài đặt
 
 ### Edge / Chromium (cài đặt chính thức)
 
 1. Mở [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-2. Nhấn **Get** để cài đặt (trình duyệt Chromium dùng trang cửa hàng Edge)
+2. Nhấp vào **Nhận** / **Get** để hoàn tất cài đặt (với các trình duyệt gốc Chromium, vui lòng sử dụng trang cửa hàng Edge)
 
-### Nhà phát triển: build từ mã nguồn
+### Dành cho nhà phát triển: Xây dựng từ mã nguồn
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -85,44 +78,39 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge: `chrome://extensions` → Chế độ nhà phát triển → **Tải tiện ích chưa đóng gói** → chọn `dist/boxing-chrome/`
-- Firefox: `about:debugging#/runtime/this-firefox` → **Tải tiện ích tạm thời** → chọn `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → Bật chế độ nhà phát triển → **Tải tiện ích đã giải nén** → chọn `dist/boxing-chrome/`
+- Firefox: `about:debugging#/runtime/this-firefox` → **Tải tiện ích bổ sung tạm thời...** → chọn `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> Các file zip được build ra dùng để **tải lên cửa hàng hoặc gỡ lỗi cục bộ**, không phải kênh cài đặt chính thức. Hãy dùng liên kết cửa hàng ở trên.
-> Việc ký được thực hiện bởi cửa hàng; GitHub Releases của repo này **không còn** phân phối `.xpi` / `.crx`.
+> Tệp zip sau khi build dùng cho việc **tải lên cửa hàng hoặc gỡ lỗi cục bộ**, không phải là kênh cài đặt chính thức cho người dùng cuối. Vui lòng sử dụng các liên kết cửa hàng ở trên để cài đặt thông thường.
+> Chữ ký số được thực hiện bởi cửa hàng; kho lưu trữ GitHub này **không còn** phân phối các tệp `.xpi` / `.crx` trong phần Releases.
 
-## Sử dụng
+## Cách sử dụng
 
-- **Nhấp đúp** khung vẽ trống → tạo hộp mới
-- **Kéo** thanh tiêu đề hộp → di chuyển hộp
-- **Ctrl+lăn chuột** → zoom khung vẽ (30% đến 200%)
-- **Kéo** khung vẽ trống → pan
-- **Nhấp chuột phải** → quay lại cấp khung vẽ cha
-- **Nhấp** vào hộp → vào khung vẽ con
-- **Kéo** từ điểm giữa cạnh hộp → kết nối với hộp khác
-- **Alt+nhấp** đường kết nối → xóa
-- **Sao** trên hộp → đánh dấu là cha (các con di chuyển cùng)
-- **Ghim** → khóa vị trí hộp
-- **Nút hình tròn** trên cùng bên phải khung vẽ → bỏ ghim tiêu đề cho chế độ toàn màn hình
+- **Nhấp đúp** vào vùng trống canvas → Tạo hộp mới
+- **Kéo** thanh tiêu đề của hộp → Di chuyển hộp
+- **Ctrl+cuộn chuột** → Thu phóng canvas (30% đến 200%)
+- **Kéo** vùng trống canvas → Di chuyển góc nhìn (pan)
+- **Nhấp chuột phải** → Quay lại canvas cha
+- **Nhấp** vào hộp → Vào canvas con
+- **Kéo** từ điểm giữa cạnh hộp → Nối với hộp khác
+- **Alt+nhấp** vào đường nối → Xóa đường nối
+- Biểu tượng **ngôi sao** trên hộp → Đặt làm hộp cha (các hộp con sẽ di chuyển theo)
+- Biểu tượng **ghim** → Khóa vị trí của hộp
+- **Nút tròn** ở góc trên bên phải canvas → Bỏ ghim và chuyển sang chế độ toàn màn hình
 
 ## Quyền riêng tư
 
-- Tất cả dữ liệu nằm trong `chrome.storage.local` — không có gì rời khỏi thiết bị của bạn ngoài các yêu cầu gửi ra liệt kê dưới đây hoặc bản sao lưu đám mây tùy chọn mà bạn tự cấu hình
-- Lưu lượng gửi ra chỉ gồm tra cứu favicon (các dịch vụ biểu tượng bên thứ ba và truy vấn `favicon.ico` trực tiếp), kiểm tra phiên bản ẩn danh qua GitHub Releases API (khi thất bại sẽ quay về `https://boxing.xxx91n.com/demo/version.json`), và sao lưu WebDAV / GitHub Gist tùy chọn
-- URL WebDAV theo mặc định phải là điểm cuối HTTPS công khai — các tên host riêng tư và nội bộ bị từ chối (chỉ kiểm tra tên host, không phân giải DNS); tùy chọn bật rõ ràng trong Cài đặt → Đồng bộ chỉ nới lỏng việc từ chối này cho máy chủ LAN tự lưu trữ, HTTPS vẫn bắt buộc; quy tắc và lý do trong [chính sách quyền riêng tư](../../docs/privacy-policy.md)
-- Thông tin xác thực đồng bộ nằm trong lớp bọc làm rối (không phải mã hóa bằng khóa người dùng); các file sao lưu xuất thủ công có thể được đóng dấu bằng cụm mật khẩu riêng — chi tiết trong [chính sách quyền riêng tư](../../docs/privacy-policy.md)
-- Không phân tích, không theo dõi, không thực thi mã của bên thứ ba
-- Chính sách quyền riêng tư đầy đủ: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Phát triển
 
-### Điều kiện tiên quyết
+### Yêu cầu trước khi bắt đầu
 
 - Node.js 24.22.1
 - npm
 
-### Thiết lập
+### Cài đặt môi trường
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -132,10 +120,10 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### Xây dựng (Build)
 
 ```bash
-npm run build     # Build phát triển → dist/boxing-chrome + dist/boxing-firefox
+npm run build     # Bản dựng phát triển → dist/boxing-chrome + dist/boxing-firefox
 npm test          # Kiểm thử Playwright (Chrome + Firefox)
 ```
 
@@ -143,8 +131,8 @@ Xem [CONTRIBUTING.md](../../CONTRIBUTING.md) để biết hướng dẫn phát t
 
 ## Đóng góp
 
-Chào đón đóng góp! Xem [CONTRIBUTING.md](../../CONTRIBUTING.md) để biết thiết lập, quy trình và phong cách mã.
+Rất hoan nghênh các đóng góp! Xem [CONTRIBUTING.md](../../CONTRIBUTING.md) để biết chi tiết về thiết lập môi trường, quy trình làm việc và phong cách viết mã.
 
 ## Giấy phép
 
-Apache-2.0 — xem [LICENSE](../../LICENSE)
+[Apache-2.0](../../LICENSE)

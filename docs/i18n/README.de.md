@@ -4,77 +4,70 @@
 
 # Boxing
 
-Hierarchischer Lesezeichen-Organisator auf unendlicher Leinwand, im beige-minimalistischen Design.
+Hierarchischer Lesezeichen-Manager auf unendlicher Leinwand im minimalistischen Beige-Design.
 
-Boxing wandelt Ihre neue Tab-Seite in einen visuellen Arbeitsbereich fuer Lesezeichen um. Statt flacher Ordner organisieren Sie Lesezeichen in beschrifteten Boxen auf einer unendlichen Leinwand — ziehen, verbinden und schachteln Sie sie raeumlich. Obsidian-Canvas trifft auf Lesezeichen.
+Boxing verwandelt Ihren neuen Tab im Browser in einen visuellen Arbeitsbereich für Lesezeichen. Keine starren Ordner mehr: Organisieren Sie Lesezeichen in beschrifteten Boxen auf einer unendlichen Leinwand — ziehen, verbinden und verschachteln Sie sie genau so, wie Sie denken. Stellen Sie es sich wie eine Obsidian-Leinwand für Lesezeichen vor.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing Canvas-Uebersicht" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Boxing-Leinwand Übersicht" width="1280">
 </picture>
 
 ## Inhaltsverzeichnis
 
 - [Funktionen](#funktionen)
 - [Screenshots](#screenshots)
-- [Marken-Assets](#marken-assets)
 - [Installation](#installation)
-- [Verwendung](#verwendung)
+- [Bedienung](#bedienung)
 - [Datenschutz](#datenschutz)
 - [Entwicklung](#entwicklung)
 - [Mitwirken](#mitwirken)
 - [Lizenz](#lizenz)
 
-> Ausserhalb dieser Uebersetzung (out of scope): vertiefte technische Details stehen im englischen README und in `docs/`; diese Uebersetzung behandelt Installation, Verwendung und die Datenschutz-Zusammenfassung.
-
 ## Funktionen
 
-**Unendliche Leinwand** — Frei schwenken und zoomen (Strg+Scrollen). Unbegrenzt viele Boxen auf einer einzigen Leinwand erstellen. Boxen mit Linien verbinden, um Beziehungen darzustellen. Eltern-Kind-Beziehungen festlegen — eine Eltern-Box bewegen, und die Kinder folgen.
+**Unendliche Leinwand** : Freies Verschieben und Zoomen (Strg+Mausrad). Beliebig viele Boxen auf einer einzigen Leinwand erstellen. Beziehungen zwischen Boxen mit Verbindungslinien darstellen. Eltern-Kind-Beziehungen festlegen — Kind-Boxen bewegen sich mit, wenn die Eltern-Box verschoben wird.
 
-**Zweistufige Hierarchie** — Grosse Boxen enthalten kleine Boxen, kleine Boxen enthalten Lesezeichen. Auf eine Box klicken, um ihren Unter-Canvas zu betreten. Brotkrumelnavigation zeigt den Pfad. So tief schachteln wie noetig.
+**Zweistufige Hierarchie** : Große Boxen enthalten kleine Boxen, kleine Boxen enthalten Lesezeichen. Klick auf eine Box öffnet deren Unter-Leinwand. Breadcrumb-Navigation zeigt den Pfad an. Beliebig tief verschachtelbar.
 
-**Lesezeichen-Verwaltung** — Jede Box hat ihre eigene Lesezeichensammlung mit Listen- und Rasteransicht. Hinzufuegen, bearbeiten, loeschen mit einem klaren Dialog. In aktuellem Tab oder neuem Tab oeffnen (konfigurierbar). Ziehen zum Sortieren.
+**Lesezeichen-Verwaltung** : Jede Box besitzt ihre eigene Lesezeichen-Sammlung mit Listen- und Rasteransicht. Schnelles Hinzufügen, Bearbeiten und Löschen. Links können im aktuellen oder in einem neuen Tab geöffnet werden (konfigurierbar). Sortierung per Drag-and-Drop.
 
-**Verbindungen** — Visuelle SVG-Verbindungslinien zwischen Boxen. Alt+Klick auf eine Linie zum Loeschen (konfigurierbar: Einfachklick oder Doppelklick). Eltern-Kind-Bewegungspropagierung mit elastischer Begrenzung.
+**Verbindungslinien** : Visuelle SVG-Linien zwischen Boxen. Alt+Klick auf eine Verbindung zum Löschen (konfigurierbar: Einfach- oder Doppelklick). Bewegungsausbreitung von Eltern zu Kindern mit elastischen Randbegrenzungen.
 
-**Design und Theme** — Beige/Creme-minimalistische Aesthetik. Hell- und Dunkelmodus mit automatischer Systemerkennung. Einstellbare Schriftgroesse und Zoom. Eckig/abgerundet umschalten.
+**Design und Themes** : Minimalistische Ästhetik in Beige / Creme. Dunkelmodus mit automatischer Systemanpassung. Anpassbare Schriftgröße und Skalierung. Umschaltung zwischen eckigen und abgerundeten Ecken.
 
-**14 Sprachen** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi mit automatischer Browser-Sprachenerkennung.
+**14 Sprachen** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi (automatische Erkennung der Browsersprache).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Box-Hierarchie und Lesezeichen" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Boxen-Hierarchie und Lesezeichen" width="1280">
 </picture>
 
 ## Screenshots
 
-| Leinwand | Boxen & Lesezeichen | Verbindungen |
+| Leinwand | Boxen & Lesezeichen | Verbindungslinien |
 |---|---|---|
-| ![Leinwand](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Boxen & Lesezeichen](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Verbindungen](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+| ![Leinwand](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Boxen & Lesezeichen](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Verbindungslinien](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
 
-| Einstellungen | Lesezeichen-Bearbeitung |
+| Einstellungen | Lesezeichen bearbeiten |
 |---|---|
-| ![Einstellungen](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Lesezeichen-Bearbeitung](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
-
-## Marken-Assets
-
-Helle und dunkle Logos, Erweiterungs-Icons, Favicons, Store-Kacheln und die Varianten-Übersicht liegen im Repository unter [`docs/brand/`](../../docs/brand/) (24 Dateien aus dem `box_png`-Asset-Kit). Wiederverwendbar für Store-Listings, Dokumentation und GitHub-Social-Preview.
+| ![Einstellungen](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Lesezeichen bearbeiten](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
 ## Installation
 
 > [!IMPORTANT]
-> **Installieren Sie über die offiziellen Store-Seiten** (empfohlen). Maßgeblich für die Installationsschritte und die aktuell veröffentlichte Store-Version sind das [englische README — Install](../../README.md#install).
-> GitHub Releases sind ein **Änderungsprotokoll für Nutzer**: [neueste Release](https://github.com/Xxx91n/boxing/releases/latest).
+> **Bitte über die offiziellen Store-Seiten installieren** (empfohlen). Die verbindlichen Installationsschritte und aktuellen Versionen werden in der [englischen README — Install](../../README.md#install) gepflegt.
+> GitHub Releases dienen ausschließlich als **Änderungsprotokoll für Nutzer**: [Neueste Version](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (offizielle Installation)
 
-1. Öffnen Sie [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
-2. Klicken Sie auf **Zu Firefox hinzufügen** und folgen Sie den Hinweisen des Browsers
+1. [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/de/firefox/addon/boxing-newtab/) öffnen
+2. Auf **Add to Firefox** klicken und den Browseranweisungen folgen, um die Installation abzuschließen
 
 ### Edge / Chromium (offizielle Installation)
 
-1. Öffnen Sie [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-2. Klicken Sie auf **Get** / **Hinzufügen**, um die Installation abzuschließen (Chromium-Browser: nutzen Sie die Edge-Store-Seite)
+1. [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi) öffnen
+2. Auf **Abrufen** / **Get** klicken, um die Installation abzuschließen (Chromium-basierte Browser nutzen bitte die Edge-Store-Seite)
 
 ### Entwickler: Aus dem Quellcode bauen
 
@@ -85,35 +78,30 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge: `chrome://extensions` → Entwicklermodus → **Entpackte Erweiterung laden** → `dist/boxing-chrome/` wählen
-- Firefox: `about:debugging#/runtime/this-firefox` → **Temporäres Add-on laden** → `dist/boxing-firefox/manifest.json` wählen
+- Chrome/Edge: `chrome://extensions` → Entwicklermodus aktivieren → **Entpackte Erweiterung laden** → `dist/boxing-chrome/` auswählen
+- Firefox: `about:debugging#/runtime/this-firefox` → **Temporäres Add-on laden...** → `dist/boxing-firefox/manifest.json` auswählen
 
 > [!NOTE]
-> Die Build-Artefakte (zip) dienen **dem Store-Upload oder dem lokalen Debuggen**, nicht als offizieller Installationsweg. Nutzen Sie die Store-Links oben.
-> Die Signierung erfolgt durch die Stores; die GitHub Releases dieses Repositorys verteilen **keine** `.xpi` / `.crx` mehr.
+> Die erstellten ZIP-Dateien dienen dem **Store-Upload oder lokalen Debugging**, nicht als regulärer Installationskanal für Nutzer. Reguläre Installationen bitte über die Store-Links oben durchführen.
+> Die Signierung erfolgt durch den jeweiligen Store; dieses GitHub-Repository verteilt **keine** `.xpi` / `.crx` Dateien mehr über Releases.
 
-## Verwendung
+## Bedienung
 
-- **Doppelklick** auf leere Leinwand → neue Box erstellen
-- **Ziehen** an Box-Titelleiste → Box bewegen
-- **Strg+Scrollen** → Leinwand zoomen (30% bis 200%)
-- **Ziehen** der leeren Leinwand → Schwenken
-- **Rechtsklick** → zurueck zur uebergeordneten Canvas-Ebene
-- **Klick** auf eine Box → Unter-Canvas betreten
-- **Ziehen** von Box-Kantenmitte → mit anderer Box verbinden
-- **Alt+Klick** auf Verbindungslinie → loeschen
-- **Stern** auf einer Box → als Eltern-Box markieren (Kinder bewegen sich mit)
-- **Pin** → Box-Position sperren
-- **Kreis-Schaltflaeche** oben rechts auf Leinwand → Kopfzeile loesen fuer Vollbildmodus
+- **Doppelklick** auf freie Leinwand → Neue Box erstellen
+- **Titelleiste ziehen** → Box verschieben
+- **Strg+Mausrad** → Leinwand zoomen (30 % bis 200 %)
+- **Freie Leinwand ziehen** → Ansicht verschieben (Pan)
+- **Rechtsklick** → Zur übergeordneten Leinwand zurückkehren
+- **Klick** auf Box → Unter-Leinwand öffnen
+- Von der Kantenmitte einer Box **ziehen** → Mit anderer Box verbinden
+- **Alt+Klick** auf Verbindungslinie → Linie löschen
+- **Stern** auf einer Box → Als Eltern-Box festlegen (Kinder bewegen sich mit)
+- **Pin-Symbol** → Position der Box sperren
+- **Kreis-Schaltfläche** oben rechts → Fixierung lösen und in den Vollbildmodus wechseln
 
 ## Datenschutz
 
-- Alle Daten bleiben in `chrome.storage.local` — nichts verlaesst Ihr Geraet ausser den unten aufgefuehrten ausgehenden Anfragen oder einem optionalen Cloud-Backup, das Sie konfigurieren
-- Ausgehender Verkehr ist auf Favicon-Abrufe (Icon-Dienste von Drittanbietern und direkte `favicon.ico`-Anfragen), eine anonyme Versionspruefung ueber die GitHub Releases API (mit Fallback auf `https://boxing.xxx91n.com/demo/version.json` bei Fehlschlag) und das optionale WebDAV / GitHub Gist Backup beschraenkt
-- WebDAV-URLs muessen standardmaessig oeffentliche HTTPS-Endpunkte sein — private und lokale Hostnamen werden abgelehnt (nur Hostnamen-Pruefung, keine DNS-Aufloesung); eine explizite Option unter Einstellungen → Sync lockert nur diese Ablehnung fuer selbst gehostete LAN-Server, HTTPS bleibt erforderlich; Regeln und Begruendung in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
-- Sync-Anmeldedaten liegen in einer verschleierten (nicht benutzerschluesselbasierten) Huelle; manuell exportierte Backupdateien koennen zusaetzlich mit einer Passphrase versiegelt werden — Details in der [Datenschutzrichtlinie](../../docs/privacy-policy.md)
-- Keine Analytik, kein Tracking, kein ausgefuehrter Drittanbieter-Code
-- Vollstaendige Datenschutzrichtlinie: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Entwicklung
 
@@ -132,19 +120,19 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### Bauen
 
 ```bash
-npm run build     # Dev-Build → dist/boxing-chrome + dist/boxing-firefox
+npm run build     # Entwicklungs-Build → dist/boxing-chrome + dist/boxing-firefox
 npm test          # Playwright-Tests (Chrome + Firefox)
 ```
 
-Siehe [CONTRIBUTING.md](../../CONTRIBUTING.md) fuer die vollstaendige Entwicklungsanleitung.
+Weitere Details finden Sie im vollständigen Entwicklungsleitfaden in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Mitwirken
 
-Beitraege sind willkommen! Siehe [CONTRIBUTING.md](../../CONTRIBUTING.md) fuer Einrichtung, Workflow und Code-Stil.
+Beiträge sind herzlich willkommen! Details zu Umgebungseinrichtung, Arbeitsabläufen und Code-Stil finden Sie in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Lizenz
 
-Apache-2.0 — siehe [LICENSE](../../LICENSE)
+[Apache-2.0](../../LICENSE)

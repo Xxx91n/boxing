@@ -6,7 +6,7 @@
 
 层级化无限画布书签管理器,米白极简设计。
 
-Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平文件夹,而是在无限画布上用标签盒子组织书签 — 拖拽、连接、嵌套,按你的思维空间排列。可以理解为 Obsidian 画布遇见书签管理。
+Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平文件夹,而是在无限画布上用标签盒子组织书签 — 拖拽、连接、嵌套, 按你的思维空间排列。可以理解为 Obsidian 的书签管理画布。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
@@ -17,7 +17,6 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 
 - [功能](#功能)
 - [截图](#截图)
-- [品牌资产](#品牌资产)
 - [安装](#安装)
 - [使用](#使用)
 - [隐私](#隐私)
@@ -25,21 +24,19 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 - [贡献](#贡献)
 - [许可证](#许可证)
 
-> 本译文范围外: 深入的技术细节以英文 README 与 `docs/` 为准; 本译文聚焦安装、使用与隐私概要。
-
 ## 功能
 
-**无限画布** — 自由平移和缩放(Ctrl+滚轮)。在单个画布上创建无限盒子。用连线表示盒子间的关系。设置父子关系 — 移动父盒子时子盒子跟随移动。
+**无限画布** : 自由平移和缩放(Ctrl+滚轮)。在单个画布上创建无限盒子。用连线表示盒子间的关系。设置父子关系 — 移动父盒子时子盒子跟随移动。
 
-**两级层级** — 大盒子包含小盒子,小盒子包含书签。点击盒子进入其子画布。面包屑导航显示路径。可任意深度嵌套。
+**两级层级** : 大盒子包含小盒子,小盒子包含书签。点击盒子进入其子画布。面包屑导航显示路径。可任意深度嵌套。
 
-**书签管理** — 每个盒子有自己的书签集合,支持列表和网格视图。添加、编辑、删除,操作简洁。可在当前标签页或新标签页打开(可配置)。拖拽排序。
+**书签管理** : 每个盒子有自己的书签集合,支持列表和网格视图。添加、编辑、删除,操作简洁。可在当前标签页或新标签页打开(可配置)。拖拽排序。
 
-**连线** — 盒子间的可视化 SVG 连线。Alt+点击连线删除(可配置:单击或双击)。父子移动传播,带弹性边界约束。
+**连线** : 盒子间的可视化 SVG 连线。Alt+点击连线删除(可配置:单击或双击)。父子移动传播,带弹性边界约束。
 
-**设计与主题** — 米白/奶油色极简美学。深色模式,自动跟随系统。可调字号和缩放。方角/圆角切换。
+**设计与主题** : 米白/奶油色极简美学。深色模式,自动跟随系统。可调字号和缩放。方角/圆角切换。
 
-**14 种语言** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi,自动检测浏览器语言。
+**14 种语言** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi,自动检测浏览器语言。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
@@ -55,10 +52,6 @@ Boxing 将浏览器新标签页变为可视化书签工作区。不再是扁平�
 | 设置 | 书签编辑 |
 |---|---|
 | ![设置](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![书签编辑](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
-
-## 品牌资产
-
-浅色/深色 logo、扩展图标、favicon、商店图块与变体展示均收录于 [`docs/brand/`](../../docs/brand/)（24 个文件，来自 `box_png` 资产套件），可直接复用于商店 listing、文档与 GitHub 社交预览图。
 
 ## 安装
 
@@ -108,12 +101,7 @@ npm run build
 
 ## 隐私
 
-- 所有数据保存在 `chrome.storage.local` — 除下列出站请求或你配置的可选云备份外,不会离开你的设备
-- 出站流量仅限: 网站图标查询(第三方图标服务与直接 `favicon.ico` 探测)、匿名的 GitHub Releases API 版本检查(GitHub 失败时回退到 `https://boxing.xxx91n.com/demo/version.json`),以及可选的 WebDAV / GitHub Gist 备份
-- WebDAV 地址默认必须是公网 HTTPS 端点 — 拒绝私有/本地主机名(仅检查主机名,不做 DNS 解析); 在 设置 → 同步 中显式开启的选项仅放宽私有主机拒绝(供自建局域网服务),HTTPS 仍然必需; 规则与理由见[隐私政策](../../docs/privacy-policy.md)
-- 同步凭据保存在混淆封装中(非用户密钥加密); 手动导出的备份文件可另用口令加密 — 详见[隐私政策](../../docs/privacy-policy.md)
-- 无分析、无追踪、不执行第三方代码
-- 完整隐私政策: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## 开发
 
@@ -147,4 +135,4 @@ npm test          # Playwright 测试 (Chrome + Firefox)
 
 ## 许可证
 
-Apache-2.0 — 见 [LICENSE](../../LICENSE)
+[Apache-2.0](../../LICENSE)

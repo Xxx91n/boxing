@@ -4,79 +4,72 @@
 
 # Boxing
 
-Organisateur de signets hierarchique sur canevas infini, design minimaliste beige.
+Gestionnaire de favoris hiérarchique sur toile infinie, design minimaliste beige.
 
-Boxing transforme votre page de nouvel onglet en espace de travail visuel pour vos signets. Au lieu de dossiers plats, organisez vos signets dans des boites etiquetees sur un canevas infini — glissez, connectez et imbriquez-les spatialment. Pensez Obsidian canvas rencontre signets.
+Boxing transforme la page de nouvel onglet de votre navigateur en un espace de travail visuel pour vos favoris. Fini les dossiers plats traditionnels : organisez vos favoris dans des boîtes étiquetées sur une toile infinie — glissez, reliez et imbriquez selon votre façon de penser. Considérez-le comme la toile d'Obsidian appliquée à la gestion des favoris.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Apercu du canevas Boxing" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Aperçu de la toile Boxing" width="1280">
 </picture>
 
 ## Sommaire
 
-- [Fonctionnalites](#fonctionnalites)
+- [Fonctionnalités](#fonctionnalités)
 - [Captures d'écran](#captures-décran)
-- [Ressources de marque](#ressources-de-marque)
 - [Installation](#installation)
 - [Utilisation](#utilisation)
-- [Confidentialite](#confidentialite)
-- [Developpement](#developpement)
-- [Contribuer](#contribuer)
+- [Confidentialité](#confidentialité)
+- [Développement](#développement)
+- [Contribution](#contribution)
 - [Licence](#licence)
 
-> Hors perimetre de cette traduction (out of scope) : les details techniques approfondis sont dans le README anglais et `docs/` ; cette traduction couvre l'installation, l'usage et le resume de confidentialite.
+## Fonctionnalités
 
-## Fonctionnalites
+**Toile infinie** : Déplacement et zoom libres (Ctrl+molette). Créez autant de boîtes que souhaité sur une seule toile. Visualisez les relations entre boîtes grâce à des lignes de connexion. Définissez des relations parent-enfant — les boîtes enfants suivent automatiquement le déplacement de la boîte parente.
 
-**Canevas infini** — Pan et zoom libres (Ctrl+molette). Creez un nombre illimite de boites sur un seul canevas. Connectez les boites avec des lignes pour montrer les relations. Definissez des relations parent-enfant — deplacez un parent et ses enfants suivent.
+**Hiérarchie à deux niveaux** : Les grandes boîtes contiennent des petites boîtes, et les petites boîtes contiennent des favoris. Cliquez sur une boîte pour accéder à sa sous-toile. Le fil d'Ariane affiche le chemin actuel. Imbrication possible à n'importe quelle profondeur.
 
-**Hierarchie a deux niveaux** — Les grandes boites contiennent des petites boites, les petites boites contiennent des signets. Cliquez sur une boite pour entrer dans son sous-canevas. Le fil d Ariane montre votre chemin. Imbriquez aussi profondement que necessaire.
+**Gestion des favoris** : Chaque boîte possède sa propre collection de favoris, avec affichage en liste ou en grille. Ajout, modification et suppression simples et rapides. Ouverture dans l'onglet actif ou dans un nouvel onglet (configurable). Réorganisation par glisser-déposer.
 
-**Gestion des signets** — Chaque boite a sa propre collection de signets avec vues liste et grille. Ajouter, modifier, supprimer avec un dialogue eclaire. Ouvrir dans l onglet actuel ou un nouvel onglet (configurable). Glisser pour reorganiser.
+**Lignes de connexion** : Connexions SVG visuelles entre les boîtes. Alt+clic sur une ligne pour la supprimer (configurable : clic simple ou double-clic). Déplacement synchronisé du parent vers les enfants avec contraintes de bordure élastiques.
 
-**Connectivite** — Lignes de connexion SVG visuelles entre boites. Alt+Clic sur une ligne pour la supprimer (configurable: clic simple ou double-clic). Propagation du deplacement parent-enfant avec limite elastique.
+**Design et thèmes** : Esthétique minimaliste beige / crème. Mode sombre avec suivi automatique du système. Taille de police et niveau de zoom ajustables. Bascule entre angles droits et arrondis.
 
-**Design et theme** — Esthetique minimaliste beige/creme. Mode clair et sombre avec detection automatique du systeme. Taille de police et zoom ajustables. Bascule coins carres/arrondis.
-
-**14 langues** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi avec detection automatique de la langue du navigateur.
+**14 langues** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi, avec détection automatique de la langue du navigateur.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Hierarchie des boites et signets" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Hiérarchie des boîtes et favoris" width="1280">
 </picture>
 
 ## Captures d'écran
 
-| Toile | Boîtes et favoris | Connexions |
+| Toile | Boîtes et favoris | Lignes de connexion |
 |---|---|---|
-| ![Toile](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Boîtes et favoris](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Connexions](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+| ![Toile](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Boîtes et favoris](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Lignes de connexion](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
 
-| Paramètres | Édition des favoris |
+| Paramètres | Édition de favori |
 |---|---|
-| ![Paramètres](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Édition des favoris](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
-
-## Ressources de marque
-
-Les logos clair/sombre, icônes d'extension, favicons, vignettes de boutique et la galerie de variantes sont fournis dans [`docs/brand/`](../../docs/brand/) (24 fichiers, issus du kit d'assets `box_png`). Réutilisables pour les fiches de boutique, la documentation et l'aperçu social GitHub.
+| ![Paramètres](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Édition de favori](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
 ## Installation
 
 > [!IMPORTANT]
-> **Installez depuis les pages officielles des stores** (recommandé). Les étapes d’installation et la version de store publiée font foi dans le [README anglais — Install](../../README.md#install).
-> Les GitHub Releases sont un **journal des modifications pour les utilisateurs** : [dernière release](https://github.com/Xxx91n/boxing/releases/latest).
+> **Veuillez installer l'extension depuis la page officielle de la boutique** (recommandé). Les étapes d'installation de référence et les versions actuellement publiées sont maintenues dans le [README en anglais — Install](../../README.md#install).
+> Les publications GitHub Releases servent uniquement de **journal des modifications utilisateur** : [Dernière version](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (installation officielle)
 
-1. Ouvrez [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
-2. Cliquez sur **Ajouter à Firefox** et suivez les invites du navigateur
+1. Ouvrez [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/fr/firefox/addon/boxing-newtab/)
+2. Cliquez sur **Add to Firefox** et suivez les instructions du navigateur pour finaliser l'installation
 
 ### Edge / Chromium (installation officielle)
 
 1. Ouvrez [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-2. Cliquez sur **Get** / **Obtenir** pour installer (sur Chromium, utilisez la page du store Edge)
+2. Cliquez sur **Obtenir** / **Get** pour finaliser l'installation (pour les navigateurs basés sur Chromium, veuillez utiliser la page du catalogue Edge)
 
-### Développeurs : build depuis les sources
+### Développeurs : compiler depuis les sources
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -85,39 +78,34 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge : `chrome://extensions` → Mode développeur → **Charger l’extension non empaquetée** → sélectionnez `dist/boxing-chrome/`
-- Firefox : `about:debugging#/runtime/this-firefox` → **Charger un module complémentaire temporaire** → sélectionnez `dist/boxing-firefox/manifest.json`
+- Chrome/Edge : `chrome://extensions` → Mode développeur → **Charger l'extension non empaquetée** → sélectionner `dist/boxing-chrome/`
+- Firefox : `about:debugging#/runtime/this-firefox` → **Charger un module temporaire...** → sélectionner `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> Les archives zip produites par le build servent **au dépôt sur les stores ou au débogage local**, ce n’est pas le canal d’installation officiel. Utilisez les liens de store ci-dessus.
-> La signature est effectuée par les stores ; les GitHub Releases de ce dépôt ne distribuent **plus** de `.xpi` / `.crx`.
+> Le fichier zip issu de la compilation est destiné à **la publication sur les boutiques ou au débogage local**, et non de canal d'installation officiel pour les utilisateurs finaux. Pour un usage standard, veuillez passer par les liens officiels ci-dessus.
+> La signature numérique est effectuée par les boutiques ; ce dépôt GitHub **ne distribue plus** de fichiers `.xpi` / `.crx` dans ses Releases.
 
 ## Utilisation
 
-- **Double-clic** sur canevas vide → creer une nouvelle boite
-- **Glisser** la barre de titre de la boite → deplacer la boite
-- **Ctrl+molette** → zoomer le canevas (30% a 200%)
-- **Glisser** le canevas vide → pan
-- **Clic droit** → revenir au niveau de canevas parent
-- **Clic** sur une boite → entrer dans son sous-canevas
-- **Glisser** depuis le milieu d un bord de boite → connecter a une autre boite
-- **Alt+Clic** sur une ligne de connexion → la supprimer
-- **Etoile** sur une boite → marquer comme parent (les enfants bougent ensemble)
-- **Epingle** → verrouiller la position de la boite
-- **Bouton cercle** en haut a droite du canevas → detacher l en-tete pour le mode plein ecran
+- **Double-clic** sur un espace vide de la toile → Créer une nouvelle boîte
+- **Glisser** la barre de titre d'une boîte → Déplacer la boîte
+- **Ctrl+molette** → Zoomer sur la toile (de 30 % à 200 %)
+- **Glisser** sur un espace vide de la toile → Déplacer la vue (pan)
+- **Clic droit** → Revenir à la toile parente
+- **Cliquer** sur une boîte → Entrer dans la sous-toile
+- **Glisser** depuis le milieu d'un bord de boîte → Relier à une autre boîte
+- **Alt+clic** sur une ligne de connexion → Supprimer la ligne
+- **Étoile** sur une boîte → Définir comme boîte parente (les boîtes enfants suivent le déplacement)
+- **Épingle** → Verrouiller la position de la boîte
+- **Bouton rond** en haut à droite de la toile → Détacher et passer en mode plein écran
 
-## Confidentialite
+## Confidentialité
 
-- Toutes les donnees restent dans `chrome.storage.local` — rien ne quitte votre appareil en dehors des requetes sortantes ci-dessous ou d une sauvegarde cloud optionnelle que vous configurez
-- Le trafic sortant se limite a la recherche de favicons (services d'icones tiers et sondes `favicon.ico` directes), a une verification de version anonyme via l'API GitHub Releases (avec repli vers `https://boxing.xxx91n.com/demo/version.json` en cas d'echec), et a la sauvegarde optionnelle WebDAV / GitHub Gist
-- Les URL WebDAV doivent etre des points d'acces HTTPS publics par defaut — les noms d'hotes prives et locaux sont refuses (verification du nom d'hote uniquement, sans resolution DNS) ; une option explicite sous Parametres → Sync assouplit uniquement ce refus pour les serveurs LAN auto-heberges, HTTPS restant requis ; regles et justification dans la [politique de confidentialite](../../docs/privacy-policy.md)
-- Les identifiants de synchronisation sont conserves dans une enveloppe obfusquee (pas de chiffrement par cle utilisateur) ; les fichiers de sauvegarde exportes manuellement peuvent etre scelles par une phrase de passe separee — details dans la [politique de confidentialite](../../docs/privacy-policy.md)
-- Pas d analytics, pas de tracking, aucun code tiers execute
-- Politique de confidentialite complete: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
-## Developpement
+## Développement
 
-### Prerequis
+### Prérequis
 
 - Node.js 24.22.1
 - npm
@@ -132,19 +120,19 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### Compilation
 
 ```bash
-npm run build     # Build dev → dist/boxing-chrome + dist/boxing-firefox
+npm run build     # Compilation de développement → dist/boxing-chrome + dist/boxing-firefox
 npm test          # Tests Playwright (Chrome + Firefox)
 ```
 
-Voir [CONTRIBUTING.md](../../CONTRIBUTING.md) pour le guide de developpement complet.
+Consultez [CONTRIBUTING.md](../../CONTRIBUTING.md) pour accéder au guide complet de développement.
 
-## Contribuer
+## Contribution
 
-Les contributions sont les bienvenues! Voir [CONTRIBUTING.md](../../CONTRIBUTING.md) pour la configuration, le flux de travail et le style de code.
+Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](../../CONTRIBUTING.md) pour en savoir plus sur l'environnement de travail, les flux et le style de code.
 
 ## Licence
 
-Apache-2.0 — voir [LICENSE](../../LICENSE)
+[Apache-2.0](../../LICENSE)

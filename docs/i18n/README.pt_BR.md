@@ -4,79 +4,72 @@
 
 # Boxing
 
-Organizador de marcadores hierarquico em tela infinita, com design minimalista bege.
+Gerenciador hierárquico de favoritos em tela infinita, com design minimalista bege.
 
-Boxing transforma sua pagina de nova aba em um espaco de trabalho visual para marcadores. Em vez de pastas planas, organize seus marcadores em caixas etiquetadas em uma tela infinita — arraste, conecte e aninhe-os espacialmente. Pense no canvas do Obsidian encontrando os marcadores.
+O Boxing transforma a página de nova guia do seu navegador em um espaço de trabalho visual para seus favoritos. Em vez de pastas planas tradicionais, organize seus favoritos em caixas identificadas em uma tela infinita — arraste, conecte e aninhe de acordo com seu fluxo de pensamento. Pense nisso como a tela do Obsidian aplicada aos seus favoritos.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-1-canvas.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Visao geral da tela do Boxing" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-1-canvas.png" alt="Visão geral da tela do Boxing" width="1280">
 </picture>
 
-## Sumario
+## Sumário
 
 - [Recursos](#recursos)
 - [Capturas de tela](#capturas-de-tela)
-- [Recursos de marca](#recursos-de-marca)
-- [Instalacao](#instalacao)
-- [Uso](#uso)
+- [Instalação](#instalação)
+- [Como usar](#como-usar)
 - [Privacidade](#privacidade)
 - [Desenvolvimento](#desenvolvimento)
-- [Contribuir](#contribuir)
-- [Licenca](#licenca)
-
-> Fora do escopo desta traducao (out of scope): os detalhes tecnicos em profundidade estao no README em ingles e em `docs/`; esta traducao cobre instalacao, uso e o resumo de privacidade.
+- [Contribuição](#contribuição)
+- [Licença](#licença)
 
 ## Recursos
 
-**Tela infinita** — Pan e zoom livres (Ctrl+rolagem). Crie caixas ilimitadas em uma unica tela. Conecte caixas com linhas para mostrar relacionamentos. Defina relacionamentos pai-filho — mova um pai e seus filhos o seguem.
+**Tela infinita** : Movimentação panorâmica e zoom livres (Ctrl+rolagem). Crie quantas caixas precisar em uma única tela. Exiba relações entre caixas usando linhas de conexão. Defina relações pai-filho — as caixas filhas acompanham automaticamente o movimento da caixa pai.
 
-**Hierarquia de dois niveis** — Caixas grandes contem caixas pequenas, caixas pequenas contem marcadores. Clique em uma caixa para entrar em sua sub-tela. Navegacao por trilha mostra seu caminho. Aninhe tao profundamente quanto necessario.
+**Hierarquia de dois níveis** : Caixas grandes contêm caixas pequenas, e caixas pequenas contêm favoritos. Clique em uma caixa para acessar sua subtela. A navegação estrutural (breadcrumbs) mostra o caminho percorrido. Aninhamento em qualquer nível de profundidade.
 
-**Gerenciamento de marcadores** — Cada caixa tem sua propria colecao de marcadores com visualizacoes de lista e grade. Adicionar, editar, excluir com um dialogo limpo. Abrir na aba atual ou nova aba (configuravel). Arrastar para reordenar.
+**Gerenciamento de favoritos** : Cada caixa mantém sua própria coleção de favoritos com visualização em lista ou grade. Adicione, edite e exclua com facilidade. Abra links na guia atual ou em uma nova guia (configurável). Reordenação por arrastar e soltar.
 
-**Conectividade** — Linhas de conexao SVG visuais entre caixas. Alt+Clique em uma linha para exclui-la (configuravel: clique simples ou duplo clique). Propagacao de movimento pai-filho com fixacao de limites elastica.
+**Linhas de conexão** : Conexões SVG visuais entre as caixas. Alt+clique em uma linha para removê-la (configurável: clique simples ou duplo). Movimentação sincronizada de pai para filhos com limites elásticos.
 
-**Design e tema** — Estetica minimalista bege/creme. Modo claro e escuro com deteccao automatica do sistema. Tamanho de fonte e zoom ajustaveis. Alternancia de cantos quadrados/arredondados.
+**Design e temas** : Estética minimalista em tons de bege e creme. Modo escuro com acompanhamento automático do sistema. Tamanho de fonte e zoom ajustáveis. Alternância entre cantos retos e arredondados.
 
-**14 idiomas** — en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi com deteccao automatica do idioma do navegador.
+**14 idiomas** : en, zh_CN, zh_TW, ja, ko, fr, de, es, pt_BR, ru, ar, hi, th, vi (detecção automática pelo idioma do navegador).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../../docs/store-assets/screenshots/screenshot-2-boxes.png">
-  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Hierarquia de caixas e marcadores" width="1280">
+  <img src="../../docs/store-assets/screenshots/screenshot-2-boxes.png" alt="Hierarquia de caixas e favoritos" width="1280">
 </picture>
 
 ## Capturas de tela
 
-| Tela | Pastas e marcadores | Conexões |
+| Tela | Caixas e favoritos | Linhas de conexão |
 |---|---|---|
-| ![Tela](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Pastas e marcadores](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Conexões](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
+| ![Tela](../../docs/store-assets/screenshots/screenshot-1-canvas.png) | ![Caixas e favoritos](../../docs/store-assets/screenshots/screenshot-2-boxes.png) | ![Linhas de conexão](../../docs/store-assets/screenshots/screenshot-3-connections.png) |
 
-| Configurações | Edição de marcadores |
+| Configurações | Edição de favoritos |
 |---|---|
-| ![Configurações](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Edição de marcadores](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
+| ![Configurações](../../docs/store-assets/screenshots/screenshot-4-settings.png) | ![Edição de favoritos](../../docs/store-assets/screenshots/screenshot-5-bookmarks.png) |
 
-## Recursos de marca
-
-Logotipos claro/escuro, ícones da extensão, favicons, blocos da loja e a galeria de variantes estão em [`docs/brand/`](../../docs/brand/) (24 arquivos, do kit de recursos `box_png`). Reutilizáveis em anúncios de loja, documentação e na pré-visualização social do GitHub.
-
-## Instalacao
+## Instalação
 
 > [!IMPORTANT]
-> **Instale pelas páginas oficiais das lojas** (recomendado). As etapas de instalação e a versão publicada nas lojas estão no [README em inglês — Install](../../README.md#install).
-> As GitHub Releases são um **registro de mudanças para usuários**: [última release](https://github.com/Xxx91n/boxing/releases/latest).
+> **Recomendamos a instalação pelas páginas oficiais das lojas** (recomendado). As etapas oficiais e as versões atualmente publicadas são mantidas no [README em inglês — Install](../../README.md#install).
+> Os lançamentos do GitHub Releases servem exclusivamente como **registro de alterações para usuários**: [Última versão](https://github.com/Xxx91n/boxing/releases/latest).
 
 ### Firefox (instalação oficial)
 
-1. Abra [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/zh-CN/firefox/addon/boxing-newtab/)
-2. Clique em **Adicionar ao Firefox** e siga as instruções do navegador
+1. Acesse [Firefox Browser ADD-ONS — Boxing New Tab](https://addons.mozilla.org/pt-BR/firefox/addon/boxing-newtab/)
+2. Clique em **Add to Firefox** e siga as instruções do navegador para concluir a instalação
 
 ### Edge / Chromium (instalação oficial)
 
-1. Abra [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
-2. Clique em **Get** / **Obter** para instalar (no Chromium use a página da loja Edge)
+1. Acesse [Edge Add-ons — Boxing](https://microsoftedge.microsoft.com/addons/detail/inkgieheaiifkkdmlpggihjplkkgpepi)
+2. Clique em **Obter** / **Get** para concluir a instalação (navegadores baseados em Chromium devem usar a página do Edge)
 
-### Desenvolvedores: compilar a partir do código-fonte
+### Desenvolvedores: compilação a partir do código-fonte
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -85,44 +78,39 @@ npm ci
 npm run build
 ```
 
-- Chrome/Edge: `chrome://extensions` → Modo de desenvolvedor → **Carregar extensão descompactada** → selecione `dist/boxing-chrome/`
-- Firefox: `about:debugging#/runtime/this-firefox` → **Carregar complemento temporário** → selecione `dist/boxing-firefox/manifest.json`
+- Chrome/Edge: `chrome://extensions` → Modo do desenvolvedor → **Carregar sem compactação** → selecione `dist/boxing-chrome/`
+- Firefox: `about:debugging#/runtime/this-firefox` → **Carregar extensão temporária...** → selecione `dist/boxing-firefox/manifest.json`
 
 > [!NOTE]
-> Os zips gerados servem **para envio às lojas ou depuração local**, não são o canal oficial de instalação. Use os links de loja acima.
-> A assinatura é feita pelas lojas; as GitHub Releases deste repositório **não** distribuem mais `.xpi` / `.crx`.
+> Os pacotes zip gerados destinam-se ao **envio para as lojas ou depuração local**, não como canal de instalação para usuários finais. Para uso regular, utilize os links das lojas acima.
+> A assinatura digital é feita pelas lojas; este repositório **não distribui mais** arquivos `.xpi` / `.crx` no GitHub Releases.
 
-## Uso
+## Como usar
 
-- **Duplo clique** na tela vazia → criar nova caixa
-- **Arrastar** barra de titulo da caixa → mover caixa
-- **Ctrl+rolagem** → zoom da tela (30% a 200%)
-- **Arrastar** tela vazia → pan
-- **Clique direito** → voltar ao nivel de tela pai
-- **Clique** em uma caixa → entrar em sua sub-tela
-- **Arrastar** do ponto medio da borda da caixa → conectar a outra caixa
-- **Alt+Clique** na linha de conexao → exclui-la
-- **Estrela** em uma caixa → marcar como pai (filhos se movem juntos)
-- **Alfinete** → bloquear posicao da caixa
-- **Botao circular** no canto superior direito da tela → soltar cabecalho para modo tela cheia
+- **Clique duplo** na tela vazia → Criar nova caixa
+- **Arrastar** a barra de título da caixa → Mover a caixa
+- **Ctrl+rolagem** → Zoom na tela (de 30% a 200%)
+- **Arrastar** na tela vazia → Movimento panorâmico (pan)
+- **Botão direito** → Voltar à tela pai
+- **Clicar** na caixa → Entrar na subtela
+- **Arrastar** a partir do ponto médio da borda da caixa → Conectar a outra caixa
+- **Alt+clique** na linha de conexão → Excluir linha de conexão
+- **Estrela** na caixa → Marcar como caixa pai (caixas filhas se movem junto)
+- **Alfinete / Pin** → Fixar posição da caixa
+- **Botão circular** no canto superior direito da tela → Desafixar e entrar no modo tela cheia
 
 ## Privacidade
 
-- Todos os dados permanecem em `chrome.storage.local` — nada sai do seu dispositivo alem das solicitacoes de saida listadas abaixo ou de um backup em nuvem opcional que voce configure
-- O trafego de saida se limita a busca de favicons (servicos de icones de terceiros e requisicoes diretas de `favicon.ico`), a uma verificacao de versao anonima na API do GitHub Releases (com fallback para `https://boxing.xxx91n.com/demo/version.json` em caso de falha) e ao backup opcional WebDAV / GitHub Gist
-- URLs de WebDAV devem ser endpoints HTTPS publicos por padrao — nomes de host privados e locais sao recusados (somente verificacao do nome do host, sem resolucao de DNS); uma opcao explicita em Configuracoes → Sync relaxa apenas essa recusa para servidores LAN auto-hospedados, e HTTPS continua obrigatorio; regras e justificativa na [politica de privacidade](../../docs/privacy-policy.md)
-- As credenciais de sincronizacao ficam em um envelope ofuscado (nao cifrado com chave do usuario); backups exportados manualmente podem ser selados com uma frase-senha separada — detalhes na [politica de privacidade](../../docs/privacy-policy.md)
-- Sem analises, sem rastreamento; nenhum codigo de terceiros é executado
-- Politica de privacidade completa: [docs/privacy-policy.md](../../docs/privacy-policy.md)
+[docs/privacy-policy.md](../../docs/privacy-policy.md)
 
 ## Desenvolvimento
 
-### Pre-requisitos
+### Pré-requisitos
 
 - Node.js 24.22.1
 - npm
 
-### Configuracao
+### Configuração
 
 ```bash
 git clone https://github.com/Xxx91n/boxing.git
@@ -132,19 +120,19 @@ npx playwright install firefox chromium
 npm run build
 ```
 
-### Build
+### Compilação
 
 ```bash
-npm run build     # Build de desenvolvimento → dist/boxing-chrome + dist/boxing-firefox
+npm run build     # Compilação de desenvolvimento → dist/boxing-chrome + dist/boxing-firefox
 npm test          # Testes Playwright (Chrome + Firefox)
 ```
 
-Veja [CONTRIBUTING.md](../../CONTRIBUTING.md) para o guia de desenvolvimento completo.
+Consulte [CONTRIBUTING.md](../../CONTRIBUTING.md) para obter o guia completo de desenvolvimento.
 
-## Contribuir
+## Contribuição
 
-Contribuicoes sao bem-vindas! Veja [CONTRIBUTING.md](../../CONTRIBUTING.md) para configuracao, fluxo de trabalho e estilo de codigo.
+Contribuições são muito bem-vindas! Consulte [CONTRIBUTING.md](../../CONTRIBUTING.md) para saber mais sobre configuração do ambiente, fluxo de trabalho e estilo de código.
 
-## Licenca
+## Licença
 
-Apache-2.0 — veja [LICENSE](../../LICENSE)
+[Apache-2.0](../../LICENSE)
