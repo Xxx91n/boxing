@@ -25,7 +25,7 @@ test.describe('i18n ratchet guard (ticket 118)', () => {
     .sort();
 
   test('all 13 non-English locales satisfy ratchet thresholds from baseline', () => {
-    expect(nonEnLocales.length).toBe(13);
+    expect(nonEnLocales).toEqual(Object.keys(baselines).sort());
 
     for (const loc of nonEnLocales) {
       const locPath = path.join(LOCALES_DIR, loc, 'messages.json');
@@ -35,7 +35,7 @@ test.describe('i18n ratchet guard (ticket 118)', () => {
       const untranslated: string[] = [];
 
       for (const [key, val] of Object.entries(en as Record<string, { message: string }>)) {
-        if (data[key] && data[key].message === val.message) {
+        if (!data[key] || data[key].message === val.message) {
           untranslated.push(key);
         }
       }

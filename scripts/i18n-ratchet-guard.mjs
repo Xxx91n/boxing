@@ -19,16 +19,20 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LOCALES_DIR = path.join(ROOT, '_locales');
 const BASELINE_PATH = path.join(ROOT, 'test', 'i18n-baseline.json');
 
+/**
+ * Verifies that all locales satisfy the i18n ratchet thresholds.
+ * @returns {{ violations: string[], results: Record<string, { untranslatedCount: number, maxAllowed: number, untranslatedKeys: string[] }> }}
+ */
 export function checkI18nRatchet() {
   const violations = [];
   const enPath = path.join(LOCALES_DIR, 'en', 'messages.json');
   if (!fs.existsSync(enPath)) {
-    return ['_locales/en/messages.json does not exist'];
+    return { violations: ['_locales/en/messages.json does not exist'], results: {} };
   }
   const en = JSON.parse(fs.readFileSync(enPath, 'utf8'));
 
   if (!fs.existsSync(BASELINE_PATH)) {
-    return ['test/i18n-baseline.json does not exist'];
+    return { violations: ['test/i18n-baseline.json does not exist'], results: {} };
   }
   const baselineData = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8'));
   const baselines = baselineData.baselines || {};
@@ -40,6 +44,12 @@ export function checkI18nRatchet() {
 
   const results = {};
 
+  for (const loc of Object.keys(baselines)) {
+    if (!locales.includes(loc)) {
+      violations.push(`Locale ${loc} is missing`);
+    }
+  }
+
   for (const loc of locales) {
     const locPath = path.join(LOCALES_DIR, loc, 'messages.json');
     if (!fs.existsSync(locPath)) {
@@ -50,7 +60,7 @@ export function checkI18nRatchet() {
     const untranslated = [];
 
     for (const [key, val] of Object.entries(en)) {
-      if (data[key] && data[key].message === val.message) {
+      if (!data[key] || data[key].message === val.message) {
         untranslated.push(key);
       }
     }
