@@ -564,9 +564,14 @@ test.describe('WebDAV base URL with a query string or fragment (ticket 114)', ()
     expect(r.refused.statusText).toBe(r.refused.error);
     expect(r.refused.sent).toBe(0);
     // Same contract for the embedded-credential base: refused, nothing deleted.
+    // Ticket 116 split the visible text per reason, so the two refusals now differ
+    // in their prefix while still sharing the unchanged failure copy.
     expect(r.embedded.ok).toBe(false);
-    expect(r.embedded.error).toBe(r.refused.error);
     expect(r.embedded.statusText).toBe(r.embedded.error);
+    expect(r.embedded.error).not.toBe(r.refused.error);
+    const TAIL = 'Failed to delete the remote backup data — nothing was changed.';
+    expect(r.refused.error.endsWith(TAIL)).toBe(true);
+    expect(r.embedded.error.endsWith(TAIL)).toBe(true);
     expect(r.embedded.sent).toBe(0);
     // Control: the same call with a clean base does reach the transport.
     expect(r.accepted.sent).toBe(1);
