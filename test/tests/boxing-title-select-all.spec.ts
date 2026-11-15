@@ -116,17 +116,19 @@ const layoutTitle = (page: Page) =>
   page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].title);
 const childTitle = (page: Page) =>
   page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].title);
+// The storage facade writes through a serial chain (and may also be holding a
+// debounced save), so give a just-triggered write a moment to land before the counter
+// is read. This is instrumentation for the "exactly once" contract, not an assertion
+// about how fast the app persists.
 const writeCount = async (page: Page) => {
-  // Reads back the mock-storage layout so any write still queued in the facade's
-  // serial chain (and its cross-tab merge) is drained before the counter is read —
-  // reading must not write, which is what saveLayout() itself would do.
-  await page.evaluate(async () => {
-    await (window as any).__boxingDebug.storageGet('boxingLayout');
-  });
+  await page.waitForTimeout(300);
   return page.evaluate(() => Number(localStorage.getItem('__titleWriteCount') || '0'));
 };
-const resetWriteCount = (page: Page) =>
-  page.evaluate(() => localStorage.setItem('__titleWriteCount', '0'));
+const resetWriteCount = async (page: Page) => {
+  // Let anything the seeding step queued settle first, then open a fresh window.
+  await page.waitForTimeout(400);
+  await page.evaluate(() => localStorage.setItem('__titleWriteCount', '0'));
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // #120 T1 last bullet: the key cases also run in the REAL Chrome build.
@@ -372,11 +374,12 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     await boot(page);
     await seedTitles(page);
 
-    // Plain blur (focus moved to another real control) commits the trimmed text.
+    // Plain blur (focus moved to a blank canvas spot) commits the trimmed text.
+    await resetWriteCount(page);
     await page.locator('.large-box__title').click();
     await page.keyboard.press('ControlOrMeta+a');
     await page.keyboard.type('  Blurred  ');
-    await page.locator('#q').click();
+    await page.locator('.canvas__surface').click({ position: { x: 900, y: 700 } });
     await expect.poll(() => layoutTitle(page)).toBe('Blurred');
     await expect(page.locator('.large-box__title')).toHaveValue('Blurred');
     expect(await writeCount(page), 'a plain blur persists the edit exactly once').toBe(1);
@@ -404,9 +407,7 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     });
     await page.waitForTimeout(150);
     expect(await layoutTitle(page), 'an IME Enter must never commit the title').toBe('Blurred');
-    // No new title value has been written yet. (The blur itself still persists view
-    // state through the same storage facade, so the count only proves "no title edit".)
-    expect(await writeCount(page)).toBe(1);
+    expect(await writeCount(page), 'an IME Enter must not persist anything either').toBe(0);
 
     // Ending the composition leaves the decision to the user: nothing was saved, and
     // the next real Enter commits the current value exactly once.
