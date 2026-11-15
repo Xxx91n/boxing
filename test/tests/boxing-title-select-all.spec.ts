@@ -103,14 +103,49 @@ function titleState(page: Page, sel: string) {
   }, sel);
 }
 
-// A REAL mouse click at a horizontal fraction of the title input's own box. The
-// returned caret index comes from the control itself, so the assertions never depend
-// on guessing glyph widths.
+// A REAL mouse click at a fraction of the TITLE TEXT — not of the element's box.
+// The field stretches to fill its bar, so for a short name most of that box is empty
+// space to the right of the text: a fraction of the box lands past the last character
+// and the caret sits at the very end, which is why "the caret is in the middle" could
+// never hold (measured on the Firefox lane: clicking 40% of a 340px bar put the caret
+// after the last letter of "Delta"). The text extent is measured with the field's own
+// font, so the point is inside the glyphs regardless of paddings or zoom.
 async function clickTitleAt(page: Page, sel: string, fraction: number) {
-  const box = await page.locator(sel).boundingBox();
-  if (!box) throw new Error(sel + ' has no box');
-  await page.mouse.click(box.x + box.width * fraction, box.y + box.height / 2);
+  const point = await page.evaluate(({ s, f }) => {
+    const el = document.querySelector(s) as HTMLInputElement | null;
+    if (!el) throw new Error(s + ' is missing');
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const textWidth = ctx.measureText(el.value).width;
+    const padLeft = parseFloat(cs.paddingLeft) || 0;
+    const padRight = parseFloat(cs.paddingRight) || 0;
+    // Inside the text, and inside the field. A resting long title is parked at
+    // scrollLeft 0 and clipped at the right edge, so the visible glyphs are the first
+    // (r.width - padLeft - padRight) worth of text.
+    const visibleText = Math.max(0, Math.min(textWidth, r.width - padLeft - padRight));
+    const x = r.x + padLeft + visibleText * f;
+    // Guard the degenerate case (empty field): stay inside the control.
+    const clamped = Math.min(Math.max(x, r.x + 1), r.x + r.width - 1);
+    return { x: clamped, y: r.y + r.height / 2 };
+  }, { s: sel, f: fraction });
+  await page.mouse.click(point.x, point.y);
   return (await titleState(page, sel))!;
+}
+
+// A REAL click on empty canvas, used to blur a title the way a user would. The point is
+// derived from both the surface and the viewport: the surface is a virtual canvas that
+// can extend past the window, and Playwright waits (then times out) when asked to click
+// at a position its element does not cover — the old hard-coded {x: 900, y: 700} did
+// exactly that on lanes whose viewport is shorter.
+async function clickBlankCanvas(page: Page) {
+  const vp = page.viewportSize();
+  const box = await page.locator('.canvas__surface').boundingBox();
+  if (!box || !vp) throw new Error('the canvas surface has no box');
+  const x = Math.min(box.x + box.width - 24, vp.width - 24);
+  const y = Math.min(box.y + box.height - 24, vp.height - 24);
+  await page.mouse.click(x, y);
 }
 
 // Reaching the caret after a commit: Enter blurs the field, so the very next click is
@@ -393,25 +428,24 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     await page.locator('.large-box__title').click();
     await page.keyboard.press('ControlOrMeta+a');
     await page.keyboard.type('  Blurred  ');
-    await page.locator('.canvas__surface').click({ position: { x: 900, y: 700 } });
+    await clickBlankCanvas(page);
     await expect.poll(() => layoutTitle(page)).toBe('Blurred');
     await expect(page.locator('.large-box__title')).toHaveValue('Blurred');
     expect(await writeCount(page), 'a plain blur persists the edit exactly once').toBe(1);
 
     // While an IME composition is running, Enter belongs to the candidate list and
-    // must not commit. Chromium gets its real composition through CDP; the Firefox
-    // lane dispatches the same event shape (isComposing) the browser would produce.
+    // must not commit. Both lanes get the same event shape a browser produces
+    // (isComposing on keydown), which is the whole contract: the handler reads those
+    // two flags and nothing else.
+    //
+    // Chromium is deliberately NOT driven through CDP Input.imeSetComposition here.
+    // That call puts the real input pipeline into a composition, and no dispatched
+    // compositionend can take it back out: the later keyboard.type below then waits on
+    // a composing field until the whole test times out (measured: 60s, Firefox lane
+    // passthrough included). A synthetic pair has the same observable contract and
+    // leaves the field usable, which is what the rest of this case needs to prove.
     await page.locator('.large-box__title').click();
     await resetWriteCount(page);
-    const cdp = await page.context().newCDPSession(page).catch(() => null);
-    if (cdp) {
-      try {
-        await cdp.send('Input.imeSetComposition', { text: 'にほん', selectionStart: 3, selectionEnd: 3 });
-      } catch {
-        // Older Chromium builds may not accept the composition command; the
-        // dispatched events below carry the same contract.
-      }
-    }
     await page.evaluate(() => {
       const el = document.querySelector('.large-box__title')!;
       el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: 'にほん' }));
@@ -451,7 +485,16 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     ];
 
     for (const [pasted, expected] of cases) {
+      // A real click first, and the click is what proves the field is ready: the paste
+      // below is a dispatched event, so if the field were not focused the text would
+      // land nowhere and the empty title would commit as "Untitled box" instead of the
+      // pasted text. The select-all also means each round starts from the whole name,
+      // so the inserted text replaces it rather than appending to the previous case.
       await page.locator('.large-box__title').click();
+      const ready = (await titleState(page, '.large-box__title'))!;
+      expect(ready.focused, 'the field must own focus before the paste').toBe(true);
+      expect(ready.selected, 'a fresh click selects the whole name').toBe('Alpha');
+
       const notCancelled = await page.evaluate((text) => {
         const el = document.querySelector('.large-box__title') as HTMLInputElement;
         const dt = new DataTransfer();
@@ -461,6 +504,8 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
       }, pasted);
       // The handler claims the paste, so no native rich-text insertion happens.
       expect(notCancelled).toBe(false);
+      // The plain text really replaced the selection inside the field.
+      await expect(page.locator('.large-box__title')).toHaveValue(expected);
       await page.keyboard.press('Enter');
       await expect.poll(() => layoutTitle(page)).toBe(expected);
       await expect(page.locator('.large-box__title')).toHaveValue(expected);
