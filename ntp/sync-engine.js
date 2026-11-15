@@ -19,6 +19,7 @@ let refreshSnapshotHealth = null;
 let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput;
 let webdavPermissionBanner, webdavPermissionMsg, webdavPermissionBtn;
 let localAutoBackupStatusEl, localAutoBackupLastAtEl, localAutoBackupErrorEl, autoBackupUpgradeBox, autoBackupActivateBtn;
+let autoBackupRemoteEl;
 // Ticket 99 (T13): stored-credential danger zone refs — assigned in bindSyncBackupUi
 // before updateSyncConfigVisibility() first runs so the visibility toggle is safe.
 let syncCredentialDangerZone, deleteOpenBtn, deletePanel, deleteCancelBtn, deleteConfirmBtn, deleteRemoteCheck, deleteStatusEl;
@@ -1207,6 +1208,49 @@ export function initSyncEngineFacade(deps) {
       return false;
     }
 
+    // Ticket #125 (spec #120 T5): the cloud result line. It is separate from the
+    // local snapshot result on purpose — a local snapshot success never claims the
+    // cloud side worked, and a cloud pause keeps its own reason visible here.
+    const REMOTE_REASON_I18N = {
+      'need-permission': 'autoBackupCloudReasonNeedPermission',
+      'remote-exists-untrusted': 'autoBackupCloudReasonRemoteExists',
+      'remote-exists-unknown': 'autoBackupCloudReasonRemoteExists',
+      'remote-unreachable': 'autoBackupCloudReasonUnreachable',
+      'auth-failed': 'autoBackupCloudReasonAuth',
+      'invalid-target': 'autoBackupCloudReasonInvalidTarget',
+      'credential-unreadable': 'autoBackupCloudReasonCredential',
+      'create-conflict': 'autoBackupCloudReasonConflict',
+      'create-failed': 'autoBackupCloudReasonError',
+      'conditional-unsupported': 'autoBackupCloudReasonConditional',
+      'unknown-outcome': 'autoBackupCloudReasonUnknownOutcome',
+      'target-changed': 'autoBackupCloudReasonTargetChanged',
+      'internal-error': 'autoBackupCloudReasonError',
+    };
+
+    function formatRemoteAutoBackupState(remote) {
+      if (!remote || remote.status === 'idle') return { text: '', state: 'idle' };
+      const reason = i18n(REMOTE_REASON_I18N[remote.lastErrorCode] || 'autoBackupCloudReasonError');
+      if (remote.status === 'running') {
+        return { text: i18n('localAutoBackupStatusRunning'), state: 'active' };
+      }
+      if (remote.status === 'ok') {
+        const when = remote.lastSuccessAt > 0 ? new Date(remote.lastSuccessAt).toLocaleString() : '';
+        const suffix = when ? ' · ' + i18n('autoBackupCloudLastLabel') + ': ' + when : '';
+        return { text: i18n('autoBackupCloudStatusOk') + suffix, state: 'ok' };
+      }
+      if (remote.status === 'unknown') {
+        return { text: i18n('autoBackupCloudStatusUnknown'), state: 'unknown' };
+      }
+      if (remote.status === 'paused') {
+        // Blocking pauses need the user to resolve the remote side; tell them how to
+        // release the pause (switching auto-backup off and on is the explicit action).
+        const blocking = ['remote-exists-untrusted', 'remote-exists-unknown', 'create-conflict', 'conditional-unsupported', 'invalid-target', 'target-changed'];
+        const hint = blocking.includes(remote.lastErrorCode) ? ' ' + i18n('autoBackupCloudRetryHint') : '';
+        return { text: i18n('autoBackupCloudStatusPaused', [reason]) + hint, state: 'paused' };
+      }
+      return { text: i18n('autoBackupCloudStatusError', [reason]), state: 'error' };
+    }
+
     function formatAutoBackupStateLabel(state, isActive, needsOptIn) {
       const st = state && state.local ? state.local.status : 'idle';
       if (st === 'error' && (isActive || (state && state.local && state.local.lastError))) {
@@ -1260,6 +1304,13 @@ export function initSyncEngineFacade(deps) {
           localAutoBackupErrorEl.textContent = '';
           localAutoBackupErrorEl.hidden = true;
         }
+      }
+      if (autoBackupRemoteEl) {
+        const remoteLine = formatRemoteAutoBackupState(state && state.remote);
+        autoBackupRemoteEl.textContent = remoteLine.text;
+        autoBackupRemoteEl.hidden = !remoteLine.text;
+        if (remoteLine.text) autoBackupRemoteEl.dataset.state = remoteLine.state;
+        else delete autoBackupRemoteEl.dataset.state;
       }
       if (autoBackupUpgradeBox) {
         autoBackupUpgradeBox.hidden = !needsLegacyOptIn;
@@ -1354,6 +1405,8 @@ export function initSyncEngineFacade(deps) {
                 ...(prev.local || {}),
                 status: (prev.local && (prev.local.lastSuccessAt > 0 || prev.local.lastError)) ? 'cancelled' : 'idle',
               },
+              // Ticket #125: cloud history survives the switch-off.
+              remote: prev.remote,
               lock: null,
             });
             if (mySeq !== localAutoBackupConfigSeq) {
@@ -1384,6 +1437,7 @@ export function initSyncEngineFacade(deps) {
             nextScheduledAt: now + intervalSec * 1000,
             updatedAt: now,
             local: localState,
+            remote: prev.remote,
             lock: null,
           });
           if (mySeq !== localAutoBackupConfigSeq) {
@@ -1463,6 +1517,7 @@ export function bindSyncBackupUi() {
     localAutoBackupStatusEl = document.getElementById('local-auto-backup-status-text');
     localAutoBackupLastAtEl = document.getElementById('local-auto-backup-last-at');
     localAutoBackupErrorEl = document.getElementById('local-auto-backup-error');
+    autoBackupRemoteEl = document.getElementById('auto-backup-remote-status');
     autoBackupUpgradeBox = document.getElementById('auto-backup-upgrade-box');
     autoBackupActivateBtn = document.getElementById('auto-backup-activate-btn');
 

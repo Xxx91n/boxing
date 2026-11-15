@@ -23,6 +23,28 @@
   const AUTO_BACKUP_LOCK_TTL_MS = 30000;
   const MIN_AUTO_BACKUP_INTERVAL_SEC = 3600;
 
+  // Ticket #125 (spec #120 T5): cloud (WebDAV) result is tracked separately from the
+  // local snapshot result. A local snapshot success never turns into a cloud success,
+  // and a cloud pause/unknown never erases the local success time.
+  // Status vocabulary is closed: 'idle' | 'running' | 'ok' | 'paused' | 'unknown' | 'error'.
+  const AUTO_BACKUP_REMOTE_STATUSES = Object.freeze(['idle', 'running', 'ok', 'paused', 'unknown', 'error']);
+  // Reason codes are a closed allow-list; NTP maps each to a localized line.
+  const AUTO_BACKUP_REMOTE_REASONS = Object.freeze([
+    'need-permission',
+    'remote-exists-untrusted',
+    'remote-exists-unknown',
+    'remote-unreachable',
+    'auth-failed',
+    'invalid-target',
+    'credential-unreadable',
+    'create-conflict',
+    'create-failed',
+    'conditional-unsupported',
+    'unknown-outcome',
+    'target-changed',
+    'internal-error',
+  ]);
+
   const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);
   const dailyBucket = (ts) => Math.floor(ts / DAY_MS);
   const weeklyBucket = (ts) => Math.floor(ts / (7 * DAY_MS));
@@ -275,6 +297,16 @@
     return ALLOWED_AUTO_BACKUP_INTERVALS.includes(n) ? n : 0;
   }
 
+  function defaultRemoteAutoBackupState() {
+    return {
+      status: 'idle',
+      lastAttemptAt: 0,
+      lastSuccessAt: 0,
+      lastErrorCode: null,
+      baseline: null,
+    };
+  }
+
   function defaultAutoBackupState() {
     return {
       version: 1,
@@ -290,7 +322,39 @@
         lastSnapshotTs: 0,
         lastError: null,
       },
+      remote: defaultRemoteAutoBackupState(),
       lock: null,
+    };
+  }
+
+  // Trusted cloud baseline: binds the auto-backup writer to ONE real remote file and
+  // account. No credential material is ever stored here.
+  function normalizeRemoteBaseline(raw) {
+    if (!isPlainObject(raw)) return null;
+    if (raw.service !== 'webdav') return null;
+    if (typeof raw.fileUrl !== 'string' || !raw.fileUrl) return null;
+    return {
+      service: 'webdav',
+      fileUrl: raw.fileUrl.slice(0, 4096),
+      account: typeof raw.account === 'string' ? raw.account.slice(0, 512) : '',
+      createdAt: Math.max(0, Number(raw.createdAt) || 0),
+      etag: typeof raw.etag === 'string' ? raw.etag.slice(0, 512) : null,
+    };
+  }
+
+  function normalizeRemoteAutoBackupState(raw) {
+    const dflt = defaultRemoteAutoBackupState();
+    if (!isPlainObject(raw)) return dflt;
+    const status = AUTO_BACKUP_REMOTE_STATUSES.includes(raw.status) ? raw.status : 'idle';
+    const code = typeof raw.lastErrorCode === 'string' && AUTO_BACKUP_REMOTE_REASONS.includes(raw.lastErrorCode)
+      ? raw.lastErrorCode
+      : null;
+    return {
+      status,
+      lastAttemptAt: Math.max(0, Number(raw.lastAttemptAt) || 0),
+      lastSuccessAt: Math.max(0, Number(raw.lastSuccessAt) || 0),
+      lastErrorCode: code,
+      baseline: normalizeRemoteBaseline(raw.baseline),
     };
   }
 
@@ -326,6 +390,7 @@
         lastSnapshotTs: Math.max(0, Number(rawLocal.lastSnapshotTs) || 0),
         lastError: typeof rawLocal.lastError === 'string' && rawLocal.lastError ? rawLocal.lastError : null,
       },
+      remote: normalizeRemoteAutoBackupState(raw.remote),
       lock,
     };
   }
@@ -374,6 +439,8 @@
     ALLOWED_AUTO_BACKUP_INTERVALS,
     AUTO_BACKUP_LOCK_TTL_MS,
     MIN_AUTO_BACKUP_INTERVAL_SEC,
+    AUTO_BACKUP_REMOTE_STATUSES,
+    AUTO_BACKUP_REMOTE_REASONS,
     readIndexWithAdapter,
     writeIndexWithAdapter,
     rotateAndWriteIndexWithAdapter,
@@ -384,6 +451,8 @@
     getLatestSnapshotWithAdapter,
     normalizeAutoBackupInterval,
     defaultAutoBackupState,
+    defaultRemoteAutoBackupState,
+    normalizeRemoteAutoBackupState,
     normalizeAutoBackupState,
     isAutoBackupActive,
     isAutoBackupOverdue,

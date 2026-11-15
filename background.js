@@ -340,6 +340,347 @@ try {
     return normalized;
   }
 
+  // ── Ticket #125 (spec #120 T5): background WebDAV first-create auto backup ──
+  // One job only: when the user has enabled auto-backup against a saved WebDAV
+  // target, and the remote file is verifiably ABSENT, create it once with
+  // If-None-Match: * so a concurrent writer can never be overwritten. Every
+  // uncertain case pauses with a reason code and sends nothing. Updating a known
+  // target on later cycles belongs to T6 and is deliberately not implemented here.
+  const BG_WEBDAV_DEFAULT_FILENAME = 'boxing-backup.json';
+  const BG_CRED_KEY_STORE_KEY = 'boxingCredKey.v1';
+  const BG_CRED_OBFUSCATION_SECRET = 'boxing-sync-cred-v2-app-secret-2024';
+  let bgCredKeyPromise = null;
+  const bgWebdavTargetQueues = new Map();
+
+  // Per-target write queue: a page-driven manual PUT and the background create
+  // sequence for the same fileUrl never interleave inside this worker. The
+  // create itself stays protected across worker restarts by the conditional header.
+  function enqueueBgWebdavTargetWrite(targetUrl, fn) {
+    const key = typeof targetUrl === 'string' ? targetUrl : '';
+    const prev = bgWebdavTargetQueues.get(key) || Promise.resolve();
+    const next = prev.then(fn, fn);
+    const tail = next.then(() => undefined, () => undefined);
+    bgWebdavTargetQueues.set(key, tail);
+    tail.then(() => {
+      if (bgWebdavTargetQueues.get(key) === tail) bgWebdavTargetQueues.delete(key);
+    });
+    return next;
+  }
+
+  function bgSubtleCrypto() {
+    const c = root.crypto || (typeof crypto !== 'undefined' ? crypto : null);
+    return c && c.subtle ? c.subtle : null;
+  }
+
+  function bgB64ToBytes(b64) {
+    const bin = atob(String(b64));
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  async function bgGetPerInstallCredKeyB64() {
+    if (bgCredKeyPromise) return bgCredKeyPromise;
+    bgCredKeyPromise = (async () => {
+      const res = await bgStorageGet({ [BG_CRED_KEY_STORE_KEY]: null });
+      const v = res && res[BG_CRED_KEY_STORE_KEY];
+      return typeof v === 'string' && v.length >= 40 ? v : '';
+    })().catch(() => { bgCredKeyPromise = null; return ''; });
+    return bgCredKeyPromise;
+  }
+
+  async function bgDeriveCredKey(saltBytes, mode) {
+    const material = mode === 'v3' ? await bgGetPerInstallCredKeyB64() : BG_CRED_OBFUSCATION_SECRET;
+    const subtle = bgSubtleCrypto();
+    if (!material || !subtle) return null;
+    const baseKey = await subtle.importKey('raw', new TextEncoder().encode(material), 'PBKDF2', false, ['deriveKey']);
+    return subtle.deriveKey(
+      { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+      baseKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  }
+
+  // Same envelope compatibility as ntp/credentials.js (v1 decrypt bridge, v2 legacy
+  // constant secret, v3 per-install key, legacy plaintext string). Plaintext is used
+  // only as the Authorization value and never enters state, logs, or snapshots.
+  async function bgDecryptCredential(enc) {
+    if (!enc) return '';
+    if (typeof enc === 'string') return enc;
+    const subtle = bgSubtleCrypto();
+    if (!subtle) return '';
+    try {
+      if (enc.k && enc.iv && enc.d) {
+        const key = await subtle.importKey('raw', bgB64ToBytes(enc.k), { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+        const dec = await subtle.decrypt({ name: 'AES-GCM', iv: bgB64ToBytes(enc.iv) }, key, bgB64ToBytes(enc.d));
+        return new TextDecoder().decode(dec);
+      }
+      if ((enc.v === 2 || enc.v === 3) && enc.s && enc.iv && enc.d) {
+        const key = await bgDeriveCredKey(bgB64ToBytes(enc.s), enc.v === 3 ? 'v3' : 'v2');
+        if (!key) return '';
+        const dec = await subtle.decrypt({ name: 'AES-GCM', iv: bgB64ToBytes(enc.iv) }, key, bgB64ToBytes(enc.d));
+        return new TextDecoder().decode(dec);
+      }
+    } catch (e) {
+      bgErr('bgDecryptCredential failed', e);
+    }
+    return '';
+  }
+
+  // Mirrors ntp/sync-engine.js resolveWebDAVFileUrl for every accepted base URL
+  // (origin + pathname, trailing slash, custom syncFileName sanitization, and the
+  // verbatim path that already ends in .json).
+  function bgResolveWebdavFileUrl(settings) {
+    const base = settings && typeof settings.webdavUrl === 'string' ? settings.webdavUrl.trim() : '';
+    if (!base || base.length > BG_MAX_URL) return { error: 'invalid-url' };
+    let target;
+    try { target = new URL(base); } catch (_) { return { error: 'invalid-url' }; }
+    if (target.protocol !== 'https:') return { error: 'invalid-url' };
+    if (target.username || target.password) return { error: 'invalid-url' };
+    if (target.search || target.hash) return { error: 'invalid-url' };
+    if (!isSafeWebDAVUrl(base, settings.webdavAllowPrivateHost === true)) return { error: 'invalid-url' };
+    const baseHref = target.origin + target.pathname;
+    let basePath = baseHref;
+    if (!basePath.endsWith('/')) basePath += '/';
+    const customName = (typeof settings.syncFileName === 'string' ? settings.syncFileName : '')
+      .trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
+    const filename = customName || BG_WEBDAV_DEFAULT_FILENAME;
+    let fileUrl = basePath.endsWith(filename) ? basePath : basePath + filename;
+    if (target.pathname.endsWith('.json')) fileUrl = baseHref;
+    if (fileUrl.length > BG_MAX_URL) return { error: 'invalid-url' };
+    try { if (new URL(fileUrl).href.length > BG_MAX_URL) return { error: 'invalid-url' }; } catch (_) { return { error: 'invalid-url' }; }
+    return { fileUrl };
+  }
+
+  // Same allowlist boundary as the page (#122): only sanitized boxing data leaves,
+  // syncLevel still decides what the user shares. Credentials never enter this body.
+  function bgBuildWebdavBackupBody(rawLayout) {
+    const clean = swSanitizeLayoutForBackup(rawLayout);
+    const level = rawLayout && rawLayout.settings ? rawLayout.settings.syncLevel : undefined;
+    if (level === 'settingsOnly') {
+      clean.boxes = [];
+      clean.connections = [];
+    } else if (level === 'boxesOnly') {
+      clean.settings = null;
+    }
+    return JSON.stringify(clean, null, 2);
+  }
+
+  async function bgWebdavReadFileState(url, user, pass) {
+    const h = new Headers();
+    const auth = makeAuthHeader(user, pass);
+    if (auth) h.set('Authorization', auth);
+    const resp = await fetch(url, { method: 'GET', headers: h, redirect: 'manual' });
+    if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') return { kind: 'unreachable' };
+    try { if (resp.body && typeof resp.body.cancel === 'function') await resp.body.cancel(); } catch (_) {}
+    if (resp.status === 404) return { kind: 'absent' };
+    if (resp.status === 401 || resp.status === 403) return { kind: 'auth' };
+    if (resp.ok) return { kind: 'exists', etag: resp.headers.get('etag') || null };
+    return { kind: 'unreachable', status: resp.status };
+  }
+
+  // Create-only PUT. The header is the whole safety story: on a correct server a
+  // concurrent writer turns this into 412 instead of being overwritten.
+  async function bgWebdavCreateOnly(url, user, pass, body) {
+    const h = new Headers({ 'Content-Type': 'application/json', 'If-None-Match': '*' });
+    const auth = makeAuthHeader(user, pass);
+    if (auth) h.set('Authorization', auth);
+    const resp = await fetch(url, { method: 'PUT', headers: h, body, redirect: 'manual' });
+    if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') throw new Error('webdav conditional create redirect blocked');
+    return { status: resp.status, ok: Boolean(resp.ok), etag: resp.headers.get('etag') || null };
+  }
+
+  async function bgRecordWebDAVPendingPermission(origin, reason) {
+    if (!origin || !api.storage || !api.storage.local || !api.storage.local.set) return;
+    try {
+      const stored = await bgStorageGet({ [BG_WEBDAV_PERM_KEY]: null });
+      const prev = stored && stored[BG_WEBDAV_PERM_KEY];
+      const nextReason = (reason === 'missing-permission' && prev && prev.needed && prev.origin === origin && prev.reason === 'denied')
+        ? 'denied'
+        : (reason || 'missing-permission');
+      await api.storage.local.set({
+        webdavPendingPermission: { needed: true, origin, source: 'background', reason: nextReason, updatedAt: Date.now() },
+      });
+    } catch (e) {
+      bgErr('bgRecordWebDAVPendingPermission failed', e);
+    }
+  }
+
+  function bgRemoteStatusForCode(code) {
+    if (code === 'remote-unreachable' || code === 'create-failed' || code === 'internal-error') return 'error';
+    if (code === 'unknown-outcome') return 'unknown';
+    return 'paused';
+  }
+
+  function bgAutoBackupNeedsAttention(localState, remoteState) {
+    if (localState && localState.status === 'error') return true;
+    const rs = remoteState && remoteState.status;
+    return rs === 'paused' || rs === 'unknown' || rs === 'error';
+  }
+
+  async function runBackgroundWebDAVAutoBackup(opts) {
+    const options = opts || {};
+    const core = await ensureSnapshotCore();
+    const state = options.state;
+    const rawLayout = options.layout;
+    const activeEpoch = options.epoch;
+    const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
+    const settings = rawLayout && rawLayout.settings ? rawLayout.settings : null;
+
+    if (!settings || settings.syncProvider !== 'webdav') {
+      // Not a WebDAV target: cloud auto-backup is off. Keep the trusted baseline
+      // (so switching back to the same target still matches), just stop reporting.
+      return {
+        attempted: false,
+        skipped: 'not-webdav',
+        remote: { ...prevRemote, status: 'idle', lastErrorCode: null },
+      };
+    }
+
+    const pausedRemote = (code) => ({
+      status: bgRemoteStatusForCode(code),
+      lastAttemptAt: Date.now(),
+      lastSuccessAt: prevRemote.lastSuccessAt || 0,
+      lastErrorCode: code,
+      baseline: prevRemote.baseline || null,
+    });
+
+    const derived = bgResolveWebdavFileUrl(settings);
+    const user = typeof settings.webdavUser === 'string' ? settings.webdavUser.trim() : '';
+
+    if (prevRemote.baseline) {
+      if (derived.error) return { attempted: false, remote: pausedRemote('invalid-target') };
+      if (prevRemote.baseline.fileUrl !== derived.fileUrl || prevRemote.baseline.account !== user) {
+        return { attempted: false, remote: pausedRemote('target-changed') };
+      }
+      // Known + unchanged target: T5 never writes it. T6 owns periodic updates.
+      return { attempted: false, skipped: 'baseline-present', remote: { ...prevRemote, status: 'ok', lastErrorCode: null } };
+    }
+
+    // A previous create whose response was lost must not be retried blindly. The
+    // user clears this only by changing the auto-backup setting (an explicit action).
+    if (prevRemote.status === 'unknown') {
+      return { attempted: false, skipped: 'unknown-outcome', remote: prevRemote };
+    }
+
+    // Safety pauses that require the user to look at the remote file first do not
+    // retry on their own (D4: user resolves, then auto-backup resumes). Permission,
+    // auth, credential and reachability problems stay retryable because fixing them
+    // is a normal user action elsewhere in Settings.
+    const BG_REMOTE_BLOCKING_REASONS = [
+      'remote-exists-untrusted', 'remote-exists-unknown', 'create-conflict',
+      'conditional-unsupported', 'invalid-target', 'target-changed',
+    ];
+    if (prevRemote.status === 'paused' && BG_REMOTE_BLOCKING_REASONS.includes(prevRemote.lastErrorCode)) {
+      return { attempted: false, skipped: 'paused', remote: prevRemote };
+    }
+
+    if (derived.error) return { attempted: false, remote: pausedRemote('invalid-target') };
+
+    let pass = '';
+    if (settings._encWebdavPass) {
+      pass = await bgDecryptCredential(settings._encWebdavPass);
+      if (!pass) return { attempted: false, remote: pausedRemote('credential-unreadable') };
+    }
+    if (user && !pass) return { attempted: false, remote: pausedRemote('credential-unreadable') };
+
+    const perm = await ensureWebDAVPermission(derived.fileUrl);
+    if (!perm.ok) {
+      if (perm.needPermission && perm.origin) {
+        await bgRecordWebDAVPendingPermission(perm.origin, 'missing-permission');
+        return { attempted: false, remote: pausedRemote('need-permission') };
+      }
+      return { attempted: false, remote: pausedRemote('invalid-target') };
+    }
+
+    const outcome = await enqueueBgWebdavTargetWrite(derived.fileUrl, async () => {
+      const live = await bgReadAutoBackupState();
+      if (!core.isAutoBackupActive(live) || live.epoch !== activeEpoch) {
+        return { attempted: false, cancelled: true, remote: live.remote };
+      }
+      if (live.remote && live.remote.baseline) {
+        return { attempted: false, skipped: 'baseline-present', remote: { ...live.remote, status: 'ok', lastErrorCode: null } };
+      }
+      if (live.remote && live.remote.status === 'unknown') {
+        return { attempted: false, skipped: 'unknown-outcome', remote: live.remote };
+      }
+
+      let fileState;
+      try {
+        fileState = await bgWebdavReadFileState(derived.fileUrl, user, pass);
+      } catch (e) {
+        bgErr('WebDAV auto-backup: remote check failed', e);
+        return { attempted: true, remote: pausedRemote('remote-unreachable') };
+      }
+      if (fileState.kind === 'exists') return { attempted: true, remote: pausedRemote('remote-exists-untrusted') };
+      if (fileState.kind === 'auth') return { attempted: true, remote: pausedRemote('auth-failed') };
+      if (fileState.kind !== 'absent') return { attempted: true, remote: pausedRemote('remote-unreachable') };
+
+      let body;
+      try {
+        body = bgBuildWebdavBackupBody(rawLayout);
+        JSON.parse(body);
+      } catch (_) {
+        return { attempted: true, remote: pausedRemote('internal-error') };
+      }
+
+      // The user may have disabled auto-backup while the remote check was in flight.
+      const liveBeforeWrite = await bgReadAutoBackupState();
+      if (!core.isAutoBackupActive(liveBeforeWrite) || liveBeforeWrite.epoch !== activeEpoch) {
+        return { attempted: false, cancelled: true, remote: liveBeforeWrite.remote };
+      }
+      if (liveBeforeWrite.remote && liveBeforeWrite.remote.baseline) {
+        return { attempted: false, skipped: 'baseline-present', remote: { ...liveBeforeWrite.remote, status: 'ok', lastErrorCode: null } };
+      }
+
+      let created;
+      try {
+        created = await bgWebdavCreateOnly(derived.fileUrl, user, pass, body);
+      } catch (e) {
+        // The request may or may not have reached the server. Do not guess and do
+        // not retry automatically; the user must re-check the target first.
+        bgErr('WebDAV auto-backup: conditional create outcome unknown', e);
+        return { attempted: true, remote: pausedRemote('unknown-outcome') };
+      }
+
+      if (created.status === 201) {
+        const confirmedAt = Date.now();
+        return {
+          attempted: true,
+          created: true,
+          remote: {
+            status: 'ok',
+            lastAttemptAt: confirmedAt,
+            lastSuccessAt: confirmedAt,
+            lastErrorCode: null,
+            baseline: {
+              service: 'webdav',
+              fileUrl: derived.fileUrl,
+              account: user,
+              createdAt: confirmedAt,
+              etag: created.etag || null,
+            },
+          },
+        };
+      }
+      if (created.status === 412) return { attempted: true, remote: pausedRemote('remote-exists-unknown') };
+      if (created.status === 409) return { attempted: true, remote: pausedRemote('create-conflict') };
+      if (created.status === 401 || created.status === 403) return { attempted: true, remote: pausedRemote('auth-failed') };
+      if (created.status === 428) return { attempted: true, remote: pausedRemote('conditional-unsupported') };
+      // A plain 200/204 means the server did not prove create-only behaviour — a
+      // server that ignores If-None-Match could have overwritten a file. Fail closed.
+      if (created.ok) return { attempted: true, remote: pausedRemote('conditional-unsupported') };
+      return { attempted: true, remote: pausedRemote('create-failed') };
+    });
+
+    bgLog('WebDAV auto-backup result:', JSON.stringify({
+      attempted: Boolean(outcome && outcome.attempted),
+      created: Boolean(outcome && outcome.created),
+      skipped: (outcome && outcome.skipped) || null,
+      status: outcome && outcome.remote ? outcome.remote.status : null,
+      code: outcome && outcome.remote ? outcome.remote.lastErrorCode : null,
+    }));
+    return outcome;
+  }
+
   async function runBackgroundLocalAutoBackup(opts) {
     const options = opts || {};
     const trigger = String(options.trigger || 'alarm');
@@ -400,10 +741,12 @@ try {
 
       let snapOutcome = null;
       let errMessage = null;
+      let rawLayout = null;
       try {
         const storedLayout = await bgStorageGet({ boxingLayout: null });
-        const rawLayout = storedLayout && storedLayout.boxingLayout;
+        rawLayout = storedLayout && storedLayout.boxingLayout;
         if (!swIsPlausibleLayout(rawLayout)) {
+          rawLayout = null; // never build a cloud body from an invalid layout
           throw new Error('boxingLayout is missing or invalid for local auto-backup');
         }
 
@@ -430,8 +773,7 @@ try {
         bgErr('Background local auto-backup failed (' + trigger + '):', errMessage);
       }
 
-      const latestState = await bgReadAutoBackupState();
-      const finishedAt = Date.now();
+      let latestState = await bgReadAutoBackupState();
       if (!core.isAutoBackupActive(latestState) || latestState.epoch !== activeEpoch) {
         // User turned off or changed configuration mid-flight: preserve disabled/new state.
         if (!core.isAutoBackupActive(latestState)) {
@@ -441,6 +783,54 @@ try {
           ok: Boolean(snapOutcome && snapOutcome.ok),
           cancelled: !core.isAutoBackupActive(latestState),
           state: latestState,
+        };
+      }
+
+      // Ticket #125: the cloud (WebDAV) first-create attempt runs only after the local
+      // snapshot settled, and its result stays independent from the local result.
+      let remoteOutcome = null;
+      if (rawLayout) {
+        try {
+          remoteOutcome = await runBackgroundWebDAVAutoBackup({
+            state: latestState,
+            layout: rawLayout,
+            epoch: activeEpoch,
+            trigger,
+          });
+        } catch (e) {
+          bgErr('Background WebDAV auto-backup failed (' + trigger + '):', e);
+          remoteOutcome = {
+            attempted: true,
+            remote: {
+              ...latestState.remote,
+              status: 'error',
+              lastAttemptAt: Date.now(),
+              lastErrorCode: 'internal-error',
+            },
+          };
+        }
+      }
+      const remoteState = (remoteOutcome && remoteOutcome.remote) || latestState.remote;
+      latestState = await bgReadAutoBackupState();
+      const finishedAt = Date.now();
+
+      // The user may have disabled auto-backup while the remote create was in flight.
+      // A confirmed create is still recorded truthfully; stop everything else.
+      if (!core.isAutoBackupActive(latestState) || latestState.epoch !== activeEpoch) {
+        await bgWriteAutoBackupState({
+          ...latestState,
+          updatedAt: finishedAt,
+          remote: remoteState,
+          lock: null,
+        });
+        if (!core.isAutoBackupActive(latestState)) {
+          await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+        }
+        return {
+          ok: Boolean(snapOutcome && snapOutcome.ok),
+          cancelled: !core.isAutoBackupActive(latestState),
+          state: latestState,
+          remote: remoteState,
         };
       }
 
@@ -457,11 +847,12 @@ try {
             lastSnapshotTs: snapOutcome.ts,
             lastError: null,
           },
+          remote: remoteState,
           lock: null,
         });
-        await setAutoBackupBadge(false);
+        await setAutoBackupBadge(bgAutoBackupNeedsAttention(savedState.local, savedState.remote));
         bgLog('Background local auto-backup saved ts=' + snapOutcome.ts + ' trigger=' + trigger);
-        return { ok: true, ts: snapOutcome.ts, state: savedState };
+        return { ok: true, ts: snapOutcome.ts, state: savedState, remote: savedState.remote };
       }
 
       // Failure: NEVER update lastSuccessAt or lastSnapshotTs.
@@ -476,10 +867,11 @@ try {
           lastSnapshotTs: prevLocal.lastSnapshotTs || 0,
           lastError: errMessage || 'Failed to save local snapshot',
         },
+        remote: remoteState,
         lock: null,
       });
       await setAutoBackupBadge(true);
-      return { ok: false, error: failState.local.lastError, state: failState };
+      return { ok: false, error: failState.local.lastError, state: failState, remote: failState.remote };
     });
 
     if (!forceImmediate) {
@@ -548,6 +940,8 @@ try {
             ...prevLocal,
             status: prevLocal.lastSuccessAt > 0 || prevLocal.lastError ? 'cancelled' : 'idle',
           },
+          // Cloud success/pause history is not erased by turning auto-backup off.
+          remote: prev.remote,
           lock: null,
         });
         return { ok: true, state: disabledState };
@@ -566,6 +960,14 @@ try {
           status: 'running',
           lastError: null,
         },
+        // Ticket #125: an explicit user re-enable/reconfigure is the acknowledgement
+        // that releases a held pause or unknown outcome; the next attempt re-checks the
+        // remote file before writing anything.
+        remote: prev.remote ? {
+          ...prev.remote,
+          status: (prev.remote.status === 'unknown' || prev.remote.status === 'paused') ? 'idle' : prev.remote.status,
+          lastErrorCode: (prev.remote.status === 'unknown' || prev.remote.status === 'paused') ? null : prev.remote.lastErrorCode,
+        } : undefined,
         lock: null,
       });
       await bgAlarmsCreate(BG_AUTO_BACKUP_ALARM_NAME, {
@@ -651,6 +1053,11 @@ try {
     configureBackgroundAutoBackup,
     getAutoBackupState: bgReadAutoBackupState,
     inspectAndRecordBackgroundWebDAVPermission,
+    runBackgroundWebDAVAutoBackup,
+    readWebdavFileState: bgWebdavReadFileState,
+    decryptCredential: bgDecryptCredential,
+    resolveWebdavFileUrl: bgResolveWebdavFileUrl,
+    buildWebdavBackupBody: bgBuildWebdavBackupBody,
   };
 
   // ── WebDAV message proxy ────────────────────────────────────
@@ -945,7 +1352,9 @@ try {
         const result = await handleWebDAVTest(msg);
         return { success: true, ...result };
       } else if (msg.type === 'webdav-put') {
-        const result = await handleWebDAVPut(msg);
+        // Ticket #125: page-driven manual PUTs and the background create sequence share
+        // one per-target queue, so the same remote file never sees two writers at once.
+        const result = await enqueueBgWebdavTargetWrite(msg.url, () => handleWebDAVPut(msg));
         return { success: true, ...result };
       } else if (msg.type === 'webdav-get') {
         const result = await handleWebDAVGet(msg);

@@ -711,7 +711,10 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
           },
         ];
         dbg.layout.nextLargeIndex = 2;
-        dbg.layout.settings.syncProvider = 'webdav';
+        // Ticket #125: keep the WebDAV fields to prove they never leak into snapshots,
+        // but leave the provider on Local so this #124 spec still isolates the local
+        // snapshot lane (cloud auto-backup now has its own spec: boxing-webdav-auto-backup).
+        dbg.layout.settings.syncProvider = 'local';
         dbg.layout.settings.webdavUrl = 'https://dav.example.com/private/';
         dbg.layout.settings.webdavUser = 'secret-account';
         dbg.layout.settings._encWebdavPass = { v: 1, iv: 'iv1', ct: 'CIPHER_SHOULD_NOT_LEAK' };

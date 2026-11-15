@@ -1363,7 +1363,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "Salva instantâneos locais automaticamente neste navegador, mesmo sem uma Nova Guia aberta. Nunca envia nem baixa arquivos.",
+    "message": "Salva snapshots locais em segundo plano neste navegador automaticamente, mesmo sem nenhuma Nova Guia aberta. Com WebDAV selecionado, a primeira cópia na nuvem só é criada quando é seguro; um arquivo remoto existente nunca é sobrescrito automaticamente.",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1389,6 +1389,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "Pausado — confirmação necessária",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "Cópia na nuvem criada",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "Cópia na nuvem pausada — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "Resultado da cópia na nuvem desconhecido — verifique o arquivo remoto antes de tentar de novo",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "Falha na cópia na nuvem — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "Última cópia na nuvem",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "O acesso ao WebDAV ainda não foi concedido. Use o botão de permissão acima e tente novamente.",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "O arquivo remoto já existe e este navegador não o verificou, então nada foi sobrescrito.",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "Não foi possível acessar o servidor remoto.",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "A conta ou a senha do WebDAV foi rejeitada.",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "O endereço WebDAV salvo não é seguro para envio automático.",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "Não foi possível ler a senha do WebDAV salva. Digite-a novamente para continuar.",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "Outro escritor alterou o arquivo remoto durante a criação.",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "O servidor não comprovou que a criação exclusiva é aplicada, então o envio automático parou.",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "O resultado do envio é desconhecido. Verifique o arquivo remoto e desligue e ligue a cópia automática para tentar de novo.",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "O endereço, a conta ou o nome do arquivo WebDAV mudou. Confirme o novo destino antes de retomar a cópia automática.",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "Falha inesperada durante o envio automático.",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "Desligue e ligue a cópia automática para tentar de novo depois de corrigir o lado remoto.",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "Seu intervalo anterior foi mantido. O backup local automático em segundo plano fica pausado até você ativar aqui.",
