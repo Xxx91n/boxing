@@ -1523,6 +1523,10 @@
     "message": "GitHub refused the request. Check the token, its gist scope, and the target.",
     "description": "Background Gist backup paused because GitHub returned a 4xx response"
   },
+  "gistAutoBackupErrTooLarge": {
+    "message": "The backup data is too large to send automatically. Automatic Gist backup is paused.",
+    "description": "Background Gist backup paused because the sanitized payload exceeds the request cap"
+  },
   "gistAutoBackupErrCheck": {
     "message": "Could not verify the GitHub account or its Gists. Automatic Gist backup is paused.",
     "description": "Background Gist backup paused because the account check failed"

@@ -947,7 +947,7 @@ try {
     const payload = swBuildSyncPayload(rawLayout);
     const content = JSON.stringify(payload, null, 2);
     if (content.length > BG_MAX_BODY) {
-      return finishPause('gistRequestRejected', cloud, sameAccountPatch);
+      return finishPause('gistPayloadTooLarge', cloud, sameAccountPatch);
     }
     const body = gistCore.buildGistCreateBody(fileName, content);
     const startedAt = Date.now();

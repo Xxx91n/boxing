@@ -1294,6 +1294,7 @@ export function initSyncEngineFacade(deps) {
       gistUnknownExisting: 'gistAutoBackupErrExisting',
       gistResultUnknown: 'gistAutoBackupErrUnknown',
       gistRequestRejected: 'gistAutoBackupErrRejected',
+      gistPayloadTooLarge: 'gistAutoBackupErrTooLarge',
       gistCheckFailed: 'gistAutoBackupErrCheck',
       gistUpdateNotEnabled: 'gistAutoBackupErrUpdate',
     };

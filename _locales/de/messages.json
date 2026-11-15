@@ -1450,5 +1450,8 @@
   },
   "gistAutoBackupErrExisting": {
     "message": "Ein Gist mit diesem Dateinamen existiert bereits, ist aber nicht in Boxing erfasst. Die automatische Sicherung ist pausiert."
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "Die Sicherungsdaten sind zu groß für den automatischen Upload. Die automatische Gist-Sicherung ist pausiert."
   }
 }

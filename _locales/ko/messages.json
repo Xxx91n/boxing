@@ -1450,5 +1450,8 @@
   },
   "gistAutoBackupErrExisting": {
     "message": "이 파일 이름의 Gist가 이미 있지만 Boxing에 기록되어 있지 않습니다. 자동 백업을 중지했습니다."
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "백업 데이터가 너무 커서 자동으로 보낼 수 없습니다. 자동 Gist 백업을 중지했습니다."
   }
 }

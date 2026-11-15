@@ -1450,5 +1450,8 @@
   },
   "gistAutoBackupErrExisting": {
     "message": "Ya existe un Gist con este nombre de archivo, pero Boxing no lo tiene registrado. La copia automática está en pausa."
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "Los datos de copia son demasiado grandes para enviarlos automáticamente. La copia Gist automática está en pausa."
   }
 }

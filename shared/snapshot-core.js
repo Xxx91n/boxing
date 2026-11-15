@@ -291,9 +291,9 @@
     };
   }
 
-  // A present-but-malformed account/baseline/pending marker must still block the
-  // unattended path. Returning null here would re-open the "create a fresh Gist"
-  // branch on corrupt state, which is exactly the duplicate the ticket forbids.
+  // A present-but-malformed Gist baseline/pending object still normalizes to a
+  // marker, so corrupt local state cannot re-open the "create a fresh Gist" branch.
+  // A non-object or non-Gist baseline belongs to another target and is ignored.
   function normalizeAccountId(value) {
     if (typeof value === 'number' && Number.isFinite(value)) return value;
     return typeof value === 'string' && /^\d{1,20}$/.test(value) ? value : '';

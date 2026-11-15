@@ -1450,5 +1450,8 @@
   },
   "gistAutoBackupErrExisting": {
     "message": "Đã có Gist với tên tệp này nhưng Boxing không theo dõi nó. Sao lưu tự động đã tạm dừng."
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "Dữ liệu sao lưu quá lớn để gửi tự động. Sao lưu Gist tự động đã tạm dừng."
   }
 }

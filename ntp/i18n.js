@@ -245,6 +245,7 @@ I18N_FALLBACK.gistAutoBackupErrTarget = 'The Gist target or file name does not m
 I18N_FALLBACK.gistAutoBackupErrExisting = 'A Gist with this file name already exists but is not tracked by Boxing. Automatic backup is paused.';
 I18N_FALLBACK.gistAutoBackupErrUnknown = 'A previous Gist creation has no confirmed result. Check GitHub before retrying.';
 I18N_FALLBACK.gistAutoBackupErrRejected = 'GitHub refused the request. Check the token, its gist scope, and the target.';
+I18N_FALLBACK.gistAutoBackupErrTooLarge = 'The backup data is too large to send automatically. Automatic Gist backup is paused.';
 I18N_FALLBACK.gistAutoBackupErrCheck = 'Could not verify the GitHub account or its Gists. Automatic Gist backup is paused.';
 I18N_FALLBACK.gistAutoBackupErrUpdate = 'The Gist already exists. Automatic updates of an existing Gist are not enabled yet.';
 I18N_FALLBACK.settingsNavGeneral = 'General';

@@ -1450,5 +1450,8 @@
   },
   "gistAutoBackupErrExisting": {
     "message": "このファイル名の Gist は既に存在しますが、Boxing に記録されていません。自動バックアップを停止しました。"
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "バックアップデータが大きすぎて自動送信できません。自動 Gist バックアップを停止しました。"
   }
 }

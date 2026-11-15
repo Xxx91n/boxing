@@ -718,6 +718,25 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(state.cloud.pendingCreate.gistId).toBe('abc12345');
   });
 
+  test('a payload over the request cap pauses as too large without POST', async () => {
+    const store = await baseStore();
+    store.boxingLayout.boxes[0].title = 'X'.repeat(2_200_000);
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return jsonResponse(200, []);
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(false);
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistPayloadTooLarge');
+    expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+  });
+
   test('missing token pauses without network and keeps local snapshot success independent', async () => {
     const env = await encryptV3(TOKEN, PIK);
     const layout = seedLayout(env);
@@ -780,7 +799,6 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
         provider: 'gist',
         status: 'paused',
         lastErrorCode: 'gistTargetNeedsReview',
-        lastError: 'target mismatch',
       }),
     });
 
@@ -803,7 +821,6 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
           lastAttemptAt: 2,
           lastSuccessAt: 0,
           lastErrorCode: 'gistResultUnknown',
-          lastError: 'unknown',
           account: null,
           baseline: null,
           pendingCreate: { provider: 'gist', fileName: 'boxing-backup.json' },
@@ -837,7 +854,6 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
           status: 'ok',
           lastAttemptAt: 10,
           lastSuccessAt: 10,
-          lastError: null,
           lastErrorCode: null,
           account: { login: 'spec-user', id: 42 },
           baseline: {

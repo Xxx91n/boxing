@@ -1453,5 +1453,8 @@
   },
   "gistAutoBackupErrExisting": {
     "message": "该文件名对应的 Gist 已存在，但 Boxing 没有记录它。自动备份已暂停。"
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "备份数据太大，无法自动上传。自动 Gist 备份已暂停。"
   }
 }

@@ -1450,5 +1450,8 @@
   },
   "gistAutoBackupErrExisting": {
     "message": "Un Gist portant ce nom de fichier existe déjà mais n’est pas suivi par Boxing. La sauvegarde automatique est en pause."
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "Les données de sauvegarde sont trop volumineuses pour un envoi automatique. La sauvegarde Gist automatique est en pause."
   }
 }
