@@ -483,6 +483,120 @@ test.describe('Ticket #124 — Background local auto-backup contracts (file:// +
         .catch(() => {});
     }
   });
+
+  test('SW takePreUpdateSnapshot allocates monotonic ts on same-ms collision and backwards clock skew', async () => {
+    const vm = require('node:vm');
+    const existingTs = 1_750_000_000_000;
+    const preIndex: any[] = [];
+    const store: Record<string, any> = {
+      boxingLayout: {
+        version: 3.5,
+        schemaVersion: 3,
+        nextLargeIndex: 2,
+        boxes: [{ id: 'L1', type: 'large', title: 'Updated State', x: 0, y: 0, width: 320, height: 220, children: [] }],
+        connections: [],
+        settings: { selectedLanguage: 'en', onboardingCompleted: true },
+      },
+    };
+    // Fill 30 snapshots (cap) ending at existingTs so clock-backwards would be sorted first & evicted if not monotonic.
+    for (let i = 0; i < 30; i++) {
+      const ts = existingTs - (29 - i) * 3600_000;
+      const snap = { ts, schemaVersion: 3, data: { version: 3.5, boxes: [{ id: 'OLD_' + i }] } };
+      store['snap.v1.' + ts] = snap;
+      preIndex.push({ ts, schemaVersion: 3, size: JSON.stringify(snap).length });
+    }
+    store['snap.v1.index'] = preIndex;
+
+    let fakeNow = existingTs; // Start with exact same-ms collision against latest snapshot
+    let onInstalledHandler: ((details: any) => Promise<void>) | null = null;
+    const FakeDate: any = function (...args: any[]) {
+      return args.length ? new (Date as any)(...args) : new Date(fakeNow);
+    };
+    FakeDate.now = () => fakeNow;
+    FakeDate.UTC = Date.UTC;
+    FakeDate.parse = Date.parse;
+    FakeDate.prototype = Date.prototype;
+
+    const chromeMock = {
+      storage: {
+        local: {
+          get: (keys: any, cb?: (res: any) => void) => {
+            const out: Record<string, any> = {};
+            if (keys == null) Object.assign(out, structuredClone(store));
+            else if (typeof keys === 'string') { if (keys in store) out[keys] = structuredClone(store[keys]); }
+            else if (Array.isArray(keys)) { for (const k of keys) if (k in store) out[k] = structuredClone(store[k]); }
+            else { for (const [k, d] of Object.entries(keys)) out[k] = k in store ? structuredClone(store[k]) : d; }
+            if (typeof cb === 'function') { cb(out); return undefined; }
+            return Promise.resolve(out);
+          },
+          set: (obj: Record<string, any>, cb?: () => void) => {
+            for (const [k, v] of Object.entries(obj)) store[k] = structuredClone(v);
+            if (typeof cb === 'function') { cb(); return undefined; }
+            return Promise.resolve();
+          },
+          remove: (keys: string | string[], cb?: () => void) => {
+            for (const k of Array.isArray(keys) ? keys : [keys]) delete store[k];
+            if (typeof cb === 'function') { cb(); return undefined; }
+            return Promise.resolve();
+          },
+        },
+        sync: { get: (_k: any, cb?: (r: any) => void) => { cb && cb({}); } },
+      },
+      alarms: {
+        get: (_n: string, cb?: (a: any) => void) => { cb && cb(null); return Promise.resolve(null); },
+        create: () => Promise.resolve(),
+        clear: (_n: string, cb?: (b: boolean) => void) => { cb && cb(true); return Promise.resolve(true); },
+        onAlarm: { addListener: () => {} },
+      },
+      action: {
+        setBadgeText: () => Promise.resolve(),
+        setBadgeBackgroundColor: () => Promise.resolve(),
+      },
+      runtime: {
+        id: 'spec-ext-id',
+        getURL: (p: string) => 'chrome-extension://spec-ext-id/' + p,
+        onInstalled: { addListener: (fn: any) => { onInstalledHandler = fn; } },
+        onStartup: { addListener: () => {} },
+        onMessage: { addListener: () => {} },
+        lastError: null,
+      },
+    };
+
+    const sandbox: any = {
+      chrome: chromeMock,
+      console: { log: () => {}, warn: () => {}, error: () => {} },
+      Date: FakeDate,
+      Math, JSON, Object, Array, Number, String, Boolean, RegExp, Error, Set, Map, WeakSet, WeakMap, URL, Promise,
+      importScripts: (relPath: string) => {
+        const code = fs.readFileSync(path.join(ROOT_DIR, relPath), 'utf8');
+        vm.runInContext(code, sandbox, { filename: relPath });
+      },
+    };
+    sandbox.self = sandbox;
+    sandbox.globalThis = sandbox;
+    vm.createContext(sandbox);
+    vm.runInContext(fs.readFileSync(path.join(ROOT_DIR, 'background.js'), 'utf8'), sandbox, { filename: 'background.js' });
+
+    expect(typeof onInstalledHandler).toBe('function');
+
+    // 1) Exact same-millisecond Date.now() collision: must allocate existingTs + 1 and preserve existing snapshot.
+    await onInstalledHandler!({ reason: 'update', previousVersion: '2026.10.0' });
+    const idxAfterSameMs = store['snap.v1.index'];
+    expect(idxAfterSameMs[idxAfterSameMs.length - 1].ts).toBe(existingTs + 1);
+    expect(new Set(idxAfterSameMs.map((e: any) => e.ts)).size).toBe(idxAfterSameMs.length);
+    expect(store['snap.v1.' + existingTs]?.data?.boxes?.[0]?.id).toBe('OLD_29');
+    expect(store['snap.v1.' + (existingTs + 1)]?.reason).toBe('pre-update');
+    expect(store['snap.v1.' + (existingTs + 1)]?.data?.boxes?.[0]?.title).toBe('Updated State');
+
+    // 2) Clock skewed 1 hour backwards: must still allocate existingTs + 2 and NOT get evicted.
+    fakeNow = existingTs - 3600_000;
+    await onInstalledHandler!({ reason: 'update', previousVersion: '2026.10.1' });
+    const idxAfterSkew = store['snap.v1.index'];
+    expect(idxAfterSkew[idxAfterSkew.length - 1].ts).toBe(existingTs + 2);
+    expect(new Set(idxAfterSkew.map((e: any) => e.ts)).size).toBe(idxAfterSkew.length);
+    expect(store['snap.v1.' + (existingTs + 2)]?.reason).toBe('pre-update');
+    expect(store['snap.v1.' + (existingTs + 2)]?.data?.boxes?.[0]?.title).toBe('Updated State');
+  });
 });
 
 function verifyAndAttachSwNetworkAudit(ctx: any) {

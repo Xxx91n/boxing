@@ -1215,21 +1215,50 @@ try {
   async function takePreUpdateSnapshot() {
     return enqueueBgSnapshotOp(async () => {
       try {
-        const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });
+        const storedLayout = await bgStorageGet({ boxingLayout: null });
+        const boxingLayout = storedLayout && storedLayout.boxingLayout;
         if (!swIsPlainObj(boxingLayout)) return; // no valid layout object (fresh install or corrupt non-object) — nothing to snapshot
-        const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: swSanitizeLayoutForBackup(boxingLayout) };
+        let core = null;
+        try {
+          core = await ensureSnapshotCore();
+        } catch (_) {
+          core = null;
+        }
+        if (core && typeof core.saveSnapshotWithAdapter === 'function') {
+          const outcome = await core.saveSnapshotWithAdapter(bgSnapStorage, boxingLayout, {
+            reason: 'pre-update',
+            sanitizeLayout: swSanitizeLayoutForBackup,
+            log: bgLog,
+            errorLog: bgErr,
+            returnDetails: true,
+          });
+          if (outcome && outcome.ok) {
+            bgLog('pre-update snapshot saved ts=' + outcome.ts + ' bytes=' + outcome.size);
+          } else if (outcome && outcome.reason === 'oversize') {
+            bgErr('pre-update snapshot skipped: ' + outcome.size + 'B exceeds 2MB single cap');
+          }
+          return;
+        }
+        // Fallback for minimal VM harnesses without importScripts/import(): still allocate strictly monotonic ts.
+        const stored = await bgStorageGet(SW_SNAP_INDEX_KEY);
+        const index = Array.isArray(stored && stored[SW_SNAP_INDEX_KEY]) ? stored[SW_SNAP_INDEX_KEY].slice() : [];
+        let maxTs = 0;
+        for (const row of index) {
+          if (row && typeof row.ts === 'number' && row.ts > maxTs) maxTs = row.ts;
+        }
+        const ts = Math.max(Date.now(), maxTs + 1);
+        const snap = { ts, schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: swSanitizeLayoutForBackup(boxingLayout) };
         const json = JSON.stringify(snap);
         if (json.length > SW_SNAP_MAX_BYTES) { bgErr('pre-update snapshot skipped: ' + json.length + 'B exceeds 2MB single cap'); return; }
-        await api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });
-        const stored = await api.storage.local.get(SW_SNAP_INDEX_KEY);
-        const index = Array.isArray(stored && stored[SW_SNAP_INDEX_KEY]) ? stored[SW_SNAP_INDEX_KEY] : [];
+        await bgStorageSetValidated({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap }, SW_SNAP_KEY_PREFIX);
         index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion, size: json.length });
         index.sort((a, b) => a.ts - b.ts);
+        let evicted = [];
         if (index.length > SW_SNAP_INDEX_CAP) {
-          const evicted = index.splice(0, index.length - SW_SNAP_INDEX_CAP);
-          for (const e of evicted) { try { await api.storage.local.remove(SW_SNAP_KEY_PREFIX + e.ts); } catch (_) { /* non-fatal */ } }
+          evicted = index.splice(0, index.length - SW_SNAP_INDEX_CAP);
         }
-        await api.storage.local.set({ [SW_SNAP_INDEX_KEY]: index });
+        await bgStorageSetValidated({ [SW_SNAP_INDEX_KEY]: index }, SW_SNAP_INDEX_KEY);
+        for (const e of evicted) { try { await bgStorageRemoveValidated(SW_SNAP_KEY_PREFIX + e.ts); } catch (_) { /* non-fatal */ } }
         bgLog('pre-update snapshot saved ts=' + snap.ts + ' bytes=' + json.length);
       } catch (e) { bgErr('pre-update snapshot failed', e); } // never block onInstalled
     });
