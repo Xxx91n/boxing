@@ -291,7 +291,9 @@ test.describe('Ticket #124 — Background local auto-backup contracts (file:// +
 
     // Release the slow opt-in save and verify stale completion does NOT overwrite opt-out.
     await page.evaluate(() => (window as any).__releaseSlowSave());
-    await page.waitForTimeout(150);
+    await expect
+      .poll(() => page.evaluate(() => (window as any).__boxingGetPendingAutoBackupConfigCount()), { timeout: 5000 })
+      .toBe(0);
 
     const finalState = await page.evaluate(async () => {
       const dbg = (window as any).__boxingDebug;
@@ -406,6 +408,53 @@ test.describe('Ticket #124 — Background local auto-backup contracts (file:// +
   });
 });
 
+function verifyAndAttachSwNetworkAudit(ctx: any) {
+  const downloads: string[] = [];
+  const externalRequests: string[] = [];
+  let probeUrl: string | null = null;
+  let probeCapturedFromSw = false;
+
+  const onPage = (p: any) => {
+    p.on('download', (d: any) => downloads.push(d.suggestedFilename()));
+  };
+  const onRequest = (req: any) => {
+    const u = req.url();
+    if (probeUrl && u === probeUrl) {
+      if (req.serviceWorker()) probeCapturedFromSw = true;
+      return;
+    }
+    if (u.startsWith('http://') || u.startsWith('https://')) {
+      externalRequests.push(u);
+    }
+  };
+
+  ctx.on('page', onPage);
+  ctx.on('request', onRequest);
+
+  return {
+    downloads,
+    externalRequests,
+    async verifySwCapture(sw: any) {
+      const testProbeUrl = 'https://sw-network-audit.invalid/ping';
+      probeUrl = testProbeUrl;
+      probeCapturedFromSw = false;
+      const routeHandler = (route: any) => route.abort();
+      await ctx.route(testProbeUrl, routeHandler);
+      try {
+        await sw.evaluate((u: string) => fetch(u).catch(() => {}), testProbeUrl);
+        await expect.poll(() => probeCapturedFromSw, { timeout: 5000 }).toBe(true);
+      } finally {
+        await ctx.unroute(testProbeUrl, routeHandler).catch(() => {});
+        probeUrl = null;
+      }
+    },
+    dispose() {
+      ctx.off('page', onPage);
+      ctx.off('request', onRequest);
+    },
+  };
+}
+
 test.describe('Ticket #124 — Real Chrome extension background local auto-backup (chromium-extension only)', () => {
   test('AC1-AC6: runs with zero NTP tabs open, deduplicates concurrent catch-ups, cleans up on disable, isolates failures + badge, and rolls back via Time Machine', async ({}, testInfo) => {
     test.setTimeout(180_000);
@@ -426,15 +475,8 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
       ],
     });
 
-    const downloads: string[] = [];
-    const externalRequests: string[] = [];
-    ctx.on('page', (p) => {
-      p.on('download', (d) => downloads.push(d.suggestedFilename()));
-      p.on('request', (req) => {
-        const u = req.url();
-        if (u.startsWith('http://') || u.startsWith('https://')) externalRequests.push(u);
-      });
-    });
+    const audit = verifyAndAttachSwNetworkAudit(ctx);
+    const { downloads, externalRequests } = audit;
 
     try {
       const keeperPage = await ctx.newPage();
@@ -446,6 +488,9 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
         .poll(() => ntpPage.evaluate(() => Boolean((window as any).__boxingDebug?.saveLayout)), { timeout: 30000 })
         .toBe(true);
       await dismissOnboarding(ntpPage);
+
+      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
+      await audit.verifySwCapture(sw);
 
       // Seed initial layout with a box and simulated encrypted secret (must stay out of snapshots).
       await ntpPage.evaluate(async () => {
@@ -496,11 +541,14 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
       await openSyncTab(ntpPage);
       await ntpPage.locator('#auto-backup-interval').selectOption('3600');
       await expect
-        .poll(async () => (await readAutoBackupStateFromPage(ntpPage)).optIn, { timeout: 15000 })
+        .poll(async () => {
+          const st = await readAutoBackupStateFromPage(ntpPage);
+          const pending = await ntpPage.evaluate(() => (window as any).__boxingGetPendingAutoBackupConfigCount());
+          return st.optIn === true && st.local?.status === 'ok' && pending === 0;
+        }, { timeout: 15000 })
         .toBe(true);
       await expect(ntpPage.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'active');
 
-      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
       const afterOptIn = await sw.evaluate(async () => {
         const alarm = await chrome.alarms.get('boxing-auto-backup');
         const all = await chrome.storage.local.get(null);
@@ -705,6 +753,7 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
       expect(downloads).toEqual([]);
       expect(externalRequests).toEqual([]);
     } finally {
+      audit.dispose();
       await ctx.close().catch(() => {});
       fs.rmSync(profile, { recursive: true, force: true });
     }
@@ -729,15 +778,8 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
       ],
     });
 
-    const downloads: string[] = [];
-    const externalRequests: string[] = [];
-    ctx.on('page', (p) => {
-      p.on('download', (d) => downloads.push(d.suggestedFilename()));
-      p.on('request', (req) => {
-        const u = req.url();
-        if (u.startsWith('http://') || u.startsWith('https://')) externalRequests.push(u);
-      });
-    });
+    const audit = verifyAndAttachSwNetworkAudit(ctx);
+    const { downloads, externalRequests } = audit;
 
     try {
       const ntpPage = await ctx.newPage();
@@ -747,13 +789,19 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
         .toBe(true);
       await dismissOnboarding(ntpPage);
 
+      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
+      await audit.verifySwCapture(sw);
+
       await openSyncTab(ntpPage);
       await ntpPage.locator('#auto-backup-interval').selectOption('604800');
       await expect
-        .poll(async () => (await readAutoBackupStateFromPage(ntpPage)).optIn, { timeout: 15000 })
+        .poll(async () => {
+          const st = await readAutoBackupStateFromPage(ntpPage);
+          const pending = await ntpPage.evaluate(() => (window as any).__boxingGetPendingAutoBackupConfigCount());
+          return st.optIn === true && st.local?.status === 'ok' && pending === 0;
+        }, { timeout: 15000 })
         .toBe(true);
 
-      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
       const recoveryMissingLock = await sw.evaluate(async () => {
         const bg = (self as any).__boxingBgAutoBackup;
         const cur = (await chrome.storage.local.get('autoBackupState')).autoBackupState;
@@ -828,6 +876,7 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
       expect(downloads).toEqual([]);
       expect(externalRequests).toEqual([]);
     } finally {
+      audit.dispose();
       await ctx.close().catch(() => {});
       fs.rmSync(profile, { recursive: true, force: true });
     }
@@ -852,15 +901,8 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
       ],
     });
 
-    const downloads: string[] = [];
-    const externalRequests: string[] = [];
-    ctx.on('page', (p) => {
-      p.on('download', (d) => downloads.push(d.suggestedFilename()));
-      p.on('request', (req) => {
-        const u = req.url();
-        if (u.startsWith('http://') || u.startsWith('https://')) externalRequests.push(u);
-      });
-    });
+    const audit = verifyAndAttachSwNetworkAudit(ctx);
+    const { downloads, externalRequests } = audit;
 
     try {
       const ntpPage = await ctx.newPage();
@@ -870,13 +912,19 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
         .toBe(true);
       await dismissOnboarding(ntpPage);
 
+      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
+      await audit.verifySwCapture(sw);
+
       await openSyncTab(ntpPage);
       await ntpPage.locator('#auto-backup-interval').selectOption('3600');
       await expect
-        .poll(async () => (await readAutoBackupStateFromPage(ntpPage)).optIn, { timeout: 15000 })
+        .poll(async () => {
+          const st = await readAutoBackupStateFromPage(ntpPage);
+          const pending = await ntpPage.evaluate(() => (window as any).__boxingGetPendingAutoBackupConfigCount());
+          return st.optIn === true && st.local?.status === 'ok' && pending === 0;
+        }, { timeout: 15000 })
         .toBe(true);
 
-      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
       const initialSnaps = await ntpPage.evaluate(() => (window as any).__boxingDebug.listSnapshots());
       expect(initialSnaps).toHaveLength(1);
 
@@ -913,6 +961,137 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
       expect(downloads).toEqual([]);
       expect(externalRequests).toEqual([]);
     } finally {
+      audit.dispose();
+      await ctx.close().catch(() => {});
+      fs.rmSync(profile, { recursive: true, force: true });
+    }
+  });
+
+  test('autoBackupState updates refresh Time Machine snapshots without clearing open conflict comparison panels', async ({}, testInfo) => {
+    test.setTimeout(120_000);
+    test.skip(testInfo.project.name !== 'chromium-extension', 'real extension SW test runs on chromium-extension lane');
+    test.skip(
+      !fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
+      'dist/boxing-chrome is not built - run npm run build first',
+    );
+
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-issue124-conflict-'));
+    const ctx = await chromium.launchPersistentContext(profile, {
+      headless: false,
+      args: [
+        '--load-extension=' + DIST_CHROME,
+        '--disable-extensions-except=' + DIST_CHROME,
+        '--no-first-run',
+        '--no-default-browser-check',
+      ],
+    });
+
+    const audit = verifyAndAttachSwNetworkAudit(ctx);
+    const { downloads, externalRequests } = audit;
+
+    try {
+      const ntpPage = await ctx.newPage();
+      await ntpPage.goto('chrome://newtab', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await expect
+        .poll(() => ntpPage.evaluate(() => Boolean((window as any).__boxingDebug?.saveLayout)), { timeout: 30000 })
+        .toBe(true);
+      await dismissOnboarding(ntpPage);
+
+      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
+      await audit.verifySwCapture(sw);
+
+      // Seed current layout + a diverged conflict archive + activate local auto-backup.
+      await ntpPage.evaluate(async () => {
+        const dbg = (window as any).__boxingDebug;
+        dbg.layout.boxes = [
+          {
+            id: 'L1',
+            type: 'large',
+            title: 'Current Alpha',
+            x: 40,
+            y: 50,
+            width: 320,
+            height: 220,
+            nextSmallIndex: 1,
+            children: [],
+          },
+        ];
+        dbg.layout.nextLargeIndex = 2;
+        await dbg.saveLayout();
+
+        const ts = 1_726_100_000_000;
+        const raw = {
+          boxes: [
+            {
+              id: 'L1',
+              type: 'large',
+              title: 'Conflicted Alpha',
+              x: 40,
+              y: 50,
+              width: 320,
+              height: 220,
+              nextSmallIndex: 1,
+              children: [],
+            },
+          ],
+        };
+        const size = JSON.stringify(raw).length;
+        await dbg.storageSet({
+          ['boxingLayout.conflict.' + ts]: { ts, reason: 'import-merge', side: 'incoming', raw, size, boxes: 1 },
+          'boxingLayout.conflict.index': [{ ts, reason: 'import-merge', side: 'incoming', size, boxes: 1 }],
+        });
+      });
+
+      await openSyncTab(ntpPage);
+      await ntpPage.locator('#auto-backup-interval').selectOption('3600');
+      await expect
+        .poll(async () => {
+          const st = await readAutoBackupStateFromPage(ntpPage);
+          const pending = await ntpPage.evaluate(() => (window as any).__boxingGetPendingAutoBackupConfigCount());
+          return st.optIn === true && st.local?.status === 'ok' && pending === 0;
+        }, { timeout: 15000 })
+        .toBe(true);
+      const activeBadgeText = (await ntpPage.locator('#local-auto-backup-status-text').textContent()) || '';
+
+      await openDataTab(ntpPage);
+      await expect(ntpPage.locator('#data-snapshot-list .data-snapshot-row')).toHaveCount(1);
+      await ntpPage.locator('#data-conflict-list .data-conflict-compare-btn').first().click();
+      await expect(ntpPage.locator('#data-conflict-list .data-conflict-diff')).toBeVisible();
+      await ntpPage.locator('#data-conflict-list .data-conflict-diff input[type="radio"][value="copy"]').first().check();
+      await expect(ntpPage.locator('#data-conflict-list .data-conflict-apply-btn')).toBeEnabled();
+
+      // 1) Intermediate autoBackupState update (lastSnapshotTs unchanged) must not wipe panel or selection.
+      await sw.evaluate(async () => {
+        const cur = (await chrome.storage.local.get('autoBackupState')).autoBackupState;
+        await chrome.storage.local.set({
+          autoBackupState: {
+            ...cur,
+            local: {
+              ...cur.local,
+              status: 'running',
+              lastAttemptAt: Date.now(),
+            },
+          },
+        });
+      });
+      await expect(ntpPage.locator('#local-auto-backup-status-text')).not.toHaveText(activeBadgeText);
+      await expect(ntpPage.locator('#data-conflict-list .data-conflict-diff')).toBeVisible();
+      await expect(ntpPage.locator('#data-conflict-list .data-conflict-apply-btn')).toBeEnabled();
+
+      // 2) Background backup completes (lastSnapshotTs changes while modal is open): updates Time Machine
+      //    snapshots in-place without clearing #data-conflict-list or conflictPanels selection.
+      const bgRes = await sw.evaluate(() =>
+        (self as any).__boxingBgAutoBackup.runBackgroundLocalAutoBackup({ trigger: 'alarm' }),
+      );
+      expect(bgRes.ok).toBe(true);
+      await expect(ntpPage.locator('#data-snapshot-list .data-snapshot-row')).toHaveCount(2);
+      await expect(ntpPage.locator('#data-conflict-list .data-conflict-diff')).toBeVisible();
+      await expect(ntpPage.locator('#data-conflict-list .data-conflict-apply-btn')).toBeEnabled();
+
+      expect(downloads).toEqual([]);
+      expect(externalRequests).toEqual([]);
+    } finally {
+      audit.dispose();
       await ctx.close().catch(() => {});
       fs.rmSync(profile, { recursive: true, force: true });
     }

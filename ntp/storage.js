@@ -135,7 +135,10 @@ export function registerStorageOnChanged() {
       if (changes.autoBackupState && typeof onAutoBackupStateChanged === 'function') {
         try {
           const core = getSnapshotCore();
-          onAutoBackupStateChanged(core.normalizeAutoBackupState(changes.autoBackupState.newValue));
+          onAutoBackupStateChanged(
+            core.normalizeAutoBackupState(changes.autoBackupState.newValue),
+            core.normalizeAutoBackupState(changes.autoBackupState.oldValue)
+          );
         } catch (_) {}
       }
       if (!changes.boxingLayout?.newValue) return;

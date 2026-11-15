@@ -15,6 +15,7 @@ import { encryptCredential, decryptCredential } from './credentials.js';
 
 let debug, debugErr, debugWarn;
 let refreshDataHealth = null;
+let refreshSnapshotHealth = null;
 let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput;
 let webdavPermissionBanner, webdavPermissionMsg, webdavPermissionBtn;
 let localAutoBackupStatusEl, localAutoBackupLastAtEl, localAutoBackupErrorEl, autoBackupUpgradeBox, autoBackupActivateBtn;
@@ -27,6 +28,7 @@ let syncCredentialDangerZone, deleteOpenBtn, deletePanel, deleteCancelBtn, delet
 export function initSyncEngineFacade(deps) {
   debug = deps.debug; debugErr = deps.debugErr; debugWarn = deps.debugWarn;
   refreshDataHealth = typeof deps.refreshDataHealth === 'function' ? deps.refreshDataHealth : null;
+  refreshSnapshotHealth = typeof deps.refreshSnapshotHealth === 'function' ? deps.refreshSnapshotHealth : refreshDataHealth;
   syncProviderSelect = deps.syncProviderSelect; webdavConfig = deps.webdavConfig; gistConfig = deps.gistConfig;
   webdavUrlInput = deps.webdavUrlInput; webdavUserInput = deps.webdavUserInput; webdavPassInput = deps.webdavPassInput; webdavAllowPrivateInput = deps.webdavAllowPrivateInput;
   gistTokenInput = deps.gistTokenInput; gistIdInput = deps.gistIdInput;
@@ -1267,116 +1269,123 @@ export function initSyncEngineFacade(deps) {
     window.__boxingRefreshLocalAutoBackupUi = refreshLocalAutoBackupUi;
 
     let localAutoBackupConfigSeq = 0;
+    let pendingLocalAutoBackupConfigs = 0;
+    window.__boxingGetPendingAutoBackupConfigCount = () => pendingLocalAutoBackupConfigs;
 
     async function configureLocalAutoBackup(rawIntervalSec, optIn) {
-      const mySeq = ++localAutoBackupConfigSeq;
-      const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
-      const intervalSec = core
-        ? core.normalizeAutoBackupInterval(rawIntervalSec)
-        : (rawIntervalSec === 3600 || rawIntervalSec === 86400 || rawIntervalSec === 604800 ? Number(rawIntervalSec) : 0);
-      const enable = Boolean(optIn) && intervalSec >= 3600;
+      pendingLocalAutoBackupConfigs += 1;
+      try {
+        const mySeq = ++localAutoBackupConfigSeq;
+        const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+        const intervalSec = core
+          ? core.normalizeAutoBackupInterval(rawIntervalSec)
+          : (rawIntervalSec === 3600 || rawIntervalSec === 86400 || rawIntervalSec === 604800 ? Number(rawIntervalSec) : 0);
+        const enable = Boolean(optIn) && intervalSec >= 3600;
 
-      layout.settings.autoBackupInterval = enable ? intervalSec : 0;
-      await saveLayout({ preserveUpdatedAt: true });
-      if (mySeq !== localAutoBackupConfigSeq) {
-        return { ok: false, stale: true };
-      }
+        layout.settings.autoBackupInterval = enable ? intervalSec : 0;
+        await saveLayout({ preserveUpdatedAt: true });
+        if (mySeq !== localAutoBackupConfigSeq) {
+          return { ok: false, stale: true };
+        }
 
-      if (typeof window !== 'undefined' && window.__BOXING_DEMO__) {
-        await refreshLocalAutoBackupUi();
-        return { ok: true, demo: true };
-      }
+        if (typeof window !== 'undefined' && window.__BOXING_DEMO__) {
+          await refreshLocalAutoBackupUi();
+          return { ok: true, demo: true };
+        }
 
-      if (hasExtensionRuntime()) {
-        try {
-          const resp = await sendToBackground({
-            type: 'auto-backup-configure',
-            optIn: enable,
-            intervalSec: enable ? intervalSec : 0,
+        if (hasExtensionRuntime()) {
+          try {
+            const resp = await sendToBackground({
+              type: 'auto-backup-configure',
+              optIn: enable,
+              intervalSec: enable ? intervalSec : 0,
+            });
+            if (mySeq !== localAutoBackupConfigSeq) {
+              return { ok: false, stale: true };
+            }
+            await refreshLocalAutoBackupUi(resp && resp.state ? resp.state : null);
+            if (mySeq !== localAutoBackupConfigSeq) {
+              return { ok: false, stale: true };
+            }
+            if (typeof refreshSnapshotHealth === 'function') {
+              try { await refreshSnapshotHealth(); } catch (_) {}
+            }
+            return resp;
+          } catch (e) {
+            debugWarn('auto-backup-configure failed', e);
+            if (mySeq !== localAutoBackupConfigSeq) {
+              return { ok: false, stale: true };
+            }
+            await refreshLocalAutoBackupUi();
+            return { ok: false, error: e && e.message ? e.message : String(e) };
+          }
+        }
+
+        // file:// lane (no background SW): update persisted coordination state directly via storage facade, never setInterval.
+        const prev = await getAutoBackupState();
+        if (mySeq !== localAutoBackupConfigSeq) {
+          return { ok: false, stale: true };
+        }
+        const now = Date.now();
+        const nextEpoch = (prev.epoch || 0) + 1;
+        if (!enable) {
+          const disabled = await setAutoBackupState({
+            version: 1,
+            optIn: false,
+            intervalSec: 0,
+            epoch: nextEpoch,
+            nextScheduledAt: 0,
+            updatedAt: now,
+            local: {
+              ...(prev.local || {}),
+              status: (prev.local && (prev.local.lastSuccessAt > 0 || prev.local.lastError)) ? 'cancelled' : 'idle',
+            },
+            lock: null,
           });
           if (mySeq !== localAutoBackupConfigSeq) {
             return { ok: false, stale: true };
           }
-          await refreshLocalAutoBackupUi(resp && resp.state ? resp.state : null);
-          if (mySeq !== localAutoBackupConfigSeq) {
-            return { ok: false, stale: true };
-          }
-          if (typeof refreshDataHealth === 'function') {
-            try { await refreshDataHealth(); } catch (_) {}
-          }
-          return resp;
-        } catch (e) {
-          debugWarn('auto-backup-configure failed', e);
-          if (mySeq !== localAutoBackupConfigSeq) {
-            return { ok: false, stale: true };
-          }
-          await refreshLocalAutoBackupUi();
-          return { ok: false, error: e && e.message ? e.message : String(e) };
+          await refreshLocalAutoBackupUi(disabled);
+          return { ok: true, state: disabled };
         }
-      }
 
-      // file:// lane (no background SW): update persisted coordination state directly via storage facade, never setInterval.
-      const prev = await getAutoBackupState();
-      if (mySeq !== localAutoBackupConfigSeq) {
-        return { ok: false, stale: true };
-      }
-      const now = Date.now();
-      const nextEpoch = (prev.epoch || 0) + 1;
-      if (!enable) {
-        const disabled = await setAutoBackupState({
+        const ts = await saveSnapshot('auto-backup');
+        if (mySeq !== localAutoBackupConfigSeq) {
+          return { ok: false, stale: true };
+        }
+        const localState = ts
+          ? { status: 'ok', lastAttemptAt: now, lastSuccessAt: ts, lastSnapshotTs: ts, lastError: null }
+          : {
+              status: 'error',
+              lastAttemptAt: now,
+              lastSuccessAt: (prev.local && prev.local.lastSuccessAt) || 0,
+              lastSnapshotTs: (prev.local && prev.local.lastSnapshotTs) || 0,
+              lastError: 'Failed to save local snapshot',
+            };
+        const enabled = await setAutoBackupState({
           version: 1,
-          optIn: false,
-          intervalSec: 0,
+          optIn: true,
+          intervalSec,
           epoch: nextEpoch,
-          nextScheduledAt: 0,
+          nextScheduledAt: now + intervalSec * 1000,
           updatedAt: now,
-          local: {
-            ...(prev.local || {}),
-            status: (prev.local && (prev.local.lastSuccessAt > 0 || prev.local.lastError)) ? 'cancelled' : 'idle',
-          },
+          local: localState,
           lock: null,
         });
         if (mySeq !== localAutoBackupConfigSeq) {
           return { ok: false, stale: true };
         }
-        await refreshLocalAutoBackupUi(disabled);
-        return { ok: true, state: disabled };
+        await refreshLocalAutoBackupUi(enabled);
+        if (mySeq !== localAutoBackupConfigSeq) {
+          return { ok: false, stale: true };
+        }
+        if (typeof refreshSnapshotHealth === 'function') {
+          try { await refreshSnapshotHealth(); } catch (_) {}
+        }
+        return { ok: Boolean(ts), state: enabled };
+      } finally {
+        pendingLocalAutoBackupConfigs -= 1;
       }
-
-      const ts = await saveSnapshot('auto-backup');
-      if (mySeq !== localAutoBackupConfigSeq) {
-        return { ok: false, stale: true };
-      }
-      const localState = ts
-        ? { status: 'ok', lastAttemptAt: now, lastSuccessAt: ts, lastSnapshotTs: ts, lastError: null }
-        : {
-            status: 'error',
-            lastAttemptAt: now,
-            lastSuccessAt: (prev.local && prev.local.lastSuccessAt) || 0,
-            lastSnapshotTs: (prev.local && prev.local.lastSnapshotTs) || 0,
-            lastError: 'Failed to save local snapshot',
-          };
-      const enabled = await setAutoBackupState({
-        version: 1,
-        optIn: true,
-        intervalSec,
-        epoch: nextEpoch,
-        nextScheduledAt: now + intervalSec * 1000,
-        updatedAt: now,
-        local: localState,
-        lock: null,
-      });
-      if (mySeq !== localAutoBackupConfigSeq) {
-        return { ok: false, stale: true };
-      }
-      await refreshLocalAutoBackupUi(enabled);
-      if (mySeq !== localAutoBackupConfigSeq) {
-        return { ok: false, stale: true };
-      }
-      if (typeof refreshDataHealth === 'function') {
-        try { await refreshDataHealth(); } catch (_) {}
-      }
-      return { ok: Boolean(ts), state: enabled };
     }
 
 // Init-time wiring, called from ntp.js init() at the exact positions these statements
@@ -1780,7 +1789,7 @@ export function bindSyncBackupUi() {
     if (hasExtensionRuntime()) {
       sendToBackground({ type: 'auto-backup-ensure', runCatchup: true })
         .then((resp) => refreshLocalAutoBackupUi(resp && resp.state ? resp.state : null))
-        .then(() => { if (typeof refreshDataHealth === 'function') return refreshDataHealth(); })
+        .then(() => { if (typeof refreshSnapshotHealth === 'function') return refreshSnapshotHealth(); })
         .catch((e) => { if (typeof debugWarn === 'function') debugWarn('auto-backup-ensure', e); });
     }
 
