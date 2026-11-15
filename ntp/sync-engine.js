@@ -8,7 +8,7 @@
 // `export` prefixes, facade glue, and the bindSyncBackupUi() wrapper around the init-time wiring).
 
 import { layout, setLayout, writerId } from './state.js';
-import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, clearAutoBackupDue } from './storage.js';
+import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, clearAutoBackupDue, getWebDAVPendingPermission, setWebDAVPendingPermission, clearWebDAVPendingPermission } from './storage.js';
 import { migrateLayout, mergeLayoutThreeWay } from './utils.js';
 import { i18n } from './i18n.js';
 import { renderCanvas } from './render.js';
@@ -16,6 +16,7 @@ import { encryptCredential, decryptCredential } from './credentials.js';
 
 let debug, debugErr, debugWarn;
 let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput;
+let webdavPermissionBanner, webdavPermissionMsg, webdavPermissionBtn;
 // Ticket 99 (T13): stored-credential danger zone refs — assigned in bindSyncBackupUi
 // before updateSyncConfigVisibility() first runs so the visibility toggle is safe.
 let syncCredentialDangerZone, deleteOpenBtn, deletePanel, deleteCancelBtn, deleteConfirmBtn, deleteRemoteCheck, deleteStatusEl;
@@ -43,7 +44,7 @@ export function initSyncEngineFacade(deps) {
     'webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass',
     'webdavErrAuth', 'webdavErrPath', 'webdavErrStatus', 'webdavErrPut',
     'webdavErrConflict', 'webdavErrNetwork', 'webdavErrUrlTooLong', 'webdavErrBlockedHost',
-    'webdavErrQuery',
+    'webdavErrQuery', 'webdavErrPermission', 'webdavErrPermissionDenied',
   ];
   function webdavError(key, params) {
     const e = new Error(i18n(key, params));
@@ -152,7 +153,7 @@ export function initSyncEngineFacade(deps) {
       // Try Promise-based API first (Firefox browser.* native, Chrome MV3 also supports this)
       if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
         return browser.runtime.sendMessage(msg).then(resp => {
-          if (resp && resp.success) return resp;
+          if (resp && (resp.success || resp.needPermission || resp.blocked)) return resp;
           throw new Error(resp && resp.error ? resp.error : 'BG error');
         });
       }
@@ -165,7 +166,7 @@ export function initSyncEngineFacade(deps) {
                 reject(new Error(chrome.runtime.lastError.message));
                 return;
               }
-              if (resp && resp.success) resolve(resp);
+              if (resp && (resp.success || resp.needPermission || resp.blocked)) resolve(resp);
               else if (resp && !resp.success) reject(new Error(resp.error || 'BG error'));
               else reject(new Error('No response from background'));
             });
@@ -175,24 +176,326 @@ export function initSyncEngineFacade(deps) {
       return Promise.reject(new Error('No extension runtime available'));
     }
 
-    // A2b: Chrome MV3 — request optional host permission from user gesture (click handler context).
-  async function ensureWebDAVPermissionGranted(url) {
-    const u = new URL(url);
-    const origin = u.origin + '/*';
-    const apiNs = typeof browser !== 'undefined' ? browser : chrome;
-    if (!apiNs.permissions) return true; // no permissions API — assume granted
+  // Ticket #123: cross-browser origin permission helpers (Chrome optional_host_permissions +
+  // Firefox runtime host_permissions revocation). Never fail open when permissions API throws.
+  function getWebDAVOriginPattern(urlOrOrigin) {
     try {
-      const has = await apiNs.permissions.contains({ origins: [origin] });
-      if (has) return true;
-      const granted = await apiNs.permissions.request({ origins: [origin] });
-      return !!granted;
-    } catch (_) { return true; } // fail open on Firefox (host_permissions required)
+      const clean = typeof urlOrOrigin === 'string' && urlOrOrigin.endsWith('/*')
+        ? urlOrOrigin.slice(0, -2)
+        : urlOrOrigin;
+      const u = new URL(clean);
+      if (u.protocol !== 'https:' || !u.origin || u.origin === 'null') return '';
+      return u.origin + '/*';
+    } catch (_) {
+      return '';
+    }
   }
 
-  async function testWebDAVConnection() {
+  function displayOriginFromPattern(pattern) {
+    if (typeof pattern !== 'string') return '';
+    return pattern.endsWith('/*') ? pattern.slice(0, -2) : pattern;
+  }
+
+  function getPermissionsApi() {
+    const apiNs = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
+    return apiNs && apiNs.permissions ? apiNs.permissions : null;
+  }
+
+  function callPermApi(permApi, methodName, details) {
+    return new Promise((resolve, reject) => {
+      try {
+        let settled = false;
+        const fn = permApi[methodName];
+        if (typeof fn !== 'function') {
+          reject(new Error('permissions.' + methodName + ' unavailable'));
+          return;
+        }
+        const ret = fn.call(permApi, details, (res) => {
+          if (settled) return;
+          settled = true;
+          const lastErr = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError;
+          if (lastErr) reject(new Error(lastErr.message));
+          else resolve(Boolean(res));
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            (v) => { if (!settled) { settled = true; resolve(Boolean(v)); } },
+            (e) => { if (!settled) { settled = true; reject(e); } }
+          );
+        }
+      } catch (e) {
+        try {
+          const ret1 = permApi[methodName].call(permApi, details);
+          if (ret1 && typeof ret1.then === 'function') ret1.then((v) => resolve(Boolean(v)), reject);
+          else resolve(Boolean(ret1));
+        } catch (e2) {
+          reject(e2);
+        }
+      }
+    });
+  }
+
+  async function checkWebDAVOriginPermission(urlOrOrigin) {
+    const origin = getWebDAVOriginPattern(urlOrOrigin);
+    if (!origin) return { supported: true, granted: false, origin: '', error: 'invalid WebDAV origin' };
+    const permApi = getPermissionsApi();
+    if (!permApi || typeof permApi.contains !== 'function') {
+      return { supported: false, granted: false, origin };
+    }
+    try {
+      const granted = await callPermApi(permApi, 'contains', { origins: [origin] });
+      return { supported: true, granted, origin };
+    } catch (e) {
+      return { supported: true, granted: false, origin, error: e && e.message ? e.message : String(e) };
+    }
+  }
+
+  async function requestWebDAVOriginPermission(urlOrOrigin) {
+    const origin = getWebDAVOriginPattern(urlOrOrigin);
+    if (!origin) return { supported: true, granted: false, origin: '', error: 'invalid WebDAV origin' };
+    const permApi = getPermissionsApi();
+    if (!permApi || typeof permApi.request !== 'function') {
+      return { supported: false, granted: false, origin };
+    }
+    try {
+      const granted = await callPermApi(permApi, 'request', { origins: [origin] });
+      return { supported: true, granted, origin };
+    } catch (e) {
+      return { supported: true, granted: false, origin, error: e && e.message ? e.message : String(e) };
+    }
+  }
+
+  let permUiEpoch = 0;
+  let grantedFeedbackOrigin = '';
+  let grantedFeedbackTimer = null;
+
+  function clearGrantedFeedback() {
+    if (grantedFeedbackTimer) {
+      clearTimeout(grantedFeedbackTimer);
+      grantedFeedbackTimer = null;
+    }
+    grantedFeedbackOrigin = '';
+  }
+
+  function showGrantedFeedback(origin) {
+    clearGrantedFeedback();
+    grantedFeedbackOrigin = origin;
+    if (webdavPermissionBanner && webdavPermissionMsg) {
+      const displayOrigin = displayOriginFromPattern(origin) || origin;
+      webdavPermissionBanner.hidden = false;
+      webdavPermissionBanner.dataset.state = 'granted';
+      webdavPermissionMsg.textContent = i18n('webdavPermGrantedStatus', [displayOrigin]);
+      if (webdavPermissionBtn) webdavPermissionBtn.hidden = true;
+    }
+    grantedFeedbackTimer = setTimeout(() => {
+      grantedFeedbackOrigin = '';
+      grantedFeedbackTimer = null;
+      refreshWebDAVPermissionUi();
+    }, 4000);
+  }
+
+  async function persistPendingPermissionState({ origin, source, reason }) {
+    if (!origin) return;
+    try {
+      await setWebDAVPendingPermission({
+        needed: true,
+        origin,
+        source: source || 'background',
+        reason: reason || 'missing-permission',
+        updatedAt: Date.now(),
+      });
+    } catch (e) {
+      debugWarn('persistPendingPermissionState failed', e);
+    }
+  }
+
+  async function clearPendingPermissionIfOrigin(origin) {
+    try {
+      const pending = await getWebDAVPendingPermission();
+      if (!pending) return;
+      if (!origin || pending.origin === origin) {
+        await clearWebDAVPendingPermission();
+      }
+    } catch (e) {
+      debugWarn('clearPendingPermissionIfOrigin failed', e);
+    }
+  }
+
+  async function refreshWebDAVPermissionUi() {
+    const myEpoch = ++permUiEpoch;
+    if (!webdavPermissionBanner || !webdavPermissionMsg || !webdavPermissionBtn) return;
+    const provider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
+    if (provider !== 'webdav') {
+      clearGrantedFeedback();
+      webdavPermissionBanner.hidden = true;
+      delete webdavPermissionBanner.dataset.state;
+      delete webdavPermissionBtn.dataset.origin;
+      return;
+    }
+    const rawUrl = (webdavUrlInput?.value ?? layout.settings.webdavUrl ?? '').trim();
+    const currentPattern = rawUrl && isSafeExtUrl(rawUrl) ? getWebDAVOriginPattern(rawUrl) : '';
+    const pending = await getWebDAVPendingPermission();
+    if (myEpoch !== permUiEpoch) return;
+
+    const targetOrigin = currentPattern || (pending && pending.needed && typeof pending.origin === 'string' ? pending.origin : '');
+    if (!targetOrigin) {
+      clearGrantedFeedback();
+      webdavPermissionBanner.hidden = true;
+      delete webdavPermissionBanner.dataset.state;
+      delete webdavPermissionBtn.dataset.origin;
+      return;
+    }
+
+    const check = await checkWebDAVOriginPermission(targetOrigin);
+    if (myEpoch !== permUiEpoch) return;
+    if (check.supported && check.granted) {
+      if (pending && pending.needed && pending.origin === targetOrigin) {
+        await clearPendingPermissionIfOrigin(targetOrigin);
+        if (myEpoch !== permUiEpoch) return;
+      }
+      if (grantedFeedbackOrigin === targetOrigin) {
+        const displayOrigin = displayOriginFromPattern(targetOrigin) || targetOrigin;
+        webdavPermissionBanner.hidden = false;
+        webdavPermissionBanner.dataset.state = 'granted';
+        webdavPermissionMsg.textContent = i18n('webdavPermGrantedStatus', [displayOrigin]);
+        webdavPermissionBtn.hidden = true;
+        return;
+      }
+      webdavPermissionBanner.hidden = true;
+      delete webdavPermissionBanner.dataset.state;
+      delete webdavPermissionBtn.dataset.origin;
+      return;
+    }
+
+    const matchesPending = Boolean(pending && pending.needed && pending.origin === targetOrigin);
+    const shouldShow = matchesPending || (check.supported && Boolean(currentPattern));
+    if (!shouldShow) {
+      if (grantedFeedbackOrigin === targetOrigin && !check.supported) {
+        const displayOrigin = displayOriginFromPattern(targetOrigin) || targetOrigin;
+        webdavPermissionBanner.hidden = false;
+        webdavPermissionBanner.dataset.state = 'granted';
+        webdavPermissionMsg.textContent = i18n('webdavPermGrantedStatus', [displayOrigin]);
+        webdavPermissionBtn.hidden = true;
+        return;
+      }
+      webdavPermissionBanner.hidden = true;
+      delete webdavPermissionBanner.dataset.state;
+      delete webdavPermissionBtn.dataset.origin;
+      return;
+    }
+
+    clearGrantedFeedback();
+    const displayOrigin = displayOriginFromPattern(targetOrigin) || targetOrigin;
+    const isDenied = matchesPending && pending.reason === 'denied';
+    webdavPermissionBanner.hidden = false;
+    webdavPermissionBanner.dataset.state = isDenied ? 'denied' : 'pending';
+    webdavPermissionMsg.textContent = i18n(isDenied ? 'webdavPermDeniedHint' : 'webdavPermPendingHint', [displayOrigin]);
+    webdavPermissionBtn.hidden = false;
+    webdavPermissionBtn.textContent = i18n('webdavAuthorizeBtn');
+    webdavPermissionBtn.dataset.origin = targetOrigin;
+  }
+  window.__boxingRefreshWebDAVPermissionUi = refreshWebDAVPermissionUi;
+
+  async function sendWebDAVViaBackground(msg, opts = {}) {
+    const allowPrompt = Boolean(opts && opts.allowPermissionPrompt);
+    const source = (opts && opts.source) || (allowPrompt ? 'manual' : 'background');
+    const origin = getWebDAVOriginPattern(msg.url);
+    const displayOrigin = displayOriginFromPattern(origin) || msg.url;
+
+    const preCheck = await checkWebDAVOriginPermission(msg.url);
+    if (preCheck.supported) {
+      if (!preCheck.granted) {
+        if (allowPrompt) {
+          const req = await requestWebDAVOriginPermission(msg.url);
+          if (!req.granted) {
+            await persistPendingPermissionState({
+              origin: req.origin || origin,
+              source,
+              reason: 'denied',
+            });
+            refreshWebDAVPermissionUi();
+            throw webdavError('webdavErrPermissionDenied', [displayOrigin]);
+          }
+          await clearPendingPermissionIfOrigin(req.origin || origin);
+          refreshWebDAVPermissionUi();
+        } else {
+          await persistPendingPermissionState({
+            origin: preCheck.origin || origin,
+            source,
+            reason: 'missing-permission',
+          });
+          refreshWebDAVPermissionUi();
+          throw webdavError('webdavErrPermission', [displayOrigin]);
+        }
+      } else {
+        await clearPendingPermissionIfOrigin(preCheck.origin || origin);
+      }
+    }
+
+    const resp = await sendToBackground(msg);
+    if (resp && resp.blocked) {
+      if (typeof resp.error === 'string' && resp.error.includes('unsafe WebDAV url')) {
+        throw webdavError('webdavErrBlockedHost');
+      }
+      const be = new Error(resp.error || 'WebDAV request blocked');
+      be.noDirectFallback = true;
+      throw be;
+    }
+    if (resp && resp.needPermission) {
+      const missingOrigin = resp.origin || origin;
+      const missingDisplay = displayOriginFromPattern(missingOrigin) || displayOrigin;
+      if (allowPrompt) {
+        const req = await requestWebDAVOriginPermission(missingOrigin || msg.url);
+        if (req.supported && req.granted) {
+          await clearPendingPermissionIfOrigin(req.origin || missingOrigin);
+          const resp2 = await sendToBackground(msg);
+          if (resp2 && resp2.blocked) {
+            if (typeof resp2.error === 'string' && resp2.error.includes('unsafe WebDAV url')) {
+              throw webdavError('webdavErrBlockedHost');
+            }
+            const be2 = new Error(resp2.error || 'WebDAV request blocked');
+            be2.noDirectFallback = true;
+            throw be2;
+          }
+          if (resp2 && resp2.needPermission) {
+            await persistPendingPermissionState({
+              origin: resp2.origin || missingOrigin,
+              source,
+              reason: 'missing-permission',
+            });
+            refreshWebDAVPermissionUi();
+            throw webdavError('webdavErrPermission', [missingDisplay]);
+          }
+          refreshWebDAVPermissionUi();
+          return resp2;
+        }
+        const reason = req.supported ? 'denied' : 'missing-permission';
+        await persistPendingPermissionState({
+          origin: missingOrigin,
+          source,
+          reason,
+        });
+        refreshWebDAVPermissionUi();
+        throw webdavError(req.supported ? 'webdavErrPermissionDenied' : 'webdavErrPermission', [missingDisplay]);
+      }
+      await persistPendingPermissionState({
+        origin: missingOrigin,
+        source,
+        reason: 'missing-permission',
+      });
+      refreshWebDAVPermissionUi();
+      throw webdavError('webdavErrPermission', [missingDisplay]);
+    }
+    return resp;
+  }
+
+  async function testWebDAVConnection(opts = {}) {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
-      const pass = webdavPassInput?.value || '';
+      let pass = webdavPassInput?.value || '';
+      if (!pass && layout.settings._encWebdavPass) {
+        try { pass = (await decryptCredential(layout.settings._encWebdavPass)) || ''; } catch (_) {}
+      }
       debug('WebDAV test: starting', { url, user: user ? '(set)' : '(empty)', pass: pass ? '(set)' : '(empty)' });
       if (!url) throw webdavError('webdavErrNoUrl');
       // BX-AUD-01/03 front-end guard: private hosts, scheme, length, embedded creds
@@ -215,19 +518,14 @@ export function initSyncEngineFacade(deps) {
         let status, ok;
         // Primary: route through background SW (bypasses CORS in Firefox MV3)
         try {
-          const resp = await sendToBackground({ type: 'webdav-test', url: target.href, user, pass });
-          if (resp.needPermission) {
-            debug('WebDAV test: needPermission, requesting origin', resp.origin);
-            const granted = await ensureWebDAVPermissionGranted(target.href);
-            if (!granted) throw webdavError('webdavErrNetwork');
-            // Retry after permission granted
-            const resp2 = await sendToBackground({ type: 'webdav-test', url: target.href, user, pass });
-            status = resp2.status; ok = resp2.ok;
-          } else {
-            status = resp.status; ok = resp.ok;
-          }
+          const resp = await sendWebDAVViaBackground(
+            { type: 'webdav-test', url: target.href, user, pass },
+            { allowPermissionPrompt: Boolean(opts && opts.allowPermissionPrompt), source: (opts && opts.source) || 'manual' }
+          );
+          status = resp.status; ok = resp.ok;
           debug('WebDAV test via BG:', { status, ok });
         } catch (bgErr) {
+          if (isKnownWebDAVError(bgErr) || (bgErr && bgErr.noDirectFallback)) throw bgErr;
           debug('WebDAV test via BG failed, falling back to direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
           // Fallback: direct fetch (works in Chromium extension, not in Firefox)
           const h = new Headers({ 'Depth': '0' });
@@ -273,10 +571,13 @@ export function initSyncEngineFacade(deps) {
     window.__bxSync = window.__bxSync || {};
     window.__bxSync.buildSyncPayload = buildSyncPayload;
 
-    async function backupToWebDAV() {
+    async function backupToWebDAV(opts = {}) {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
-      const pass = webdavPassInput?.value || '';
+      let pass = webdavPassInput?.value || '';
+      if (!pass && layout.settings._encWebdavPass) {
+        try { pass = (await decryptCredential(layout.settings._encWebdavPass)) || ''; } catch (_) {}
+      }
       debug('WebDAV backup: starting', { url, user: user ? '(set)' : '(empty)' });
       if (!url) throw webdavError('webdavErrNoUrl');
       // BX-AUD-01/03 front-end guard: private hosts, scheme, length, embedded creds
@@ -304,18 +605,14 @@ export function initSyncEngineFacade(deps) {
         let status, ok;
         // Primary: route through background SW
         try {
-          const resp = await sendToBackground({ type: 'webdav-put', url: fileUrl, user, pass, body });
-          if (resp.needPermission) {
-            debug('WebDAV backup: needPermission, requesting origin', resp.origin);
-            const granted = await ensureWebDAVPermissionGranted(fileUrl);
-            if (!granted) throw webdavError('webdavErrNetwork');
-            const resp2 = await sendToBackground({ type: 'webdav-put', url: fileUrl, user, pass, body });
-            status = resp2.status; ok = resp2.ok;
-          } else {
-            status = resp.status; ok = resp.ok;
-          }
+          const resp = await sendWebDAVViaBackground(
+            { type: 'webdav-put', url: fileUrl, user, pass, body },
+            { allowPermissionPrompt: Boolean(opts && opts.allowPermissionPrompt), source: (opts && opts.source) || 'manual' }
+          );
+          status = resp.status; ok = resp.ok;
           debug('WebDAV backup via BG: PUT', { status, ok });
         } catch (bgErr) {
+          if (isKnownWebDAVError(bgErr) || (bgErr && bgErr.noDirectFallback)) throw bgErr;
           debug('WebDAV backup via BG failed, falling back to direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
           const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
           if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
@@ -418,12 +715,16 @@ export function initSyncEngineFacade(deps) {
       return new TextDecoder().decode(joined);
     }
 
-    async function webdavGetCloud(fileUrl, user, pass) {
+    async function webdavGetCloud(fileUrl, user, pass, opts = {}) {
       let status, body;
       try {
-        const resp = await sendToBackground({ type: 'webdav-get', url: fileUrl, user, pass });
+        const resp = await sendWebDAVViaBackground(
+          { type: 'webdav-get', url: fileUrl, user, pass },
+          { allowPermissionPrompt: Boolean(opts && opts.allowPermissionPrompt), source: (opts && opts.source) || 'background' }
+        );
         status = resp.status; body = resp.body;
       } catch (bgErr) {
+        if (isKnownWebDAVError(bgErr) || (bgErr && bgErr.noDirectFallback)) throw bgErr;
         debug('WebDAV GET via BG failed, trying direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
         const h = new Headers();
         if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
@@ -439,12 +740,16 @@ export function initSyncEngineFacade(deps) {
       try { return JSON.parse(body); } catch (_) { throw new Error(i18n('syncErrParseFailed')); }
     }
 
-    async function webdavPutLocal(fileUrl, user, pass, body) {
+    async function webdavPutLocal(fileUrl, user, pass, body, opts = {}) {
       let status, ok;
       try {
-        const resp = await sendToBackground({ type: 'webdav-put', url: fileUrl, user, pass, body });
+        const resp = await sendWebDAVViaBackground(
+          { type: 'webdav-put', url: fileUrl, user, pass, body },
+          { allowPermissionPrompt: Boolean(opts && opts.allowPermissionPrompt), source: (opts && opts.source) || 'background' }
+        );
         status = resp.status; ok = resp.ok;
       } catch (bgErr) {
+        if (isKnownWebDAVError(bgErr) || (bgErr && bgErr.noDirectFallback)) throw bgErr;
         debug('WebDAV PUT via BG failed, trying direct fetch', bgErr && bgErr.message ? bgErr.message : bgErr);
         const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
         if (user) h.set('Authorization', 'Basic ' + btoa(user + ':' + pass));
@@ -533,9 +838,17 @@ export function initSyncEngineFacade(deps) {
 
     async function syncWithWebDAV(opts = {}) {
       const bypassLossGuard = !!opts.bypassLossGuard;
+      const allowPermissionPrompt = Boolean(opts && (opts.allowPermissionPrompt || opts.userInitiated));
+      const transportOpts = {
+        allowPermissionPrompt,
+        source: (opts && opts.source) || (allowPermissionPrompt ? 'manual' : 'background'),
+      };
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
-      const pass = webdavPassInput?.value || '';
+      let pass = webdavPassInput?.value || '';
+      if (!pass && layout.settings._encWebdavPass) {
+        try { pass = (await decryptCredential(layout.settings._encWebdavPass)) || ''; } catch (_) {}
+      }
       debug('WebDAV sync: starting', { url, user: user ? '(set)' : '(empty)' });
       if (!url) throw webdavError('webdavErrNoUrl');
       checkUrlValid(url);
@@ -551,7 +864,7 @@ export function initSyncEngineFacade(deps) {
         const msg = i18n('syncErrPartialLoss', [baseline, cur]);
         if (typeof confirm === 'function' && confirm(msg)) {
           // Try to restore from cloud (force pull). If user declines after all, abort sync.
-          const cloud = await webdavGetCloud(fileUrl, user, pass);
+          const cloud = await webdavGetCloud(fileUrl, user, pass, transportOpts);
           if (cloud && typeof cloud === 'object' && Array.isArray(cloud.boxes)) {
             // Replace local layout with cloud (keep sync meta).
             // Ticket 44: explicit user-confirmed overwrite — newer-wins is allowed HERE,
@@ -590,7 +903,7 @@ export function initSyncEngineFacade(deps) {
       }
 
       // GET cloud file.
-      const cloud = await webdavGetCloud(fileUrl, user, pass);
+      const cloud = await webdavGetCloud(fileUrl, user, pass, transportOpts);
       const lastSyncAt = Number(layout.settings?.lastSyncAt) || 0;
       const localUpdatedAt = Number(layout._meta?.updatedAt) || 0;
       const cloudUpdatedAt = cloud && typeof cloud === 'object' ? (Number(cloud._meta?.updatedAt) || 0) : 0;
@@ -715,7 +1028,7 @@ export function initSyncEngineFacade(deps) {
         }
         // Local is newer → upload local over cloud.
         const body = JSON.stringify(stripGroupsForPersist(layout), null, 2);
-        await webdavPutLocal(fileUrl, user, pass, body);
+        await webdavPutLocal(fileUrl, user, pass, body, transportOpts);
         layout.settings.lastSyncAt = Date.now();
         setBaselineBoxCount(computeBoxCount(layout).total);
         saveLayout();
@@ -726,7 +1039,7 @@ export function initSyncEngineFacade(deps) {
 
       // Cloud absent or invalid → upload local.
       const body = JSON.stringify(stripGroupsForPersist(layout), null, 2);
-      await webdavPutLocal(fileUrl, user, pass, body);
+      await webdavPutLocal(fileUrl, user, pass, body, transportOpts);
       layout.settings.lastSyncAt = Date.now();
       setBaselineBoxCount(computeBoxCount(layout).total);
       saveLayout();
@@ -799,11 +1112,13 @@ export function initSyncEngineFacade(deps) {
 
     // Unified backup dispatcher (only used for remote providers)
     // Unified sync dispatcher (only used for remote providers)
-    async function performBackup() {
-      const p = syncProviderSelect?.value || 'local';
+    async function performBackup(opts = {}) {
+      const p = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
+      const userInitiated = Boolean(opts && opts.userInitiated);
+      const source = (opts && opts.source) || (userInitiated ? 'manual' : 'background');
       try {
         if (p === 'webdav') {
-          const res = await syncWithWebDAV();
+          const res = await syncWithWebDAV({ allowPermissionPrompt: userInitiated, source });
           debug('WebDAV sync ok', res && res.direction ? { direction: res.direction, conflicts: res.conflicts || 0 } : undefined);
           // Ticket 91: box-level AND child-level conflict copies land in the
           // ticket-79 Settings > Data readout automatically (same archive key
@@ -854,7 +1169,7 @@ export function initSyncEngineFacade(deps) {
         const now = Date.now();
         const last = layout.settings.lastBackupAt || 0;
         if (last && (now - last) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
-        try { await performBackup(); debug('Auto-backup done'); } catch (e) { debugErr('Auto-backup err', e); }
+        try { await performBackup({ userInitiated: false, source: 'background-interval' }); debug('Auto-backup done'); } catch (e) { debugErr('Auto-backup err', e); }
       }, sec * 1000);
     }
 
@@ -892,7 +1207,7 @@ export function initSyncEngineFacade(deps) {
           return;
         }
         try {
-          await performBackup();
+          await performBackup({ userInitiated: false, source: 'background-catchup' });
           debug('Auto-backup catch-up done');
         } catch (e) {
           debugErr('Auto-backup catch-up failed', e);
@@ -912,6 +1227,9 @@ export function bindSyncBackupUi() {
     deleteConfirmBtn = document.getElementById('delete-sync-credential-confirm');
     deleteRemoteCheck = document.getElementById('delete-sync-credential-remote');
     deleteStatusEl = document.getElementById('delete-sync-credential-status');
+    webdavPermissionBanner = document.getElementById('webdav-permission-banner');
+    webdavPermissionMsg = document.getElementById('webdav-permission-msg');
+    webdavPermissionBtn = document.getElementById('webdav-permission-btn');
 
     // Restore persisted config
     const syncProviderVal = layout.settings.syncProvider || 'local';
@@ -998,6 +1316,32 @@ export function bindSyncBackupUi() {
     updateLastBackupDisplay();
 
     updateSyncConfigVisibility();
+    refreshWebDAVPermissionUi();
+
+    webdavPermissionBtn?.addEventListener('click', async () => {
+      if (webdavPermissionBtn.disabled) return;
+      const rawUrl = (webdavUrlInput?.value || layout.settings.webdavUrl || '').trim();
+      const targetOrigin = (rawUrl && isSafeExtUrl(rawUrl) ? getWebDAVOriginPattern(rawUrl) : '') || webdavPermissionBtn.dataset.origin || '';
+      if (!targetOrigin) return;
+      webdavPermissionBtn.disabled = true;
+      try {
+        // Call permissions.request immediately inside the click gesture before any async storage reads.
+        const req = await requestWebDAVOriginPermission(targetOrigin);
+        if (req.supported && req.granted) {
+          await clearPendingPermissionIfOrigin(req.origin || targetOrigin);
+          showGrantedFeedback(req.origin || targetOrigin);
+          return;
+        }
+        await persistPendingPermissionState({
+          origin: req.origin || targetOrigin,
+          source: 'manual-banner',
+          reason: req.supported ? 'denied' : 'missing-permission',
+        });
+        await refreshWebDAVPermissionUi();
+      } finally {
+        webdavPermissionBtn.disabled = false;
+      }
+    });
 
     // (Bug16): sync level + filename persist on change
     syncLevelSelect?.addEventListener('change', () => {
@@ -1013,12 +1357,15 @@ export function bindSyncBackupUi() {
     });
     syncProviderSelect?.addEventListener('change', () => {
       layout.settings.syncProvider = syncProviderSelect.value;
+      clearGrantedFeedback();
       updateSyncConfigVisibility();
+      refreshWebDAVPermissionUi();
       saveLayout();
     });
 
     webdavAllowPrivateInput?.addEventListener('change', () => {
       layout.settings.webdavAllowPrivateHost = webdavAllowPrivateInput.checked === true;
+      refreshWebDAVPermissionUi();
       saveLayout();
     });
 
@@ -1037,6 +1384,7 @@ export function bindSyncBackupUi() {
       if (userChanged) layout.settings.webdavUser = webdavUserInput.value.trim();
       saveLayout();
       __credDirty = false;
+      if (urlChanged) { clearGrantedFeedback(); refreshWebDAVPermissionUi(); }
     }));
     // debounced input listeners — survive close without blur (browser close, tab close).
     let __credDebounceTimer = null;
@@ -1054,7 +1402,13 @@ export function bindSyncBackupUi() {
       const prevUser = layout.settings.webdavUser || '';
       if (webdavUrlInput) layout.settings.webdavUrl = webdavUrlInput.value.trim();
       if (webdavUserInput) layout.settings.webdavUser = webdavUserInput.value.trim();
-      if ((layout.settings.webdavUrl || '') !== prevUrl || (layout.settings.webdavUser || '') !== prevUser) __credDirty = true;
+      if ((layout.settings.webdavUrl || '') !== prevUrl) {
+        __credDirty = true;
+        clearGrantedFeedback();
+        refreshWebDAVPermissionUi();
+      } else if ((layout.settings.webdavUser || '') !== prevUser) {
+        __credDirty = true;
+      }
       __scheduleCredFlush();
     }));
     webdavPassInput?.addEventListener('input', __scheduleCredFlush);
@@ -1121,11 +1475,13 @@ export function bindSyncBackupUi() {
     // flight" state (D5 AC3) — the boot-time decrypt window is too short to race in CI.
     window.__boxingSetCredentialDecryptPending = (pending) => { webdavPassReady = !pending; gistTokenReady = !pending; };
     // WebDAV test connection button
+    let webdavTestLabelReset = null;
     webdavTestBtn?.addEventListener('click', async () => {
+      if (webdavTestLabelReset) { clearTimeout(webdavTestLabelReset); webdavTestLabelReset = null; }
       webdavTestBtn.textContent = i18n('webdavTesting');
       webdavTestBtn.disabled = true;
       try {
-        await testWebDAVConnection();
+        await testWebDAVConnection({ allowPermissionPrompt: true, source: 'manual' });
         webdavTestBtn.textContent = i18n('webdavTestOk');
       } catch (e) {
         debugErr('WebDAV test failed', e);
@@ -1140,7 +1496,7 @@ export function bindSyncBackupUi() {
         }
       } finally {
         webdavTestBtn.disabled = false;
-        setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 4000);
+        webdavTestLabelReset = setTimeout(() => { webdavTestBtn.textContent = i18n('webdavTestBtn'); }, 4000);
       }
     });
     let backupNowLabelReset = null;
@@ -1156,7 +1512,7 @@ export function bindSyncBackupUi() {
         if (p === 'local') {
           backupToLocal();
         }
-        await performBackup();
+        await performBackup({ userInitiated: true, source: 'manual' });
       } catch (e) {
         // PR #109 review round 2: performBackup now propagates failures —
         // display the localized error on the button (known i18n error verbatim,
@@ -1185,7 +1541,9 @@ export function bindSyncBackupUi() {
             sendResponse({ ok: true, skipped: true });
             return;
           }
-          performBackup().then(() => sendResponse({ ok: true })).catch(e => sendResponse({ ok: false, error: e.message }));
+          performBackup({ userInitiated: false, source: 'background' })
+            .then(() => sendResponse({ ok: true }))
+            .catch(e => sendResponse({ ok: false, error: e.message, key: e && e.key ? e.key : undefined }));
           return true; // async response
         }
       });
@@ -1328,7 +1686,10 @@ export function bindSyncBackupUi() {
         if (!pass) {
           return { ok: false, reason: 'missing-password', error: remoteDeleteFailureText('missing-password') };
         }
-        const delResp = await sendToBackground({ type: 'webdav-delete', url: fileUrl, user, pass });
+        const delResp = await sendWebDAVViaBackground(
+          { type: 'webdav-delete', url: fileUrl, user, pass },
+          { allowPermissionPrompt: true, source: 'remote-delete' }
+        );
         // Server-side refusal: no reason — the transport result is deliberately not
         // surfaced, so this keeps the generic copy (ticket 116 closed allow-list).
         if (!delResp || delResp.ok !== true) return { ok: false, error: dangerRemoteDeleteFailed };
@@ -1406,7 +1767,10 @@ export function bindSyncBackupUi() {
         setDeleteStatus(dangerPersistFailed, true);
         return { ok: false, error: dangerPersistFailed };
       }
+      try { await clearWebDAVPendingPermission(); } catch (_) {}
+      clearGrantedFeedback();
       updateSyncConfigVisibility();
+      refreshWebDAVPermissionUi();
       updateLastBackupDisplay();
       showDeletePanel(false);
       setDeleteStatus(dangerStatusDone, false);

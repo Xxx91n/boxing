@@ -259,6 +259,9 @@ export function initSettingsUiFacade(deps) {
       document.querySelectorAll('.settings-tab').forEach(t => { t.hidden = t.id !== 'tab-' + tabToClick.dataset.tab; });
       document.querySelector('.settings-content')?.scrollTo({ top: 0 });
       if (tabToClick.dataset.tab === 'about') checkVersionUpdate();
+      if (tabToClick.dataset.tab === 'sync') {
+        try { if (typeof window.__boxingRefreshWebDAVPermissionUi === 'function') window.__boxingRefreshWebDAVPermissionUi(); } catch (_) {}
+      }
     }
   }
 
@@ -1301,6 +1304,9 @@ export function bindSettingsUi() {
         const tab = document.getElementById('tab-' + tabId);
         if (tab) tab.hidden = false;
         if (tabId === 'about') checkVersionUpdate();
+        if (tabId === 'sync') {
+          try { if (typeof window.__boxingRefreshWebDAVPermissionUi === 'function') window.__boxingRefreshWebDAVPermissionUi(); } catch (_) {}
+        }
         document.querySelector('.settings-content')?.scrollTo({ top: 0 });
       });
     });
@@ -1321,6 +1327,7 @@ export function bindSettingsUi() {
      // from importing onboarding.js). Undefined until the entry is bound — same tolerance as
      // __boxingFlushCredentials above.
      try { const refresh = window.__boxingRefreshQuickHelp; if (typeof refresh === 'function') refresh(); } catch (e) { debugWarn('quick help refresh', e); }
+     try { const refreshPerm = window.__boxingRefreshWebDAVPermissionUi; if (typeof refreshPerm === 'function') refreshPerm(); } catch (_) {}
      // Re-apply the action tooltip/aria-label in the new language (the header button
      // no longer carries a static data-i18n-title). Kept even though saveLayout above
      // already replays the apply path: a failed persist must not leave a stale label.

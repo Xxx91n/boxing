@@ -1318,5 +1318,48 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "فشل حفظ الإعدادات المنظفة — بقيت بيانات الاعتماد المخزنة كما هي. يرجى المحاولة مرة أخرى.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "webdavErrPermission": {
+    "message": "امنح الإذن لـ $origin$ للمتابعة",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "تم رفض الإذن لـ $origin$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "تحتاج مزامنة WebDAV في الخلفية إلى إذن للوصول إلى $origin$ قبل الاتصال.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "تم رفض الوصول إلى $origin$ أو إبطاله. امنح الإذن للمتابعة.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "منح الإذن"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "تم منح الوصول إلى $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   }
 }

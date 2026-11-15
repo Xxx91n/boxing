@@ -1321,5 +1321,48 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "儲存清理後的設定失敗 — 已儲存的憑證保持不變。請重試。",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "webdavErrPermission": {
+    "message": "請先授予 $origin$ 存取權限後再繼續",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "$origin$ 的存取權限已被拒絕",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "背景 WebDAV 同步需要先授予 $origin$ 存取權限才能連線。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "對 $origin$ 的存取權限已被拒絕或撤銷。請授予權限以繼續使用 WebDAV 同步。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "授予權限"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "已授予 $origin$ 存取權限。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   }
 }

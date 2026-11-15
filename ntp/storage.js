@@ -35,12 +35,14 @@ let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMap
 // moving the listener elsewhere to reach a helper directly would violate WORKFLOW §6.
 // Facade injection is the established pattern for exactly this constraint.
 let applyDarkMode = null;
+let onWebDAVPendingPermissionChanged = null;
 
 export function initStorageFacade(deps) {
   api = deps.api;
   layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   mirrorWriter = deps.mirrorWriter; // ticket 60: boot mirror writer (localStorage, sync-readable first paint)
   applyDarkMode = deps.applyDarkMode; // single dark-mode apply path (persist.js)
+  onWebDAVPendingPermissionChanged = deps.onWebDAVPendingPermissionChanged || null;
   debug = deps.debug;
   debugErr = deps.debugErr;
   debugWarn = deps.debugWarn;
@@ -76,6 +78,26 @@ export function clearAutoBackupDue() {
   return layoutStorage.remove('autoBackupDue');
 }
 
+// Ticket #123: webdavPendingPermission is a storage.local coordination key written
+// by the background SW (when no-gesture alarm lacks host permission) or NTP sync-engine
+// (when manual authorization is denied/needed), containing only origin/reason metadata
+// and never credentials. All NTP reads/writes/clears route through this facade.
+const WEBDAV_PENDING_PERM_KEY = 'webdavPendingPermission';
+export async function getWebDAVPendingPermission() {
+  try {
+    const res = await layoutStorage.get({ [WEBDAV_PENDING_PERM_KEY]: null });
+    return (res && res[WEBDAV_PENDING_PERM_KEY]) || null;
+  } catch (_) {
+    return null;
+  }
+}
+export function setWebDAVPendingPermission(state) {
+  return layoutStorage.set({ [WEBDAV_PENDING_PERM_KEY]: state });
+}
+export function clearWebDAVPendingPermission() {
+  return layoutStorage.remove(WEBDAV_PENDING_PERM_KEY);
+}
+
 // storage.onChanged listener registration — moved verbatim from ntp.js init() (same
 // registration point in the boot sequence). External boxingLayout changes feed
 // applyExternalLayout, whose applyingExternalLayout guard below prevents
@@ -83,7 +105,11 @@ export function clearAutoBackupDue() {
 export function registerStorageOnChanged() {
     api.storage.onChanged?.addListener?.((changes, areaName) => {
       const expectedArea = layoutStorage === api.storage.local ? 'local' : 'sync';
-      if (areaName !== expectedArea || !changes.boxingLayout?.newValue) return;
+      if (areaName !== expectedArea) return;
+      if (changes.webdavPendingPermission && typeof onWebDAVPendingPermissionChanged === 'function') {
+        try { onWebDAVPendingPermissionChanged(changes.webdavPendingPermission.newValue || null); } catch (_) {}
+      }
+      if (!changes.boxingLayout?.newValue) return;
       applyExternalLayout(changes.boxingLayout.newValue);
     });
 }

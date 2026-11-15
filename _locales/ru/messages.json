@@ -1318,5 +1318,48 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "Не удалось сохранить очищенную конфигурацию — сохранённые учётные данные остались на месте. Повторите попытку.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "webdavErrPermission": {
+    "message": "Предоставьте разрешение для $origin$, чтобы продолжить",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "Отказано в разрешении для $origin$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "Фоновой синхронизации WebDAV требуется разрешение для $origin$ перед подключением.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "Доступ к $origin$ был отклонён или отозван. Предоставьте разрешение, чтобы продолжить.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "Предоставить доступ"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "Доступ для $origin$ предоставлен.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   }
 }

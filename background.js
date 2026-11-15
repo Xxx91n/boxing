@@ -37,6 +37,30 @@ try {
   // The NTP page creates/ensures the alarm; the background SW acts as the alarm hub,
   // recording autoBackupDue: true in chrome.storage.local and notifying any open NTP tabs.
   // If no NTP tab is open, the due mark ensures the backup is performed upon next NTP open.
+  const BG_WEBDAV_PERM_KEY = 'webdavPendingPermission';
+
+  async function inspectAndRecordBackgroundWebDAVPermission() {
+    try {
+      if (!api.storage || !api.storage.local || !api.storage.local.get) return;
+      const stored = await api.storage.local.get({ boxingLayout: null, [BG_WEBDAV_PERM_KEY]: null });
+      const settings = stored && stored.boxingLayout && stored.boxingLayout.settings;
+      if (!settings || settings.syncProvider !== 'webdav') return;
+      const url = typeof settings.webdavUrl === 'string' ? settings.webdavUrl.trim() : '';
+      if (!url || !isSafeWebDAVUrl(url, settings.webdavAllowPrivateHost === true)) return;
+      const perm = await ensureWebDAVPermission(url);
+      if (!perm.ok && perm.needPermission && perm.origin) {
+        if (api.storage.local.set) {
+          const permState = { needed: true, origin: perm.origin, source: 'background', reason: 'missing-permission', updatedAt: Date.now() };
+          await api.storage.local.set({ webdavPendingPermission: permState });
+        }
+      } else if (perm.ok && stored[BG_WEBDAV_PERM_KEY] && stored[BG_WEBDAV_PERM_KEY].origin === perm.origin) {
+        if (api.storage.local.remove) {
+          await api.storage.local.remove(BG_WEBDAV_PERM_KEY);
+        }
+      }
+    } catch (e) { bgErr('inspectAndRecordBackgroundWebDAVPermission error', e); }
+  }
+
   if (typeof chrome !== 'undefined' && chrome.alarms && chrome.alarms.onAlarm) {
     chrome.alarms.onAlarm.addListener(function(alarm) {
       if (alarm.name !== 'boxing-auto-backup') return;
@@ -46,6 +70,10 @@ try {
           chrome.storage.local.set({ autoBackupDue: true });
         }
       } catch (e) { bgErr('Failed to set autoBackupDue flag', e); }
+      // Ticket #123: on background alarm, inspect WebDAV permission read-only via
+      // permissions.contains and persist pending state if ungranted — never prompt
+      // or send a WebDAV request without permission.
+      inspectAndRecordBackgroundWebDAVPermission();
       // Try to send message to any open NTP tab to trigger backup
       try {
         chrome.tabs.query({}, function(tabs) {
@@ -109,20 +137,63 @@ try {
     return null;
   }
 
-  // A2: Chrome MV3 — host_permissions moved to optional_host_permissions for store compliance.
-  // Check whether the extension currently holds origin permission for the WebDAV URL.
-  // Firefox keeps host_permissions as required, so this check always passes there.
-  async function ensureWebDAVPermission(url) {
+  // A2 / Ticket #123: Chrome MV3 keeps https://*/* in optional_host_permissions, and
+  // Firefox MV3 lets users revoke host permissions at runtime. Check actual origin
+  // grant status before any background WebDAV fetch and never fail open on errors.
+  function getWebDAVOriginPattern(url) {
     try {
       const u = new URL(url);
-      const origin = u.origin + '/*';
-      const apiNs = typeof browser !== 'undefined' ? browser : chrome;
-    if (!apiNs.permissions || !apiNs.permissions.contains) return { ok: true }; // older Chrome/missing API
-      const granted = await apiNs.permissions.contains({ origins: [origin] });
-      if (granted) return { ok: true };
-      return { ok: false, needPermission: true, origin };
+      if (u.protocol !== 'https:' || !u.origin || u.origin === 'null') return '';
+      return u.origin + '/*';
     } catch (_) {
-      return { ok: true }; // fail open on unexpected API issues
+      return '';
+    }
+  }
+
+  function checkPermissionsContains(permApi, origin) {
+    return new Promise((resolve, reject) => {
+      try {
+        let settled = false;
+        const ret = permApi.contains({ origins: [origin] }, (granted) => {
+          if (settled) return;
+          settled = true;
+          const lastErr = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError;
+          if (lastErr) reject(new Error(lastErr.message));
+          else resolve(Boolean(granted));
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            (v) => { if (!settled) { settled = true; resolve(Boolean(v)); } },
+            (e) => { if (!settled) { settled = true; reject(e); } }
+          );
+        }
+      } catch (e) {
+        try {
+          const ret1 = permApi.contains({ origins: [origin] });
+          if (ret1 && typeof ret1.then === 'function') ret1.then((v) => resolve(Boolean(v)), reject);
+          else resolve(Boolean(ret1));
+        } catch (e2) {
+          reject(e2);
+        }
+      }
+    });
+  }
+
+  async function ensureWebDAVPermission(url) {
+    const origin = getWebDAVOriginPattern(url);
+    if (!origin) {
+      return { ok: false, needPermission: false, origin: '', error: 'invalid WebDAV origin' };
+    }
+    try {
+      const apiNs = typeof browser !== 'undefined' ? browser : chrome;
+      if (!apiNs || !apiNs.permissions || typeof apiNs.permissions.contains !== 'function') {
+        return { ok: true, origin };
+      }
+      const granted = await checkPermissionsContains(apiNs.permissions, origin);
+      if (granted) return { ok: true, origin };
+      return { ok: false, needPermission: true, origin };
+    } catch (e) {
+      return { ok: false, needPermission: true, origin, error: e && e.message ? e.message : String(e) };
     }
   }
 
@@ -290,10 +361,16 @@ try {
       const block = guardWebDAVRequest(msg, true);
       if (block) return block;
     }
-    // A2: Chrome optional_host_permissions — verify origin access before fetch.
+    // A2 / Ticket #123: verify origin permission before fetch (Chrome optional_host_permissions
+    // and Firefox runtime revocations). Return structured flags, never fall open.
     if (msg.type === 'webdav-test' || msg.type === 'webdav-put' || msg.type === 'webdav-get' || msg.type === 'webdav-delete') {
       const perm = await ensureWebDAVPermission(msg.url);
-      if (!perm.ok) return { success: false, needPermission: true, error: 'host permission not granted', origin: perm.origin };
+      if (!perm.ok) {
+        if (perm.needPermission) {
+          return { success: false, needPermission: true, error: 'host permission not granted', origin: perm.origin };
+        }
+        return { success: false, blocked: true, error: perm.error || 'blocked unsafe WebDAV url' };
+      }
     }
     try {
       if (msg.type === 'webdav-test') {
