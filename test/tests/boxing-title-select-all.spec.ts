@@ -1,7 +1,8 @@
-import { test, expect, type Page } from '@playwright/test';
+import { chromium, test, expect, type Page } from '@playwright/test';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { dismissOnboarding } from '../helpers/onboarding';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -126,6 +127,82 @@ const writeCount = async (page: Page) => {
 };
 const resetWriteCount = (page: Page) =>
   page.evaluate(() => localStorage.setItem('__titleWriteCount', '0'));
+
+// ═══════════════════════════════════════════════════════════════════════════
+// #120 T1 last bullet: the key cases also run in the REAL Chrome build.
+// The shared chromium project loads the built extension, but the rest of this file
+// drives the file:// page like its siblings. This block mirrors the headline of the
+// click/commit contract inside dist/boxing-chrome, the same way the copy-only /
+// conflict-copy / About specs prove their golden path in the loaded build. Firefox
+// coverage of the built add-on is the documented manual gate (#68 decision B, #69
+// checklist) — a file:// page is not an extension there.
+// ═══════════════════════════════════════════════════════════════════════════
+const DIST_CHROME = path.join(EXTENSION_PATH, 'dist', 'boxing-chrome');
+
+test.describe('Ticket 121 - title inputs in the loaded Chrome build', () => {
+  test.skip(({ browserName }) => browserName !== 'chromium', 'the loaded build is a chromium lane');
+
+  test('first click selects all, second click places the caret, Enter saves, reload keeps it', async ({}) => {
+    test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
+      'dist/boxing-chrome is not built - CI builds before running tests');
+    test.setTimeout(180000);
+
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-121-ext-'));
+    const ctx = await chromium.launchPersistentContext(profile, {
+      headless: false,
+      args: [
+        '--load-extension=' + DIST_CHROME,
+        '--disable-extensions-except=' + DIST_CHROME,
+        '--no-first-run',
+        '--no-default-browser-check',
+      ],
+    });
+    try {
+      const page = await ctx.newPage();
+      await page.goto('chrome://newtab', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageGet)),
+        { timeout: 30000 }).toBe(true);
+      // Lane proof: the page is served by the extension, not read from disk.
+      expect(page.url()).toContain('chrome-extension://');
+      await dismissOnboarding(page);
+
+      // A real box, created through the app's own entry point.
+      await page.evaluate(() => (window as any)._boxingAddLargeBox());
+      await expect(page.locator('.large-box')).toHaveCount(1);
+      const original = (await titleState(page, '.large-box__title'))!.value;
+      expect(original.length).toBeGreaterThan(0);
+
+      await page.locator('.large-box__title').click();
+      let state = (await titleState(page, '.large-box__title'))!;
+      expect(state.tag, 'the loaded build ships an input, not an editable span').toBe('INPUT');
+      expect(state.selected).toBe(original);
+
+      const middle = await clickTitleAt(page, '.large-box__title', 0.45);
+      expect(middle.start).toBe(middle.end);
+      expect(middle.start).toBeGreaterThan(0);
+      expect(middle.start).toBeLessThan(original.length);
+
+      await page.keyboard.press('ControlOrMeta+a');
+      await page.keyboard.type('Built build title');
+      await page.keyboard.press('Enter');
+      const readBack = () => page.evaluate(async () => {
+        const res = await (window as any).__boxingDebug.storageGet('boxingLayout');
+        return res?.boxingLayout?.boxes?.[0]?.title ?? null;
+      });
+      await expect.poll(readBack, { timeout: 15000 }).toBe('Built build title');
+
+      // The value is really persisted: a full reload shows it again.
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug)), { timeout: 30000 }).toBe(true);
+      await expect(page.locator('.large-box__title')).toHaveValue('Built build title');
+      state = (await titleState(page, '.large-box__title'))!;
+      expect(state.value).toBe('Built build title');
+    } finally {
+      await ctx.close();
+      fs.rmSync(profile, { recursive: true, force: true });
+    }
+  });
+});
 
 test.describe('Ticket 10/121 - native title inputs: first click selects all, later clicks place the caret', () => {
 
@@ -499,6 +576,25 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     expect(state.selected.length).toBeGreaterThan(0);
     expect('Alpha'.startsWith(state.selected)).toBe(true);
     expect(await page.locator('.large-box').boundingBox()).toEqual(boxBefore);
+  });
+
+  test('the title bar blank space still drags the whole box', async ({ page }) => {
+    test.setTimeout(40000);
+    await boot(page);
+    await seedTitles(page);
+
+    const boxBefore = (await page.locator('.large-box').boundingBox())!;
+    const icon = (await page.locator('.large-box__icon').boundingBox())!;
+    await page.mouse.move(icon.x + icon.width / 2, icon.y + icon.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(icon.x + icon.width / 2 + 120, icon.y + icon.height / 2 + 90, { steps: 10 });
+    await page.mouse.up();
+    await expect.poll(async () => (await page.locator('.large-box').boundingBox())!.x)
+      .toBeGreaterThan(boxBefore.x + 60);
+
+    // Nothing was typed into the title by the drag, and the stored name is intact.
+    await expect(page.locator('.large-box__title')).toHaveValue('Alpha');
+    expect(await layoutTitle(page)).toBe('Alpha');
   });
 
   test('source contract: one shared title-input helper drives all three surfaces', () => {

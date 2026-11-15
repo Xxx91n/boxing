@@ -71,6 +71,26 @@
 
 ## 核验步骤（每步对应既有 spec 的头条断言）
 
+### 0. 三处盒子标题可编辑（#121 / spec #120 T1）
+
+来源断言：`boxing-title-select-all.spec.ts` 的
+`large title: first real click selects everything…`、`…second real click collapses the
+selection and puts the caret where it landed`、`inner-page title: … Enter saves once`、
+`paste is plain text…`、`an empty title falls back to that box type localized default name`。
+Chrome 侧由该 spec 的 `Ticket 121 - title inputs in the loaded Chrome build` 用例在真实
+构建里承担；Firefox 侧在本清单人工执行。
+
+- [ ] 新建一个大盒子：**第一次真实点击**标题 → 整名被选中；直接输入即整体替换。
+- [ ] **第二次真实点击**标题中间某个字 → 选区收起、光标落在点到的位置（不是首/尾）；
+      能插入与删除该处文字，标题栏空白处拖动仍移动整个盒子，标题文字拖动不移动盒子。
+- [ ] 回车提交；Esc 取消（随后的失焦不把取消的内容写回）；点别处（失焦）也会提交。
+- [ ] 中文输入法：选字时按回车只上屏、不提交；上屏后回车才提交。
+- [ ] 从网页复制带换行的富文本粘贴：只留纯文字，换行变成空格，首尾空白被去掉；
+      清空标题后保存，大盒子与盒内顶部显示「未命名盒子」，小盒子显示「新建小盒子」。
+- [ ] 进入大盒子：盒内顶部标题同样首点全选、次点定位、回车保存、Esc 取消；
+      小盒子标题同上，超长标题在未聚焦时显示省略号，编辑时能看到全部内容。
+- [ ] 刷新页面：上述标题内容全部保留。
+
 ### 1. 冲突比较与逐字段应用（#54）
 
 来源断言：`boxing-conflict-field-adjudication.spec.ts` 的
