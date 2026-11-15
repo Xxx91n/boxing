@@ -123,9 +123,12 @@ try {
     if (root.__boxingCredentialCore) return root.__boxingCredentialCore;
     if (!_credCorePromise) {
       _credCorePromise = import('./shared/credential-core.js').then((mod) => {
-        const core = root.__boxingCredentialCore || (mod && (mod.default || mod));
+        const candidate = root.__boxingCredentialCore || (mod && (mod.default || mod));
+        // A classic-script IIFE module has no ESM exports; accept it only when the
+        // expected API is really present so an empty namespace cannot poison the cache.
+        const core = candidate && typeof candidate.createCredentialCore === 'function' ? candidate : null;
         if (core && !root.__boxingCredentialCore) root.__boxingCredentialCore = core;
-        return root.__boxingCredentialCore;
+        return core;
       }).catch((e) => {
         _credCorePromise = null;
         throw e;
@@ -373,6 +376,9 @@ try {
   // uncertain case pauses with a reason code and sends nothing. Updating a known
   // target on later cycles belongs to T6 and is deliberately not implemented here.
   const BG_WEBDAV_DEFAULT_FILENAME = 'boxing-backup.json';
+  // One network step must not hang the target queue (and therefore future creates)
+  // forever. A timed-out PUT is an unknown outcome, never a retryable success.
+  const BG_WEBDAV_TIMEOUT_MS = 30000;
   let bgCredKeyPromise = null;
   let bgCredCoreInstance = null;
   const bgWebDAVTargetQueues = new Map();
@@ -396,14 +402,24 @@ try {
 
   async function bgGetPerInstallCredKeyB64() {
     if (bgCredKeyPromise) return bgCredKeyPromise;
-    bgCredKeyPromise = (async () => {
+    const pending = (async () => {
       const core = await ensureCredentialCore();
       const storeKey = core.CRED_KEY_STORE_KEY;
       const res = await bgStorageGet({ [storeKey]: null });
       const v = res && res[storeKey];
-      return typeof v === 'string' && v.length >= 40 ? v : '';
-    })().catch(() => { bgCredKeyPromise = null; return ''; });
-    return bgCredKeyPromise;
+      return core.isUsablePerInstallKey(v) ? v : '';
+    })();
+    bgCredKeyPromise = pending;
+    try {
+      const value = await pending;
+      // Only a real key is memoized: a read before the page wrote the key must not
+      // pin an empty value for the rest of this worker's life.
+      if (!value) bgCredKeyPromise = null;
+      return value || '';
+    } catch (_) {
+      bgCredKeyPromise = null;
+      return '';
+    }
   }
 
   // Shared envelope compatibility (v1 decrypt bridge, v2 legacy constant secret, v3
@@ -468,11 +484,24 @@ try {
     return JSON.stringify(clean, null, 2);
   }
 
+  function bgWebDAVAbortHandle(timeoutMs) {
+    if (typeof AbortController !== 'function') return { signal: undefined, done: () => {} };
+    const controller = new AbortController();
+    const timer = setTimeout(() => { try { controller.abort(); } catch (_) {} }, timeoutMs);
+    return { signal: controller.signal, done: () => clearTimeout(timer) };
+  }
+
   async function bgWebDAVReadFileState(url, user, pass) {
     const h = new Headers();
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
-    const resp = await fetch(url, { method: 'GET', headers: h, redirect: 'manual' });
+    const abort = bgWebDAVAbortHandle(BG_WEBDAV_TIMEOUT_MS);
+    let resp;
+    try {
+      resp = await fetch(url, { method: 'GET', headers: h, redirect: 'manual', signal: abort.signal });
+    } finally {
+      abort.done();
+    }
     if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') return { kind: 'unreachable' };
     try { if (resp.body && typeof resp.body.cancel === 'function') await resp.body.cancel(); } catch (_) {}
     if (resp.status === 404) return { kind: 'absent' };
@@ -487,7 +516,13 @@ try {
     const h = new Headers({ 'Content-Type': 'application/json', 'If-None-Match': '*' });
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
-    const resp = await fetch(url, { method: 'PUT', headers: h, body, redirect: 'manual' });
+    const abort = bgWebDAVAbortHandle(BG_WEBDAV_TIMEOUT_MS);
+    let resp;
+    try {
+      resp = await fetch(url, { method: 'PUT', headers: h, body, redirect: 'manual', signal: abort.signal });
+    } finally {
+      abort.done();
+    }
     if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') throw new Error('webdav conditional create redirect blocked');
     return { status: resp.status, ok: Boolean(resp.ok), etag: resp.headers.get('etag') || null };
   }
@@ -570,11 +605,7 @@ try {
     // retry on their own (D4: user resolves, then auto-backup resumes). Permission,
     // auth, credential and reachability problems stay retryable because fixing them
     // is a normal user action elsewhere in Settings.
-    const BG_REMOTE_BLOCKING_REASONS = [
-      'remote-exists-untrusted', 'remote-exists-unknown', 'create-conflict',
-      'conditional-unsupported', 'invalid-target', 'target-changed',
-    ];
-    if (prevRemote.status === 'paused' && BG_REMOTE_BLOCKING_REASONS.includes(prevRemote.lastErrorCode)) {
+    if (prevRemote.status === 'paused' && core.AUTO_BACKUP_REMOTE_BLOCKING_REASONS.includes(prevRemote.lastErrorCode)) {
       return { attempted: false, skipped: 'paused', remote: prevRemote };
     }
 
@@ -818,23 +849,26 @@ try {
       latestState = await bgReadAutoBackupState();
       const finishedAt = Date.now();
 
-      // The user may have disabled auto-backup while the remote create was in flight.
-      // A confirmed create is still recorded truthfully; stop everything else.
-      if (!core.isAutoBackupActive(latestState) || latestState.epoch !== activeEpoch) {
-        await bgWriteAutoBackupState({
-          ...latestState,
-          updatedAt: finishedAt,
-          remote: remoteState,
-          lock: null,
-        });
+      // The user may have disabled or reconfigured auto-backup while the remote create
+      // was in flight. A changed epoch means the saved configuration may point at a
+      // different target, so the old outcome is not merged into it; the next run
+      // re-checks the remote before writing anything.
+      if (latestState.epoch !== activeEpoch) {
         if (!core.isAutoBackupActive(latestState)) {
           await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
         }
         return {
           ok: Boolean(snapOutcome && snapOutcome.ok),
-          cancelled: !core.isAutoBackupActive(latestState),
+          cancelled: true,
           state: latestState,
-          remote: remoteState,
+        };
+      }
+      if (!core.isAutoBackupActive(latestState)) {
+        await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+        return {
+          ok: Boolean(snapOutcome && snapOutcome.ok),
+          cancelled: true,
+          state: latestState,
         };
       }
 

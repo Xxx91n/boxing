@@ -66,13 +66,11 @@ export function initCredentialsFacade(deps) {
 // it never enters buildSyncPayload, buildExportEnvelope or snapshots. Without an injected
 // store (file:// pre-init probes) the module falls back to a per-page random session key so
 // roundtrips still work inside one page (SEC-01 mock stays local).
-const CRED_KEY_STORE_KEY = 'boxingCredKey.v1';
 const CRED_KEY_B64_LEN = 32; // 256-bit per-install key
 let __perInstallKeyPromise = null; // memoized PIK loader — one storage read per page
 let __sessionKeyB64 = null; // file:// fallback: random per-page session key
 let __credentialCoreInstance = null;
 
-function b64ToU8(b64) { return Uint8Array.from(atob(b64), c => c.charCodeAt(0)); }
 function u8ToB64(u8) { return btoa(String.fromCharCode(...u8)); }
 function getCredentialCoreModule() {
   const core = typeof globalThis !== 'undefined' ? globalThis.__boxingCredentialCore : null;
@@ -88,13 +86,15 @@ function getCredentialCoreModule() {
 async function getPerInstallKeyB64() {
   if (__perInstallKeyPromise) return __perInstallKeyPromise;
   __perInstallKeyPromise = (async () => {
+    const core = getCredentialCoreModule();
+    const storeKey = core.CRED_KEY_STORE_KEY;
     if (credKeyStore && typeof credKeyStore.get === 'function' && typeof credKeyStore.set === 'function') {
       try {
-        const got = await credKeyStore.get(CRED_KEY_STORE_KEY);
-        const existing = got && got[CRED_KEY_STORE_KEY];
-        if (typeof existing === 'string' && existing.length >= 40) return existing;
+        const got = await credKeyStore.get(storeKey);
+        const existing = got && got[storeKey];
+        if (core.isUsablePerInstallKey(existing)) return existing;
         const fresh = u8ToB64(crypto.getRandomValues(new Uint8Array(CRED_KEY_B64_LEN)));
-        await credKeyStore.set(CRED_KEY_STORE_KEY, fresh);
+        await credKeyStore.set(storeKey, fresh);
         return fresh;
       } catch (e) { debugErr('per-install key store failed — falling back to session key', e); }
     }
@@ -109,7 +109,7 @@ async function getPerInstallKeyB64() {
 // cred regression lane without leaking the key material itself.
 export function perInstallKeyInfo() {
   return {
-    storeKey: CRED_KEY_STORE_KEY,
+    storeKey: getCredentialCoreModule().CRED_KEY_STORE_KEY,
     injected: Boolean(credKeyStore),
     hasPromise: Boolean(__perInstallKeyPromise),
     sessionFallback: __sessionKeyB64 !== null,

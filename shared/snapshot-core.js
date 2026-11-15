@@ -44,6 +44,16 @@
     'target-changed',
     'internal-error',
   ]);
+  // Pauses that need the user to inspect the remote side first. They do not retry on
+  // their own; permission/auth/credential/reachability problems stay retryable.
+  const AUTO_BACKUP_REMOTE_BLOCKING_REASONS = Object.freeze([
+    'remote-exists-untrusted',
+    'remote-exists-unknown',
+    'create-conflict',
+    'conditional-unsupported',
+    'invalid-target',
+    'target-changed',
+  ]);
 
   const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);
   const dailyBucket = (ts) => Math.floor(ts / DAY_MS);
@@ -441,6 +451,7 @@
     MIN_AUTO_BACKUP_INTERVAL_SEC,
     AUTO_BACKUP_REMOTE_STATUSES,
     AUTO_BACKUP_REMOTE_REASONS,
+    AUTO_BACKUP_REMOTE_BLOCKING_REASONS,
     readIndexWithAdapter,
     writeIndexWithAdapter,
     rotateAndWriteIndexWithAdapter,

@@ -28,9 +28,19 @@
   function b64ToU8(b64) { return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)); }
   function u8ToB64(u8) { return btoa(String.fromCharCode(...u8)); }
 
+  function cryptoApi() {
+    return root && root.crypto ? root.crypto : (typeof crypto !== 'undefined' ? crypto : null);
+  }
+
   function subtleCrypto() {
-    const c = root && root.crypto ? root.crypto : (typeof crypto !== 'undefined' ? crypto : null);
+    const c = cryptoApi();
     return c && c.subtle ? c.subtle : null;
+  }
+
+  // The per-install key is 32 random bytes rendered as base64. Anything shorter or
+  // non-string is missing, not a key.
+  function isUsablePerInstallKey(value) {
+    return typeof value === 'string' && value.length >= 40;
   }
 
   // deps.getPerInstallKeyB64: async () => string (per-install key or session fallback).
@@ -70,11 +80,12 @@
       if (!plaintext) return null;
       try {
         const subtle = subtleCrypto();
-        if (!subtle) return null;
-        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const cryptoObj = cryptoApi();
+        if (!subtle || !cryptoObj) return null;
+        const salt = cryptoObj.getRandomValues(new Uint8Array(16));
         const key = await deriveCredKey(salt, 'v3');
         if (!key) return null;
-        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const iv = cryptoObj.getRandomValues(new Uint8Array(12));
         const enc = await subtle.encrypt({ name: ENC_ALGO, iv }, key, new TextEncoder().encode(plaintext));
         return { v: 3, s: u8ToB64(salt), iv: u8ToB64(iv), d: u8ToB64(new Uint8Array(enc)) };
       } catch (e) {
@@ -113,6 +124,7 @@
   const exported = {
     CRED_KEY_STORE_KEY,
     CRED_OBFUSCATION_SECRET,
+    isUsablePerInstallKey,
     createCredentialCore,
   };
   if (root) root.__boxingCredentialCore = exported;

@@ -270,6 +270,9 @@ function createSandbox(opts: SandboxOptions = {}) {
     atob: (s: string) => Buffer.from(String(s), 'base64').toString('binary'),
     btoa: (s: string) => Buffer.from(String(s), 'binary').toString('base64'),
     structuredClone,
+    AbortController,
+    setTimeout,
+    clearTimeout,
     console: { log: () => {}, warn: () => {}, error: () => {} },
     Date, Math, JSON, Object, Array, Number, String, Boolean, RegExp, Error, Set, Map, WeakSet, WeakMap, URL, Promise,
     importScripts: (relPath: string) => {
@@ -633,6 +636,27 @@ test.describe('Ticket #125 — Settings cloud status line (file:// lane)', () =>
     });
     await expect(page.locator('#tab-sync')).toBeVisible();
   }
+
+  test('background fileUrl derivation matches the page resolver for the same inputs', async ({ page }) => {
+    await bootWithState(page, seedAutoBackupState());
+    const cases = [
+      { base: 'https://dav.example.test/dav', name: '' },
+      { base: 'https://dav.example.test/dav/', name: 'my backup.json' },
+      { base: 'https://dav.example.test/dav/custom.json', name: '' },
+      { base: 'https://dav.example.test/dav/', name: 'nested/name.json' },
+      { base: 'https://dav.example.test/dav/', name: '备份.json' },
+    ];
+    const env = createSandbox();
+    for (const c of cases) {
+      const pageUrl = await page.evaluate(({ base, name }) => {
+        const dbg = (window as any).__boxingDebug;
+        dbg.layout.settings.syncFileName = name;
+        return (window as any).__bxSync.resolveWebDAVFileUrl(base).fileUrl;
+      }, c);
+      const bgRes = env.bg.resolveWebDAVFileUrl({ webdavUrl: c.base, syncFileName: c.name });
+      expect(bgRes.fileUrl, `background derivation for ${c.base} / ${c.name}`).toBe(pageUrl);
+    }
+  });
 
   test('paused cloud state renders its own reason line next to, not instead of, the local status', async ({ page }) => {
     await bootWithState(page, seedAutoBackupState({
