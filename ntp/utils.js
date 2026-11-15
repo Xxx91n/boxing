@@ -1110,7 +1110,7 @@ function sanitizeMetaForBackup(meta) {
 }
 
 function sanitizeLayoutForBackup(raw) {
-  if (!isPlainObject(raw)) return raw;
+  if (!isPlainObject(raw)) return {};
   const out = {};
   for (const k of ALLOWED_BACKUP_TOP_LEVEL_KEYS) {
     if (!hasOwn(raw, k) || raw[k] === undefined) continue;
@@ -1146,19 +1146,45 @@ function redactUrlForLog(urlStr) {
     return u.protocol + '//' + authPart + u.host + u.pathname + queryPart + hashPart;
   } catch (_) {
     return trimmed
-      .replace(/(https?:\/\/)[^/\s:@]+:[^/\s@]*@/gi, '$1***:***@')
-      .replace(/(https?:\/\/)[^/\s:@]+@/gi, '$1***@')
-      .replace(/([?#])[^\s]*/g, '$1***');
+      .replace(/(https?:\/\/)[^/\s:@?#]+:[^/\s@?#]*@/gi, '$1***:***@')
+      .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
+      .replace(/\?[^#\s]*/g, '?***')
+      .replace(/#[^\s]*/g, '#***');
   }
+}
+
+function redactUrlTokenForLog(rawUrl) {
+  let urlPart = rawUrl;
+  let suffix = '';
+  // Preserve unmatched trailing ')' or ']' (e.g. prose wrappers "(https://...)") without exposing query/hash
+  while (urlPart.endsWith(')') || urlPart.endsWith(']')) {
+    const open = urlPart.endsWith(')') ? '(' : '[';
+    const close = urlPart.slice(-1);
+    let opens = 0;
+    let closes = 0;
+    for (let i = 0; i < urlPart.length; i++) {
+      if (urlPart[i] === open) opens++;
+      else if (urlPart[i] === close) closes++;
+    }
+    if (closes > opens) {
+      suffix = close + suffix;
+      urlPart = urlPart.slice(0, -1);
+    } else {
+      break;
+    }
+  }
+  const redacted = urlPart
+    .replace(/(https?:\/\/)[^/\s:@?#]+:[^/\s@?#]*@/gi, '$1***:***@')
+    .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
+    .replace(/\?[^#]*/g, '?***')
+    .replace(/#[\s\S]*/g, '#***');
+  return redacted + suffix;
 }
 
 function redactSensitiveLogText(text) {
   if (typeof text !== 'string') return String(text ?? '');
   return text
-    .replace(/(https?:\/\/)[^/\s:@]+:[^/\s@]*@/gi, '$1***:***@')
-    .replace(/(https?:\/\/)[^/\s:@]+@/gi, '$1***@')
-    .replace(/(https?:\/\/[^\s?#"'(),;<>]*)\?[^\s#"'(),;<>]*/gi, '$1?***')
-    .replace(/(https?:\/\/[^\s#"'(),;<>]*)#[^\s"'(),;<>]*/gi, '$1#***')
+    .replace(/https?:\/\/[^\s"'<>`]+/gi, redactUrlTokenForLog)
     .replace(/\b(Basic|Bearer)\s+[A-Za-z0-9._~+/=-]{4,}/gi, '$1 [REDACTED]')
     .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey(?:\.v\d+)?)"\s*:\s*(?:"(?:\\.|[^"\\])*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
 }

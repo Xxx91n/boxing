@@ -431,6 +431,15 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     expect(JSON.parse(JSON.stringify(swSanitize(legacyPreUpdate)))).toEqual(cleanLegacy);
     expect(JSON.parse(JSON.stringify(swSanitize({ ...dirty, settings: null })))).toEqual(boxesOnly);
 
+    // Non-object / array-corrupted top-level layout must fail closed to {} (never return raw payload).
+    const arrayCorrupt = [{ settings: { _encGistToken: { v: 2, d: SPEC_TOKEN }, extra: SPEC_PASS } }];
+    expect(sanitizeLayoutForBackup(arrayCorrupt)).toEqual({});
+    expect(JSON.parse(JSON.stringify(swSanitize(arrayCorrupt)))).toEqual({});
+    expect(sanitizeLayoutForBackup('raw-secret-' + SPEC_PASS)).toEqual({});
+    expect(JSON.parse(JSON.stringify(swSanitize('raw-secret-' + SPEC_PASS)))).toEqual({});
+    expect(sanitizeLayoutForBackup(null)).toEqual({});
+    expect(JSON.parse(JSON.stringify(swSanitize(null)))).toEqual({});
+
     // DR archive + index sanitizers strip/redact credentials cleanly.
     const drBodies = sanitizeDrBodiesForExport({
       snapshots: [{ ts: SNAP_TS, schemaVersion: 3, reason: 'manual', data: dirty, extraBodyKey: 'drop' }],
@@ -473,7 +482,7 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     });
     expect(arrayConflict.raw).toEqual([]);
 
-    // URL and log text redaction unit edge cases.
+    // URL and log text redaction unit edge cases (including commas, semicolons, and parentheses inside query/hash).
     expect(redactUrlForLog('https://alice:secret@dav.example.com/root?token=123#frag')).toBe('https://***:***@dav.example.com/root?***#***');
     const redactedMixed = redactSensitiveLogText(
       'Authorization: Basic dXNlcjpwYXNz {"url":"https://u:p@h.test/p?k=v#h","boxingCredKey.v1":"secret-pik","_encGistToken":{"v":3}}',
@@ -482,6 +491,20 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     expect(redactedMixed).toContain('"url":"https://***:***@h.test/p?***#***"');
     expect(redactedMixed).toContain('"boxingCredKey.v1":"[REDACTED]"');
     expect(redactedMixed).toContain('"_encGistToken":"[REDACTED]"');
+
+    const redactedPunctQuery = redactSensitiveLogText(
+      'err1=https://dav.example/x?labels=a,b&access_token=' + SPEC_TOKEN +
+      ' err2=https://dav.example/x?a=1;token=' + SPEC_PASS +
+      ' err3=(https://u:p@dav.example/x?q=(1,2);z=3&token=' + SPEC_TOKEN + '#frag,a;b(c))',
+    );
+    expect(redactedPunctQuery).not.toContain(SPEC_TOKEN);
+    expect(redactedPunctQuery).not.toContain(SPEC_PASS);
+    expect(redactedPunctQuery).not.toContain('u:p@');
+    expect(redactedPunctQuery).not.toContain('access_token=');
+    expect(redactedPunctQuery).not.toContain('frag,a');
+    expect(redactedPunctQuery).toContain('err1=https://dav.example/x?***');
+    expect(redactedPunctQuery).toContain('err2=https://dav.example/x?***');
+    expect(redactedPunctQuery).toContain('err3=(https://***:***@dav.example/x?***#***)');
   });
 
   test('SW takePreUpdateSnapshot strips credentials/groups while preserving legacy shape and bgErr redacts logs', async () => {
@@ -513,13 +536,28 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     expect(snap2.data.groups).toBeUndefined();
     expect(snap2.data.extraCred).toBeUndefined();
 
-    // Trigger bgErr directly with sensitive payload and verify bgErrLog redacts it.
-    harness1.sandbox.bgErr('PUT failed url=https://u:p@dav.example/f?tok=1 Bearer ' + SPEC_TOKEN + ' {"_encWebdavPass":{"v":3}}');
+    // Array-corrupted boxingLayout in storage must NOT be written into pre-update snapshot.
+    const harnessArray = loadBackgroundHarness({
+      boxingLayout: [{ settings: { _encGistToken: { v: 2, d: SPEC_TOKEN }, extra: SPEC_PASS } }],
+    });
+    await harnessArray.triggerOnInstalled({ reason: 'update', previousVersion: '2026.10.0' });
+    expect(harnessArray.store['snap.v1.index']).toBeUndefined();
+    assertCleanSerialized(
+      JSON.stringify(Object.entries(harnessArray.store).filter(([k]) => k.startsWith('snap.v1.'))),
+      'SW corrupt-array snapshot guard',
+    );
+
+    // Trigger bgErr directly with sensitive payload (including punctuation in query) and verify bgErrLog redacts it.
+    harness1.sandbox.bgErr(
+      'PUT failed url=https://u:p@dav.example/f?labels=a,b;q=(1)&tok=' + SPEC_PASS + '#h,1 Bearer ' + SPEC_TOKEN + ' {"_encWebdavPass":{"v":3}}',
+    );
     const bgLogText = JSON.stringify(harness1.store.bgErrLog);
     expect(bgLogText).not.toContain('u:p@');
-    expect(bgLogText).not.toContain('tok=1');
+    expect(bgLogText).not.toContain('tok=');
+    expect(bgLogText).not.toContain(SPEC_PASS);
     expect(bgLogText).not.toContain(SPEC_TOKEN);
     expect(bgLogText).toContain('Bearer [REDACTED]');
+    expect(bgLogText).toContain('https://***:***@dav.example/f?***#***');
   });
 
   test('sync payloads, WebDAV/Gist pushes, local backup, plain/DR/conflict/sealed exports strip creds without mutating storage archives', async ({ page }) => {
@@ -939,17 +977,69 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     expect(partialRes.encPass).toBeUndefined();
     expect(partialRes.encToken).toBeTruthy();
 
-    // Log redaction E2E: run testWebDAV with embedded-auth URL + inspect exportLog().
+    // Cross-destination isolation: legacy snapshot with historical WebDAV URL/user (no pass) or Gist ID (no token)
+    // must NOT inherit live _encWebdavPass / _encGistToken from the current destination.
+    const crossDestRes = await page.evaluate(async (seed) => {
+      const dbg = (window as any).__boxingDebug;
+      const enc = (window as any).__boxingEncryptCredential;
+      dbg.layout.settings.webdavUrl = 'https://current.webdav.invalid/dav';
+      dbg.layout.settings.webdavUser = 'current-user';
+      dbg.layout.settings.webdavAllowPrivateHost = true;
+      dbg.layout.settings._encWebdavPass = await enc(seed.pass);
+      dbg.layout.settings.gistId = 'current-gist-id';
+      dbg.layout.settings._encGistToken = await enc(seed.token);
+      const legacyDestTs = Date.now() - 20000;
+      await dbg.storageSet({
+        ['snap.v1.' + legacyDestTs]: {
+          ts: legacyDestTs,
+          schemaVersion: 3,
+          data: {
+            version: 3.5,
+            schemaVersion: 3,
+            nextLargeIndex: 2,
+            boxes: [{ id: 'L9', type: 'large', title: 'Legacy Dest', x: 0, y: 0, width: 320, height: 220, children: [] }],
+            connections: [],
+            settings: {
+              syncProvider: 'webdav',
+              webdavUrl: 'https://legacy-other.invalid/dav',
+              webdavUser: 'legacy-user',
+              gistId: 'legacy-gist-id',
+            },
+          },
+        },
+      });
+      const rec = await dbg.restoreFromSnapshot(legacyDestTs);
+      return {
+        webdavUrl: rec?.settings?.webdavUrl,
+        webdavUser: rec?.settings?.webdavUser,
+        encPass: rec?.settings?._encWebdavPass,
+        allowPrivate: rec?.settings?.webdavAllowPrivateHost,
+        gistId: rec?.settings?.gistId,
+        encToken: rec?.settings?._encGistToken,
+      };
+    }, { pass: SPEC_PASS, token: SPEC_TOKEN });
+    expect(crossDestRes.webdavUrl).toBe('https://legacy-other.invalid/dav');
+    expect(crossDestRes.webdavUser).toBe('legacy-user');
+    expect(crossDestRes.encPass).toBeUndefined();
+    expect(crossDestRes.allowPrivate).toBe(false);
+    expect(crossDestRes.gistId).toBe('legacy-gist-id');
+    expect(crossDestRes.encToken).toBeUndefined();
+
+    // Log redaction E2E: run testWebDAV with embedded-auth URL + punctuation query/hash and inspect exportLog().
     const logText = await page.evaluate(async (seed) => {
       const dbg = (window as any).__boxingDebug;
-      dbg.setWebDAVConfig('https://' + seed.user + ':' + seed.pass + '@webdav.invalid/dav?tok=secret123#secHash', seed.user, seed.pass);
+      dbg.setWebDAVConfig(
+        'https://' + seed.user + ':' + seed.pass + '@webdav.invalid/dav?labels=a,b;q=(1)&tok=secret123#secHash,1;2(3)',
+        seed.user,
+        seed.pass,
+      );
       try { await dbg.testWebDAV(); } catch (_) {}
       dbg.layout.settings.webdavUrl = '';
       return dbg.exportLog();
     }, { user: SPEC_USER, pass: SPEC_PASS });
     expect(logText).not.toContain(SPEC_PASS);
     expect(logText).not.toContain('tok=secret123');
-    expect(logText).not.toContain('#secHash');
+    expect(logText).not.toContain('secHash');
     expect(logText).toContain('***:***@webdav.invalid/dav?***#***');
   });
 });

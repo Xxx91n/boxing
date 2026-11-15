@@ -396,11 +396,31 @@ export function registerStorageOnChanged() {
       const curSettings = (layout && layout.settings && typeof layout.settings === 'object') ? layout.settings : {};
       const snapSettings = (snap.data && snap.data.settings && typeof snap.data.settings === 'object') ? snap.data.settings : null;
       if (recovered.settings) {
-        const LOCAL_SYNC_CRED_KEYS = ['webdavUrl', 'webdavUser', 'webdavAllowPrivateHost', '_encWebdavPass', 'gistId', '_encGistToken'];
-        for (const k of LOCAL_SYNC_CRED_KEYS) {
-          const snapHasKey = Boolean(snapSettings && Object.prototype.hasOwnProperty.call(snapSettings, k) && snapSettings[k] !== undefined);
-          const liveHasKey = Object.prototype.hasOwnProperty.call(curSettings, k) && curSettings[k] !== undefined;
-          if (!snapHasKey && liveHasKey) recovered.settings[k] = curSettings[k];
+        // Reconcile credentials and destinations per-provider as a unit so a legacy
+        // snapshot with a historical destination and no credential cannot inherit
+        // live credentials from another destination.
+        const hasSnapWebdavBinding = Boolean(snapSettings && (
+          (typeof snapSettings.webdavUrl === 'string' && snapSettings.webdavUrl.trim()) ||
+          (typeof snapSettings.webdavUser === 'string' && snapSettings.webdavUser.trim()) ||
+          snapSettings._encWebdavPass
+        ));
+        if (!hasSnapWebdavBinding) {
+          for (const k of ['webdavUrl', 'webdavUser', 'webdavAllowPrivateHost', '_encWebdavPass']) {
+            if (Object.prototype.hasOwnProperty.call(curSettings, k) && curSettings[k] !== undefined) {
+              recovered.settings[k] = curSettings[k];
+            }
+          }
+        }
+        const hasSnapGistBinding = Boolean(snapSettings && (
+          (typeof snapSettings.gistId === 'string' && snapSettings.gistId.trim()) ||
+          snapSettings._encGistToken
+        ));
+        if (!hasSnapGistBinding) {
+          for (const k of ['gistId', '_encGistToken']) {
+            if (Object.prototype.hasOwnProperty.call(curSettings, k) && curSettings[k] !== undefined) {
+              recovered.settings[k] = curSettings[k];
+            }
+          }
         }
         // Ticket 99 (T13) / CodeRabbit (security): once stored sync credentials have
         // been deleted (the in-memory layout carries none), a rollback to an older

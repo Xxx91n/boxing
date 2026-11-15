@@ -4,12 +4,35 @@
 const BG_LOG_PREFIX = '[Boxing:BG]';
 // Debug mode toggle — set boxing_debug_mode in storage.sync to enable
 let BG_DEBUG_ENABLED = false;
+function bgRedactUrlToken(rawUrl) {
+  let urlPart = rawUrl;
+  let suffix = '';
+  while (urlPart.endsWith(')') || urlPart.endsWith(']')) {
+    const open = urlPart.endsWith(')') ? '(' : '[';
+    const close = urlPart.slice(-1);
+    let opens = 0;
+    let closes = 0;
+    for (let i = 0; i < urlPart.length; i++) {
+      if (urlPart[i] === open) opens++;
+      else if (urlPart[i] === close) closes++;
+    }
+    if (closes > opens) {
+      suffix = close + suffix;
+      urlPart = urlPart.slice(0, -1);
+    } else {
+      break;
+    }
+  }
+  const redacted = urlPart
+    .replace(/(https?:\/\/)[^/\s:@?#]+:[^/\s@?#]*@/gi, '$1***:***@')
+    .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
+    .replace(/\?[^#]*/g, '?***')
+    .replace(/#[\s\S]*/g, '#***');
+  return redacted + suffix;
+}
 function bgRedactSensitiveText(text) {
   return String(text ?? '')
-    .replace(/(https?:\/\/)[^/\s:@]+:[^/\s@]*@/gi, '$1***:***@')
-    .replace(/(https?:\/\/)[^/\s:@]+@/gi, '$1***@')
-    .replace(/(https?:\/\/[^\s?#"'(),;<>]*)\?[^\s#"'(),;<>]*/gi, '$1?***')
-    .replace(/(https?:\/\/[^\s#"'(),;<>]*)#[^\s"'(),;<>]*/gi, '$1#***')
+    .replace(/https?:\/\/[^\s"'<>`]+/gi, bgRedactUrlToken)
     .replace(/\b(Basic|Bearer)\s+[A-Za-z0-9._~+/=-]{4,}/gi, '$1 [REDACTED]')
     .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey(?:\.v\d+)?)"\s*:\s*(?:"(?:\\.|[^"\\])*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
 }
@@ -24,7 +47,9 @@ function bgRedactUrl(urlStr) {
     const hashPart = u.hash ? '#***' : '';
     return u.protocol + '//' + authPart + u.host + u.pathname + queryPart + hashPart;
   } catch (_) {
-    return bgRedactSensitiveText(trimmed).replace(/([?#])[^\s]*/g, '$1***');
+    return bgRedactSensitiveText(trimmed)
+      .replace(/\?[^#\s]*/g, '?***')
+      .replace(/#[^\s]*/g, '#***');
   }
 }
 function bgLog(...a) { if (BG_DEBUG_ENABLED) console.log(BG_LOG_PREFIX, ...a); }
@@ -525,7 +550,7 @@ try {
     return out;
   }
   function swSanitizeLayoutForBackup(raw) {
-    if (!swIsPlainObj(raw)) return raw;
+    if (!swIsPlainObj(raw)) return {};
     const out = {};
     for (const k of SW_ALLOWED_TOP_LEVEL_KEYS) {
       if (!swHasOwn(raw, k) || raw[k] === undefined) continue;
@@ -550,7 +575,7 @@ try {
   async function takePreUpdateSnapshot() {
     try {
       const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });
-      if (!boxingLayout) return; // no data yet (fresh install) — nothing to protect
+      if (!swIsPlainObj(boxingLayout)) return; // no valid layout object (fresh install or corrupt non-object) — nothing to snapshot
       const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: swSanitizeLayoutForBackup(boxingLayout) };
       const json = JSON.stringify(snap);
       if (json.length > SW_SNAP_MAX_BYTES) { bgErr('pre-update snapshot skipped: ' + json.length + 'B exceeds 2MB single cap'); return; }
