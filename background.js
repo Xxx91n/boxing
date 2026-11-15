@@ -4,12 +4,61 @@
 const BG_LOG_PREFIX = '[Boxing:BG]';
 // Debug mode toggle — set boxing_debug_mode in storage.sync to enable
 let BG_DEBUG_ENABLED = false;
+function bgRedactUrlToken(rawUrl) {
+  let urlPart = rawUrl;
+  let suffix = '';
+  while (urlPart.endsWith(')') || urlPart.endsWith(']')) {
+    const open = urlPart.endsWith(')') ? '(' : '[';
+    const close = urlPart.slice(-1);
+    let opens = 0;
+    let closes = 0;
+    for (let i = 0; i < urlPart.length; i++) {
+      if (urlPart[i] === open) opens++;
+      else if (urlPart[i] === close) closes++;
+    }
+    if (closes > opens) {
+      suffix = close + suffix;
+      urlPart = urlPart.slice(0, -1);
+    } else {
+      break;
+    }
+  }
+  const redacted = urlPart
+    .replace(/(https?:\/\/)[^/\s:@?#]*:[^/\s@?#]*@/gi, '$1***:***@')
+    .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
+    .replace(/\?[^#]*/g, '?***')
+    .replace(/#[\s\S]*/g, '#***');
+  return redacted + suffix;
+}
+function bgRedactSensitiveText(text) {
+  return String(text ?? '')
+    .replace(/https?:\/\/[^\s"'<>`]+/gi, bgRedactUrlToken)
+    .replace(/\b(Basic|Bearer)\s+[A-Za-z0-9._~+/=-]{4,}/gi, '$1 [REDACTED]')
+    .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey(?:\.v\d+)?)"\s*:\s*(?:"(?:\\.|[^"\\])*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
+}
+function bgRedactUrl(urlStr) {
+  if (typeof urlStr !== 'string') return '';
+  const trimmed = urlStr.trim();
+  if (!trimmed) return '';
+  try {
+    const u = new URL(trimmed);
+    const authPart = (u.username || u.password) ? '***:***@' : '';
+    const queryPart = u.search ? '?***' : '';
+    const hashPart = u.hash ? '#***' : '';
+    return u.protocol + '//' + authPart + u.host + u.pathname + queryPart + hashPart;
+  } catch (_) {
+    return bgRedactSensitiveText(trimmed)
+      .replace(/\?[^#\s]*/g, '?***')
+      .replace(/#[^\s]*/g, '#***');
+  }
+}
 function bgLog(...a) { if (BG_DEBUG_ENABLED) console.log(BG_LOG_PREFIX, ...a); }
 function bgErr(...a) {
-  console.error(BG_LOG_PREFIX, ...a); // errors always log
+  const safeText = bgRedactSensitiveText(a.map(function(x){ return x instanceof Error ? x.message : String(x); }).join(' '));
+  console.error(BG_LOG_PREFIX, safeText); // errors always log (redacted)
   // persist bg errors to storage.local so NTP diagnostics panel can surface them
   try {
-    const entry = { ts: Date.now(), prefix: '[Boxing:BG]', text: a.map(function(x){ return x instanceof Error ? x.message : String(x); }).join(' ') };
+    const entry = { ts: Date.now(), prefix: '[Boxing:BG]', text: safeText };
     chrome.storage && chrome.storage.local && chrome.storage.local.get && chrome.storage.local.get({ bgErrLog: [] }, function(r) {
       try {
         var log = (r.bgErrLog || []).slice(-49);
@@ -148,7 +197,7 @@ try {
 
   async function handleWebDAVTest(msg) {
     const { url, user, pass } = msg;
-    bgLog('WebDAV test via BG:', { url, user: user ? '(set)' : '(empty)' });
+    bgLog('WebDAV test via BG:', { url: bgRedactUrl(url), user: user ? '(set)' : '(empty)' });
     const auth = makeAuthHeader(user, pass);
 
     // Try PROPFIND first (standard WebDAV method, returns 207 on success)
@@ -201,7 +250,7 @@ try {
 
   async function handleWebDAVPut(msg) {
     const { url, user, pass, body } = msg;
-    bgLog('WebDAV PUT via BG:', { url, size: body?.length || 0 });
+    bgLog('WebDAV PUT via BG:', { url: bgRedactUrl(url), size: body?.length || 0 });
     const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -218,7 +267,7 @@ try {
   // PUT/GET — no body, so guardWebDAVRequest(msg, false) applies.
   async function handleWebDAVDelete(msg) {
     const { url, user, pass } = msg;
-    bgLog('WebDAV DELETE via BG:', { url });
+    bgLog('WebDAV DELETE via BG:', { url: bgRedactUrl(url) });
     const h = new Headers();
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -258,7 +307,7 @@ try {
   // GET cloud backup file for sync comparison. Returns status + body text on success.
   async function handleWebDAVGet(msg) {
     const { url, user, pass } = msg;
-    bgLog('WebDAV GET via BG:', { url });
+    bgLog('WebDAV GET via BG:', { url: bgRedactUrl(url) });
     const h = new Headers();
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -347,14 +396,187 @@ try {
   const SW_SNAP_MAX_BYTES = 2 * 1024 * 1024; // single-snapshot size cap (2MB)
   const SW_SNAP_INDEX_CAP = 40;              // SW-side bounded directory; NTP owns full rotation
 
+  // Ticket 122 (spec #120 T2): SW-side self-contained explicit allowlist sanitizer
+  // (parity-tested 1:1 against ntp/utils.js). Reused by takePreUpdateSnapshot and
+  // future SW-side backup/snapshot callers (#124).
+  const SW_ALLOWED_TOP_LEVEL_KEYS = Object.freeze([
+    'version', 'schemaVersion', 'boxes', 'nextLargeIndex', 'connections', 'settings', '_meta',
+  ]);
+  const SW_ALLOWED_SETTINGS_KEYS = Object.freeze([
+    'selectedLanguage', 'rememberLastPos', 'zoomLevel', 'darkMode', 'fontSize',
+    'squareCorners', 'autoBackupInterval', 'lastBackupAt', 'headerPinned',
+    'syncProvider', 'urlOpenMode', 'connDeleteAction', 'theme',
+    'autoTitleEnabled', 'autoTitleRules', 'lastSettingsTab',
+    'onboardingCompleted', 'syncLevel', 'syncFileName', 'lastSyncAt',
+    'lastKnownBoxCountBaseline',
+  ]);
+  const SW_ALLOWED_AUTO_TITLE_RULE_KEYS = Object.freeze(['pattern', 'type']);
+  const SW_ALLOWED_META_KEYS = Object.freeze([
+    'revision', 'updatedAt', 'writerId', 'baseRevision', '__groupsMigrated', 'deleted',
+  ]);
+  const SW_ALLOWED_LARGE_BOX_KEYS = Object.freeze([
+    'id', 'type', 'title', 'x', 'y', 'width', 'height',
+    'nextSmallIndex', 'collapseHover', 'pinned', 'isParent', 'viewState', 'children',
+  ]);
+  const SW_ALLOWED_VIEW_STATE_KEYS = Object.freeze([
+    'innerZoom', 'innerPanX', 'innerPanY', 'updatedAt',
+  ]);
+  const SW_ALLOWED_SMALL_BOX_KEYS = Object.freeze([
+    'id', 'type', 'title', 'x', 'y', 'width', 'height',
+    'pinned', 'collapseHover', 'isParent', 'bookmarks',
+  ]);
+  const SW_ALLOWED_BOOKMARK_KEYS = Object.freeze(['id', 'title', 'url']);
+  const SW_ALLOWED_CONN_KEYS = Object.freeze([
+    'id', 'from', 'to', 'source', 'target', 'createdAt', 'props',
+  ]);
+  const SW_ALLOWED_CONN_PROPS_KEYS = Object.freeze([]);
+
+  function swIsPlainObj(v) { return Boolean(v) && typeof v === 'object' && !Array.isArray(v); }
+  function swHasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function swIsScalar(v) {
+    if (typeof v === 'string' || typeof v === 'boolean') return true;
+    if (typeof v === 'number') return Number.isFinite(v);
+    return false;
+  }
+  function swNormDarkMode(v) {
+    if (v === true || v === 'dark') return 'dark';
+    if (v === 'system') return 'system';
+    return 'light';
+  }
+  function swPickScalars(src, keys) {
+    const out = {};
+    for (const k of keys) {
+      if (!swHasOwn(src, k) || src[k] === undefined) continue;
+      if (swIsScalar(src[k])) out[k] = src[k];
+    }
+    return out;
+  }
+  function swSanitizeViewState(vs) {
+    if (!swIsPlainObj(vs)) return undefined;
+    const out = {};
+    for (const k of SW_ALLOWED_VIEW_STATE_KEYS) {
+      if (swHasOwn(vs, k) && typeof vs[k] === 'number' && Number.isFinite(vs[k])) out[k] = vs[k];
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }
+  function swSanitizeBookmark(bm) {
+    return swIsPlainObj(bm) ? swPickScalars(bm, SW_ALLOWED_BOOKMARK_KEYS) : null;
+  }
+  function swSanitizeSmallBox(sb) {
+    if (!swIsPlainObj(sb)) return null;
+    const out = {};
+    for (const k of SW_ALLOWED_SMALL_BOX_KEYS) {
+      if (!swHasOwn(sb, k) || sb[k] === undefined) continue;
+      if (k === 'bookmarks') {
+        out.bookmarks = Array.isArray(sb.bookmarks) ? sb.bookmarks.map(swSanitizeBookmark).filter(Boolean) : [];
+      } else if (swIsScalar(sb[k])) {
+        out[k] = sb[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeLargeBox(lb) {
+    if (!swIsPlainObj(lb)) return null;
+    const out = {};
+    for (const k of SW_ALLOWED_LARGE_BOX_KEYS) {
+      if (!swHasOwn(lb, k) || lb[k] === undefined) continue;
+      if (k === 'viewState') {
+        const cleanVs = swSanitizeViewState(lb.viewState);
+        if (cleanVs !== undefined) out.viewState = cleanVs;
+      } else if (k === 'children') {
+        out.children = Array.isArray(lb.children) ? lb.children.map(swSanitizeSmallBox).filter(Boolean) : [];
+      } else if (swIsScalar(lb[k])) {
+        out[k] = lb[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeConn(conn) {
+    if (!swIsPlainObj(conn)) return null;
+    const out = {};
+    for (const k of SW_ALLOWED_CONN_KEYS) {
+      if (!swHasOwn(conn, k) || conn[k] === undefined) continue;
+      if (k === 'props') {
+        if (swIsPlainObj(conn.props)) out.props = swPickScalars(conn.props, SW_ALLOWED_CONN_PROPS_KEYS);
+      } else if (swIsScalar(conn[k])) {
+        out[k] = conn[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeSettings(settings) {
+    if (settings === null) return null;
+    if (settings === undefined) return undefined;
+    if (!swIsPlainObj(settings)) return {};
+    const out = {};
+    for (const k of SW_ALLOWED_SETTINGS_KEYS) {
+      if (!swHasOwn(settings, k) || settings[k] === undefined) continue;
+      if (k === 'darkMode') {
+        out.darkMode = swNormDarkMode(settings.darkMode);
+      } else if (k === 'autoTitleRules') {
+        const rules = [];
+        for (const r of (Array.isArray(settings.autoTitleRules) ? settings.autoTitleRules : [])) {
+          if (!swIsPlainObj(r)) continue;
+          const clean = {};
+          for (const rk of SW_ALLOWED_AUTO_TITLE_RULE_KEYS) {
+            if (swHasOwn(r, rk) && typeof r[rk] === 'string') clean[rk] = r[rk];
+          }
+          if (typeof clean.pattern === 'string' && typeof clean.type === 'string') rules.push(clean);
+        }
+        out.autoTitleRules = rules;
+      } else if (swIsScalar(settings[k])) {
+        out[k] = settings[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeMeta(meta) {
+    if (!swIsPlainObj(meta)) return undefined;
+    const out = {};
+    for (const k of SW_ALLOWED_META_KEYS) {
+      if (!swHasOwn(meta, k) || meta[k] === undefined) continue;
+      if (k === 'deleted') {
+        if (swIsPlainObj(meta.deleted)) {
+          const cleanDel = {};
+          for (const [dk, dv] of Object.entries(meta.deleted)) {
+            if (typeof dv === 'number' && Number.isFinite(dv)) cleanDel[dk] = dv;
+          }
+          out.deleted = cleanDel;
+        }
+      } else if (swIsScalar(meta[k])) {
+        out[k] = meta[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeLayoutForBackup(raw) {
+    if (!swIsPlainObj(raw)) return {};
+    const out = {};
+    for (const k of SW_ALLOWED_TOP_LEVEL_KEYS) {
+      if (!swHasOwn(raw, k) || raw[k] === undefined) continue;
+      if (k === 'boxes') {
+        out.boxes = Array.isArray(raw.boxes) ? raw.boxes.map(swSanitizeLargeBox).filter(Boolean) : [];
+      } else if (k === 'connections') {
+        out.connections = Array.isArray(raw.connections) ? raw.connections.map(swSanitizeConn).filter(Boolean) : [];
+      } else if (k === 'settings') {
+        const cleanSettings = swSanitizeSettings(raw.settings);
+        if (cleanSettings !== undefined) out.settings = cleanSettings;
+      } else if (k === '_meta') {
+        const cleanMeta = swSanitizeMeta(raw._meta);
+        if (cleanMeta !== undefined) out._meta = cleanMeta;
+      } else if (swIsScalar(raw[k])) {
+        out[k] = raw[k];
+      }
+    }
+    return out;
+  }
+  root.__boxingSwSanitizeLayoutForBackup = swSanitizeLayoutForBackup;
+
   async function takePreUpdateSnapshot() {
     try {
       const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });
-      if (!boxingLayout) return; // no data yet (fresh install) — nothing to protect
-      const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: JSON.parse(JSON.stringify(boxingLayout)) };
-      if (snap.data && typeof snap.data === 'object' && Object.prototype.hasOwnProperty.call(snap.data, 'groups')) {
-        delete snap.data.groups; // groups are runtime-only, never persisted
-      }
+      if (!swIsPlainObj(boxingLayout)) return; // no valid layout object (fresh install or corrupt non-object) — nothing to snapshot
+      const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: swSanitizeLayoutForBackup(boxingLayout) };
       const json = JSON.stringify(snap);
       if (json.length > SW_SNAP_MAX_BYTES) { bgErr('pre-update snapshot skipped: ' + json.length + 'B exceeds 2MB single cap'); return; }
       await api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });
