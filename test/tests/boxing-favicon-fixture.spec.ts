@@ -32,6 +32,20 @@ async function bootFixtureLane(page: Page, opts: {
   entries?: Record<string, { url: string | null; ts: number }>;
   holdRetries?: boolean;
 } = {}) {
+  // Playwright aborts URLs ending in /favicon.ico before page.route sees them
+  // (Request._isFavicon / FrameManager.requestStarted). Add a test-only query
+  // at the native image setter so the real direct-token path remains routable.
+  // favicon.js still races and caches the original URL, without this suffix.
+  await page.addInitScript(() => {
+    const src = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src')!;
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      ...src,
+      set(value: string) {
+        src.set!.call(this, /^https:\/\/[^/]+\.test\/favicon\.ico$/.test(value)
+          ? `${value}?boxing-fixture=1` : value);
+      },
+    });
+  });
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
   if (opts.entries) {
@@ -177,7 +191,7 @@ test.describe('favicon fixture lane', () => {
     const directHosts = new Set<string>();
     const requests: string[] = [];
     page.on('request', (request) => { if (request.url().includes('.test')) requests.push(request.url()); });
-    await page.route('https://*.test/favicon.ico', (route) => {
+    await page.route('https://*.test/favicon.ico?boxing-fixture=1', (route) => {
       const host = new URL(route.request().url()).hostname;
       if (Object.hasOwn(entries, host)) directHosts.add(host);
       return route.abort();
