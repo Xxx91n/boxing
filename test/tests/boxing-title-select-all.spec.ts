@@ -485,30 +485,57 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     ];
 
     for (const [pasted, expected] of cases) {
-      // A real click first, and the click is what proves the field is ready: the paste
-      // below is a dispatched event, so if the field were not focused the text would
-      // land nowhere and the empty title would commit as "Untitled box" instead of the
-      // pasted text. The select-all also means each round starts from the whole name,
-      // so the inserted text replaces it rather than appending to the previous case.
+      // Each round starts blurred on purpose. After the previous round's Enter the
+      // field may still hold focus, and a click on an already focused title is the
+      // SECOND click: it drops the caret instead of selecting the name, so the paste
+      // would land at a caret position rather than over the whole value.
+      await clickBlankCanvas(page);
       await page.locator('.large-box__title').click();
       const ready = (await titleState(page, '.large-box__title'))!;
       expect(ready.focused, 'the field must own focus before the paste').toBe(true);
       expect(ready.selected, 'a fresh click selects the whole name').toBe('Alpha');
 
-      const notCancelled = await page.evaluate((text) => {
+      // Read the field in the same tick as the dispatch. The handler claims the paste
+      // and rewrites the value synchronously; the browser may still run its own paste
+      // handling afterwards (empty OS clipboard on CI), so polling the field later
+      // measures that native step instead of the handler under test.
+      const afterPaste = await page.evaluate((text) => {
         const el = document.querySelector('.large-box__title') as HTMLInputElement;
         const dt = new DataTransfer();
         dt.setData('text/plain', text);
         dt.setData('text/html', '<b>markup</b>');
-        return el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+        // clipboardData is readonly and the constructor ignores it in some engines
+        // (Gecko), which would hand the handler an empty clipboard and make this look
+        // like the product dropped the text. Attach the payload the way the constructor
+        // is supposed to, then prove it is actually there before trusting the result.
+        const ev = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+        try {
+          Object.defineProperty(ev, 'clipboardData', { value: dt });
+        } catch (e) { /* older engines: the property is fixed, checked below */ }
+        const carried = ev.clipboardData || null;
+        const notCancelled = el.dispatchEvent(ev);
+        return {
+          notCancelled,
+          value: el.value,
+          carried: carried ? carried.getData('text/plain') : null,
+        };
       }, pasted);
+
       // The handler claims the paste, so no native rich-text insertion happens.
-      expect(notCancelled).toBe(false);
-      // The plain text really replaced the selection inside the field. Before Enter the
-      // field still holds the RAW paste (edges included, line breaks already spaces):
-      // trimming is part of committing, so compare against the paste, not the result.
-      await expect(page.locator('.large-box__title')).toHaveValue(
+      expect(afterPaste.notCancelled).toBe(false);
+      // Guard the harness itself: if the event could not carry the payload, the check
+      // below would be measuring an empty clipboard instead of the handler.
+      expect(afterPaste.carried, 'the synthetic paste must carry its text').toBe(
+        pasted);
+      // The plain text replaced the selection: line breaks already became spaces, and
+      // the edges are still there because trimming happens when the edit is committed.
+      expect(afterPaste.value, 'the paste replaced the whole name').toBe(
         pasted.replace(/\r\n|\r|\n/g, ' '));
+
+      // Commit. If the browser's own paste step then overwrote the handler's text (CI
+      // has an empty OS clipboard), the title may fall back to its default name — the
+      // value assertion above is the one that owns "the paste became plain text", and
+      // the commit assertion below still owns "Enter persists what the field holds".
       await page.keyboard.press('Enter');
       await expect.poll(() => layoutTitle(page)).toBe(expected);
       await expect(page.locator('.large-box__title')).toHaveValue(expected);
