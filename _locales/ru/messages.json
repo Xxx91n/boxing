@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "Включить локальное автосохранение",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "Название контейнера",
+    "description": "Accessible name for the editable box title field"
   }
 }

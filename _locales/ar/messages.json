@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "تفعيل النسخ الاحتياطي المحلي التلقائي",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "عنوان الصندوق",
+    "description": "Accessible name for the editable box title field"
   }
 }

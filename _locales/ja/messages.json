@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "ローカル自動バックアップを有効にする",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "ボックスのタイトル",
+    "description": "Accessible name for the editable box title field"
   }
 }

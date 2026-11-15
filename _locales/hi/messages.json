@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "स्थानीय ऑटो-बैकअप चालू करें",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "बॉक्स का शीर्षक",
+    "description": "Accessible name for the editable box title field"
   }
 }

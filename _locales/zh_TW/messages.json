@@ -1400,5 +1400,9 @@
   "autoBackupActivateBtn": {
     "message": "啟用本機自動備份",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "盒子標題",
+    "description": "Accessible name for the editable box title field"
   }
 }

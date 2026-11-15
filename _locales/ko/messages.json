@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "로컬 자동 백업 켜기",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "박스 제목",
+    "description": "Accessible name for the editable box title field"
   }
 }

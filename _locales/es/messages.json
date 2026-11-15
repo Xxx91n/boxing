@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "Activar copia automática local",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "Título de la caja",
+    "description": "Accessible name for the editable box title field"
   }
 }

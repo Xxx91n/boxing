@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "Lokale Autosicherung aktivieren",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "Boxtitel",
+    "description": "Accessible name for the editable box title field"
   }
 }

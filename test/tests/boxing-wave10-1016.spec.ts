@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import fs from 'fs';
 import { dismissOnboarding } from '../helpers/onboarding';
+import { stripComments } from '../helpers/source';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
@@ -110,19 +111,25 @@ test.describe('Wave 2026.10.16 — E2E & Contract Tests', () => {
     expect(syncSrc).toContain('auto-backup-ensure');
   });
 
-  // ── Title selection focus machine ────────────────────────────
-  test('title focus machine has unconditional mouseup preventDefault & caret fallback', () => {
+  // ── Title selection (ticket 121: native input, not contentEditable) ──────
+  // This used to pin the contentEditable workaround (mouseup preventDefault +
+  // caretPositionFromPoint/caretRangeFromPoint fallbacks). Titles are native inputs
+  // now, so the contract is the behaviour itself: a first click on an unfocused
+  // title selects everything, and a click on the focused title keeps the native
+  // caret. The end-to-end proof lives in boxing-title-select-all.spec.ts.
+  test('title input keeps the first-click select-all contract', () => {
     const renderSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
+    // Comments are allowed to DISCUSS the removed workaround (the helper's own comment
+    // explains why it is no longer needed), so the negative checks read code only.
+    const codeSrc = stripComments(renderSrc, 'js');
 
-    // guardFirstMouseUp prevents default without checking isCollapsed
-    expect(renderSrc).toContain('if (guardFirstMouseUp) {');
-    expect(renderSrc).toContain('guardFirstMouseUp = false;');
+    expect(renderSrc).toContain('function attachTitleInput(');
     expect(renderSrc).toContain('e.preventDefault();');
-    expect(renderSrc).toContain('selectAllTitleText(el);');
-
-    // Firefox caret position fallback on second click
-    expect(renderSrc).toContain('caretPositionFromPoint');
-    expect(renderSrc).toContain('caretRangeFromPoint');
+    expect(renderSrc).toContain('el.select();');
+    // The contentEditable-only hacks are gone, not merely unused: a reintroduced
+    // caretPositionFromPoint call or contentEditable assignment still fails here.
+    expect(codeSrc).not.toContain('caretPositionFromPoint');
+    expect(codeSrc).not.toMatch(/contenteditable/i);
   });
 
   // ── Version check module & About tab ─────────────────────────

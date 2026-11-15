@@ -359,11 +359,36 @@ body {
   user-select: none; /* BX-SEL-01: prevent native dblclick text selection */
 }
 
-/* BX-SEL-01: contenteditable titles must remain selectable/editable despite canvas user-select: none */
-.large-box__title[contenteditable="true"],
-.small-box__title[contenteditable="true"],
-.inner__crumb-title[contenteditable="true"] {
+/* BX-SEL-01: the title inputs must stay selectable/editable despite canvas user-select: none */
+.large-box__title,
+.small-box__title,
+.inner__crumb-title {
   user-select: text;
+}
+
+/* BX-CSS-DUAL-WRITE: __title vs __title — the native input resets both surfaces
+   share (the browser's own border/padding/background are cleared; typography and
+   spacing come from the per-surface rules below, so the bar keeps its old look). */
+.large-box__title,
+.small-box__title {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  line-height: inherit;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Hides the default focus ring without losing the app's own focus look (the :focus
+   rules below paint the background). */
+.large-box__title:focus,
+.small-box__title:focus,
+.inner__crumb-title:focus {
+  outline: none;
 }
 
 /* CSS `display:flex` overrides HTML `hidden` attribute (MDN:
@@ -526,8 +551,8 @@ body {
   white-space: nowrap;
 }
 
-/* BX-CSS-DUAL-WRITE: __title[contenteditable]:focus */
-.large-box__title[contenteditable="true"]:focus {
+/* BX-CSS-DUAL-WRITE: __title:focus (large) vs __title:focus (small, see below) */
+.large-box__title:focus {
   background: var(--color-elevated);
   padding: 2px 6px;
   border-radius: 4px;
@@ -901,9 +926,20 @@ body {
 }
 
 .inner__crumb-title {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  flex: 1;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  line-height: inherit;
+  box-shadow: none;
   font-size: var(--fs-lg);
   font-weight: 600;
   letter-spacing: -0.3px;
+  color: var(--color-ink);
   outline: none;
   cursor: text;
   min-width: 0;
@@ -911,7 +947,7 @@ body {
   padding: 2px 6px;
 }
 
-.inner__crumb-title[contenteditable="true"]:focus {
+.inner__crumb-title:focus {
   background: var(--color-surface);
 }
 
@@ -991,6 +1027,14 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* BX-CSS-DUAL-WRITE: __title:focus (small) vs __title:focus (large, above) */
+.small-box__title:focus {
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-overflow: clip;
 }
 
 .small-box.small-box--dragging .small-box__bar {

@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "Bật sao lưu tự động cục bộ",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "Tiêu đề hộp",
+    "description": "Accessible name for the editable box title field"
   }
 }

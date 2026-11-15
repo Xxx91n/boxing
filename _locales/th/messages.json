@@ -1397,5 +1397,9 @@
   "autoBackupActivateBtn": {
     "message": "เปิดใช้งานการสำรองข้อมูลอัตโนมัติในเครื่อง",
     "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
+  "titleInputLabel": {
+    "message": "ชื่อกล่อง",
+    "description": "Accessible name for the editable box title field"
   }
 }
