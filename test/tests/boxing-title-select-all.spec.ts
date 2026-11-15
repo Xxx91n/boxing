@@ -497,22 +497,35 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     test.setTimeout(40000);
     await boot(page);
     await seedTitles(page);
-    await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
-    await expect(page.locator('.small-box__title')).toHaveCount(1);
 
     // The field shows the user's own text, which cannot name it: each of the three
-    // surfaces needs the localized "Box title" label. Values differ on purpose, so a
-    // name that merely echoed the value would still be distinguishable here.
-    const seeded = { '.large-box__title': 'Alpha', '.small-box__title': 'Beta', '#inner-crumb-title': 'Alpha' };
-    for (const [sel, value] of Object.entries(seeded)) {
-      const el = page.locator(sel);
-      await expect(el, sel + ' shows the user text').toHaveValue(value);
-      await expect(el, sel + ' needs an accessible name').toHaveAttribute('aria-label', 'Box title');
-    }
+    // surfaces needs the localized "Box title" label. Check each while its surface is
+    // the visible one, and prove the name is not just the seeded value echoed back.
+    await expect(page.locator('.large-box__title')).toHaveValue('Alpha');
+    await expect(page.locator('.large-box__title'), 'the large title needs an accessible name')
+      .toHaveAttribute('aria-label', 'Box title');
 
-    // The label is a real i18n key in all 14 locales, and the English fallback too.
-    const messages = JSON.parse(fs.readFileSync(path.join(EXTENSION_PATH, '_locales/en/messages.json'), 'utf8'));
-    expect(messages.titleInputLabel?.message).toBe('Box title');
+    await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
+    await expect(page.locator('.small-box__title')).toHaveCount(1);
+    await expect(page.locator('.small-box__title')).toHaveValue('Beta');
+    await expect(page.locator('.small-box__title'), 'the small title needs an accessible name')
+      .toHaveAttribute('aria-label', 'Box title');
+
+    await expect(page.locator('#inner-crumb-title')).toHaveValue('Alpha');
+    await expect(page.locator('#inner-crumb-title'), 'the inner-page title needs an accessible name')
+      .toHaveAttribute('aria-label', 'Box title');
+
+    // The label is a real i18n key in all 14 locales, and in the English fallback too.
+    const localesDir = path.join(EXTENSION_PATH, '_locales');
+    const locales = fs.readdirSync(localesDir, { withFileTypes: true })
+      .filter(d => d.isDirectory()).map(d => d.name).sort();
+    expect(locales, 'the shipped locale set').toHaveLength(14);
+    for (const lang of locales) {
+      const messages = JSON.parse(fs.readFileSync(path.join(localesDir, lang, 'messages.json'), 'utf8'));
+      expect(messages.titleInputLabel?.message, 'titleInputLabel in ' + lang).toBeTruthy();
+    }
+    expect(JSON.parse(fs.readFileSync(path.join(localesDir, 'en', 'messages.json'), 'utf8'))
+      .titleInputLabel.message).toBe('Box title');
     const i18nSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/i18n.js'), 'utf8');
     expect(i18nSrc).toMatch(/titleInputLabel: 'Box title'/);
   });
