@@ -304,10 +304,17 @@ try {
   const BG_WORKER_OWNER_ID = 'sw-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now();
   let bgAutoBackupQueue = Promise.resolve();
   let bgAutoBackupInFlightPromise = null;
+  let bgSnapshotQueue = Promise.resolve();
 
   function enqueueBgAutoBackup(fn) {
     const run = bgAutoBackupQueue.then(fn, fn);
     bgAutoBackupQueue = run.then(() => undefined, () => undefined);
+    return run;
+  }
+
+  function enqueueBgSnapshotOp(fn) {
+    const run = bgSnapshotQueue.then(fn, fn);
+    bgSnapshotQueue = run.then(() => undefined, () => undefined);
     return run;
   }
 
@@ -355,10 +362,15 @@ try {
       if (expectedEpoch !== undefined && state.epoch !== expectedEpoch) {
         return { ok: false, cancelled: true, reason: 'epoch-changed', state };
       }
+      const isInterruptedRecovery = Boolean(
+        state.local &&
+        state.local.status === 'running' &&
+        (!state.lock || state.lock.expiresAt <= now)
+      );
       if (!forceImmediate) {
-        // Dedup across startup/ensure bursts: catch-up / ensure only runs when overdue.
+        // Dedup across startup/ensure bursts: catch-up / ensure runs when overdue or recovering an interrupted run.
         // An explicit alarm event is itself the browser's due signal (and keeps tests able to fire it directly).
-        if (trigger !== 'alarm' && state.nextScheduledAt && now < state.nextScheduledAt) {
+        if (trigger !== 'alarm' && !isInterruptedRecovery && state.nextScheduledAt && now < state.nextScheduledAt) {
           return { ok: false, skipped: true, reason: 'not-due-yet', state };
         }
         // Durable lease lock against overlapping wakeups.
@@ -368,11 +380,10 @@ try {
       }
 
       const activeEpoch = state.epoch;
-      const intervalMs = state.intervalSec * 1000;
       const prevLocal = state.local || core.defaultAutoBackupState().local;
+      // Do NOT advance nextScheduledAt until the snapshot settles; an interrupted SW wakeup must retry.
       const claimedState = await bgWriteAutoBackupState({
         ...state,
-        nextScheduledAt: now + intervalMs,
         updatedAt: now,
         local: {
           ...prevLocal,
@@ -403,14 +414,14 @@ try {
           return { ok: false, cancelled: true, reason: 'cancelled-before-write', state: beforeWriteState };
         }
 
-        snapOutcome = await core.saveSnapshotWithAdapter(bgSnapStorage, rawLayout, {
+        snapOutcome = await enqueueBgSnapshotOp(() => core.saveSnapshotWithAdapter(bgSnapStorage, rawLayout, {
           reason: 'auto-backup',
           sanitizeLayout: swSanitizeLayoutForBackup,
           now: Date.now(),
           log: bgLog,
           errorLog: bgErr,
           returnDetails: true,
-        });
+        }));
         if (!snapOutcome || !snapOutcome.ok) {
           throw new Error((snapOutcome && snapOutcome.error) || 'Failed to save local snapshot');
         }
@@ -433,9 +444,11 @@ try {
         };
       }
 
+      const settledIntervalMs = latestState.intervalSec * 1000;
       if (snapOutcome && snapOutcome.ok) {
         const savedState = await bgWriteAutoBackupState({
           ...latestState,
+          nextScheduledAt: finishedAt + settledIntervalMs,
           updatedAt: finishedAt,
           local: {
             status: 'ok',
@@ -454,6 +467,7 @@ try {
       // Failure: NEVER update lastSuccessAt or lastSnapshotTs.
       const failState = await bgWriteAutoBackupState({
         ...latestState,
+        nextScheduledAt: finishedAt + settledIntervalMs,
         updatedAt: finishedAt,
         local: {
           status: 'error',
@@ -545,7 +559,7 @@ try {
         optIn: true,
         intervalSec,
         epoch: nextEpoch,
-        nextScheduledAt: now + intervalSec * 1000,
+        nextScheduledAt: 0,
         updatedAt: now,
         local: {
           ...prevLocal,
@@ -954,6 +968,35 @@ try {
       } else if (msg.type === 'webdav-permission-inspect') {
         const pending = await inspectAndRecordBackgroundWebDAVPermission();
         return { success: true, pending };
+      } else if (msg.type === 'snapshot-save') {
+        const rawLayout = msg.layout;
+        if (!swIsPlainObj(rawLayout)) {
+          return { success: true, result: { ok: false, reason: 'invalid-layout', error: 'Invalid layout object for snapshot' } };
+        }
+        const reason = typeof msg.reason === 'string' && msg.reason.trim() ? msg.reason.trim().slice(0, 64) : undefined;
+        const core = await ensureSnapshotCore();
+        const result = await enqueueBgSnapshotOp(() => core.saveSnapshotWithAdapter(bgSnapStorage, rawLayout, {
+          reason,
+          sanitizeLayout: swSanitizeLayoutForBackup,
+          log: bgLog,
+          errorLog: bgErr,
+          returnDetails: true,
+        }));
+        return { success: true, result };
+      } else if (msg.type === 'snapshot-list') {
+        const core = await ensureSnapshotCore();
+        const snapshots = await enqueueBgSnapshotOp(() => core.listSnapshotsWithAdapter(bgSnapStorage, {
+          log: bgLog,
+          errorLog: bgErr,
+        }));
+        return { success: true, snapshots };
+      } else if (msg.type === 'snapshot-migrate') {
+        const core = await ensureSnapshotCore();
+        await enqueueBgSnapshotOp(() => core.migrateSnapshotsWithAdapter(bgSnapStorage, {
+          log: bgLog,
+          errorLog: bgErr,
+        }));
+        return { success: true };
       }
       return { success: false, error: 'Unknown message type: ' + msg.type };
     } catch (e) {
@@ -1170,24 +1213,26 @@ try {
   root.__boxingSwSanitizeLayoutForBackup = swSanitizeLayoutForBackup;
 
   async function takePreUpdateSnapshot() {
-    try {
-      const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });
-      if (!swIsPlainObj(boxingLayout)) return; // no valid layout object (fresh install or corrupt non-object) — nothing to snapshot
-      const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: swSanitizeLayoutForBackup(boxingLayout) };
-      const json = JSON.stringify(snap);
-      if (json.length > SW_SNAP_MAX_BYTES) { bgErr('pre-update snapshot skipped: ' + json.length + 'B exceeds 2MB single cap'); return; }
-      await api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });
-      const stored = await api.storage.local.get(SW_SNAP_INDEX_KEY);
-      const index = Array.isArray(stored && stored[SW_SNAP_INDEX_KEY]) ? stored[SW_SNAP_INDEX_KEY] : [];
-      index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion, size: json.length });
-      index.sort((a, b) => a.ts - b.ts);
-      if (index.length > SW_SNAP_INDEX_CAP) {
-        const evicted = index.splice(0, index.length - SW_SNAP_INDEX_CAP);
-        for (const e of evicted) { try { await api.storage.local.remove(SW_SNAP_KEY_PREFIX + e.ts); } catch (_) { /* non-fatal */ } }
-      }
-      await api.storage.local.set({ [SW_SNAP_INDEX_KEY]: index });
-      bgLog('pre-update snapshot saved ts=' + snap.ts + ' bytes=' + json.length);
-    } catch (e) { bgErr('pre-update snapshot failed', e); } // never block onInstalled
+    return enqueueBgSnapshotOp(async () => {
+      try {
+        const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });
+        if (!swIsPlainObj(boxingLayout)) return; // no valid layout object (fresh install or corrupt non-object) — nothing to snapshot
+        const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: swSanitizeLayoutForBackup(boxingLayout) };
+        const json = JSON.stringify(snap);
+        if (json.length > SW_SNAP_MAX_BYTES) { bgErr('pre-update snapshot skipped: ' + json.length + 'B exceeds 2MB single cap'); return; }
+        await api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });
+        const stored = await api.storage.local.get(SW_SNAP_INDEX_KEY);
+        const index = Array.isArray(stored && stored[SW_SNAP_INDEX_KEY]) ? stored[SW_SNAP_INDEX_KEY] : [];
+        index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion, size: json.length });
+        index.sort((a, b) => a.ts - b.ts);
+        if (index.length > SW_SNAP_INDEX_CAP) {
+          const evicted = index.splice(0, index.length - SW_SNAP_INDEX_CAP);
+          for (const e of evicted) { try { await api.storage.local.remove(SW_SNAP_KEY_PREFIX + e.ts); } catch (_) { /* non-fatal */ } }
+        }
+        await api.storage.local.set({ [SW_SNAP_INDEX_KEY]: index });
+        bgLog('pre-update snapshot saved ts=' + snap.ts + ' bytes=' + json.length);
+      } catch (e) { bgErr('pre-update snapshot failed', e); } // never block onInstalled
+    });
   }
 
   api.runtime?.onInstalled?.addListener(async (details) => {

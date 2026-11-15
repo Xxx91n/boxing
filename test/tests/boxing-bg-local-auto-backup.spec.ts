@@ -252,6 +252,158 @@ test.describe('Ticket #124 — Background local auto-backup contracts (file:// +
     expect(core.isAutoBackupActive({ optIn: true, intervalSec: 3600 })).toBe(true);
     expect(core.isAutoBackupActive({ optIn: false, intervalSec: 3600 })).toBe(false);
   });
+
+  test('file://: rapid opt-out during slow snapshot save prevents stale opt-in overwrite', async ({ page }) => {
+    await bootFreshFileNtp(page);
+    await openSyncTab(page);
+
+    await page.evaluate(() => {
+      const core = (window as any).__boxingSnapshotCore;
+      const origSave = core.saveSnapshotWithAdapter;
+      let intercepted = false;
+      (window as any).__testSaveStarted = false;
+      core.saveSnapshotWithAdapter = function (...args: any[]) {
+        if (!intercepted) {
+          intercepted = true;
+          (window as any).__testSaveStarted = true;
+          return new Promise((resolve, reject) => {
+            (window as any).__releaseSlowSave = () => {
+              Promise.resolve(origSave.apply(core, args)).then(resolve, reject);
+            };
+          });
+        }
+        return origSave.apply(core, args);
+      };
+    });
+
+    // Trigger opt-in (Hourly = 3600) -> enters saveSnapshotWithAdapter and pauses.
+    await page.locator('#auto-backup-interval').selectOption('3600');
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as any).__testSaveStarted)))
+      .toBe(true);
+
+    // Rapidly disable ('0') while the initial snapshot write is still in flight.
+    await page.locator('#auto-backup-interval').selectOption('0');
+    await expect
+      .poll(async () => (await readAutoBackupStateFromPage(page)).optIn)
+      .toBe(false);
+    await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'off');
+
+    // Release the slow opt-in save and verify stale completion does NOT overwrite opt-out.
+    await page.evaluate(() => (window as any).__releaseSlowSave());
+    await page.waitForTimeout(150);
+
+    const finalState = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const raw = (await dbg.storageGet('autoBackupState')).autoBackupState;
+      return {
+        state: (window as any).__boxingSnapshotCore.normalizeAutoBackupState(raw),
+        setting: dbg.layout.settings.autoBackupInterval,
+        selectVal: (document.getElementById('auto-backup-interval') as HTMLSelectElement | null)?.value,
+        badgeState: document.getElementById('local-auto-backup-status-text')?.getAttribute('data-state'),
+      };
+    });
+    expect(finalState.state.optIn).toBe(false);
+    expect(finalState.state.intervalSec).toBe(0);
+    expect(finalState.setting).toBe(0);
+    expect(finalState.selectVal).toBe('0');
+    expect(finalState.badgeState).toBe('off');
+  });
+
+  test('snapshot-core: readIndexWithAdapter storage error fails closed without overwriting existing snap.v1.index', async () => {
+    const core = require(path.join(ROOT_DIR, 'shared', 'snapshot-core.js'));
+    const store: Record<string, any> = {};
+    let failIndexReads = false;
+    const storage = {
+      async get(keys: any) {
+        if (keys === 'snap.v1.index' && failIndexReads) {
+          throw new Error('transient index read failure');
+        }
+        if (typeof keys === 'string') {
+          return Object.prototype.hasOwnProperty.call(store, keys) ? { [keys]: store[keys] } : {};
+        }
+        const out: Record<string, any> = {};
+        if (keys && typeof keys === 'object' && !Array.isArray(keys)) {
+          for (const [k, def] of Object.entries(keys)) {
+            out[k] = Object.prototype.hasOwnProperty.call(store, k) ? store[k] : def;
+          }
+        }
+        return out;
+      },
+      async set(obj: Record<string, any>) {
+        Object.assign(store, obj);
+      },
+      async remove(keys: string | string[]) {
+        for (const k of Array.isArray(keys) ? keys : [keys]) delete store[k];
+      },
+    };
+
+    const first = await core.saveSnapshotWithAdapter(
+      storage,
+      { version: 3.5, schemaVersion: 3, boxes: [{ id: 'L1', title: 'Keep Me' }] },
+      { reason: 'manual', now: 1_700_000_001_000, returnDetails: true },
+    );
+    expect(first.ok).toBe(true);
+    const savedIndexBefore = JSON.parse(JSON.stringify(store['snap.v1.index']));
+    expect(savedIndexBefore).toHaveLength(1);
+
+    failIndexReads = true;
+    const failed = await core.saveSnapshotWithAdapter(
+      storage,
+      { version: 3.5, schemaVersion: 3, boxes: [{ id: 'L2', title: 'New' }] },
+      { reason: 'auto-backup', now: 1_700_000_002_000, returnDetails: true },
+    );
+    expect(failed.ok).toBe(false);
+    expect(failed.reason).toBe('storage-error');
+    expect(store['snap.v1.index']).toEqual(savedIndexBefore);
+    expect(store['snap.v1.' + savedIndexBefore[0].ts]).toBeTruthy();
+  });
+
+  test('snapshot-core: migrateSnapshotsWithAdapter keeps boxingSnapshots intact if index write fails, then migrates cleanly on retry', async () => {
+    const core = require(path.join(ROOT_DIR, 'shared', 'snapshot-core.js'));
+    const store: Record<string, any> = {
+      boxingSnapshots: [
+        { ts: 1_700_000_010_000, schemaVersion: 2, data: { version: 3.5, boxes: [{ id: 'A' }] } },
+        { ts: 1_700_000_020_000, schemaVersion: 2, data: { version: 3.5, boxes: [{ id: 'B' }] } },
+      ],
+    };
+    let failIndexWriteOnce = true;
+    const storage = {
+      async get(keys: any) {
+        if (typeof keys === 'string') {
+          return Object.prototype.hasOwnProperty.call(store, keys) ? { [keys]: store[keys] } : {};
+        }
+        const out: Record<string, any> = {};
+        if (keys && typeof keys === 'object' && !Array.isArray(keys)) {
+          for (const [k, def] of Object.entries(keys)) {
+            out[k] = Object.prototype.hasOwnProperty.call(store, k) ? store[k] : def;
+          }
+        }
+        return out;
+      },
+      async set(obj: Record<string, any>) {
+        if (failIndexWriteOnce && Object.prototype.hasOwnProperty.call(obj, 'snap.v1.index')) {
+          failIndexWriteOnce = false;
+          throw new Error('simulated quota/write error on snap.v1.index');
+        }
+        Object.assign(store, obj);
+      },
+      async remove(keys: string | string[]) {
+        for (const k of Array.isArray(keys) ? keys : [keys]) delete store[k];
+      },
+    };
+
+    await expect(core.migrateSnapshotsWithAdapter(storage)).rejects.toThrow('simulated quota/write error');
+    expect(Array.isArray(store.boxingSnapshots)).toBe(true);
+    expect(store.boxingSnapshots).toHaveLength(2);
+    expect(store['snap.v1.index']).toBeUndefined();
+
+    const migratedList = await core.listSnapshotsWithAdapter(storage);
+    expect(migratedList.map((e: any) => e.ts)).toEqual([1_700_000_010_000, 1_700_000_020_000]);
+    expect(store.boxingSnapshots).toBeUndefined();
+    expect(store['snap.v1.1700000010000']).toBeTruthy();
+    expect(store['snap.v1.1700000020000']).toBeTruthy();
+  });
 });
 
 test.describe('Ticket #124 — Real Chrome extension background local auto-backup (chromium-extension only)', () => {
@@ -549,6 +701,214 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
       });
       expect(legacyExtCheck.res.active).toBe(false);
       expect(legacyExtCheck.alarm).toBeUndefined();
+
+      expect(downloads).toEqual([]);
+      expect(externalRequests).toEqual([]);
+    } finally {
+      await ctx.close().catch(() => {});
+      fs.rmSync(profile, { recursive: true, force: true });
+    }
+  });
+
+  test('Crash recovery: interrupted running state with expired or missing lock and future nextScheduledAt still catches up immediately', async ({}, testInfo) => {
+    test.setTimeout(120_000);
+    test.skip(testInfo.project.name !== 'chromium-extension', 'real extension SW test runs on chromium-extension lane');
+    test.skip(
+      !fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
+      'dist/boxing-chrome is not built - run npm run build first',
+    );
+
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-issue124-crash-'));
+    const ctx = await chromium.launchPersistentContext(profile, {
+      headless: false,
+      args: [
+        '--load-extension=' + DIST_CHROME,
+        '--disable-extensions-except=' + DIST_CHROME,
+        '--no-first-run',
+        '--no-default-browser-check',
+      ],
+    });
+
+    const downloads: string[] = [];
+    const externalRequests: string[] = [];
+    ctx.on('page', (p) => {
+      p.on('download', (d) => downloads.push(d.suggestedFilename()));
+      p.on('request', (req) => {
+        const u = req.url();
+        if (u.startsWith('http://') || u.startsWith('https://')) externalRequests.push(u);
+      });
+    });
+
+    try {
+      const ntpPage = await ctx.newPage();
+      await ntpPage.goto('chrome://newtab', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await expect
+        .poll(() => ntpPage.evaluate(() => Boolean((window as any).__boxingDebug?.saveLayout)), { timeout: 30000 })
+        .toBe(true);
+      await dismissOnboarding(ntpPage);
+
+      await openSyncTab(ntpPage);
+      await ntpPage.locator('#auto-backup-interval').selectOption('604800');
+      await expect
+        .poll(async () => (await readAutoBackupStateFromPage(ntpPage)).optIn, { timeout: 15000 })
+        .toBe(true);
+
+      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
+      const recoveryMissingLock = await sw.evaluate(async () => {
+        const bg = (self as any).__boxingBgAutoBackup;
+        const cur = (await chrome.storage.local.get('autoBackupState')).autoBackupState;
+        const beforeSnaps = (await chrome.storage.local.get('snap.v1.index'))['snap.v1.index'] || [];
+        // Simulate SW killed after claiming running state while nextScheduledAt is a week away and lock is gone.
+        await chrome.storage.local.set({
+          autoBackupState: {
+            ...cur,
+            nextScheduledAt: Date.now() + 7 * 86400 * 1000,
+            local: {
+              ...cur.local,
+              status: 'running',
+              lastAttemptAt: Date.now() - 60_000,
+            },
+            lock: null,
+          },
+        });
+        const rec = await bg.reconcileAutoBackupSchedule({ trigger: 'startup-catchup', runCatchup: true });
+        const afterState = (await chrome.storage.local.get('autoBackupState')).autoBackupState;
+        const afterSnaps = (await chrome.storage.local.get('snap.v1.index'))['snap.v1.index'] || [];
+        return {
+          beforeCount: beforeSnaps.length,
+          afterCount: afterSnaps.length,
+          rec,
+          afterState,
+        };
+      });
+      expect(recoveryMissingLock.rec.catchupRan).toBe(true);
+      expect(recoveryMissingLock.rec.ok).toBe(true);
+      expect(recoveryMissingLock.afterCount).toBe(recoveryMissingLock.beforeCount + 1);
+      expect(recoveryMissingLock.afterState.local.status).toBe('ok');
+      expect(recoveryMissingLock.afterState.lock).toBeNull();
+
+      // Also verify interrupted state with an expired lease lock catches up.
+      const recoveryExpiredLock = await sw.evaluate(async () => {
+        const bg = (self as any).__boxingBgAutoBackup;
+        const cur = (await chrome.storage.local.get('autoBackupState')).autoBackupState;
+        const beforeSnaps = (await chrome.storage.local.get('snap.v1.index'))['snap.v1.index'] || [];
+        await chrome.storage.local.set({
+          autoBackupState: {
+            ...cur,
+            nextScheduledAt: Date.now() + 7 * 86400 * 1000,
+            local: {
+              ...cur.local,
+              status: 'running',
+              lastAttemptAt: Date.now() - 120_000,
+            },
+            lock: {
+              ownerId: 'dead-sw-owner',
+              epoch: cur.epoch,
+              acquiredAt: Date.now() - 120_000,
+              expiresAt: Date.now() - 5_000,
+            },
+          },
+        });
+        const rec = await bg.reconcileAutoBackupSchedule({ trigger: 'ntp-ensure', runCatchup: true });
+        const afterState = (await chrome.storage.local.get('autoBackupState')).autoBackupState;
+        const afterSnaps = (await chrome.storage.local.get('snap.v1.index'))['snap.v1.index'] || [];
+        return {
+          beforeCount: beforeSnaps.length,
+          afterCount: afterSnaps.length,
+          rec,
+          afterState,
+        };
+      });
+      expect(recoveryExpiredLock.rec.catchupRan).toBe(true);
+      expect(recoveryExpiredLock.rec.ok).toBe(true);
+      expect(recoveryExpiredLock.afterCount).toBe(recoveryExpiredLock.beforeCount + 1);
+      expect(recoveryExpiredLock.afterState.local.status).toBe('ok');
+      expect(recoveryExpiredLock.afterState.lock).toBeNull();
+
+      expect(downloads).toEqual([]);
+      expect(externalRequests).toEqual([]);
+    } finally {
+      await ctx.close().catch(() => {});
+      fs.rmSync(profile, { recursive: true, force: true });
+    }
+  });
+
+  test('Cross-context serialization: concurrent SW auto-backup and NTP saveSnapshot preserve all snapshots in snap.v1.index and Time Machine', async ({}, testInfo) => {
+    test.setTimeout(120_000);
+    test.skip(testInfo.project.name !== 'chromium-extension', 'real extension SW test runs on chromium-extension lane');
+    test.skip(
+      !fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
+      'dist/boxing-chrome is not built - run npm run build first',
+    );
+
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-issue124-race-'));
+    const ctx = await chromium.launchPersistentContext(profile, {
+      headless: false,
+      args: [
+        '--load-extension=' + DIST_CHROME,
+        '--disable-extensions-except=' + DIST_CHROME,
+        '--no-first-run',
+        '--no-default-browser-check',
+      ],
+    });
+
+    const downloads: string[] = [];
+    const externalRequests: string[] = [];
+    ctx.on('page', (p) => {
+      p.on('download', (d) => downloads.push(d.suggestedFilename()));
+      p.on('request', (req) => {
+        const u = req.url();
+        if (u.startsWith('http://') || u.startsWith('https://')) externalRequests.push(u);
+      });
+    });
+
+    try {
+      const ntpPage = await ctx.newPage();
+      await ntpPage.goto('chrome://newtab', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await expect
+        .poll(() => ntpPage.evaluate(() => Boolean((window as any).__boxingDebug?.saveLayout)), { timeout: 30000 })
+        .toBe(true);
+      await dismissOnboarding(ntpPage);
+
+      await openSyncTab(ntpPage);
+      await ntpPage.locator('#auto-backup-interval').selectOption('3600');
+      await expect
+        .poll(async () => (await readAutoBackupStateFromPage(ntpPage)).optIn, { timeout: 15000 })
+        .toBe(true);
+
+      const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
+      const initialSnaps = await ntpPage.evaluate(() => (window as any).__boxingDebug.listSnapshots());
+      expect(initialSnaps).toHaveLength(1);
+
+      // Fire SW auto-backup concurrently with two NTP saveSnapshot calls in the same turn.
+      const [bgRes, ntpTs1, ntpTs2] = await Promise.all([
+        sw.evaluate(() => (self as any).__boxingBgAutoBackup.runBackgroundLocalAutoBackup({ trigger: 'alarm' })),
+        ntpPage.evaluate(() => (window as any).__boxingDebug.saveSnapshot('pre-restore')),
+        ntpPage.evaluate(() => (window as any).__boxingDebug.saveSnapshot('manual-race')),
+      ]);
+
+      expect(bgRes.ok).toBe(true);
+      expect(typeof bgRes.ts).toBe('number');
+      expect(typeof ntpTs1).toBe('number');
+      expect(typeof ntpTs2).toBe('number');
+
+      const tsSet = new Set([initialSnaps[0].ts, bgRes.ts, ntpTs1, ntpTs2]);
+      expect(tsSet.size).toBe(4);
+
+      const storedCheck = await sw.evaluate(async () => {
+        const all = await chrome.storage.local.get(null);
+        const index = all['snap.v1.index'] || [];
+        const reasons = index.map((row: any) => all['snap.v1.' + row.ts]?.reason || null);
+        return { index, reasons };
+      });
+      expect(storedCheck.index).toHaveLength(4);
+      expect(storedCheck.reasons).toContain('auto-backup');
+      expect(storedCheck.reasons).toContain('pre-restore');
+      expect(storedCheck.reasons).toContain('manual-race');
+
+      // Time Machine UI lists all 4 snapshots without any dropped entry.
+      await openDataTab(ntpPage);
+      await expect(ntpPage.locator('#data-snapshot-list .data-snapshot-row')).toHaveCount(4);
 
       expect(downloads).toEqual([]);
       expect(externalRequests).toEqual([]);

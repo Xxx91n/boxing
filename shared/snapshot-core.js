@@ -65,13 +65,9 @@
 
   async function readIndexWithAdapter(storage, indexKey) {
     const key = indexKey || SNAP_INDEX_KEY;
-    try {
-      const stored = await storage.get(key);
-      const v = stored && stored[key];
-      return Array.isArray(v) ? v : [];
-    } catch (_) {
-      return [];
-    }
+    const stored = await storage.get(key);
+    const v = stored && stored[key];
+    return Array.isArray(v) ? v : [];
   }
 
   async function writeIndexWithAdapter(storage, index, indexKey) {
@@ -161,13 +157,13 @@
         if (Object.keys(keysToSet).length > 0) {
           await storage.set(keysToSet);
         }
+        index.sort((a, b) => a.ts - b.ts);
+        await rotateAndWriteIndexWithAdapter(storage, index);
         try {
           if (typeof storage.remove === 'function') await storage.remove('boxingSnapshots');
         } catch (_) {
           // Non-fatal: monolith removal retries on later boot
         }
-        index.sort((a, b) => a.ts - b.ts);
-        await rotateAndWriteIndexWithAdapter(storage, index);
         if (log) log('Snapshot migration complete: ' + index.length + ' entries');
       }
       if (migratedStorages) migratedStorages.add(storage);
@@ -343,6 +339,10 @@
     const norm = normalizeAutoBackupState(state);
     if (!isAutoBackupActive(norm)) return false;
     const now = typeof nowMs === 'number' && Number.isFinite(nowMs) ? nowMs : Date.now();
+    // Interrupted run whose lease lock is missing or expired must catch up immediately.
+    if (norm.local.status === 'running' && (!norm.lock || norm.lock.expiresAt <= now)) {
+      return true;
+    }
     if (!norm.nextScheduledAt) return true;
     return now >= norm.nextScheduledAt;
   }

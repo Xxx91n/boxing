@@ -26,6 +26,7 @@ import { defaultLayout, isPlausibleLayout, mergeById, migrateLayout, normalizeDa
 
 // ── injected ntp.js-scope bindings (assigned once by initStorageFacade, before any call) ──
 let api = null;
+let isBrowserNamespace = false;
 let layoutStorage = null;
 let mirrorWriter = null; // ticket 60: paint-critical boot mirror writer (persist.js facade)
 let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning;
@@ -48,6 +49,7 @@ function getSnapshotCore() {
 
 export function initStorageFacade(deps) {
   api = deps.api;
+  isBrowserNamespace = Boolean(deps.isBrowserNamespace);
   layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   mirrorWriter = deps.mirrorWriter; // ticket 60: boot mirror writer (localStorage, sync-readable first paint)
   applyDarkMode = deps.applyDarkMode; // single dark-mode apply path (persist.js)
@@ -220,14 +222,70 @@ export function registerStorageOnChanged() {
   // ── Ticket 41 / #124: Split-key snapshots + Time Machine layered rotation ──
   // Implementation delegated to shared/snapshot-core.js so background SW and NTP
   // share the exact same rotation, migration, 2MB/8MB caps, and write serialization.
+  // In real extension contexts, snapshot index mutations/reads route through background.js's
+  // single bgSnapshotQueue so SW alarms and NTP tabs never race on snap.v1.index.
   const SNAP_KEY_PREFIX = 'snap.v1.';
   const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;
   const MAX_SNAPSHOTS_TOTAL_BYTES = 8 * 1024 * 1024;
   export const MAX_SNAPSHOT_COUNT = 30;
 
-  // One-time migration: boxingSnapshots[] → split keys (delegated to snapshot-core)
+  function hasExtensionSnapshotRuntime() {
+    if (typeof window !== 'undefined' && window.__BOXING_DEMO__) return false;
+    const proto = (typeof window !== 'undefined' && window.location && window.location.protocol) || '';
+    if (!proto.endsWith('-extension:') && proto !== 'extension:') return false;
+    return Boolean(api && api.runtime && typeof api.runtime.sendMessage === 'function');
+  }
+
+  function sendSnapshotMessageToBg(msg) {
+    const runtime = api && api.runtime;
+    if (!runtime || typeof runtime.sendMessage !== 'function') {
+      return Promise.reject(new Error('No extension runtime available'));
+    }
+    if (isBrowserNamespace) {
+      return runtime.sendMessage(msg).then((resp) => {
+        if (resp && resp.success) return resp;
+        throw new Error((resp && resp.error) || 'BG snapshot error');
+      });
+    }
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      try {
+        const ret = runtime.sendMessage(msg, (resp) => {
+          if (settled) return;
+          settled = true;
+          const lastErr = runtime.lastError;
+          if (lastErr) { reject(new Error(lastErr.message)); return; }
+          if (resp && resp.success) resolve(resp);
+          else reject(new Error((resp && resp.error) || 'BG snapshot error'));
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            (resp) => {
+              if (settled) return;
+              settled = true;
+              if (resp && resp.success) resolve(resp);
+              else reject(new Error((resp && resp.error) || 'BG snapshot error'));
+            },
+            (err) => {
+              if (settled) return;
+              settled = true;
+              reject(err);
+            }
+          );
+        }
+      } catch (e) {
+        if (!settled) { settled = true; reject(e); }
+      }
+    });
+  }
+
+  // One-time migration: boxingSnapshots[] → split keys (delegated to snapshot-core / background queue)
   async function _migrateSnapshots() {
     try {
+      if (hasExtensionSnapshotRuntime()) {
+        await sendSnapshotMessageToBg({ type: 'snapshot-migrate' });
+        return;
+      }
       await getSnapshotCore().migrateSnapshotsWithAdapter(layoutStorage, {
         log: debug,
         errorLog: debugErr,
@@ -252,9 +310,18 @@ export function registerStorageOnChanged() {
   }
 
   // Ticket 50 (spec ticket 50): saveSnapshot(reason) — returns snap.ts on success, null when
-  // skipped (over-cap) or on storage error. Delegated to shared/snapshot-core.js.
+  // skipped (over-cap) or on storage error. Delegated to background queue in extension mode.
   export async function saveSnapshot(reason) {
     try {
+      if (hasExtensionSnapshotRuntime()) {
+        if (!layout || typeof layout !== 'object' || Array.isArray(layout)) return null;
+        const resp = await sendSnapshotMessageToBg({
+          type: 'snapshot-save',
+          layout: sanitizeLayoutForBackup(layout),
+          reason,
+        });
+        return (resp && resp.result && resp.result.ok) ? resp.result.ts : null;
+      }
       return await getSnapshotCore().saveSnapshotWithAdapter(layoutStorage, layout, {
         reason,
         sanitizeLayout: sanitizeLayoutForBackup,
@@ -269,6 +336,13 @@ export function registerStorageOnChanged() {
 
   async function getLatestSnapshot() {
     try {
+      if (hasExtensionSnapshotRuntime()) {
+        await _migrateSnapshots();
+        const index = await _readIndex();
+        if (index.length === 0) return null;
+        const latest = index[index.length - 1];
+        return await _getSnapshotBody(latest.ts);
+      }
       return await getSnapshotCore().getLatestSnapshotWithAdapter(layoutStorage, {
         log: debug,
         errorLog: debugErr,
@@ -281,6 +355,10 @@ export function registerStorageOnChanged() {
 
   export async function listSnapshots() {
     try {
+      if (hasExtensionSnapshotRuntime()) {
+        const resp = await sendSnapshotMessageToBg({ type: 'snapshot-list' });
+        return Array.isArray(resp && resp.snapshots) ? resp.snapshots : [];
+      }
       return await getSnapshotCore().listSnapshotsWithAdapter(layoutStorage, {
         log: debug,
         errorLog: debugErr,

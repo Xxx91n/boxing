@@ -1266,7 +1266,10 @@ export function initSyncEngineFacade(deps) {
     }
     window.__boxingRefreshLocalAutoBackupUi = refreshLocalAutoBackupUi;
 
+    let localAutoBackupConfigSeq = 0;
+
     async function configureLocalAutoBackup(rawIntervalSec, optIn) {
+      const mySeq = ++localAutoBackupConfigSeq;
       const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
       const intervalSec = core
         ? core.normalizeAutoBackupInterval(rawIntervalSec)
@@ -1275,6 +1278,9 @@ export function initSyncEngineFacade(deps) {
 
       layout.settings.autoBackupInterval = enable ? intervalSec : 0;
       await saveLayout({ preserveUpdatedAt: true });
+      if (mySeq !== localAutoBackupConfigSeq) {
+        return { ok: false, stale: true };
+      }
 
       if (typeof window !== 'undefined' && window.__BOXING_DEMO__) {
         await refreshLocalAutoBackupUi();
@@ -1288,13 +1294,22 @@ export function initSyncEngineFacade(deps) {
             optIn: enable,
             intervalSec: enable ? intervalSec : 0,
           });
+          if (mySeq !== localAutoBackupConfigSeq) {
+            return { ok: false, stale: true };
+          }
           await refreshLocalAutoBackupUi(resp && resp.state ? resp.state : null);
+          if (mySeq !== localAutoBackupConfigSeq) {
+            return { ok: false, stale: true };
+          }
           if (typeof refreshDataHealth === 'function') {
             try { await refreshDataHealth(); } catch (_) {}
           }
           return resp;
         } catch (e) {
           debugWarn('auto-backup-configure failed', e);
+          if (mySeq !== localAutoBackupConfigSeq) {
+            return { ok: false, stale: true };
+          }
           await refreshLocalAutoBackupUi();
           return { ok: false, error: e && e.message ? e.message : String(e) };
         }
@@ -1302,6 +1317,9 @@ export function initSyncEngineFacade(deps) {
 
       // file:// lane (no background SW): update persisted coordination state directly via storage facade, never setInterval.
       const prev = await getAutoBackupState();
+      if (mySeq !== localAutoBackupConfigSeq) {
+        return { ok: false, stale: true };
+      }
       const now = Date.now();
       const nextEpoch = (prev.epoch || 0) + 1;
       if (!enable) {
@@ -1318,11 +1336,17 @@ export function initSyncEngineFacade(deps) {
           },
           lock: null,
         });
+        if (mySeq !== localAutoBackupConfigSeq) {
+          return { ok: false, stale: true };
+        }
         await refreshLocalAutoBackupUi(disabled);
         return { ok: true, state: disabled };
       }
 
       const ts = await saveSnapshot('auto-backup');
+      if (mySeq !== localAutoBackupConfigSeq) {
+        return { ok: false, stale: true };
+      }
       const localState = ts
         ? { status: 'ok', lastAttemptAt: now, lastSuccessAt: ts, lastSnapshotTs: ts, lastError: null }
         : {
@@ -1342,7 +1366,13 @@ export function initSyncEngineFacade(deps) {
         local: localState,
         lock: null,
       });
+      if (mySeq !== localAutoBackupConfigSeq) {
+        return { ok: false, stale: true };
+      }
       await refreshLocalAutoBackupUi(enabled);
+      if (mySeq !== localAutoBackupConfigSeq) {
+        return { ok: false, stale: true };
+      }
       if (typeof refreshDataHealth === 'function') {
         try { await refreshDataHealth(); } catch (_) {}
       }
