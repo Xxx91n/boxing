@@ -119,7 +119,7 @@ test.describe('Wave 2026.10.16 — E2E & Contract Tests', () => {
     const renderSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
     // Comments are allowed to DISCUSS the removed workaround (the helper's own comment
     // explains why it is no longer needed), so the negative checks read code only.
-    const codeSrc = stripComments(renderSrc);
+    const codeSrc = stripComments(renderSrc, 'js');
 
     expect(renderSrc).toContain('function attachTitleInput(');
     expect(renderSrc).toContain('e.preventDefault();');

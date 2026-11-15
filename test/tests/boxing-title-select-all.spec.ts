@@ -658,7 +658,7 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     // No box title is a contentEditable span any more. Read code, not comments: the
     // helper's own comment names the surface it replaced, and a comment cannot run.
     // Case-insensitive too, so setAttribute('contenteditable', …) cannot slip past.
-    const code = stripComments(src);
+    const code = stripComments(src, 'js');
     expect(code).not.toMatch(/contenteditable/i);
     expect(code).not.toContain('execCommand');
     // The negative check still bites: the API name survives in the working copy, i.e.
@@ -671,10 +671,52 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     expect((src.match(/void saveLayout\(\);/g) || []).length).toBe(3);
   });
 
+  test('source contract: the comment stripper cannot hide a reintroduced old implementation', () => {
+    // The negative source checks above only mean something while the stripper keeps
+    // real code and drops comments. These cases pin that boundary; the regex one is
+    // the trap: a naive scanner reads the `//` inside /\/\// as a line comment and
+    // blanks the contentEditable assignment that follows, so the ban would pass on
+    // code that brought the old implementation back.
+    const kept: Array<[string, string]> = [
+      ["const re = /\/\//; el.contentEditable = 'true';", 'el.contentEditable'],
+      ['const r = document.caretPositionFromPoint(x, y);', 'caretPositionFromPoint'],
+      ["el.setAttribute('contenteditable', 'true');", 'contenteditable'],
+      ['const half = total / 2; el.contentEditable = true;', 'el.contentEditable'],
+      ['const url = "https://example.com/a//b"; el.contentEditable = true;', 'el.contentEditable'],
+      ['const t = `a // b`; el.contentEditable = true;', 'el.contentEditable'],
+    ];
+    for (const [source, needle] of kept) {
+      expect(stripComments(source, 'js'), 'real code must survive: ' + source).toContain(needle);
+    }
+
+    // Comments, on the other hand, must be gone.
+    const dropped: Array<[string, string, 'js' | 'html' | 'css']> = [
+      ['// it removed contentEditable entirely', 'contentEditable', 'js'],
+      ['/* contentEditable is no longer used */ const a = 1;', 'contentEditable', 'js'],
+      ['const s = "kept"; // contentEditable', 'contentEditable', 'js'],
+      ['<!-- <div contenteditable="true"></div> -->', 'contenteditable', 'html'],
+      ['.a { color: red; } /* .b[contenteditable] { } */', 'contenteditable', 'css'],
+    ];
+    for (const [source, needle, lang] of dropped) {
+      expect(stripComments(source, lang), 'comments must be blanked: ' + source)
+        .not.toMatch(new RegExp(needle, 'i'));
+    }
+
+    // Markup keeps its URLs: the `//` in https:// is not a JavaScript comment.
+    const markup = '<input placeholder="https://dav.example.com/boxing/" type="url">';
+    expect(stripComments(markup, 'html')).toContain('https://dav.example.com/boxing/');
+
+    // Line numbers stay honest: the stripper never changes the line count.
+    const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
+    expect(stripComments(src, 'js').split('\n')).toHaveLength(src.split('\n').length);
+  });
+
   test('source contract: the title markup is a native single-line input everywhere', () => {
-    const src = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8'));
-    const html = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8'));
-    const css = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/base.css'), 'utf8'));
+    // Each file is read with its own comment syntax: a JavaScript scanner pointed at
+    // markup would swallow the `//` inside placeholder="https://…" and blank real code.
+    const src = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8'), 'js');
+    const html = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8'), 'html');
+    const css = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/base.css'), 'utf8'), 'css');
 
     // Two created titles are inputs with type=text, and the inner-page one is too.
     expect((src.match(/title\.type = 'text';/g) || []).length).toBe(2);
