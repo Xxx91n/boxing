@@ -787,6 +787,9 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
       ['const r = document.caretPositionFromPoint(x, y);', 'caretPositionFromPoint'],
       ["el.setAttribute('contenteditable', 'true');", 'contenteditable'],
       ['const half = total / 2; el.contentEditable = true;', 'el.contentEditable'],
+      ['function f() { return /[/*]/; } el.contentEditable = true;', 'el.contentEditable'],
+      ['throw /[/*]/; el.contentEditable = true;', 'el.contentEditable'],
+      ['const half = obj.return / 2; el.contentEditable = true;', 'el.contentEditable'],
       ['const url = "https://example.com/a//b"; el.contentEditable = true;', 'el.contentEditable'],
       ['const t = `a // b`; el.contentEditable = true;', 'el.contentEditable'],
     ];

@@ -78,7 +78,7 @@ export function stripJsComments(source: string): string {
   let out = '';
   let i = 0;
   const n = source.length;
-  // Last significant (non-space, non-comment) character, for the regex/division call.
+  // Last significant token, for the regex/division call.
   let lastSignificant = '';
   const push = (s: string) => { out += s; };
   while (i < n) {
@@ -125,6 +125,15 @@ export function stripJsComments(source: string): string {
         if (c === quote) break;
       }
       lastSignificant = quote;
+      continue;
+    }
+    if (/[A-Za-z_$]/.test(ch)) {
+      const start = i++;
+      while (i < n && /[A-Za-z0-9_$]/.test(source[i])) i++;
+      const token = source.slice(start, i);
+      push(token);
+      // A member named `return` is a value, not the return keyword.
+      lastSignificant = lastSignificant === '.' ? '.' + token : token;
       continue;
     }
     push(ch);
