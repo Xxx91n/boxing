@@ -1230,6 +1230,9 @@ export function initSyncEngineFacade(deps) {
     function formatRemoteAutoBackupState(remote) {
       if (!remote || remote.status === 'idle') return { text: '', state: 'idle' };
       const reason = i18n(REMOTE_REASON_I18N[remote.lastErrorCode] || 'autoBackupCloudReasonError');
+      if (remote.status === 'running') {
+        return { text: i18n('localAutoBackupStatusRunning'), state: 'active' };
+      }
       if (remote.status === 'ok') {
         const when = remote.lastSuccessAt > 0 ? new Date(remote.lastSuccessAt).toLocaleString() : '';
         const suffix = when ? ' · ' + i18n('autoBackupCloudLastLabel') + ': ' + when : '';
@@ -1239,13 +1242,12 @@ export function initSyncEngineFacade(deps) {
         return { text: i18n('autoBackupCloudStatusUnknown'), state: 'unknown' };
       }
       if (remote.status === 'paused') {
-        // Blocking pauses need the user to resolve the remote side; tell them how to
-        // release the pause (switching auto-backup off and on is the explicit action).
-        // A target change is the exception: only a confirmed new target can resume it.
+        // Only the shared list decides which pauses get the retry hint; an absent
+        // core simply shows no hint instead of keeping a second copy of the list.
         const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
         const blocking = core && Array.isArray(core.AUTO_BACKUP_REMOTE_BLOCKING_REASONS)
           ? core.AUTO_BACKUP_REMOTE_BLOCKING_REASONS
-          : ['remote-exists-untrusted', 'remote-exists-unknown', 'create-conflict', 'conditional-unsupported', 'invalid-target'];
+          : [];
         const hint = blocking.includes(remote.lastErrorCode) ? ' ' + i18n('autoBackupCloudRetryHint') : '';
         return { text: i18n('autoBackupCloudStatusPaused', [reason]) + hint, state: 'paused' };
       }

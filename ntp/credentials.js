@@ -85,9 +85,11 @@ function getCredentialCoreModule() {
 // a missing/rejected store falls back to a session key so the file:// lane keeps working.
 async function getPerInstallKeyB64() {
   if (__perInstallKeyPromise) return __perInstallKeyPromise;
+  // Resolve the shared core before caching the single-flight promise: a missing
+  // script must fail this call, not poison every later call with a rejected promise.
+  const core = getCredentialCoreModule();
+  const storeKey = core.CRED_KEY_STORE_KEY;
   __perInstallKeyPromise = (async () => {
-    const core = getCredentialCoreModule();
-    const storeKey = core.CRED_KEY_STORE_KEY;
     if (credKeyStore && typeof credKeyStore.get === 'function' && typeof credKeyStore.set === 'function') {
       try {
         const got = await credKeyStore.get(storeKey);
@@ -108,8 +110,10 @@ async function getPerInstallKeyB64() {
 // Debug/test seam (ticket 81): expose the per-install key presence + source for the
 // cred regression lane without leaking the key material itself.
 export function perInstallKeyInfo() {
+  let storeKey = 'boxingCredKey.v1'; // diagnostics-only fallback if the shared core did not load
+  try { storeKey = getCredentialCoreModule().CRED_KEY_STORE_KEY; } catch (_) { /* report the legacy name */ }
   return {
-    storeKey: getCredentialCoreModule().CRED_KEY_STORE_KEY,
+    storeKey,
     injected: Boolean(credKeyStore),
     hasPromise: Boolean(__perInstallKeyPromise),
     sessionFallback: __sessionKeyB64 !== null,

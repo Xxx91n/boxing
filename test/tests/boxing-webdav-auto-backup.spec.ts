@@ -513,6 +513,25 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
     expect(readRemote(env)).toMatchObject({ status: 'paused', lastErrorCode: 'invalid-target' });
   });
 
+  test('a confirmed create keeps its baseline when the state epoch changes mid-flight for the same target', async () => {
+    let releasePut!: () => void;
+    const gate = { wait: new Promise<void>((resolve) => { releasePut = resolve; }) };
+    const webdav = createFakeWebdav({ putGate: gate });
+    const env = createSandbox({ webdav });
+
+    const run = env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    await expect.poll(() => webdav.requests.some((r) => r.method === 'PUT')).toBe(true);
+    // Simulate another context bumping the epoch while the PUT is in flight.
+    env.store.autoBackupState = { ...env.store.autoBackupState, epoch: 99, updatedAt: Date.now() };
+    releasePut();
+    await run;
+
+    const remote = readRemote(env);
+    expect(remote.status).toBe('ok');
+    expect(remote.baseline).toMatchObject({ service: 'webdav', fileUrl: WEBDAV_FILE_URL, account: 'alice' });
+    expect(remote.lastSuccessAt).toBeGreaterThan(0);
+  });
+
   test('manual page PUT and the background create never interleave on the same file', async () => {
     let releasePut!: () => void;
     const gate = { wait: new Promise<void>((resolve) => { releasePut = resolve; }) };

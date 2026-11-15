@@ -851,9 +851,39 @@ try {
 
       // The user may have disabled or reconfigured auto-backup while the remote create
       // was in flight. A changed epoch means the saved configuration may point at a
-      // different target, so the old outcome is not merged into it; the next run
-      // re-checks the remote before writing anything.
+      // different target, so the old outcome is not merged into it — except for a
+      // confirmed create whose target still matches, which must keep its baseline.
       if (latestState.epoch !== activeEpoch) {
+        const createdTarget = remoteState && remoteState.baseline;
+        if (createdTarget) {
+          try {
+            const current = await bgStorageGet({ boxingLayout: null });
+            const currentSettings = current && current.boxingLayout && current.boxingLayout.settings;
+            const currentDerived = bgResolveWebDAVFileUrl(currentSettings || {});
+            const currentUser = currentSettings && typeof currentSettings.webdavUser === 'string'
+              ? currentSettings.webdavUser.trim()
+              : '';
+            if (!currentDerived.error &&
+                currentDerived.fileUrl === createdTarget.fileUrl &&
+                currentUser === createdTarget.account) {
+              const merged = await bgWriteAutoBackupState({
+                ...latestState,
+                updatedAt: finishedAt,
+                remote: remoteState,
+                lock: null,
+              });
+              if (!core.isAutoBackupActive(merged)) {
+                await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+              }
+              return {
+                ok: Boolean(snapOutcome && snapOutcome.ok),
+                cancelled: true,
+                state: merged,
+                remote: merged.remote,
+              };
+            }
+          } catch (_) { /* unknown current target: drop the stale outcome */ }
+        }
         if (!core.isAutoBackupActive(latestState)) {
           await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
         }
