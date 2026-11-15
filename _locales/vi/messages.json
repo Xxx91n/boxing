@@ -1443,7 +1443,7 @@
     "message": "GitHub từ chối yêu cầu. Hãy kiểm tra token, phạm vi gist và mục tiêu."
   },
   "gistAutoBackupErrCheck": {
-    "message": "Không thể kiểm tra tài khoản GitHub. Sao lưu Gist tự động đã tạm dừng."
+    "message": "Không thể xác minh tài khoản GitHub hoặc các Gist của tài khoản. Sao lưu Gist tự động đã tạm dừng."
   },
   "gistAutoBackupErrUpdate": {
     "message": "Gist đã tồn tại. Chưa hỗ trợ tự động cập nhật Gist hiện có."

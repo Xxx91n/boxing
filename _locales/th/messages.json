@@ -1443,7 +1443,7 @@
     "message": "GitHub ปฏิเสธคำขอ โปรดตรวจสอบโทเค็น ขอบเขต gist และเป้าหมาย"
   },
   "gistAutoBackupErrCheck": {
-    "message": "ไม่สามารถตรวจสอบบัญชี GitHub ได้ การสำรอง Gist อัตโนมัติหยุดชั่วคราว"
+    "message": "ไม่สามารถตรวจสอบบัญชี GitHub หรือ Gist ของบัญชีได้ การสำรอง Gist อัตโนมัติหยุดชั่วคราว"
   },
   "gistAutoBackupErrUpdate": {
     "message": "Gist มีอยู่แล้ว ยังไม่รองรับการอัปเดต Gist ที่มีอยู่โดยอัตโนมัติ"

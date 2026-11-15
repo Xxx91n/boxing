@@ -1524,7 +1524,7 @@
     "description": "Background Gist backup paused because GitHub returned a 4xx response"
   },
   "gistAutoBackupErrCheck": {
-    "message": "Could not check the GitHub account. Automatic Gist backup is paused.",
+    "message": "Could not verify the GitHub account or its Gists. Automatic Gist backup is paused.",
     "description": "Background Gist backup paused because the account check failed"
   },
   "gistAutoBackupErrUpdate": {

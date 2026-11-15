@@ -1443,7 +1443,7 @@
     "message": "GitHub がリクエストを拒否しました。トークン、gist スコープ、対象を確認してください。"
   },
   "gistAutoBackupErrCheck": {
-    "message": "GitHub アカウントを確認できませんでした。自動 Gist バックアップを停止しました。"
+    "message": "GitHub アカウントまたは Gist を確認できませんでした。自動 Gist バックアップを停止しました。"
   },
   "gistAutoBackupErrUpdate": {
     "message": "この Gist は既に存在します。既存 Gist の自動更新はまだ有効ではありません。"

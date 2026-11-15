@@ -284,7 +284,6 @@
       status: 'idle',
       lastAttemptAt: 0,
       lastSuccessAt: 0,
-      lastError: null,
       lastErrorCode: null,
       account: null,
       baseline: null,
@@ -307,6 +306,10 @@
   }
 
   const CLOUD_GIST_ID_RE = /^[a-f0-9]{5,64}$/i;
+  // Must match shared/gist-backup-core.js DEFAULT_GIST_FILE_NAME. The background
+  // load order and classic-SW boundary keep these modules independent; the spec
+  // asserts the literal stays in sync.
+  const CLOUD_DEFAULT_GIST_FILE = 'boxing-backup.json';
 
   function normalizeCloudBaseline(raw) {
     if (!isPlainObject(raw)) return null;
@@ -334,7 +337,7 @@
     // marker to pause, and a malformed marker must not authorize a second POST.
     const fileName = typeof raw.fileName === 'string' && raw.fileName.trim()
       ? raw.fileName.trim().slice(0, 512)
-      : 'boxing-backup.json';
+      : CLOUD_DEFAULT_GIST_FILE;
     const gistId = typeof raw.gistId === 'string' && CLOUD_GIST_ID_RE.test(raw.gistId)
       ? raw.gistId.toLowerCase()
       : '';
@@ -353,14 +356,13 @@
     const dflt = defaultCloudState();
     if (!isPlainObject(raw)) return dflt;
     const provider = raw.provider === 'gist' ? raw.provider : '';
-    const allowedStatus = ['idle', 'running', 'ok', 'paused', 'error', 'pending'];
+    const allowedStatus = ['idle', 'running', 'ok', 'paused', 'pending'];
     const status = allowedStatus.includes(raw.status) ? raw.status : 'idle';
     return {
       provider,
       status,
       lastAttemptAt: Math.max(0, Number(raw.lastAttemptAt) || 0),
       lastSuccessAt: Math.max(0, Number(raw.lastSuccessAt) || 0),
-      lastError: typeof raw.lastError === 'string' && raw.lastError ? raw.lastError.slice(0, 300) : null,
       lastErrorCode: typeof raw.lastErrorCode === 'string' && raw.lastErrorCode ? raw.lastErrorCode.slice(0, 64) : null,
       account: normalizeCloudAccount(raw.account),
       baseline: normalizeCloudBaseline(raw.baseline),

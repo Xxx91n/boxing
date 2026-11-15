@@ -1284,8 +1284,8 @@ export function initSyncEngineFacade(deps) {
       return false;
     }
 
-    // Ticket #126: stable background error codes -> localized sentences. The raw
-    // English lastError stays as a fallback; it never contains a token or body.
+    // Ticket #126: stable background error codes -> localized sentences. An
+    // unknown code falls back to the generic paused label rather than a raw message.
     const GIST_REASON_I18N = {
       gistTokenMissing: 'gistAutoBackupErrToken',
       gistPermissionMissing: 'gistAutoBackupErrPermission',
@@ -1300,7 +1300,7 @@ export function initSyncEngineFacade(deps) {
     function cloudErrorMessage(cloud) {
       if (!cloud) return '';
       const key = cloud.lastErrorCode && GIST_REASON_I18N[cloud.lastErrorCode];
-      return i18n(key || 'gistAutoBackupErrCheck');
+      return i18n(key || 'gistAutoBackupStatusPaused');
     }
 
     function formatAutoBackupStateLabel(state, isActive, needsOptIn) {
@@ -1317,9 +1317,6 @@ export function initSyncEngineFacade(deps) {
       }
       if (cloud && cloud.status === 'paused') {
         return { text: i18n('gistAutoBackupStatusPaused'), badgeState: 'paused' };
-      }
-      if (cloud && cloud.status === 'error') {
-        return { text: i18n('localAutoBackupStatusError'), badgeState: 'error' };
       }
       const st = state && state.local ? state.local.status : 'idle';
       if (st === 'error' && (isActive || (state && state.local && state.local.lastError))) {

@@ -1443,7 +1443,7 @@
     "message": "GitHub hat die Anfrage abgelehnt. Prüfen Sie Token, gist-Berechtigung und Ziel."
   },
   "gistAutoBackupErrCheck": {
-    "message": "Das GitHub-Konto konnte nicht geprüft werden. Die automatische Gist-Sicherung ist pausiert."
+    "message": "GitHub-Konto oder Gists konnten nicht geprüft werden. Die automatische Gist-Sicherung ist pausiert."
   },
   "gistAutoBackupErrUpdate": {
     "message": "Der Gist existiert bereits. Automatische Aktualisierungen eines bestehenden Gists sind noch nicht aktiviert."

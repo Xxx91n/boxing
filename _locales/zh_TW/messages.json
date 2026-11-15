@@ -1446,7 +1446,7 @@
     "message": "GitHub 拒絕了請求。請檢查 Token、gist 權限範圍和目標。"
   },
   "gistAutoBackupErrCheck": {
-    "message": "無法核對 GitHub 帳號，自動 Gist 備份已暫停。"
+    "message": "無法核對 GitHub 帳號或其 Gist，自動 Gist 備份已暫停。"
   },
   "gistAutoBackupErrUpdate": {
     "message": "此 Gist 已存在。目前不支援自動更新既有 Gist。"

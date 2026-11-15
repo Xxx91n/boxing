@@ -1443,7 +1443,7 @@
     "message": "O GitHub recusou a solicitação. Verifique o token, o escopo gist e o destino."
   },
   "gistAutoBackupErrCheck": {
-    "message": "Não foi possível verificar a conta do GitHub. O backup Gist automático está pausado."
+    "message": "Não foi possível verificar a conta do GitHub nem os Gists. O backup Gist automático está pausado."
   },
   "gistAutoBackupErrUpdate": {
     "message": "O Gist já existe. A atualização automática de um Gist existente ainda não está ativada."

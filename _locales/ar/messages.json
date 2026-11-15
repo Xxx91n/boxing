@@ -1443,7 +1443,7 @@
     "message": "رفض GitHub الطلب. تحقق من الرمز ونطاق gist والهدف."
   },
   "gistAutoBackupErrCheck": {
-    "message": "تعذر التحقق من حساب GitHub. تم إيقاف النسخ الاحتياطي التلقائي لـ Gist."
+    "message": "تعذر التحقق من حساب GitHub أو Gists الخاصة به. تم إيقاف النسخ الاحتياطي التلقائي لـ Gist."
   },
   "gistAutoBackupErrUpdate": {
     "message": "Gist موجود بالفعل. التحديث التلقائي لـ Gist موجود غير مفعّل بعد."

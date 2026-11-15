@@ -536,8 +536,7 @@ try {
         currentProvider === 'gist' &&
         finalState.cloud &&
         (finalState.cloud.status === 'paused' ||
-          finalState.cloud.status === 'pending' ||
-          finalState.cloud.status === 'error')
+          finalState.cloud.status === 'pending')
       );
       await setAutoBackupBadge(localFailed || cloudNeedsAttention);
       return {
@@ -883,7 +882,6 @@ try {
         lastAttemptAt: Date.now(),
         lastSuccessAt: Number(fromCloud && fromCloud.lastSuccessAt) || 0,
         lastErrorCode: reasonCode,
-        lastError: null,
         ...extraPatch,
       };
       const next = await bgPatchAutoBackupCloud(patch);
@@ -970,7 +968,6 @@ try {
       status: 'running',
       lastAttemptAt: startedAt,
       lastSuccessAt: Number(cloud.lastSuccessAt) || 0,
-      lastError: null,
       lastErrorCode: null,
       account,
       pendingCreate,
@@ -981,7 +978,6 @@ try {
       status: 'pending',
       lastAttemptAt: startedAt,
       lastSuccessAt: Number(cloud.lastSuccessAt) || 0,
-      lastError: null,
       lastErrorCode: 'gistResultUnknown',
       account,
       pendingCreate,
@@ -1027,7 +1023,6 @@ try {
           status: 'ok',
           lastAttemptAt: startedAt,
           lastSuccessAt: finishedAt,
-          lastError: null,
           lastErrorCode: null,
           account: { login: baseline.ownerLogin, id: baseline.ownerId },
           baseline,
@@ -1062,7 +1057,6 @@ try {
       lastAttemptAt: startedAt,
       lastSuccessAt: Number(cloud.lastSuccessAt) || 0,
       lastErrorCode: failure.reasonCode,
-      lastError: null,
       account,
       pendingCreate: null,
     });
@@ -1482,9 +1476,6 @@ try {
         return { success: true, state: next };
       } else if (msg.type === 'webdav-permission-inspect') {
         const pending = await inspectAndRecordBackgroundWebDAVPermission();
-        return { success: true, pending };
-      } else if (msg.type === 'gist-permission-inspect') {
-        const pending = await inspectAndRecordBackgroundGistPermission();
         return { success: true, pending };
       } else if (msg.type === 'snapshot-save') {
         const rawLayout = msg.layout;

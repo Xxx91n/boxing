@@ -1443,7 +1443,7 @@
     "message": "GitHub a refusé la requête. Vérifiez le jeton, la portée gist et la cible."
   },
   "gistAutoBackupErrCheck": {
-    "message": "Impossible de vérifier le compte GitHub. La sauvegarde Gist automatique est en pause."
+    "message": "Impossible de vérifier le compte GitHub ou ses Gists. La sauvegarde Gist automatique est en pause."
   },
   "gistAutoBackupErrUpdate": {
     "message": "Le Gist existe déjà. La mise à jour automatique d’un Gist existant n’est pas encore activée."

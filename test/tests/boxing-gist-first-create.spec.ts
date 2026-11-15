@@ -319,6 +319,9 @@ test.describe('Ticket #126 — Gist first-create protocol core', () => {
     expect(gistCore.planGistFirstCreate(base)).toEqual({ action: 'create', fileName: GIST_FILE });
     expect(gistCore.planGistFirstCreate({ ...base, settings: { ...settings, gistId: 'deadbeef' } }))
       .toMatchObject({ action: 'pause', reasonCode: 'gistTargetNeedsReview' });
+    // A non-empty but unparseable saved id is untrusted, not "no target".
+    expect(gistCore.planGistFirstCreate({ ...base, settings: { ...settings, gistId: 'https://gist.github.com/x' } }))
+      .toMatchObject({ action: 'pause', reasonCode: 'gistTargetNeedsReview' });
     expect(gistCore.planGistFirstCreate({ ...base, account: { login: 'b', id: 2 } }))
       .toMatchObject({ action: 'pause', reasonCode: 'gistAccountChanged' });
     expect(gistCore.planGistFirstCreate({ ...base, cloud: { ...cloud, pendingCreate: { provider: 'gist', fileName: GIST_FILE } } }))
@@ -369,6 +372,25 @@ test.describe('Ticket #126 — Gist first-create protocol core', () => {
       public: false,
       files: { [GIST_FILE]: { content: '{"a":1}' } },
     });
+  });
+
+  test('background and NTP copies keep the same credential secret, API origin, and default file name', () => {
+    const credentialSrc = fs.readFileSync(path.join(ROOT_DIR, 'ntp', 'credentials.js'), 'utf8');
+    const credentialCore = fs.readFileSync(path.join(ROOT_DIR, 'shared', 'credential-core.js'), 'utf8');
+    const secretMatch = /CRED_OBFUSCATION_SECRET = '([^']+)'/.exec(credentialSrc);
+    expect(secretMatch).not.toBeNull();
+    expect(credentialCore).toContain("CRED_OBFUSCATION_SECRET = '" + secretMatch![1] + "'");
+
+    const backgroundSrc = fs.readFileSync(path.join(ROOT_DIR, 'background.js'), 'utf8');
+    const syncEngineSrc = fs.readFileSync(path.join(ROOT_DIR, 'ntp', 'sync-engine.js'), 'utf8');
+    expect(backgroundSrc).toContain("'https://api.github.com/*'");
+    expect(syncEngineSrc).toContain("'https://api.github.com/*'");
+
+    const gistCoreSrc = fs.readFileSync(path.join(ROOT_DIR, 'shared', 'gist-backup-core.js'), 'utf8');
+    const snapshotCoreSrc = fs.readFileSync(path.join(ROOT_DIR, 'shared', 'snapshot-core.js'), 'utf8');
+    const defaultFileMatch = /DEFAULT_GIST_FILE_NAME = '([^']+)'/.exec(gistCoreSrc);
+    expect(defaultFileMatch).not.toBeNull();
+    expect(snapshotCoreSrc).toContain("CLOUD_DEFAULT_GIST_FILE = '" + defaultFileMatch![1] + "'");
   });
 
   test('shared credential decrypt reads v3 envelopes and fails closed without the install key', async () => {

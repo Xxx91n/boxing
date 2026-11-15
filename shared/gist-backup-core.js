@@ -130,7 +130,13 @@
     if (cloud.pendingCreate) return { action: 'pause', reasonCode: 'gistResultUnknown' };
 
     const fileName = sanitizeGistFileName(settings.syncFileName);
-    const savedGistId = normalizeGistId(settings.gistId);
+    const rawGistId = typeof settings.gistId === 'string' ? settings.gistId.trim() : '';
+    const savedGistId = normalizeGistId(rawGistId);
+    // A non-empty but unparseable id is an untrusted target, not "no target".
+    // Creating a fresh Gist here would silently ignore the user's saved target.
+    if (rawGistId && !savedGistId) {
+      return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
+    }
     const baseline = cloud.baseline && cloud.baseline.provider === 'gist' ? cloud.baseline : null;
 
     // GitHub account id is the stable identity; a renamed login is not a new target.
