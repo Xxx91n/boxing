@@ -120,17 +120,18 @@ async function clickTitleAt(page: Page, sel: string, fraction: number) {
   return (await titleState(page, sel))!;
 }
 
-// A REAL click on empty canvas, used to blur a title the way a user would. The point is
+// A REAL click on the visible outer or inner canvas, used to blur a title. The point is
 // derived from both the surface and the viewport: the surface is a virtual canvas that
 // can extend past the window, and Playwright waits (then times out) when asked to click
 // at a position its element does not cover — the old hard-coded {x: 900, y: 700} did
 // exactly that on lanes whose viewport is shorter.
 async function clickBlankCanvas(page: Page) {
   const vp = page.viewportSize();
-  const box = await page.locator('.canvas__surface').boundingBox();
+  const box = await page.locator('.canvas__surface:visible, #inner-surface:visible').boundingBox();
   if (!box || !vp) throw new Error('the canvas surface has no box');
   const x = Math.min(box.x + box.width - 24, vp.width - 24);
-  const y = Math.min(box.y + box.height - 24, vp.height - 24);
+  // Keep clear of the zoom controls at the bottom-right of either canvas.
+  const y = Math.min(box.y + box.height - 80, vp.height - 80);
   await page.mouse.click(x, y);
 }
 
@@ -452,6 +453,7 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
       await page.locator(selector).click();
       expect((await titleState(page, selector))!.selected).toBe(expected);
       await clickBlankCanvas(page);
+      await expect(page.locator(selector)).not.toBeFocused();
       await expect.poll(() => surface === 'small' ? childTitle(page) : layoutTitle(page)).toBe(expected);
       await expect.poll(() => page.evaluate((isSmall) => {
         const box = JSON.parse(localStorage.getItem('boxingLayout') || '{}').boxes?.[0];
