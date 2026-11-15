@@ -7,6 +7,9 @@ and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) st
 
 ## [Unreleased]
 
+### Changed
+- **Box titles are native text fields now** — the large-box title, the small-box title and the title on the inner page are single-line inputs instead of editable spans. The first click still selects the whole name, the second click drops the caret exactly where you clicked, and Enter / Esc / clicking away still commit, cancel or save as before. Pasting keeps plain text only (line breaks become spaces), and an empty title falls back to that box type's default name.
+
 ## [2026.11.1] - 2026-11-01
 
 User-facing notes for store listings and the GitHub Release body.

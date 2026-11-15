@@ -39,7 +39,7 @@ Every CSS rule that affects a box selector MUST be classified with one of three 
 | `.large-box--ghost` | `.small-box--ghost` | ghost outline |
 | `.large-box__bar` | `.small-box__bar` | title bar bg, padding, border-bottom, flex layout |
 | `.large-box__title` | `.small-box__title` | font-size, font-weight, color, ellipsis |
-| `.large-box__title[contenteditable]:focus` | `.small-box__title[contenteditable]:focus` | focus outline/bg |
+| `.large-box__title:focus` | `.small-box__title:focus` | focus outline/bg |
 | `.large-box__delete` | `.small-box__delete` | delete button position, size, color |
 | `.large-box__delete:hover` | `.small-box__delete:hover` | hover color |
 | `.large-box__body` | `.small-box__body` | body padding, overflow |

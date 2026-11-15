@@ -1361,5 +1361,9 @@
         "content": "$1"
       }
     }
+  },
+  "titleInputLabel": {
+    "message": "बॉक्स का शीर्षक",
+    "description": "Accessible name for the editable box title field"
   }
 }

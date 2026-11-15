@@ -1364,5 +1364,9 @@
         "content": "$1"
       }
     }
+  },
+  "titleInputLabel": {
+    "message": "盒子标题",
+    "description": "Accessible name for the editable box title field"
   }
 }

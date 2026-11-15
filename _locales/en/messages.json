@@ -1428,5 +1428,9 @@
       }
     },
     "description": "Confirmation status after WebDAV host permission is granted"
+  },
+  "titleInputLabel": {
+    "message": "Box title",
+    "description": "Accessible name for the editable box title field"
   }
 }

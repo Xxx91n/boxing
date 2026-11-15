@@ -1361,5 +1361,9 @@
         "content": "$1"
       }
     }
+  },
+  "titleInputLabel": {
+    "message": "Titre de la boîte",
+    "description": "Accessible name for the editable box title field"
   }
 }

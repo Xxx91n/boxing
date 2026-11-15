@@ -46,6 +46,7 @@ const I18N_FALLBACK = {
   canvasRoot: 'Canvas', untitledBox: 'Untitled box',
   untitledLargeBox: 'Untitled large box', untitledSmallBox: 'Untitled small box',
   newLargeBox: 'Box $1$', newSmallBox: 'New small box',
+  titleInputLabel: 'Box title',
   deleteBox: 'Delete box', confirmDeleteLarge: 'Delete this large box and all its small boxes?',
   confirmDeleteSmall: 'Delete this small box?', pin: 'Pin', unpin: 'Unpin',
   largeBoxesCount: '$1$ large boxes', smallBoxesCount: '$1$ small boxes',
@@ -456,6 +457,11 @@ function applyI18n() {
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     el.placeholder = i18n(el.dataset.i18nPlaceholder);
+  });
+  // Accessible names for controls whose visible text is not their label (the box
+  // titles only ever show the user's own text, which cannot name the field).
+  document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+    el.setAttribute('aria-label', i18n(el.dataset.i18nAriaLabel));
   });
 }
 

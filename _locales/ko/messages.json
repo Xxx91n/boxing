@@ -1361,5 +1361,9 @@
         "content": "$1"
       }
     }
+  },
+  "titleInputLabel": {
+    "message": "박스 제목",
+    "description": "Accessible name for the editable box title field"
   }
 }
