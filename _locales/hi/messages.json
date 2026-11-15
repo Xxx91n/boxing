@@ -1447,5 +1447,8 @@
   },
   "gistAutoBackupErrUpdate": {
     "message": "Gist पहले से मौजूद है। मौजूदा Gist का स्वचालित अपडेट अभी उपलब्ध नहीं है।"
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "इस फ़ाइल नाम वाला Gist पहले से मौजूद है, लेकिन Boxing इसे ट्रैक नहीं करता। स्वचालित बैकअप रुका हुआ है।"
   }
 }

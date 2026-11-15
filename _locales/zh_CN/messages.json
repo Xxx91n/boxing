@@ -1450,5 +1450,8 @@
   },
   "gistAutoBackupErrUpdate": {
     "message": "该 Gist 已存在。暂不支持自动更新已有 Gist。"
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "该文件名对应的 Gist 已存在，但 Boxing 没有记录它。自动备份已暂停。"
   }
 }

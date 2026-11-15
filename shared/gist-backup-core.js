@@ -18,17 +18,6 @@
   const DEFAULT_GIST_FILE_NAME = 'boxing-backup.json';
   const GIST_ID_RE = /^[a-f0-9]{5,64}$/i;
 
-  const REASON_TEXT = Object.freeze({
-    gistTokenMissing: 'GitHub token is missing. Add it under Gist settings.',
-    gistPermissionMissing: 'GitHub API access is not granted. Allow it from the Boxing settings page.',
-    gistAccountChanged: 'The GitHub token belongs to a different account than the saved backup target.',
-    gistTargetNeedsReview: 'The Gist target or file name does not match the trusted baseline. Automatic backup is paused.',
-    gistResultUnknown: 'A previous Gist creation has no confirmed result. Check GitHub before retrying.',
-    gistRequestRejected: 'GitHub refused the request. Check the token, its gist scope, and the target.',
-    gistCheckFailed: 'Could not check the GitHub account. Automatic Gist backup is paused.',
-    gistUpdateNotEnabled: 'The Gist already exists. Automatic updates of an existing Gist are not enabled yet.',
-  });
-
   function normalizeGistId(value) {
     if (typeof value !== 'string') return '';
     const trimmed = value.trim();
@@ -57,6 +46,11 @@
     return Number.isFinite(ts) && ts > 0 ? ts : 0;
   }
 
+  function normalizeAccountId(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    return typeof value === 'string' && /^\d{1,20}$/.test(value) ? value : '';
+  }
+
   // Returns a confirmed baseline shape only when the response carries the Gist id
   // AND the expected file. Anything else is an unknown result, never a success.
   function parseGistResponse(json, expectedFileName) {
@@ -66,9 +60,7 @@
     const fileName = sanitizeGistFileName(expectedFileName);
     if (!json.files || typeof json.files !== 'object' || !json.files[fileName]) return null;
     const owner = json.owner && typeof json.owner === 'object' ? json.owner : {};
-    const ownerId = (typeof owner.id === 'number' && Number.isFinite(owner.id))
-      ? owner.id
-      : (typeof owner.id === 'string' && /^\d{1,20}$/.test(owner.id) ? owner.id : '');
+    const ownerId = normalizeAccountId(owner.id);
     const createdAt = safeTimestamp(json.created_at);
     const updatedAt = safeTimestamp(json.updated_at) || createdAt;
     return {
@@ -82,6 +74,26 @@
     };
   }
 
+  // Returns the first gist that already carries the target file name, or null.
+  // The caller pauses on any match: an untracked Boxing-looking gist is an unknown
+  // target, not a creatable empty slot (spec D4 "remote definitely does not exist").
+  function findGistWithFile(gists, fileName) {
+    if (!Array.isArray(gists)) return null;
+    const target = sanitizeGistFileName(fileName);
+    for (const gist of gists) {
+      if (!gist || typeof gist !== 'object') continue;
+      const files = gist.files;
+      if (!files || typeof files !== 'object' || !files[target]) continue;
+      const owner = gist.owner && typeof gist.owner === 'object' ? gist.owner : {};
+      return {
+        gistId: normalizeGistId(gist.id),
+        ownerLogin: typeof owner.login === 'string' ? owner.login : '',
+        ownerId: normalizeAccountId(owner.id),
+      };
+    }
+    return null;
+  }
+
   // 4xx means GitHub answered "no object was created". 5xx and anything else stays
   // unknown on purpose: a proxy or partially-successful server may have created the
   // Gist even though Boxing did not get a usable answer.
@@ -91,10 +103,6 @@
       return { kind: 'definitive', reasonCode: 'gistRequestRejected' };
     }
     return { kind: 'unknown', reasonCode: 'gistResultUnknown' };
-  }
-
-  function describeReason(reasonCode) {
-    return REASON_TEXT[reasonCode] || REASON_TEXT.gistCheckFailed;
   }
 
   function accountIdsEqual(a, b) {
@@ -165,13 +173,12 @@
     GIST_CREATE_DESCRIPTION,
     DEFAULT_GIST_FILE_NAME,
     GIST_ID_RE,
-    REASON_TEXT,
     normalizeGistId,
     sanitizeGistFileName,
     buildGistCreateBody,
     parseGistResponse,
+    findGistWithFile,
     classifyGistFailure,
-    describeReason,
     planGistFirstCreate,
   };
 

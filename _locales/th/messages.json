@@ -1447,5 +1447,8 @@
   },
   "gistAutoBackupErrUpdate": {
     "message": "Gist มีอยู่แล้ว ยังไม่รองรับการอัปเดต Gist ที่มีอยู่โดยอัตโนมัติ"
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "มี Gist ที่ใช้ชื่อไฟล์นี้อยู่แล้ว แต่ Boxing ไม่ได้ติดตามไว้ การสำรองอัตโนมัติหยุดชั่วคราว"
   }
 }

@@ -527,7 +527,13 @@ try {
 
       const finalState = cloudResult && cloudResult.state ? cloudResult.state : await bgReadAutoBackupState();
       const localFailed = !(snapOutcome && snapOutcome.ok);
+      // Only current Gist targets own the cloud badge; a historical pause must not
+      // leave "!" after the user switches to WebDAV/local.
+      const latestLayout = await bgStorageGet({ boxingLayout: null });
+      const currentProvider = latestLayout && latestLayout.boxingLayout &&
+        latestLayout.boxingLayout.settings ? latestLayout.boxingLayout.settings.syncProvider : '';
       const cloudNeedsAttention = Boolean(
+        currentProvider === 'gist' &&
         finalState.cloud &&
         (finalState.cloud.status === 'paused' ||
           finalState.cloud.status === 'pending' ||
@@ -609,6 +615,10 @@ try {
             ...prevLocal,
             status: prevLocal.lastSuccessAt > 0 || prevLocal.lastError ? 'cancelled' : 'idle',
           },
+          // Ticket #126: reconfiguring the interval must never drop the cloud
+          // baseline/account/pending marker. Doing so would erase a pending POST
+          // result and let the immediate run create a duplicate Gist.
+          cloud: prev.cloud,
           lock: null,
         });
         return { ok: true, state: disabledState };
@@ -622,6 +632,7 @@ try {
         epoch: nextEpoch,
         nextScheduledAt: 0,
         updatedAt: now,
+        cloud: prev.cloud,
         local: {
           ...prevLocal,
           status: 'running',
@@ -712,6 +723,11 @@ try {
     }
   }
 
+  function bgNormalizeAccountId(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    return typeof value === 'string' && /^\d{1,20}$/.test(value) ? value : '';
+  }
+
   async function bgGistGetUser(token) {
     let resp;
     try {
@@ -725,15 +741,39 @@ try {
     if (!resp.ok) return { ok: false, reasonCode: 'gistCheckFailed' };
     let json;
     try { json = await resp.json(); } catch (_) { return { ok: false, reasonCode: 'gistCheckFailed' }; }
-    const id = json && json.id;
     const login = json && json.login;
-    const normalizedId = (typeof id === 'number' && Number.isFinite(id))
-      ? id
-      : (typeof id === 'string' && /^\d{1,20}$/.test(id) ? id : '');
+    const normalizedId = bgNormalizeAccountId(json && json.id);
     if (!normalizedId || typeof login !== 'string' || !login) {
       return { ok: false, reasonCode: 'gistCheckFailed' };
     }
     return { ok: true, account: { login: login.slice(0, 100), id: normalizedId } };
+  }
+
+  const BG_GIST_LIST_MAX_PAGES = 3; // 300 gists; beyond that "absent" cannot be proven.
+
+  async function bgGistListOwnGists(token) {
+    const all = [];
+    for (let page = 1; page <= BG_GIST_LIST_MAX_PAGES; page++) {
+      let resp;
+      try {
+        resp = await bgGistFetch('/gists?per_page=100&page=' + page, token, { method: 'GET' });
+      } catch (e) {
+        return { ok: false, reasonCode: 'gistCheckFailed' };
+      }
+      if (resp.status === 401 || resp.status === 403) {
+        return { ok: false, reasonCode: 'gistRequestRejected' };
+      }
+      if (!resp.ok) return { ok: false, reasonCode: 'gistCheckFailed' };
+      let json;
+      try { json = await resp.json(); } catch (_) { return { ok: false, reasonCode: 'gistCheckFailed' }; }
+      if (!Array.isArray(json)) return { ok: false, reasonCode: 'gistCheckFailed' };
+      for (const gist of json) all.push(gist);
+      const link = resp.headers && typeof resp.headers.get === 'function' ? resp.headers.get('link') : '';
+      const hasNext = typeof link === 'string' && /rel="next"/i.test(link);
+      if (!hasNext) return { ok: true, gists: all };
+    }
+    // Still more pages than the bound: absence cannot be proven, so pause.
+    return { ok: false, reasonCode: 'gistCheckFailed' };
   }
 
   async function bgPatchAutoBackupCloud(patch) {
@@ -843,7 +883,7 @@ try {
         lastAttemptAt: Date.now(),
         lastSuccessAt: Number(fromCloud && fromCloud.lastSuccessAt) || 0,
         lastErrorCode: reasonCode,
-        lastError: gistCore.describeReason(reasonCode),
+        lastError: null,
         ...extraPatch,
       };
       const next = await bgPatchAutoBackupCloud(patch);
@@ -886,6 +926,18 @@ try {
       return { ok: true, skipped: true, reason: plan.action, state };
     }
 
+    // Spec D4: create only when the remote target is proven absent. Without a
+    // saved Gist id, the target is "this account + file name", so an untracked
+    // Gist carrying that file name is an unknown target and must pause.
+    const listResult = await bgGistListOwnGists(token);
+    if (!listResult.ok) {
+      return finishPause(listResult.reasonCode || 'gistCheckFailed', cloud, sameAccountPatch);
+    }
+    const conflict = gistCore.findGistWithFile(listResult.gists, plan.fileName);
+    if (conflict) {
+      return finishPause('gistUnknownExisting', cloud, sameAccountPatch);
+    }
+
     // Re-check cancellation immediately before the one irreversible step.
     const beforePost = await bgReadAutoBackupState();
     if (!core.isAutoBackupActive(beforePost) || (expectedEpoch !== undefined && beforePost.epoch !== expectedEpoch)) {
@@ -924,6 +976,18 @@ try {
       pendingCreate,
     });
 
+    const pendingPatch = (extra) => ({
+      provider: 'gist',
+      status: 'pending',
+      lastAttemptAt: startedAt,
+      lastSuccessAt: Number(cloud.lastSuccessAt) || 0,
+      lastError: null,
+      lastErrorCode: 'gistResultUnknown',
+      account,
+      pendingCreate,
+      ...extra,
+    });
+
     let resp = null;
     let requestError = null;
     try {
@@ -937,16 +1001,7 @@ try {
     const finishedAt = Date.now();
 
     if (!resp) {
-      const next = await bgPatchAutoBackupCloud({
-        provider: 'gist',
-        status: 'pending',
-        lastAttemptAt: startedAt,
-        lastSuccessAt: Number(cloud.lastSuccessAt) || 0,
-        lastErrorCode: 'gistResultUnknown',
-        lastError: gistCore.describeReason('gistResultUnknown'),
-        account,
-        pendingCreate,
-      });
+      const next = await bgPatchAutoBackupCloud(pendingPatch());
       await setAutoBackupBadge(true);
       bgErr('Gist create result unknown (' + trigger + '):', requestError && requestError.message ? requestError.message : 'network error');
       return { ok: false, pending: true, reasonCode: 'gistResultUnknown', state: next };
@@ -984,17 +1039,10 @@ try {
       }
       // GitHub said 2xx but the body is unusable. The object may exist; keep the
       // pending marker (and any id we can see) so no second POST is sent.
-      const knownId = json && typeof json.id === 'string' && /^[a-f0-9]{5,64}$/i.test(json.id) ? json.id.toLowerCase() : '';
-      const next = await bgPatchAutoBackupCloud({
-        provider: 'gist',
-        status: 'pending',
-        lastAttemptAt: startedAt,
-        lastSuccessAt: Number(cloud.lastSuccessAt) || 0,
-        lastErrorCode: 'gistResultUnknown',
-        lastError: gistCore.describeReason('gistResultUnknown'),
-        account,
+      const knownId = json ? gistCore.normalizeGistId(json.id) : '';
+      const next = await bgPatchAutoBackupCloud(pendingPatch({
         pendingCreate: { ...pendingCreate, gistId: knownId },
-      });
+      }));
       await setAutoBackupBadge(true);
       bgErr('Gist create response incomplete (' + trigger + ')');
       return { ok: false, pending: true, reasonCode: 'gistResultUnknown', state: next };
@@ -1002,16 +1050,7 @@ try {
 
     const failure = gistCore.classifyGistFailure(resp.status);
     if (failure.kind === 'unknown') {
-      const next = await bgPatchAutoBackupCloud({
-        provider: 'gist',
-        status: 'pending',
-        lastAttemptAt: startedAt,
-        lastSuccessAt: Number(cloud.lastSuccessAt) || 0,
-        lastErrorCode: failure.reasonCode,
-        lastError: gistCore.describeReason(failure.reasonCode),
-        account,
-        pendingCreate,
-      });
+      const next = await bgPatchAutoBackupCloud(pendingPatch({ lastErrorCode: failure.reasonCode }));
       await setAutoBackupBadge(true);
       bgErr('Gist create returned HTTP ' + resp.status + ' (' + trigger + '); result treated as unknown');
       return { ok: false, pending: true, reasonCode: failure.reasonCode, state: next };
@@ -1023,7 +1062,7 @@ try {
       lastAttemptAt: startedAt,
       lastSuccessAt: Number(cloud.lastSuccessAt) || 0,
       lastErrorCode: failure.reasonCode,
-      lastError: gistCore.describeReason(failure.reasonCode),
+      lastError: null,
       account,
       pendingCreate: null,
     });

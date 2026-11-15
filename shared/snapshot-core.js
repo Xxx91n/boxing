@@ -295,19 +295,23 @@
   // A present-but-malformed account/baseline/pending marker must still block the
   // unattended path. Returning null here would re-open the "create a fresh Gist"
   // branch on corrupt state, which is exactly the duplicate the ticket forbids.
+  function normalizeAccountId(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    return typeof value === 'string' && /^\d{1,20}$/.test(value) ? value : '';
+  }
+
   function normalizeCloudAccount(raw) {
     if (!isPlainObject(raw)) return null;
     const login = typeof raw.login === 'string' ? raw.login.trim().slice(0, 100) : '';
-    const id = (typeof raw.id === 'number' && Number.isFinite(raw.id))
-      ? raw.id
-      : (typeof raw.id === 'string' && /^\d{1,20}$/.test(raw.id) ? raw.id : '');
-    return { login, id };
+    return { login, id: normalizeAccountId(raw.id) };
   }
+
+  const CLOUD_GIST_ID_RE = /^[a-f0-9]{5,64}$/i;
 
   function normalizeCloudBaseline(raw) {
     if (!isPlainObject(raw)) return null;
     if (raw.provider !== 'gist') return null;
-    const gistId = typeof raw.gistId === 'string' && /^[a-f0-9]{5,64}$/i.test(raw.gistId)
+    const gistId = typeof raw.gistId === 'string' && CLOUD_GIST_ID_RE.test(raw.gistId)
       ? raw.gistId.toLowerCase()
       : '';
     const fileName = typeof raw.fileName === 'string' ? raw.fileName.trim().slice(0, 512) : '';
@@ -331,7 +335,7 @@
     const fileName = typeof raw.fileName === 'string' && raw.fileName.trim()
       ? raw.fileName.trim().slice(0, 512)
       : 'boxing-backup.json';
-    const gistId = typeof raw.gistId === 'string' && /^[a-f0-9]{5,64}$/i.test(raw.gistId)
+    const gistId = typeof raw.gistId === 'string' && CLOUD_GIST_ID_RE.test(raw.gistId)
       ? raw.gistId.toLowerCase()
       : '';
     return {
@@ -340,9 +344,7 @@
       description: typeof raw.description === 'string' ? raw.description.slice(0, 200) : '',
       startedAt: Math.max(0, Number(raw.startedAt) || 0),
       accountLogin: typeof raw.accountLogin === 'string' ? raw.accountLogin.slice(0, 100) : '',
-      accountId: (typeof raw.accountId === 'number' && Number.isFinite(raw.accountId))
-        ? raw.accountId
-        : (typeof raw.accountId === 'string' && /^\d{1,20}$/.test(raw.accountId) ? raw.accountId : ''),
+      accountId: normalizeAccountId(raw.accountId),
       gistId,
     };
   }
@@ -350,7 +352,7 @@
   function normalizeCloudState(raw) {
     const dflt = defaultCloudState();
     if (!isPlainObject(raw)) return dflt;
-    const provider = raw.provider === 'gist' || raw.provider === 'webdav' ? raw.provider : '';
+    const provider = raw.provider === 'gist' ? raw.provider : '';
     const allowedStatus = ['idle', 'running', 'ok', 'paused', 'error', 'pending'];
     const status = allowedStatus.includes(raw.status) ? raw.status : 'idle';
     return {

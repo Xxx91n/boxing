@@ -147,6 +147,10 @@ function apiUser(id = 42, login = 'spec-user') {
   return jsonResponse(200, { login, id });
 }
 
+function isGistListCall(call: BgCall) {
+  return call.method === 'GET' && call.url.includes('/gists?');
+}
+
 function gistCreated(id = 'abc12345', fileName = GIST_FILE) {
   return jsonResponse(201, {
     id,
@@ -353,6 +357,10 @@ test.describe('Ticket #126 — Gist first-create protocol core', () => {
     });
     expect(gistCore.parseGistResponse({ id: 'abcdef12' }, GIST_FILE)).toBeNull();
     expect(gistCore.parseGistResponse({ id: 'not-a-gist', files: { [GIST_FILE]: {} } }, GIST_FILE)).toBeNull();
+    expect(gistCore.findGistWithFile([{ id: 'feedface', files: { [GIST_FILE]: {} } }], GIST_FILE))
+      .toMatchObject({ gistId: 'feedface' });
+    expect(gistCore.findGistWithFile([{ id: 'feedface', files: { 'other.json': {} } }], GIST_FILE)).toBeNull();
+    expect(gistCore.findGistWithFile([], GIST_FILE)).toBeNull();
     expect(gistCore.classifyGistFailure(401)).toMatchObject({ kind: 'definitive' });
     expect(gistCore.classifyGistFailure(403)).toMatchObject({ kind: 'definitive' });
     expect(gistCore.classifyGistFailure(500)).toMatchObject({ kind: 'unknown', reasonCode: 'gistResultUnknown' });
@@ -391,6 +399,7 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
       store,
       fetchImpl: (call) => {
         if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return jsonResponse(200, []);
         if (call.method === 'POST' && call.url.endsWith('/gists')) return gistCreated();
         throw new Error('unexpected call ' + call.method + ' ' + call.url);
       },
@@ -398,7 +407,7 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
 
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(res.ok).toBe(true);
-    expect(sandbox.calls.map((c) => c.method + ' ' + new URL(c.url).pathname)).toEqual(['GET /user', 'POST /gists']);
+    expect(sandbox.calls.map((c) => c.method + ' ' + new URL(c.url).pathname)).toEqual(['GET /user', 'GET /gists', 'POST /gists']);
     expect(sandbox.permissionRequests).toEqual([]);
     expect(sandbox.getBadge()).toBe('');
 
@@ -459,6 +468,7 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
       store,
       fetchImpl: (call) => {
         if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return jsonResponse(200, []);
         if (call.method === 'POST' && call.url.endsWith('/gists')) return gistCreated();
         throw new Error('unexpected call ' + call.method + ' ' + call.url);
       },
@@ -480,6 +490,55 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(revoked.store.gistPendingPermission).toMatchObject({ needed: true, origin: 'https://api.github.com/*' });
   });
 
+  test('reconfiguring the interval preserves the cloud baseline and pending marker', async () => {
+    const store = await baseStore({ syncProvider: 'local' }, {
+      provider: 'gist',
+      status: 'pending',
+      lastAttemptAt: 5,
+      lastSuccessAt: 9,
+      lastError: null,
+      lastErrorCode: 'gistResultUnknown',
+      account: { login: 'spec-user', id: 42 },
+      baseline: {
+        provider: 'gist',
+        gistId: 'abc12345',
+        fileName: GIST_FILE,
+        ownerLogin: 'spec-user',
+        ownerId: 42,
+        createdAt: 9,
+        updatedAt: 9,
+        verifiedAt: 9,
+      },
+      pendingCreate: {
+        provider: 'gist',
+        fileName: GIST_FILE,
+        description: 'Boxing extension backup',
+        startedAt: 5,
+        accountLogin: 'spec-user',
+        accountId: 42,
+        gistId: '',
+      },
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: () => { throw new Error('provider is local; no network expected'); },
+    });
+
+    await sandbox.bg.configureBackgroundAutoBackup({ optIn: true, intervalSec: 86400 });
+    let state = sandbox.store.autoBackupState;
+    expect(state.optIn).toBe(true);
+    expect(state.cloud.baseline.gistId).toBe('abc12345');
+    expect(state.cloud.pendingCreate).toBeTruthy();
+    expect(state.cloud.account).toMatchObject({ login: 'spec-user', id: 42 });
+
+    await sandbox.bg.configureBackgroundAutoBackup({ optIn: false, intervalSec: 0 });
+    state = sandbox.store.autoBackupState;
+    expect(state.optIn).toBe(false);
+    expect(state.cloud.baseline.gistId).toBe('abc12345');
+    expect(state.cloud.pendingCreate).toBeTruthy();
+    expect(sandbox.calls).toEqual([]);
+  });
+
   test('saved Gist id without a trusted baseline pauses before any POST', async () => {
     const store = await baseStore({ gistId: 'deadbeef' });
     const sandbox = await makeBgSandbox({
@@ -495,6 +554,47 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
     expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistTargetNeedsReview');
     expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+  });
+
+  test('an untracked Gist with the target file name pauses without POST', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) {
+          return jsonResponse(200, [{
+            id: 'feedface',
+            files: { [GIST_FILE]: { filename: GIST_FILE, size: 10 } },
+            owner: { login: 'spec-user', id: 42 },
+          }]);
+        }
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistUnknownExisting');
+    expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+  });
+
+  test('a failed account Gist list check pauses without POST', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) throw new TypeError('list unavailable');
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistCheckFailed');
   });
 
   test('token account change pauses without POST or layout writes', async () => {
@@ -556,6 +656,7 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
       store,
       fetchImpl: (call) => {
         if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return jsonResponse(200, []);
         if (call.method === 'POST' && call.url.endsWith('/gists')) throw new TypeError('network lost');
         throw new Error('unexpected call ' + call.method + ' ' + call.url);
       },
@@ -582,6 +683,7 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
       store,
       fetchImpl: (call) => {
         if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return jsonResponse(200, []);
         if (call.method === 'POST' && call.url.endsWith('/gists')) return jsonResponse(201, { id: 'abc12345' });
         throw new Error('unexpected call ' + call.method + ' ' + call.url);
       },
@@ -884,6 +986,10 @@ test.describe('Ticket #126 — real Chrome extension', () => {
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ login: 'spec-user', id: 42 }) });
         return;
       }
+      if (req.method() === 'GET' && req.url().includes('/gists?per_page=')) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+        return;
+      }
       if (req.method() === 'POST' && req.url().endsWith('/gists')) {
         await route.fulfill({
           status: 201,
@@ -920,6 +1026,7 @@ test.describe('Ticket #126 — real Chrome extension', () => {
       expect(run.res.ok).toBe(true);
       expect(apiCalls.filter((c) => c.method === 'POST')).toHaveLength(1);
       expect(apiCalls.filter((c) => c.method === 'GET' && c.url.endsWith('/user'))).toHaveLength(1);
+      expect(apiCalls.filter((c) => c.method === 'GET' && c.url.includes('/gists?per_page='))).toHaveLength(1);
       const post = apiCalls.find((c) => c.method === 'POST')!;
       expect(post.headers.authorization || post.headers.Authorization).toContain(TOKEN);
       expect(post.body).not.toContain(TOKEN);

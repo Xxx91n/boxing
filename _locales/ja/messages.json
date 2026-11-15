@@ -1447,5 +1447,8 @@
   },
   "gistAutoBackupErrUpdate": {
     "message": "この Gist は既に存在します。既存 Gist の自動更新はまだ有効ではありません。"
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "このファイル名の Gist は既に存在しますが、Boxing に記録されていません。自動バックアップを停止しました。"
   }
 }

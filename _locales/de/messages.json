@@ -1447,5 +1447,8 @@
   },
   "gistAutoBackupErrUpdate": {
     "message": "Der Gist existiert bereits. Automatische Aktualisierungen eines bestehenden Gists sind noch nicht aktiviert."
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "Ein Gist mit diesem Dateinamen existiert bereits, ist aber nicht in Boxing erfasst. Die automatische Sicherung ist pausiert."
   }
 }

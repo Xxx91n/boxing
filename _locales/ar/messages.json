@@ -1447,5 +1447,8 @@
   },
   "gistAutoBackupErrUpdate": {
     "message": "Gist موجود بالفعل. التحديث التلقائي لـ Gist موجود غير مفعّل بعد."
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "يوجد Gist بهذا اسم الملف بالفعل لكن Boxing لا يتتبعه. تم إيقاف النسخ الاحتياطي التلقائي."
   }
 }

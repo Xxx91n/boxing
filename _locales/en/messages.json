@@ -1511,6 +1511,10 @@
     "message": "The Gist target or file name does not match the trusted baseline. Automatic backup is paused.",
     "description": "Background Gist backup paused because the saved target changed"
   },
+  "gistAutoBackupErrExisting": {
+    "message": "A Gist with this file name already exists but is not tracked by Boxing. Automatic backup is paused.",
+    "description": "Background Gist backup paused because the account already has an untracked Gist with the target file"
+  },
   "gistAutoBackupErrUnknown": {
     "message": "A previous Gist creation has no confirmed result. Check GitHub before retrying.",
     "description": "Background Gist backup paused because an earlier POST result is unknown"

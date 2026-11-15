@@ -1447,5 +1447,8 @@
   },
   "gistAutoBackupErrUpdate": {
     "message": "Gist가 이미 있습니다. 기존 Gist 자동 업데이트는 아직 지원되지 않습니다."
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "이 파일 이름의 Gist가 이미 있지만 Boxing에 기록되어 있지 않습니다. 자동 백업을 중지했습니다."
   }
 }

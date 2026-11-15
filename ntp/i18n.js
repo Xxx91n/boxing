@@ -242,6 +242,7 @@ I18N_FALLBACK.gistAutoBackupErrToken = 'GitHub token is missing. Add it under Gi
 I18N_FALLBACK.gistAutoBackupErrPermission = 'GitHub API access is not granted. Allow it from this settings page.';
 I18N_FALLBACK.gistAutoBackupErrAccount = 'The GitHub token belongs to a different account than the saved backup target.';
 I18N_FALLBACK.gistAutoBackupErrTarget = 'The Gist target or file name does not match the trusted baseline. Automatic backup is paused.';
+I18N_FALLBACK.gistAutoBackupErrExisting = 'A Gist with this file name already exists but is not tracked by Boxing. Automatic backup is paused.';
 I18N_FALLBACK.gistAutoBackupErrUnknown = 'A previous Gist creation has no confirmed result. Check GitHub before retrying.';
 I18N_FALLBACK.gistAutoBackupErrRejected = 'GitHub refused the request. Check the token, its gist scope, and the target.';
 I18N_FALLBACK.gistAutoBackupErrCheck = 'Could not check the GitHub account. Automatic Gist backup is paused.';

@@ -1291,6 +1291,7 @@ export function initSyncEngineFacade(deps) {
       gistPermissionMissing: 'gistAutoBackupErrPermission',
       gistAccountChanged: 'gistAutoBackupErrAccount',
       gistTargetNeedsReview: 'gistAutoBackupErrTarget',
+      gistUnknownExisting: 'gistAutoBackupErrExisting',
       gistResultUnknown: 'gistAutoBackupErrUnknown',
       gistRequestRejected: 'gistAutoBackupErrRejected',
       gistCheckFailed: 'gistAutoBackupErrCheck',
@@ -1299,8 +1300,7 @@ export function initSyncEngineFacade(deps) {
     function cloudErrorMessage(cloud) {
       if (!cloud) return '';
       const key = cloud.lastErrorCode && GIST_REASON_I18N[cloud.lastErrorCode];
-      if (key) return i18n(key);
-      return typeof cloud.lastError === 'string' ? cloud.lastError : '';
+      return i18n(key || 'gistAutoBackupErrCheck');
     }
 
     function formatAutoBackupStateLabel(state, isActive, needsOptIn) {
@@ -1382,9 +1382,10 @@ export function initSyncEngineFacade(deps) {
       if (localAutoBackupErrorEl) {
         const currentProvider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
         const cloudMatchesProvider = state && state.cloud && state.cloud.provider === 'gist' && currentProvider === 'gist';
+        // An unconfirmed result stays visible after a provider switch or disable;
+        // every other cloud pause only belongs to the current, active Gist target.
         const cloudErr = state && state.cloud &&
-          (state.cloud.status === 'pending' || (isActive && cloudMatchesProvider)) &&
-          (state.cloud.status === 'paused' || state.cloud.status === 'pending' || state.cloud.status === 'error')
+          (state.cloud.status === 'pending' || (isActive && cloudMatchesProvider))
           ? cloudErrorMessage(state.cloud)
           : '';
         const errMsg = cloudErr || (state && state.local && state.local.lastError);
@@ -1416,12 +1417,12 @@ export function initSyncEngineFacade(deps) {
           return;
         }
         const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+        if (!core) {
+          debugWarn('resetAutoBackupCloudTarget: snapshot core missing');
+          return;
+        }
         const st = await getAutoBackupState();
-        const cloud = core ? core.defaultCloudState() : {
-          provider: '', status: 'idle', lastAttemptAt: 0, lastSuccessAt: 0,
-          lastError: null, lastErrorCode: null, account: null, baseline: null, pendingCreate: null,
-        };
-        const next = await setAutoBackupState({ ...st, cloud });
+        const next = await setAutoBackupState({ ...st, cloud: core.defaultCloudState() });
         await refreshLocalAutoBackupUi(next);
       } catch (e) {
         debugWarn('resetAutoBackupCloudTarget failed', e);
