@@ -1428,5 +1428,41 @@
       }
     },
     "description": "Confirmation status after WebDAV host permission is granted"
+  },
+  "localAutoBackupHint": {
+    "message": "Saves local snapshots inside this browser automatically, even with no New Tab open. Never uploads to a server or downloads files.",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "Last local snapshot",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "Off",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "Active",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "Backing up…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "Error",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "Paused — confirmation needed",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "You previously kept an auto-backup interval. Background local auto-backup stays off until you enable it here.",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "Enable local auto-backup",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
   }
 }

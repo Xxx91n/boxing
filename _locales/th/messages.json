@@ -1361,5 +1361,41 @@
         "content": "$1"
       }
     }
+  },
+  "localAutoBackupHint": {
+    "message": "บันทึกสแนปช็อตภายในเบราว์เซอร์นี้อัตโนมัติแม้ไม่ได้เปิดแท็บใหม่ ไม่มีการอัปโหลดหรือดาวน์โหลดไฟล์",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "สแนปช็อตในเครื่องล่าสุด",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "ปิด",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "ทำงานอยู่",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "กำลังสำรองข้อมูล…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "ข้อผิดพลาด",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "หยุดชั่วคราว — ต้องยืนยัน",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "คงค่าระยะเวลาเดิมไว้แล้ว การสำรองข้อมูลอัตโนมัติในพื้นหลังจะยังไม่เริ่มจนกว่าคุณจะเปิดใช้งานที่นี่",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "เปิดใช้งานการสำรองข้อมูลอัตโนมัติในเครื่อง",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
   }
 }

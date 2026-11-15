@@ -1361,5 +1361,41 @@
         "content": "$1"
       }
     }
+  },
+  "localAutoBackupHint": {
+    "message": "يحفظ لقطات محلية داخل هذا المتصفح تلقائيًا حتى دون فتح علامة تبويب جديدة. لا يرفع إلى خادم ولا ينزل ملفات.",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "آخر لقطة محلية",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "متوقف",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "نشط",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "جارٍ الحفظ…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "خطأ",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "متوقف مؤقتًا — يلزم التأكيد",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "تم الاحتفاظ بفاصل النسخ الاحتياطي السابق. يظل النسخ المحلي التلقائي في الخلفية متوقفًا حتى تفعّله هنا.",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "تفعيل النسخ الاحتياطي المحلي التلقائي",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
   }
 }

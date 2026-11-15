@@ -382,6 +382,27 @@
               <p class="modal__hint" style="margin:0;font-size:11px;"><span data-i18n="lastBackupTime">Last
                   backup</span>: <span id="last-backup-time-value">Never</span></p>
             </section>
+            <!-- Ticket #124 (spec #120 T4): local background auto-backup controls live outside #remote-backup-zone
+                 so Local Only users can see and enable background snapshots directly, without touching .sync-group count. -->
+            <section class="modal__section local-auto-backup" id="local-auto-backup-section">
+              <label class="modal__label" for="auto-backup-interval" data-i18n="autoBackupInterval">Auto-Backup Interval</label>
+              <select id="auto-backup-interval" class="modal__select">
+                <option value="0" data-i18n="backupDisabled">Disabled</option>
+                <option value="3600" data-i18n="backupHourly">Hourly</option>
+                <option value="86400" data-i18n="backupDaily">Daily</option>
+                <option value="604800" data-i18n="backupWeekly">Weekly</option>
+              </select>
+              <p class="modal__hint" data-i18n="localAutoBackupHint">Saves local snapshots inside this browser automatically, even with no New Tab open. Never uploads to a server or downloads files.</p>
+              <div class="local-auto-backup__status" id="local-auto-backup-status-row">
+                <span class="local-auto-backup__badge" id="local-auto-backup-status-text" data-i18n="localAutoBackupStatusOff">Off</span>
+                <span class="modal__hint"><span data-i18n="localAutoBackupLastLabel">Last local snapshot</span>: <span id="local-auto-backup-last-at">Never</span></span>
+              </div>
+              <p class="modal__hint local-auto-backup__error" id="local-auto-backup-error" hidden></p>
+              <div class="local-auto-backup__upgrade" id="auto-backup-upgrade-box" hidden>
+                <p class="modal__hint" id="auto-backup-upgrade-hint" data-i18n="autoBackupUpgradeHint">You previously kept an auto-backup interval. Background local auto-backup stays off until you enable it here.</p>
+                <button type="button" id="auto-backup-activate-btn" class="btn" data-i18n="autoBackupActivateBtn">Enable local auto-backup</button>
+              </div>
+            </section>
             <!-- Remote backup zone (WebDAV/Gist) — hidden when provider is local -->
             <div id="remote-backup-zone" hidden>
               <!-- T-39/04-sync-ui: visual grouping — Shared (provider-agnostic) vs WebDAV vs Gist cards -->
@@ -403,15 +424,6 @@
                   <input id="sync-filename-input" class="modal__input" type="text" spellcheck="false"
                     data-i18n-placeholder="syncFileNamePlaceholder" placeholder="boxing-backup.json">
                   <p class="modal__hint" data-i18n="syncFileNameHint">Custom file name for the remote backup file</p>
-                </section>
-                <section class="modal__section">
-                  <label class="modal__label" data-i18n="autoBackupInterval">Auto-Backup Interval</label>
-                  <select id="auto-backup-interval" class="modal__select">
-                    <option value="3600" data-i18n="backupHourly">Hourly</option>
-                    <option value="0" data-i18n="backupDisabled">Disabled</option>
-                    <option value="86400" data-i18n="backupDaily">Daily</option>
-                    <option value="604800" data-i18n="backupWeekly">Weekly</option>
-                  </select>
                 </section>
                 <section class="modal__section">
                   <button id="backup-now-btn" tabindex="-1" class="btn" data-i18n="syncNow">Sync Now</button>
@@ -669,6 +681,7 @@
     </div>
     <ul class="quick-help__list" id="quick-help-list"></ul>
   </section>
+  <script src="../shared/snapshot-core.js"></script>
   <!-- Ticket 03 (architecture-recovery): ESM switch — type="module" defers by default (V8/MDN), ntp.js now imports ./favicon.js (first module, spec.md strangler-fig). -->
   <script type="module" src="ntp.js"></script>
 </body>

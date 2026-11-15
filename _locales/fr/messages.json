@@ -1361,5 +1361,41 @@
         "content": "$1"
       }
     }
+  },
+  "localAutoBackupHint": {
+    "message": "Enregistre automatiquement des instantanés locaux dans ce navigateur, même sans nouvel onglet ouvert. Aucun envoi ni téléchargement de fichier.",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "Dernier instantané local",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "Désactivé",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "Actif",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "Sauvegarde…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "Erreur",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "En pause — confirmation requise",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "Votre intervalle précédent a été conservé. La sauvegarde locale en arrière-plan reste arrêtée tant que vous ne l’activez pas ici.",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "Activer la sauvegarde locale auto",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
   }
 }

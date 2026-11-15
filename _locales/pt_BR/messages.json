@@ -1361,5 +1361,41 @@
         "content": "$1"
       }
     }
+  },
+  "localAutoBackupHint": {
+    "message": "Salva instantâneos locais automaticamente neste navegador, mesmo sem uma Nova Guia aberta. Nunca envia nem baixa arquivos.",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "Último instantâneo local",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "Desativado",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "Ativo",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "Salvando…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "Erro",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "Pausado — confirmação necessária",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "Seu intervalo anterior foi mantido. O backup local automático em segundo plano fica pausado até você ativar aqui.",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "Ativar backup automático local",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
   }
 }

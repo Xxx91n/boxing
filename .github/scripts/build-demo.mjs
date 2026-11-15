@@ -89,6 +89,8 @@ for (const ent of fs.readdirSync(path.join(ROOT, "ntp"))) {
 }
 // locale dictionaries (i18n.js fetches _locales/<lang>/messages.json)
 copyTree(path.join(ROOT, "_locales"), path.join(DEMO, "_locales"));
+// shared snapshot core loaded by ntp/index.html via ../shared/snapshot-core.js
+copyTree(path.join(ROOT, "shared"), path.join(OUT, "shared"));
 // chrome.* web stub
 copyFile(path.join(ROOT, "demo", "chrome-stub.js"), DEMO);
 // (bug3): the Pages demo must NOT show the first-run tour. It has no

@@ -1361,5 +1361,41 @@
         "content": "$1"
       }
     }
+  },
+  "localAutoBackupHint": {
+    "message": "Автоматически сохраняет локальные снимки в этом браузере, даже когда новая вкладка закрыта. Без загрузки файлов и отправки в сеть.",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "Последний локальный снимок",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "Выкл.",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "Активно",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "Сохранение…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "Ошибка",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "Пауза — нужно подтверждение",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "Прежний интервал сохранён. Фоновое локальное автосохранение не запустится, пока вы не включите его здесь.",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "Включить локальное автосохранение",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
   }
 }

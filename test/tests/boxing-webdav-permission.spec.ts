@@ -207,19 +207,23 @@ async function bootWithPermMock(page: Page, opts: MockOpts = {}) {
         runtime: {
           ...runtimeCommon,
           sendMessage(msg: any) {
-            (window as any).__bgCalls.push(msg);
+            if (msg && typeof msg.type === 'string' && msg.type.startsWith('webdav-')) {
+              (window as any).__bgCalls.push(msg);
+            }
             try { return Promise.resolve(swFn(msg, state)); }
             catch (e) { return Promise.reject(e); }
           },
         },
         permissions: permApiBrowser,
       };
-      // Keep chrome.runtime.onMessage available for alarm trigger registration
+      // Keep chrome.runtime.onMessage available for runtime listener registration
       (window as any).chrome = {
         runtime: {
           ...runtimeCommon,
           sendMessage(msg: any, cb?: (r: any) => void) {
-            (window as any).__bgCalls.push(msg);
+            if (msg && typeof msg.type === 'string' && msg.type.startsWith('webdav-')) {
+              (window as any).__bgCalls.push(msg);
+            }
             const r = swFn(msg, state);
             if (cb) cb(r);
             return Promise.resolve(r);
@@ -231,7 +235,9 @@ async function bootWithPermMock(page: Page, opts: MockOpts = {}) {
         runtime: {
           ...runtimeCommon,
           sendMessage(msg: any, cb?: (r: any) => void) {
-            (window as any).__bgCalls.push(msg);
+            if (msg && typeof msg.type === 'string' && msg.type.startsWith('webdav-')) {
+              (window as any).__bgCalls.push(msg);
+            }
             try {
               const r = swFn(msg, state);
               if (cb) { cb(r); return; }
@@ -354,10 +360,15 @@ test.describe('WebDAV permission loop & background closure (file:// lane, ticket
       (window as any).chrome = {
         runtime: {
           sendMessage: (msg: any, cb?: (r: any) => void) => {
-            (window as any).__bgCalls.push(msg);
-            const r = { success: false, needPermission: true, origin: 'https://webdav.invalid/*', error: 'host permission not granted' };
-            if (cb) cb(r);
-            return Promise.resolve(r);
+            if (msg && typeof msg.type === 'string' && msg.type.startsWith('webdav-')) {
+              (window as any).__bgCalls.push(msg);
+              const r = { success: false, needPermission: true, origin: 'https://webdav.invalid/*', error: 'host permission not granted' };
+              if (cb) cb(r);
+              return Promise.resolve(r);
+            }
+            const ok = { success: true, active: false, state: null };
+            if (cb) cb(ok);
+            return Promise.resolve(ok);
           },
           getURL: (p: string) => p,
           lastError: null,
@@ -404,12 +415,17 @@ test.describe('WebDAV permission loop & background closure (file:// lane, ticket
       } catch (e: any) {
         performErr = { key: e && e.key, message: e && e.message };
       }
-      const triggerResp = await (window as any).__dispatchRuntimeMessage({ type: 'boxing-auto-backup-trigger' });
+      let syncErr: any = null;
+      try {
+        await (window as any).__boxingSyncWebDAV({ userInitiated: false, source: 'background' });
+      } catch (e: any) {
+        syncErr = { key: e && e.key, message: e && e.message };
+      }
       const pending = await (window as any).__boxingDebug.storageGet('webdavPendingPermission');
       const lastBackupAt = (window as any).__boxingDebug.layout.settings.lastBackupAt;
       return {
         performErr,
-        triggerResp,
+        syncErr,
         pending: pending.webdavPendingPermission,
         lastBackupAt,
         permCalls: (window as any).__permCalls,
@@ -421,8 +437,7 @@ test.describe('WebDAV permission loop & background closure (file:// lane, ticket
     const afterSnaps = await page.evaluate(async () => (await (window as any).__boxingDebug.listSnapshots()).length);
 
     expect(out.performErr?.key).toBe('webdavErrPermission');
-    expect(out.triggerResp?.ok).toBe(false);
-    expect(out.triggerResp?.key).toBe('webdavErrPermission');
+    expect(out.syncErr?.key).toBe('webdavErrPermission');
     expect(out.permCalls.filter((c: any) => c.op === 'request')).toEqual([]);
     expect(out.permCalls.filter((c: any) => c.op === 'contains').length).toBeGreaterThanOrEqual(2);
     expect(out.bgCalls).toEqual([]);
@@ -674,7 +689,6 @@ test.describe('WebDAV permission loop & background closure (file:// lane, ticket
     // Background runs for the same origin must NOT downgrade 'denied' back to 'missing-permission'
     await page.evaluate(async () => {
       try { await (window as any).__bxSync.performBackup({ userInitiated: false, source: 'background' }); } catch (_) {}
-      await (window as any).__dispatchRuntimeMessage({ type: 'boxing-auto-backup-trigger' });
     });
     const pending = await page.evaluate(async () =>
       (await (window as any).__boxingDebug.storageGet('webdavPendingPermission')).webdavPendingPermission
@@ -842,7 +856,7 @@ test.describe('Real built Chrome extension build (chromium-extension only, ticke
       expect(swChecks.delResp).toMatchObject({ success: false, needPermission: true, origin: WEBDAV_ORIGIN_PATTERN });
       expect(swChecks.privateResp).toMatchObject({ success: false, blocked: true });
 
-      // Seed WebDAV + encrypted password + hourly auto-backup + autoBackupDue: true and reload to run real catch-up without user gesture
+      // Seed WebDAV + encrypted password + hourly auto-backup and trigger real background permission inspection without gesture
       await page.evaluate(async (url) => {
         const dbg = (window as any).__boxingDebug;
         const enc = await (window as any).__boxingEncryptCredential('secret');
@@ -852,14 +866,16 @@ test.describe('Real built Chrome extension build (chromium-extension only, ticke
         dbg.layout.settings.autoBackupInterval = 3600;
         dbg.layout.settings.lastBackupAt = 0;
         await dbg.saveLayout({ preserveUpdatedAt: true });
-        await dbg.storageSet({ autoBackupDue: true });
+        await new Promise<any>((resolve) =>
+          chrome.runtime.sendMessage({ type: 'webdav-permission-inspect' }, resolve),
+        );
       }, WEBDAV_URL);
 
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
       await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.storageGet)), { timeout: 30000 }).toBe(true);
       await dismissOnboarding(page);
 
-      // Catch-up runs asynchronously after init; poll until real chrome.storage.local records webdavPendingPermission
+      // Verify real chrome.storage.local records webdavPendingPermission written by background
       await expect.poll(async () => page.evaluate(async () => {
         const res = await (window as any).__boxingDebug.storageGet('webdavPendingPermission');
         return res.webdavPendingPermission || null;
@@ -867,6 +883,7 @@ test.describe('Real built Chrome extension build (chromium-extension only, ticke
         needed: true,
         origin: WEBDAV_ORIGIN_PATTERN,
         reason: 'missing-permission',
+        source: 'background',
       });
 
       const lastBackupAt = await page.evaluate(() => (window as any).__boxingDebug.layout.settings.lastBackupAt);

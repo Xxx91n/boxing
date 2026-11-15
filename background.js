@@ -82,20 +82,508 @@ try {
     typeof globalThis !== "undefined" ? globalThis : null);
   if (!root) return;
 
-  // ── Auto-backup: chrome.alarms hub in the service worker ──
-  // The NTP page creates/ensures the alarm; the background SW acts as the alarm hub,
-  // recording autoBackupDue: true in chrome.storage.local and notifying any open NTP tabs.
-  // If no NTP tab is open, the due mark ensures the backup is performed upon next NTP open.
+  // Ticket #124 (spec #120 T4): classic Chrome SW loads shared/snapshot-core.js synchronously;
+  // Firefox ESM background loads it lazily via dynamic import() in ensureSnapshotCore().
+  if (typeof importScripts === 'function' && !root.__boxingSnapshotCore) {
+    try {
+      importScripts('shared/snapshot-core.js');
+    } catch (e) {
+      bgErr('Failed to importScripts shared/snapshot-core.js', e);
+    }
+  }
+
+  let _corePromise = null;
+  async function ensureSnapshotCore() {
+    if (root.__boxingSnapshotCore) return root.__boxingSnapshotCore;
+    if (!_corePromise) {
+      _corePromise = import('./shared/snapshot-core.js').then((mod) => {
+        const core = root.__boxingSnapshotCore || (mod && (mod.default || mod));
+        if (core && !root.__boxingSnapshotCore) root.__boxingSnapshotCore = core;
+        return root.__boxingSnapshotCore;
+      }).catch((e) => {
+        _corePromise = null;
+        throw e;
+      });
+    }
+    return _corePromise;
+  }
+
+  // ── Cross-browser storage / alarms / badge helpers ────────
+  function bgStorageGet(keys) {
+    const local = api.storage && api.storage.local;
+    if (!local || typeof local.get !== 'function') return Promise.resolve({});
+    return new Promise((resolve, reject) => {
+      try {
+        if (typeof browser !== 'undefined' && api === browser) {
+          Promise.resolve(local.get(keys)).then(resolve, reject);
+          return;
+        }
+        let settled = false;
+        const ret = local.get(keys, (res) => {
+          if (settled) return;
+          settled = true;
+          const err = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError;
+          if (err) reject(new Error(err.message));
+          else resolve(res || {});
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            (v) => { if (!settled) { settled = true; resolve(v || {}); } },
+            (e) => { if (!settled) { settled = true; reject(e); } }
+          );
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  function bgStorageSetValidated(obj, allowHint) {
+    const local = api.storage && api.storage.local;
+    if (!local || typeof local.set !== 'function') {
+      return Promise.reject(new Error('storage.local.set unavailable'));
+    }
+    // Fail-closed invariant: background must NEVER write boxingLayout.
+    if (!obj || typeof obj !== 'object' || Object.prototype.hasOwnProperty.call(obj, 'boxingLayout')) {
+      return Promise.reject(new Error('Background refused write to boxingLayout'));
+    }
+    for (const k of Object.keys(obj)) {
+      const okKey = k === 'autoBackupState' || k === 'snap.v1.index' || k.startsWith('snap.v1.');
+      if (!okKey) {
+        return Promise.reject(new Error('Background refused unexpected write key: ' + k));
+      }
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        if (typeof browser !== 'undefined' && api === browser) {
+          Promise.resolve(local.set(obj)).then(resolve, reject);
+          return;
+        }
+        let settled = false;
+        const ret = api.storage.local.set(obj, () => { // SW_SNAP_KEY_PREFIX / SW_SNAP_INDEX_KEY / autoBackupState validated above
+          if (settled) return;
+          settled = true;
+          const err = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError;
+          if (err) reject(new Error(err.message));
+          else resolve();
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            () => { if (!settled) { settled = true; resolve(); } },
+            (e) => { if (!settled) { settled = true; reject(e); } }
+          );
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  function bgStorageRemoveValidated(keys) {
+    const local = api.storage && api.storage.local;
+    if (!local || typeof local.remove !== 'function') return Promise.resolve();
+    const list = Array.isArray(keys) ? keys : [keys];
+    for (const k of list) {
+      if (k === 'boxingLayout') {
+        return Promise.reject(new Error('Background refused remove of boxingLayout'));
+      }
+    }
+    return new Promise((resolve, reject) => {
+      try {
+        if (typeof browser !== 'undefined' && api === browser) {
+          Promise.resolve(local.remove(keys)).then(resolve, reject);
+          return;
+        }
+        let settled = false;
+        const ret = local.remove(keys, () => {
+          if (settled) return;
+          settled = true;
+          const err = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError;
+          if (err) reject(new Error(err.message));
+          else resolve();
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            () => { if (!settled) { settled = true; resolve(); } },
+            (e) => { if (!settled) { settled = true; reject(e); } }
+          );
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  const bgSnapStorage = {
+    get: bgStorageGet,
+    set: (obj) => bgStorageSetValidated(obj, 'snap.v1.'),
+    remove: bgStorageRemoveValidated,
+  };
+
+  function bgAlarmsGet(name) {
+    const alarms = api.alarms;
+    if (!alarms || typeof alarms.get !== 'function') return Promise.resolve(null);
+    return new Promise((resolve) => {
+      try {
+        if (typeof browser !== 'undefined' && api === browser) {
+          Promise.resolve(alarms.get(name)).then((v) => resolve(v || null), () => resolve(null));
+          return;
+        }
+        let settled = false;
+        const ret = alarms.get(name, (a) => {
+          if (!settled) { settled = true; resolve(a || null); }
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            (v) => { if (!settled) { settled = true; resolve(v || null); } },
+            () => { if (!settled) { settled = true; resolve(null); } }
+          );
+        }
+      } catch (_) {
+        resolve(null);
+      }
+    });
+  }
+
+  function bgAlarmsCreate(name, alarmInfo) {
+    const alarms = api.alarms;
+    if (!alarms || typeof alarms.create !== 'function') return Promise.resolve();
+    return new Promise((resolve) => {
+      try {
+        const ret = alarms.create(name, alarmInfo);
+        if (ret && typeof ret.then === 'function') ret.then(() => resolve(), () => resolve());
+        else resolve();
+      } catch (_) {
+        resolve();
+      }
+    });
+  }
+
+  function bgAlarmsClear(name) {
+    const alarms = api.alarms;
+    if (!alarms || typeof alarms.clear !== 'function') return Promise.resolve(false);
+    return new Promise((resolve) => {
+      try {
+        if (typeof browser !== 'undefined' && api === browser) {
+          Promise.resolve(alarms.clear(name)).then((v) => resolve(Boolean(v)), () => resolve(false));
+          return;
+        }
+        let settled = false;
+        const ret = alarms.clear(name, (cleared) => {
+          if (!settled) { settled = true; resolve(Boolean(cleared)); }
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            (v) => { if (!settled) { settled = true; resolve(Boolean(v)); } },
+            () => { if (!settled) { settled = true; resolve(false); } }
+          );
+        }
+      } catch (_) {
+        resolve(false);
+      }
+    });
+  }
+
+  async function setAutoBackupBadge(isError) {
+    const actionApi = api.action || api.browserAction;
+    if (!actionApi || typeof actionApi.setBadgeText !== 'function') return;
+    try {
+      await Promise.resolve(actionApi.setBadgeText({ text: isError ? '!' : '' }));
+      if (isError && typeof actionApi.setBadgeBackgroundColor === 'function') {
+        await Promise.resolve(actionApi.setBadgeBackgroundColor({ color: '#b3261e' }));
+      }
+    } catch (_) {
+      // Non-fatal: badge API may be unavailable in test environments
+    }
+  }
+
+  // ── Background local auto-backup (single owner, #124 / #120 T4) ──
   const BG_WEBDAV_PERM_KEY = 'webdavPendingPermission';
+  const BG_AUTO_BACKUP_STATE_KEY = 'autoBackupState';
+  const BG_AUTO_BACKUP_ALARM_NAME = 'boxing-auto-backup';
+  const BG_WORKER_OWNER_ID = 'sw-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now();
+  let bgAutoBackupQueue = Promise.resolve();
+  let bgAutoBackupInFlightPromise = null;
+
+  function enqueueBgAutoBackup(fn) {
+    const run = bgAutoBackupQueue.then(fn, fn);
+    bgAutoBackupQueue = run.then(() => undefined, () => undefined);
+    return run;
+  }
+
+  function swIsPlausibleLayout(raw) {
+    if (!swIsPlainObj(raw)) return false;
+    if (typeof raw.version !== 'number' || !Number.isFinite(raw.version)) return false;
+    if (!Array.isArray(raw.boxes)) return false;
+    return true;
+  }
+
+  async function bgReadAutoBackupState() {
+    const core = await ensureSnapshotCore();
+    const res = await bgStorageGet({ [BG_AUTO_BACKUP_STATE_KEY]: null });
+    return core.normalizeAutoBackupState(res && res[BG_AUTO_BACKUP_STATE_KEY]);
+  }
+
+  async function bgWriteAutoBackupState(nextState) {
+    const core = await ensureSnapshotCore();
+    const normalized = core.normalizeAutoBackupState(nextState);
+    if (api.storage && api.storage.local && api.storage.local.set) {
+      await bgStorageSetValidated({ autoBackupState: normalized }, BG_AUTO_BACKUP_STATE_KEY);
+    }
+    return normalized;
+  }
+
+  async function runBackgroundLocalAutoBackup(opts) {
+    const options = opts || {};
+    const trigger = String(options.trigger || 'alarm');
+    const forceImmediate = Boolean(options.forceImmediate);
+    const expectedEpoch = options.expectedEpoch;
+
+    if (bgAutoBackupInFlightPromise && !forceImmediate) {
+      return bgAutoBackupInFlightPromise;
+    }
+
+    const work = enqueueBgAutoBackup(async () => {
+      const core = await ensureSnapshotCore();
+      const now = Date.now();
+      let state = await bgReadAutoBackupState();
+
+      if (!core.isAutoBackupActive(state)) {
+        await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+        return { ok: false, skipped: true, reason: 'inactive', state };
+      }
+      if (expectedEpoch !== undefined && state.epoch !== expectedEpoch) {
+        return { ok: false, cancelled: true, reason: 'epoch-changed', state };
+      }
+      if (!forceImmediate) {
+        // Dedup across startup/ensure bursts: catch-up / ensure only runs when overdue.
+        // An explicit alarm event is itself the browser's due signal (and keeps tests able to fire it directly).
+        if (trigger !== 'alarm' && state.nextScheduledAt && now < state.nextScheduledAt) {
+          return { ok: false, skipped: true, reason: 'not-due-yet', state };
+        }
+        // Durable lease lock against overlapping wakeups.
+        if (state.lock && state.lock.expiresAt > now && state.lock.ownerId !== BG_WORKER_OWNER_ID) {
+          return { ok: false, skipped: true, reason: 'locked', state };
+        }
+      }
+
+      const activeEpoch = state.epoch;
+      const intervalMs = state.intervalSec * 1000;
+      const prevLocal = state.local || core.defaultAutoBackupState().local;
+      const claimedState = await bgWriteAutoBackupState({
+        ...state,
+        nextScheduledAt: now + intervalMs,
+        updatedAt: now,
+        local: {
+          ...prevLocal,
+          status: 'running',
+          lastAttemptAt: now,
+        },
+        lock: {
+          ownerId: BG_WORKER_OWNER_ID,
+          epoch: activeEpoch,
+          acquiredAt: now,
+          expiresAt: now + core.AUTO_BACKUP_LOCK_TTL_MS,
+        },
+      });
+
+      let snapOutcome = null;
+      let errMessage = null;
+      try {
+        const storedLayout = await bgStorageGet({ boxingLayout: null });
+        const rawLayout = storedLayout && storedLayout.boxingLayout;
+        if (!swIsPlausibleLayout(rawLayout)) {
+          throw new Error('boxingLayout is missing or invalid for local auto-backup');
+        }
+
+        // Re-check cancellation before writing snapshot body/index.
+        const beforeWriteState = await bgReadAutoBackupState();
+        if (!core.isAutoBackupActive(beforeWriteState) || beforeWriteState.epoch !== activeEpoch) {
+          await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+          return { ok: false, cancelled: true, reason: 'cancelled-before-write', state: beforeWriteState };
+        }
+
+        snapOutcome = await core.saveSnapshotWithAdapter(bgSnapStorage, rawLayout, {
+          reason: 'auto-backup',
+          sanitizeLayout: swSanitizeLayoutForBackup,
+          now: Date.now(),
+          log: bgLog,
+          errorLog: bgErr,
+          returnDetails: true,
+        });
+        if (!snapOutcome || !snapOutcome.ok) {
+          throw new Error((snapOutcome && snapOutcome.error) || 'Failed to save local snapshot');
+        }
+      } catch (e) {
+        errMessage = bgRedactSensitiveText(e && e.message ? e.message : String(e || 'Auto-backup failed')).slice(0, 240);
+        bgErr('Background local auto-backup failed (' + trigger + '):', errMessage);
+      }
+
+      const latestState = await bgReadAutoBackupState();
+      const finishedAt = Date.now();
+      if (!core.isAutoBackupActive(latestState) || latestState.epoch !== activeEpoch) {
+        // User turned off or changed configuration mid-flight: preserve disabled/new state.
+        if (!core.isAutoBackupActive(latestState)) {
+          await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+        }
+        return {
+          ok: Boolean(snapOutcome && snapOutcome.ok),
+          cancelled: !core.isAutoBackupActive(latestState),
+          state: latestState,
+        };
+      }
+
+      if (snapOutcome && snapOutcome.ok) {
+        const savedState = await bgWriteAutoBackupState({
+          ...latestState,
+          updatedAt: finishedAt,
+          local: {
+            status: 'ok',
+            lastAttemptAt: claimedState.local.lastAttemptAt,
+            lastSuccessAt: snapOutcome.ts,
+            lastSnapshotTs: snapOutcome.ts,
+            lastError: null,
+          },
+          lock: null,
+        });
+        await setAutoBackupBadge(false);
+        bgLog('Background local auto-backup saved ts=' + snapOutcome.ts + ' trigger=' + trigger);
+        return { ok: true, ts: snapOutcome.ts, state: savedState };
+      }
+
+      // Failure: NEVER update lastSuccessAt or lastSnapshotTs.
+      const failState = await bgWriteAutoBackupState({
+        ...latestState,
+        updatedAt: finishedAt,
+        local: {
+          status: 'error',
+          lastAttemptAt: claimedState.local.lastAttemptAt,
+          lastSuccessAt: prevLocal.lastSuccessAt || 0,
+          lastSnapshotTs: prevLocal.lastSnapshotTs || 0,
+          lastError: errMessage || 'Failed to save local snapshot',
+        },
+        lock: null,
+      });
+      await setAutoBackupBadge(true);
+      return { ok: false, error: failState.local.lastError, state: failState };
+    });
+
+    if (!forceImmediate) {
+      const wrapped = work.finally(() => {
+        if (bgAutoBackupInFlightPromise === wrapped) bgAutoBackupInFlightPromise = null;
+      });
+      bgAutoBackupInFlightPromise = wrapped;
+      return wrapped;
+    }
+    return work;
+  }
+
+  async function reconcileAutoBackupSchedule(opts) {
+    const options = opts || {};
+    const trigger = String(options.trigger || 'reconcile');
+    const runCatchup = options.runCatchup !== false;
+    const core = await ensureSnapshotCore();
+    const state = await bgReadAutoBackupState();
+
+    if (!core.isAutoBackupActive(state)) {
+      await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+      return { ok: true, active: false, state };
+    }
+
+    const now = Date.now();
+    const periodInMinutes = Math.max(1, Math.ceil(state.intervalSec / 60));
+    const existingAlarm = await bgAlarmsGet(BG_AUTO_BACKUP_ALARM_NAME);
+    if (!existingAlarm || Number(existingAlarm.periodInMinutes) !== periodInMinutes) {
+      const delayInMinutes = core.computeAlarmDelayMinutes(state, now);
+      await bgAlarmsCreate(BG_AUTO_BACKUP_ALARM_NAME, { delayInMinutes, periodInMinutes });
+    }
+
+    if (runCatchup && core.isAutoBackupOverdue(state, now)) {
+      const res = await runBackgroundLocalAutoBackup({
+        trigger,
+        expectedEpoch: state.epoch,
+      });
+      return { ok: res.ok, active: true, catchupRan: true, result: res, state: res.state };
+    }
+    return { ok: true, active: true, catchupRan: false, state };
+  }
+
+  async function configureBackgroundAutoBackup(opts) {
+    const options = opts || {};
+    const core = await ensureSnapshotCore();
+    const intervalSec = core.normalizeAutoBackupInterval(options.intervalSec);
+    const optIn = Boolean(options.optIn) && intervalSec >= core.MIN_AUTO_BACKUP_INTERVAL_SEC;
+
+    return enqueueBgAutoBackup(async () => {
+      const prev = await bgReadAutoBackupState();
+      const now = Date.now();
+      const nextEpoch = (prev.epoch || 0) + 1;
+      const prevLocal = prev.local || core.defaultAutoBackupState().local;
+
+      if (!optIn) {
+        await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+        await setAutoBackupBadge(false);
+        const disabledState = await bgWriteAutoBackupState({
+          version: 1,
+          optIn: false,
+          intervalSec: 0,
+          epoch: nextEpoch,
+          nextScheduledAt: 0,
+          updatedAt: now,
+          local: {
+            ...prevLocal,
+            status: prevLocal.lastSuccessAt > 0 || prevLocal.lastError ? 'cancelled' : 'idle',
+          },
+          lock: null,
+        });
+        return { ok: true, state: disabledState };
+      }
+
+      const periodInMinutes = Math.max(1, Math.ceil(intervalSec / 60));
+      const enabledState = await bgWriteAutoBackupState({
+        version: 1,
+        optIn: true,
+        intervalSec,
+        epoch: nextEpoch,
+        nextScheduledAt: now + intervalSec * 1000,
+        updatedAt: now,
+        local: {
+          ...prevLocal,
+          status: 'running',
+          lastError: null,
+        },
+        lock: null,
+      });
+      await bgAlarmsCreate(BG_AUTO_BACKUP_ALARM_NAME, {
+        delayInMinutes: periodInMinutes,
+        periodInMinutes,
+      });
+      return { ok: true, state: enabledState, shouldRunImmediate: true, epoch: nextEpoch };
+    }).then(async (cfgResult) => {
+      if (cfgResult && cfgResult.shouldRunImmediate) {
+        const execRes = await runBackgroundLocalAutoBackup({
+          trigger: 'opt-in-immediate',
+          expectedEpoch: cfgResult.epoch,
+          forceImmediate: true,
+        });
+        return {
+          ok: Boolean(execRes && execRes.ok),
+          error: execRes && execRes.error ? execRes.error : undefined,
+          state: (execRes && execRes.state) || cfgResult.state,
+        };
+      }
+      return cfgResult;
+    });
+  }
 
   async function inspectAndRecordBackgroundWebDAVPermission() {
     try {
       if (!api.storage || !api.storage.local || !api.storage.local.get) return;
-      const stored = await api.storage.local.get({ boxingLayout: null, [BG_WEBDAV_PERM_KEY]: null });
+      const stored = await bgStorageGet({ boxingLayout: null, [BG_WEBDAV_PERM_KEY]: null });
       const settings = stored && stored.boxingLayout && stored.boxingLayout.settings;
-      if (!settings || settings.syncProvider !== 'webdav') return;
+      if (!settings || settings.syncProvider !== 'webdav') return null;
       const url = typeof settings.webdavUrl === 'string' ? settings.webdavUrl.trim() : '';
-      if (!url || !isSafeWebDAVUrl(url, settings.webdavAllowPrivateHost === true)) return;
+      if (!url || !isSafeWebDAVUrl(url, settings.webdavAllowPrivateHost === true)) return null;
       const perm = await ensureWebDAVPermission(url);
       if (!perm.ok && perm.needPermission && perm.origin) {
         if (api.storage.local.set) {
@@ -105,44 +593,51 @@ try {
             : 'missing-permission';
           const permState = { needed: true, origin: perm.origin, source: 'background', reason, updatedAt: Date.now() };
           await api.storage.local.set({ webdavPendingPermission: permState });
+          return permState;
         }
       } else if (perm.ok && stored[BG_WEBDAV_PERM_KEY] && stored[BG_WEBDAV_PERM_KEY].origin === perm.origin) {
         if (api.storage.local.remove) {
-          await api.storage.local.remove(BG_WEBDAV_PERM_KEY);
+          await bgStorageRemoveValidated(BG_WEBDAV_PERM_KEY);
         }
       }
-    } catch (e) { bgErr('inspectAndRecordBackgroundWebDAVPermission error', e); }
+      return null;
+    } catch (e) {
+      bgErr('inspectAndRecordBackgroundWebDAVPermission error', e);
+      return null;
+    }
   }
 
-  if (typeof chrome !== 'undefined' && chrome.alarms && chrome.alarms.onAlarm) {
-    chrome.alarms.onAlarm.addListener(function(alarm) {
-      if (alarm.name !== 'boxing-auto-backup') return;
+  if (api.alarms && api.alarms.onAlarm && typeof api.alarms.onAlarm.addListener === 'function') {
+    api.alarms.onAlarm.addListener((alarm) => {
+      if (!alarm || alarm.name !== BG_AUTO_BACKUP_ALARM_NAME) return;
       bgLog('Auto-backup alarm fired');
-      try {
-        if (chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ autoBackupDue: true });
-        }
-      } catch (e) { bgErr('Failed to set autoBackupDue flag', e); }
+      // Execute local snapshot directly in background (single executor, works with zero open NTP tabs).
+      runBackgroundLocalAutoBackup({ trigger: 'alarm' }).catch((e) => {
+        bgErr('Auto-backup alarm handler error', e);
+      });
       // Ticket #123: on background alarm, inspect WebDAV permission read-only via
       // permissions.contains and persist pending state if ungranted — never prompt
       // or send a WebDAV request without permission.
       inspectAndRecordBackgroundWebDAVPermission();
-      // Try to send message to any open NTP tab to trigger backup
-      try {
-        chrome.tabs.query({}, function(tabs) {
-          if (!tabs) return;
-          for (var i = 0; i < tabs.length; i++) {
-            var tab = tabs[i];
-            if (tab.url && (tab.url.indexOf('chrome://newtab') === 0 || tab.url.indexOf('moz-extension://') === 0 || tab.url.indexOf('chrome-extension://') === 0)) {
-              chrome.tabs.sendMessage(tab.id, { type: 'boxing-auto-backup-trigger' }, function() {
-                if (chrome.runtime.lastError) { /* tab may not have listener */ }
-              });
-            }
-          }
-        });
-      } catch (e) { bgErr('Auto-backup alarm handler error', e); }
     });
   }
+
+  if (api.runtime && api.runtime.onStartup && typeof api.runtime.onStartup.addListener === 'function') {
+    api.runtime.onStartup.addListener(() => {
+      reconcileAutoBackupSchedule({ trigger: 'startup-catchup', runCatchup: true }).catch((e) => {
+        bgErr('onStartup auto-backup reconcile error', e);
+      });
+      inspectAndRecordBackgroundWebDAVPermission();
+    });
+  }
+
+  root.__boxingBgAutoBackup = {
+    runBackgroundLocalAutoBackup,
+    reconcileAutoBackupSchedule,
+    configureBackgroundAutoBackup,
+    getAutoBackupState: bgReadAutoBackupState,
+    inspectAndRecordBackgroundWebDAVPermission,
+  };
 
   // ── WebDAV message proxy ────────────────────────────────────
   // The background service worker bypasses page-level CSP and CORS
@@ -444,10 +939,25 @@ try {
       } else if (msg.type === 'webdav-delete') {
         const result = await handleWebDAVDelete(msg);
         return { success: true, ...result };
+      } else if (msg.type === 'auto-backup-configure') {
+        const result = await configureBackgroundAutoBackup(msg);
+        return { success: true, ...result };
+      } else if (msg.type === 'auto-backup-ensure') {
+        const result = await reconcileAutoBackupSchedule({
+          trigger: 'ntp-ensure',
+          runCatchup: msg.runCatchup !== false,
+        });
+        return { success: true, ...result };
+      } else if (msg.type === 'auto-backup-get-state') {
+        const state = await bgReadAutoBackupState();
+        return { success: true, state };
+      } else if (msg.type === 'webdav-permission-inspect') {
+        const pending = await inspectAndRecordBackgroundWebDAVPermission();
+        return { success: true, pending };
       }
       return { success: false, error: 'Unknown message type: ' + msg.type };
     } catch (e) {
-      bgErr('WebDAV BG error:', e);
+      bgErr('BG dispatch error:', e);
       return { success: false, error: e.message || String(e) };
     }
   }
@@ -694,6 +1204,7 @@ try {
       if ((details?.reason === "install" || details?.reason === "update") && api.storage?.local?.set) {
         await api.storage.local.set({ boxingInstallSignal: { reason: details.reason, at: Date.now() } });
       }
+      await reconcileAutoBackupSchedule({ trigger: 'installed-reconcile', runCatchup: false });
     } catch (e) { bgErr('onInstalled:', e); }
   });
 

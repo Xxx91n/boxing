@@ -59,6 +59,11 @@ export function initSettingsUiFacade(deps) {
     document.querySelectorAll('.theme-preset').forEach(btn => {
       btn.classList.toggle('theme-preset--active', btn.dataset.theme === currentTheme);
     });
+    try {
+      if (typeof window.__boxingRefreshLocalAutoBackupUi === 'function') {
+        window.__boxingRefreshLocalAutoBackupUi();
+      }
+    } catch (_) {}
 
  }
 

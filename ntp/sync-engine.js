@@ -1,22 +1,23 @@
 // Boxing — sync/backup engine (ticket 10, architecture-recovery).
 // WebDAV/Gist transport + two-way sync with outbox-style field-level merge +
-// chrome.alarms auto-backup + BX-AUD-01/03 front-end URL guard + the sync/backup config UI
-// bindings (inputs, credential flush, test/backup buttons, auto-backup select).
+// background SW auto-backup coordination + BX-AUD-01/03 front-end URL guard + the sync/backup config UI
+// bindings (inputs, credential flush, test/backup buttons, local auto-backup controls).
 // Engine layer — persistence only through the ./storage.js facade
 // (saveLayout / directSetBoxingLayout / saveSnapshot / stripGroupsForPersist); shared state
-// via ./state.js singletons (live bindings). Moved verbatim from ntp.js (byte-exact except
-// `export` prefixes, facade glue, and the bindSyncBackupUi() wrapper around the init-time wiring).
+// via ./state.js singletons (live bindings).
 
 import { layout, setLayout, writerId } from './state.js';
-import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, clearAutoBackupDue, getWebDAVPendingPermission, setWebDAVPendingPermission, clearWebDAVPendingPermission } from './storage.js';
+import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, getAutoBackupState, setAutoBackupState, getWebDAVPendingPermission, setWebDAVPendingPermission, clearWebDAVPendingPermission } from './storage.js';
 import { migrateLayout, mergeLayoutThreeWay, sanitizeLayoutForBackup, redactUrlForLog } from './utils.js';
 import { i18n } from './i18n.js';
 import { renderCanvas } from './render.js';
 import { encryptCredential, decryptCredential } from './credentials.js';
 
 let debug, debugErr, debugWarn;
+let refreshDataHealth = null;
 let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput;
 let webdavPermissionBanner, webdavPermissionMsg, webdavPermissionBtn;
+let localAutoBackupStatusEl, localAutoBackupLastAtEl, localAutoBackupErrorEl, autoBackupUpgradeBox, autoBackupActivateBtn;
 // Ticket 99 (T13): stored-credential danger zone refs — assigned in bindSyncBackupUi
 // before updateSyncConfigVisibility() first runs so the visibility toggle is safe.
 let syncCredentialDangerZone, deleteOpenBtn, deletePanel, deleteCancelBtn, deleteConfirmBtn, deleteRemoteCheck, deleteStatusEl;
@@ -25,6 +26,7 @@ let syncCredentialDangerZone, deleteOpenBtn, deletePanel, deleteCancelBtn, delet
 // once in ntp.js; duplicate getElementById here would fork their null-ness).
 export function initSyncEngineFacade(deps) {
   debug = deps.debug; debugErr = deps.debugErr; debugWarn = deps.debugWarn;
+  refreshDataHealth = typeof deps.refreshDataHealth === 'function' ? deps.refreshDataHealth : null;
   syncProviderSelect = deps.syncProviderSelect; webdavConfig = deps.webdavConfig; gistConfig = deps.gistConfig;
   webdavUrlInput = deps.webdavUrlInput; webdavUserInput = deps.webdavUserInput; webdavPassInput = deps.webdavPassInput; webdavAllowPrivateInput = deps.webdavAllowPrivateInput;
   gistTokenInput = deps.gistTokenInput; gistIdInput = deps.gistIdInput;
@@ -118,10 +120,16 @@ export function initSyncEngineFacade(deps) {
     return u.search !== '' || u.hash !== '';
   }
 
-    // Show last backup time
-    function updateLastBackupDisplay() {
+    // Show last backup time (only real confirmed timestamps; never synthesize success)
+    function updateLastBackupDisplay(autoState) {
+      const remoteAt = Number(layout.settings.lastBackupAt) || 0;
+      const localAt = Number(autoState && autoState.local && autoState.local.lastSuccessAt) || 0;
       if (lastBackupTimeVal) {
-        lastBackupTimeVal.textContent = layout.settings.lastBackupAt ? new Date(layout.settings.lastBackupAt).toLocaleString() : i18n('neverText');
+        const displayAt = Math.max(remoteAt, localAt);
+        lastBackupTimeVal.textContent = displayAt > 0 ? new Date(displayAt).toLocaleString() : i18n('neverText');
+      }
+      if (localAutoBackupLastAtEl) {
+        localAutoBackupLastAtEl.textContent = localAt > 0 ? new Date(localAt).toLocaleString() : i18n('neverText');
       }
     }
 
@@ -1169,8 +1177,8 @@ export function initSyncEngineFacade(deps) {
         await saveSnapshot(); // always save a versioned snapshot
         // Local mode auto-backup strictly converges to a silent snapshot, never calls backupToLocal()
         layout.settings.lastBackupAt = Date.now();
-        updateLastBackupDisplay();
         saveLayout();
+        await refreshLocalAutoBackupUi();
       } catch (e) {
         // PR #109 review round 2: keep the diagnostic log, then propagate — the
         // Sync Now handler surfaces the localized failure, the alarm/catch-up
@@ -1181,78 +1189,164 @@ export function initSyncEngineFacade(deps) {
       }
     }
 
-    // ── Auto-backup scheduler ──────────────────────
-    let autoBackupTimer = null;
-
-    // Auto-backup uses a chrome.alarms hub in the background SW; the NTP page creates/ensures the alarm.
-    // Duplicate onAlarm listener in NTP page removed to prevent double execution.
-    function setupAutoBackup(sec) {
-      if (typeof window !== 'undefined' && window.__BOXING_DEMO__) return;
-      if (autoBackupTimer) { clearInterval(autoBackupTimer); autoBackupTimer = null; }
-      if (!sec || sec < 3600) {
-        try {
-          if (typeof chrome !== 'undefined' && chrome.alarms) {
-            chrome.alarms.clear('boxing-auto-backup');
-          }
-        } catch (_) {}
-        return;
+    // ── Background local auto-backup coordination (#124 / #120 T4) ──
+    // Single executor lives in background.js. NTP never owns setInterval or alarm listeners;
+    // NTP only configures opt-in, ensures missed alarms/catch-ups on boot, and mirrors persisted state.
+    function hasExtensionRuntime() {
+      if (typeof window !== 'undefined' && window.__BOXING_DEMO__) return false;
+      const proto = (typeof window !== 'undefined' && window.location && window.location.protocol) || '';
+      if (!proto.endsWith('-extension:') && proto !== 'extension:') return false;
+      if (typeof browser !== 'undefined' && browser.runtime && typeof browser.runtime.sendMessage === 'function') {
+        return true;
       }
-      try {
-        if (typeof chrome !== 'undefined' && chrome.alarms) {
-          chrome.alarms.create('boxing-auto-backup', { periodInMinutes: Math.ceil(sec / 60) });
-          debug('Auto-backup via chrome.alarms, period=' + Math.ceil(sec / 60) + 'min');
-          return;
-        }
-      } catch (e) { debugWarn('chrome.alarms not available, falling back to setInterval', e); }
-      // Fallback: setInterval (only works while NTP page is open)
-      autoBackupTimer = setInterval(async () => {
-        const now = Date.now();
-        const last = layout.settings.lastBackupAt || 0;
-        if (last && (now - last) < sec * 900) { debug('Auto-backup skipped: too close to last'); return; }
-        try { await performBackup({ userInitiated: false, source: 'background-interval' }); debug('Auto-backup done'); } catch (e) { debugErr('Auto-backup err', e); }
-      }, sec * 1000);
+      if (typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.sendMessage === 'function') {
+        return true;
+      }
+      return false;
     }
 
-    async function checkAutoBackupCatchUp() {
-      if (typeof window !== 'undefined' && window.__BOXING_DEMO__) return;
-      // Requires a real extension environment: file:// lanes and the demo stub
-      // have no service worker, so no alarm hub exists and no due flag can ever
-      // be set. Without this gate, seeded test layouts (autoBackupInterval set,
-      // lastBackupAt absent) treat every boot as overdue -> an extra snapshot
-      // and a backupToLocal() download per boot.
-      if (typeof chrome === 'undefined' || !chrome.alarms) return;
-      const sec = layout.settings.autoBackupInterval || 0;
-      if (sec < 3600) return;
-      // Idempotently ensure alarm exists in SW (fixes Firefox alarms not persisting across sessions)
-      setupAutoBackup(sec);
+    function formatAutoBackupStateLabel(state, isActive, needsOptIn) {
+      const st = state && state.local ? state.local.status : 'idle';
+      if (st === 'error' && (isActive || (state && state.local && state.local.lastError))) {
+        return { text: i18n('localAutoBackupStatusError'), badgeState: 'error' };
+      }
+      if (isActive && st === 'running') {
+        return { text: i18n('localAutoBackupStatusRunning'), badgeState: 'active' };
+      }
+      if (isActive) {
+        return { text: i18n('localAutoBackupStatusActive'), badgeState: 'active' };
+      }
+      if (needsOptIn) {
+        return { text: i18n('localAutoBackupStatusNeedsOptIn'), badgeState: 'paused' };
+      }
+      return { text: i18n('localAutoBackupStatusOff'), badgeState: 'off' };
+    }
 
-      let due = false;
-      try {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          const res = await new Promise((resolve) => {
-            chrome.storage.local.get(['autoBackupDue'], resolve);
-          });
-          if (res && res.autoBackupDue) due = true;
-        }
-      } catch (_) {}
+    async function refreshLocalAutoBackupUi(stateFromCaller) {
+      const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+      const state = stateFromCaller
+        ? (core ? core.normalizeAutoBackupState(stateFromCaller) : stateFromCaller)
+        : await getAutoBackupState();
+      const autoBackupSelect = document.getElementById('auto-backup-interval');
+      const rawInterval = Number(layout.settings && layout.settings.autoBackupInterval) || 0;
+      const normalizedLayoutInterval = core
+        ? core.normalizeAutoBackupInterval(rawInterval)
+        : (rawInterval === 3600 || rawInterval === 86400 || rawInterval === 604800 ? rawInterval : 0);
+      const isActive = core
+        ? core.isAutoBackupActive(state)
+        : Boolean(state && state.optIn === true && state.intervalSec >= 3600);
+      const needsLegacyOptIn = !isActive && normalizedLayoutInterval >= 3600;
 
-      const now = Date.now();
-      const last = layout.settings.lastBackupAt || 0;
-      const overdue = !last || (now - last) >= sec * 1000;
+      if (autoBackupSelect) {
+        autoBackupSelect.value = isActive
+          ? String(state.intervalSec)
+          : (needsLegacyOptIn ? String(normalizedLayoutInterval) : '0');
+      }
+      updateLastBackupDisplay(state);
 
-      if (due || overdue) {
-        try { clearAutoBackupDue(); } catch (_) { /* facade not ready — flag stays, retried next boot */ }
-        if (last && (now - last) < sec * 900) {
-          debug('Auto-backup catch-up skipped: too close to last');
-          return;
-        }
-        try {
-          await performBackup({ userInitiated: false, source: 'background-catchup' });
-          debug('Auto-backup catch-up done');
-        } catch (e) {
-          debugErr('Auto-backup catch-up failed', e);
+      if (localAutoBackupStatusEl) {
+        const badge = formatAutoBackupStateLabel(state, isActive, needsLegacyOptIn);
+        localAutoBackupStatusEl.textContent = badge.text;
+        localAutoBackupStatusEl.dataset.state = badge.badgeState;
+      }
+      if (localAutoBackupErrorEl) {
+        const errMsg = state && state.local && state.local.lastError;
+        if (errMsg && (state.local.status === 'error' || isActive)) {
+          localAutoBackupErrorEl.textContent = errMsg;
+          localAutoBackupErrorEl.hidden = false;
+        } else {
+          localAutoBackupErrorEl.textContent = '';
+          localAutoBackupErrorEl.hidden = true;
         }
       }
+      if (autoBackupUpgradeBox) {
+        autoBackupUpgradeBox.hidden = !needsLegacyOptIn;
+      }
+      return state;
+    }
+    window.__boxingRefreshLocalAutoBackupUi = refreshLocalAutoBackupUi;
+
+    async function configureLocalAutoBackup(rawIntervalSec, optIn) {
+      const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+      const intervalSec = core
+        ? core.normalizeAutoBackupInterval(rawIntervalSec)
+        : (rawIntervalSec === 3600 || rawIntervalSec === 86400 || rawIntervalSec === 604800 ? Number(rawIntervalSec) : 0);
+      const enable = Boolean(optIn) && intervalSec >= 3600;
+
+      layout.settings.autoBackupInterval = enable ? intervalSec : 0;
+      await saveLayout({ preserveUpdatedAt: true });
+
+      if (typeof window !== 'undefined' && window.__BOXING_DEMO__) {
+        await refreshLocalAutoBackupUi();
+        return { ok: true, demo: true };
+      }
+
+      if (hasExtensionRuntime()) {
+        try {
+          const resp = await sendToBackground({
+            type: 'auto-backup-configure',
+            optIn: enable,
+            intervalSec: enable ? intervalSec : 0,
+          });
+          await refreshLocalAutoBackupUi(resp && resp.state ? resp.state : null);
+          if (typeof refreshDataHealth === 'function') {
+            try { await refreshDataHealth(); } catch (_) {}
+          }
+          return resp;
+        } catch (e) {
+          debugWarn('auto-backup-configure failed', e);
+          await refreshLocalAutoBackupUi();
+          return { ok: false, error: e && e.message ? e.message : String(e) };
+        }
+      }
+
+      // file:// lane (no background SW): update persisted coordination state directly via storage facade, never setInterval.
+      const prev = await getAutoBackupState();
+      const now = Date.now();
+      const nextEpoch = (prev.epoch || 0) + 1;
+      if (!enable) {
+        const disabled = await setAutoBackupState({
+          version: 1,
+          optIn: false,
+          intervalSec: 0,
+          epoch: nextEpoch,
+          nextScheduledAt: 0,
+          updatedAt: now,
+          local: {
+            ...(prev.local || {}),
+            status: (prev.local && (prev.local.lastSuccessAt > 0 || prev.local.lastError)) ? 'cancelled' : 'idle',
+          },
+          lock: null,
+        });
+        await refreshLocalAutoBackupUi(disabled);
+        return { ok: true, state: disabled };
+      }
+
+      const ts = await saveSnapshot('auto-backup');
+      const localState = ts
+        ? { status: 'ok', lastAttemptAt: now, lastSuccessAt: ts, lastSnapshotTs: ts, lastError: null }
+        : {
+            status: 'error',
+            lastAttemptAt: now,
+            lastSuccessAt: (prev.local && prev.local.lastSuccessAt) || 0,
+            lastSnapshotTs: (prev.local && prev.local.lastSnapshotTs) || 0,
+            lastError: 'Failed to save local snapshot',
+          };
+      const enabled = await setAutoBackupState({
+        version: 1,
+        optIn: true,
+        intervalSec,
+        epoch: nextEpoch,
+        nextScheduledAt: now + intervalSec * 1000,
+        updatedAt: now,
+        local: localState,
+        lock: null,
+      });
+      await refreshLocalAutoBackupUi(enabled);
+      if (typeof refreshDataHealth === 'function') {
+        try { await refreshDataHealth(); } catch (_) {}
+      }
+      return { ok: Boolean(ts), state: enabled };
     }
 
 // Init-time wiring, called from ntp.js init() at the exact positions these statements
@@ -1270,6 +1364,11 @@ export function bindSyncBackupUi() {
     webdavPermissionBanner = document.getElementById('webdav-permission-banner');
     webdavPermissionMsg = document.getElementById('webdav-permission-msg');
     webdavPermissionBtn = document.getElementById('webdav-permission-btn');
+    localAutoBackupStatusEl = document.getElementById('local-auto-backup-status-text');
+    localAutoBackupLastAtEl = document.getElementById('local-auto-backup-last-at');
+    localAutoBackupErrorEl = document.getElementById('local-auto-backup-error');
+    autoBackupUpgradeBox = document.getElementById('auto-backup-upgrade-box');
+    autoBackupActivateBtn = document.getElementById('auto-backup-activate-btn');
 
     // Restore persisted config
     const syncProviderVal = layout.settings.syncProvider || 'local';
@@ -1628,38 +1727,32 @@ export function bindSyncBackupUi() {
         backupNowLabelReset = setTimeout(() => { backupNowBtn.textContent = i18n('syncNow'); }, 4000);
       }
     });
-    // Listen for the background SW auto-backup trigger
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-        if (msg && msg.type === 'boxing-auto-backup-trigger') {
-          debug('Auto-backup triggered by background alarm');
-          try { clearAutoBackupDue(); } catch (_) { /* facade not ready — flag stays, retried next boot */ }
-          const sec = layout.settings.autoBackupInterval || 0;
-          const now = Date.now();
-          const last = layout.settings.lastBackupAt || 0;
-          if (sec >= 3600 && last && (now - last) < sec * 900) {
-            debug('Auto-backup skipped: too close to last');
-            sendResponse({ ok: true, skipped: true });
-            return;
-          }
-          performBackup({ userInitiated: false, source: 'background' })
-            .then(() => sendResponse({ ok: true }))
-            .catch(e => sendResponse({ ok: false, error: e.message, key: e && e.key ? e.key : undefined }));
-          return true; // async response
-        }
-      });
-    }
-    if (layout.settings.autoBackupInterval >= 3600) {
-      checkAutoBackupCatchUp();
-    }
-
     const autoBackupSelect = document.getElementById('auto-backup-interval');
-    autoBackupSelect?.addEventListener('change', () => {
-      layout.settings.autoBackupInterval = parseInt(autoBackupSelect.value, 10) || 0;
-      setupAutoBackup(layout.settings.autoBackupInterval);
-      saveLayout();
+    autoBackupSelect?.addEventListener('change', async () => {
+      const intervalSec = parseInt(autoBackupSelect.value, 10) || 0;
+      await configureLocalAutoBackup(intervalSec, intervalSec >= 3600);
     });
-    if (layout.settings.autoBackupInterval && autoBackupSelect) autoBackupSelect.value = String(layout.settings.autoBackupInterval);
+    autoBackupActivateBtn?.addEventListener('click', async () => {
+      if (autoBackupActivateBtn.disabled) return;
+      const curInterval = parseInt((autoBackupSelect && autoBackupSelect.value) || layout.settings.autoBackupInterval, 10) || 0;
+      if (curInterval < 3600) return;
+      autoBackupActivateBtn.disabled = true;
+      try {
+        await configureLocalAutoBackup(curInterval, true);
+      } finally {
+        autoBackupActivateBtn.disabled = false;
+      }
+    });
+
+    // Hydrate local auto-backup UI immediately from persisted state, then ask SW to reconcile
+    // any lost alarm / overdue catch-up (only acts if optIn === true).
+    refreshLocalAutoBackupUi().catch((e) => { if (typeof debugWarn === 'function') debugWarn('refreshLocalAutoBackupUi init', e); });
+    if (hasExtensionRuntime()) {
+      sendToBackground({ type: 'auto-backup-ensure', runCatchup: true })
+        .then((resp) => refreshLocalAutoBackupUi(resp && resp.state ? resp.state : null))
+        .then(() => { if (typeof refreshDataHealth === 'function') return refreshDataHealth(); })
+        .catch((e) => { if (typeof debugWarn === 'function') debugWarn('auto-backup-ensure', e); });
+    }
 
     // ── Ticket 99 (T13): delete stored sync credentials — danger zone ──────
     // Two-step confirm (open panel → explicit delete), optional remote data
