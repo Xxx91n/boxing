@@ -678,7 +678,9 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     // blanks the contentEditable assignment that follows, so the ban would pass on
     // code that brought the old implementation back.
     const kept: Array<[string, string]> = [
-      ["const re = /\/\//; el.contentEditable = 'true';", 'el.contentEditable'],
+      // String.raw: in a normal string a backslash before / is just a slash, so the
+      // stripper would receive `const re = ////;` — a line comment, not the regex.
+      [String.raw`const re = /\/\//; el.contentEditable = 'true';`, 'el.contentEditable'],
       ['const r = document.caretPositionFromPoint(x, y);', 'caretPositionFromPoint'],
       ["el.setAttribute('contenteditable', 'true');", 'contenteditable'],
       ['const half = total / 2; el.contentEditable = true;', 'el.contentEditable'],
