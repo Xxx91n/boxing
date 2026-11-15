@@ -8,7 +8,7 @@
 
 import { layout, canvasZoom, currentLargeBoxId, setLayout, setCanvasZoom, setInnerZoom, setSelectedConnId, setConfirmCallback, confirmCallback, groupStar, MAX_LARGE_BOXES, MAX_SMALL_BOXES, MAX_BOOKMARKS } from './state.js';
 import { saveLayout, saveLayoutDebounced, listSnapshots, listCorruptArchives, saveSnapshot, restoreFromSnapshot, replaceLayoutFromRestored, archiveConflictLayouts, listConflictArchives, getConflictArchive, listConflictGuards, saveConflictGuard, deleteConflictArchive, discardConflictGuard, restoreConflictGuard, readDrBodies } from './storage.js';
-import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref, diffConflictArchive, planConflictApply, largeKey, smallKey } from './utils.js';
+import { migrateLayout, normalizeBookmarkUrl, mergeImportedLayout, unwrapExportEnvelope, compareVersions, normalizeDarkModePref, diffConflictArchive, planConflictApply, largeKey, smallKey, sanitizeLayoutForBackup, sanitizeDrBodiesForExport, sanitizeConflictArchiveForExport, sanitizeDrIndexRowsForExport } from './utils.js';
 import { i18n, applyI18n, loadI18nStore } from './i18n.js';
 import { applyDarkMode, applyTheme, nextDarkModePreference } from './persist.js';
 import { getLargeBox, renderInnerSurface, renderCrumbs, renderCanvas, updateAutohideUI, applyCanvasTransform, applyInnerTransform, exitToCanvas, commit, _execDeleteLargeBox, _execDeleteSmallBox } from './render.js';
@@ -532,7 +532,8 @@ export function initSettingsUiFacade(deps) {
         debugWarn('exportConflictCopy: conflict archive body unavailable (pruned or unknown ts=' + ts + ')');
         return;
       }
-      const text = JSON.stringify(entry, null, 2);
+      const cleanEntry = sanitizeConflictArchiveForExport(entry);
+      const text = JSON.stringify(cleanEntry, null, 2);
       const blob = new Blob([text], { type: 'application/json; charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1438,9 +1439,9 @@ export function bindSettingsUi() {
       return String(d.getFullYear()) + m + day;
     }
     async function buildExportEnvelope() {
-      const snaps = await listSnapshots();
-      const corrupt = await listCorruptArchives();
-      const conflicts = await listConflictArchives();
+      const snaps = sanitizeDrIndexRowsForExport('snapshots', await listSnapshots());
+      const corrupt = sanitizeDrIndexRowsForExport('corrupt', await listCorruptArchives());
+      const conflicts = sanitizeDrIndexRowsForExport('conflicts', await listConflictArchives());
       return {
         _exportedAt: new Date().toISOString(),
         meta: {
@@ -1450,7 +1451,7 @@ export function bindSettingsUi() {
           corrupt: corrupt,
           conflicts: conflicts
         },
-        layout: Object.assign({}, layout)
+        layout: sanitizeLayoutForBackup(layout)
       };
     }
     function downloadJson(text, name) {
@@ -1476,7 +1477,7 @@ export function bindSettingsUi() {
         let text = JSON.stringify(env, null, 2);
         if (fullPackage) {
           env.meta.fullPackage = true;
-          env._bodies = await readDrBodies();
+          env._bodies = sanitizeDrBodiesForExport(await readDrBodies());
           // Size estimate + 5MB handling (SEC-06 parity: the importer rejects
           // payloads it cannot land; a full package must stay restorable, not
           // maximal).

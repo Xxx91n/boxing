@@ -899,3 +899,422 @@ function planConflictApply(diff, selectedPaths) {
 }
 
 export { mergeChildrenById, mergeLayoutThreeWay, diffConflictArchive, planConflictApply };
+
+// ── Ticket 122 (spec #120 T2): Explicit field allowlists & log redaction ─────
+// Defense-in-depth egress boundary: only fields explicitly enumerated here may
+// leave the browser (WebDAV/Gist sync payloads, plain/sealed JSON exports, full
+// DR packages, conflict-copy exports) or land in newly created Time Machine
+// snapshots. Sync credentials (_encWebdavPass, _encGistToken, webdavUrl,
+// webdavUser, webdavAllowPrivateHost, gistId), runtime __* flags, computed
+// `groups`, and unknown future fields are excluded by construction.
+const ALLOWED_BACKUP_TOP_LEVEL_KEYS = Object.freeze([
+  'version', 'schemaVersion', 'boxes', 'nextLargeIndex', 'connections', 'settings', '_meta',
+]);
+
+const ALLOWED_BACKUP_SETTINGS_KEYS = Object.freeze([
+  'selectedLanguage', 'rememberLastPos', 'zoomLevel', 'darkMode', 'fontSize',
+  'squareCorners', 'autoBackupInterval', 'lastBackupAt', 'headerPinned',
+  'syncProvider', 'urlOpenMode', 'connDeleteAction', 'theme',
+  'autoTitleEnabled', 'autoTitleRules', 'lastSettingsTab',
+  'onboardingCompleted', 'syncLevel', 'syncFileName', 'lastSyncAt',
+  'lastKnownBoxCountBaseline',
+]);
+
+const ALLOWED_AUTO_TITLE_RULE_KEYS = Object.freeze(['pattern', 'type']);
+
+const ALLOWED_BACKUP_META_KEYS = Object.freeze([
+  'revision', 'updatedAt', 'writerId', 'baseRevision', '__groupsMigrated', 'deleted',
+]);
+
+const ALLOWED_BACKUP_LARGE_BOX_KEYS = Object.freeze([
+  'id', 'type', 'title', 'x', 'y', 'width', 'height',
+  'nextSmallIndex', 'collapseHover', 'pinned', 'isParent', 'viewState', 'children',
+]);
+
+const ALLOWED_BACKUP_VIEW_STATE_KEYS = Object.freeze([
+  'innerZoom', 'innerPanX', 'innerPanY', 'updatedAt',
+]);
+
+const ALLOWED_BACKUP_SMALL_BOX_KEYS = Object.freeze([
+  'id', 'type', 'title', 'x', 'y', 'width', 'height',
+  'pinned', 'collapseHover', 'isParent', 'bookmarks',
+]);
+
+const ALLOWED_BACKUP_BOOKMARK_KEYS = Object.freeze(['id', 'title', 'url']);
+
+const ALLOWED_BACKUP_CONN_KEYS = Object.freeze([
+  'id', 'from', 'to', 'source', 'target', 'createdAt', 'props',
+]);
+
+const ALLOWED_BACKUP_CONN_PROPS_KEYS = Object.freeze([]);
+
+const ALLOWED_SNAPSHOT_ARCHIVE_KEYS = Object.freeze([
+  'ts', 'schemaVersion', 'reason', 'data',
+]);
+
+const ALLOWED_CONFLICT_ARCHIVE_KEYS = Object.freeze([
+  'ts', 'reason', 'side', 'size', 'boxes', 'truncated', 'raw',
+]);
+
+const ALLOWED_CORRUPT_ARCHIVE_KEYS = Object.freeze([
+  'ts', 'error', 'size', 'truncated', 'raw',
+]);
+
+function isPlainObject(v) {
+  return Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+}
+
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+function isSafeJsonScalar(v) {
+  if (typeof v === 'string' || typeof v === 'boolean') return true;
+  if (typeof v === 'number') return Number.isFinite(v);
+  return false;
+}
+
+function pickAllowedScalars(src, keys) {
+  const out = {};
+  for (const k of keys) {
+    if (!hasOwn(src, k)) continue;
+    const v = src[k];
+    if (v === undefined) continue;
+    if (isSafeJsonScalar(v)) out[k] = v;
+  }
+  return out;
+}
+
+function sanitizeViewStateForBackup(vs) {
+  if (!isPlainObject(vs)) return undefined;
+  const out = {};
+  for (const k of ALLOWED_BACKUP_VIEW_STATE_KEYS) {
+    if (hasOwn(vs, k) && typeof vs[k] === 'number' && Number.isFinite(vs[k])) {
+      out[k] = vs[k];
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function sanitizeBookmarkForBackup(bm) {
+  if (!isPlainObject(bm)) return null;
+  return pickAllowedScalars(bm, ALLOWED_BACKUP_BOOKMARK_KEYS);
+}
+
+function sanitizeSmallBoxForBackup(sb) {
+  if (!isPlainObject(sb)) return null;
+  const out = {};
+  for (const k of ALLOWED_BACKUP_SMALL_BOX_KEYS) {
+    if (!hasOwn(sb, k) || sb[k] === undefined) continue;
+    if (k === 'bookmarks') {
+      out[k] = Array.isArray(sb.bookmarks)
+        ? sb.bookmarks.map(sanitizeBookmarkForBackup).filter(Boolean)
+        : [];
+    } else if (isSafeJsonScalar(sb[k])) {
+      out[k] = sb[k];
+    }
+  }
+  return out;
+}
+
+function sanitizeLargeBoxForBackup(lb) {
+  if (!isPlainObject(lb)) return null;
+  const out = {};
+  for (const k of ALLOWED_BACKUP_LARGE_BOX_KEYS) {
+    if (!hasOwn(lb, k) || lb[k] === undefined) continue;
+    if (k === 'viewState') {
+      const cleanVs = sanitizeViewStateForBackup(lb.viewState);
+      if (cleanVs !== undefined) out.viewState = cleanVs;
+    } else if (k === 'children') {
+      out[k] = Array.isArray(lb.children)
+        ? lb.children.map(sanitizeSmallBoxForBackup).filter(Boolean)
+        : [];
+    } else if (isSafeJsonScalar(lb[k])) {
+      out[k] = lb[k];
+    }
+  }
+  return out;
+}
+
+function sanitizeBoxesArrayForBackup(boxes) {
+  if (!Array.isArray(boxes)) return [];
+  return boxes.map(sanitizeLargeBoxForBackup).filter(Boolean);
+}
+
+function sanitizeConnForBackup(conn) {
+  if (!isPlainObject(conn)) return null;
+  const out = {};
+  for (const k of ALLOWED_BACKUP_CONN_KEYS) {
+    if (!hasOwn(conn, k) || conn[k] === undefined) continue;
+    if (k === 'props') {
+      if (isPlainObject(conn.props)) {
+        out.props = pickAllowedScalars(conn.props, ALLOWED_BACKUP_CONN_PROPS_KEYS);
+      }
+    } else if (isSafeJsonScalar(conn[k])) {
+      out[k] = conn[k];
+    }
+  }
+  return out;
+}
+
+function sanitizeAutoTitleRulesForBackup(rules) {
+  if (!Array.isArray(rules)) return [];
+  const out = [];
+  for (const r of rules) {
+    if (!isPlainObject(r)) continue;
+    const clean = {};
+    for (const k of ALLOWED_AUTO_TITLE_RULE_KEYS) {
+      if (hasOwn(r, k) && typeof r[k] === 'string') clean[k] = r[k];
+    }
+    if (typeof clean.pattern === 'string' && typeof clean.type === 'string') out.push(clean);
+  }
+  return out;
+}
+
+function sanitizeSettingsForBackup(settings) {
+  if (settings === null) return null;
+  if (settings === undefined) return undefined;
+  if (!isPlainObject(settings)) return {};
+  const out = {};
+  for (const k of ALLOWED_BACKUP_SETTINGS_KEYS) {
+    if (!hasOwn(settings, k) || settings[k] === undefined) continue;
+    if (k === 'darkMode') {
+      out.darkMode = normalizeDarkModePref(settings.darkMode);
+    } else if (k === 'autoTitleRules') {
+      out.autoTitleRules = sanitizeAutoTitleRulesForBackup(settings.autoTitleRules);
+    } else if (isSafeJsonScalar(settings[k])) {
+      out[k] = settings[k];
+    }
+  }
+  return out;
+}
+
+function sanitizeMetaForBackup(meta) {
+  if (!isPlainObject(meta)) return undefined;
+  const out = {};
+  for (const k of ALLOWED_BACKUP_META_KEYS) {
+    if (!hasOwn(meta, k) || meta[k] === undefined) continue;
+    if (k === 'deleted') {
+      if (isPlainObject(meta.deleted)) {
+        const cleanDel = {};
+        for (const [dk, dv] of Object.entries(meta.deleted)) {
+          if (typeof dv === 'number' && Number.isFinite(dv)) cleanDel[dk] = dv;
+        }
+        out.deleted = cleanDel;
+      }
+    } else if (isSafeJsonScalar(meta[k])) {
+      out[k] = meta[k];
+    }
+  }
+  return out;
+}
+
+function sanitizeLayoutForBackup(raw) {
+  if (!isPlainObject(raw)) return {};
+  const out = {};
+  for (const k of ALLOWED_BACKUP_TOP_LEVEL_KEYS) {
+    if (!hasOwn(raw, k) || raw[k] === undefined) continue;
+    if (k === 'boxes') {
+      out.boxes = sanitizeBoxesArrayForBackup(raw.boxes);
+    } else if (k === 'connections') {
+      out.connections = Array.isArray(raw.connections)
+        ? raw.connections.map(sanitizeConnForBackup).filter(Boolean)
+        : [];
+    } else if (k === 'settings') {
+      const cleanSettings = sanitizeSettingsForBackup(raw.settings);
+      if (cleanSettings !== undefined) out.settings = cleanSettings;
+    } else if (k === '_meta') {
+      const cleanMeta = sanitizeMetaForBackup(raw._meta);
+      if (cleanMeta !== undefined) out._meta = cleanMeta;
+    } else if (isSafeJsonScalar(raw[k])) {
+      out[k] = raw[k];
+    }
+  }
+  return out;
+}
+
+function redactUrlForLog(urlStr) {
+  if (typeof urlStr !== 'string') return '';
+  const trimmed = urlStr.trim();
+  if (!trimmed) return '';
+  try {
+    const u = new URL(trimmed);
+    const hasAuth = Boolean(u.username || u.password);
+    const authPart = hasAuth ? '***:***@' : '';
+    const queryPart = u.search ? '?***' : '';
+    const hashPart = u.hash ? '#***' : '';
+    return u.protocol + '//' + authPart + u.host + u.pathname + queryPart + hashPart;
+  } catch (_) {
+    return trimmed
+      .replace(/(https?:\/\/)[^/\s:@?#]*:[^/\s@?#]*@/gi, '$1***:***@')
+      .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
+      .replace(/\?[^#\s]*/g, '?***')
+      .replace(/#[^\s]*/g, '#***');
+  }
+}
+
+function redactUrlTokenForLog(rawUrl) {
+  let urlPart = rawUrl;
+  let suffix = '';
+  // Preserve unmatched trailing ')' or ']' (e.g. prose wrappers "(https://...)") without exposing query/hash
+  while (urlPart.endsWith(')') || urlPart.endsWith(']')) {
+    const open = urlPart.endsWith(')') ? '(' : '[';
+    const close = urlPart.slice(-1);
+    let opens = 0;
+    let closes = 0;
+    for (let i = 0; i < urlPart.length; i++) {
+      if (urlPart[i] === open) opens++;
+      else if (urlPart[i] === close) closes++;
+    }
+    if (closes > opens) {
+      suffix = close + suffix;
+      urlPart = urlPart.slice(0, -1);
+    } else {
+      break;
+    }
+  }
+  const redacted = urlPart
+    .replace(/(https?:\/\/)[^/\s:@?#]*:[^/\s@?#]*@/gi, '$1***:***@')
+    .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
+    .replace(/\?[^#]*/g, '?***')
+    .replace(/#[\s\S]*/g, '#***');
+  return redacted + suffix;
+}
+
+function redactSensitiveLogText(text) {
+  if (typeof text !== 'string') return String(text ?? '');
+  return text
+    .replace(/https?:\/\/[^\s"'<>`]+/gi, redactUrlTokenForLog)
+    .replace(/\b(Basic|Bearer)\s+[A-Za-z0-9._~+/=-]{4,}/gi, '$1 [REDACTED]')
+    .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey(?:\.v\d+)?)"\s*:\s*(?:"(?:\\.|[^"\\])*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
+}
+
+function sanitizeArchiveRawPayload(raw) {
+  if (Array.isArray(raw)) return [];
+  if (!isPlainObject(raw)) {
+    if (typeof raw === 'string') return redactSensitiveLogText(raw);
+    return isSafeJsonScalar(raw) || raw === null ? raw : null;
+  }
+  const hasLayoutTopFields = hasOwn(raw, 'version') || hasOwn(raw, 'schemaVersion') ||
+    hasOwn(raw, 'nextLargeIndex') || hasOwn(raw, 'connections') ||
+    hasOwn(raw, 'settings') || hasOwn(raw, '_meta');
+  if (hasLayoutTopFields) return sanitizeLayoutForBackup(raw);
+  if (hasOwn(raw, 'boxes') && Array.isArray(raw.boxes)) {
+    return { boxes: sanitizeBoxesArrayForBackup(raw.boxes) };
+  }
+  return {};
+}
+
+function sanitizeSnapshotArchiveForExport(snap) {
+  if (!isPlainObject(snap)) return null;
+  const out = {};
+  for (const k of ALLOWED_SNAPSHOT_ARCHIVE_KEYS) {
+    if (!hasOwn(snap, k) || snap[k] === undefined) continue;
+    if (k === 'data') {
+      out.data = isPlainObject(snap.data) ? sanitizeLayoutForBackup(snap.data) : null;
+    } else if (isSafeJsonScalar(snap[k])) {
+      out[k] = snap[k];
+    }
+  }
+  return out;
+}
+
+function sanitizeConflictArchiveForExport(entry) {
+  if (!isPlainObject(entry)) return null;
+  const out = {};
+  for (const k of ALLOWED_CONFLICT_ARCHIVE_KEYS) {
+    if (!hasOwn(entry, k) || entry[k] === undefined) continue;
+    if (k === 'raw') {
+      out.raw = sanitizeArchiveRawPayload(entry.raw);
+    } else if (isSafeJsonScalar(entry[k])) {
+      out[k] = entry[k];
+    }
+  }
+  return out;
+}
+
+function sanitizeCorruptStringRaw(rawStr) {
+  if (!rawStr) return '';
+  try {
+    const parsed = JSON.parse(rawStr);
+    if (isPlainObject(parsed)) return JSON.stringify(sanitizeArchiveRawPayload(parsed));
+    if (Array.isArray(parsed)) return '[]';
+    if (isSafeJsonScalar(parsed)) return JSON.stringify(typeof parsed === 'string' ? redactSensitiveLogText(parsed) : parsed);
+    return 'null';
+  } catch (_) {
+    // Non-JSON / truncated corrupt string cannot be safely allowlisted field-by-field; fail closed.
+    return '[REDACTED_CORRUPT_RAW]';
+  }
+}
+
+function sanitizeCorruptArchiveForExport(entry) {
+  if (!isPlainObject(entry)) return null;
+  const out = {};
+  for (const k of ALLOWED_CORRUPT_ARCHIVE_KEYS) {
+    if (!hasOwn(entry, k) || entry[k] === undefined) continue;
+    if (k === 'error') {
+      out.error = redactSensitiveLogText(String(entry.error));
+    } else if (k === 'raw') {
+      if (isPlainObject(entry.raw)) {
+        out.raw = sanitizeArchiveRawPayload(entry.raw);
+      } else if (Array.isArray(entry.raw)) {
+        out.raw = [];
+      } else if (typeof entry.raw === 'string') {
+        out.raw = sanitizeCorruptStringRaw(entry.raw);
+      } else if (entry.raw === null || typeof entry.raw === 'number' || typeof entry.raw === 'boolean') {
+        out.raw = entry.raw;
+      }
+    } else if (isSafeJsonScalar(entry[k])) {
+      out[k] = entry[k];
+    }
+  }
+  return out;
+}
+
+function sanitizeDrBodiesForExport(bodies) {
+  const src = isPlainObject(bodies) ? bodies : {};
+  return {
+    snapshots: Array.isArray(src.snapshots) ? src.snapshots.map(sanitizeSnapshotArchiveForExport).filter(Boolean) : [],
+    corrupt: Array.isArray(src.corrupt) ? src.corrupt.map(sanitizeCorruptArchiveForExport).filter(Boolean) : [],
+    conflicts: Array.isArray(src.conflicts) ? src.conflicts.map(sanitizeConflictArchiveForExport).filter(Boolean) : [],
+  };
+}
+
+function sanitizeDrIndexRowsForExport(kind, rows) {
+  if (!Array.isArray(rows)) return [];
+  const keyMap = {
+    snapshots: ['ts', 'schemaVersion', 'size'],
+    corrupt: ['ts', 'error', 'size', 'truncated'],
+    conflicts: ['ts', 'reason', 'side', 'size', 'boxes', 'truncated'],
+  };
+  const keys = keyMap[kind] || [];
+  return rows.filter(isPlainObject).map((row) => {
+    const clean = pickAllowedScalars(row, keys);
+    if (kind === 'corrupt' && typeof clean.error === 'string') {
+      clean.error = redactSensitiveLogText(clean.error);
+    }
+    return clean;
+  });
+}
+
+export {
+  ALLOWED_AUTO_TITLE_RULE_KEYS,
+  ALLOWED_BACKUP_BOOKMARK_KEYS,
+  ALLOWED_BACKUP_CONN_KEYS,
+  ALLOWED_BACKUP_CONN_PROPS_KEYS,
+  ALLOWED_BACKUP_LARGE_BOX_KEYS,
+  ALLOWED_BACKUP_META_KEYS,
+  ALLOWED_BACKUP_SETTINGS_KEYS,
+  ALLOWED_BACKUP_SMALL_BOX_KEYS,
+  ALLOWED_BACKUP_TOP_LEVEL_KEYS,
+  ALLOWED_BACKUP_VIEW_STATE_KEYS,
+  redactSensitiveLogText,
+  redactUrlForLog,
+  sanitizeConflictArchiveForExport,
+  sanitizeCorruptArchiveForExport,
+  sanitizeDrBodiesForExport,
+  sanitizeDrIndexRowsForExport,
+  sanitizeLayoutForBackup,
+  sanitizeSettingsForBackup,
+  sanitizeSnapshotArchiveForExport,
+};

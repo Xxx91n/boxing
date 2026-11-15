@@ -22,7 +22,7 @@ import {
   saveDebounceTimer, setApplyingExternalLayout, setCurrentLargeBoxId, setInnerPanX, setInnerPanY,
   setInnerZoom, setLayout, setSaveDebounceTimer, setStorageWriteChain, storageWriteChain, writerId,
 } from './state.js';
-import { defaultLayout, isPlausibleLayout, mergeById, migrateLayout, normalizeDarkModePref } from './utils.js';
+import { defaultLayout, isPlausibleLayout, mergeById, migrateLayout, normalizeDarkModePref, sanitizeLayoutForBackup } from './utils.js';
 
 // ── injected ntp.js-scope bindings (assigned once by initStorageFacade, before any call) ──
 let api = null;
@@ -360,7 +360,7 @@ export function registerStorageOnChanged() {
       const snap = {
         ts,
         schemaVersion: layout.schemaVersion || 1,
-        data: stripGroupsForPersist(layout)
+        data: sanitizeLayoutForBackup(layout)
       };
       if (reason) snap.reason = String(reason);
       const snapJson = JSON.stringify(snap);
@@ -415,14 +415,46 @@ export function registerStorageOnChanged() {
         return null;
       }
       const recovered = migrateLayout(snap.data);
-      // Ticket 99 (T13) / CodeRabbit (security): once stored sync credentials have
-      // been deleted (the in-memory layout carries none), a rollback to an older
-      // snapshot must not resurrect credentials the user explicitly removed. Snapshots
-      // taken before the deletion are thereby invalidated for those fields; the user
-      // re-enters them after a rollback.
-      if (recovered.settings && !layout.settings._encWebdavPass && !layout.settings._encGistToken) {
-        delete recovered.settings._encWebdavPass;
-        delete recovered.settings._encGistToken;
+      // Ticket 122 (spec #120 T2): newly saved snapshots strip sync credentials
+      // and remote connection config. Preserve active local sync config / credentials
+      // when rolling back to a sanitized snapshot that omitted them, while strictly
+      // honoring Ticket 99 never to resurrect explicitly deleted credentials.
+      const curSettings = (layout && layout.settings && typeof layout.settings === 'object') ? layout.settings : {};
+      const snapSettings = (snap.data && snap.data.settings && typeof snap.data.settings === 'object') ? snap.data.settings : null;
+      if (recovered.settings) {
+        // Reconcile credentials and destinations per-provider as a unit so a legacy
+        // snapshot with a historical destination and no credential cannot inherit
+        // live credentials from another destination.
+        const hasSnapWebdavBinding = Boolean(snapSettings && (
+          (typeof snapSettings.webdavUrl === 'string' && snapSettings.webdavUrl.trim()) ||
+          (typeof snapSettings.webdavUser === 'string' && snapSettings.webdavUser.trim()) ||
+          snapSettings._encWebdavPass
+        ));
+        if (!hasSnapWebdavBinding) {
+          for (const k of ['webdavUrl', 'webdavUser', 'webdavAllowPrivateHost', '_encWebdavPass']) {
+            if (Object.prototype.hasOwnProperty.call(curSettings, k) && curSettings[k] !== undefined) {
+              recovered.settings[k] = curSettings[k];
+            }
+          }
+        }
+        const hasSnapGistBinding = Boolean(snapSettings && (
+          (typeof snapSettings.gistId === 'string' && snapSettings.gistId.trim()) ||
+          snapSettings._encGistToken
+        ));
+        if (!hasSnapGistBinding) {
+          for (const k of ['gistId', '_encGistToken']) {
+            if (Object.prototype.hasOwnProperty.call(curSettings, k) && curSettings[k] !== undefined) {
+              recovered.settings[k] = curSettings[k];
+            }
+          }
+        }
+        // Ticket 99 (T13) / CodeRabbit (security): once stored sync credentials have
+        // been deleted (the in-memory layout carries none), a rollback to an older
+        // snapshot must not resurrect credentials the user explicitly removed. Snapshots
+        // taken before the deletion are thereby invalidated for those fields; the user
+        // re-enters them after a rollback.
+        if (!curSettings._encWebdavPass) delete recovered.settings._encWebdavPass;
+        if (!curSettings._encGistToken) delete recovered.settings._encGistToken;
       }
       debug('restoreFromSnapshot: recovered from ts=' + ts +
         ' @' + new Date(snap.ts).toISOString());
