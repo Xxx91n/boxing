@@ -482,16 +482,16 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
 
   test('payload honors syncLevel and never carries credential or account fields', async () => {
     const env = createSandbox();
-    const full = JSON.parse(env.bg.buildWebdavBackupBody(seedLayout()));
+    const full = JSON.parse(env.bg.buildWebDAVBackupBody(seedLayout()));
     expect(full.settings.webdavUrl).toBeUndefined();
     expect(full.settings.webdavUser).toBeUndefined();
     expect(full.settings._encWebdavPass).toBeUndefined();
 
-    const boxesOnly = JSON.parse(env.bg.buildWebdavBackupBody(seedLayout({ settings: { syncLevel: 'boxesOnly' } })));
+    const boxesOnly = JSON.parse(env.bg.buildWebDAVBackupBody(seedLayout({ settings: { syncLevel: 'boxesOnly' } })));
     expect(boxesOnly.settings).toBeNull();
     expect(boxesOnly.boxes.length).toBe(1);
 
-    const settingsOnly = JSON.parse(env.bg.buildWebdavBackupBody(seedLayout({ settings: { syncLevel: 'settingsOnly' } })));
+    const settingsOnly = JSON.parse(env.bg.buildWebDAVBackupBody(seedLayout({ settings: { syncLevel: 'settingsOnly' } })));
     expect(settingsOnly.boxes).toEqual([]);
     expect(settingsOnly.connections).toEqual([]);
     expect(JSON.stringify(settingsOnly)).not.toContain('secret-pass');
@@ -595,9 +595,13 @@ test.describe('Ticket #125 — static contracts', () => {
 
   test('background source never requests host permission and the built worker carries the create-only header', async () => {
     const bgSrc = fs.readFileSync(path.join(ROOT_DIR, 'background.js'), 'utf8');
+    const pageSrc = fs.readFileSync(path.join(ROOT_DIR, 'ntp', 'index.html'), 'utf8');
     expect(bgSrc).not.toMatch(/permissions\.request/);
     expect(bgSrc).toContain("'If-None-Match': '*'");
     expect(bgSrc).not.toContain('notifications');
+    // One credential-envelope implementation shared by page and worker.
+    expect(bgSrc).toContain("importScripts('shared/credential-core.js')");
+    expect(pageSrc).toContain('src="../shared/credential-core.js"');
 
     for (const dist of [DIST_CHROME, DIST_FIREFOX]) {
       const builtPath = path.join(dist, 'background.js');
@@ -605,6 +609,7 @@ test.describe('Ticket #125 — static contracts', () => {
       const built = fs.readFileSync(builtPath, 'utf8');
       expect(built).toContain("'If-None-Match': '*'");
       expect(built).not.toMatch(/permissions\.request/);
+      expect(fs.existsSync(path.join(dist, 'shared', 'credential-core.js')), `${dist} ships shared/credential-core.js`).toBe(true);
     }
   });
 });

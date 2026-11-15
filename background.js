@@ -91,6 +91,16 @@ try {
       bgErr('Failed to importScripts shared/snapshot-core.js', e);
     }
   }
+  // Ticket #125 (spec #120 T5): credential-envelope crypto is shared with the NTP page
+  // so the background decrypts with the same code path (no second copy of the legacy
+  // literals). Same load split as the snapshot core.
+  if (typeof importScripts === 'function' && !root.__boxingCredentialCore) {
+    try {
+      importScripts('shared/credential-core.js');
+    } catch (e) {
+      bgErr('Failed to importScripts shared/credential-core.js', e);
+    }
+  }
 
   let _corePromise = null;
   async function ensureSnapshotCore() {
@@ -106,6 +116,22 @@ try {
       });
     }
     return _corePromise;
+  }
+
+  let _credCorePromise = null;
+  async function ensureCredentialCore() {
+    if (root.__boxingCredentialCore) return root.__boxingCredentialCore;
+    if (!_credCorePromise) {
+      _credCorePromise = import('./shared/credential-core.js').then((mod) => {
+        const core = root.__boxingCredentialCore || (mod && (mod.default || mod));
+        if (core && !root.__boxingCredentialCore) root.__boxingCredentialCore = core;
+        return root.__boxingCredentialCore;
+      }).catch((e) => {
+        _credCorePromise = null;
+        throw e;
+      });
+    }
+    return _credCorePromise;
   }
 
   // ── Cross-browser storage / alarms / badge helpers ────────
@@ -347,88 +373,66 @@ try {
   // uncertain case pauses with a reason code and sends nothing. Updating a known
   // target on later cycles belongs to T6 and is deliberately not implemented here.
   const BG_WEBDAV_DEFAULT_FILENAME = 'boxing-backup.json';
-  const BG_CRED_KEY_STORE_KEY = 'boxingCredKey.v1';
-  const BG_CRED_OBFUSCATION_SECRET = 'boxing-sync-cred-v2-app-secret-2024';
   let bgCredKeyPromise = null;
-  const bgWebdavTargetQueues = new Map();
+  let bgCredCoreInstance = null;
+  const bgWebDAVTargetQueues = new Map();
 
-  // Per-target write queue: a page-driven manual PUT and the background create
-  // sequence for the same fileUrl never interleave inside this worker. The
-  // create itself stays protected across worker restarts by the conditional header.
-  function enqueueBgWebdavTargetWrite(targetUrl, fn) {
+  // Per-target write queue: a page-driven manual PUT through this worker and the
+  // background create sequence for the same fileUrl never interleave here. The
+  // create itself stays protected across worker restarts by the conditional header,
+  // and a page fallback that skips this worker still cannot make the create
+  // overwrite anything (the server answers 412 instead).
+  function enqueueBgWebDAVTargetWrite(targetUrl, fn) {
     const key = typeof targetUrl === 'string' ? targetUrl : '';
-    const prev = bgWebdavTargetQueues.get(key) || Promise.resolve();
+    const prev = bgWebDAVTargetQueues.get(key) || Promise.resolve();
     const next = prev.then(fn, fn);
     const tail = next.then(() => undefined, () => undefined);
-    bgWebdavTargetQueues.set(key, tail);
+    bgWebDAVTargetQueues.set(key, tail);
     tail.then(() => {
-      if (bgWebdavTargetQueues.get(key) === tail) bgWebdavTargetQueues.delete(key);
+      if (bgWebDAVTargetQueues.get(key) === tail) bgWebDAVTargetQueues.delete(key);
     });
     return next;
-  }
-
-  function bgSubtleCrypto() {
-    const c = root.crypto || (typeof crypto !== 'undefined' ? crypto : null);
-    return c && c.subtle ? c.subtle : null;
-  }
-
-  function bgB64ToBytes(b64) {
-    const bin = atob(String(b64));
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
   }
 
   async function bgGetPerInstallCredKeyB64() {
     if (bgCredKeyPromise) return bgCredKeyPromise;
     bgCredKeyPromise = (async () => {
-      const res = await bgStorageGet({ [BG_CRED_KEY_STORE_KEY]: null });
-      const v = res && res[BG_CRED_KEY_STORE_KEY];
+      const core = await ensureCredentialCore();
+      const storeKey = core.CRED_KEY_STORE_KEY;
+      const res = await bgStorageGet({ [storeKey]: null });
+      const v = res && res[storeKey];
       return typeof v === 'string' && v.length >= 40 ? v : '';
     })().catch(() => { bgCredKeyPromise = null; return ''; });
     return bgCredKeyPromise;
   }
 
-  async function bgDeriveCredKey(saltBytes, mode) {
-    const material = mode === 'v3' ? await bgGetPerInstallCredKeyB64() : BG_CRED_OBFUSCATION_SECRET;
-    const subtle = bgSubtleCrypto();
-    if (!material || !subtle) return null;
-    const baseKey = await subtle.importKey('raw', new TextEncoder().encode(material), 'PBKDF2', false, ['deriveKey']);
-    return subtle.deriveKey(
-      { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
-      baseKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-  }
-
-  // Same envelope compatibility as ntp/credentials.js (v1 decrypt bridge, v2 legacy
-  // constant secret, v3 per-install key, legacy plaintext string). Plaintext is used
-  // only as the Authorization value and never enters state, logs, or snapshots.
+  // Shared envelope compatibility (v1 decrypt bridge, v2 legacy constant secret, v3
+  // per-install key, legacy plaintext string) lives in shared/credential-core.js.
+  // Plaintext is used only as the Authorization value and never enters state, logs,
+  // or snapshots.
   async function bgDecryptCredential(enc) {
     if (!enc) return '';
     if (typeof enc === 'string') return enc;
-    const subtle = bgSubtleCrypto();
-    if (!subtle) return '';
     try {
-      if (enc.k && enc.iv && enc.d) {
-        const key = await subtle.importKey('raw', bgB64ToBytes(enc.k), { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-        const dec = await subtle.decrypt({ name: 'AES-GCM', iv: bgB64ToBytes(enc.iv) }, key, bgB64ToBytes(enc.d));
-        return new TextDecoder().decode(dec);
+      const core = await ensureCredentialCore();
+      if (!core || typeof core.createCredentialCore !== 'function') return '';
+      if (!bgCredCoreInstance) {
+        bgCredCoreInstance = core.createCredentialCore({
+          getPerInstallKeyB64: bgGetPerInstallCredKeyB64,
+          onError: (e) => bgErr('bg credential decrypt failed', e),
+        });
       }
-      if ((enc.v === 2 || enc.v === 3) && enc.s && enc.iv && enc.d) {
-        const key = await bgDeriveCredKey(bgB64ToBytes(enc.s), enc.v === 3 ? 'v3' : 'v2');
-        if (!key) return '';
-        const dec = await subtle.decrypt({ name: 'AES-GCM', iv: bgB64ToBytes(enc.iv) }, key, bgB64ToBytes(enc.d));
-        return new TextDecoder().decode(dec);
-      }
+      return await bgCredCoreInstance.decrypt(enc);
     } catch (e) {
       bgErr('bgDecryptCredential failed', e);
+      return '';
     }
-    return '';
   }
 
   // Mirrors ntp/sync-engine.js resolveWebDAVFileUrl for every accepted base URL
   // (origin + pathname, trailing slash, custom syncFileName sanitization, and the
   // verbatim path that already ends in .json).
-  function bgResolveWebdavFileUrl(settings) {
+  function bgResolveWebDAVFileUrl(settings) {
     const base = settings && typeof settings.webdavUrl === 'string' ? settings.webdavUrl.trim() : '';
     if (!base || base.length > BG_MAX_URL) return { error: 'invalid-url' };
     let target;
@@ -452,7 +456,7 @@ try {
 
   // Same allowlist boundary as the page (#122): only sanitized boxing data leaves,
   // syncLevel still decides what the user shares. Credentials never enter this body.
-  function bgBuildWebdavBackupBody(rawLayout) {
+  function bgBuildWebDAVBackupBody(rawLayout) {
     const clean = swSanitizeLayoutForBackup(rawLayout);
     const level = rawLayout && rawLayout.settings ? rawLayout.settings.syncLevel : undefined;
     if (level === 'settingsOnly') {
@@ -464,7 +468,7 @@ try {
     return JSON.stringify(clean, null, 2);
   }
 
-  async function bgWebdavReadFileState(url, user, pass) {
+  async function bgWebDAVReadFileState(url, user, pass) {
     const h = new Headers();
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -479,7 +483,7 @@ try {
 
   // Create-only PUT. The header is the whole safety story: on a correct server a
   // concurrent writer turns this into 412 instead of being overwritten.
-  async function bgWebdavCreateOnly(url, user, pass, body) {
+  async function bgWebDAVCreateOnly(url, user, pass, body) {
     const h = new Headers({ 'Content-Type': 'application/json', 'If-None-Match': '*' });
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -489,18 +493,19 @@ try {
   }
 
   async function bgRecordWebDAVPendingPermission(origin, reason) {
-    if (!origin || !api.storage || !api.storage.local || !api.storage.local.set) return;
+    if (!origin || !api.storage || !api.storage.local || !api.storage.local.set) return null;
     try {
       const stored = await bgStorageGet({ [BG_WEBDAV_PERM_KEY]: null });
       const prev = stored && stored[BG_WEBDAV_PERM_KEY];
       const nextReason = (reason === 'missing-permission' && prev && prev.needed && prev.origin === origin && prev.reason === 'denied')
         ? 'denied'
         : (reason || 'missing-permission');
-      await api.storage.local.set({
-        webdavPendingPermission: { needed: true, origin, source: 'background', reason: nextReason, updatedAt: Date.now() },
-      });
+      const permState = { needed: true, origin, source: 'background', reason: nextReason, updatedAt: Date.now() };
+      await api.storage.local.set({ [BG_WEBDAV_PERM_KEY]: permState });
+      return permState;
     } catch (e) {
       bgErr('bgRecordWebDAVPendingPermission failed', e);
+      return null;
     }
   }
 
@@ -543,7 +548,7 @@ try {
       baseline: prevRemote.baseline || null,
     });
 
-    const derived = bgResolveWebdavFileUrl(settings);
+    const derived = bgResolveWebDAVFileUrl(settings);
     const user = typeof settings.webdavUser === 'string' ? settings.webdavUser.trim() : '';
 
     if (prevRemote.baseline) {
@@ -591,7 +596,7 @@ try {
       return { attempted: false, remote: pausedRemote('invalid-target') };
     }
 
-    const outcome = await enqueueBgWebdavTargetWrite(derived.fileUrl, async () => {
+    const outcome = await enqueueBgWebDAVTargetWrite(derived.fileUrl, async () => {
       const live = await bgReadAutoBackupState();
       if (!core.isAutoBackupActive(live) || live.epoch !== activeEpoch) {
         return { attempted: false, cancelled: true, remote: live.remote };
@@ -605,7 +610,7 @@ try {
 
       let fileState;
       try {
-        fileState = await bgWebdavReadFileState(derived.fileUrl, user, pass);
+        fileState = await bgWebDAVReadFileState(derived.fileUrl, user, pass);
       } catch (e) {
         bgErr('WebDAV auto-backup: remote check failed', e);
         return { attempted: true, remote: pausedRemote('remote-unreachable') };
@@ -616,8 +621,7 @@ try {
 
       let body;
       try {
-        body = bgBuildWebdavBackupBody(rawLayout);
-        JSON.parse(body);
+        body = bgBuildWebDAVBackupBody(rawLayout);
       } catch (_) {
         return { attempted: true, remote: pausedRemote('internal-error') };
       }
@@ -633,7 +637,7 @@ try {
 
       let created;
       try {
-        created = await bgWebdavCreateOnly(derived.fileUrl, user, pass, body);
+        created = await bgWebDAVCreateOnly(derived.fileUrl, user, pass, body);
       } catch (e) {
         // The request may or may not have reached the server. Do not guess and do
         // not retry automatically; the user must re-check the target first.
@@ -1002,15 +1006,7 @@ try {
       if (!url || !isSafeWebDAVUrl(url, settings.webdavAllowPrivateHost === true)) return null;
       const perm = await ensureWebDAVPermission(url);
       if (!perm.ok && perm.needPermission && perm.origin) {
-        if (api.storage.local.set) {
-          const prev = stored[BG_WEBDAV_PERM_KEY];
-          const reason = (prev && prev.needed && prev.origin === perm.origin && prev.reason === 'denied')
-            ? 'denied'
-            : 'missing-permission';
-          const permState = { needed: true, origin: perm.origin, source: 'background', reason, updatedAt: Date.now() };
-          await api.storage.local.set({ webdavPendingPermission: permState });
-          return permState;
-        }
+        return await bgRecordWebDAVPendingPermission(perm.origin, 'missing-permission');
       } else if (perm.ok && stored[BG_WEBDAV_PERM_KEY] && stored[BG_WEBDAV_PERM_KEY].origin === perm.origin) {
         if (api.storage.local.remove) {
           await bgStorageRemoveValidated(BG_WEBDAV_PERM_KEY);
@@ -1054,10 +1050,10 @@ try {
     getAutoBackupState: bgReadAutoBackupState,
     inspectAndRecordBackgroundWebDAVPermission,
     runBackgroundWebDAVAutoBackup,
-    readWebdavFileState: bgWebdavReadFileState,
+    readWebDAVFileState: bgWebDAVReadFileState,
     decryptCredential: bgDecryptCredential,
-    resolveWebdavFileUrl: bgResolveWebdavFileUrl,
-    buildWebdavBackupBody: bgBuildWebdavBackupBody,
+    resolveWebDAVFileUrl: bgResolveWebDAVFileUrl,
+    buildWebDAVBackupBody: bgBuildWebDAVBackupBody,
   };
 
   // ── WebDAV message proxy ────────────────────────────────────
@@ -1354,7 +1350,7 @@ try {
       } else if (msg.type === 'webdav-put') {
         // Ticket #125: page-driven manual PUTs and the background create sequence share
         // one per-target queue, so the same remote file never sees two writers at once.
-        const result = await enqueueBgWebdavTargetWrite(msg.url, () => handleWebDAVPut(msg));
+        const result = await enqueueBgWebDAVTargetWrite(msg.url, () => handleWebDAVPut(msg));
         return { success: true, ...result };
       } else if (msg.type === 'webdav-get') {
         const result = await handleWebDAVGet(msg);

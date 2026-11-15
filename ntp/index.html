@@ -684,6 +684,10 @@
     <ul class="quick-help__list" id="quick-help-list"></ul>
   </section>
   <script src="../shared/snapshot-core.js"></script>
+  <!-- Ticket #125: one credential-envelope implementation shared by the page and the
+       background worker (see shared/credential-core.js). Classic script so it is ready
+       before the deferred ntp.js module runs. -->
+  <script src="../shared/credential-core.js"></script>
   <!-- Ticket 03 (architecture-recovery): ESM switch — type="module" defers by default (V8/MDN), ntp.js now imports ./favicon.js (first module, spec.md strangler-fig). -->
   <script type="module" src="ntp.js"></script>
 </body>
