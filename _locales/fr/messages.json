@@ -1319,6 +1319,49 @@
     "message": "Échec de l'enregistrement de la configuration nettoyée : les identifiants stockés ont été conservés. Veuillez réessayer.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   },
+  "webdavErrPermission": {
+    "message": "Accordez l’autorisation pour $origin$ pour continuer",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "Autorisation refusée pour $origin$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "La synchronisation WebDAV en arrière-plan nécessite votre autorisation pour $origin$ avant de pouvoir se connecter.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "L’accès à $origin$ a été refusé ou révoqué. Accordez l’autorisation pour continuer.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "Accorder l’autorisation"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "Accès autorisé pour $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
   "titleInputLabel": {
     "message": "Titre de la boîte",
     "description": "Accessible name for the editable box title field"

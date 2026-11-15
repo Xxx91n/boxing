@@ -4,12 +4,61 @@
 const BG_LOG_PREFIX = '[Boxing:BG]';
 // Debug mode toggle — set boxing_debug_mode in storage.sync to enable
 let BG_DEBUG_ENABLED = false;
+function bgRedactUrlToken(rawUrl) {
+  let urlPart = rawUrl;
+  let suffix = '';
+  while (urlPart.endsWith(')') || urlPart.endsWith(']')) {
+    const open = urlPart.endsWith(')') ? '(' : '[';
+    const close = urlPart.slice(-1);
+    let opens = 0;
+    let closes = 0;
+    for (let i = 0; i < urlPart.length; i++) {
+      if (urlPart[i] === open) opens++;
+      else if (urlPart[i] === close) closes++;
+    }
+    if (closes > opens) {
+      suffix = close + suffix;
+      urlPart = urlPart.slice(0, -1);
+    } else {
+      break;
+    }
+  }
+  const redacted = urlPart
+    .replace(/(https?:\/\/)[^/\s:@?#]*:[^/\s@?#]*@/gi, '$1***:***@')
+    .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
+    .replace(/\?[^#]*/g, '?***')
+    .replace(/#[\s\S]*/g, '#***');
+  return redacted + suffix;
+}
+function bgRedactSensitiveText(text) {
+  return String(text ?? '')
+    .replace(/https?:\/\/[^\s"'<>`]+/gi, bgRedactUrlToken)
+    .replace(/\b(Basic|Bearer)\s+[A-Za-z0-9._~+/=-]{4,}/gi, '$1 [REDACTED]')
+    .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey(?:\.v\d+)?)"\s*:\s*(?:"(?:\\.|[^"\\])*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
+}
+function bgRedactUrl(urlStr) {
+  if (typeof urlStr !== 'string') return '';
+  const trimmed = urlStr.trim();
+  if (!trimmed) return '';
+  try {
+    const u = new URL(trimmed);
+    const authPart = (u.username || u.password) ? '***:***@' : '';
+    const queryPart = u.search ? '?***' : '';
+    const hashPart = u.hash ? '#***' : '';
+    return u.protocol + '//' + authPart + u.host + u.pathname + queryPart + hashPart;
+  } catch (_) {
+    return bgRedactSensitiveText(trimmed)
+      .replace(/\?[^#\s]*/g, '?***')
+      .replace(/#[^\s]*/g, '#***');
+  }
+}
 function bgLog(...a) { if (BG_DEBUG_ENABLED) console.log(BG_LOG_PREFIX, ...a); }
 function bgErr(...a) {
-  console.error(BG_LOG_PREFIX, ...a); // errors always log
+  const safeText = bgRedactSensitiveText(a.map(function(x){ return x instanceof Error ? x.message : String(x); }).join(' '));
+  console.error(BG_LOG_PREFIX, safeText); // errors always log (redacted)
   // persist bg errors to storage.local so NTP diagnostics panel can surface them
   try {
-    const entry = { ts: Date.now(), prefix: '[Boxing:BG]', text: a.map(function(x){ return x instanceof Error ? x.message : String(x); }).join(' ') };
+    const entry = { ts: Date.now(), prefix: '[Boxing:BG]', text: safeText };
     chrome.storage && chrome.storage.local && chrome.storage.local.get && chrome.storage.local.get({ bgErrLog: [] }, function(r) {
       try {
         var log = (r.bgErrLog || []).slice(-49);
@@ -37,6 +86,34 @@ try {
   // The NTP page creates/ensures the alarm; the background SW acts as the alarm hub,
   // recording autoBackupDue: true in chrome.storage.local and notifying any open NTP tabs.
   // If no NTP tab is open, the due mark ensures the backup is performed upon next NTP open.
+  const BG_WEBDAV_PERM_KEY = 'webdavPendingPermission';
+
+  async function inspectAndRecordBackgroundWebDAVPermission() {
+    try {
+      if (!api.storage || !api.storage.local || !api.storage.local.get) return;
+      const stored = await api.storage.local.get({ boxingLayout: null, [BG_WEBDAV_PERM_KEY]: null });
+      const settings = stored && stored.boxingLayout && stored.boxingLayout.settings;
+      if (!settings || settings.syncProvider !== 'webdav') return;
+      const url = typeof settings.webdavUrl === 'string' ? settings.webdavUrl.trim() : '';
+      if (!url || !isSafeWebDAVUrl(url, settings.webdavAllowPrivateHost === true)) return;
+      const perm = await ensureWebDAVPermission(url);
+      if (!perm.ok && perm.needPermission && perm.origin) {
+        if (api.storage.local.set) {
+          const prev = stored[BG_WEBDAV_PERM_KEY];
+          const reason = (prev && prev.needed && prev.origin === perm.origin && prev.reason === 'denied')
+            ? 'denied'
+            : 'missing-permission';
+          const permState = { needed: true, origin: perm.origin, source: 'background', reason, updatedAt: Date.now() };
+          await api.storage.local.set({ webdavPendingPermission: permState });
+        }
+      } else if (perm.ok && stored[BG_WEBDAV_PERM_KEY] && stored[BG_WEBDAV_PERM_KEY].origin === perm.origin) {
+        if (api.storage.local.remove) {
+          await api.storage.local.remove(BG_WEBDAV_PERM_KEY);
+        }
+      }
+    } catch (e) { bgErr('inspectAndRecordBackgroundWebDAVPermission error', e); }
+  }
+
   if (typeof chrome !== 'undefined' && chrome.alarms && chrome.alarms.onAlarm) {
     chrome.alarms.onAlarm.addListener(function(alarm) {
       if (alarm.name !== 'boxing-auto-backup') return;
@@ -46,6 +123,10 @@ try {
           chrome.storage.local.set({ autoBackupDue: true });
         }
       } catch (e) { bgErr('Failed to set autoBackupDue flag', e); }
+      // Ticket #123: on background alarm, inspect WebDAV permission read-only via
+      // permissions.contains and persist pending state if ungranted — never prompt
+      // or send a WebDAV request without permission.
+      inspectAndRecordBackgroundWebDAVPermission();
       // Try to send message to any open NTP tab to trigger backup
       try {
         chrome.tabs.query({}, function(tabs) {
@@ -109,20 +190,69 @@ try {
     return null;
   }
 
-  // A2: Chrome MV3 — host_permissions moved to optional_host_permissions for store compliance.
-  // Check whether the extension currently holds origin permission for the WebDAV URL.
-  // Firefox keeps host_permissions as required, so this check always passes there.
-  async function ensureWebDAVPermission(url) {
+  // A2 / Ticket #123: Chrome MV3 keeps https://*/* in optional_host_permissions, and
+  // Firefox MV3 lets users revoke host permissions at runtime. Check actual origin
+  // grant status before any background WebDAV fetch and never fail open on errors.
+  function getWebDAVOriginPattern(url) {
     try {
       const u = new URL(url);
-      const origin = u.origin + '/*';
-      const apiNs = typeof browser !== 'undefined' ? browser : chrome;
-    if (!apiNs.permissions || !apiNs.permissions.contains) return { ok: true }; // older Chrome/missing API
-      const granted = await apiNs.permissions.contains({ origins: [origin] });
-      if (granted) return { ok: true };
-      return { ok: false, needPermission: true, origin };
+      if (u.protocol !== 'https:' || !u.hostname) return '';
+      return u.protocol + '//' + u.hostname + '/*';
     } catch (_) {
-      return { ok: true }; // fail open on unexpected API issues
+      return '';
+    }
+  }
+
+  function checkPermissionsContains(permApi, origin) {
+    return new Promise((resolve, reject) => {
+      try {
+        if (typeof browser !== 'undefined' && permApi === browser.permissions) {
+          const ret1 = permApi.contains({ origins: [origin] });
+          if (ret1 && typeof ret1.then === 'function') ret1.then((v) => resolve(Boolean(v)), reject);
+          else resolve(Boolean(ret1));
+          return;
+        }
+        let settled = false;
+        const ret = permApi.contains({ origins: [origin] }, (granted) => {
+          if (settled) return;
+          settled = true;
+          const lastErr = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.lastError;
+          if (lastErr) reject(new Error(lastErr.message));
+          else resolve(Boolean(granted));
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            (v) => { if (!settled) { settled = true; resolve(Boolean(v)); } },
+            (e) => { if (!settled) { settled = true; reject(e); } }
+          );
+        }
+      } catch (e) {
+        try {
+          const ret1 = permApi.contains({ origins: [origin] });
+          if (ret1 && typeof ret1.then === 'function') ret1.then((v) => resolve(Boolean(v)), reject);
+          else resolve(Boolean(ret1));
+        } catch (e2) {
+          reject(e2);
+        }
+      }
+    });
+  }
+
+  async function ensureWebDAVPermission(url) {
+    const origin = getWebDAVOriginPattern(url);
+    if (!origin) {
+      return { ok: false, needPermission: false, origin: '', error: 'invalid WebDAV origin' };
+    }
+    try {
+      const apiNs = typeof browser !== 'undefined' ? browser : chrome;
+      if (!apiNs || !apiNs.permissions || typeof apiNs.permissions.contains !== 'function') {
+        return { ok: false, needPermission: true, origin, error: 'permissions.contains unavailable' };
+      }
+      const granted = await checkPermissionsContains(apiNs.permissions, origin);
+      if (granted) return { ok: true, origin };
+      return { ok: false, needPermission: true, origin };
+    } catch (e) {
+      return { ok: false, needPermission: true, origin, error: e && e.message ? e.message : String(e) };
     }
   }
 
@@ -148,7 +278,7 @@ try {
 
   async function handleWebDAVTest(msg) {
     const { url, user, pass } = msg;
-    bgLog('WebDAV test via BG:', { url, user: user ? '(set)' : '(empty)' });
+    bgLog('WebDAV test via BG:', { url: bgRedactUrl(url), user: user ? '(set)' : '(empty)' });
     const auth = makeAuthHeader(user, pass);
 
     // Try PROPFIND first (standard WebDAV method, returns 207 on success)
@@ -201,7 +331,7 @@ try {
 
   async function handleWebDAVPut(msg) {
     const { url, user, pass, body } = msg;
-    bgLog('WebDAV PUT via BG:', { url, size: body?.length || 0 });
+    bgLog('WebDAV PUT via BG:', { url: bgRedactUrl(url), size: body?.length || 0 });
     const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -218,7 +348,7 @@ try {
   // PUT/GET — no body, so guardWebDAVRequest(msg, false) applies.
   async function handleWebDAVDelete(msg) {
     const { url, user, pass } = msg;
-    bgLog('WebDAV DELETE via BG:', { url });
+    bgLog('WebDAV DELETE via BG:', { url: bgRedactUrl(url) });
     const h = new Headers();
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -258,7 +388,7 @@ try {
   // GET cloud backup file for sync comparison. Returns status + body text on success.
   async function handleWebDAVGet(msg) {
     const { url, user, pass } = msg;
-    bgLog('WebDAV GET via BG:', { url });
+    bgLog('WebDAV GET via BG:', { url: bgRedactUrl(url) });
     const h = new Headers();
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -290,10 +420,16 @@ try {
       const block = guardWebDAVRequest(msg, true);
       if (block) return block;
     }
-    // A2: Chrome optional_host_permissions — verify origin access before fetch.
+    // A2 / Ticket #123: verify origin permission before fetch (Chrome optional_host_permissions
+    // and Firefox runtime revocations). Return structured flags, never fall open.
     if (msg.type === 'webdav-test' || msg.type === 'webdav-put' || msg.type === 'webdav-get' || msg.type === 'webdav-delete') {
       const perm = await ensureWebDAVPermission(msg.url);
-      if (!perm.ok) return { success: false, needPermission: true, error: 'host permission not granted', origin: perm.origin };
+      if (!perm.ok) {
+        if (perm.needPermission) {
+          return { success: false, needPermission: true, error: 'host permission not granted', origin: perm.origin };
+        }
+        return { success: false, blocked: true, error: perm.error || 'blocked unsafe WebDAV url' };
+      }
     }
     try {
       if (msg.type === 'webdav-test') {
@@ -347,14 +483,187 @@ try {
   const SW_SNAP_MAX_BYTES = 2 * 1024 * 1024; // single-snapshot size cap (2MB)
   const SW_SNAP_INDEX_CAP = 40;              // SW-side bounded directory; NTP owns full rotation
 
+  // Ticket 122 (spec #120 T2): SW-side self-contained explicit allowlist sanitizer
+  // (parity-tested 1:1 against ntp/utils.js). Reused by takePreUpdateSnapshot and
+  // future SW-side backup/snapshot callers (#124).
+  const SW_ALLOWED_TOP_LEVEL_KEYS = Object.freeze([
+    'version', 'schemaVersion', 'boxes', 'nextLargeIndex', 'connections', 'settings', '_meta',
+  ]);
+  const SW_ALLOWED_SETTINGS_KEYS = Object.freeze([
+    'selectedLanguage', 'rememberLastPos', 'zoomLevel', 'darkMode', 'fontSize',
+    'squareCorners', 'autoBackupInterval', 'lastBackupAt', 'headerPinned',
+    'syncProvider', 'urlOpenMode', 'connDeleteAction', 'theme',
+    'autoTitleEnabled', 'autoTitleRules', 'lastSettingsTab',
+    'onboardingCompleted', 'syncLevel', 'syncFileName', 'lastSyncAt',
+    'lastKnownBoxCountBaseline',
+  ]);
+  const SW_ALLOWED_AUTO_TITLE_RULE_KEYS = Object.freeze(['pattern', 'type']);
+  const SW_ALLOWED_META_KEYS = Object.freeze([
+    'revision', 'updatedAt', 'writerId', 'baseRevision', '__groupsMigrated', 'deleted',
+  ]);
+  const SW_ALLOWED_LARGE_BOX_KEYS = Object.freeze([
+    'id', 'type', 'title', 'x', 'y', 'width', 'height',
+    'nextSmallIndex', 'collapseHover', 'pinned', 'isParent', 'viewState', 'children',
+  ]);
+  const SW_ALLOWED_VIEW_STATE_KEYS = Object.freeze([
+    'innerZoom', 'innerPanX', 'innerPanY', 'updatedAt',
+  ]);
+  const SW_ALLOWED_SMALL_BOX_KEYS = Object.freeze([
+    'id', 'type', 'title', 'x', 'y', 'width', 'height',
+    'pinned', 'collapseHover', 'isParent', 'bookmarks',
+  ]);
+  const SW_ALLOWED_BOOKMARK_KEYS = Object.freeze(['id', 'title', 'url']);
+  const SW_ALLOWED_CONN_KEYS = Object.freeze([
+    'id', 'from', 'to', 'source', 'target', 'createdAt', 'props',
+  ]);
+  const SW_ALLOWED_CONN_PROPS_KEYS = Object.freeze([]);
+
+  function swIsPlainObj(v) { return Boolean(v) && typeof v === 'object' && !Array.isArray(v); }
+  function swHasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function swIsScalar(v) {
+    if (typeof v === 'string' || typeof v === 'boolean') return true;
+    if (typeof v === 'number') return Number.isFinite(v);
+    return false;
+  }
+  function swNormDarkMode(v) {
+    if (v === true || v === 'dark') return 'dark';
+    if (v === 'system') return 'system';
+    return 'light';
+  }
+  function swPickScalars(src, keys) {
+    const out = {};
+    for (const k of keys) {
+      if (!swHasOwn(src, k) || src[k] === undefined) continue;
+      if (swIsScalar(src[k])) out[k] = src[k];
+    }
+    return out;
+  }
+  function swSanitizeViewState(vs) {
+    if (!swIsPlainObj(vs)) return undefined;
+    const out = {};
+    for (const k of SW_ALLOWED_VIEW_STATE_KEYS) {
+      if (swHasOwn(vs, k) && typeof vs[k] === 'number' && Number.isFinite(vs[k])) out[k] = vs[k];
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+  }
+  function swSanitizeBookmark(bm) {
+    return swIsPlainObj(bm) ? swPickScalars(bm, SW_ALLOWED_BOOKMARK_KEYS) : null;
+  }
+  function swSanitizeSmallBox(sb) {
+    if (!swIsPlainObj(sb)) return null;
+    const out = {};
+    for (const k of SW_ALLOWED_SMALL_BOX_KEYS) {
+      if (!swHasOwn(sb, k) || sb[k] === undefined) continue;
+      if (k === 'bookmarks') {
+        out.bookmarks = Array.isArray(sb.bookmarks) ? sb.bookmarks.map(swSanitizeBookmark).filter(Boolean) : [];
+      } else if (swIsScalar(sb[k])) {
+        out[k] = sb[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeLargeBox(lb) {
+    if (!swIsPlainObj(lb)) return null;
+    const out = {};
+    for (const k of SW_ALLOWED_LARGE_BOX_KEYS) {
+      if (!swHasOwn(lb, k) || lb[k] === undefined) continue;
+      if (k === 'viewState') {
+        const cleanVs = swSanitizeViewState(lb.viewState);
+        if (cleanVs !== undefined) out.viewState = cleanVs;
+      } else if (k === 'children') {
+        out.children = Array.isArray(lb.children) ? lb.children.map(swSanitizeSmallBox).filter(Boolean) : [];
+      } else if (swIsScalar(lb[k])) {
+        out[k] = lb[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeConn(conn) {
+    if (!swIsPlainObj(conn)) return null;
+    const out = {};
+    for (const k of SW_ALLOWED_CONN_KEYS) {
+      if (!swHasOwn(conn, k) || conn[k] === undefined) continue;
+      if (k === 'props') {
+        if (swIsPlainObj(conn.props)) out.props = swPickScalars(conn.props, SW_ALLOWED_CONN_PROPS_KEYS);
+      } else if (swIsScalar(conn[k])) {
+        out[k] = conn[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeSettings(settings) {
+    if (settings === null) return null;
+    if (settings === undefined) return undefined;
+    if (!swIsPlainObj(settings)) return {};
+    const out = {};
+    for (const k of SW_ALLOWED_SETTINGS_KEYS) {
+      if (!swHasOwn(settings, k) || settings[k] === undefined) continue;
+      if (k === 'darkMode') {
+        out.darkMode = swNormDarkMode(settings.darkMode);
+      } else if (k === 'autoTitleRules') {
+        const rules = [];
+        for (const r of (Array.isArray(settings.autoTitleRules) ? settings.autoTitleRules : [])) {
+          if (!swIsPlainObj(r)) continue;
+          const clean = {};
+          for (const rk of SW_ALLOWED_AUTO_TITLE_RULE_KEYS) {
+            if (swHasOwn(r, rk) && typeof r[rk] === 'string') clean[rk] = r[rk];
+          }
+          if (typeof clean.pattern === 'string' && typeof clean.type === 'string') rules.push(clean);
+        }
+        out.autoTitleRules = rules;
+      } else if (swIsScalar(settings[k])) {
+        out[k] = settings[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeMeta(meta) {
+    if (!swIsPlainObj(meta)) return undefined;
+    const out = {};
+    for (const k of SW_ALLOWED_META_KEYS) {
+      if (!swHasOwn(meta, k) || meta[k] === undefined) continue;
+      if (k === 'deleted') {
+        if (swIsPlainObj(meta.deleted)) {
+          const cleanDel = {};
+          for (const [dk, dv] of Object.entries(meta.deleted)) {
+            if (typeof dv === 'number' && Number.isFinite(dv)) cleanDel[dk] = dv;
+          }
+          out.deleted = cleanDel;
+        }
+      } else if (swIsScalar(meta[k])) {
+        out[k] = meta[k];
+      }
+    }
+    return out;
+  }
+  function swSanitizeLayoutForBackup(raw) {
+    if (!swIsPlainObj(raw)) return {};
+    const out = {};
+    for (const k of SW_ALLOWED_TOP_LEVEL_KEYS) {
+      if (!swHasOwn(raw, k) || raw[k] === undefined) continue;
+      if (k === 'boxes') {
+        out.boxes = Array.isArray(raw.boxes) ? raw.boxes.map(swSanitizeLargeBox).filter(Boolean) : [];
+      } else if (k === 'connections') {
+        out.connections = Array.isArray(raw.connections) ? raw.connections.map(swSanitizeConn).filter(Boolean) : [];
+      } else if (k === 'settings') {
+        const cleanSettings = swSanitizeSettings(raw.settings);
+        if (cleanSettings !== undefined) out.settings = cleanSettings;
+      } else if (k === '_meta') {
+        const cleanMeta = swSanitizeMeta(raw._meta);
+        if (cleanMeta !== undefined) out._meta = cleanMeta;
+      } else if (swIsScalar(raw[k])) {
+        out[k] = raw[k];
+      }
+    }
+    return out;
+  }
+  root.__boxingSwSanitizeLayoutForBackup = swSanitizeLayoutForBackup;
+
   async function takePreUpdateSnapshot() {
     try {
       const { boxingLayout } = await api.storage.local.get({ boxingLayout: null });
-      if (!boxingLayout) return; // no data yet (fresh install) — nothing to protect
-      const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: JSON.parse(JSON.stringify(boxingLayout)) };
-      if (snap.data && typeof snap.data === 'object' && Object.prototype.hasOwnProperty.call(snap.data, 'groups')) {
-        delete snap.data.groups; // groups are runtime-only, never persisted
-      }
+      if (!swIsPlainObj(boxingLayout)) return; // no valid layout object (fresh install or corrupt non-object) — nothing to snapshot
+      const snap = { ts: Date.now(), schemaVersion: Number(boxingLayout.schemaVersion) || 1, data: swSanitizeLayoutForBackup(boxingLayout) };
       const json = JSON.stringify(snap);
       if (json.length > SW_SNAP_MAX_BYTES) { bgErr('pre-update snapshot skipped: ' + json.length + 'B exceeds 2MB single cap'); return; }
       await api.storage.local.set({ [SW_SNAP_KEY_PREFIX + snap.ts]: snap });

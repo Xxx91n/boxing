@@ -1319,6 +1319,49 @@
     "message": "Error al guardar la configuración limpiada: las credenciales almacenadas se mantuvieron. Vuelva a intentarlo.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   },
+  "webdavErrPermission": {
+    "message": "Concede permiso para $origin$ para continuar",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "Permiso denegado para $origin$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "La sincronización WebDAV en segundo plano necesita permiso para $origin$ antes de poder conectarse.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "El acceso a $origin$ fue denegado o revocado. Concede el permiso para continuar.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "Conceder permiso"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "Acceso concedido para $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
   "titleInputLabel": {
     "message": "Título de la caja",
     "description": "Accessible name for the editable box title field"

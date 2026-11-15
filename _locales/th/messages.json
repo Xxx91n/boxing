@@ -1319,6 +1319,49 @@
     "message": "ไม่สามารถบันทึกการกำหนดค่าที่ล้างแล้ว — ข้อมูลประจำตัวที่เก็บไว้ยังคงอยู่ โปรดลองอีกครั้ง",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   },
+  "webdavErrPermission": {
+    "message": "โปรดอนุญาตสิทธิ์สำหรับ $origin$ เพื่อดำเนินการต่อ",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "สิทธิ์สำหรับ $origin$ ถูกปฏิเสธ",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "การซิงค์ WebDAV เบื้องหลังต้องได้รับสิทธิ์สำหรับ $origin$ ก่อนจึงจะเชื่อมต่อได้",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "การเข้าถึง $origin$ ถูกปฏิเสธหรือเพิกถอน โปรดอนุญาตสิทธิ์เพื่อดำเนินการต่อ",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "อนุญาตสิทธิ์"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "อนุญาตการเข้าถึงสำหรับ $origin$ แล้ว",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
   "titleInputLabel": {
     "message": "ชื่อกล่อง",
     "description": "Accessible name for the editable box title field"

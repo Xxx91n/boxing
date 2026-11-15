@@ -31,7 +31,7 @@ import {
   setProvisionalGhost, setSelectedConnId, setConfirmCallback, setSizeObserver,
   saveDebounceTimer, setSaveDebounceTimer,
 } from './state.js';
-import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, screenToWorld, smallKey, snapCanvas, snapInner } from './utils.js';
+import { CANVAS_GRID, INNER_GRID, LARGE_DEF_H, LARGE_DEF_W, LARGE_MIN_H, LARGE_MIN_W, MAX_ZOOM, MIN_ZOOM, RESIZE_SNAP, SMALL_DEF_H, SMALL_DEF_W, SMALL_MIN_H, SMALL_MIN_W, SPATIAL_THRESHOLD, ZOOM_STEPS, buildSpatialGrid, elasticSnap, hexToRgbTriplet, largeKey, mergeById, migrateLayout, normalizeBookmarkUrl, querySpatialNearby, redactSensitiveLogText, sanitizeLayoutForBackup, screenToWorld, smallKey, snapCanvas, snapInner } from './utils.js';
 import { initI18n, loadI18nStore, i18n, applyI18n, currentLang, SUPPORTED_LANGS } from './i18n.js';
 // Ticket 07 (architecture-recovery): storage write facade — write chain + loop guard +
 // onChanged listener moved verbatim to ./storage.js; all chrome.storage writes go through it.
@@ -136,7 +136,7 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
   const layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   // Ticket 07 (architecture-recovery): inject ntp.js-scope deps into the storage write facade
   // (./storage.js) — write chain + loop guard + onChanged listener moved there verbatim.
-  initStorageFacade({ api, debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning, mirrorWriter: () => { persistBootThemeMirror((mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } }); }, applyDarkMode });
+  initStorageFacade({ api, debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning, mirrorWriter: () => { persistBootThemeMirror((mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } }); }, applyDarkMode, onWebDAVPendingPermissionChanged: () => { try { if (typeof window.__boxingRefreshWebDAVPermissionUi === 'function') window.__boxingRefreshWebDAVPermissionUi(); } catch (_) {} } });
 
   // ── constants ──────────────────────────────────────────
   const DEBUG = true;
@@ -183,7 +183,8 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
         return JSON.stringify(a);
       } catch (_) { return String(a); }
     }).join(' ');
-    return { ts, level, prefix, text: text.length > 800 ? text.slice(0, 800) + '…' : text };
+    const safeText = redactSensitiveLogText(text);
+    return { ts, level, prefix, text: safeText.length > 800 ? safeText.slice(0, 800) + '…' : safeText };
   }
 
   function __logPush(level, args) {
@@ -192,9 +193,9 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
     __logRing.push(entry);
     if (__logRing.length > LOG_RING_MAX) __logRing.splice(0, __logRing.length - LOG_RING_MAX);
     if (window.__BOXING_DEBUG__) {
-      if (level === LOG_ERROR) console.error(entry.prefix, ...args);
-      else if (level === LOG_WARN) console.warn(entry.prefix, ...args);
-      else console.log(entry.prefix, ...args);
+      if (level === LOG_ERROR) console.error(entry.prefix, entry.text);
+      else if (level === LOG_WARN) console.warn(entry.prefix, entry.text);
+      else console.log(entry.prefix, entry.text);
     }
   }
 
@@ -321,7 +322,7 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
     getLogRing: () => __logRing.slice(),
     exportLog: () => {
       var all = __logRing.slice();
-      if (__bgErrLogCache && __bgErrLogCache.length) all.push.apply(all, __bgErrLogCache.map(function(e){ return { ts: e.ts, prefix: e.prefix || '[Boxing:BG]', text: e.text || String(e) }; }));
+      if (__bgErrLogCache && __bgErrLogCache.length) all.push.apply(all, __bgErrLogCache.map(function(e){ return { ts: e.ts, prefix: e.prefix || '[Boxing:BG]', text: redactSensitiveLogText(e.text || String(e)) }; }));
       all.sort(function(a,b){ return a.ts - b.ts; });
       return all.map(function(e){ return e.ts + ' ' + e.prefix + ' ' + e.text; }).join('\n');
     },
@@ -337,6 +338,7 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
     get connById() { return connById; },
     // Architecture acceptance hooks (Playwright)
     stripGroupsForPersist,
+    sanitizeLayoutForBackup,
     migrateLayout,
     gcTombstones,
     buildSpatialGrid,

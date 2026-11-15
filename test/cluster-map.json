@@ -60,7 +60,9 @@
       "boxing-conflict-copy-safe-delete.spec.ts",
       "boxing-conflict-copy-additions.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts",
-      "boxing-about-quick-entries.spec.ts"
+      "boxing-about-quick-entries.spec.ts",
+      "boxing-webdav-permission.spec.ts",
+      "boxing-backup-credential-allowlist.spec.ts"
     ],
     "ntp/render.js": [
       "boxing-auto-expand.spec.ts",
@@ -127,7 +129,9 @@
       "boxing-conflict-copy-additions.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts",
       "boxing-merge-three-way.spec.ts",
-      "boxing-wave11-1017.spec.ts"
+      "boxing-wave11-1017.spec.ts",
+      "boxing-webdav-permission.spec.ts",
+      "boxing-backup-credential-allowlist.spec.ts"
     ],
     "ntp/persist.js": [
       "boxing-accent-theme.spec.ts",
@@ -143,10 +147,12 @@
       "boxing-sync-level.spec.ts",
       "boxing-sync.spec.ts",
       "boxing-webdav.spec.ts",
+      "boxing-webdav-permission.spec.ts",
       "data-recovery.spec.ts",
       "boxing-dr-export-envelope.spec.ts",
       "boxing-merge-three-way.spec.ts",
-      "boxing-wave11-1017.spec.ts"
+      "boxing-wave11-1017.spec.ts",
+      "boxing-backup-credential-allowlist.spec.ts"
     ],
     "ntp/credentials.js": [
       "boxing-cred-encrypt.spec.ts",
@@ -179,7 +185,9 @@
       "boxing-backup-passphrase.spec.ts",
       "boxing-wave10-1016.spec.ts",
       "boxing-wave11-1017.spec.ts",
-      "boxing-about-quick-entries.spec.ts"
+      "boxing-about-quick-entries.spec.ts",
+      "boxing-webdav-permission.spec.ts",
+      "boxing-backup-credential-allowlist.spec.ts"
     ],
     "ntp/onboarding.js": [
       "boxing-debug.spec.ts",
@@ -200,7 +208,8 @@
       "boxing-conflict-copy-safe-delete.spec.ts",
       "boxing-conflict-copy-additions.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts",
-      "boxing-about-quick-entries.spec.ts"
+      "boxing-about-quick-entries.spec.ts",
+      "boxing-webdav-permission.spec.ts"
     ],
     "ntp/state.js": [
       "boxing-architecture-acceptance.spec.ts",
@@ -226,7 +235,8 @@
       "boxing-dr-export-envelope.spec.ts",
       "boxing-wave11-1017.spec.ts",
       "boxing-conflict-copy-additions.spec.ts",
-      "boxing-conflict-field-adjudication.spec.ts"
+      "boxing-conflict-field-adjudication.spec.ts",
+      "boxing-backup-credential-allowlist.spec.ts"
     ],
     "ntp/favicon.js": [
       "boxing-favicon-fixture.spec.ts",

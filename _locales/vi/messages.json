@@ -1319,6 +1319,49 @@
     "message": "Không thể lưu cấu hình đã dọn — thông tin đăng nhập đã lưu vẫn giữ nguyên. Vui lòng thử lại.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
   },
+  "webdavErrPermission": {
+    "message": "Hãy cấp quyền cho $origin$ để tiếp tục",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "Quyền truy cập $origin$ đã bị từ chối",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "Đồng bộ WebDAV nền cần quyền truy cập $origin$ trước khi kết nối.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "Quyền truy cập $origin$ đã bị từ chối hoặc thu hồi. Hãy cấp quyền để tiếp tục.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "Cấp quyền"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "Đã cấp quyền truy cập cho $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
   "titleInputLabel": {
     "message": "Tiêu đề hộp",
     "description": "Accessible name for the editable box title field"
