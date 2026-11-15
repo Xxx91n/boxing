@@ -174,7 +174,7 @@ export function initConnFacade(deps) {
     if (getConnDeleteTrigger() !== 'select+delete') return;
     if (e.key !== 'Backspace' && e.key !== 'Delete') return;
     if (!selectedConnId) return;
-    // Avoid hijacking Backspace while editing text inputs / contenteditable
+    // Avoid hijacking Backspace while editing a text field (the box titles are inputs too)
     const ae = document.activeElement;
     if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
     e.preventDefault();

@@ -36,9 +36,17 @@ if (!/JSON\.stringify\(data\)\.length\s*>\s*2_000_000/.test(settingsUi)) {
   violations.push('ntp/settings-ui.js import payload is not capped at 2_000_000 bytes');
 }
 
-const pasteHandlers = (render.match(/execCommand\('insertText', false, text\)/g) || []).length;
-if (pasteHandlers < 3) {
-  violations.push(`ntp/render.js plain-text paste handlers: expected >=3, found ${pasteHandlers}`);
+// Plain-text paste. The three box titles are native <input> elements now, so their
+// paste handling lives in ONE shared helper (it inserts clipboardData text/plain
+// only); the contract is that the helper exists, nothing else inserts rich text, and
+// the old contentEditable execCommand path is gone rather than bypassed.
+const pasteHelper = /function insertPlainTitleText\(/.test(render)
+  && /getData\('text\/plain'\)/.test(render);
+if (!pasteHelper) {
+  violations.push('ntp/render.js no longer inserts pasted box titles as plain text only');
+}
+if (/execCommand\(/.test(render)) {
+  violations.push('ntp/render.js still uses document.execCommand — the title inputs insert text directly');
 }
 
 // D11: every outbound endpoint declared in the runtime source must be

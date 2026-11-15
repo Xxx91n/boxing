@@ -8,12 +8,52 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
 const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html')).href;
 
-// Ticket 10 (wave4 P2): clicking a box title (large / small / inner crumb) must enter
-// rename mode with the WHOLE name pre-selected so typing replaces it directly, and the
-// crumb title must also gain focus. mousedown interactions are synthetic (ticket-27
-// convention: cross-browser deterministic dispatch); text input uses real keyboard on
-// the focused contenteditable.
+// Ticket 10 (wave4 P2) + ticket 121 (#120 T1 / D1): the three box titles — the large
+// box title, the small box title and the title on the inner page — are native single
+// line <input> elements. This spec checks what the user actually gets:
+//
+//   * the first REAL click on an unfocused title selects the whole name;
+//   * a second REAL click on the already focused title drops that selection and puts
+//     the caret where the user clicked (no re-select, no jump to either end);
+//   * Enter commits, Escape cancels, plain blur commits, and an IME composition
+//     swallows Enter until the composition ends;
+//   * paste is plain text only, CRLF/LF/CR become one space, edges are trimmed and an
+//     empty title falls back to that box type's localized default name;
+//   * long titles keep the ellipsis while resting while the stored text stays whole.
+//
+// These are behaviour assertions, not a rewrite of the old contentEditable internals:
+// the previous version pinned `span[contenteditable]`, `window.getSelection()` ranges
+// and per-handler `execCommand` counts. The control changed, so the assertions follow
+// the control's own observable surface (value / selectionStart / selectionEnd).
 async function boot(page: Page) {
+  await page.addInitScript(() => {
+    // Counts how often a title VALUE is really persisted (the file:// lane keeps the
+    // layout in localStorage). Writes that leave both titles untouched — the storage
+    // facade also persists view state — are ignored, so "one edit, one write" means
+    // what it says. Test-side instrumentation only: product code is not touched.
+    localStorage.removeItem('__titleWriteCount');
+    const titleSignature = (raw: string | null) => {
+      try {
+        const parsed = JSON.parse(raw || 'null');
+        const lb = parsed && parsed.boxes && parsed.boxes[0];
+        const sb = lb && lb.children && lb.children[0];
+        return JSON.stringify([lb && lb.title, sb && sb.title]);
+      } catch {
+        return 'unreadable';
+      }
+    };
+    const realSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (key === 'boxingLayout') {
+        const previous = localStorage.getItem('boxingLayout');
+        if (previous === null || titleSignature(previous) !== titleSignature(value)) {
+          localStorage.setItem.call(this, '__titleWriteCount',
+            String(Number(localStorage.getItem('__titleWriteCount') || '0') + 1));
+        }
+      }
+      return realSetItem.call(this, key, value);
+    };
+  });
   await page.goto(NTP_URL, { waitUntil: 'domcontentloaded', timeout: 10000 });
   await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
   await dismissOnboarding(page);
@@ -41,236 +81,467 @@ async function seedTitles(page: Page) {
   await expect(page.locator('.large-box')).toHaveCount(1);
 }
 
-function jsClickTitle(page: Page, sel: string) {
+// Selection state of a title input, read straight off the control.
+function titleState(page: Page, sel: string) {
   return page.evaluate((s) => {
-    const el = document.querySelector(s) as HTMLElement | null;
-    if (!el) return false;
-    const r = el.getBoundingClientRect();
-    const opts = { bubbles: true, cancelable: true, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 };
-    el.dispatchEvent(new MouseEvent('mousedown', opts));
-    el.dispatchEvent(new MouseEvent('mouseup', opts));
-    return true;
+    const el = document.querySelector(s) as HTMLInputElement | null;
+    if (!el) return null;
+    const active = document.activeElement as HTMLElement | null;
+    return {
+      value: el.value,
+      start: el.selectionStart as number,
+      end: el.selectionEnd as number,
+      selected: el.value.slice(el.selectionStart ?? 0, el.selectionEnd ?? 0),
+      focused: active === el,
+      activeId: active?.id || '',
+      activeClass: (active?.className || '').toString(),
+      tag: el.tagName,
+      type: el.getAttribute('type'),
+    };
   }, sel);
 }
 
-function selState(page: Page) {
-  return page.evaluate(() => {
-    const sel = window.getSelection();
-    const active = document.activeElement as HTMLElement | null;
-    return {
-      text: sel ? sel.toString() : '',
-      rangeCount: sel ? sel.rangeCount : 0,
-      activeId: active?.id || '',
-      activeClass: (active?.className || '').toString(),
-      activeEditable: active?.isContentEditable || false,
-    };
-  });
+// A REAL mouse click at a horizontal fraction of the title input's own box. The
+// returned caret index comes from the control itself, so the assertions never depend
+// on guessing glyph widths.
+async function clickTitleAt(page: Page, sel: string, fraction: number) {
+  const box = await page.locator(sel).boundingBox();
+  if (!box) throw new Error(sel + ' has no box');
+  await page.mouse.click(box.x + box.width * fraction, box.y + box.height / 2);
+  return (await titleState(page, sel))!;
 }
 
 const layoutTitle = (page: Page) =>
   page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].title);
 const childTitle = (page: Page) =>
   page.evaluate(() => (window as any).__boxingDebug.layout.boxes[0].children[0].title);
+const writeCount = async (page: Page) => {
+  // Reads back the mock-storage layout so any write still queued in the facade's
+  // serial chain (and its cross-tab merge) is drained before the counter is read —
+  // reading must not write, which is what saveLayout() itself would do.
+  await page.evaluate(async () => {
+    await (window as any).__boxingDebug.storageGet('boxingLayout');
+  });
+  return page.evaluate(() => Number(localStorage.getItem('__titleWriteCount') || '0'));
+};
+const resetWriteCount = (page: Page) =>
+  page.evaluate(() => localStorage.setItem('__titleWriteCount', '0'));
 
-test.describe('Ticket 10 - title click selects all (large / small / crumb)', () => {
+test.describe('Ticket 10/121 - native title inputs: first click selects all, later clicks place the caret', () => {
 
-  test('large title: click selects whole name, typing replaces, Enter saves, Escape restores', async ({ page }) => {
-    test.setTimeout(30000);
+  test('large title: first real click selects everything, typing replaces, Enter saves once', async ({ page }) => {
+    test.setTimeout(40000);
     await boot(page);
     await seedTitles(page);
 
     const boxBefore = await page.locator('.large-box').boundingBox();
-    expect(await jsClickTitle(page, '.large-box__title')).toBe(true);
+    await page.locator('.large-box__title').click();
 
-    // AC1: selection string === current title text; editor focused.
-    const after = await selState(page);
-    expect(after.text).toBe('Alpha');
-    expect(after.activeEditable).toBe(true);
-    expect(after.activeClass).toContain('large-box__title');
+    // The whole name is selected and the input owns the focus.
+    let state = (await titleState(page, '.large-box__title'))!;
+    expect(state.tag).toBe('INPUT');
+    expect(state.type).toBe('text');
+    expect(state.selected).toBe('Alpha');
+    expect(state.focused).toBe(true);
+    expect(state.activeClass).toContain('large-box__title');
 
-    // AC4: clicking the title must not start a box drag.
+    // Clicking the title must not drag the box.
     expect(await page.locator('.large-box').boundingBox()).toEqual(boxBefore);
 
-    // AC3: typing replaces the whole name; Enter blurs and persists via the blur handler.
+    // Typing replaces the whole name; Enter commits; the blur that follows Enter must
+    // not persist the same edit a second time.
+    await resetWriteCount(page);
     await page.keyboard.type('Gamma', { delay: 20 });
-    await expect(page.locator('.large-box__title')).toHaveText('Gamma');
+    await expect(page.locator('.large-box__title')).toHaveValue('Gamma');
     await page.keyboard.press('Enter');
     await expect.poll(() => layoutTitle(page)).toBe('Gamma');
-    const blurred = await selState(page);
-    expect(blurred.activeClass).not.toContain('large-box__title');
+    expect((await titleState(page, '.large-box__title'))!.focused).toBe(false);
+    expect(await writeCount(page)).toBe(1);
 
-    // AC3: Escape restores the previous name and blurs without saving.
-    await jsClickTitle(page, '.large-box__title');
-    expect((await selState(page)).text).toBe('Gamma');
+    // Escape throws this edit away: the stored name stays and the blur after Escape
+    // does not write the abandoned text back.
+    await resetWriteCount(page);
+    await page.locator('.large-box__title').click();
+    expect((await titleState(page, '.large-box__title'))!.selected).toBe('Gamma');
     await page.keyboard.type('X', { delay: 20 });
     await page.keyboard.press('Escape');
-    await expect(page.locator('.large-box__title')).toHaveText('Gamma');
-    await expect.poll(() => layoutTitle(page)).toBe('Gamma');
+    await expect(page.locator('.large-box__title')).toHaveValue('Gamma');
+    expect(await layoutTitle(page)).toBe('Gamma');
+    expect(await writeCount(page)).toBe(0);
   });
 
-  test('small title: click selects whole name, typing replaces, Enter saves', async ({ page }) => {
-    test.setTimeout(30000);
+  test('large title: the second real click collapses the selection and puts the caret where it landed', async ({ page }) => {
+    test.setTimeout(40000);
+    await boot(page);
+    await seedTitles(page);
+
+    await page.locator('.large-box__title').click();
+    expect((await titleState(page, '.large-box__title'))!.selected).toBe('Alpha');
+
+    // Real click in the middle area of the focused title: the selection collapses and
+    // the caret sits inside the text, not at either end.
+    const middle = await clickTitleAt(page, '.large-box__title', 0.4);
+    expect(middle.focused).toBe(true);
+    expect(middle.start).toBe(middle.end);
+    expect(middle.start).toBeGreaterThan(0);
+    expect(middle.start).toBeLessThan('Alpha'.length);
+
+    // A second, further-right click moves the caret further right — plain native
+    // caret placement, never a fresh select-all.
+    const right = await clickTitleAt(page, '.large-box__title', 0.6);
+    expect(right.start).toBe(right.end);
+    expect(right.start).toBeGreaterThan(middle.start);
+
+    // Edit around that caret: insert a letter, delete a neighbour, and save.
+    await page.keyboard.press('Home');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.type('X');
+    await expect(page.locator('.large-box__title')).toHaveValue('AlXpha');
+    await page.keyboard.press('Backspace');
+    await expect(page.locator('.large-box__title')).toHaveValue('Alpha');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Backspace'); // removes "h", leaving "Alpa"
+    await expect(page.locator('.large-box__title')).toHaveValue('Alpa');
+
+    await page.keyboard.press('Enter');
+    await expect.poll(() => layoutTitle(page)).toBe('Alpa');
+
+    // The edit survives a real reload, not just memory.
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+    await expect(page.locator('.large-box__title')).toHaveValue('Alpa');
+    expect(await layoutTitle(page)).toBe('Alpa');
+  });
+
+  test('small title: same click contract, Enter saves, Escape restores', async ({ page }) => {
+    test.setTimeout(40000);
     await boot(page);
     await seedTitles(page);
     await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
     await expect(page.locator('.small-box__title')).toHaveCount(1);
 
     const boxBefore = await page.locator('.small-box').boundingBox();
-    expect(await jsClickTitle(page, '.small-box__title')).toBe(true);
+    await page.locator('.small-box__title').click();
 
-    const after = await selState(page);
-    expect(after.text).toBe('Beta');
-    expect(after.activeEditable).toBe(true);
-    expect(after.activeClass).toContain('small-box__title');
+    let state = (await titleState(page, '.small-box__title'))!;
+    expect(state.tag).toBe('INPUT');
+    expect(state.selected).toBe('Beta');
+    expect(state.focused).toBe(true);
     expect(await page.locator('.small-box').boundingBox()).toEqual(boxBefore);
 
     await page.keyboard.type('Delta', { delay: 20 });
-    await expect(page.locator('.small-box__title')).toHaveText('Delta');
+    await expect(page.locator('.small-box__title')).toHaveValue('Delta');
     await page.keyboard.press('Enter');
     await expect.poll(() => childTitle(page)).toBe('Delta');
 
-    await jsClickTitle(page, '.small-box__title');
-    expect((await selState(page)).text).toBe('Delta');
-    await page.keyboard.type('Y', { delay: 20 });
+    // Second real click: caret inside the name, no re-select.
+    const middle = await clickTitleAt(page, '.small-box__title', 0.4);
+    expect(middle.start).toBe(middle.end);
+    expect(middle.start).toBeGreaterThan(0);
+    expect(middle.start).toBeLessThan('Delta'.length);
+    await page.keyboard.type('Y');
+    const edited = (await titleState(page, '.small-box__title'))!.value;
+    expect(edited).toHaveLength('Delta'.length + 1);
+    expect(edited.at(middle.start)).toBe('Y');
+
     await page.keyboard.press('Escape');
-    await expect(page.locator('.small-box__title')).toHaveText('Delta');
+    await expect(page.locator('.small-box__title')).toHaveValue('Delta');
     await expect.poll(() => childTitle(page)).toBe('Delta');
   });
 
-  test('crumb title: click selects all AND gains focus; Enter saves, Escape restores', async ({ page }) => {
-    test.setTimeout(30000);
+  test('inner-page title: first click selects all, second click places the caret, Enter saves once', async ({ page }) => {
+    test.setTimeout(40000);
     await boot(page);
     await seedTitles(page);
     await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
-    await expect(page.locator('#inner-crumb-title')).toHaveText('Alpha');
+    await expect(page.locator('#inner-crumb-title')).toHaveValue('Alpha');
 
-    expect(await jsClickTitle(page, '#inner-crumb-title')).toBe(true);
+    await page.locator('#inner-crumb-title').click();
+    let state = (await titleState(page, '#inner-crumb-title'))!;
+    expect(state.tag).toBe('INPUT');
+    expect(state.selected).toBe('Alpha');
+    expect(state.focused).toBe(true);
+    expect(state.activeId).toBe('inner-crumb-title');
 
-    // AC2: crumb gets the selection AND focus (pre-ticket: no focus() call at all).
-    const after = await selState(page);
-    expect(after.text).toBe('Alpha');
-    expect(after.activeId).toBe('inner-crumb-title');
-    expect(after.activeEditable).toBe(true);
-
-    // AC3 parity: Enter blurs (onblur saves); Escape restores without saving.
+    // Enter commits exactly once, even though a blur follows it.
+    await resetWriteCount(page);
     await page.keyboard.type('Crumbed', { delay: 20 });
-    await expect(page.locator('#inner-crumb-title')).toHaveText('Crumbed');
     await page.keyboard.press('Enter');
     await expect.poll(() => layoutTitle(page)).toBe('Crumbed');
+    expect(await writeCount(page)).toBe(1);
 
-    await jsClickTitle(page, '#inner-crumb-title');
-    expect((await selState(page)).text).toBe('Crumbed');
-    await page.keyboard.type('Z', { delay: 20 });
+    const middle = await clickTitleAt(page, '#inner-crumb-title', 0.4);
+    expect(middle.start).toBe(middle.end);
+    expect(middle.start).toBeGreaterThan(0);
+    expect(middle.start).toBeLessThan('Crumbed'.length);
+    await page.keyboard.type('Z');
+    const edited = (await titleState(page, '#inner-crumb-title'))!.value;
+    expect(edited.at(middle.start)).toBe('Z');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => layoutTitle(page)).toBe(edited);
+
+    // Escape after a fresh click restores the stored name.
+    await page.locator('#inner-crumb-title').click();
+    await page.keyboard.type('Q', { delay: 20 });
     await page.keyboard.press('Escape');
-    await expect(page.locator('#inner-crumb-title')).toHaveText('Crumbed');
-    await expect.poll(() => layoutTitle(page)).toBe('Crumbed');
+    await expect(page.locator('#inner-crumb-title')).toHaveValue(edited);
+    expect(await layoutTitle(page)).toBe(edited);
   });
 
-  test('source contract: one shared helper, three mousedown sites, SEC-03 + ticket-09 pipeline intact', () => {
-    const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
-    // Shared helper defined once...
-    expect((src.match(/function selectAllTitleText\(/g) || []).length).toBe(1);
-    // focus-state machine defined once...
-    expect((src.match(/function makeTitleFocusMachine\(/g) || []).length).toBe(1);
-    // ...wired into exactly the three title surfaces.
-    expect((src.match(/makeTitleFocusMachine\(title\)/g) || []).length).toBe(2);   // large + small
-    expect((src.match(/makeTitleFocusMachine\(innerCrumbTitle\)/g) || []).length).toBe(1); // crumb
-    // AC4: crumb Enter/Escape contract present.
-    expect(src).toContain('innerCrumbTitle.onkeydown');
-    // SEC-03: plain-text paste stays on all three editable titles.
-    expect((src.match(/document\.execCommand\('insertText', false, text\)/g) || []).length).toBe(3);
-    // Ticket 09 scope untouched: create pipeline still renders before fire-and-forget save.
-    expect(src).not.toContain('await saveLayout');
-    expect((src.match(/void saveLayout\(\);/g) || []).length).toBe(3);
-  });
-
-  test('source contract: per-focus flag + mouseup re-assert guard present', () => {
-    const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
-    // Per-focus-cycle flag (not a bare "first ever click" boolean) gates the select-all.
-    expect(src).toContain('let selectedThisFocus = false;');
-    expect(src).toContain('let guardFirstMouseUp = false;');
-    expect(src).toContain('if (!selectedThisFocus) {');
-    // blur resets both flags so the next focus cycle re-selects.
-    expect(src).toContain('selectedThisFocus = false;');
-    // mouseup normalization guard re-asserts the swallowed first-click select-all.
-    expect(src).toContain('if (guardFirstMouseUp) {');
-    expect(src).toContain('e.preventDefault();');
-  });
-
-  test('second activation places a native caret (first click still selects all)', async ({ page }) => {
-    test.setTimeout(30000);
+  test('plain blur commits; Enter during an IME composition does not', async ({ page }) => {
+    test.setTimeout(60000);
     await boot(page);
     await seedTitles(page);
 
-    // Deterministic first activation: synthetic mousedown/mouseup → focus + select-all.
-    expect(await jsClickTitle(page, '.large-box__title')).toBe(true);
-    expect((await selState(page)).text).toBe('Alpha');
-
-    // Second activation: a real (trusted) click on the already-focused title must collapse
-    // the selection to a native caret instead of re-selecting the whole name.
+    // Plain blur (focus moved to another real control) commits the trimmed text.
     await page.locator('.large-box__title').click();
-    const after = await page.evaluate(() => {
-      const sel = window.getSelection();
-      const active = document.activeElement as HTMLElement | null;
-      return { collapsed: sel ? sel.isCollapsed : false, active: (active?.className || '').toString() };
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.type('  Blurred  ');
+    await page.locator('#q').click();
+    await expect.poll(() => layoutTitle(page)).toBe('Blurred');
+    await expect(page.locator('.large-box__title')).toHaveValue('Blurred');
+    expect(await writeCount(page), 'a plain blur persists the edit exactly once').toBe(1);
+
+    // While an IME composition is running, Enter belongs to the candidate list and
+    // must not commit. Chromium gets its real composition through CDP; the Firefox
+    // lane dispatches the same event shape (isComposing) the browser would produce.
+    await page.locator('.large-box__title').click();
+    await resetWriteCount(page);
+    const cdp = await page.context().newCDPSession(page).catch(() => null);
+    if (cdp) {
+      try {
+        await cdp.send('Input.imeSetComposition', { text: 'にほん', selectionStart: 3, selectionEnd: 3 });
+      } catch {
+        // Older Chromium builds may not accept the composition command; the
+        // dispatched events below carry the same contract.
+      }
+    }
+    await page.evaluate(() => {
+      const el = document.querySelector('.large-box__title')!;
+      el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: 'にほん' }));
+      el.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter', isComposing: true, bubbles: true, cancelable: true,
+      }));
     });
-    expect(after.active).toContain('large-box__title');
-    expect(after.collapsed).toBe(true);
+    await page.waitForTimeout(150);
+    expect(await layoutTitle(page), 'an IME Enter must never commit the title').toBe('Blurred');
+    // No new title value has been written yet. (The blur itself still persists view
+    // state through the same storage facade, so the count only proves "no title edit".)
+    expect(await writeCount(page)).toBe(1);
+
+    // Ending the composition leaves the decision to the user: nothing was saved, and
+    // the next real Enter commits the current value exactly once.
+    await page.evaluate(() => {
+      document.querySelector('.large-box__title')!
+        .dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: 'にほん' }));
+    });
+    await page.locator('.large-box__title').click();
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.type('Japan');
+    await resetWriteCount(page);
+    await page.keyboard.press('Enter');
+    await expect.poll(() => layoutTitle(page)).toBe('Japan');
+    expect(await writeCount(page)).toBe(1);
   });
 
-  test('arrow key collapses the select-all; Shift+Arrow makes a partial selection', async ({ page }) => {
-    test.setTimeout(30000);
+  test('paste is plain text: CRLF/LF/CR become one space, markup stays text, edges trimmed', async ({ page }) => {
+    test.setTimeout(40000);
     await boot(page);
     await seedTitles(page);
 
-    // Deterministic first activation: synthetic mousedown/mouseup → focus + select-all.
-    expect(await jsClickTitle(page, '.large-box__title')).toBe(true);
-    expect((await selState(page)).text).toBe('Alpha');
+    const cases: Array<[string, string]> = [
+      ['  one\r\ntwo  ', 'one two'],
+      ['three\nfour', 'three four'],
+      ['five\rsix', 'five six'],
+      ['<b>bold</b> kept as text', '<b>bold</b> kept as text'],
+    ];
 
-    // ArrowLeft collapses the whole-name selection to a caret (browser native).
-    await page.keyboard.press('ArrowLeft');
-    const collapsed = await page.evaluate(() => {
-      const sel = window.getSelection();
-      return { collapsed: sel ? sel.isCollapsed : false };
+    for (const [pasted, expected] of cases) {
+      await page.locator('.large-box__title').click();
+      const notCancelled = await page.evaluate((text) => {
+        const el = document.querySelector('.large-box__title') as HTMLInputElement;
+        const dt = new DataTransfer();
+        dt.setData('text/plain', text);
+        dt.setData('text/html', '<b>markup</b>');
+        return el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+      }, pasted);
+      // The handler claims the paste, so no native rich-text insertion happens.
+      expect(notCancelled).toBe(false);
+      await page.keyboard.press('Enter');
+      await expect.poll(() => layoutTitle(page)).toBe(expected);
+      await expect(page.locator('.large-box__title')).toHaveValue(expected);
+    }
+
+    // The title never gained child markup.
+    expect(await page.evaluate(() => document.querySelector('.large-box__title')!.children.length)).toBe(0);
+  });
+
+  test('an empty title falls back to that box type localized default name', async ({ page }) => {
+    test.setTimeout(40000);
+    await boot(page);
+    await seedTitles(page);
+
+    // All-whitespace on the large box → untitledBox ("Untitled box").
+    await page.locator('.large-box__title').click();
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type('   ');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => layoutTitle(page)).toBe('Untitled box');
+    await expect(page.locator('.large-box__title')).toHaveValue('Untitled box');
+
+    // The small box uses its own default name instead.
+    await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
+    await expect(page.locator('.small-box__title')).toHaveCount(1);
+    await page.locator('.small-box__title').click();
+    await page.keyboard.press('ControlOrMeta+a');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => childTitle(page)).toBe('New small box');
+    await expect(page.locator('.small-box__title')).toHaveValue('New small box');
+  });
+
+  test('long titles: ellipsis while resting, whole value stored, caret reachable in the middle', async ({ page }) => {
+    test.setTimeout(40000);
+    await boot(page);
+    const longTitle = 'A very long box title that cannot possibly fit inside one title bar';
+    const applied = await page.evaluate((t) => {
+      // The same seeding path the other cases use: it also rebuilds the box maps, so
+      // the inner page can be entered afterwards.
+      return (window as any).__boxingDebug.applyExternalLayout({
+        version: 3.5,
+        boxes: [{
+          id: 'L1', type: 'large', title: t, x: 80, y: 80, width: 340, height: 220,
+          children: [{ id: 'S1', type: 'small', title: t, x: 20, y: 20, width: 260, height: 200, bookmarks: [] }],
+        }],
+        connections: [],
+        _meta: { updatedAt: Date.now() + 100000, revision: 5 },
+      });
+    }, longTitle);
+    expect(applied).toBe(true);
+    await expect(page.locator('.large-box__title')).toHaveValue(longTitle);
+
+    const resting = await page.evaluate(() => {
+      const el = document.querySelector('.large-box__title') as HTMLInputElement;
+      const cs = getComputedStyle(el);
+      return { textOverflow: cs.textOverflow, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth };
     });
-    expect(collapsed.collapsed).toBe(true);
+    expect(resting.textOverflow).toBe('ellipsis');
+    expect(resting.scrollWidth).toBeGreaterThan(resting.clientWidth);
 
-    // Shift+ArrowRight extends a PARTIAL selection (not the whole name).
+    // Nothing truncates the stored text.
+    expect(await layoutTitle(page)).toBe(longTitle);
+
+    // Editing reaches the middle of a long name: the select-all still shows the whole
+    // value, and a real click in the middle lands the caret inside it.
+    await page.locator('.large-box__title').click();
+    expect((await titleState(page, '.large-box__title'))!.selected).toBe(longTitle);
+    const middle = await clickTitleAt(page, '.large-box__title', 0.45);
+    expect(middle.value).toBe(longTitle);
+    expect(middle.start).toBe(middle.end);
+    expect(middle.start).toBeGreaterThan(0);
+    expect(middle.start).toBeLessThan(longTitle.length - 1);
+    await page.keyboard.press('Escape');
+
+    // The small box title keeps its ellipsis too, and nothing truncates the data.
+    await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
+    await expect(page.locator('.small-box__title')).toHaveValue(longTitle);
+    const smallResting = await page.evaluate(() => {
+      const el = document.querySelector('.small-box__title') as HTMLInputElement;
+      const cs = getComputedStyle(el);
+      return { textOverflow: cs.textOverflow, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth };
+    });
+    expect(smallResting.textOverflow).toBe('ellipsis');
+    expect(smallResting.scrollWidth).toBeGreaterThan(smallResting.clientWidth);
+    expect(await childTitle(page)).toBe(longTitle);
+
+    // The inner-page title adds no ellipsis of its own (it never had one).
+    const crumb = await page.evaluate(() => {
+      const el = document.querySelector('#inner-crumb-title') as HTMLInputElement;
+      return { textOverflow: getComputedStyle(el).textOverflow, value: el.value };
+    });
+    expect(crumb.textOverflow).not.toContain('ellipsis');
+    expect(crumb.value).toBe(longTitle);
+  });
+
+  test('keyboard and mouse selection inside a title still behave natively', async ({ page }) => {
+    test.setTimeout(40000);
+    await boot(page);
+    await seedTitles(page);
+
+    await page.locator('.large-box__title').click();
+    expect((await titleState(page, '.large-box__title'))!.selected).toBe('Alpha');
+
+    // ArrowLeft collapses the select-all to a caret.
+    await page.keyboard.press('ArrowLeft');
+    let state = (await titleState(page, '.large-box__title'))!;
+    expect(state.start).toBe(state.end);
+
+    // Shift+ArrowRight extends a PARTIAL selection, not the whole name.
     await page.keyboard.press('Shift+ArrowRight');
-    const partial = await selState(page);
-    expect(partial.text.length).toBeGreaterThan(0);
-    expect(partial.text.length).toBeLessThan('Alpha'.length);
-    expect('Alpha'.includes(partial.text)).toBe(true);
-  });
+    state = (await titleState(page, '.large-box__title'))!;
+    expect(state.selected.length).toBeGreaterThan(0);
+    expect(state.selected.length).toBeLessThan('Alpha'.length);
+    expect('Alpha'.includes(state.selected)).toBe(true);
 
-  test('mouse drag makes a partial selection (native)', async ({ page }) => {
-    test.setTimeout(30000);
-    // The firefox lane is headless now — the headed-lane native-input wedge
-    // (playwright#16095 class) does not apply there.
-    await boot(page);
-    await seedTitles(page);
-
-    // Focus + select-all, then collapse to the start so the drag extends rightwards.
-    expect(await jsClickTitle(page, '.large-box__title')).toBe(true);
-    expect((await selState(page)).text).toBe('Alpha');
-    await page.keyboard.press('ArrowLeft');
-
-    const box = await page.locator('.large-box__title').boundingBox();
-    if (!box) throw new Error('.large-box__title not found');
+    // Dragging over part of the text selects that part only, and the box does not move.
+    const boxBefore = await page.locator('.large-box').boundingBox();
+    await page.keyboard.press('Home');
+    const box = (await page.locator('.large-box__title').boundingBox())!;
     const y = box.y + box.height / 2;
     await page.mouse.move(box.x + 3, y);
     await page.mouse.down();
     await page.mouse.move(box.x + box.width * 0.5, y, { steps: 6 });
     await page.mouse.up();
-
-    // Native drag outcome is runner-dependent (headless CI yields empty, partial, or the
-    // mouseup guard's re-asserted full select-all). The deterministic partial-selection
-    // contract is covered by the Shift+Arrow test above; here assert only the invariant
-    // the app owns: the selection never leaks outside the title text.
-    const s = await selState(page);
-    expect('Alpha'.startsWith(s.text)).toBe(true);
+    state = (await titleState(page, '.large-box__title'))!;
+    expect(state.selected.length).toBeGreaterThan(0);
+    expect('Alpha'.startsWith(state.selected)).toBe(true);
+    expect(await page.locator('.large-box').boundingBox()).toEqual(boxBefore);
   });
 
+  test('source contract: one shared title-input helper drives all three surfaces', () => {
+    const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
+    // The helper is defined once...
+    expect((src.match(/function attachTitleInput\(/g) || []).length).toBe(1);
+    expect((src.match(/function insertPlainTitleText\(/g) || []).length).toBe(1);
+    // ...and wired into exactly the three title surfaces.
+    expect((src.match(/attachTitleInput\(title, \{/g) || []).length).toBe(2);   // large + small
+    expect((src.match(/attachTitleInput\(innerCrumbTitle, \{/g) || []).length).toBe(1);
+    // No box title is a contentEditable span any more.
+    expect(src).not.toContain('contentEditable');
+    expect(src).not.toContain('execCommand');
+    // SEC-03: paste still goes through text/plain only.
+    expect(src).toContain("getData('text/plain')");
+    // Ticket 09 scope untouched: create pipeline still renders before fire-and-forget save.
+    expect(src).not.toContain('await saveLayout');
+    expect((src.match(/void saveLayout\(\);/g) || []).length).toBe(3);
+  });
+
+  test('source contract: the title markup is a native single-line input everywhere', () => {
+    const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
+    const html = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8');
+    const css = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/base.css'), 'utf8');
+
+    // Two created titles are inputs with type=text, and the inner-page one is too.
+    expect((src.match(/title\.type = 'text';/g) || []).length).toBe(2);
+    expect(html).toContain('id="inner-crumb-title" type="text"');
+    expect(html).not.toContain('contenteditable');
+
+    // Composition guard, Enter/Escape contract, plain blur commit, trim + fallback.
+    expect(src).toContain('e.isComposing || e.keyCode === 229');
+    expect(src).toContain('commitTitleInput(el, opts)');
+    expect(src).toContain('el.select();');
+    expect(src).toContain('.trim()');
+
+    // The contentEditable-only styling hooks are gone from the stylesheet, and each
+    // surface still has its own focus look.
+    expect(css).not.toContain('contenteditable');
+    expect(css).toContain('.large-box__title:focus');
+    expect(css).toContain('.small-box__title:focus');
+    expect(css).toContain('.inner__crumb-title:focus');
+  });
   test('favicon Phase-1 hot pool, decode(), is-loading and is-cached classes', () => {
     const favSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/favicon.js'), 'utf8');
     const popSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/popups.js'), 'utf8');

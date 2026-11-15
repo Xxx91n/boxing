@@ -58,76 +58,100 @@ export function initRenderFacade(deps) {
   }
   // ── helpers ────────────────────────────────────────────
   export function getLargeBox(id) { return boxById.get(id) || null; }
-  // Ticket 10 (BX-TITLE-SEL): clicking a contentEditable box title enters rename with the
-  // whole name pre-selected so typing replaces it directly. Shared by the large-box title,
-  // small-box title and inner crumb title mousedown handlers. selectNodeContents + addRange
-  // is the platform-standard select-all for contentEditable (Chrome + Firefox parity).
-  function selectAllTitleText(el) {
-    el.focus();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    const sel = window.getSelection();
-    if (sel) { sel.removeAllRanges(); sel.addRange(range); }
+  // ── box titles: one native single-line <input> per surface ───────────────
+  // The large-box title, the small-box title and the box title on the inner page all
+  // use the same native input. A real input gives the click behaviour for free:
+  // select() is a textbook select-all, and a click on an already-focused input puts
+  // the caret exactly where the user clicked. It also removes the contentEditable
+  // HTML surface, so pasted markup can never reach the layout (SEC-03).
+  //
+  // Pasted text is plain text only. CRLF, LF and CR each become one space so a
+  // multi-line paste keeps its word separation instead of gluing the words together;
+  // every other character is kept as-is.
+  function normalizeTitleText(raw) {
+    return String(raw == null ? '' : raw).replace(/\r\n|\r|\n/g, ' ');
   }
 
-  // Focus-state-machine title helper — preserves first-click select-all
-  // while allowing caret placement on subsequent clicks.
-  function makeTitleFocusMachine(el) {
-    if (el._titleFocusMachineAttached) return;
-    el._titleFocusMachineAttached = true;
-    let selectedThisFocus = false;
-    let guardFirstMouseUp = false;
+  function insertPlainTitleText(el, text) {
+    const clean = normalizeTitleText(text);
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    if (typeof start !== 'number' || typeof end !== 'number') { el.value += clean; return; }
+    el.setRangeText(clean, start, end, 'end');
+  }
 
+  // opts: { read() -> stored title, write(title), fallback() -> localized default }
+  // Attaching twice is a no-op, so the persistent inner-page title can call this on
+  // every entry without stacking duplicate listeners.
+  function attachTitleInput(el, opts) {
+    if (el._titleInputAttached) return;
+    el._titleInputAttached = true;
+    let valueWhenEditStarted = el.value;
+    // Set while Escape is putting the old name back: the blur it triggers must not
+    // commit anything, otherwise a stored title with edge whitespace would be trimmed
+    // (and rewritten) by the very gesture that was supposed to cancel the edit.
+    let revertingEdit = false;
+
+    el.addEventListener('focus', () => { valueWhenEditStarted = el.value; });
+
+    // First real click on a title that does not have focus yet: focus it and select
+    // the whole name, so typing replaces it. Cancelling the mousedown default is what
+    // keeps the native click from collapsing that selection to a caret. Once the field
+    // has focus we stay out of the way, so the second click is plain native caret
+    // placement — no caretPositionFromPoint fallback needed any more.
     el.addEventListener('mousedown', e => {
       e.stopPropagation();
-      if (document.activeElement !== el) {
-        guardFirstMouseUp = true;
-        el.focus();
-      }
+      if (document.activeElement === el) return;
+      e.preventDefault();
+      el.focus();
+      el.select();
     });
 
-    el.addEventListener('focus', () => {
-      if (!selectedThisFocus) {
-        selectedThisFocus = true;
-        selectAllTitleText(el);
-        guardFirstMouseUp = true;
-      }
-    });
-
-    el.addEventListener('mouseup', e => {
-      if (guardFirstMouseUp) {
-        guardFirstMouseUp = false;
+    // Enter commits, Escape throws the edit away and a plain blur commits.
+    // Composition guard: while an IME is composing, Enter picks the candidate and
+    // must never commit; keyCode 229 covers browsers that report isComposing late.
+    // stopPropagation keeps the page-level Escape (exit the box / clear search) from
+    // firing on top of "cancel this rename".
+    el.addEventListener('keydown', e => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if (e.key === 'Enter') {
         e.preventDefault();
-        selectAllTitleText(el);
-      } else if (document.activeElement === el) {
-        // Second click on focused title: allow native caret placement,
-        // with Firefox caretPositionFromPoint ?? caretRangeFromPoint fallback if selection is still not collapsed
-        const sel = window.getSelection();
-        if (sel && !sel.isCollapsed) {
-          if (document.caretPositionFromPoint) {
-            const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
-            if (pos && pos.offsetNode && el.contains(pos.offsetNode)) {
-              const range = document.createRange();
-              range.setStart(pos.offsetNode, pos.offset);
-              range.collapse(true);
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }
-          } else if (document.caretRangeFromPoint) {
-            const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-            if (range && el.contains(range.startContainer)) {
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }
-          }
-        }
+        e.stopPropagation();
+        commitTitleInput(el, opts);
+        el.blur();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        revertingEdit = true;
+        el.value = valueWhenEditStarted;
+        el.blur();
       }
+    });
+
+    el.addEventListener('paste', e => {
+      e.preventDefault();
+      const data = e.clipboardData || window.clipboardData;
+      insertPlainTitleText(el, data ? data.getData('text/plain') : '');
     });
 
     el.addEventListener('blur', () => {
-      selectedThisFocus = false;
-      guardFirstMouseUp = false;
+      if (revertingEdit) { revertingEdit = false; return; }
+      commitTitleInput(el, opts);
     });
+  }
+
+  // Trimmed plain text; an empty title falls back to the localized default name of
+  // that box type. Committing only writes when the stored title really changed, so
+  // one edit (Enter then the blur that follows it) persists at most once.
+  function commitTitleInput(el, opts) {
+    const typed = normalizeTitleText(el.value).trim();
+    const next = typed || opts.fallback();
+    if (next !== opts.read()) opts.write(next);
+    if (el.value !== next) el.value = next;
+    // Firefox leaves a long value scrolled to the caret after blur, which hides the
+    // ellipsis (gecko bug 860329). Park the field at the start so a resting title
+    // always reads from its beginning.
+    try { el.scrollLeft = 0; } catch (e) { /* cosmetic only */ }
   }
 
 
@@ -493,7 +517,7 @@ export function initRenderFacade(deps) {
     canvasEmpty.hidden = true;
    // Bug2: clear DOM synchronously then rebuild in same tick — no flash
     // blur activeElement before DOM wipe — prevents Chrome focus-steal on rebuild
-    // also blur if activeElement is a contenteditable inside canvasSurface
+    // also blur if activeElement is a title input inside canvasSurface
     // or a toolbar button that Chrome will redirect to after the wipe.
     const _ae1 = document.activeElement;
     // BX-SEL-01: clear residual text selection before DOM wipe — Chrome native dblclick
@@ -582,22 +606,17 @@ export function initRenderFacade(deps) {
     icon.textContent = '📦';
     icon.setAttribute('aria-hidden', 'true');
 
-    const title = document.createElement('span');
+    const title = document.createElement('input');
+    title.type = 'text';
     title.className = 'large-box__title';
-    title.contentEditable = 'true';
     title.spellcheck = false;
-    title.textContent = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]);
+    title.autocomplete = 'off';
+    title.value = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]);
     // Title: NO drag, NO click-through — only text editing
-    makeTitleFocusMachine(title);
-    title.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
-      if (e.key === 'Escape') { title.textContent = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]); title.blur(); }
-    });
-    // SEC-03: Force plain-text paste — prevent HTML injection via contentEditable
-    title.addEventListener('paste', e => { e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
-    title.addEventListener('blur', () => {
-      const t = title.textContent.trim() || i18n('untitledBox');
-      if (t !== box.title) { box.title = t; saveLayout(); }
+    attachTitleInput(title, {
+      read: () => box.title,
+      write: (t) => { box.title = t; saveLayout(); },
+      fallback: () => i18n('untitledBox')
     });
 
     const meta = document.createElement('span');
@@ -842,24 +861,21 @@ export function initRenderFacade(deps) {
     updateAutohideUI(); // always reposition pin to active canvas
 
     renderCrumbs(lb);
-    innerCrumbTitle.textContent = lb.title || i18n('untitledBox');
-    innerCrumbTitle.contentEditable = 'true';
-    innerCrumbTitle.spellcheck = false;
-    // Inner title: no drag allowed
-    makeTitleFocusMachine(innerCrumbTitle);
-    // Ticket 10 AC3: crumb rename parity with the box-title contract — Enter blurs (onblur
-    // saves), Escape restores the previous name. Assigned (not addEventListener) because
-    // innerCrumbTitle is a persistent element re-entered via _enterLargeBox each time.
-    innerCrumbTitle.onkeydown = (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); innerCrumbTitle.blur(); }
-      if (e.key === 'Escape') { innerCrumbTitle.textContent = lb.title || i18n('untitledBox'); innerCrumbTitle.blur(); }
-    };
-    // SEC-03: Force plain-text paste
-    innerCrumbTitle.addEventListener('paste', e => { e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
-    innerCrumbTitle.onblur = () => {
-      const t = innerCrumbTitle.textContent.trim() || i18n('untitledBox');
-      if (t !== lb.title) { lb.title = t; saveLayout(); renderCrumbs(lb); }
-    };
+    innerCrumbTitle.value = lb.title || i18n('untitledBox');
+    // The inner-page title element persists across box switches, so the handlers are
+    // attached once (attachTitleInput is idempotent) and every accessor reads the box
+    // that is open right now.
+    attachTitleInput(innerCrumbTitle, {
+      read: () => (getLargeBox(currentLargeBoxId) || {}).title,
+      write: (t) => {
+        const open = getLargeBox(currentLargeBoxId);
+        if (!open) return;
+        open.title = t;
+        saveLayout();
+        renderCrumbs(open);
+      },
+      fallback: () => i18n('untitledBox')
+    });
 
     disposeAllConns(); // clear canvas-view lines before inner surface re-renders them
     renderInnerSurface(lb);
@@ -996,21 +1012,16 @@ export function initRenderFacade(deps) {
       }
     });
 
-    const title = document.createElement('span');
+    const title = document.createElement('input');
+    title.type = 'text';
     title.className = 'small-box__title';
-    title.contentEditable = 'true';
     title.spellcheck = false;
-    title.textContent = sb.title || i18n('newSmallBox');
-    makeTitleFocusMachine(title);
-    title.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
-      if (e.key === 'Escape') { title.textContent = sb.title || i18n('newSmallBox'); title.blur(); }
-    });
-    // SEC-03: Force plain-text paste for small box title
-    title.addEventListener('paste', e => { e.preventDefault(); const text = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, text); });
-    title.addEventListener('blur', () => {
-      const t = title.textContent.trim() || i18n('newSmallBox');
-      if (t !== sb.title) { sb.title = t; saveLayout(); }
+    title.autocomplete = 'off';
+    title.value = sb.title || i18n('newSmallBox');
+    attachTitleInput(title, {
+      read: () => sb.title,
+      write: (t) => { sb.title = t; saveLayout(); },
+      fallback: () => i18n('newSmallBox')
     });
 
     const delBtn = document.createElement('button');
@@ -1643,7 +1654,7 @@ export function initRenderFacade(deps) {
     // feedback behind storageWriteChain — wave4 P1 "double-click lost, boxes batch-appear".
     renderCanvas();
     // after DOM rebuild, Chrome redirects focus to the first
-    // focusable element in DOM order (contenteditable title / toolbar button).
+    // focusable element in DOM order (title input / toolbar button).
     // Explicitly park focus on our tabindex=-1 sink to prevent the steal.
     canvasContainer.focus({ preventScroll: true });
     void saveLayout();

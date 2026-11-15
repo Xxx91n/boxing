@@ -47,6 +47,9 @@ async function captureState(page: Page, label: string) {
       activeTag: active?.tagName || '',
       activeId: active?.id || '',
       activeEditable: (active as HTMLElement)?.isContentEditable || false,
+      // Ticket 121: box titles are native inputs now, so "the rename field grabbed the
+      // focus" is observable as the active element carrying a title class.
+      activeTitle: !!active && /(large|small)-box__title|inner__crumb-title/.test((active.className || '').toString()),
     };
   });
   console.log(`[STATE ${label}]`, JSON.stringify(state));
@@ -193,6 +196,7 @@ test.describe('dblclick — BX-SEL-01 selection guard via synthetic input', () =
     const after = await captureState(page, 'AFTER SYNTHETIC DBLCLICK');
     expect(after.selRangeCount).toBe(0);
     expect(after.activeTag).not.toBe('INPUT');
+    expect(after.activeTitle, 'a freshly created box must not steal the caret into its title').toBe(false);
     expect(after.activeEditable).toBe(false);
 
     // CSS layer of BX-SEL-01: .canvas must keep user-select none (this is what
@@ -224,6 +228,7 @@ test.describe('dblclick — BX-SEL-01 selection guard via synthetic input', () =
 
     const after = await captureState(page, 'AFTER TITLE SYNTHETIC DBLCLICK');
     expect(after.selRangeCount).toBe(0);
+    expect(after.activeTitle).toBe(false);
     expect(after.activeEditable).toBe(false);
   });
 
@@ -259,6 +264,7 @@ test.describe('dblclick — BX-SEL-01 selection guard via synthetic input', () =
 
     const state = await captureState(page, 'AFTER 2 SYNTHETIC BOXES');
     expect(state.selRangeCount).toBe(0);
+    expect(state.activeTitle, 'no title input may keep the focus after the box was created').toBe(false);
     expect(state.activeEditable).toBe(false);
   });
 });

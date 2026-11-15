@@ -108,19 +108,21 @@ test.describe('Wave 2026.10.16 — E2E & Contract Tests', () => {
     expect(syncSrc).toContain('checkAutoBackupCatchUp');
   });
 
-  // ── Title selection focus machine ────────────────────────────
-  test('title focus machine has unconditional mouseup preventDefault & caret fallback', () => {
+  // ── Title selection (ticket 121: native input, not contentEditable) ──────
+  // This used to pin the contentEditable workaround (mouseup preventDefault +
+  // caretPositionFromPoint/caretRangeFromPoint fallbacks). Titles are native inputs
+  // now, so the contract is the behaviour itself: a first click on an unfocused
+  // title selects everything, and a click on the focused title keeps the native
+  // caret. The end-to-end proof lives in boxing-title-select-all.spec.ts.
+  test('title input keeps the first-click select-all contract', () => {
     const renderSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
 
-    // guardFirstMouseUp prevents default without checking isCollapsed
-    expect(renderSrc).toContain('if (guardFirstMouseUp) {');
-    expect(renderSrc).toContain('guardFirstMouseUp = false;');
+    expect(renderSrc).toContain('function attachTitleInput(');
     expect(renderSrc).toContain('e.preventDefault();');
-    expect(renderSrc).toContain('selectAllTitleText(el);');
-
-    // Firefox caret position fallback on second click
-    expect(renderSrc).toContain('caretPositionFromPoint');
-    expect(renderSrc).toContain('caretRangeFromPoint');
+    expect(renderSrc).toContain('el.select();');
+    // The contentEditable-only hacks are gone, not merely unused.
+    expect(renderSrc).not.toContain('caretPositionFromPoint');
+    expect(renderSrc).not.toContain('contentEditable');
   });
 
   // ── Version check module & About tab ─────────────────────────

@@ -62,7 +62,7 @@ test.describe('Boxing v3 — Deep Debug', () => {
     await expect(page.locator('#canvas-empty')).toBeHidden();
 
     // === 4. Verify large box title contains "Box 1" ===
-    const firstBoxTitle = await page.locator('.large-box__title').first().textContent();
+    const firstBoxTitle = await page.locator('.large-box__title').first().inputValue();
     console.log('First box title:', firstBoxTitle);
     expect(firstBoxTitle).toContain('1');
     // Should show resize handle
