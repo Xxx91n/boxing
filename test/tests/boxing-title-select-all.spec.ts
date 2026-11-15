@@ -663,9 +663,8 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     const code = stripComments(src, 'js');
     expect(code).not.toMatch(/contenteditable/i);
     expect(code).not.toContain('execCommand');
-    // The negative check still bites: the API name survives in the working copy, i.e.
-    // the ban above is not vacuously true because nothing mentions it.
-    expect(src).toMatch(/contenteditable/i);
+    // The check above is only worth something if the stripper cannot hide code, and
+    // that is pinned by its own cases below instead of by a comment's wording.
     // SEC-03: paste still goes through text/plain only.
     expect(src).toContain("getData('text/plain')");
     // Ticket 09 scope untouched: create pipeline still renders before fire-and-forget save.

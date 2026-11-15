@@ -36,7 +36,12 @@ export default defineConfig({
   //   page (156 processes / ~6GB observed) that never got recycled. The Firefox
   //   project caps that pref below.
   workers: 2,
-  reporter: 'html',
+  // CI also prints the list reporter: the html report alone keeps the failing test
+  // name and its assertion message inside the uploaded artifact, so a red run leaves
+  // nothing readable in the job log (ticket 121 round: three OS lanes failed and the
+  // log carried only "Process completed with exit code 1"). 'list' writes the
+  // failures straight into the log; 'html' still produces the artifact.
+  reporter: process.env.CI ? [['list'], ['html']] : 'html',
   use: {
     trace: 'on-first-retry',
     headless: false,
