@@ -29,29 +29,15 @@ const NTP_URL = pathToFileURL(path.join(EXTENSION_PATH, 'ntp/index.html')).href;
 // the control's own observable surface (value / selectionStart / selectionEnd).
 async function boot(page: Page) {
   await page.addInitScript(() => {
-    // Counts how often a title VALUE is really persisted (the file:// lane keeps the
-    // layout in localStorage). Writes that leave both titles untouched — the storage
-    // facade also persists view state — are ignored, so "one edit, one write" means
-    // what it says. Test-side instrumentation only: product code is not touched.
+    // Count every layout write, including repeated writes of the same title.
+    // Tab view state uses separate keys; queued inner-view/layout saves settle
+    // before resetWriteCount opens the measurement window.
     localStorage.removeItem('__titleWriteCount');
-    const titleSignature = (raw: string | null) => {
-      try {
-        const parsed = JSON.parse(raw || 'null');
-        const lb = parsed && parsed.boxes && parsed.boxes[0];
-        const sb = lb && lb.children && lb.children[0];
-        return JSON.stringify([lb && lb.title, sb && sb.title]);
-      } catch {
-        return 'unreadable';
-      }
-    };
     const realSetItem = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key: string, value: string) {
       if (key === 'boxingLayout') {
-        const previous = localStorage.getItem('boxingLayout');
-        if (previous === null || titleSignature(previous) !== titleSignature(value)) {
-          localStorage.setItem.call(this, '__titleWriteCount',
-            String(Number(localStorage.getItem('__titleWriteCount') || '0') + 1));
-        }
+        realSetItem.call(this, '__titleWriteCount',
+          String(Number(localStorage.getItem('__titleWriteCount') || '0') + 1));
       }
       return realSetItem.call(this, key, value);
     };
@@ -62,8 +48,8 @@ async function boot(page: Page) {
   await page.waitForTimeout(300);
 }
 
-async function seedTitles(page: Page) {
-  const applied = await page.evaluate(() => {
+async function seedTitles(page: Page, largeTitle = 'Alpha', smallTitle = 'Beta') {
+  const applied = await page.evaluate(({ largeTitle, smallTitle }) => {
     const dbg = (window as any).__boxingDebug;
     // 48 (wave4 residual title-select-all x3): a raw without version>=3 is degraded
     // to defaultLayout by migrateLayout (its _meta — including revision 5 — dropped),
@@ -72,13 +58,13 @@ async function seedTitles(page: Page) {
     return dbg.applyExternalLayout({
       version: 3.5,
       boxes: [{
-        id: 'L1', type: 'large', title: 'Alpha', x: 80, y: 80, width: 340, height: 220,
-        children: [{ id: 'S1', type: 'small', title: 'Beta', x: 20, y: 20, width: 260, height: 200, pinned: false, bookmarks: [] }],
+        id: 'L1', type: 'large', title: largeTitle, x: 80, y: 80, width: 340, height: 220,
+        children: [{ id: 'S1', type: 'small', title: smallTitle, x: 20, y: 20, width: 260, height: 200, pinned: false, bookmarks: [] }],
       }],
       connections: [],
       _meta: { updatedAt: Date.now() + 100000, revision: 5 },
     });
-  });
+  }, { largeTitle, smallTitle });
   expect(applied).toBe(true);
   await expect(page.locator('.large-box')).toHaveCount(1);
 }
@@ -418,6 +404,53 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     expect(await layoutTitle(page)).toBe(edited);
   });
 
+  test('the write counter catches two saves of the same title', async ({ page }) => {
+    await boot(page);
+    await seedTitles(page);
+    await page.locator('.large-box__title').click();
+    await page.keyboard.type('Repeated title');
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.evaluate(() =>
+      JSON.parse(localStorage.getItem('boxingLayout') || '{}').boxes?.[0]?.title)).toBe('Repeated title');
+    await resetWriteCount(page);
+    await page.evaluate(() => {
+      const raw = localStorage.getItem('boxingLayout');
+      if (raw === null) throw new Error('the edited layout was not saved');
+      localStorage.setItem('boxingLayout', raw);
+      localStorage.setItem('boxingLayout', raw);
+    });
+    expect(await writeCount(page)).toBe(2);
+  });
+
+  for (const surface of ['large', 'small', 'inner'] as const) {
+    test(`${surface} title: existing line breaks stay separated after focus, blur and reload`, async ({ page }) => {
+      await boot(page);
+      await seedTitles(page, 'Alpha\r\nBeta\nGamma\rDelta', 'One\r\nTwo\nThree\rFour');
+      const selector = surface === 'large' ? '.large-box__title'
+        : surface === 'small' ? '.small-box__title' : '#inner-crumb-title';
+      const expected = surface === 'small' ? 'One Two Three Four' : 'Alpha Beta Gamma Delta';
+      if (surface !== 'large') {
+        await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
+      }
+      await expect(page.locator(selector)).toHaveValue(expected);
+      await page.locator(selector).click();
+      expect((await titleState(page, selector))!.selected).toBe(expected);
+      await clickBlankCanvas(page);
+      await expect.poll(() => surface === 'small' ? childTitle(page) : layoutTitle(page)).toBe(expected);
+      await expect.poll(() => page.evaluate((isSmall) => {
+        const box = JSON.parse(localStorage.getItem('boxingLayout') || '{}').boxes?.[0];
+        return isSmall ? box?.children?.[0]?.title : box?.title;
+      }, surface === 'small')).toBe(expected);
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+      if (surface !== 'large') {
+        await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
+      }
+      await expect(page.locator(selector)).toHaveValue(expected);
+      expect(await (surface === 'small' ? childTitle(page) : layoutTitle(page))).toBe(expected);
+    });
+  }
+
   test('plain blur commits; Enter during an IME composition does not', async ({ page }) => {
     test.setTimeout(60000);
     await boot(page);
@@ -447,13 +480,16 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     await page.locator('.large-box__title').click();
     await resetWriteCount(page);
     await page.evaluate(() => {
-      const el = document.querySelector('.large-box__title')!;
+      const el = document.querySelector('.large-box__title') as HTMLInputElement;
       el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: 'にほん' }));
+      el.value = 'にほん';
+      el.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true, data: 'にほん' }));
       el.dispatchEvent(new KeyboardEvent('keydown', {
         key: 'Enter', isComposing: true, bubbles: true, cancelable: true,
       }));
     });
-    await page.waitForTimeout(150);
+    expect((await titleState(page, '.large-box__title'))!.focused, 'IME Enter keeps focus').toBe(true);
+    await expect(page.locator('.large-box__title')).toHaveValue('にほん');
     expect(await layoutTitle(page), 'an IME Enter must never commit the title').toBe('Blurred');
     expect(await writeCount(page), 'an IME Enter must not persist anything either').toBe(0);
 
@@ -484,6 +520,7 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
       ['<b>bold</b> kept as text', '<b>bold</b> kept as text'],
     ];
 
+    let currentTitle = 'Alpha';
     for (const [pasted, expected] of cases) {
       // Each round starts blurred on purpose. After the previous round's Enter the
       // field may still hold focus, and a click on an already focused title is the
@@ -493,26 +530,17 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
       await page.locator('.large-box__title').click();
       const ready = (await titleState(page, '.large-box__title'))!;
       expect(ready.focused, 'the field must own focus before the paste').toBe(true);
-      expect(ready.selected, 'a fresh click selects the whole name').toBe('Alpha');
+      expect(ready.selected, 'a fresh click selects the whole name').toBe(currentTitle);
 
-      // Read the field in the same tick as the dispatch. The handler claims the paste
-      // and rewrites the value synchronously; the browser may still run its own paste
-      // handling afterwards (empty OS clipboard on CI), so polling the field later
-      // measures that native step instead of the handler under test.
+      // A synthetic paste supplies the same plain-text payload on both browsers.
       const afterPaste = await page.evaluate((text) => {
         const el = document.querySelector('.large-box__title') as HTMLInputElement;
         const dt = new DataTransfer();
         dt.setData('text/plain', text);
         dt.setData('text/html', '<b>markup</b>');
-        // clipboardData is readonly and the constructor ignores it in some engines
-        // (Gecko), which would hand the handler an empty clipboard and make this look
-        // like the product dropped the text. Attach the payload the way the constructor
-        // is supposed to, then prove it is actually there before trusting the result.
-        const ev = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
-        try {
-          Object.defineProperty(ev, 'clipboardData', { value: dt });
-        } catch (e) { /* older engines: the property is fixed, checked below */ }
-        const carried = ev.clipboardData || null;
+        const ev = new Event('paste', { bubbles: true, cancelable: true });
+        Object.defineProperty(ev, 'clipboardData', { value: dt });
+        const carried = (ev as ClipboardEvent).clipboardData;
         const notCancelled = el.dispatchEvent(ev);
         return {
           notCancelled,
@@ -532,13 +560,12 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
       expect(afterPaste.value, 'the paste replaced the whole name').toBe(
         pasted.replace(/\r\n|\r|\n/g, ' '));
 
-      // Commit. If the browser's own paste step then overwrote the handler's text (CI
-      // has an empty OS clipboard), the title may fall back to its default name — the
-      // value assertion above is the one that owns "the paste became plain text", and
-      // the commit assertion below still owns "Enter persists what the field holds".
+      // The cancelled paste keeps its full value until Enter trims and saves it.
+      await expect(page.locator('.large-box__title')).toHaveValue(afterPaste.value);
       await page.keyboard.press('Enter');
       await expect.poll(() => layoutTitle(page)).toBe(expected);
       await expect(page.locator('.large-box__title')).toHaveValue(expected);
+      currentTitle = expected;
     }
 
     // The title never gained child markup.

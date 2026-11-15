@@ -614,7 +614,7 @@ export function initRenderFacade(deps) {
     // The field shows the user's own text, which cannot name it: give it the
     // localized "Box title" name instead (the bar re-renders on language change).
     title.setAttribute('aria-label', i18n('titleInputLabel'));
-    title.value = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]);
+    title.value = normalizeTitleText(box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]));
     // Title: NO drag, NO click-through — only text editing
     attachTitleInput(title, {
       read: () => box.title,
@@ -864,7 +864,7 @@ export function initRenderFacade(deps) {
     updateAutohideUI(); // always reposition pin to active canvas
 
     renderCrumbs(lb);
-    innerCrumbTitle.value = lb.title || i18n('untitledBox');
+    innerCrumbTitle.value = normalizeTitleText(lb.title || i18n('untitledBox'));
     // The inner-page title element persists across box switches, so the handlers are
     // attached once (attachTitleInput is idempotent) and every accessor reads the box
     // that is open right now.
@@ -1021,7 +1021,7 @@ export function initRenderFacade(deps) {
     title.spellcheck = false;
     title.autocomplete = 'off';
     title.setAttribute('aria-label', i18n('titleInputLabel'));
-    title.value = sb.title || i18n('newSmallBox');
+    title.value = normalizeTitleText(sb.title || i18n('newSmallBox'));
     attachTitleInput(title, {
       read: () => sb.title,
       write: (t) => { sb.title = t; saveLayout(); },
