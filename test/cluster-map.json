@@ -61,6 +61,7 @@
       "boxing-conflict-copy-additions.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts",
       "boxing-about-quick-entries.spec.ts",
+      "boxing-webdav-permission.spec.ts",
       "boxing-backup-credential-allowlist.spec.ts"
     ],
     "ntp/render.js": [
@@ -129,6 +130,7 @@
       "boxing-conflict-field-adjudication.spec.ts",
       "boxing-merge-three-way.spec.ts",
       "boxing-wave11-1017.spec.ts",
+      "boxing-webdav-permission.spec.ts",
       "boxing-backup-credential-allowlist.spec.ts"
     ],
     "ntp/persist.js": [
@@ -145,6 +147,7 @@
       "boxing-sync-level.spec.ts",
       "boxing-sync.spec.ts",
       "boxing-webdav.spec.ts",
+      "boxing-webdav-permission.spec.ts",
       "data-recovery.spec.ts",
       "boxing-dr-export-envelope.spec.ts",
       "boxing-merge-three-way.spec.ts",
@@ -183,6 +186,7 @@
       "boxing-wave10-1016.spec.ts",
       "boxing-wave11-1017.spec.ts",
       "boxing-about-quick-entries.spec.ts",
+      "boxing-webdav-permission.spec.ts",
       "boxing-backup-credential-allowlist.spec.ts"
     ],
     "ntp/onboarding.js": [
@@ -204,7 +208,8 @@
       "boxing-conflict-copy-safe-delete.spec.ts",
       "boxing-conflict-copy-additions.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts",
-      "boxing-about-quick-entries.spec.ts"
+      "boxing-about-quick-entries.spec.ts",
+      "boxing-webdav-permission.spec.ts"
     ],
     "ntp/state.js": [
       "boxing-architecture-acceptance.spec.ts",

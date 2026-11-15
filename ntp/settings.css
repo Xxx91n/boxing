@@ -114,6 +114,31 @@
 .sync-group .btn {
   margin: 0; /* mirror .modal__section .btn — no stray margin for buttons inside a group */
 }
+.sync-permission-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-hairline);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+}
+.sync-permission-banner[hidden] {
+  display: none;
+}
+.sync-permission-banner .btn[hidden] {
+  display: none;
+}
+.sync-permission-banner__msg {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--color-ink);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
 
 .modal__label {
   font-size: var(--fs-md);

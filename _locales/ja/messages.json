@@ -1318,5 +1318,48 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "クリアした設定を保存できませんでした — 保存済みの認証情報はそのまま残っています。もう一度お試しください。",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "webdavErrPermission": {
+    "message": "続行するには $origin$ へのアクセス権限を許可してください",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "$origin$ へのアクセス権限が拒否されました",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "バックグラウンドの WebDAV 同期には $origin$ へのアクセス許可が必要です。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "$origin$ へのアクセスが拒否または取り消されました。同期を再開するには権限を許可してください。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "権限を許可"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "$origin$ へのアクセスを許可しました。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   }
 }

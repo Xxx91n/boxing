@@ -1318,5 +1318,48 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "Falha ao salvar a configuração limpa — as credenciais armazenadas foram mantidas. Tente novamente.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "webdavErrPermission": {
+    "message": "Conceda permissão para $origin$ para continuar",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "Permissão negada para $origin$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "A sincronização WebDAV em segundo plano precisa de permissão para $origin$ antes de se conectar.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "O acesso a $origin$ foi negado ou revogado. Conceda a permissão para continuar.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "Conceder permissão"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "Acesso concedido para $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   }
 }

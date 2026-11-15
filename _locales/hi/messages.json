@@ -1318,5 +1318,48 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "साफ़ की गई कॉन्फ़िगरेशन सहेजने में विफल — संग्रहीत क्रेडेंशियल यथावत रहे। कृपया पुनः प्रयास करें।",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "webdavErrPermission": {
+    "message": "जारी रखने के लिए $origin$ की अनुमति दें",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavErrPermissionDenied": {
+    "message": "$origin$ के लिए अनुमति अस्वीकार की गई",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermPendingHint": {
+    "message": "बैकग्राउंड WebDAV सिंक कनेक्ट करने से पहले $origin$ के लिए अनुमति की आवश्यकता है।",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavPermDeniedHint": {
+    "message": "$origin$ तक पहुंच अस्वीकार या रद्द कर दी गई है। जारी रखने के लिए अनुमति दें।",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "webdavAuthorizeBtn": {
+    "message": "अनुमति दें"
+  },
+  "webdavPermGrantedStatus": {
+    "message": "$origin$ के लिए अनुमति मिल गई है।",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
   }
 }
