@@ -510,13 +510,17 @@ test.describe('WebDAV permission loop & background closure (file:// lane, ticket
     expect(zhText).not.toContain('$origin$');
     expect(zhText).not.toContain('$1$');
 
-    // Clicking authorize and denying updates banner to denied
-    await page.evaluate(() => (document.getElementById('webdav-permission-btn') as HTMLElement)?.click());
+    // Keyboard accessibility: Tab from #webdav-allow-private focuses #webdav-permission-btn and Enter triggers deny -> grant
+    await page.locator('#webdav-allow-private').focus();
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe('webdav-permission-btn');
+    await page.keyboard.press('Enter');
     await expect.poll(() => page.locator('#webdav-permission-banner').getAttribute('data-state')).toBe('denied');
 
-    // Granting clears pending storage and displays granted feedback before hiding
+    // Granting via Enter clears pending storage and displays granted feedback before hiding
     await page.evaluate(() => { (window as any).__permTestState.requestResult = true; });
-    await page.evaluate(() => (document.getElementById('webdav-permission-btn') as HTMLElement)?.click());
+    await page.locator('#webdav-permission-btn').focus();
+    await page.keyboard.press('Enter');
     await expect.poll(() => page.locator('#webdav-permission-banner').getAttribute('data-state')).toBe('granted');
     expect(await page.locator('#webdav-permission-btn').isVisible()).toBe(false);
     const cleared = await page.evaluate(async () =>
