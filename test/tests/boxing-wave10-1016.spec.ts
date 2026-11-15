@@ -84,29 +84,31 @@ test.describe('Wave 2026.10.16 — E2E & Contract Tests', () => {
     expect(favSrc).toContain("img.style.display = '';");
   });
 
-  // ── Auto-backup alarm hub + NTP catch-up ─────────────────────
-  test('SW records autoBackupDue; NTP catches up without duplicate onAlarm', () => {
+  // ── Background single-owner local auto-backup (#124) ────────────
+  test('SW owns local auto-backup execution alone; NTP uses autoBackupState facade without duplicate executor', () => {
     const bgSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'background.js'), 'utf8');
     const syncSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/sync-engine.js'), 'utf8');
 
-    // background.js sets autoBackupDue on alarm
-    expect(bgSrc).toContain('autoBackupDue: true');
-    expect(bgSrc).toContain('Auto-backup: chrome.alarms hub in the service worker');
+    // background.js owns alarm/startup execution and shared snapshot-core state
+    expect(bgSrc).toContain('runBackgroundLocalAutoBackup');
+    expect(bgSrc).toContain('reconcileAutoBackupSchedule');
+    expect(bgSrc).toContain('autoBackupState');
+    expect(bgSrc).not.toContain('autoBackupDue');
 
-    // ntp/sync-engine.js must NOT have chrome.alarms.onAlarm listener
+    // ntp/sync-engine.js must NOT have chrome.alarms.onAlarm listener, setInterval fallback,
+    // or boxing-auto-backup-trigger handler
     expect(syncSrc).not.toContain('chrome.alarms.onAlarm.addListener');
-    expect(syncSrc).toContain('checkAutoBackupCatchUp');
-    expect(syncSrc).toContain('autoBackupDue');
-    // Deprecated lastAutoBackupTs
+    expect(syncSrc).not.toContain('checkAutoBackupCatchUp');
+    expect(syncSrc).not.toContain('boxing-auto-backup-trigger');
+    expect(syncSrc).not.toContain('autoBackupDue');
     expect(syncSrc).not.toContain('let lastAutoBackupTs');
-    // Single write path: due-flag consumption goes through the storage.js
-    // facade (clearAutoBackupDue), never direct chrome.storage writes.
+    // Single write path: autoBackupState coordination goes through the storage.js
+    // facade (getAutoBackupState / setAutoBackupState), never direct chrome.storage writes.
     expect(syncSrc).not.toContain('chrome.storage.local.remove');
-    expect(syncSrc).toContain('clearAutoBackupDue');
-    // Catch-up requires the extension env (SW alarm hub exists only there);
-    // file:// lanes / demo stub must never trigger a boot backup.
-    expect(syncSrc).toContain('chrome.alarms');
-    expect(syncSrc).toContain('checkAutoBackupCatchUp');
+    expect(syncSrc).not.toContain('chrome.storage.local.set');
+    expect(syncSrc).toContain('getAutoBackupState');
+    expect(syncSrc).toContain('setAutoBackupState');
+    expect(syncSrc).toContain('auto-backup-ensure');
   });
 
   // ── Title selection (ticket 121: native input, not contentEditable) ──────

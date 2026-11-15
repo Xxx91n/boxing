@@ -59,6 +59,11 @@ export function initSettingsUiFacade(deps) {
     document.querySelectorAll('.theme-preset').forEach(btn => {
       btn.classList.toggle('theme-preset--active', btn.dataset.theme === currentTheme);
     });
+    try {
+      if (typeof window.__boxingRefreshLocalAutoBackupUi === 'function') {
+        window.__boxingRefreshLocalAutoBackupUi();
+      }
+    } catch (_) {}
 
  }
 
@@ -83,19 +88,53 @@ export function initSettingsUiFacade(deps) {
   // listCorruptArchives); refreshed on every modal open, fire-and-forget (never blocks
   // the modal). Corrupt row stays hidden unless crash-rescue actually forked a damaged
   // main key — persistent entry point instead of a startup popup (ABP one-notice lesson).
-  export async function refreshDataHealth() {
+  // Lightweight snapshot-only health refresh (used by background auto-backup updates so
+  // open conflict comparison panels and conflictPanels state are never wiped).
+  export async function refreshSnapshotHealth() {
     try {
       const snapCountEl = document.getElementById('data-snapshot-count');
       const lastSnapEl = document.getElementById('data-last-snapshot-time');
-      const corruptRow = document.getElementById('data-corrupt-row');
-      const corruptCountEl = document.getElementById('data-corrupt-count');
-      const corruptTimeEl = document.getElementById('data-corrupt-time');
       const snaps = await listSnapshots();
       if (snapCountEl) snapCountEl.textContent = String(snaps.length);
       if (lastSnapEl) {
         const latest = snaps.length ? snaps[snaps.length - 1] : null;
         lastSnapEl.textContent = (latest && latest.ts) ? new Date(latest.ts).toLocaleString() : i18n('neverText');
       }
+      const tmEl = document.getElementById('data-snapshot-timemachine');
+      const listEl = document.getElementById('data-snapshot-list');
+      if (tmEl && listEl) {
+        const rows = snaps.slice(-SNAPSHOT_LIST_MAX).reverse();
+        listEl.textContent = '';
+        for (const e of rows) {
+          const row = document.createElement('div');
+          row.className = 'data-snapshot-row';
+          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:var(--fs-xs);';
+          const when = document.createElement('span');
+          when.textContent = (e && e.ts) ? new Date(e.ts).toLocaleString() : '-';
+          const ver = document.createElement('span');
+          ver.textContent = 'v' + ((e && e.schemaVersion != null) ? e.schemaVersion : '?');
+          const size = document.createElement('span');
+          size.textContent = formatSnapshotSize(e && e.size);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn data-snapshot-rollback-btn';
+          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:var(--fs-xs);';
+          btn.dataset.ts = String((e && e.ts) || '');
+          btn.textContent = i18n('dataRollbackBtn');
+          row.append(when, ver, size, btn);
+          listEl.appendChild(row);
+        }
+        tmEl.hidden = rows.length === 0;
+      }
+    } catch (e) { if (typeof debugWarn === 'function') debugWarn('refreshSnapshotHealth', e); }
+  }
+
+  export async function refreshDataHealth() {
+    try {
+      await refreshSnapshotHealth();
+      const corruptRow = document.getElementById('data-corrupt-row');
+      const corruptCountEl = document.getElementById('data-corrupt-count');
+      const corruptTimeEl = document.getElementById('data-corrupt-time');
       const corrupt = await listCorruptArchives();
       if (corruptRow) {
         if (corrupt.length > 0) {
@@ -211,35 +250,6 @@ export function initSettingsUiFacade(deps) {
           gListEl.appendChild(row);
         }
         gWrapEl.hidden = gRows.length === 0;
-      }
-      // Ticket 50 (spec ticket 50): Time Machine list — one row per stored snapshot (ts /
-      // schemaVersion / size, newest first, last SNAPSHOT_LIST_MAX) with a per-row rollback
-      // button. Rows are rebuilt on every modal open (refreshDataHealth is the single seam).
-      const tmEl = document.getElementById('data-snapshot-timemachine');
-      const listEl = document.getElementById('data-snapshot-list');
-      if (tmEl && listEl) {
-        const rows = snaps.slice(-SNAPSHOT_LIST_MAX).reverse();
-        listEl.textContent = '';
-        for (const e of rows) {
-          const row = document.createElement('div');
-          row.className = 'data-snapshot-row';
-          row.style.cssText = 'display:flex;gap:8px;align-items:center;margin:4px 0;font-size:var(--fs-xs);';
-          const when = document.createElement('span');
-          when.textContent = (e && e.ts) ? new Date(e.ts).toLocaleString() : '-';
-          const ver = document.createElement('span');
-          ver.textContent = 'v' + ((e && e.schemaVersion != null) ? e.schemaVersion : '?');
-          const size = document.createElement('span');
-          size.textContent = formatSnapshotSize(e && e.size);
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'btn data-snapshot-rollback-btn';
-          btn.style.cssText = 'margin-left:auto;padding:2px 10px;font-size:var(--fs-xs);';
-          btn.dataset.ts = String((e && e.ts) || '');
-          btn.textContent = i18n('dataRollbackBtn');
-          row.append(when, ver, size, btn);
-          listEl.appendChild(row);
-        }
-        tmEl.hidden = rows.length === 0;
       }
     } catch (e) { if (typeof debugWarn === 'function') debugWarn('refreshDataHealth', e); }
   }

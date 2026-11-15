@@ -1365,6 +1365,42 @@
       }
     }
   },
+  "localAutoBackupHint": {
+    "message": "按周期在浏览器本地自动保存快照，未打开新标签页也能照常执行；绝不会上传服务器，也不会弹出下载文件。",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "上次本地快照",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "已关闭",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "运行中",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "正在保存快照…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "失败",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "待确认开启",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "你之前设置过自动备份周期。升级后后台本地自动备份默认暂停，需要你在这里确认开启才会运行。",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "开启本地自动备份",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
   "titleInputLabel": {
     "message": "盒子标题",
     "description": "Accessible name for the editable box title field"

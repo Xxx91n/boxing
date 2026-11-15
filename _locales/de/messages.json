@@ -1362,6 +1362,42 @@
       }
     }
   },
+  "localAutoBackupHint": {
+    "message": "Speichert lokale Schnappschüsse automatisch in diesem Browser, auch ohne geöffneten Neuen Tab. Lädt nichts hoch und lädt keine Dateien herunter.",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "Letzter lokaler Schnappschuss",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "Aus",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "Aktiv",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "Sicherung läuft…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "Fehler",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "Pausiert — Bestätigung nötig",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "Ihr früheres Sicherungsintervall blieb erhalten. Die lokale Hintergrundsicherung startet erst, wenn Sie sie hier aktivieren.",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "Lokale Autosicherung aktivieren",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
   "titleInputLabel": {
     "message": "Boxtitel",
     "description": "Accessible name for the editable box title field"

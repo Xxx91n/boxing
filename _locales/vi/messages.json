@@ -1362,6 +1362,42 @@
       }
     }
   },
+  "localAutoBackupHint": {
+    "message": "Tự động lưu ảnh chụp cục bộ trong trình duyệt này ngay cả khi không mở Tab mới. Không tải lên máy chủ hay tải tệp về.",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "Ảnh chụp cục bộ gần nhất",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "Đang tắt",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "Đang bật",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "Đang sao lưu…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "Lỗi",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "Tạm dừng — cần xác nhận",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "Chu kỳ sao lưu trước đó của bạn được giữ nguyên. Sao lưu cục bộ tự động dưới nền chỉ chạy khi bạn bật tại đây.",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "Bật sao lưu tự động cục bộ",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
   "titleInputLabel": {
     "message": "Tiêu đề hộp",
     "description": "Accessible name for the editable box title field"

@@ -1402,3 +1402,53 @@ body.box-resizing {
   margin: 0;
   font-size: var(--fs-sm);
 }
+
+/* ── Ticket #124: local background auto-backup status & upgrade opt-in card ── */
+.local-auto-backup__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.local-auto-backup__status[hidden] {
+  display: none;
+}
+.local-auto-backup__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-elevated);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.local-auto-backup__badge[data-state="active"] {
+  border-color: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+.local-auto-backup__badge[data-state="error"] {
+  border-color: var(--color-danger);
+  background: var(--color-danger-hover);
+  color: var(--color-danger);
+}
+.local-auto-backup__error {
+  color: var(--color-danger);
+}
+.local-auto-backup__error[hidden] {
+  display: none;
+}
+.local-auto-backup__upgrade {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+  background: var(--color-elevated);
+}
+.local-auto-backup__upgrade[hidden] {
+  display: none;
+}

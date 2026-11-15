@@ -1365,6 +1365,42 @@
       }
     }
   },
+  "localAutoBackupHint": {
+    "message": "按週期在瀏覽器本機自動儲存快照，即使沒有開啟新分頁也能正常運作；絕不上傳伺服器，也不會下載檔案。",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "上次本機快照",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "已關閉",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "執行中",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "正在儲存快照…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "失敗",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "待確認啟用",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "你先前設定過自動備份週期。升級後背景本機自動備份預設暫停，需在此確認啟用才會執行。",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "啟用本機自動備份",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
   "titleInputLabel": {
     "message": "盒子標題",
     "description": "Accessible name for the editable box title field"

@@ -26,6 +26,7 @@ import { defaultLayout, isPlausibleLayout, mergeById, migrateLayout, normalizeDa
 
 // ── injected ntp.js-scope bindings (assigned once by initStorageFacade, before any call) ──
 let api = null;
+let isBrowserNamespace = false;
 let layoutStorage = null;
 let mirrorWriter = null; // ticket 60: paint-critical boot mirror writer (persist.js facade)
 let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning;
@@ -36,13 +37,24 @@ let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMap
 // Facade injection is the established pattern for exactly this constraint.
 let applyDarkMode = null;
 let onWebDAVPendingPermissionChanged = null;
+let onAutoBackupStateChanged = null;
+
+function getSnapshotCore() {
+  const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+  if (!core) {
+    throw new Error('__boxingSnapshotCore is not loaded (include shared/snapshot-core.js before ntp.js)');
+  }
+  return core;
+}
 
 export function initStorageFacade(deps) {
   api = deps.api;
+  isBrowserNamespace = Boolean(deps.isBrowserNamespace);
   layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   mirrorWriter = deps.mirrorWriter; // ticket 60: boot mirror writer (localStorage, sync-readable first paint)
   applyDarkMode = deps.applyDarkMode; // single dark-mode apply path (persist.js)
   onWebDAVPendingPermissionChanged = deps.onWebDAVPendingPermissionChanged || null;
+  onAutoBackupStateChanged = deps.onAutoBackupStateChanged || null;
   debug = deps.debug;
   debugErr = deps.debugErr;
   debugWarn = deps.debugWarn;
@@ -70,12 +82,23 @@ export function directSetBoxingLayout(persisted) {
   return layoutStorage.set({ boxingLayout: persisted });
 }
 
-// autoBackupDue is a storage.local coordination flag written by the
-// service worker and consumed by the NTP. It is not boxingLayout state, but the
-// write path still routes through this facade (data-golden gate 2, single write
-// path — direct chrome.storage.* writes outside storage.js are violations).
-export function clearAutoBackupDue() {
-  return layoutStorage.remove('autoBackupDue');
+// Ticket #124 (spec #120 T4): autoBackupState is owned by the background service worker
+// and observed by NTP through this storage facade (never written directly outside storage.js).
+const AUTO_BACKUP_STATE_KEY = 'autoBackupState';
+export async function getAutoBackupState() {
+  const core = getSnapshotCore();
+  try {
+    const res = await layoutStorage.get({ [AUTO_BACKUP_STATE_KEY]: null });
+    return core.normalizeAutoBackupState(res && res[AUTO_BACKUP_STATE_KEY]);
+  } catch (_) {
+    return core.defaultAutoBackupState();
+  }
+}
+export async function setAutoBackupState(state) {
+  const core = getSnapshotCore();
+  const normalized = core.normalizeAutoBackupState(state);
+  await layoutStorage.set({ [AUTO_BACKUP_STATE_KEY]: normalized });
+  return normalized;
 }
 
 // Ticket #123: webdavPendingPermission is a storage.local coordination key written
@@ -108,6 +131,15 @@ export function registerStorageOnChanged() {
       if (areaName !== expectedArea) return;
       if (changes.webdavPendingPermission && typeof onWebDAVPendingPermissionChanged === 'function') {
         try { onWebDAVPendingPermissionChanged(changes.webdavPendingPermission.newValue || null); } catch (_) {}
+      }
+      if (changes.autoBackupState && typeof onAutoBackupStateChanged === 'function') {
+        try {
+          const core = getSnapshotCore();
+          onAutoBackupStateChanged(
+            core.normalizeAutoBackupState(changes.autoBackupState.newValue),
+            core.normalizeAutoBackupState(changes.autoBackupState.oldValue)
+          );
+        } catch (_) {}
       }
       if (!changes.boxingLayout?.newValue) return;
       applyExternalLayout(changes.boxingLayout.newValue);
@@ -190,220 +222,162 @@ export function registerStorageOnChanged() {
     try { ensureGroups(); } catch (e) { debugErr("ensureGroups after load", e); } // runtime groups mirror after load
   }
 
-  // ── Ticket 41: Split-key snapshots + Time Machine layered rotation ───────────
-  // Replaces boxingSnapshots[] single-key (Sidebery #1057 anti-pattern) with:
-  //   snap.v1.<ts>  — per-snapshot body key (max 2MB each)
-  //   snap.v1.index  — lightweight index: [{ts, schemaVersion, size}]
-  // Rotation (spec D1): last 24h hourly, 24h–30d daily, >30d weekly; total byte cap LRU fallback.
-  // Compatible with the schemaVersion field; sync transport unchanged.
+  // ── Ticket 41 / #124: Split-key snapshots + Time Machine layered rotation ──
+  // Implementation delegated to shared/snapshot-core.js so background SW and NTP
+  // share the exact same rotation, migration, 2MB/8MB caps, and write serialization.
+  // In real extension contexts, snapshot index mutations/reads route through background.js's
+  // single bgSnapshotQueue so SW alarms and NTP tabs never race on snap.v1.index.
   const SNAP_KEY_PREFIX = 'snap.v1.';
-  const SNAP_INDEX_KEY = 'snap.v1.index';
-  // Measurement basis (issue 71, deferred): every size ceiling here and every index
-  // `size` field compares String.length — UTF-16 code units, not UTF-8 bytes — so
-  // non-ASCII payloads under-count real usage (pure BMP CJK measures roughly
-  // one-third of its UTF-8 byte size). The same unit governs every store reusing
-  // these constants (snap.v1.*, boxingLayout.conflict.*, snap.guard.v1.*,
-  // boxingLayout.corrupt.*); the 8MB total cap itself applies only to the snapshot
-  // and guard namespaces, which additionally cap entry count (30 and 20
-  // respectively) — the conflict/corrupt stores cap by count only.
-  // Converting to UTF-8 byte metering is a cross-module contract change (rotation
-  // trigger points, index size semantics, backward compat) — deferred, never
-  // unilateral.
   const MAX_SNAPSHOT_BYTES = 2 * 1024 * 1024;
   const MAX_SNAPSHOTS_TOTAL_BYTES = 8 * 1024 * 1024;
-  const HOUR_MS = 3600000;
-  const DAY_MS = 86400000;
-  const HOURLY_WINDOW_MS = 24 * HOUR_MS;
-  const DAILY_WINDOW_MS = 30 * DAY_MS;
-  // Compatibility contract (41R): the newest N snapshots are always kept verbatim —
-  // tier dedup applies beyond the floor, so saveSnapshot + restoreFromSnapshot within one
-  // hour still finds every entry (strict same-hour dedup silently pruned pre-update copies).
-  const RAW_KEEP_FLOOR = 10;
   export const MAX_SNAPSHOT_COUNT = 30;
 
-  const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);
-  const dailyBucket = (ts) => Math.floor(ts / DAY_MS);
-  const weeklyBucket = (ts) => Math.floor(ts / (7 * DAY_MS));
+  function hasExtensionSnapshotRuntime() {
+    if (typeof window !== 'undefined' && window.__BOXING_DEMO__) return false;
+    const proto = (typeof window !== 'undefined' && window.location && window.location.protocol) || '';
+    if (!proto.endsWith('-extension:') && proto !== 'extension:') return false;
+    return Boolean(api && api.runtime && typeof api.runtime.sendMessage === 'function');
+  }
 
-  // 41R: _snapMigrated is set ONLY after a fully successful pass (a failed quota/storage
-  // error retries on the next call); _snapMigrating dedupes concurrent callers.
-  let _snapMigrated = false;
-  let _snapMigrating = null;
-
-  // One-time migration: boxingSnapshots[] → split keys
-  async function _migrateSnapshots() {
-    if (_snapMigrated) return;
-    if (_snapMigrating) return _snapMigrating;
-    _snapMigrating = (async () => {
-      const stored = await layoutStorage.get({ boxingSnapshots: null });
-      const oldSnaps = Array.isArray(stored.boxingSnapshots) ? stored.boxingSnapshots : [];
-      if (oldSnaps.length > 0) {
-        debug('Migrating ' + oldSnaps.length + ' boxingSnapshots[] to split keys');
-        const index = await _readIndex();
-        const keysToSet = {};
-        for (const snap of oldSnaps) {
-          if (!snap || typeof snap.ts !== 'number') continue;
-          const snapJson = JSON.stringify(snap);
-          if (snapJson.length > MAX_SNAPSHOT_BYTES) continue;
-          const key = SNAP_KEY_PREFIX + snap.ts;
-          keysToSet[key] = snap;
-          if (!index.some(e => e.ts === snap.ts)) {
-            index.push({ ts: snap.ts, schemaVersion: snap.schemaVersion || 1, size: snapJson.length });
-          }
+  function sendSnapshotMessageToBg(msg) {
+    const runtime = api && api.runtime;
+    if (!runtime || typeof runtime.sendMessage !== 'function') {
+      return Promise.reject(new Error('No extension runtime available'));
+    }
+    if (isBrowserNamespace) {
+      return runtime.sendMessage(msg).then((resp) => {
+        if (resp && resp.success) return resp;
+        throw new Error((resp && resp.error) || 'BG snapshot error');
+      });
+    }
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      try {
+        const ret = runtime.sendMessage(msg, (resp) => {
+          if (settled) return;
+          settled = true;
+          const lastErr = runtime.lastError;
+          if (lastErr) { reject(new Error(lastErr.message)); return; }
+          if (resp && resp.success) resolve(resp);
+          else reject(new Error((resp && resp.error) || 'BG snapshot error'));
+        });
+        if (ret && typeof ret.then === 'function') {
+          ret.then(
+            (resp) => {
+              if (settled) return;
+              settled = true;
+              if (resp && resp.success) resolve(resp);
+              else reject(new Error((resp && resp.error) || 'BG snapshot error'));
+            },
+            (err) => {
+              if (settled) return;
+              settled = true;
+              reject(err);
+            }
+          );
         }
-        if (Object.keys(keysToSet).length > 0) {
-          await layoutStorage.set(keysToSet);
-        }
-        // Remove old monolithic key
-        try { await layoutStorage.remove('boxingSnapshots'); } catch (_) { /* silent: monolith removal, retry happens next boot */ }
-        index.sort((a, b) => a.ts - b.ts);
-        await _rotateAndWriteIndex(index);
-        debug('Snapshot migration complete: ' + index.length + ' entries');
+      } catch (e) {
+        if (!settled) { settled = true; reject(e); }
       }
-      _snapMigrated = true;
-    })();
+    });
+  }
+
+  // One-time migration: boxingSnapshots[] → split keys (delegated to snapshot-core / background queue)
+  async function _migrateSnapshots() {
     try {
-      await _snapMigrating;
+      if (hasExtensionSnapshotRuntime()) {
+        await sendSnapshotMessageToBg({ type: 'snapshot-migrate' });
+        return;
+      }
+      await getSnapshotCore().migrateSnapshotsWithAdapter(layoutStorage, {
+        log: debug,
+        errorLog: debugErr,
+      });
     } catch (e) {
-      _snapMigrating = null; // allow retry — flag stays unset until success (41R AC8)
       debugErr('_migrateSnapshots', e);
     }
   }
 
-  // Namespace-scoped so ticket 56's conflict-archive safe copies run through this same
-  // rotation instead of growing a second retention engine; the defaults keep the layout
-  // snapshot path byte-identical. `tiers: false` is for stores whose entries hold distinct
-  // payloads (a safe copy is not a redundant sample of its bucket): only the caps prune.
-  async function _readIndex(indexKey = SNAP_INDEX_KEY) {
-    try {
-      const stored = await layoutStorage.get(indexKey);
-      const v = stored && stored[indexKey];
-      return Array.isArray(v) ? v : [];
-    } catch (_) { return []; }
+  // Namespace-scoped index/rotation helpers delegated to shared/snapshot-core.js
+  // (reused by ticket 56 conflict-guard namespace).
+  async function _readIndex(indexKey) {
+    return getSnapshotCore().readIndexWithAdapter(layoutStorage, indexKey);
   }
 
-  async function _writeIndex(index, indexKey = SNAP_INDEX_KEY) {
-    await layoutStorage.set({ [indexKey]: index });
+  async function _writeIndex(index, indexKey) {
+    return getSnapshotCore().writeIndexWithAdapter(layoutStorage, index, indexKey);
   }
 
-  // Rotation: newest RAW_KEEP_FLOOR entries pass through verbatim; older
-  // entries are tier-deduped (hourly / daily / weekly), then total-byte LRU.
   async function _rotateAndWriteIndex(index, ns = {}) {
-    const keyPrefix = ns.keyPrefix || SNAP_KEY_PREFIX;
-    const indexKey = ns.indexKey || SNAP_INDEX_KEY;
-    const countCap = ns.countCap || MAX_SNAPSHOT_COUNT;
-    const now = Date.now();
-    const sorted = index.slice().sort((a, b) => a.ts - b.ts);
-    const floor = sorted.slice(Math.max(0, sorted.length - RAW_KEEP_FLOOR));
-    const older = sorted.slice(0, Math.max(0, sorted.length - RAW_KEEP_FLOOR));
-    const tiers = { hourly: [], daily: [], weekly: [] };
-    for (const e of older) {
-      const age = now - e.ts;
-      if (age <= HOURLY_WINDOW_MS) tiers.hourly.push(e);
-      else if (age <= DAILY_WINDOW_MS) tiers.daily.push(e);
-      else tiers.weekly.push(e);
-    }
-    // Per-tier dedup: keep newest entry per bucket
-    const dedup = (entries, bucketFn) => {
-      const map = new Map();
-      for (const e of entries) {
-        const b = bucketFn(e.ts);
-        const existing = map.get(b);
-        if (!existing || e.ts > existing.ts) map.set(b, e);
-      }
-      return Array.from(map.values()).sort((a, b) => a.ts - b.ts);
-    };
-    const kept = ns.tiers === false
-      ? sorted.slice()
-      : [
-          ...dedup(tiers.hourly, hourlyBucket),
-          ...dedup(tiers.daily, dailyBucket),
-          ...dedup(tiers.weekly, weeklyBucket),
-          ...floor,
-        ];
-    kept.sort((a, b) => a.ts - b.ts);
-    // Absolute count cap: drop oldest until at or under the namespace cap (snapshots: 30)
-    while (kept.length > countCap) kept.shift();
-    // Total byte cap: drop oldest until under budget (keep at least 1)
-    let totalBytes = kept.reduce((s, e) => s + (e.size || 0), 0);
-    while (kept.length > 1 && totalBytes > MAX_SNAPSHOTS_TOTAL_BYTES) {
-      totalBytes -= (kept.shift().size || 0);
-    }
-    // Commit the surviving index FIRST, then remove the bodies it no longer lists. Removing
-    // before the commit was the wrong order: if the commit is rejected the stored index keeps
-    // pointing at payloads that are already gone, and a safe copy of an already deleted archive
-    // becomes unreadable for good. A removal that fails after the commit only leaves bytes no
-    // index lists any more.
-    const keptTs = new Set(kept.map(e => e.ts));
-    await _writeIndex(kept, indexKey);
-    for (const e of index) {
-      if (!keptTs.has(e.ts)) {
-        try { await layoutStorage.remove(keyPrefix + e.ts); } catch (_) { /* non-fatal: orphan bytes */ }
-      }
-    }
-    return kept;
+    return getSnapshotCore().rotateAndWriteIndexWithAdapter(layoutStorage, index, ns);
   }
 
-  // Ticket 50 (spec ticket 50): saveSnapshot(reason) — the optional label (e.g. 'pre-restore') is
-  // written on the snapshot BODY only; snap.v1.index stays metadata-only {ts,schemaVersion,size}
-  // (41R pin). Returns snap.ts on success, null when skipped (over-cap) or on storage error —
-  // callers fail closed: ticket 50 forbids a full-replacement restore without a safety snapshot
-  // (fail-closed semantics). Monotonic ts guard (precedent: _lastConflictTs):
-  // two snapshots in one millisecond must not share a body key.
-  let _lastSnapTs = 0;
+  // Ticket 50 (spec ticket 50): saveSnapshot(reason) — returns snap.ts on success, null when
+  // skipped (over-cap) or on storage error. Delegated to background queue in extension mode.
   export async function saveSnapshot(reason) {
     try {
-      await _migrateSnapshots();
-      let ts = Date.now();
-      if (ts <= _lastSnapTs) ts = _lastSnapTs + 1;
-      _lastSnapTs = ts;
-      const snap = {
-        ts,
-        schemaVersion: layout.schemaVersion || 1,
-        data: sanitizeLayoutForBackup(layout)
-      };
-      if (reason) snap.reason = String(reason);
-      const snapJson = JSON.stringify(snap);
-      if (snapJson.length > MAX_SNAPSHOT_BYTES) {
-        debug('Snapshot skipped: single snapshot ' + snapJson.length + 'B exceeds cap ' + MAX_SNAPSHOT_BYTES);
-        return null;
+      if (hasExtensionSnapshotRuntime()) {
+        if (!layout || typeof layout !== 'object' || Array.isArray(layout)) return null;
+        const resp = await sendSnapshotMessageToBg({
+          type: 'snapshot-save',
+          layout: sanitizeLayoutForBackup(layout),
+          reason,
+        });
+        return (resp && resp.result && resp.result.ok) ? resp.result.ts : null;
       }
-      const key = SNAP_KEY_PREFIX + ts;
-      await layoutStorage.set({ [key]: snap });
-      const index = await _readIndex();
-      index.push({ ts, schemaVersion: snap.schemaVersion, size: snapJson.length });
-      const kept = await _rotateAndWriteIndex(index);
-      debug('Snapshot saved' + (reason ? ' (' + reason + ')' : '') + ', total=' + kept.length + ' entries, bytes~' +
-        kept.reduce((s, e) => s + (e.size || 0), 0));
-      return ts;
-    } catch (e) { debugErr('saveSnapshot', e); return null; }
+      return await getSnapshotCore().saveSnapshotWithAdapter(layoutStorage, layout, {
+        reason,
+        sanitizeLayout: sanitizeLayoutForBackup,
+        log: debug,
+        errorLog: debugErr,
+      });
+    } catch (e) {
+      debugErr('saveSnapshot', e);
+      return null;
+    }
   }
 
   async function getLatestSnapshot() {
     try {
-      await _migrateSnapshots();
-      const index = await _readIndex();
-      if (index.length === 0) return null;
-      const latest = index[index.length - 1];
-      const key = SNAP_KEY_PREFIX + latest.ts;
-      const stored = await layoutStorage.get(key);
-      return (stored && stored[key]) || null;
-    } catch (e) { debugErr('getLatestSnapshot', e); return null; }
+      if (hasExtensionSnapshotRuntime()) {
+        await _migrateSnapshots();
+        const index = await _readIndex();
+        if (index.length === 0) return null;
+        const latest = index[index.length - 1];
+        return await _getSnapshotBody(latest.ts);
+      }
+      return await getSnapshotCore().getLatestSnapshotWithAdapter(layoutStorage, {
+        log: debug,
+        errorLog: debugErr,
+      });
+    } catch (e) {
+      debugErr('getLatestSnapshot', e);
+      return null;
+    }
   }
 
   export async function listSnapshots() {
     try {
-      await _migrateSnapshots();
-      return await _readIndex();
-    } catch (e) { debugErr('listSnapshots', e); return []; }
+      if (hasExtensionSnapshotRuntime()) {
+        const resp = await sendSnapshotMessageToBg({ type: 'snapshot-list' });
+        return Array.isArray(resp && resp.snapshots) ? resp.snapshots : [];
+      }
+      return await getSnapshotCore().listSnapshotsWithAdapter(layoutStorage, {
+        log: debug,
+        errorLog: debugErr,
+      });
+    } catch (e) {
+      debugErr('listSnapshots', e);
+      return [];
+    }
   }
 
   async function _getSnapshotBody(ts) {
     try {
-      const key = SNAP_KEY_PREFIX + ts;
-      const stored = await layoutStorage.get(key);
-      return (stored && stored[key]) || null;
-    } catch (_) { return null; }
+      return await getSnapshotCore().getSnapshotBodyWithAdapter(layoutStorage, ts);
+    } catch (_) {
+      return null;
+    }
   }
 
   export async function restoreFromSnapshot(ts) {

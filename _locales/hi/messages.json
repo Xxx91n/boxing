@@ -1362,6 +1362,42 @@
       }
     }
   },
+  "localAutoBackupHint": {
+    "message": "नया टैब खुले बिना भी इस ब्राउज़र में स्थानीय स्नैपशॉट स्वतः सहेजता है। न सर्वर पर अपलोड होता है, न फ़ाइल डाउनलोड होती है।",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "अंतिम स्थानीय स्नैपशॉट",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "बंद",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "सक्रिय",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "सहेजा जा रहा है…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "त्रुटि",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "रुका हुआ — पुष्टि आवश्यक",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "आपका पिछला ऑटो-बैकअप अंतराल सुरक्षित है। जब तक आप इसे यहाँ चालू नहीं करते, बैकग्राउंड स्थानीय ऑटो-बैकअप बंद रहेगा।",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "स्थानीय ऑटो-बैकअप चालू करें",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
   "titleInputLabel": {
     "message": "बॉक्स का शीर्षक",
     "description": "Accessible name for the editable box title field"

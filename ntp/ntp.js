@@ -46,7 +46,7 @@ import { initPopupsFacade } from './popups.js';
 
 import { initCredentialsFacade } from './credentials.js';
 import { initSyncEngineFacade, bindSyncBackupUi } from './sync-engine.js';
-import { initSettingsUiFacade, bindSettingsUi, syncSettingsDOM, openSettingsModal, openConfirmModal } from './settings-ui.js';
+import { initSettingsUiFacade, bindSettingsUi, syncSettingsDOM, openSettingsModal, openConfirmModal, refreshDataHealth, refreshSnapshotHealth } from './settings-ui.js';
 import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHelpEntry } from './onboarding.js';
 (async () => {
   // ── cross-browser API ──────────────────────────────────
@@ -136,7 +136,7 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
   const layoutStorage = api.storage.local;  // A6: storage.local (10MB / unlimited) vs sync 100KB quota
   // Ticket 07 (architecture-recovery): inject ntp.js-scope deps into the storage write facade
   // (./storage.js) — write chain + loop guard + onChanged listener moved there verbatim.
-  initStorageFacade({ api, debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning, mirrorWriter: () => { persistBootThemeMirror((mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } }); }, applyDarkMode, onWebDAVPendingPermissionChanged: () => { try { if (typeof window.__boxingRefreshWebDAVPermissionUi === 'function') window.__boxingRefreshWebDAVPermissionUi(); } catch (_) {} } });
+  initStorageFacade({ api, isBrowserNamespace: typeof browser !== 'undefined' && api === browser, debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMaps, markDsuDirty, ensureGroups, dsuRebuildFromConnections, getLargeBox, renderCanvas, renderInnerSurface, renderCrumbs, updateCaption, applyInnerTransform, renderConnections, syncSettingsDOM, showBoxDeletedWarning, mirrorWriter: () => { persistBootThemeMirror((mirror) => { try { localStorage.setItem(BOOT_THEME_KEY, JSON.stringify(mirror)); } catch (e) { debugWarn('boot mirror setItem', e); } }); }, applyDarkMode, onWebDAVPendingPermissionChanged: () => { try { if (typeof window.__boxingRefreshWebDAVPermissionUi === 'function') window.__boxingRefreshWebDAVPermissionUi(); } catch (_) {} }, onAutoBackupStateChanged: (nextState, prevState) => { try { if (typeof window.__boxingRefreshLocalAutoBackupUi === 'function') window.__boxingRefreshLocalAutoBackupUi(); } catch (_) {} const nextSnapTs = nextState && nextState.local ? nextState.local.lastSnapshotTs : 0; const prevSnapTs = prevState && prevState.local ? prevState.local.lastSnapshotTs : 0; const modal = document.getElementById('settings-modal'); if (nextSnapTs && nextSnapTs !== prevSnapTs && modal && !modal.hidden) { try { refreshSnapshotHealth(); } catch (_) {} } } });
 
   // ── constants ──────────────────────────────────────────
   const DEBUG = true;
@@ -491,7 +491,7 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
   // (boxingCredKey.* prefix-pinned) — credentials.js keeps zero direct chrome.storage calls
   // (gate2 single-write-path) and stays a pure crypto leaf.
   initCredentialsFacade({ debugErr, credKeyStore: { get: credKeyGet, set: credKeySet } });
-  initSyncEngineFacade({ debug, debugErr, debugWarn, syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput });
+  initSyncEngineFacade({ debug, debugErr, debugWarn, refreshDataHealth, refreshSnapshotHealth, syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput });
   initSettingsUiFacade({ debug, debugErr, debugWarn, updateCaption, settingsModal, modalClose, langSelect, rememberCheck, urlOpenModeSelect, connDeleteActionSelect, fontSlider, fontSliderVal, zoomSlider, zoomSliderVal, darkModeGroup, darkModeBtn, confirmModal, confirmTitle, confirmBody, confirmCancel, confirmDelete, appEl, exportBtn, exportFullBtn, importBtn, importFile, diagExportLogBtn, diagClearLogBtn, diagLogLevelSelect });
   initOnboardingFacade({ debug, debugErr, updateCaption, langSelect, demoRuntimeId: () => (api && api.runtime && api.runtime.id) || null });
 

@@ -29,7 +29,7 @@ test.describe('Wave 2026.10.17 — Acceptance Tests', () => {
 
     expect(syncSrc).not.toContain("if (p === 'local') backupToLocal();");
     expect(syncSrc).toContain("window.__BOXING_DEMO__");
-    expect(utilsSrc).toContain("lastBackupAt: Date.now()");
+    expect(utilsSrc).toContain("autoBackupInterval: 0, lastBackupAt: 0");
 
     // 2. Browser runtime contract
     await boot(page);

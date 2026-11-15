@@ -1362,6 +1362,42 @@
       }
     }
   },
+  "localAutoBackupHint": {
+    "message": "Guarda instantáneas locales automáticamente en este navegador, incluso sin pestañas nuevas abiertas. Nunca sube datos ni descarga archivos.",
+    "description": "Hint explaining background local auto-backup snapshots"
+  },
+  "localAutoBackupLastLabel": {
+    "message": "Última instantánea local",
+    "description": "Label for last local background snapshot timestamp"
+  },
+  "localAutoBackupStatusOff": {
+    "message": "Desactivado",
+    "description": "Status badge when local auto-backup is off"
+  },
+  "localAutoBackupStatusActive": {
+    "message": "Activo",
+    "description": "Status badge when local auto-backup is active"
+  },
+  "localAutoBackupStatusRunning": {
+    "message": "Guardando…",
+    "description": "Status badge while local auto-backup snapshot is saving"
+  },
+  "localAutoBackupStatusError": {
+    "message": "Fallo",
+    "description": "Status badge when the last local auto-backup failed"
+  },
+  "localAutoBackupStatusNeedsOptIn": {
+    "message": "En pausa — requiere confirmación",
+    "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupUpgradeHint": {
+    "message": "Se conservó tu intervalo anterior. La copia automática local en segundo plano permanecerá apagada hasta que la actives aquí.",
+    "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
+  },
+  "autoBackupActivateBtn": {
+    "message": "Activar copia automática local",
+    "description": "Button to explicitly enable local auto-backup from preserved legacy interval"
+  },
   "titleInputLabel": {
     "message": "Título de la caja",
     "description": "Accessible name for the editable box title field"

@@ -131,7 +131,8 @@
       "boxing-merge-three-way.spec.ts",
       "boxing-wave11-1017.spec.ts",
       "boxing-webdav-permission.spec.ts",
-      "boxing-backup-credential-allowlist.spec.ts"
+      "boxing-backup-credential-allowlist.spec.ts",
+      "boxing-bg-local-auto-backup.spec.ts"
     ],
     "ntp/persist.js": [
       "boxing-accent-theme.spec.ts",
@@ -152,7 +153,8 @@
       "boxing-dr-export-envelope.spec.ts",
       "boxing-merge-three-way.spec.ts",
       "boxing-wave11-1017.spec.ts",
-      "boxing-backup-credential-allowlist.spec.ts"
+      "boxing-backup-credential-allowlist.spec.ts",
+      "boxing-bg-local-auto-backup.spec.ts"
     ],
     "ntp/credentials.js": [
       "boxing-cred-encrypt.spec.ts",
