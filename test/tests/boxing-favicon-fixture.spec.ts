@@ -132,6 +132,8 @@ test.describe('favicon fixture lane', () => {
     let release: () => void = () => {};
     const gate = new Promise<void>((resolve) => { release = resolve; });
     let directRequests = 0;
+    const requests: string[] = [];
+    page.on('request', (request) => { if (request.url().includes(FIXTURE_HOST)) requests.push(request.url()); });
     await page.route(`https://${FIXTURE_HOST}/**`, async (route) => {
       directRequests++;
       await gate;
@@ -148,7 +150,11 @@ test.describe('favicon fixture lane', () => {
         document.body.appendChild(img);
         (window as any).__boxingDebug.loadFavicon(img, `https://${host}/other`);
       }, FIXTURE_HOST);
-      await expect.poll(() => directRequests).toBe(1);
+      try { await expect.poll(() => directRequests).toBe(1); }
+      catch (error) {
+        const cache = await page.evaluate((key) => localStorage.getItem(key), CACHE_KEY);
+        throw new Error(`Direct request did not start. Requests: ${JSON.stringify(requests)}; cache: ${cache}`, { cause: error });
+      }
       await runRetrySample(page); // skips the host whose display probe is pending
       expect(directRequests).toBe(1);
       release();
@@ -169,6 +175,8 @@ test.describe('favicon fixture lane', () => {
     entries['expired-miss.test'] = { url: null, ts: now - 181 * DAY };
     await bootFixtureLane(page, { entries, holdRetries: true });
     const directHosts = new Set<string>();
+    const requests: string[] = [];
+    page.on('request', (request) => { if (request.url().includes('.test')) requests.push(request.url()); });
     await page.route('https://*.test/favicon.ico', (route) => {
       const host = new URL(route.request().url()).hostname;
       if (Object.hasOwn(entries, host)) directHosts.add(host);
@@ -179,7 +187,11 @@ test.describe('favicon fixture lane', () => {
     await expectFaviconPainted(page);
     expect(directHosts.size).toBe(0);
     await runRetrySample(page);
-    await expect.poll(() => directHosts.size).toBe(3);
+    try { await expect.poll(() => directHosts.size).toBe(3); }
+    catch (error) {
+      const cache = await page.evaluate((key) => localStorage.getItem(key), CACHE_KEY);
+      throw new Error(`Sample requests missing. Requests: ${JSON.stringify(requests)}; cache: ${cache}`, { cause: error });
+    }
     expect(directHosts.has('old-miss.test')).toBe(true);
     expect(directHosts.has('expired-miss.test')).toBe(false);
     // Persisting a refreshed miss also flushes the hydrated cache. This checks
@@ -203,6 +215,39 @@ test.describe('favicon fixture lane', () => {
     await expectFaviconPainted(page);
     expect(retiredRequests).toBe(0);
   });
+
+  for (const outcome of ['resolve', 'reject'] as const) {
+    test(`a late stale decode cannot ${outcome === 'resolve' ? 'replace' : 'hide'} a refreshed icon`, async ({ page }) => {
+      await bootFixtureLane(page, {
+        entries: { [FIXTURE_HOST]: { url: FIXTURE_FAVICON_URL, ts: Date.now() - 8 * DAY } },
+        holdRetries: true,
+      });
+      const freshUrl = `https://icon.horse/icon/${FIXTURE_HOST}`;
+      await page.route(EXTERNAL_FAVICON_RE, (route) => route.request().url() === freshUrl
+        ? route.fulfill({ status: 200, contentType: 'image/png', body: FIXTURE_PNG })
+        : route.abort());
+      await page.evaluate((oldUrl) => {
+        const originalDecode = HTMLImageElement.prototype.decode;
+        HTMLImageElement.prototype.decode = function () {
+          if (this.src !== oldUrl) return originalDecode.call(this);
+          (window as any).__oldFaviconDecodeStarted = true;
+          return new Promise<void>((resolve, reject) => {
+            (window as any).__finishOldFaviconDecode = (succeed: boolean) => succeed ? resolve() : reject(new Error('old icon failed'));
+          });
+        };
+      }, FIXTURE_FAVICON_URL);
+      await seedAndEnterSmallBox(page);
+      await expect.poll(() => page.evaluate(() => Boolean((window as any).__oldFaviconDecodeStarted))).toBe(true);
+      const favicon = page.locator('.small-box[data-id="S1"] .bm-row__favicon').first();
+      await expect(favicon).toHaveAttribute('src', freshUrl);
+      await expect(favicon).toBeVisible();
+      await page.evaluate((succeed) => (window as any).__finishOldFaviconDecode(succeed), outcome === 'resolve');
+      // Wait for the old promise's continuation before checking the painted icon.
+      await page.evaluate(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
+      await expect(favicon).toHaveAttribute('src', freshUrl);
+      await expect(favicon).toBeVisible();
+    });
+  }
 
   for (const winner of ['https://icon.horse/icon/', 'https://favicon.yandex.net/favicon/v2/']) {
     test(`the added source ${winner} can supply a cold icon`, async ({ page }) => {

@@ -312,13 +312,19 @@ function paintFaviconPixel(img, host, pixel) {
   });
 }
 
+const faviconPaintVersions = new WeakMap();
 function applyDecodedFavicon(img, host, src) {
+  // A slow decode of a stale URL must not overwrite a newer refresh for this row.
+  const version = (faviconPaintVersions.get(img) || 0) + 1;
+  faviconPaintVersions.set(img, version);
   const probe = new Image();
   probe.src = src;
   return probe.decode().then(() => {
+    if (faviconPaintVersions.get(img) !== version) return false;
     paintProbeImage(img, host, probe);
     return true;
   }).catch(() => {
+    if (faviconPaintVersions.get(img) !== version) return false;
     img.classList.remove('is-loading');
     img.style.display = 'none';
     return false;
