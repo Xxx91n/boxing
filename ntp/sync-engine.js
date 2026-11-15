@@ -9,7 +9,7 @@
 
 import { layout, setLayout, writerId } from './state.js';
 import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, clearAutoBackupDue } from './storage.js';
-import { migrateLayout, mergeLayoutThreeWay } from './utils.js';
+import { migrateLayout, mergeLayoutThreeWay, sanitizeLayoutForBackup, redactUrlForLog } from './utils.js';
 import { i18n } from './i18n.js';
 import { renderCanvas } from './render.js';
 import { encryptCredential, decryptCredential } from './credentials.js';
@@ -193,7 +193,7 @@ export function initSyncEngineFacade(deps) {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
       const pass = webdavPassInput?.value || '';
-      debug('WebDAV test: starting', { url, user: user ? '(set)' : '(empty)', pass: pass ? '(set)' : '(empty)' });
+      debug('WebDAV test: starting', { url: redactUrlForLog(url), user: user ? '(set)' : '(empty)', pass: pass ? '(set)' : '(empty)' });
       if (!url) throw webdavError('webdavErrNoUrl');
       // BX-AUD-01/03 front-end guard: private hosts, scheme, length, embedded creds
       if (!isSafeExtUrl(url)) {
@@ -262,13 +262,21 @@ export function initSyncEngineFacade(deps) {
 
     // (Bug16): apply layout.settings.syncLevel — what to push to remote.
     function buildSyncPayload() {
-      // 66/every sync/export payload goes through the same sanitize boundary as
-      // persistence, so runtime-only diagnostics (__lastSaveError) and computed data
-      // (groups, runtime-only state) never leave the browser.
+      // Ticket 122 (spec #120 T2): explicit field allowlist boundary ensures sync
+      // credentials, runtime diagnostics (__*), computed groups, and unknown fields
+      // never leave the browser.
       const lvl = layout.settings.syncLevel || 'full';
-      if (lvl === 'settingsOnly') return stripGroupsForPersist(Object.assign({}, layout, { boxes: [], connections: [], groups: [] }));
-      if (lvl === 'boxesOnly') return stripGroupsForPersist(Object.assign({}, layout, { settings: null }));
-      return stripGroupsForPersist(layout);
+      const clean = sanitizeLayoutForBackup(layout);
+      if (lvl === 'settingsOnly') {
+        clean.boxes = [];
+        clean.connections = [];
+        return clean;
+      }
+      if (lvl === 'boxesOnly') {
+        clean.settings = null;
+        return clean;
+      }
+      return clean;
     }
     window.__bxSync = window.__bxSync || {};
     window.__bxSync.buildSyncPayload = buildSyncPayload;
@@ -277,7 +285,7 @@ export function initSyncEngineFacade(deps) {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
       const pass = webdavPassInput?.value || '';
-      debug('WebDAV backup: starting', { url, user: user ? '(set)' : '(empty)' });
+      debug('WebDAV backup: starting', { url: redactUrlForLog(url), user: user ? '(set)' : '(empty)' });
       if (!url) throw webdavError('webdavErrNoUrl');
       // BX-AUD-01/03 front-end guard: private hosts, scheme, length, embedded creds
       if (!isSafeExtUrl(url)) {
@@ -296,7 +304,7 @@ export function initSyncEngineFacade(deps) {
       // can push fileUrl over it — check the value that is actually sent, so the
       // page-direct fetch fallback below can never see an overlong URL.
       if (fileUrlOverCap(fileUrl)) throw webdavError('webdavErrUrlTooLong');
-      debug('WebDAV backup: resolved file URL', fileUrl);
+      debug('WebDAV backup: resolved file URL', redactUrlForLog(fileUrl));
       if (user && !pass) throw webdavError('webdavErrNoPass');
       const body = JSON.stringify(buildSyncPayload(), null, 2);
       debug('WebDAV backup: sending PUT', { size: body.length });
@@ -536,7 +544,7 @@ export function initSyncEngineFacade(deps) {
       const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
       const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
       const pass = webdavPassInput?.value || '';
-      debug('WebDAV sync: starting', { url, user: user ? '(set)' : '(empty)' });
+      debug('WebDAV sync: starting', { url: redactUrlForLog(url), user: user ? '(set)' : '(empty)' });
       if (!url) throw webdavError('webdavErrNoUrl');
       checkUrlValid(url);
       if (user && !pass) throw webdavError('webdavErrNoPass');
@@ -556,7 +564,7 @@ export function initSyncEngineFacade(deps) {
             // Replace local layout with cloud (keep sync meta).
             // Ticket 44: explicit user-confirmed overwrite — newer-wins is allowed HERE,
             // but the discarded local side is archived as a conflict copy first (never silent).
-            await archiveConflictLayouts(stripGroupsForPersist(layout), { reason: 'webdav-data-loss-restore', side: 'local' });
+            await archiveConflictLayouts(sanitizeLayoutForBackup(layout), { reason: 'webdav-data-loss-restore', side: 'local' });
             // Ticket 51 (spec ticket 51): copy-before-overwrite unified — the conflict
             // archive keeps the payload verbatim, but the snapshot makes it a
             // one-click Time Machine point like every other overwrite entry.
@@ -575,7 +583,7 @@ export function initSyncEngineFacade(deps) {
             try {
               const restoredPersisted = stripGroupsForPersist(layout);
               await directSetBoxingLayout(restoredPersisted);
-              await setSyncBase(restoredPersisted); // ticket 91: user-confirmed cloud state becomes the new ancestor
+              await setSyncBase(sanitizeLayoutForBackup(restoredPersisted)); // ticket 91: user-confirmed cloud state becomes the new ancestor
             } catch (e) { debugErr('WebDAV sync: data-loss restore set failed', e); }
             renderCanvas();
             const cnt = computeBoxCount(layout).total;
@@ -622,7 +630,7 @@ export function initSyncEngineFacade(deps) {
         try {
           const firstPullPersisted = stripGroupsForPersist(layout);
           await directSetBoxingLayout(firstPullPersisted);
-          await setSyncBase(firstPullPersisted); // ticket 91: adopted state is the new ancestor
+          await setSyncBase(sanitizeLayoutForBackup(firstPullPersisted)); // ticket 91: adopted state is the new ancestor
         } catch (e) { debugErr('WebDAV sync: first-time pull set failed', e); }
         renderCanvas();
         debug('WebDAV sync: first-time pull', { boxes: layout.boxes.length });
@@ -661,7 +669,7 @@ export function initSyncEngineFacade(deps) {
             layout.settings.lastSyncAt = Date.now();
             const mergedPersisted = stripGroupsForPersist(layout);
             await directSetBoxingLayout(mergedPersisted);
-            await setSyncBase(mergedPersisted); // merged agreement rolls base forward
+            await setSyncBase(sanitizeLayoutForBackup(mergedPersisted)); // merged agreement rolls base forward
             renderCanvas();
             setBaselineBoxCount(computeBoxCount(layout).total);
             debug('WebDAV sync: field-level merge complete', { boxes: layout.boxes.length });
@@ -672,9 +680,9 @@ export function initSyncEngineFacade(deps) {
           // main copy (both sides survive: winner on boxingLayout, loser on the conflict key).
           debugWarn('WebDAV sync: field-level merge failed — archiving the losing side as a conflict copy before newer-wins');
           if (cloudUpdatedAt >= localUpdatedAt && cloud?._meta?.writerId !== writerId) {
-            await archiveConflictLayouts(stripGroupsForPersist(layout), { reason: 'webdav-merge-failed', side: 'local' });
+            await archiveConflictLayouts(sanitizeLayoutForBackup(layout), { reason: 'webdav-merge-failed', side: 'local' });
           } else {
-            await archiveConflictLayouts({ boxes: (cloud.boxes || []) }, { reason: 'webdav-merge-failed', side: 'cloud' });
+            await archiveConflictLayouts({ boxes: (sanitizeLayoutForBackup(cloud).boxes || []) }, { reason: 'webdav-merge-failed', side: 'cloud' });
           }
         }
         // Original newer-wins logic
@@ -707,30 +715,32 @@ export function initSyncEngineFacade(deps) {
           try {
             const pulledPersisted = stripGroupsForPersist(layout);
             await directSetBoxingLayout(pulledPersisted);
-            await setSyncBase(pulledPersisted); // ticket 91: adopted state is the new ancestor
+            await setSyncBase(sanitizeLayoutForBackup(pulledPersisted)); // ticket 91: adopted state is the new ancestor
           } catch (e) { debugErr('WebDAV sync: cloud-newer pull set failed', e); }
           renderCanvas();
           debug('WebDAV sync: cloud newer, pulled', { boxes: layout.boxes.length });
           return { direction: 'pull', cloudBoxes: layout.boxes.length, localBoxes: layout.boxes.length };
         }
         // Local is newer → upload local over cloud.
-        const body = JSON.stringify(stripGroupsForPersist(layout), null, 2);
+        const sanitizedPayload = sanitizeLayoutForBackup(layout);
+        const body = JSON.stringify(sanitizedPayload, null, 2);
         await webdavPutLocal(fileUrl, user, pass, body);
         layout.settings.lastSyncAt = Date.now();
         setBaselineBoxCount(computeBoxCount(layout).total);
         saveLayout();
-        await setSyncBase(JSON.parse(body)); // ticket 91: pushed state is the new ancestor
+        await setSyncBase(sanitizedPayload); // ticket 91: pushed state is the new ancestor
         debug('WebDAV sync: local newer, pushed', { boxes: layout.boxes.length });
         return { direction: 'push', cloudBoxes: cloud.boxes.length, localBoxes: layout.boxes.length };
       }
 
       // Cloud absent or invalid → upload local.
-      const body = JSON.stringify(stripGroupsForPersist(layout), null, 2);
+      const sanitizedPayload = sanitizeLayoutForBackup(layout);
+      const body = JSON.stringify(sanitizedPayload, null, 2);
       await webdavPutLocal(fileUrl, user, pass, body);
       layout.settings.lastSyncAt = Date.now();
       setBaselineBoxCount(computeBoxCount(layout).total);
       saveLayout();
-      await setSyncBase(JSON.parse(body)); // ticket 91: pushed state is the new ancestor
+      await setSyncBase(sanitizedPayload); // ticket 91: pushed state is the new ancestor
       debug('WebDAV sync: no cloud, pushed local', { boxes: layout.boxes.length });
       return { direction: 'push', cloudBoxes: 0, localBoxes: layout.boxes.length };
     }
@@ -789,7 +799,7 @@ export function initSyncEngineFacade(deps) {
 
     function backupToLocal() {
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      const blob = new Blob([JSON.stringify(stripGroupsForPersist(layout), null, 2)], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(sanitizeLayoutForBackup(layout), null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'boxing-backup-' + ts + '.json';
