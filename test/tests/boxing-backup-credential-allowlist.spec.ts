@@ -455,7 +455,7 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     expect(drIdx[0].error).toContain('https://***:***@h.test/?***');
     expect(drIdx[0].rawLeak).toBeUndefined();
 
-    // Non-JSON broken raw string in corrupt archive must fail closed.
+    // Non-JSON broken raw string in corrupt archive & array raw in conflict archive must fail closed.
     const brokenCorrupt = sanitizeCorruptArchiveForExport({
       ts: CORRUPT_TS,
       error: 'SyntaxError',
@@ -463,10 +463,25 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     });
     expect(brokenCorrupt.raw).toBe('[REDACTED_CORRUPT_RAW]');
 
+    const arrayConflict = sanitizeConflictArchiveForExport({
+      ts: CONFLICT_TS,
+      reason: 'sync',
+      side: 'cloud',
+      size: 40,
+      boxes: 0,
+      raw: [{ _encWebdavPass: { v: 3 }, extraSecret: SPEC_PASS }],
+    });
+    expect(arrayConflict.raw).toEqual([]);
+
     // URL and log text redaction unit edge cases.
     expect(redactUrlForLog('https://alice:secret@dav.example.com/root?token=123#frag')).toBe('https://***:***@dav.example.com/root?***#***');
-    expect(redactSensitiveLogText('Authorization: Basic dXNlcjpwYXNz url=https://u:p@h.test/p?k=v#h {"_encGistToken":{"v":3},"boxingCredKey":"k"}'))
-      .toContain('Basic [REDACTED]');
+    const redactedMixed = redactSensitiveLogText(
+      'Authorization: Basic dXNlcjpwYXNz {"url":"https://u:p@h.test/p?k=v#h","boxingCredKey.v1":"secret-pik","_encGistToken":{"v":3}}',
+    );
+    expect(redactedMixed).toContain('Basic [REDACTED]');
+    expect(redactedMixed).toContain('"url":"https://***:***@h.test/p?***#***"');
+    expect(redactedMixed).toContain('"boxingCredKey.v1":"[REDACTED]"');
+    expect(redactedMixed).toContain('"_encGistToken":"[REDACTED]"');
   });
 
   test('SW takePreUpdateSnapshot strips credentials/groups while preserving legacy shape and bgErr redacts logs', async () => {
@@ -888,6 +903,41 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     });
     expect(phase2.encPass).toBeUndefined();
     expect(phase2.encToken).toBeUndefined();
+
+    // Single-credential non-resurrection: if only Gist token exists (WebDAV pass deleted),
+    // rolling back to a legacy snapshot carrying both must NOT resurrect _encWebdavPass.
+    const partialRes = await page.evaluate(async (seed) => {
+      const dbg = (window as any).__boxingDebug;
+      const enc = (window as any).__boxingEncryptCredential;
+      dbg.layout.settings._encGistToken = await enc(seed.token);
+      delete dbg.layout.settings._encWebdavPass;
+      const legacyBothTs = Date.now() - 30000;
+      await dbg.storageSet({
+        ['snap.v1.' + legacyBothTs]: {
+          ts: legacyBothTs,
+          schemaVersion: 3,
+          data: {
+            version: 3.5,
+            schemaVersion: 3,
+            nextLargeIndex: 2,
+            boxes: [{ id: 'L9', type: 'large', title: 'Old Snap', x: 0, y: 0, width: 320, height: 220, children: [] }],
+            connections: [],
+            settings: {
+              syncProvider: 'gist',
+              _encWebdavPass: { v: 2, s: 's', iv: 'iv', d: 'cipher' },
+              _encGistToken: { k: 'k', iv: 'iv', d: 'cipher' },
+            },
+          },
+        },
+      });
+      const rec = await dbg.restoreFromSnapshot(legacyBothTs);
+      return {
+        encPass: rec?.settings?._encWebdavPass,
+        encToken: rec?.settings?._encGistToken,
+      };
+    }, { token: SPEC_TOKEN });
+    expect(partialRes.encPass).toBeUndefined();
+    expect(partialRes.encToken).toBeTruthy();
 
     // Log redaction E2E: run testWebDAV with embedded-auth URL + inspect exportLog().
     const logText = await page.evaluate(async (seed) => {

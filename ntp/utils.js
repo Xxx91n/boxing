@@ -1157,15 +1157,17 @@ function redactSensitiveLogText(text) {
   return text
     .replace(/(https?:\/\/)[^/\s:@]+:[^/\s@]*@/gi, '$1***:***@')
     .replace(/(https?:\/\/)[^/\s:@]+@/gi, '$1***@')
-    .replace(/(https?:\/\/[^\s?#]*)\?[^\s#]*/gi, '$1?***')
-    .replace(/(https?:\/\/[^\s#]*)#[^\s]*/gi, '$1#***')
+    .replace(/(https?:\/\/[^\s?#"'(),;<>]*)\?[^\s#"'(),;<>]*/gi, '$1?***')
+    .replace(/(https?:\/\/[^\s#"'(),;<>]*)#[^\s"'(),;<>]*/gi, '$1#***')
     .replace(/\b(Basic|Bearer)\s+[A-Za-z0-9._~+/=-]{4,}/gi, '$1 [REDACTED]')
-    .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey)"\s*:\s*(?:"[^"]*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
+    .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey(?:\.v\d+)?)"\s*:\s*(?:"(?:\\.|[^"\\])*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
 }
 
 function sanitizeArchiveRawPayload(raw) {
+  if (Array.isArray(raw)) return [];
   if (!isPlainObject(raw)) {
-    return typeof raw === 'string' ? redactSensitiveLogText(raw) : raw;
+    if (typeof raw === 'string') return redactSensitiveLogText(raw);
+    return isSafeJsonScalar(raw) || raw === null ? raw : null;
   }
   const hasLayoutTopFields = hasOwn(raw, 'version') || hasOwn(raw, 'schemaVersion') ||
     hasOwn(raw, 'nextLargeIndex') || hasOwn(raw, 'connections') ||

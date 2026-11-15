@@ -407,10 +407,8 @@ export function registerStorageOnChanged() {
         // snapshot must not resurrect credentials the user explicitly removed. Snapshots
         // taken before the deletion are thereby invalidated for those fields; the user
         // re-enters them after a rollback.
-        if (!curSettings._encWebdavPass && !curSettings._encGistToken) {
-          delete recovered.settings._encWebdavPass;
-          delete recovered.settings._encGistToken;
-        }
+        if (!curSettings._encWebdavPass) delete recovered.settings._encWebdavPass;
+        if (!curSettings._encGistToken) delete recovered.settings._encGistToken;
       }
       debug('restoreFromSnapshot: recovered from ts=' + ts +
         ' @' + new Date(snap.ts).toISOString());

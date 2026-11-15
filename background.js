@@ -8,10 +8,10 @@ function bgRedactSensitiveText(text) {
   return String(text ?? '')
     .replace(/(https?:\/\/)[^/\s:@]+:[^/\s@]*@/gi, '$1***:***@')
     .replace(/(https?:\/\/)[^/\s:@]+@/gi, '$1***@')
-    .replace(/(https?:\/\/[^\s?#]*)\?[^\s#]*/gi, '$1?***')
-    .replace(/(https?:\/\/[^\s#]*)#[^\s]*/gi, '$1#***')
+    .replace(/(https?:\/\/[^\s?#"'(),;<>]*)\?[^\s#"'(),;<>]*/gi, '$1?***')
+    .replace(/(https?:\/\/[^\s#"'(),;<>]*)#[^\s"'(),;<>]*/gi, '$1#***')
     .replace(/\b(Basic|Bearer)\s+[A-Za-z0-9._~+/=-]{4,}/gi, '$1 [REDACTED]')
-    .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey)"\s*:\s*(?:"[^"]*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
+    .replace(/"(_encWebdavPass|_encGistToken|webdavUrl|webdavUser|gistId|boxingCredKey(?:\.v\d+)?)"\s*:\s*(?:"(?:\\.|[^"\\])*"|\{[^}]*\})/g, '"$1":"[REDACTED]"');
 }
 function bgRedactUrl(urlStr) {
   if (typeof urlStr !== 'string') return '';
