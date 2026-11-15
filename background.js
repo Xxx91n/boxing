@@ -864,8 +864,19 @@ try {
               ? currentSettings.webdavUser.trim()
               : '';
             if (!currentDerived.error &&
+                currentSettings && currentSettings.syncProvider === 'webdav' &&
                 currentDerived.fileUrl === createdTarget.fileUrl &&
                 currentUser === createdTarget.account) {
+              // Compare-and-set: a concurrent configuration write must win over the
+              // older snapshot this run read before the network call.
+              const beforeMerge = await bgReadAutoBackupState();
+              if (beforeMerge.epoch !== latestState.epoch) {
+                return {
+                  ok: Boolean(snapOutcome && snapOutcome.ok),
+                  cancelled: true,
+                  state: beforeMerge,
+                };
+              }
               const merged = await bgWriteAutoBackupState({
                 ...latestState,
                 updatedAt: finishedAt,

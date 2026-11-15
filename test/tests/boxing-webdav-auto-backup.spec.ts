@@ -530,6 +530,9 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
     expect(remote.status).toBe('ok');
     expect(remote.baseline).toMatchObject({ service: 'webdav', fileUrl: WEBDAV_FILE_URL, account: 'alice' });
     expect(remote.lastSuccessAt).toBeGreaterThan(0);
+    const settled = env.sandbox.__boxingSnapshotCore.normalizeAutoBackupState(env.store.autoBackupState);
+    expect(settled.epoch).toBe(99);
+    expect(settled.lock).toBeNull();
   });
 
   test('manual page PUT and the background create never interleave on the same file', async () => {
