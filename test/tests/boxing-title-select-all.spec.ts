@@ -504,8 +504,11 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
       }, pasted);
       // The handler claims the paste, so no native rich-text insertion happens.
       expect(notCancelled).toBe(false);
-      // The plain text really replaced the selection inside the field.
-      await expect(page.locator('.large-box__title')).toHaveValue(expected);
+      // The plain text really replaced the selection inside the field. Before Enter the
+      // field still holds the RAW paste (edges included, line breaks already spaces):
+      // trimming is part of committing, so compare against the paste, not the result.
+      await expect(page.locator('.large-box__title')).toHaveValue(
+        pasted.replace(/\r\n|\r|\n/g, ' '));
       await page.keyboard.press('Enter');
       await expect.poll(() => layoutTitle(page)).toBe(expected);
       await expect(page.locator('.large-box__title')).toHaveValue(expected);
