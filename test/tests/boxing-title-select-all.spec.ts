@@ -153,9 +153,11 @@ const resetWriteCount = async (page: Page) => {
 const DIST_CHROME = path.join(EXTENSION_PATH, 'dist', 'boxing-chrome');
 
 test.describe('Ticket 121 - title inputs in the loaded Chrome build', () => {
-  test.skip(({ browserName }) => browserName !== 'chromium', 'the loaded build is a chromium lane');
-
-  test('first click selects all, second click places the caret, Enter saves, reload keeps it', async ({}) => {
+  test('first click selects all, second click places the caret, Enter saves, reload keeps it', async ({}, testInfo) => {
+    // Same lane guard as the sibling loaded-build cases: gate on the PROJECT NAME.
+    // A browserName check would not do — both projects report a different name than
+    // the lane they run in, and the Firefox lane would then really launch Chromium.
+    test.skip(testInfo.project.name !== 'chromium-extension', 'the loaded build is a chromium lane');
     test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
       'dist/boxing-chrome is not built - CI builds before running tests');
     test.setTimeout(180000);
