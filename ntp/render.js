@@ -611,6 +611,9 @@ export function initRenderFacade(deps) {
     title.className = 'large-box__title';
     title.spellcheck = false;
     title.autocomplete = 'off';
+    // The field shows the user's own text, which cannot name it: give it the
+    // localized "Box title" name instead (the bar re-renders on language change).
+    title.setAttribute('aria-label', i18n('titleInputLabel'));
     title.value = box.title || i18n('newLargeBox', [layout.boxes.indexOf(box) + 1]);
     // Title: NO drag, NO click-through — only text editing
     attachTitleInput(title, {
@@ -1017,6 +1020,7 @@ export function initRenderFacade(deps) {
     title.className = 'small-box__title';
     title.spellcheck = false;
     title.autocomplete = 'off';
+    title.setAttribute('aria-label', i18n('titleInputLabel'));
     title.value = sb.title || i18n('newSmallBox');
     attachTitleInput(title, {
       read: () => sb.title,

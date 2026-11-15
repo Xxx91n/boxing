@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { dismissOnboarding } from '../helpers/onboarding';
+import { stripComments } from '../helpers/source';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
@@ -110,6 +111,16 @@ async function clickTitleAt(page: Page, sel: string, fraction: number) {
   if (!box) throw new Error(sel + ' has no box');
   await page.mouse.click(box.x + box.width * fraction, box.y + box.height / 2);
   return (await titleState(page, sel))!;
+}
+
+// Reaching the caret after a commit: Enter blurs the field, so the very next click is
+// a FIRST click again and selects everything. Walk the real two-click path instead of
+// pretending the field is still focused: click once (the whole name gets selected),
+// prove that, then click at the fraction to place the caret.
+async function selectThenClickTitleAt(page: Page, sel: string, fraction: number, expected: string) {
+  await page.locator(sel).click();
+  expect((await titleState(page, sel))!.selected, 'the focusing click selects the whole name').toBe(expected);
+  return clickTitleAt(page, sel, fraction);
 }
 
 const layoutTitle = (page: Page) =>
@@ -315,8 +326,9 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     await page.keyboard.press('Enter');
     await expect.poll(() => childTitle(page)).toBe('Delta');
 
-    // Second real click: caret inside the name, no re-select.
-    const middle = await clickTitleAt(page, '.small-box__title', 0.4);
+    // Enter blurred the field, so reaching a caret means walking the real two-click
+    // path: the first click selects the new name, the second collapses it to a caret.
+    const middle = await selectThenClickTitleAt(page, '.small-box__title', 0.4, 'Delta');
     expect(middle.start).toBe(middle.end);
     expect(middle.start).toBeGreaterThan(0);
     expect(middle.start).toBeLessThan('Delta'.length);
@@ -351,7 +363,7 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     await expect.poll(() => layoutTitle(page)).toBe('Crumbed');
     expect(await writeCount(page)).toBe(1);
 
-    const middle = await clickTitleAt(page, '#inner-crumb-title', 0.4);
+    const middle = await selectThenClickTitleAt(page, '#inner-crumb-title', 0.4, 'Crumbed');
     expect(middle.start).toBe(middle.end);
     expect(middle.start).toBeGreaterThan(0);
     expect(middle.start).toBeLessThan('Crumbed'.length);
@@ -481,6 +493,30 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     await expect(page.locator('.small-box__title')).toHaveValue('New small box');
   });
 
+  test('every title input carries a localized accessible name, not its own value', async ({ page }) => {
+    test.setTimeout(40000);
+    await boot(page);
+    await seedTitles(page);
+    await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
+    await expect(page.locator('.small-box__title')).toHaveCount(1);
+
+    // The field shows the user's own text, which cannot name it: each of the three
+    // surfaces needs the localized "Box title" label. Values differ on purpose, so a
+    // name that merely echoed the value would still be distinguishable here.
+    const seeded = { '.large-box__title': 'Alpha', '.small-box__title': 'Beta', '#inner-crumb-title': 'Alpha' };
+    for (const [sel, value] of Object.entries(seeded)) {
+      const el = page.locator(sel);
+      await expect(el, sel + ' shows the user text').toHaveValue(value);
+      await expect(el, sel + ' needs an accessible name').toHaveAttribute('aria-label', 'Box title');
+    }
+
+    // The label is a real i18n key in all 14 locales, and the English fallback too.
+    const messages = JSON.parse(fs.readFileSync(path.join(EXTENSION_PATH, '_locales/en/messages.json'), 'utf8'));
+    expect(messages.titleInputLabel?.message).toBe('Box title');
+    const i18nSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/i18n.js'), 'utf8');
+    expect(i18nSrc).toMatch(/titleInputLabel: 'Box title'/);
+  });
+
   test('long titles: ellipsis while resting, whole value stored, caret reachable in the middle', async ({ page }) => {
     test.setTimeout(40000);
     await boot(page);
@@ -606,9 +642,15 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     // ...and wired into exactly the three title surfaces.
     expect((src.match(/attachTitleInput\(title, \{/g) || []).length).toBe(2);   // large + small
     expect((src.match(/attachTitleInput\(innerCrumbTitle, \{/g) || []).length).toBe(1);
-    // No box title is a contentEditable span any more.
-    expect(src).not.toContain('contentEditable');
-    expect(src).not.toContain('execCommand');
+    // No box title is a contentEditable span any more. Read code, not comments: the
+    // helper's own comment names the surface it replaced, and a comment cannot run.
+    // Case-insensitive too, so setAttribute('contenteditable', …) cannot slip past.
+    const code = stripComments(src);
+    expect(code).not.toMatch(/contenteditable/i);
+    expect(code).not.toContain('execCommand');
+    // The negative check still bites: the API name survives in the working copy, i.e.
+    // the ban above is not vacuously true because nothing mentions it.
+    expect(src).toMatch(/contenteditable/i);
     // SEC-03: paste still goes through text/plain only.
     expect(src).toContain("getData('text/plain')");
     // Ticket 09 scope untouched: create pipeline still renders before fire-and-forget save.
@@ -617,9 +659,9 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
   });
 
   test('source contract: the title markup is a native single-line input everywhere', () => {
-    const src = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
-    const html = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8');
-    const css = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/base.css'), 'utf8');
+    const src = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8'));
+    const html = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/index.html'), 'utf8'));
+    const css = stripComments(fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/base.css'), 'utf8'));
 
     // Two created titles are inputs with type=text, and the inner-page one is too.
     expect((src.match(/title\.type = 'text';/g) || []).length).toBe(2);

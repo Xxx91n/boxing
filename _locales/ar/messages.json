@@ -1318,5 +1318,9 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "فشل حفظ الإعدادات المنظفة — بقيت بيانات الاعتماد المخزنة كما هي. يرجى المحاولة مرة أخرى.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "titleInputLabel": {
+    "message": "عنوان الصندوق",
+    "description": "Accessible name for the editable box title field"
   }
 }

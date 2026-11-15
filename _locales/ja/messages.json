@@ -1318,5 +1318,9 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "クリアした設定を保存できませんでした — 保存済みの認証情報はそのまま残っています。もう一度お試しください。",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "titleInputLabel": {
+    "message": "ボックスのタイトル",
+    "description": "Accessible name for the editable box title field"
   }
 }

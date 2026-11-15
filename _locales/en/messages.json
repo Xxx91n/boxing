@@ -1382,5 +1382,9 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "Failed to save the cleaned configuration — stored credentials were kept. Please try again.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "titleInputLabel": {
+    "message": "Box title",
+    "description": "Accessible name for the editable box title field"
   }
 }

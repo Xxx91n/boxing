@@ -1318,5 +1318,9 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "Не удалось сохранить очищенную конфигурацию — сохранённые учётные данные остались на месте. Повторите попытку.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "titleInputLabel": {
+    "message": "Название контейнера",
+    "description": "Accessible name for the editable box title field"
   }
 }

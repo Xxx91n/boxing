@@ -1318,5 +1318,9 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "साफ़ की गई कॉन्फ़िगरेशन सहेजने में विफल — संग्रहीत क्रेडेंशियल यथावत रहे। कृपया पुनः प्रयास करें।",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "titleInputLabel": {
+    "message": "बॉक्स का शीर्षक",
+    "description": "Accessible name for the editable box title field"
   }
 }

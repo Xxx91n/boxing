@@ -1318,5 +1318,9 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "ไม่สามารถบันทึกการกำหนดค่าที่ล้างแล้ว — ข้อมูลประจำตัวที่เก็บไว้ยังคงอยู่ โปรดลองอีกครั้ง",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "titleInputLabel": {
+    "message": "ชื่อกล่อง",
+    "description": "Accessible name for the editable box title field"
   }
 }

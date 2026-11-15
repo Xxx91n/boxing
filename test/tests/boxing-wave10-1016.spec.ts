@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import fs from 'fs';
 import { dismissOnboarding } from '../helpers/onboarding';
+import { stripComments } from '../helpers/source';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_PATH = path.resolve(__dirname, '..', '..');
@@ -116,13 +117,17 @@ test.describe('Wave 2026.10.16 — E2E & Contract Tests', () => {
   // caret. The end-to-end proof lives in boxing-title-select-all.spec.ts.
   test('title input keeps the first-click select-all contract', () => {
     const renderSrc = fs.readFileSync(path.join(EXTENSION_PATH, 'ntp/render.js'), 'utf8');
+    // Comments are allowed to DISCUSS the removed workaround (the helper's own comment
+    // explains why it is no longer needed), so the negative checks read code only.
+    const codeSrc = stripComments(renderSrc);
 
     expect(renderSrc).toContain('function attachTitleInput(');
     expect(renderSrc).toContain('e.preventDefault();');
     expect(renderSrc).toContain('el.select();');
-    // The contentEditable-only hacks are gone, not merely unused.
-    expect(renderSrc).not.toContain('caretPositionFromPoint');
-    expect(renderSrc).not.toContain('contentEditable');
+    // The contentEditable-only hacks are gone, not merely unused: a reintroduced
+    // caretPositionFromPoint call or contentEditable assignment still fails here.
+    expect(codeSrc).not.toContain('caretPositionFromPoint');
+    expect(codeSrc).not.toMatch(/contenteditable/i);
   });
 
   // ── Version check module & About tab ─────────────────────────

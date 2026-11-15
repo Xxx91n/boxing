@@ -1321,5 +1321,9 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "保存清理后的配置失败 — 已存储的凭据保持不变。请重试。",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "titleInputLabel": {
+    "message": "盒子标题",
+    "description": "Accessible name for the editable box title field"
   }
 }

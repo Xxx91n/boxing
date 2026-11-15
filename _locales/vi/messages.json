@@ -1318,5 +1318,9 @@
   "deleteSyncCredentialPersistFailed": {
     "message": "Không thể lưu cấu hình đã dọn — thông tin đăng nhập đã lưu vẫn giữ nguyên. Vui lòng thử lại.",
     "description": "Ticket 99 (T13): failure status message — cleaned config persist failed, stored credentials kept"
+  },
+  "titleInputLabel": {
+    "message": "Tiêu đề hộp",
+    "description": "Accessible name for the editable box title field"
   }
 }
