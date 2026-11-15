@@ -307,7 +307,8 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     expect(right.start).toBeGreaterThan(middle.start);
 
     // Edit around that caret: insert a letter, delete a neighbour, and save.
-    await page.keyboard.press('Home');
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowLeft' : 'Home');
+    expect((await titleState(page, '.large-box__title'))!.start).toBe(0);
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.type('X');
@@ -737,7 +738,8 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
 
     // Dragging over part of the text selects that part only, and the box does not move.
     const boxBefore = await page.locator('.large-box').boundingBox();
-    await page.keyboard.press('Home');
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowLeft' : 'Home');
+    expect((await titleState(page, '.large-box__title'))!.start).toBe(0);
     const box = (await page.locator('.large-box__title').boundingBox())!;
     const y = box.y + box.height / 2;
     await page.mouse.move(box.x + 3, y);
