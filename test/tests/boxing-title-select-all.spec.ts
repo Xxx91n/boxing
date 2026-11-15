@@ -404,6 +404,22 @@ test.describe('Ticket 10/121 - native title inputs: first click selects all, lat
     expect(await layoutTitle(page)).toBe(edited);
   });
 
+  test('right-click back saves the focused inner-page title before leaving the box', async ({ page }) => {
+    await boot(page);
+    await seedTitles(page);
+    await page.evaluate(() => (window as any).__boxingDebug.enterLargeBox('L1'));
+    await page.locator('#inner-crumb-title').click();
+    await page.keyboard.type('Saved on return');
+    await expect(page.locator('#inner-crumb-title')).toBeFocused();
+    await page.locator('#inner-crumb-title').click({ button: 'right' });
+    await expect(page.locator('.large-box__title')).toBeVisible();
+    await expect(page.locator('.large-box__title')).toHaveValue('Saved on return');
+    await expect.poll(() => page.evaluate(() =>
+      JSON.parse(localStorage.getItem('boxingLayout') || '{}').boxes?.[0]?.title)).toBe('Saved on return');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.large-box__title')).toHaveValue('Saved on return');
+  });
+
   test('the write counter catches two saves of the same title', async ({ page }) => {
     await boot(page);
     await seedTitles(page);

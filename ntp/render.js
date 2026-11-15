@@ -894,6 +894,9 @@ export function initRenderFacade(deps) {
 
   export function exitToCanvas() {
     debug(`exitToCanvas: leaving box, back to canvas`);
+    // Blur while the title can still resolve its box. Right-click back may leave
+    // the input focused until renderCanvas hides it, after the current ID is gone.
+    if (document.activeElement === innerCrumbTitle) innerCrumbTitle.blur();
     // stash inner view before resetting — preserves per-box view across exits.
     saveLargeBoxViewState(currentLargeBoxId);
     setCurrentLargeBoxId(null);
