@@ -7,7 +7,7 @@
 // via ./state.js singletons (live bindings).
 
 import { layout, setLayout, writerId } from './state.js';
-import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, getAutoBackupState, setAutoBackupState, getWebDAVPendingPermission, setWebDAVPendingPermission, clearWebDAVPendingPermission } from './storage.js';
+import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, getAutoBackupState, setAutoBackupState, getWebDAVPendingPermission, setWebDAVPendingPermission, clearWebDAVPendingPermission, getGistPendingPermission, setGistPendingPermission, clearGistPendingPermission } from './storage.js';
 import { migrateLayout, mergeLayoutThreeWay, sanitizeLayoutForBackup, redactUrlForLog } from './utils.js';
 import { i18n } from './i18n.js';
 import { renderCanvas } from './render.js';
@@ -18,6 +18,7 @@ let refreshDataHealth = null;
 let refreshSnapshotHealth = null;
 let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInput, webdavPassInput, gistTokenInput, gistIdInput, syncLevelSelect, syncFilenameInput, backupNowBtn, remoteBackupZone, lastBackupTimeVal, webdavTestBtn, webdavAllowPrivateInput;
 let webdavPermissionBanner, webdavPermissionMsg, webdavPermissionBtn;
+let gistPermissionBanner, gistPermissionMsg, gistPermissionBtn;
 let localAutoBackupStatusEl, localAutoBackupLastAtEl, localAutoBackupErrorEl, autoBackupUpgradeBox, autoBackupActivateBtn;
 // Ticket 99 (T13): stored-credential danger zone refs — assigned in bindSyncBackupUi
 // before updateSyncConfigVisibility() first runs so the visibility toggle is safe.
@@ -126,8 +127,9 @@ export function initSyncEngineFacade(deps) {
     function updateLastBackupDisplay(autoState) {
       const remoteAt = Number(layout.settings.lastBackupAt) || 0;
       const localAt = Number(autoState && autoState.local && autoState.local.lastSuccessAt) || 0;
+      const cloudAt = Number(autoState && autoState.cloud && autoState.cloud.lastSuccessAt) || 0;
       if (lastBackupTimeVal) {
-        const displayAt = Math.max(remoteAt, localAt);
+        const displayAt = Math.max(remoteAt, localAt, cloudAt);
         lastBackupTimeVal.textContent = displayAt > 0 ? new Date(displayAt).toLocaleString() : i18n('neverText');
       }
       if (localAutoBackupLastAtEl) {
@@ -200,6 +202,11 @@ export function initSyncEngineFacade(deps) {
       return '';
     }
   }
+
+  // Ticket #126: the only GitHub origin the unattended Gist backup contacts.
+  // Chrome ships https://*/* as an optional host permission; the user grants the
+  // narrower api.github.com origin from a real click in this settings page.
+  const GIST_API_ORIGIN = 'https://api.github.com/*';
 
   function displayOriginFromPattern(pattern) {
     if (typeof pattern !== 'string') return '';
@@ -432,6 +439,76 @@ export function initSyncEngineFacade(deps) {
     webdavPermissionBtn.dataset.origin = targetOrigin;
   }
   window.__boxingRefreshWebDAVPermissionUi = refreshWebDAVPermissionUi;
+
+  // ── Ticket #126: Gist origin permission banner ─────────────────────────
+  // The background never pops a permission prompt. This banner is the user-gesture
+  // path for the GitHub API origin, using the same contains/request helpers as WebDAV.
+  async function persistGistPendingPermissionState({ origin, source, reason }) {
+    if (!origin) return;
+    try {
+      let nextReason = reason || 'missing-permission';
+      if (nextReason === 'missing-permission') {
+        const existing = await getGistPendingPermission();
+        if (existing && existing.needed && existing.origin === origin && existing.reason === 'denied') {
+          nextReason = 'denied';
+        }
+      }
+      await setGistPendingPermission({
+        needed: true,
+        origin,
+        source: source || 'background',
+        reason: nextReason,
+        updatedAt: Date.now(),
+      });
+    } catch (e) {
+      debugWarn('persistGistPendingPermissionState failed', e);
+    }
+  }
+
+  async function clearGistPendingPermissionIfOrigin(origin) {
+    try {
+      const pending = await getGistPendingPermission();
+      if (!pending) return;
+      if (!origin || pending.origin === origin) await clearGistPendingPermission();
+    } catch (e) {
+      debugWarn('clearGistPendingPermissionIfOrigin failed', e);
+    }
+  }
+
+  async function refreshGistPermissionUi() {
+    if (!gistPermissionBanner || !gistPermissionMsg || !gistPermissionBtn) return;
+    const provider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
+    const hide = () => {
+      gistPermissionBanner.hidden = true;
+      delete gistPermissionBanner.dataset.state;
+      delete gistPermissionBtn.dataset.origin;
+    };
+    if (provider !== 'gist') return hide();
+    const pending = await getGistPendingPermission();
+    const check = await checkWebDAVOriginPermission(GIST_API_ORIGIN);
+    if (check.supported && check.granted) {
+      if (pending && pending.needed && pending.origin === GIST_API_ORIGIN) {
+        await clearGistPendingPermissionIfOrigin(GIST_API_ORIGIN);
+      }
+      return hide();
+    }
+    const matchesPending = Boolean(pending && pending.needed && pending.origin === GIST_API_ORIGIN);
+    // Only surface the banner once the user has actually configured a token or
+    // asked for auto-backup; an empty Gist tab should not nag on first open.
+    const hasToken = Boolean(gistTokenInput?.value?.trim() || layout.settings._encGistToken);
+    if (!matchesPending && !(check.supported && hasToken)) return hide();
+    const isDenied = matchesPending && pending.reason === 'denied';
+    gistPermissionBanner.hidden = false;
+    gistPermissionBanner.dataset.state = isDenied ? 'denied' : 'pending';
+    gistPermissionMsg.textContent = i18n(
+      isDenied ? 'gistPermDeniedHint' : 'gistPermPendingHint',
+      [displayOriginFromPattern(GIST_API_ORIGIN) || GIST_API_ORIGIN]
+    );
+    gistPermissionBtn.hidden = false;
+    gistPermissionBtn.textContent = i18n('webdavAuthorizeBtn');
+    gistPermissionBtn.dataset.origin = GIST_API_ORIGIN;
+  }
+  window.__boxingRefreshGistPermissionUi = refreshGistPermissionUi;
 
   async function sendWebDAVViaBackground(msg, opts = {}) {
     const allowPrompt = Boolean(opts && opts.allowPermissionPrompt);
@@ -1207,7 +1284,43 @@ export function initSyncEngineFacade(deps) {
       return false;
     }
 
+    // Ticket #126: stable background error codes -> localized sentences. The raw
+    // English lastError stays as a fallback; it never contains a token or body.
+    const GIST_REASON_I18N = {
+      gistTokenMissing: 'gistAutoBackupErrToken',
+      gistPermissionMissing: 'gistAutoBackupErrPermission',
+      gistAccountChanged: 'gistAutoBackupErrAccount',
+      gistTargetNeedsReview: 'gistAutoBackupErrTarget',
+      gistResultUnknown: 'gistAutoBackupErrUnknown',
+      gistRequestRejected: 'gistAutoBackupErrRejected',
+      gistCheckFailed: 'gistAutoBackupErrCheck',
+      gistUpdateNotEnabled: 'gistAutoBackupErrUpdate',
+    };
+    function cloudErrorMessage(cloud) {
+      if (!cloud) return '';
+      const key = cloud.lastErrorCode && GIST_REASON_I18N[cloud.lastErrorCode];
+      if (key) return i18n(key);
+      return typeof cloud.lastError === 'string' ? cloud.lastError : '';
+    }
+
     function formatAutoBackupStateLabel(state, isActive, needsOptIn) {
+      // While auto-backup is off or the provider moved away from Gist, the badge
+      // reflects the current provider, not a historical cloud pause. An unknown
+      // result still stays visible in the error line below.
+      const currentProvider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
+      const cloud = isActive && state && state.cloud &&
+        state.cloud.provider === 'gist' && currentProvider === 'gist'
+        ? state.cloud
+        : null;
+      if (cloud && cloud.status === 'pending') {
+        return { text: i18n('gistAutoBackupStatusPending'), badgeState: 'paused' };
+      }
+      if (cloud && cloud.status === 'paused') {
+        return { text: i18n('gistAutoBackupStatusPaused'), badgeState: 'paused' };
+      }
+      if (cloud && cloud.status === 'error') {
+        return { text: i18n('localAutoBackupStatusError'), badgeState: 'error' };
+      }
       const st = state && state.local ? state.local.status : 'idle';
       if (st === 'error' && (isActive || (state && state.local && state.local.lastError))) {
         return { text: i18n('localAutoBackupStatusError'), badgeState: 'error' };
@@ -1246,14 +1359,38 @@ export function initSyncEngineFacade(deps) {
       }
       updateLastBackupDisplay(state);
 
+      // A background-created Gist id is the real target. Mirror it into the normal
+      // settings field once, through the layout facade (the background never writes
+      // boxingLayout itself).
+      const baseline = state && state.cloud && state.cloud.baseline;
+      if (baseline && baseline.provider === 'gist' && baseline.gistId &&
+          layout.settings.syncProvider === 'gist' && !layout.settings.gistId) {
+        layout.settings.gistId = baseline.gistId;
+        if (gistIdInput) gistIdInput.value = baseline.gistId;
+        try {
+          await saveLayout({ preserveUpdatedAt: true });
+        } catch (e) {
+          debugWarn('mirror background Gist id failed', e);
+        }
+      }
+
       if (localAutoBackupStatusEl) {
         const badge = formatAutoBackupStateLabel(state, isActive, needsLegacyOptIn);
         localAutoBackupStatusEl.textContent = badge.text;
         localAutoBackupStatusEl.dataset.state = badge.badgeState;
       }
       if (localAutoBackupErrorEl) {
-        const errMsg = state && state.local && state.local.lastError;
-        if (errMsg && (state.local.status === 'error' || isActive)) {
+        const currentProvider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
+        const cloudMatchesProvider = state && state.cloud && state.cloud.provider === 'gist' && currentProvider === 'gist';
+        const cloudErr = state && state.cloud &&
+          (state.cloud.status === 'pending' || (isActive && cloudMatchesProvider)) &&
+          (state.cloud.status === 'paused' || state.cloud.status === 'pending' || state.cloud.status === 'error')
+          ? cloudErrorMessage(state.cloud)
+          : '';
+        const errMsg = cloudErr || (state && state.local && state.local.lastError);
+        const localErrorVisible = state && state.local &&
+          (state.local.status === 'error' || isActive);
+        if (errMsg && (cloudErr || localErrorVisible)) {
           localAutoBackupErrorEl.textContent = errMsg;
           localAutoBackupErrorEl.hidden = false;
         } else {
@@ -1267,6 +1404,29 @@ export function initSyncEngineFacade(deps) {
       return state;
     }
     window.__boxingRefreshLocalAutoBackupUi = refreshLocalAutoBackupUi;
+
+    // Ticket #126: deleting stored sync credentials explicitly drops the saved
+    // target. Clear the background cloud baseline/account/pending marker so a later
+    // reconnect is a fresh first-create, not an "account changed" dead end.
+    async function resetAutoBackupCloudTarget() {
+      try {
+        if (hasExtensionRuntime()) {
+          const resp = await sendToBackground({ type: 'auto-backup-reset-cloud' });
+          await refreshLocalAutoBackupUi(resp && resp.state ? resp.state : null);
+          return;
+        }
+        const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+        const st = await getAutoBackupState();
+        const cloud = core ? core.defaultCloudState() : {
+          provider: '', status: 'idle', lastAttemptAt: 0, lastSuccessAt: 0,
+          lastError: null, lastErrorCode: null, account: null, baseline: null, pendingCreate: null,
+        };
+        const next = await setAutoBackupState({ ...st, cloud });
+        await refreshLocalAutoBackupUi(next);
+      } catch (e) {
+        debugWarn('resetAutoBackupCloudTarget failed', e);
+      }
+    }
 
     let localAutoBackupConfigSeq = 0;
     let pendingLocalAutoBackupConfigs = 0;
@@ -1460,6 +1620,9 @@ export function bindSyncBackupUi() {
     webdavPermissionBanner = document.getElementById('webdav-permission-banner');
     webdavPermissionMsg = document.getElementById('webdav-permission-msg');
     webdavPermissionBtn = document.getElementById('webdav-permission-btn');
+    gistPermissionBanner = document.getElementById('gist-permission-banner');
+    gistPermissionMsg = document.getElementById('gist-permission-msg');
+    gistPermissionBtn = document.getElementById('gist-permission-btn');
     localAutoBackupStatusEl = document.getElementById('local-auto-backup-status-text');
     localAutoBackupLastAtEl = document.getElementById('local-auto-backup-last-at');
     localAutoBackupErrorEl = document.getElementById('local-auto-backup-error');
@@ -1552,6 +1715,7 @@ export function bindSyncBackupUi() {
 
     updateSyncConfigVisibility();
     refreshWebDAVPermissionUi();
+    refreshGistPermissionUi();
 
     webdavPermissionBtn?.addEventListener('click', async () => {
       if (webdavPermissionBtn.disabled) return;
@@ -1582,6 +1746,31 @@ export function bindSyncBackupUi() {
       }
     });
 
+    // Ticket #126: user-gesture grant for the GitHub API origin. The background
+    // never calls permissions.request; this button and the enable/sync controls do.
+    gistPermissionBtn?.addEventListener('click', async () => {
+      if (gistPermissionBtn.disabled) return;
+      gistPermissionBtn.disabled = true;
+      // Call permissions.request synchronously inside the click gesture before any await.
+      const reqPromise = requestWebDAVOriginPermission(GIST_API_ORIGIN);
+      try {
+        const req = await reqPromise;
+        if (req.supported && req.granted) {
+          await clearGistPendingPermissionIfOrigin(req.origin || GIST_API_ORIGIN);
+          await refreshGistPermissionUi();
+          return;
+        }
+        await persistGistPendingPermissionState({
+          origin: req.origin || GIST_API_ORIGIN,
+          source: 'manual-gist-banner',
+          reason: req.supported ? 'denied' : 'missing-permission',
+        });
+        await refreshGistPermissionUi();
+      } finally {
+        gistPermissionBtn.disabled = false;
+      }
+    });
+
     // (Bug16): sync level + filename persist on change
     syncLevelSelect?.addEventListener('change', () => {
       layout.settings.syncLevel = syncLevelSelect.value === 'settingsOnly' || syncLevelSelect.value === 'boxesOnly' ? syncLevelSelect.value : 'full';
@@ -1599,6 +1788,24 @@ export function bindSyncBackupUi() {
       clearGrantedFeedback();
       updateSyncConfigVisibility();
       refreshWebDAVPermissionUi();
+      refreshGistPermissionUi();
+      // Switching to Gist while auto-backup is already on is the user action that
+      // grants the GitHub API origin (the background cannot prompt).
+      if (layout.settings.syncProvider === 'gist' &&
+          Number(layout.settings.autoBackupInterval) >= 3600 &&
+          getPermissionsApi()) {
+        requestWebDAVOriginPermission(GIST_API_ORIGIN).then((req) => {
+          if (req && req.granted) {
+            clearGistPendingPermissionIfOrigin(req.origin || GIST_API_ORIGIN).then(refreshGistPermissionUi);
+          } else {
+            persistGistPendingPermissionState({
+              origin: GIST_API_ORIGIN,
+              source: 'manual',
+              reason: req && req.supported ? 'denied' : 'missing-permission',
+            }).then(refreshGistPermissionUi);
+          }
+        }, () => { refreshGistPermissionUi(); });
+      }
       saveLayout();
     });
 
@@ -1654,7 +1861,11 @@ export function bindSyncBackupUi() {
     gistTokenInput?.addEventListener('input', __scheduleCredFlush);
     // Keep blur for immediate commit on tabbing away.
     webdavPassInput?.addEventListener('blur', () => { if (__credDebounceTimer) { clearTimeout(__credDebounceTimer); __credDebounceTimer = null; } flushUnsavedCredentials(); });
-    gistTokenInput?.addEventListener('blur', () => { if (__credDebounceTimer) { clearTimeout(__credDebounceTimer); __credDebounceTimer = null; } flushUnsavedCredentials(); });
+    gistTokenInput?.addEventListener('blur', () => {
+      if (__credDebounceTimer) { clearTimeout(__credDebounceTimer); __credDebounceTimer = null; }
+      flushUnsavedCredentials();
+      refreshGistPermissionUi();
+    });
     // flush helper — encrypts current input values into layout.settings then saveLayout.
     // Safe-no-op when called from contexts without settings inputs (early startup, etc.).
     let __credFlushInFlight = false;
@@ -1781,9 +1992,12 @@ export function bindSyncBackupUi() {
           urlCapOk = Boolean(fileUrl && !fileUrlOverCap(fileUrl));
         } catch (_) { urlCapOk = false; }
       }
-      const canPreflightPerm = p === 'webdav' && urlCapOk && (!rawUser || hasPassOrEnvelope);
+      const isGist = p === 'gist';
+      const canPreflightPerm = (p === 'webdav' && urlCapOk && (!rawUser || hasPassOrEnvelope)) || isGist;
       // Invoke permissions.request synchronously in click handler before any await (Firefox MV3).
-      const permPromise = canPreflightPerm ? requestWebDAVOriginPermission(rawUrl) : null;
+      const permPromise = canPreflightPerm
+        ? requestWebDAVOriginPermission(isGist ? GIST_API_ORIGIN : rawUrl)
+        : null;
       backupNowBtn.disabled = true;
       try {
         if (p === 'local') {
@@ -1794,8 +2008,17 @@ export function bindSyncBackupUi() {
           const req = await permPromise;
           if (req.supported) {
             preflightHandled = true;
-            const targetOrigin = req.origin || getWebDAVOriginPattern(rawUrl);
+            const targetOrigin = req.origin || (isGist ? GIST_API_ORIGIN : getWebDAVOriginPattern(rawUrl));
             if (!req.granted) {
+              if (isGist) {
+                await persistGistPendingPermissionState({
+                  origin: targetOrigin,
+                  source: 'manual',
+                  reason: 'denied',
+                });
+                await refreshGistPermissionUi();
+                throw new Error(i18n('gistAutoBackupErrPermission'));
+              }
               await persistPendingPermissionState({
                 origin: targetOrigin,
                 source: 'manual',
@@ -1804,8 +2027,13 @@ export function bindSyncBackupUi() {
               refreshWebDAVPermissionUi();
               throw webdavError('webdavErrPermissionDenied', [displayOriginFromPattern(targetOrigin) || rawUrl]);
             }
-            await clearPendingPermissionIfOrigin(targetOrigin);
-            refreshWebDAVPermissionUi();
+            if (isGist) {
+              await clearGistPendingPermissionIfOrigin(targetOrigin);
+              await refreshGistPermissionUi();
+            } else {
+              await clearPendingPermissionIfOrigin(targetOrigin);
+              refreshWebDAVPermissionUi();
+            }
           }
         }
         await performBackup({ userInitiated: true, allowPermissionPrompt: !preflightHandled, source: 'manual' });
@@ -1826,7 +2054,29 @@ export function bindSyncBackupUi() {
     const autoBackupSelect = document.getElementById('auto-backup-interval');
     autoBackupSelect?.addEventListener('change', async () => {
       const intervalSec = parseInt(autoBackupSelect.value, 10) || 0;
+      const provider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
+      const wantsGist = provider === 'gist' && intervalSec >= 3600;
+      // Call permissions.request synchronously inside the change gesture before any await.
+      const gistPermPromise = wantsGist ? requestWebDAVOriginPermission(GIST_API_ORIGIN) : null;
       try {
+        if (gistPermPromise) {
+          const req = await gistPermPromise;
+          if (req && req.granted) {
+            await clearGistPendingPermissionIfOrigin(req.origin || GIST_API_ORIGIN);
+          } else {
+            await persistGistPendingPermissionState({
+              origin: GIST_API_ORIGIN,
+              source: 'manual',
+              reason: req && req.supported ? 'denied' : 'missing-permission',
+            });
+          }
+          await refreshGistPermissionUi();
+        }
+        // The user may have just typed the Gist token and clicked this select;
+        // commit the encrypted envelope before the background immediate run reads it.
+        if (provider === 'gist') {
+          try { await flushUnsavedCredentials(); } catch (e) { debugWarn('pre-auto-backup Gist credential flush failed', e); }
+        }
         await configureLocalAutoBackup(intervalSec, intervalSec >= 3600);
       } catch (e) {
         if (typeof debugWarn === 'function') debugWarn('autoBackupSelect change failed', e);
@@ -1838,6 +2088,10 @@ export function bindSyncBackupUi() {
       if (curInterval < 3600) return;
       autoBackupActivateBtn.disabled = true;
       try {
+        const provider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
+        if (provider === 'gist') {
+          try { await flushUnsavedCredentials(); } catch (e) { debugWarn('pre-activate Gist credential flush failed', e); }
+        }
         await configureLocalAutoBackup(curInterval, true);
       } catch (e) {
         if (typeof debugWarn === 'function') debugWarn('autoBackupActivateBtn click failed', e);
@@ -2069,9 +2323,12 @@ export function bindSyncBackupUi() {
         return { ok: false, error: dangerPersistFailed };
       }
       try { await clearWebDAVPendingPermission(); } catch (_) {}
+      try { await clearGistPendingPermission(); } catch (_) {}
+      await resetAutoBackupCloudTarget();
       clearGrantedFeedback();
       updateSyncConfigVisibility();
       refreshWebDAVPermissionUi();
+      refreshGistPermissionUi();
       updateLastBackupDisplay();
       showDeletePanel(false);
       setDeleteStatus(dangerStatusDone, false);

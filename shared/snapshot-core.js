@@ -275,6 +275,97 @@
     return ALLOWED_AUTO_BACKUP_INTERVALS.includes(n) ? n : 0;
   }
 
+  // Cloud result is independent from the local snapshot result (ticket #126 /
+  // spec #120 D6). Only fields needed to resume or explain an unattended Gist
+  // first-create live here; no credential, token, or backup body ever enters it.
+  function defaultCloudState() {
+    return {
+      provider: '',
+      status: 'idle',
+      lastAttemptAt: 0,
+      lastSuccessAt: 0,
+      lastError: null,
+      lastErrorCode: null,
+      account: null,
+      baseline: null,
+      pendingCreate: null,
+    };
+  }
+
+  // A present-but-malformed account/baseline/pending marker must still block the
+  // unattended path. Returning null here would re-open the "create a fresh Gist"
+  // branch on corrupt state, which is exactly the duplicate the ticket forbids.
+  function normalizeCloudAccount(raw) {
+    if (!isPlainObject(raw)) return null;
+    const login = typeof raw.login === 'string' ? raw.login.trim().slice(0, 100) : '';
+    const id = (typeof raw.id === 'number' && Number.isFinite(raw.id))
+      ? raw.id
+      : (typeof raw.id === 'string' && /^\d{1,20}$/.test(raw.id) ? raw.id : '');
+    return { login, id };
+  }
+
+  function normalizeCloudBaseline(raw) {
+    if (!isPlainObject(raw)) return null;
+    if (raw.provider !== 'gist') return null;
+    const gistId = typeof raw.gistId === 'string' && /^[a-f0-9]{5,64}$/i.test(raw.gistId)
+      ? raw.gistId.toLowerCase()
+      : '';
+    const fileName = typeof raw.fileName === 'string' ? raw.fileName.trim().slice(0, 512) : '';
+    const owner = normalizeCloudAccount({ login: raw.ownerLogin, id: raw.ownerId });
+    return {
+      provider: 'gist',
+      gistId,
+      fileName,
+      ownerLogin: owner ? owner.login : '',
+      ownerId: owner ? owner.id : '',
+      createdAt: Math.max(0, Number(raw.createdAt) || 0),
+      updatedAt: Math.max(0, Number(raw.updatedAt) || 0),
+      verifiedAt: Math.max(0, Number(raw.verifiedAt) || 0),
+    };
+  }
+
+  function normalizeCloudPendingCreate(raw) {
+    if (!isPlainObject(raw) || raw.provider !== 'gist') return null;
+    // Keep the marker even if its file name is missing; the plan only needs the
+    // marker to pause, and a malformed marker must not authorize a second POST.
+    const fileName = typeof raw.fileName === 'string' && raw.fileName.trim()
+      ? raw.fileName.trim().slice(0, 512)
+      : 'boxing-backup.json';
+    const gistId = typeof raw.gistId === 'string' && /^[a-f0-9]{5,64}$/i.test(raw.gistId)
+      ? raw.gistId.toLowerCase()
+      : '';
+    return {
+      provider: 'gist',
+      fileName,
+      description: typeof raw.description === 'string' ? raw.description.slice(0, 200) : '',
+      startedAt: Math.max(0, Number(raw.startedAt) || 0),
+      accountLogin: typeof raw.accountLogin === 'string' ? raw.accountLogin.slice(0, 100) : '',
+      accountId: (typeof raw.accountId === 'number' && Number.isFinite(raw.accountId))
+        ? raw.accountId
+        : (typeof raw.accountId === 'string' && /^\d{1,20}$/.test(raw.accountId) ? raw.accountId : ''),
+      gistId,
+    };
+  }
+
+  function normalizeCloudState(raw) {
+    const dflt = defaultCloudState();
+    if (!isPlainObject(raw)) return dflt;
+    const provider = raw.provider === 'gist' || raw.provider === 'webdav' ? raw.provider : '';
+    const allowedStatus = ['idle', 'running', 'ok', 'paused', 'error', 'pending'];
+    const status = allowedStatus.includes(raw.status) ? raw.status : 'idle';
+    return {
+      provider,
+      status,
+      lastAttemptAt: Math.max(0, Number(raw.lastAttemptAt) || 0),
+      lastSuccessAt: Math.max(0, Number(raw.lastSuccessAt) || 0),
+      lastError: typeof raw.lastError === 'string' && raw.lastError ? raw.lastError.slice(0, 300) : null,
+      lastErrorCode: typeof raw.lastErrorCode === 'string' && raw.lastErrorCode ? raw.lastErrorCode.slice(0, 64) : null,
+      account: normalizeCloudAccount(raw.account),
+      baseline: normalizeCloudBaseline(raw.baseline),
+      pendingCreate: normalizeCloudPendingCreate(raw.pendingCreate),
+    };
+  }
+
   function defaultAutoBackupState() {
     return {
       version: 1,
@@ -290,6 +381,7 @@
         lastSnapshotTs: 0,
         lastError: null,
       },
+      cloud: defaultCloudState(),
       lock: null,
     };
   }
@@ -326,6 +418,7 @@
         lastSnapshotTs: Math.max(0, Number(rawLocal.lastSnapshotTs) || 0),
         lastError: typeof rawLocal.lastError === 'string' && rawLocal.lastError ? rawLocal.lastError : null,
       },
+      cloud: normalizeCloudState(raw.cloud),
       lock,
     };
   }
@@ -384,6 +477,8 @@
     getLatestSnapshotWithAdapter,
     normalizeAutoBackupInterval,
     defaultAutoBackupState,
+    defaultCloudState,
+    normalizeCloudState,
     normalizeAutoBackupState,
     isAutoBackupActive,
     isAutoBackupOverdue,

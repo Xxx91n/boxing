@@ -1,0 +1,180 @@
+// Boxing — shared Gist first-create protocol core (ticket #126 / spec #120 T7).
+//
+// Pure decisions and payload/response shapes for the FIRST unattended Gist
+// backup. No fetch, no storage, no DOM: the background service worker supplies
+// the token/account/permission results and performs the request, and the same
+// functions run in Node tests against controlled Gist API samples.
+//
+// Safety rules encoded here (spec D4/D5, ticket #126):
+//   - An existing Gist is never treated as a newly creatable file.
+//   - A saved Gist ID without a matching trusted baseline cannot be updated.
+//   - A changed account, file name, or pending unknown result stops creation.
+//   - Only a confirmed POST response with the expected file may become a baseline.
+// Long-term PATCH/PUT updates of an existing Gist belong to later tickets.
+(function (root) {
+  'use strict';
+
+  const GIST_CREATE_DESCRIPTION = 'Boxing extension backup';
+  const DEFAULT_GIST_FILE_NAME = 'boxing-backup.json';
+  const GIST_ID_RE = /^[a-f0-9]{5,64}$/i;
+
+  const REASON_TEXT = Object.freeze({
+    gistTokenMissing: 'GitHub token is missing. Add it under Gist settings.',
+    gistPermissionMissing: 'GitHub API access is not granted. Allow it from the Boxing settings page.',
+    gistAccountChanged: 'The GitHub token belongs to a different account than the saved backup target.',
+    gistTargetNeedsReview: 'The Gist target or file name does not match the trusted baseline. Automatic backup is paused.',
+    gistResultUnknown: 'A previous Gist creation has no confirmed result. Check GitHub before retrying.',
+    gistRequestRejected: 'GitHub refused the request. Check the token, its gist scope, and the target.',
+    gistCheckFailed: 'Could not check the GitHub account. Automatic Gist backup is paused.',
+    gistUpdateNotEnabled: 'The Gist already exists. Automatic updates of an existing Gist are not enabled yet.',
+  });
+
+  function normalizeGistId(value) {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    return GIST_ID_RE.test(trimmed) ? trimmed.toLowerCase() : '';
+  }
+
+  // Mirrors the manual Gist path (ntp/sync-engine.js backupToGist): trim, turn
+  // path separators into underscores, drop control characters, default if empty.
+  // Never add a length limit here that the manual path does not have.
+  function sanitizeGistFileName(raw) {
+    const base = typeof raw === 'string' ? raw : '';
+    const cleaned = base.trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
+    return cleaned || DEFAULT_GIST_FILE_NAME;
+  }
+
+  function buildGistCreateBody(fileName, content) {
+    return {
+      description: GIST_CREATE_DESCRIPTION,
+      public: false,
+      files: { [fileName]: { content } },
+    };
+  }
+
+  function safeTimestamp(value) {
+    const ts = Date.parse(value);
+    return Number.isFinite(ts) && ts > 0 ? ts : 0;
+  }
+
+  // Returns a confirmed baseline shape only when the response carries the Gist id
+  // AND the expected file. Anything else is an unknown result, never a success.
+  function parseGistResponse(json, expectedFileName) {
+    if (!json || typeof json !== 'object') return null;
+    const gistId = normalizeGistId(json.id);
+    if (!gistId) return null;
+    const fileName = sanitizeGistFileName(expectedFileName);
+    if (!json.files || typeof json.files !== 'object' || !json.files[fileName]) return null;
+    const owner = json.owner && typeof json.owner === 'object' ? json.owner : {};
+    const ownerId = (typeof owner.id === 'number' && Number.isFinite(owner.id))
+      ? owner.id
+      : (typeof owner.id === 'string' && /^\d{1,20}$/.test(owner.id) ? owner.id : '');
+    const createdAt = safeTimestamp(json.created_at);
+    const updatedAt = safeTimestamp(json.updated_at) || createdAt;
+    return {
+      gistId,
+      fileName,
+      ownerLogin: typeof owner.login === 'string' ? owner.login : '',
+      ownerId,
+      createdAt,
+      updatedAt,
+      fileSize: Number(json.files[fileName].size) || 0,
+    };
+  }
+
+  // 4xx means GitHub answered "no object was created". 5xx and anything else stays
+  // unknown on purpose: a proxy or partially-successful server may have created the
+  // Gist even though Boxing did not get a usable answer.
+  function classifyGistFailure(status) {
+    const code = Number(status) || 0;
+    if (code >= 400 && code < 500) {
+      return { kind: 'definitive', reasonCode: 'gistRequestRejected' };
+    }
+    return { kind: 'unknown', reasonCode: 'gistResultUnknown' };
+  }
+
+  function describeReason(reasonCode) {
+    return REASON_TEXT[reasonCode] || REASON_TEXT.gistCheckFailed;
+  }
+
+  function accountIdsEqual(a, b) {
+    if (!a || !b) return false;
+    return String(a.id) === String(b.id);
+  }
+
+  // Pure first-create decision. Inputs are already-resolved facts:
+  //   settings   — saved Boxing settings (syncProvider/gistId/syncFileName)
+  //   cloud      — normalized autoBackupState.cloud
+  //   account    — verified GitHub account {login, id} or null
+  //   tokenPresent / permission.ok — checked before this call
+  // Returns one of: skip, pause, update-not-enabled, create.
+  function planGistFirstCreate(input) {
+    const opts = input || {};
+    const settings = opts.settings || {};
+    const cloud = opts.cloud || {};
+    const account = opts.account || null;
+
+    if (settings.syncProvider !== 'gist') return { action: 'skip', reasonCode: null };
+    if (opts.tokenPresent !== true) return { action: 'pause', reasonCode: 'gistTokenMissing' };
+    if (!opts.permission || opts.permission.ok !== true) {
+      return { action: 'pause', reasonCode: 'gistPermissionMissing' };
+    }
+    if (cloud.pendingCreate) return { action: 'pause', reasonCode: 'gistResultUnknown' };
+
+    const fileName = sanitizeGistFileName(settings.syncFileName);
+    const savedGistId = normalizeGistId(settings.gistId);
+    const baseline = cloud.baseline && cloud.baseline.provider === 'gist' ? cloud.baseline : null;
+
+    // GitHub account id is the stable identity; a renamed login is not a new target.
+    if (cloud.account && account && !accountIdsEqual(cloud.account, account)) {
+      return { action: 'pause', reasonCode: 'gistAccountChanged' };
+    }
+    if (baseline && baseline.ownerId && account && String(baseline.ownerId) !== String(account.id)) {
+      return { action: 'pause', reasonCode: 'gistAccountChanged' };
+    }
+
+    if (savedGistId) {
+      if (!baseline) return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
+      if (normalizeGistId(baseline.gistId) !== savedGistId || baseline.fileName !== fileName) {
+        return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
+      }
+      return {
+        action: 'update-not-enabled',
+        reasonCode: 'gistUpdateNotEnabled',
+        gistId: savedGistId,
+        fileName,
+      };
+    }
+
+    if (baseline) {
+      // The background created this Gist but the NTP settings have not mirrored the
+      // id yet (or the user changed the file name). Never POST a second Gist.
+      if (baseline.fileName !== fileName) return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
+      return {
+        action: 'update-not-enabled',
+        reasonCode: 'gistUpdateNotEnabled',
+        gistId: normalizeGistId(baseline.gistId),
+        fileName,
+      };
+    }
+
+    return { action: 'create', fileName };
+  }
+
+  const exported = {
+    GIST_CREATE_DESCRIPTION,
+    DEFAULT_GIST_FILE_NAME,
+    GIST_ID_RE,
+    REASON_TEXT,
+    normalizeGistId,
+    sanitizeGistFileName,
+    buildGistCreateBody,
+    parseGistResponse,
+    classifyGistFailure,
+    describeReason,
+    planGistFirstCreate,
+  };
+
+  if (root) root.__boxingGistBackupCore = exported;
+  if (typeof module !== 'undefined' && module && module.exports) module.exports = exported;
+})(typeof self !== 'undefined' ? self : typeof globalThis !== 'undefined' ? globalThis : this);

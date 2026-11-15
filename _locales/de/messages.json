@@ -1401,5 +1401,51 @@
   "titleInputLabel": {
     "message": "Boxtitel",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "Die Hintergrund-Gist-Sicherung benötigt Zugriff auf $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "Der Zugriff auf $origin$ wurde verweigert. Die Gist-Sicherung bleibt pausiert, bis Sie ihn erlauben.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "Pausiert — Aktion erforderlich"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "Ergebnis unbestätigt"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "GitHub-Token fehlt. Fügen Sie ihn in den Gist-Einstellungen hinzu."
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "Kein Zugriff auf die GitHub-API. Erlauben Sie ihn auf dieser Einstellungsseite."
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "Das GitHub-Token gehört zu einem anderen Konto als das gespeicherte Sicherungsziel."
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "Gist-Ziel oder Dateiname stimmt nicht mit der vertrauenswürdigen Basis überein. Die automatische Sicherung ist pausiert."
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "Ein früherer Gist-Erstellungsversuch ist unbestätigt. Prüfen Sie GitHub, bevor Sie es erneut versuchen."
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub hat die Anfrage abgelehnt. Prüfen Sie Token, gist-Berechtigung und Ziel."
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "Das GitHub-Konto konnte nicht geprüft werden. Die automatische Gist-Sicherung ist pausiert."
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "Der Gist existiert bereits. Automatische Aktualisierungen eines bestehenden Gists sind noch nicht aktiviert."
   }
 }

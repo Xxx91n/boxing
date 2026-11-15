@@ -464,6 +464,10 @@
                 <p class="modal__hint" data-i18n="gistTokenHint">Create a personal access token with gist scope</p>
                 <label class="modal__label" for="gist-id" data-i18n="gistId">Gist ID (auto-filled)</label>
                 <input id="gist-id" class="modal__input" type="text" readonly placeholder="Created on first backup">
+                <div id="gist-permission-banner" class="sync-permission-banner" hidden role="status" aria-live="polite">
+                  <p id="gist-permission-msg" class="sync-permission-banner__msg"></p>
+                  <button type="button" id="gist-permission-btn" class="btn" data-i18n="webdavAuthorizeBtn">Grant Permission</button>
+                </div>
               </div>
             </div>
             <!-- Ticket 99 (T13): delete stored sync credentials — danger zone.

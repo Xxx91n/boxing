@@ -62,7 +62,8 @@
       "boxing-conflict-field-adjudication.spec.ts",
       "boxing-about-quick-entries.spec.ts",
       "boxing-webdav-permission.spec.ts",
-      "boxing-backup-credential-allowlist.spec.ts"
+      "boxing-backup-credential-allowlist.spec.ts",
+      "boxing-gist-first-create.spec.ts"
     ],
     "ntp/render.js": [
       "boxing-auto-expand.spec.ts",
@@ -132,7 +133,8 @@
       "boxing-wave11-1017.spec.ts",
       "boxing-webdav-permission.spec.ts",
       "boxing-backup-credential-allowlist.spec.ts",
-      "boxing-bg-local-auto-backup.spec.ts"
+      "boxing-bg-local-auto-backup.spec.ts",
+      "boxing-gist-first-create.spec.ts"
     ],
     "ntp/persist.js": [
       "boxing-accent-theme.spec.ts",
@@ -154,7 +156,8 @@
       "boxing-merge-three-way.spec.ts",
       "boxing-wave11-1017.spec.ts",
       "boxing-backup-credential-allowlist.spec.ts",
-      "boxing-bg-local-auto-backup.spec.ts"
+      "boxing-bg-local-auto-backup.spec.ts",
+      "boxing-gist-first-create.spec.ts"
     ],
     "ntp/credentials.js": [
       "boxing-cred-encrypt.spec.ts",
@@ -189,7 +192,8 @@
       "boxing-wave11-1017.spec.ts",
       "boxing-about-quick-entries.spec.ts",
       "boxing-webdav-permission.spec.ts",
-      "boxing-backup-credential-allowlist.spec.ts"
+      "boxing-backup-credential-allowlist.spec.ts",
+      "boxing-gist-first-create.spec.ts"
     ],
     "ntp/onboarding.js": [
       "boxing-debug.spec.ts",
@@ -211,7 +215,8 @@
       "boxing-conflict-copy-additions.spec.ts",
       "boxing-conflict-field-adjudication.spec.ts",
       "boxing-about-quick-entries.spec.ts",
-      "boxing-webdav-permission.spec.ts"
+      "boxing-webdav-permission.spec.ts",
+      "boxing-gist-first-create.spec.ts"
     ],
     "ntp/state.js": [
       "boxing-architecture-acceptance.spec.ts",

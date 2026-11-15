@@ -1468,5 +1468,63 @@
   "titleInputLabel": {
     "message": "Box title",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "Background Gist backup needs access to $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    },
+    "description": "Banner explaining that the GitHub API origin still needs a user grant"
+  },
+  "gistPermDeniedHint": {
+    "message": "Access to $origin$ was denied. Background Gist backup stays paused until you grant it.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    },
+    "description": "Banner explaining that the GitHub API origin grant was denied"
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "Paused — needs your action",
+    "description": "Status badge when background Gist backup stopped for a user-fixable reason"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "Result unconfirmed",
+    "description": "Status badge when a Gist creation response was lost or unclear"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "GitHub token is missing. Add it under Gist settings.",
+    "description": "Background Gist backup paused because no token is stored"
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "GitHub API access is not granted. Allow it from this settings page.",
+    "description": "Background Gist backup paused because the API origin permission is missing"
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "The GitHub token belongs to a different account than the saved backup target.",
+    "description": "Background Gist backup paused because the token account changed"
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "The Gist target or file name does not match the trusted baseline. Automatic backup is paused.",
+    "description": "Background Gist backup paused because the saved target changed"
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "A previous Gist creation has no confirmed result. Check GitHub before retrying.",
+    "description": "Background Gist backup paused because an earlier POST result is unknown"
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub refused the request. Check the token, its gist scope, and the target.",
+    "description": "Background Gist backup paused because GitHub returned a 4xx response"
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "Could not check the GitHub account. Automatic Gist backup is paused.",
+    "description": "Background Gist backup paused because the account check failed"
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "The Gist already exists. Automatic updates of an existing Gist are not enabled yet.",
+    "description": "Background Gist backup stopped because only first creation is supported"
   }
 }

@@ -1401,5 +1401,51 @@
   "titleInputLabel": {
     "message": "Tiêu đề hộp",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "Bản sao lưu Gist chạy nền cần quyền truy cập $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "Quyền truy cập $origin$ đã bị từ chối. Bản sao lưu Gist sẽ tạm dừng cho đến khi bạn cấp quyền.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "Tạm dừng — cần bạn xử lý"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "Kết quả chưa xác nhận"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "Thiếu token GitHub. Hãy thêm trong cài đặt Gist."
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "Chưa được cấp quyền truy cập GitHub API. Hãy cấp quyền trên trang cài đặt này."
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "Token GitHub thuộc tài khoản khác với mục tiêu sao lưu đã lưu."
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "Mục tiêu Gist hoặc tên tệp không khớp với mốc tin cậy. Sao lưu tự động đã tạm dừng."
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "Kết quả tạo Gist trước đó chưa được xác nhận. Hãy kiểm tra GitHub trước khi thử lại."
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub từ chối yêu cầu. Hãy kiểm tra token, phạm vi gist và mục tiêu."
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "Không thể kiểm tra tài khoản GitHub. Sao lưu Gist tự động đã tạm dừng."
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "Gist đã tồn tại. Chưa hỗ trợ tự động cập nhật Gist hiện có."
   }
 }

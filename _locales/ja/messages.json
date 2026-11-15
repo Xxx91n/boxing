@@ -1401,5 +1401,51 @@
   "titleInputLabel": {
     "message": "ボックスのタイトル",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "バックグラウンドの Gist バックアップには $origin$ へのアクセス権が必要です。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "$origin$ へのアクセスが拒否されました。許可するまで Gist バックアップは一時停止します。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "一時停止 — 操作が必要です"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "結果未確認"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "GitHub トークンがありません。Gist 設定で追加してください。"
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "GitHub API へのアクセスが許可されていません。この設定ページから許可してください。"
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "GitHub トークンのアカウントが、保存済みのバックアップ先と一致しません。"
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "Gist の対象またはファイル名が信頼済みの基準と一致しません。自動バックアップを停止しました。"
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "前回の Gist 作成結果が未確認です。再試行前に GitHub で確認してください。"
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub がリクエストを拒否しました。トークン、gist スコープ、対象を確認してください。"
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "GitHub アカウントを確認できませんでした。自動 Gist バックアップを停止しました。"
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "この Gist は既に存在します。既存 Gist の自動更新はまだ有効ではありません。"
   }
 }

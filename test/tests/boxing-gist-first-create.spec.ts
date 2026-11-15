@@ -1,0 +1,950 @@
+// Boxing — ticket #126 (#120 T7): Gist auto-backup first create + safe pause on
+// unknown/existing targets.
+//
+// Coverage split:
+//   1. Shared protocol core: pure first-create planning and response parsing.
+//   2. Background VM lane: the real background.js classic-SW path, with controlled
+//      Gist API responses, real v3 credential envelopes, and a real snapshot write.
+//      Covers confirmed creation, existing-target pause, account change, missing
+//      permission, lost POST response, repeated-run dedup, and the no-POST guarantee.
+//   3. file:// NTP lane: paused/pending status badge + localized reason + Gist id
+//      mirroring into the normal settings field.
+//   4. Real built Chrome extension lane: the shipped optional-host-permission build
+//      must pause with zero network and persist pending permission; a test build with
+//      the host permission pre-granted must create exactly one Gist through the real
+//      service worker, with a sanitized body and no token in logs/snapshots.
+
+import { expect, test, chromium, type Page } from '@playwright/test';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import vm from 'node:vm';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { dismissOnboarding } from '../helpers/onboarding';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, '..', '..');
+const NTP_URL = pathToFileURL(path.join(ROOT_DIR, 'ntp', 'index.html')).href;
+const DIST_CHROME = path.join(ROOT_DIR, 'dist', 'boxing-chrome');
+const DIST_FIREFOX = path.join(ROOT_DIR, 'dist', 'boxing-firefox');
+
+const TOKEN = 'ghp_spec_token_126_secret';
+const PIK = 'c3BlYy1wZXItaW5zdGFsbC1rZXktMjAyNi0xMS0xNi0wMDAwMDAwMDAwMDA=';
+const GIST_FILE = 'boxing-backup.json';
+
+function b64(u8: Uint8Array): string {
+  return Buffer.from(u8).toString('base64');
+}
+
+async function encryptV3(plaintext: string, pikB64: string): Promise<any> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const baseKey = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(pikB64), 'PBKDF2', false, ['deriveKey']
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt']
+  );
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plaintext));
+  return { v: 3, s: b64(salt), iv: b64(iv), d: b64(new Uint8Array(ct)) };
+}
+
+function loadUmd(rel: string, extra: Record<string, any> = {}): any {
+  const sandbox: any = {
+    module: { exports: {} },
+    exports: {},
+    console,
+    crypto,
+    atob,
+    btoa,
+    TextEncoder,
+    TextDecoder,
+    ...extra,
+  };
+  sandbox.self = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(ROOT_DIR, rel), 'utf8'), sandbox, { filename: rel });
+  return sandbox.module.exports;
+}
+
+function seedLayout(envelope: any, overrides: Record<string, any> = {}) {
+  return {
+    version: 3.5,
+    schemaVersion: 3,
+    nextLargeIndex: 2,
+    boxes: [
+      {
+        id: 'L1',
+        type: 'large',
+        title: 'Alpha',
+        x: 0,
+        y: 0,
+        width: 320,
+        height: 220,
+        nextSmallIndex: 1,
+        children: [
+          {
+            id: 'S1',
+            type: 'small',
+            title: 'Links',
+            x: 10,
+            y: 10,
+            width: 140,
+            height: 90,
+            bookmarks: [{ id: 'b1', title: 'Example', url: 'https://example.com/' }],
+          },
+        ],
+      },
+    ],
+    connections: [],
+    settings: {
+      selectedLanguage: 'en',
+      onboardingCompleted: true,
+      syncProvider: 'gist',
+      syncFileName: GIST_FILE,
+      syncLevel: 'full',
+      autoBackupInterval: 3600,
+      _encGistToken: envelope,
+      ...overrides,
+    },
+    _meta: { revision: 5, updatedAt: 1_700_000_000_000, writerId: 'seed' },
+  };
+}
+
+function activeState(cloud?: any) {
+  return {
+    version: 1,
+    optIn: true,
+    intervalSec: 3600,
+    epoch: 1,
+    nextScheduledAt: 0,
+    updatedAt: 0,
+    local: {
+      status: 'idle',
+      lastAttemptAt: 0,
+      lastSuccessAt: 0,
+      lastSnapshotTs: 0,
+      lastError: null,
+    },
+    cloud: cloud || undefined,
+    lock: null,
+  };
+}
+
+function jsonResponse(status: number, body: any): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function apiUser(id = 42, login = 'spec-user') {
+  return jsonResponse(200, { login, id });
+}
+
+function gistCreated(id = 'abc12345', fileName = GIST_FILE) {
+  return jsonResponse(201, {
+    id,
+    files: { [fileName]: { filename: fileName, size: 123 } },
+    owner: { login: 'spec-user', id: 42 },
+    created_at: '2026-11-16T00:00:00Z',
+    updated_at: '2026-11-16T00:00:00Z',
+  });
+}
+
+interface BgCall {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string | null;
+}
+
+function clone<T>(v: T): T {
+  if (v === undefined) return v;
+  return JSON.parse(JSON.stringify(v));
+}
+
+async function makeBgSandbox(opts: {
+  store: Record<string, any>;
+  grantPermission?: boolean;
+  containsThrows?: boolean;
+  fetchImpl: (call: BgCall) => Response | Promise<Response>;
+}) {
+  const store = opts.store;
+  const calls: BgCall[] = [];
+  const permissionRequests: any[] = [];
+  let badgeText = '';
+  let onAlarmHandler: any = null;
+  let onInstalledHandler: any = null;
+  let onStartupHandler: any = null;
+
+  const chromeMock = {
+    storage: {
+      local: {
+        get(keys: any, cb?: (res: any) => void) {
+          const out: Record<string, any> = {};
+          if (keys == null) {
+            for (const [k, v] of Object.entries(store)) out[k] = clone(v);
+          } else if (typeof keys === 'string') {
+            if (keys in store) out[keys] = clone(store[keys]);
+          } else if (Array.isArray(keys)) {
+            for (const k of keys) if (k in store) out[k] = clone(store[k]);
+          } else {
+            for (const [k, d] of Object.entries(keys)) out[k] = k in store ? clone(store[k]) : d;
+          }
+          if (typeof cb === 'function') { cb(out); return undefined; }
+          return Promise.resolve(out);
+        },
+        set(obj: Record<string, any>, cb?: () => void) {
+          for (const [k, v] of Object.entries(obj)) store[k] = clone(v);
+          if (typeof cb === 'function') { cb(); return undefined; }
+          return Promise.resolve();
+        },
+        remove(keys: string | string[], cb?: () => void) {
+          for (const k of Array.isArray(keys) ? keys : [keys]) delete store[k];
+          if (typeof cb === 'function') { cb(); return undefined; }
+          return Promise.resolve();
+        },
+      },
+      sync: { get: (_k: any, cb?: (r: any) => void) => { if (cb) cb({}); } },
+    },
+    alarms: {
+      get: (_n: string, cb?: (a: any) => void) => { if (cb) cb(null); return Promise.resolve(null); },
+      create: (_n: string, _info: any, cb?: () => void) => { if (cb) cb(); return Promise.resolve(); },
+      clear: (_n: string, cb?: (b: boolean) => void) => { if (cb) cb(true); return Promise.resolve(true); },
+      onAlarm: { addListener: (fn: any) => { onAlarmHandler = fn; } },
+    },
+    action: {
+      setBadgeText: (info: any) => { badgeText = info && info.text ? info.text : ''; return Promise.resolve(); },
+      setBadgeBackgroundColor: () => Promise.resolve(),
+      onClicked: { addListener: () => {} },
+    },
+    runtime: {
+      id: 'spec-ext-id',
+      getURL: (p: string) => 'chrome-extension://spec-ext-id/' + p,
+      onInstalled: { addListener: (fn: any) => { onInstalledHandler = fn; } },
+      onStartup: { addListener: (fn: any) => { onStartupHandler = fn; } },
+      onMessage: { addListener: () => {} },
+      lastError: null,
+    },
+    permissions: {
+      contains: (_details: any, cb?: (granted: boolean) => void) => {
+        if (opts.containsThrows) {
+          if (cb) {
+            (chromeMock.runtime as any).lastError = { message: 'contains failed' };
+            cb(false);
+            (chromeMock.runtime as any).lastError = null;
+            return undefined;
+          }
+          return Promise.reject(new Error('contains failed'));
+        }
+        const granted = opts.grantPermission !== false;
+        if (cb) { cb(granted); return undefined; }
+        return Promise.resolve(granted);
+      },
+      request: (details: any, cb?: (granted: boolean) => void) => {
+        permissionRequests.push(details);
+        if (cb) { cb(false); return undefined; }
+        return Promise.resolve(false);
+      },
+    },
+  };
+
+  const fetchMock = async (input: any, init?: any) => {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const headers: Record<string, string> = {};
+    if (init && init.headers) {
+      if (typeof init.headers.entries === 'function') {
+        for (const [k, v] of init.headers.entries()) headers[k] = String(v);
+      } else {
+        for (const [k, v] of Object.entries(init.headers)) headers[k] = String(v);
+      }
+    }
+    const call: BgCall = {
+      url: String(url),
+      method: (init && init.method) || 'GET',
+      headers,
+      body: init && typeof init.body === 'string' ? init.body : null,
+    };
+    calls.push(call);
+    return opts.fetchImpl(call);
+  };
+
+  const sandbox: any = {
+    chrome: chromeMock,
+    console: { log: () => {}, warn: () => {}, error: () => {} },
+    Date, Math, JSON, Object, Array, Number, String, Boolean, RegExp, Error, Set, Map,
+    WeakSet, WeakMap, URL, Promise, structuredClone,
+    setTimeout, clearTimeout, atob, btoa, TextEncoder, TextDecoder,
+    Headers, Response, Request, AbortController, crypto,
+    fetch: fetchMock,
+    importScripts: (relPath: string) => {
+      const code = fs.readFileSync(path.join(ROOT_DIR, relPath), 'utf8');
+      vm.runInContext(code, sandbox, { filename: relPath });
+    },
+  };
+  sandbox.self = sandbox;
+  sandbox.globalThis = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(ROOT_DIR, 'background.js'), 'utf8'), sandbox, { filename: 'background.js' });
+
+  return {
+    bg: sandbox.__boxingBgAutoBackup,
+    store,
+    calls,
+    permissionRequests,
+    getBadge: () => badgeText,
+    onAlarmHandler,
+    onInstalledHandler,
+    onStartupHandler,
+  };
+}
+
+test.describe('Ticket #126 — Gist first-create protocol core', () => {
+  test('first-create plan: create / existing / account change / pending / target change', () => {
+    const gistCore = loadUmd('shared/gist-backup-core.js');
+    const settings = { syncProvider: 'gist', syncFileName: GIST_FILE };
+    const cloud = { account: { login: 'a', id: 1 }, baseline: null, pendingCreate: null };
+    const base = { settings, cloud, account: { login: 'a', id: 1 }, tokenPresent: true, permission: { ok: true } };
+
+    expect(gistCore.planGistFirstCreate(base)).toEqual({ action: 'create', fileName: GIST_FILE });
+    expect(gistCore.planGistFirstCreate({ ...base, settings: { ...settings, gistId: 'deadbeef' } }))
+      .toMatchObject({ action: 'pause', reasonCode: 'gistTargetNeedsReview' });
+    expect(gistCore.planGistFirstCreate({ ...base, account: { login: 'b', id: 2 } }))
+      .toMatchObject({ action: 'pause', reasonCode: 'gistAccountChanged' });
+    expect(gistCore.planGistFirstCreate({ ...base, cloud: { ...cloud, pendingCreate: { provider: 'gist', fileName: GIST_FILE } } }))
+      .toMatchObject({ action: 'pause', reasonCode: 'gistResultUnknown' });
+
+    const baseline = {
+      provider: 'gist', gistId: 'abc12345', fileName: GIST_FILE, ownerLogin: 'a', ownerId: 1,
+    };
+    expect(gistCore.planGistFirstCreate({ ...base, cloud: { ...cloud, baseline } }))
+      .toMatchObject({ action: 'update-not-enabled', reasonCode: 'gistUpdateNotEnabled' });
+    expect(gistCore.planGistFirstCreate({ ...base, settings: { ...settings, gistId: 'abc12345' }, cloud: { ...cloud, baseline } }))
+      .toMatchObject({ action: 'update-not-enabled', reasonCode: 'gistUpdateNotEnabled' });
+    expect(gistCore.planGistFirstCreate({ ...base, settings: { ...settings, syncFileName: 'other.json' }, cloud: { ...cloud, baseline } }))
+      .toMatchObject({ action: 'pause', reasonCode: 'gistTargetNeedsReview' });
+    expect(gistCore.planGistFirstCreate({ ...base, tokenPresent: false }))
+      .toMatchObject({ action: 'pause', reasonCode: 'gistTokenMissing' });
+    expect(gistCore.planGistFirstCreate({ ...base, permission: { ok: false } }))
+      .toMatchObject({ action: 'pause', reasonCode: 'gistPermissionMissing' });
+  });
+
+  test('Gist response parsing only accepts an id plus the expected file', () => {
+    const gistCore = loadUmd('shared/gist-backup-core.js');
+    const good = gistCore.parseGistResponse({
+      id: 'ABCDEF12',
+      files: { [GIST_FILE]: { size: 12 } },
+      owner: { login: 'spec-user', id: 42 },
+      created_at: '2026-11-16T00:00:00Z',
+      updated_at: '2026-11-16T01:00:00Z',
+    }, GIST_FILE);
+    expect(good).toMatchObject({
+      gistId: 'abcdef12',
+      fileName: GIST_FILE,
+      ownerLogin: 'spec-user',
+      ownerId: 42,
+      fileSize: 12,
+    });
+    expect(gistCore.parseGistResponse({ id: 'abcdef12' }, GIST_FILE)).toBeNull();
+    expect(gistCore.parseGistResponse({ id: 'not-a-gist', files: { [GIST_FILE]: {} } }, GIST_FILE)).toBeNull();
+    expect(gistCore.classifyGistFailure(401)).toMatchObject({ kind: 'definitive' });
+    expect(gistCore.classifyGistFailure(403)).toMatchObject({ kind: 'definitive' });
+    expect(gistCore.classifyGistFailure(500)).toMatchObject({ kind: 'unknown', reasonCode: 'gistResultUnknown' });
+    expect(gistCore.buildGistCreateBody(GIST_FILE, '{"a":1}')).toEqual({
+      description: 'Boxing extension backup',
+      public: false,
+      files: { [GIST_FILE]: { content: '{"a":1}' } },
+    });
+  });
+
+  test('shared credential decrypt reads v3 envelopes and fails closed without the install key', async () => {
+    const credCore = loadUmd('shared/credential-core.js');
+    const env = await encryptV3('hello-gist', PIK);
+    expect(await credCore.decryptCredential(env, { getPerInstallKeyB64: async () => PIK })).toBe('hello-gist');
+    expect(await credCore.decryptCredential(env, { getPerInstallKeyB64: async () => { throw new Error('missing'); } })).toBe('');
+    expect(await credCore.decryptCredential('plain-token', {})).toBe('plain-token');
+  });
+});
+
+test.describe('Ticket #126 — background Gist first-create VM lane', () => {
+  test.setTimeout(60_000);
+
+  async function baseStore(overrides: Record<string, any> = {}, stateCloud?: any) {
+    const env = await encryptV3(TOKEN, PIK);
+    return {
+      boxingLayout: seedLayout(env, overrides),
+      'boxingCredKey.v1': PIK,
+      autoBackupState: activeState(stateCloud),
+    };
+  }
+
+  test('confirmed POST records the real Gist id/owner/file baseline and never leaks the token', async () => {
+    const store = await baseStore();
+    const beforeLayout = JSON.stringify(store.boxingLayout);
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (call.method === 'POST' && call.url.endsWith('/gists')) return gistCreated();
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls.map((c) => c.method + ' ' + new URL(c.url).pathname)).toEqual(['GET /user', 'POST /gists']);
+    expect(sandbox.permissionRequests).toEqual([]);
+    expect(sandbox.getBadge()).toBe('');
+
+    const post = sandbox.calls.find((c) => c.method === 'POST')!;
+    expect(post.headers.authorization).toBe('Bearer ' + TOKEN);
+    expect(post.headers.accept).toBe('application/vnd.github+json');
+    expect(post.body).toBeTruthy();
+    expect(post.body).not.toContain(TOKEN);
+    const body = JSON.parse(post.body!);
+    expect(body.public).toBe(false);
+    expect(Object.keys(body.files)).toEqual([GIST_FILE]);
+    const content = JSON.parse(body.files[GIST_FILE].content);
+    expect(content.settings.syncProvider).toBe('gist');
+    expect(content.settings._encGistToken).toBeUndefined();
+    expect(content.settings.gistId).toBeUndefined();
+    expect(content.boxes[0].title).toBe('Alpha');
+
+    const state = sandbox.store.autoBackupState;
+    expect(state.cloud.status).toBe('ok');
+    expect(state.cloud.baseline).toMatchObject({
+      provider: 'gist',
+      gistId: 'abc12345',
+      ownerLogin: 'spec-user',
+      ownerId: 42,
+      fileName: GIST_FILE,
+    });
+    expect(state.cloud.lastSuccessAt).toBeGreaterThan(0);
+    expect(state.cloud.pendingCreate).toBeNull();
+    expect(state.cloud.account).toMatchObject({ login: 'spec-user', id: 42 });
+    expect(JSON.stringify(state)).not.toContain(TOKEN);
+
+    // Background never writes boxingLayout.
+    expect(JSON.stringify(sandbox.store.boxingLayout)).toBe(beforeLayout);
+
+    // Snapshot body is the #122 allowlist shape, not the raw layout.
+    const snapKeys = Object.keys(sandbox.store).filter((k) => k.startsWith('snap.v1.') && k !== 'snap.v1.index');
+    expect(snapKeys).toHaveLength(1);
+    const snapJson = JSON.stringify(sandbox.store[snapKeys[0]]);
+    expect(snapJson).not.toContain(TOKEN);
+    expect(snapJson).not.toContain('_encGistToken');
+    expect(snapJson).not.toContain(PIK);
+
+    // Second alarm run must not POST a second Gist after a confirmed baseline.
+    const firstSuccessAt = state.cloud.lastSuccessAt;
+    const res2 = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res2.ok).toBe(true);
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(1);
+    const state2 = sandbox.store.autoBackupState;
+    expect(state2.cloud.status).toBe('paused');
+    expect(state2.cloud.lastErrorCode).toBe('gistUpdateNotEnabled');
+    expect(state2.cloud.baseline.gistId).toBe('abc12345');
+    expect(state2.cloud.lastSuccessAt).toBe(firstSuccessAt);
+  });
+
+  test('a later permission revocation pauses with no API call and keeps the real success time', async () => {
+    const store = await baseStore();
+    const first = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (call.method === 'POST' && call.url.endsWith('/gists')) return gistCreated();
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    await first.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    const successAt = first.store.autoBackupState.cloud.lastSuccessAt;
+    expect(successAt).toBeGreaterThan(0);
+
+    const revoked = await makeBgSandbox({
+      store,
+      grantPermission: false,
+      fetchImpl: () => { throw new Error('network must not be touched after revocation'); },
+    });
+    await revoked.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(revoked.calls).toEqual([]);
+    expect(revoked.store.autoBackupState.cloud.status).toBe('paused');
+    expect(revoked.store.autoBackupState.cloud.lastErrorCode).toBe('gistPermissionMissing');
+    expect(revoked.store.autoBackupState.cloud.lastSuccessAt).toBe(successAt);
+    expect(revoked.store.gistPendingPermission).toMatchObject({ needed: true, origin: 'https://api.github.com/*' });
+  });
+
+  test('saved Gist id without a trusted baseline pauses before any POST', async () => {
+    const store = await baseStore({ gistId: 'deadbeef' });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistTargetNeedsReview');
+    expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+  });
+
+  test('token account change pauses without POST or layout writes', async () => {
+    const store = await baseStore({}, {
+      provider: 'gist', status: 'idle', account: { login: 'old-user', id: 1 },
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser(42, 'new-user');
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistAccountChanged');
+    expect(sandbox.store.autoBackupState.cloud.account).toMatchObject({ login: 'old-user', id: 1 });
+  });
+
+  test('missing host permission pauses with zero API calls and records pending permission', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      grantPermission: false,
+      fetchImpl: () => { throw new Error('network must not be touched without permission'); },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls).toEqual([]);
+    expect(sandbox.permissionRequests).toEqual([]);
+    expect(sandbox.store.gistPendingPermission).toMatchObject({
+      needed: true,
+      origin: 'https://api.github.com/*',
+      source: 'background',
+    });
+    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistPermissionMissing');
+    expect(sandbox.getBadge()).toBe('!');
+  });
+
+  test('permissions.contains throwing fails closed with no API call', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      containsThrows: true,
+      fetchImpl: () => { throw new Error('network must not be touched when permission check fails'); },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls).toEqual([]);
+    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistPermissionMissing');
+  });
+
+  test('lost POST response stays pending and a later run never sends a second POST', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (call.method === 'POST' && call.url.endsWith('/gists')) throw new TypeError('network lost');
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(1);
+    const state = sandbox.store.autoBackupState;
+    expect(state.cloud.status).toBe('pending');
+    expect(state.cloud.lastErrorCode).toBe('gistResultUnknown');
+    expect(state.cloud.pendingCreate).toMatchObject({ provider: 'gist', fileName: GIST_FILE });
+    expect(state.cloud.lastSuccessAt).toBe(0);
+    expect(sandbox.getBadge()).toBe('!');
+
+    await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(1);
+    expect(sandbox.store.autoBackupState.cloud.status).toBe('pending');
+    expect(sandbox.store.autoBackupState.cloud.baseline).toBeNull();
+  });
+
+  test('2xx with an unusable body is pending, never a success', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (call.method === 'POST' && call.url.endsWith('/gists')) return jsonResponse(201, { id: 'abc12345' });
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    const state = sandbox.store.autoBackupState;
+    expect(state.cloud.status).toBe('pending');
+    expect(state.cloud.lastSuccessAt).toBe(0);
+    expect(state.cloud.baseline).toBeNull();
+    expect(state.cloud.pendingCreate.gistId).toBe('abc12345');
+  });
+
+  test('missing token pauses without network and keeps local snapshot success independent', async () => {
+    const env = await encryptV3(TOKEN, PIK);
+    const layout = seedLayout(env);
+    delete layout.settings._encGistToken;
+    const store = {
+      boxingLayout: layout,
+      'boxingCredKey.v1': PIK,
+      autoBackupState: activeState(),
+    };
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: () => { throw new Error('network must not be touched without a token'); },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.ok).toBe(true);
+    expect(sandbox.calls).toEqual([]);
+    const state = sandbox.store.autoBackupState;
+    expect(state.local.status).toBe('ok');
+    expect(state.local.lastSuccessAt).toBeGreaterThan(0);
+    expect(state.cloud.status).toBe('paused');
+    expect(state.cloud.lastErrorCode).toBe('gistTokenMissing');
+    expect(state.cloud.lastSuccessAt).toBe(0);
+  });
+});
+
+async function bootFileNtp(page: Page) {
+  await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.saveLayout))).toBe(true);
+  await dismissOnboarding(page);
+}
+
+async function openSyncTab(page: Page) {
+  await page.evaluate(() => document.getElementById('settings-btn')?.click());
+  await expect(page.locator('#settings-modal')).toBeVisible();
+  await page.evaluate(() => {
+    (document.querySelector('.settings-nav__item[data-tab="sync"]') as HTMLElement | null)?.click();
+  });
+  await expect(page.locator('#tab-sync')).toBeVisible();
+}
+
+test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
+  test.setTimeout(60_000);
+
+  test('paused and pending cloud results reuse the existing status/error area', async ({ page }) => {
+    await bootFileNtp(page);
+    await page.evaluate(async (state) => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.syncProvider = 'gist';
+      dbg.layout.settings.autoBackupInterval = 3600;
+      dbg.layout.settings._encGistToken = 'plain-token';
+      await dbg.saveLayout();
+      const providerSelect = document.getElementById('sync-provider') as HTMLSelectElement | null;
+      if (providerSelect) providerSelect.value = 'gist';
+      await dbg.storageSet({ autoBackupState: state });
+      await (window as any).__boxingRefreshLocalAutoBackupUi(state);
+    }, {
+      ...activeState({
+        provider: 'gist',
+        status: 'paused',
+        lastErrorCode: 'gistTargetNeedsReview',
+        lastError: 'target mismatch',
+      }),
+    });
+
+    await openSyncTab(page);
+    await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'paused');
+    await expect(page.locator('#local-auto-backup-status-text')).toHaveText('Paused — needs your action');
+    await expect(page.locator('#local-auto-backup-error')).toBeVisible();
+    await expect(page.locator('#local-auto-backup-error')).toContainText('Gist target or file name');
+
+    await page.evaluate(async () => {
+      const state = {
+        ...(window as any).__boxingSnapshotCore.defaultAutoBackupState(),
+        optIn: true,
+        intervalSec: 3600,
+        epoch: 1,
+        local: { status: 'ok', lastAttemptAt: 1, lastSuccessAt: 1, lastSnapshotTs: 1, lastError: null },
+        cloud: {
+          provider: 'gist',
+          status: 'pending',
+          lastAttemptAt: 2,
+          lastSuccessAt: 0,
+          lastErrorCode: 'gistResultUnknown',
+          lastError: 'unknown',
+          account: null,
+          baseline: null,
+          pendingCreate: { provider: 'gist', fileName: 'boxing-backup.json' },
+        },
+      };
+      await (window as any).__boxingRefreshLocalAutoBackupUi(state);
+    });
+    await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'paused');
+    await expect(page.locator('#local-auto-backup-status-text')).toHaveText('Result unconfirmed');
+    await expect(page.locator('#local-auto-backup-error')).toContainText('no confirmed result');
+  });
+
+  test('a background-created Gist id is mirrored into the normal settings field', async ({ page }) => {
+    await bootFileNtp(page);
+    await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings.syncProvider = 'gist';
+      dbg.layout.settings.autoBackupInterval = 3600;
+      dbg.layout.settings._encGistToken = 'plain-token';
+      delete dbg.layout.settings.gistId;
+      await dbg.saveLayout();
+      const providerSelect = document.getElementById('sync-provider') as HTMLSelectElement | null;
+      if (providerSelect) providerSelect.value = 'gist';
+      const state = {
+        ...(window as any).__boxingSnapshotCore.defaultAutoBackupState(),
+        optIn: true,
+        intervalSec: 3600,
+        epoch: 1,
+        cloud: {
+          provider: 'gist',
+          status: 'ok',
+          lastAttemptAt: 10,
+          lastSuccessAt: 10,
+          lastError: null,
+          lastErrorCode: null,
+          account: { login: 'spec-user', id: 42 },
+          baseline: {
+            provider: 'gist',
+            gistId: 'abc12345',
+            fileName: 'boxing-backup.json',
+            ownerLogin: 'spec-user',
+            ownerId: 42,
+            createdAt: 10,
+            updatedAt: 10,
+            verifiedAt: 10,
+          },
+          pendingCreate: null,
+        },
+      };
+      await dbg.storageSet({ autoBackupState: state });
+      await (window as any).__boxingRefreshLocalAutoBackupUi(state);
+    });
+    await openSyncTab(page);
+    expect(await page.locator('#gist-id').inputValue()).toBe('abc12345');
+    expect(await page.evaluate(() => (window as any).__boxingDebug.layout.settings.gistId)).toBe('abc12345');
+  });
+});
+
+test.describe('Ticket #126 — built manifests and shared modules', () => {
+  test('Chrome/Firefox build boundaries and shared cores are packaged', () => {
+    const chromeManifestPath = path.join(DIST_CHROME, 'manifest.json');
+    const firefoxManifestPath = path.join(DIST_FIREFOX, 'manifest.json');
+    test.skip(!fs.existsSync(chromeManifestPath) || !fs.existsSync(firefoxManifestPath), 'dist builds missing - CI builds first');
+
+    const chromeManifest = JSON.parse(fs.readFileSync(chromeManifestPath, 'utf8'));
+    expect(chromeManifest.optional_host_permissions || []).toContain('https://*/*');
+    expect(chromeManifest.host_permissions || []).not.toContain('https://*/*');
+    expect(chromeManifest.permissions || []).not.toContain('notifications');
+
+    const ffManifest = JSON.parse(fs.readFileSync(firefoxManifestPath, 'utf8'));
+    expect(ffManifest.host_permissions || []).toContain('https://*/*');
+    expect(ffManifest.permissions || []).not.toContain('notifications');
+
+    for (const dist of [DIST_CHROME, DIST_FIREFOX]) {
+      for (const rel of ['shared/credential-core.js', 'shared/gist-backup-core.js', 'shared/snapshot-core.js']) {
+        expect(fs.existsSync(path.join(dist, rel)), rel + ' missing from ' + dist).toBe(true);
+      }
+    }
+    const bgCode = fs.readFileSync(path.join(DIST_CHROME, 'background.js'), 'utf8');
+    expect(bgCode).toContain("importScripts('shared/credential-core.js')");
+    expect(bgCode).toContain("importScripts('shared/gist-backup-core.js')");
+    // The background must never call permissions.request (D5).
+    expect(bgCode).not.toMatch(/permissions\.request\s*\(/);
+  });
+});
+
+function copyDir(src: string, dst: string) {
+  fs.mkdirSync(dst, { recursive: true });
+  for (const ent of fs.readdirSync(src, { withFileTypes: true })) {
+    if (ent.name === 'release') continue; // packaged zips/crx are not needed to load the extension
+    const s = path.join(src, ent.name);
+    const d = path.join(dst, ent.name);
+    if (ent.isDirectory()) copyDir(s, d);
+    else fs.copyFileSync(s, d);
+  }
+}
+
+function makeGrantedChromeBuild(): string {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-126-build-'));
+  copyDir(DIST_CHROME, tmp);
+  const manifestPath = path.join(tmp, 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const optional = Array.isArray(manifest.optional_host_permissions) ? manifest.optional_host_permissions : [];
+  manifest.optional_host_permissions = optional.filter((p: string) => p !== 'https://*/*');
+  manifest.host_permissions = Array.from(new Set([...(manifest.host_permissions || []), 'https://*/*']));
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+  return tmp;
+}
+
+async function launchExtension(extensionPath: string) {
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-126-profile-'));
+  const ctx = await chromium.launchPersistentContext(profile, {
+    headless: false,
+    args: [
+      '--load-extension=' + extensionPath,
+      '--disable-extensions-except=' + extensionPath,
+      '--no-first-run',
+      '--no-default-browser-check',
+    ],
+  });
+  return { ctx, profile };
+}
+
+async function seedRealExtension(ctx: any, token: string) {
+  const page = await ctx.newPage();
+  await page.goto('chrome://newtab', { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug?.saveLayout)), { timeout: 30000 }).toBe(true);
+  await dismissOnboarding(page);
+  await expect.poll(() => page.evaluate(() => typeof (window as any).__boxingEncryptCredential === 'function'), { timeout: 30000 }).toBe(true);
+  const sw = ctx.serviceWorkers()[0] || (await ctx.waitForEvent('serviceworker', { timeout: 15000 }));
+
+  await page.evaluate(async (plain: string) => {
+    const dbg = (window as any).__boxingDebug;
+    const enc = await (window as any).__boxingEncryptCredential(plain);
+    dbg.layout.settings.syncProvider = 'gist';
+    dbg.layout.settings.syncFileName = 'boxing-backup.json';
+    dbg.layout.settings.syncLevel = 'full';
+    dbg.layout.settings.autoBackupInterval = 3600;
+    dbg.layout.settings._encGistToken = enc;
+    await dbg.saveLayout();
+  }, token);
+
+  await sw.evaluate(async (state: any) => {
+    await chrome.storage.local.set({ autoBackupState: state });
+  }, activeState());
+
+  await page.close();
+  return sw;
+}
+
+test.describe('Ticket #126 — real Chrome extension', () => {
+  test.setTimeout(180_000);
+
+  test('shipped build with optional host permission pauses without any GitHub request', async ({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-extension', 'real extension lane');
+    test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')), 'dist/boxing-chrome not built');
+
+    const { ctx, profile } = await launchExtension(DIST_CHROME);
+    const apiRequests: string[] = [];
+    ctx.on('request', (req: any) => {
+      if (req.url().startsWith('https://api.github.com/')) apiRequests.push(req.url());
+    });
+    try {
+      const sw = await seedRealExtension(ctx, TOKEN);
+      const run = await sw.evaluate(async () => {
+        const bg = (self as any).__boxingBgAutoBackup;
+        const res = await bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+        const all = await chrome.storage.local.get(null);
+        const badge = await chrome.action.getBadgeText({});
+        return { res, state: all.autoBackupState, pending: all.gistPendingPermission, badge };
+      });
+      expect(run.res.ok).toBe(true);
+      expect(apiRequests).toEqual([]);
+      expect(run.state.cloud.status).toBe('paused');
+      expect(run.state.cloud.lastErrorCode).toBe('gistPermissionMissing');
+      expect(run.pending).toMatchObject({ needed: true, origin: 'https://api.github.com/*' });
+      expect(run.badge).toBe('!');
+    } finally {
+      await ctx.close().catch(() => {});
+      fs.rmSync(profile, { recursive: true, force: true });
+    }
+  });
+
+  test('pre-granted test build creates exactly one Gist through the real service worker', async ({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-extension', 'real extension lane');
+    test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')), 'dist/boxing-chrome not built');
+
+    const testBuild = makeGrantedChromeBuild();
+    const { ctx, profile } = await launchExtension(testBuild);
+    const apiCalls: BgCall[] = [];
+    await ctx.route('https://api.github.com/**', async (route: any) => {
+      const req = route.request();
+      const headers: Record<string, string> = {};
+      for (const [k, v] of Object.entries(req.headers())) headers[k] = String(v);
+      apiCalls.push({
+        url: req.url(),
+        method: req.method(),
+        headers,
+        body: req.postData() || null,
+      });
+      if (req.method() === 'GET' && req.url().endsWith('/user')) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ login: 'spec-user', id: 42 }) });
+        return;
+      }
+      if (req.method() === 'POST' && req.url().endsWith('/gists')) {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'abc12345',
+            files: { [GIST_FILE]: { filename: GIST_FILE, size: 123 } },
+            owner: { login: 'spec-user', id: 42 },
+            created_at: '2026-11-16T00:00:00Z',
+            updated_at: '2026-11-16T00:00:00Z',
+          }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+
+    try {
+      const sw = await seedRealExtension(ctx, TOKEN);
+      const run = await sw.evaluate(async () => {
+        const bg = (self as any).__boxingBgAutoBackup;
+        const res = await bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+        const all = await chrome.storage.local.get(null);
+        const snapKeys = Object.keys(all).filter((k) => k.startsWith('snap.v1.') && k !== 'snap.v1.index');
+        return {
+          res,
+          state: all.autoBackupState,
+          layout: all.boxingLayout,
+          snapJson: snapKeys.map((k) => JSON.stringify(all[k])).join('\n'),
+          badge: await chrome.action.getBadgeText({}),
+        };
+      });
+
+      expect(run.res.ok).toBe(true);
+      expect(apiCalls.filter((c) => c.method === 'POST')).toHaveLength(1);
+      expect(apiCalls.filter((c) => c.method === 'GET' && c.url.endsWith('/user'))).toHaveLength(1);
+      const post = apiCalls.find((c) => c.method === 'POST')!;
+      expect(post.headers.authorization || post.headers.Authorization).toContain(TOKEN);
+      expect(post.body).not.toContain(TOKEN);
+      const body = JSON.parse(post.body!);
+      expect(Object.keys(body.files)).toEqual([GIST_FILE]);
+      expect(JSON.parse(body.files[GIST_FILE].content).settings._encGistToken).toBeUndefined();
+
+      expect(run.state.cloud.status).toBe('ok');
+      expect(run.state.cloud.baseline).toMatchObject({
+        provider: 'gist',
+        gistId: 'abc12345',
+        ownerLogin: 'spec-user',
+        ownerId: 42,
+        fileName: GIST_FILE,
+      });
+      expect(run.state.cloud.lastSuccessAt).toBeGreaterThan(0);
+      expect(run.badge).toBe('');
+      expect(run.snapJson).not.toContain(TOKEN);
+      expect(run.snapJson).not.toContain('_encGistToken');
+      // Background did not mutate the layout (the NTP page is closed).
+      expect(run.layout.settings.gistId).toBeFalsy();
+    } finally {
+      await ctx.close().catch(() => {});
+      fs.rmSync(profile, { recursive: true, force: true });
+      fs.rmSync(testBuild, { recursive: true, force: true });
+    }
+  });
+});

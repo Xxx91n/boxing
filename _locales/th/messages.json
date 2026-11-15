@@ -1401,5 +1401,51 @@
   "titleInputLabel": {
     "message": "ชื่อกล่อง",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "การสำรองข้อมูล Gist เบื้องหลังต้องเข้าถึง $origin$",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "การเข้าถึง $origin$ ถูกปฏิเสธ การสำรองข้อมูล Gist จะหยุดจนกว่าคุณจะอนุญาต",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "หยุดชั่วคราว — ต้องดำเนินการ"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "ผลลัพธ์ยังไม่ยืนยัน"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "ไม่มีโทเค็น GitHub โปรดเพิ่มในการตั้งค่า Gist"
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "ยังไม่ได้อนุญาตการเข้าถึง GitHub API โปรดอนุญาตจากหน้าการตั้งค่านี้"
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "โทเค็น GitHub เป็นของบัญชีอื่น ไม่ตรงกับเป้าหมายสำรองที่บันทึกไว้"
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "เป้าหมาย Gist หรือชื่อไฟล์ไม่ตรงกับฐานที่เชื่อถือได้ การสำรองอัตโนมัติหยุดชั่วคราว"
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "ผลการสร้าง Gist ครั้งก่อนยังไม่ยืนยัน โปรดตรวจสอบ GitHub ก่อนลองใหม่"
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub ปฏิเสธคำขอ โปรดตรวจสอบโทเค็น ขอบเขต gist และเป้าหมาย"
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "ไม่สามารถตรวจสอบบัญชี GitHub ได้ การสำรอง Gist อัตโนมัติหยุดชั่วคราว"
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "Gist มีอยู่แล้ว ยังไม่รองรับการอัปเดต Gist ที่มีอยู่โดยอัตโนมัติ"
   }
 }
