@@ -68,6 +68,7 @@ interface MockOpts {
   containsThrows?: boolean;
   requestResult?: boolean;
   requestThrows?: boolean;
+  requireSyncGesture?: boolean;
   swHandler?: (msg: any) => any;
 }
 
@@ -81,7 +82,7 @@ async function bootWithPermMock(page: Page, opts: MockOpts = {}) {
         if (msg.type === 'webdav-delete') return { success: true, status: 204, ok: true };
         return { success: true };
       })`;
-  await page.addInitScript(({ apiStyle, containsGranted, containsThrows, requestResult, requestThrows, swSrc }) => {
+  await page.addInitScript(({ apiStyle, containsGranted, containsThrows, requestResult, requestThrows, requireSyncGesture, swSrc }) => {
     const swFn = eval(swSrc);
     const state = {
       apiStyle,
@@ -89,8 +90,14 @@ async function bootWithPermMock(page: Page, opts: MockOpts = {}) {
       containsThrows: Boolean(containsThrows),
       requestResult: Boolean(requestResult),
       requestThrows: Boolean(requestThrows),
+      requireSyncGesture: Boolean(requireSyncGesture),
     };
     const msgListeners: any[] = [];
+    let syncGestureActive = false;
+    window.addEventListener('click', () => {
+      syncGestureActive = true;
+      queueMicrotask(() => { syncGestureActive = false; });
+    }, { capture: true });
     (window as any).__permTestState = state;
     (window as any).__permCalls = [];
     (window as any).__bgCalls = [];
@@ -108,7 +115,7 @@ async function bootWithPermMock(page: Page, opts: MockOpts = {}) {
 
     const permApiChrome = {
       contains(details: any, cb?: (res: boolean) => void) {
-        (window as any).__permCalls.push({ op: 'contains', details });
+        (window as any).__permCalls.push({ op: 'contains', details, syncGesture: syncGestureActive });
         if (state.containsThrows) {
           if (cb) {
             (window as any).chrome.runtime.lastError = { message: 'contains failed' };
@@ -123,7 +130,18 @@ async function bootWithPermMock(page: Page, opts: MockOpts = {}) {
         return Promise.resolve(v);
       },
       request(details: any, cb?: (res: boolean) => void) {
-        (window as any).__permCalls.push({ op: 'request', details });
+        const gestureOk = syncGestureActive;
+        (window as any).__permCalls.push({ op: 'request', details, syncGesture: gestureOk });
+        if (state.requireSyncGesture && !gestureOk) {
+          const err = new Error('permissions.request may only be called from a user input handler');
+          if (cb) {
+            (window as any).chrome.runtime.lastError = { message: err.message };
+            cb(false);
+            (window as any).chrome.runtime.lastError = null;
+            return;
+          }
+          return Promise.reject(err);
+        }
         if (state.requestThrows) {
           if (cb) {
             (window as any).chrome.runtime.lastError = { message: 'request rejected' };
@@ -142,12 +160,16 @@ async function bootWithPermMock(page: Page, opts: MockOpts = {}) {
 
     const permApiBrowser = {
       contains(details: any) {
-        (window as any).__permCalls.push({ op: 'contains', details });
+        (window as any).__permCalls.push({ op: 'contains', details, syncGesture: syncGestureActive });
         if (state.containsThrows) return Promise.reject(new Error('browser contains failed'));
         return Promise.resolve(state.containsGranted);
       },
       request(details: any) {
-        (window as any).__permCalls.push({ op: 'request', details });
+        const gestureOk = syncGestureActive;
+        (window as any).__permCalls.push({ op: 'request', details, syncGesture: gestureOk });
+        if (state.requireSyncGesture && !gestureOk) {
+          return Promise.reject(new Error('permissions.request may only be called from a user input handler'));
+        }
         if (state.requestThrows) return Promise.reject(new Error('browser request rejected'));
         const v = state.requestResult;
         if (v) state.containsGranted = true;
@@ -230,6 +252,7 @@ async function bootWithPermMock(page: Page, opts: MockOpts = {}) {
     containsThrows: Boolean(opts.containsThrows),
     requestResult: Boolean(opts.requestResult),
     requestThrows: Boolean(opts.requestThrows),
+    requireSyncGesture: Boolean(opts.requireSyncGesture),
     swSrc,
   });
 }
@@ -309,6 +332,7 @@ test.describe('Static & Manifest & i18n contracts (ticket #123)', () => {
     }
     const bgSrc = fs.readFileSync(path.join(REPO_PATH, 'background.js'), 'utf8');
     expect(bgSrc).not.toMatch(/permissions\.request/);
+    expect(bgSrc).toMatch(/permissions\.contains\s*!==\s*'function'[\s\S]{0,160}ok:\s*false,\s*needPermission:\s*true/);
   });
 });
 
@@ -560,6 +584,209 @@ test.describe('WebDAV permission loop & background closure (file:// lane, ticket
     });
     expect(localDel.res.ok).toBe(true);
     expect(localDel.pending).toBeNull();
+  });
+
+  test('Firefox synchronous user-gesture requirement: all 4 manual buttons invoke permissions.request before any await', async ({ page }) => {
+    await bootWithPermMock(page, {
+      apiStyle: 'browser',
+      containsGranted: false,
+      requestResult: false,
+      requireSyncGesture: true,
+    });
+    await resetBoxing(page);
+    await seedWebDAV(page);
+    await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      dbg.layout.settings._encWebdavPass = await (window as any).__boxingEncryptCredential('secret');
+      await dbg.saveLayout({ preserveUpdatedAt: true });
+      const prov = document.getElementById('sync-provider') as HTMLSelectElement | null;
+      if (prov) { prov.value = 'webdav'; prov.dispatchEvent(new Event('change')); }
+    });
+    await openSyncTab(page);
+
+    // Self-check: calling browser.permissions.request after an await outside the sync click turn must reject
+    const asyncRejected = await page.evaluate(async () => {
+      await Promise.resolve();
+      try {
+        await (window as any).browser.permissions.request({ origins: ['https://webdav.invalid/*'] });
+        return false;
+      } catch (e: any) {
+        return String(e?.message || e).includes('user input handler');
+      }
+    });
+    expect(asyncRejected).toBe(true);
+    await page.evaluate(() => { (window as any).__permCalls.length = 0; });
+
+    // 1. Banner authorize button
+    await expect(page.locator('#webdav-permission-btn')).toBeVisible();
+    await page.evaluate(() => (document.getElementById('webdav-permission-btn') as HTMLElement)?.click());
+    await expect.poll(() => page.locator('#webdav-permission-banner').getAttribute('data-state')).toBe('denied');
+
+    // 2. Test Connection button
+    await page.evaluate(() => (document.getElementById('webdav-test-btn') as HTMLElement)?.click());
+    await expect.poll(() => page.evaluate(() => document.getElementById('webdav-test-btn')?.textContent || '')).toContain('Permission denied');
+
+    // 3. Sync Now button
+    await page.evaluate(() => (document.getElementById('backup-now-btn') as HTMLElement)?.click());
+    await expect.poll(() => page.evaluate(() => document.getElementById('backup-now-btn')?.textContent || '')).toContain('Permission denied');
+
+    // 4. Danger-zone Delete Credentials with remote delete checked (deny -> atomic fail; grant -> succeeds)
+    await page.click('#delete-sync-credential-open');
+    await page.check('#delete-sync-credential-remote');
+    await page.evaluate(() => (document.getElementById('delete-sync-credential-confirm') as HTMLElement)?.click());
+    await expect.poll(() => page.evaluate(() => (document.getElementById('delete-sync-credential-status') as HTMLElement)?.hidden)).toBe(false);
+    expect(await page.evaluate(() => document.getElementById('delete-sync-credential-status')?.textContent || '')).toContain('nothing was changed');
+    expect(await page.evaluate(() => (window as any).__boxingDebug.layout.settings.syncProvider)).toBe('webdav');
+
+    const denyReqs = await page.evaluate(() => (window as any).__permCalls.filter((c: any) => c.op === 'request'));
+    expect(denyReqs.map((c: any) => c.syncGesture)).toEqual([true, true, true, true]);
+
+    // Grant on retry and confirm remote delete + local reset completes
+    await page.evaluate(() => { (window as any).__permTestState.requestResult = true; });
+    await page.evaluate(() => (document.getElementById('delete-sync-credential-confirm') as HTMLElement)?.click());
+    await expect.poll(() => page.evaluate(() => (window as any).__boxingDebug.layout.settings.syncProvider)).toBe('local');
+    const allReqs = await page.evaluate(() => (window as any).__permCalls.filter((c: any) => c.op === 'request'));
+    expect(allReqs.map((c: any) => c.syncGesture)).toEqual([true, true, true, true, true]);
+  });
+
+  test('Custom HTTPS port strips port in match pattern and preserves denied state across background runs', async ({ page }) => {
+    const CUSTOM_PORT_URL = 'https://nas.example.net:8443/dav/';
+    const CUSTOM_ORIGIN_PATTERN = 'https://nas.example.net/*';
+    await bootWithPermMock(page, { apiStyle: 'browser', containsGranted: false, requestResult: false, requireSyncGesture: true });
+    await resetBoxing(page);
+    await seedWebDAV(page, CUSTOM_PORT_URL);
+    await openSyncTab(page);
+
+    await page.evaluate(() => (document.getElementById('webdav-test-btn') as HTMLElement)?.click());
+    await expect.poll(() => page.evaluate(() => document.getElementById('webdav-test-btn')?.textContent || '')).toContain('Permission denied');
+
+    const reqCalls = await page.evaluate(() =>
+      (window as any).__permCalls.filter((c: any) => c.op === 'request').map((c: any) => ({ origin: c.details?.origins?.[0], syncGesture: c.syncGesture }))
+    );
+    expect(reqCalls).toEqual([{ origin: CUSTOM_ORIGIN_PATTERN, syncGesture: true }]);
+    expect(await page.locator('#webdav-permission-msg').textContent()).toContain('https://nas.example.net');
+    expect(await page.locator('#webdav-permission-msg').textContent()).not.toContain(':8443');
+
+    // Background runs for the same origin must NOT downgrade 'denied' back to 'missing-permission'
+    await page.evaluate(async () => {
+      try { await (window as any).__bxSync.performBackup({ userInitiated: false, source: 'background' }); } catch (_) {}
+      await (window as any).__dispatchRuntimeMessage({ type: 'boxing-auto-backup-trigger' });
+    });
+    const pending = await page.evaluate(async () =>
+      (await (window as any).__boxingDebug.storageGet('webdavPendingPermission')).webdavPendingPermission
+    );
+    expect(pending).toMatchObject({ needed: true, origin: CUSTOM_ORIGIN_PATTERN, reason: 'denied' });
+  });
+
+  test('Unsafe WebDAV URL hides permission banner and blocks remote-delete permission prompt', async ({ page }) => {
+    await bootWithPermMock(page, { containsGranted: false, requestResult: false });
+    await resetBoxing(page);
+    await seedWebDAV(page);
+    await page.evaluate(async (origin) => {
+      await (window as any).__boxingDebug.storageSet({
+        webdavPendingPermission: { needed: true, origin, source: 'background', reason: 'missing-permission', updatedAt: Date.now() },
+      });
+    }, WEBDAV_ORIGIN_PATTERN);
+    await openSyncTab(page);
+    await expect(page.locator('#webdav-permission-banner')).toBeVisible();
+
+    // Typing an unsafe private URL (without opt-in) hides the banner instead of falling back to stale pending origin
+    await page.locator('#webdav-url').fill('https://127.0.0.1/dav/');
+    await expect.poll(() => page.evaluate(() => document.getElementById('webdav-permission-banner')?.hidden)).toBe(true);
+
+    // Even a programmatic click on the banner button or remote-delete must not request permission for stale/unsafe origin
+    const out = await page.evaluate(async () => {
+      const beforeReq = (window as any).__permCalls.filter((c: any) => c.op === 'request').length;
+      (document.getElementById('webdav-permission-btn') as HTMLElement)?.click();
+      const delRes = await (window as any).__boxingDeleteRemoteBackup();
+      const afterReq = (window as any).__permCalls.filter((c: any) => c.op === 'request').length;
+      const bgCalls = (window as any).__bgCalls.length;
+      return { beforeReq, afterReq, delRes, bgCalls };
+    });
+    expect(out.afterReq).toBe(out.beforeReq);
+    expect(out.delRes.ok).toBe(false);
+    expect(out.bgCalls).toBe(0);
+  });
+
+  test('SW legacy error keeps direct fetch fallback while blocked and resp2 needPermission refuse fallback and retries', async ({ page }) => {
+    await bootWithPermMock(page, {
+      containsGranted: false,
+      requestResult: true,
+      swHandler: (msg) => {
+        if (msg.mode === 'legacy-down' || (globalThis as any).__swMode === 'legacy-down') {
+          return { success: false, error: 'bg down' };
+        }
+        if ((globalThis as any).__swMode === 'blocked') {
+          return { success: false, blocked: true, error: 'blocked unsafe WebDAV url' };
+        }
+        return { success: false, needPermission: true, origin: 'https://webdav.invalid/*' };
+      },
+    });
+    await resetBoxing(page);
+    await seedWebDAV(page);
+
+    // 1. Legacy { success: false, error: 'bg down' } keeps direct fetch fallback when permissions are granted
+    await page.evaluate(() => {
+      (window as any).__permTestState.containsGranted = true;
+      (window as any).__swMode = 'legacy-down';
+      (window as any).__fetchCalls.length = 0;
+    });
+    const legacyOut = await page.evaluate(async () => {
+      let errKey = '';
+      try { await (window as any).__boxingDebug.testWebDAV(); } catch (e: any) { errKey = e && e.key; }
+      return {
+        errKey,
+        httpsFetches: (window as any).__fetchCalls.filter((c: any) => c.url.startsWith('https://')).map((c: any) => c.url),
+      };
+    });
+    expect(legacyOut.errKey).toBe('webdavErrNetwork');
+    expect(legacyOut.httpsFetches.length).toBeGreaterThanOrEqual(1);
+
+    // 2. { blocked: true } throws webdavErrBlockedHost and refuses direct fetch fallback
+    await page.evaluate(() => {
+      (window as any).__swMode = 'blocked';
+      (window as any).__fetchCalls.length = 0;
+    });
+    const blockedOut = await page.evaluate(async () => {
+      let errKey = '';
+      try { await (window as any).__boxingDebug.testWebDAV(); } catch (e: any) { errKey = e && e.key; }
+      return {
+        errKey,
+        httpsFetches: (window as any).__fetchCalls.filter((c: any) => c.url.startsWith('https://')),
+      };
+    });
+    expect(blockedOut.errKey).toBe('webdavErrBlockedHost');
+    expect(blockedOut.httpsFetches).toEqual([]);
+
+    // 3. When preCheck passes (containsGranted: true) but SW returns needPermission -> request once -> resp2 still needPermission: stop without retry or direct fetch
+    await page.evaluate(() => {
+      (window as any).__permTestState.containsGranted = true;
+      (window as any).__permTestState.requestResult = true;
+      (window as any).__permCalls.length = 0;
+      (window as any).__bgCalls.length = 0;
+      (window as any).__fetchCalls.length = 0;
+      (window as any).__swMode = 'need-perm';
+    });
+    const resp2Out = await page.evaluate(async () => {
+      // Call sendWebDAVViaBackground path via testWebDAVConnection with allowPermissionPrompt: true
+      // First reset containsGranted after request so resp2 exercises needPermission
+      let errKey = '';
+      try {
+        await (window as any).__boxingTestWebDAV({ allowPermissionPrompt: true, source: 'manual' });
+      } catch (e: any) {
+        errKey = e && e.key;
+      }
+      return {
+        errKey,
+        reqCount: (window as any).__permCalls.filter((c: any) => c.op === 'request').length,
+        bgCount: (window as any).__bgCalls.length,
+        httpsFetches: (window as any).__fetchCalls.filter((c: any) => c.url.startsWith('https://')),
+      };
+    });
+    expect(resp2Out.errKey).toBe('webdavErrPermission');
+    expect(resp2Out.reqCount).toBe(1);
+    expect(resp2Out.bgCount).toBe(2);
+    expect(resp2Out.httpsFetches).toEqual([]);
   });
 });
 

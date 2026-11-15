@@ -50,7 +50,11 @@ try {
       const perm = await ensureWebDAVPermission(url);
       if (!perm.ok && perm.needPermission && perm.origin) {
         if (api.storage.local.set) {
-          const permState = { needed: true, origin: perm.origin, source: 'background', reason: 'missing-permission', updatedAt: Date.now() };
+          const prev = stored[BG_WEBDAV_PERM_KEY];
+          const reason = (prev && prev.needed && prev.origin === perm.origin && prev.reason === 'denied')
+            ? 'denied'
+            : 'missing-permission';
+          const permState = { needed: true, origin: perm.origin, source: 'background', reason, updatedAt: Date.now() };
           await api.storage.local.set({ webdavPendingPermission: permState });
         }
       } else if (perm.ok && stored[BG_WEBDAV_PERM_KEY] && stored[BG_WEBDAV_PERM_KEY].origin === perm.origin) {
@@ -143,8 +147,8 @@ try {
   function getWebDAVOriginPattern(url) {
     try {
       const u = new URL(url);
-      if (u.protocol !== 'https:' || !u.origin || u.origin === 'null') return '';
-      return u.origin + '/*';
+      if (u.protocol !== 'https:' || !u.hostname) return '';
+      return u.protocol + '//' + u.hostname + '/*';
     } catch (_) {
       return '';
     }
@@ -153,6 +157,12 @@ try {
   function checkPermissionsContains(permApi, origin) {
     return new Promise((resolve, reject) => {
       try {
+        if (typeof browser !== 'undefined' && permApi === browser.permissions) {
+          const ret1 = permApi.contains({ origins: [origin] });
+          if (ret1 && typeof ret1.then === 'function') ret1.then((v) => resolve(Boolean(v)), reject);
+          else resolve(Boolean(ret1));
+          return;
+        }
         let settled = false;
         const ret = permApi.contains({ origins: [origin] }, (granted) => {
           if (settled) return;
@@ -187,7 +197,7 @@ try {
     try {
       const apiNs = typeof browser !== 'undefined' ? browser : chrome;
       if (!apiNs || !apiNs.permissions || typeof apiNs.permissions.contains !== 'function') {
-        return { ok: true, origin };
+        return { ok: false, needPermission: true, origin, error: 'permissions.contains unavailable' };
       }
       const granted = await checkPermissionsContains(apiNs.permissions, origin);
       if (granted) return { ok: true, origin };

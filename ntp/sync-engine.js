@@ -184,8 +184,8 @@ export function initSyncEngineFacade(deps) {
         ? urlOrOrigin.slice(0, -2)
         : urlOrOrigin;
       const u = new URL(clean);
-      if (u.protocol !== 'https:' || !u.origin || u.origin === 'null') return '';
-      return u.origin + '/*';
+      if (u.protocol !== 'https:' || !u.hostname) return '';
+      return u.protocol + '//' + u.hostname + '/*';
     } catch (_) {
       return '';
     }
@@ -194,6 +194,10 @@ export function initSyncEngineFacade(deps) {
   function displayOriginFromPattern(pattern) {
     if (typeof pattern !== 'string') return '';
     return pattern.endsWith('/*') ? pattern.slice(0, -2) : pattern;
+  }
+
+  function canRequestWebDAVUrlSynchronously(rawUrl) {
+    return Boolean(rawUrl && isSafeExtUrl(rawUrl) && !webdavUrlHasQueryOrFragment(rawUrl));
   }
 
   function getPermissionsApi() {
@@ -208,6 +212,14 @@ export function initSyncEngineFacade(deps) {
         const fn = permApi[methodName];
         if (typeof fn !== 'function') {
           reject(new Error('permissions.' + methodName + ' unavailable'));
+          return;
+        }
+        // Firefox browser.permissions is Promise-only (single-arg); invoke directly so
+        // permissions.request stays on the synchronous user-input stack without throwing first.
+        if (typeof browser !== 'undefined' && permApi === browser.permissions) {
+          const ret1 = fn.call(permApi, details);
+          if (ret1 && typeof ret1.then === 'function') ret1.then((v) => resolve(Boolean(v)), reject);
+          else resolve(Boolean(ret1));
           return;
         }
         const ret = fn.call(permApi, details, (res) => {
@@ -297,11 +309,18 @@ export function initSyncEngineFacade(deps) {
   async function persistPendingPermissionState({ origin, source, reason }) {
     if (!origin) return;
     try {
+      let nextReason = reason || 'missing-permission';
+      if (nextReason === 'missing-permission') {
+        const existing = await getWebDAVPendingPermission();
+        if (existing && existing.needed && existing.origin === origin && existing.reason === 'denied') {
+          nextReason = 'denied';
+        }
+      }
       await setWebDAVPendingPermission({
         needed: true,
         origin,
         source: source || 'background',
-        reason: reason || 'missing-permission',
+        reason: nextReason,
         updatedAt: Date.now(),
       });
     } catch (e) {
@@ -333,7 +352,15 @@ export function initSyncEngineFacade(deps) {
       return;
     }
     const rawUrl = (webdavUrlInput?.value ?? layout.settings.webdavUrl ?? '').trim();
-    const currentPattern = rawUrl && isSafeExtUrl(rawUrl) ? getWebDAVOriginPattern(rawUrl) : '';
+    const hasValidUrl = Boolean(rawUrl && isSafeExtUrl(rawUrl) && !webdavUrlHasQueryOrFragment(rawUrl));
+    if (rawUrl && !hasValidUrl) {
+      clearGrantedFeedback();
+      webdavPermissionBanner.hidden = true;
+      delete webdavPermissionBanner.dataset.state;
+      delete webdavPermissionBtn.dataset.origin;
+      return;
+    }
+    const currentPattern = hasValidUrl ? getWebDAVOriginPattern(rawUrl) : '';
     const pending = await getWebDAVPendingPermission();
     if (myEpoch !== permUiEpoch) return;
 
@@ -1115,10 +1142,13 @@ export function initSyncEngineFacade(deps) {
     async function performBackup(opts = {}) {
       const p = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
       const userInitiated = Boolean(opts && opts.userInitiated);
+      const allowPermissionPrompt = opts && opts.allowPermissionPrompt !== undefined
+        ? Boolean(opts.allowPermissionPrompt)
+        : userInitiated;
       const source = (opts && opts.source) || (userInitiated ? 'manual' : 'background');
       try {
         if (p === 'webdav') {
-          const res = await syncWithWebDAV({ allowPermissionPrompt: userInitiated, source });
+          const res = await syncWithWebDAV({ allowPermissionPrompt, source });
           debug('WebDAV sync ok', res && res.direction ? { direction: res.direction, conflicts: res.conflicts || 0 } : undefined);
           // Ticket 91: box-level AND child-level conflict copies land in the
           // ticket-79 Settings > Data readout automatically (same archive key
@@ -1320,13 +1350,17 @@ export function bindSyncBackupUi() {
 
     webdavPermissionBtn?.addEventListener('click', async () => {
       if (webdavPermissionBtn.disabled) return;
-      const rawUrl = (webdavUrlInput?.value || layout.settings.webdavUrl || '').trim();
-      const targetOrigin = (rawUrl && isSafeExtUrl(rawUrl) ? getWebDAVOriginPattern(rawUrl) : '') || webdavPermissionBtn.dataset.origin || '';
+      const rawUrl = (webdavUrlInput?.value ?? layout.settings.webdavUrl ?? '').trim();
+      if (rawUrl && !canRequestWebDAVUrlSynchronously(rawUrl)) return;
+      const targetOrigin = rawUrl
+        ? getWebDAVOriginPattern(rawUrl)
+        : (webdavPermissionBtn.dataset.origin || '');
       if (!targetOrigin) return;
       webdavPermissionBtn.disabled = true;
+      // Call permissions.request synchronously inside the click gesture before any await (Firefox MV3).
+      const reqPromise = requestWebDAVOriginPermission(targetOrigin);
       try {
-        // Call permissions.request immediately inside the click gesture before any async storage reads.
-        const req = await requestWebDAVOriginPermission(targetOrigin);
+        const req = await reqPromise;
         if (req.supported && req.granted) {
           await clearPendingPermissionIfOrigin(req.origin || targetOrigin);
           showGrantedFeedback(req.origin || targetOrigin);
@@ -1478,10 +1512,35 @@ export function bindSyncBackupUi() {
     let webdavTestLabelReset = null;
     webdavTestBtn?.addEventListener('click', async () => {
       if (webdavTestLabelReset) { clearTimeout(webdavTestLabelReset); webdavTestLabelReset = null; }
+      const rawUrl = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
+      const rawUser = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
+      const hasPassOrEnvelope = Boolean(webdavPassInput?.value || layout.settings._encWebdavPass);
+      const canPreflightPerm = canRequestWebDAVUrlSynchronously(rawUrl) && (!rawUser || hasPassOrEnvelope);
+      // Invoke permissions.request synchronously in click handler before any await (Firefox MV3).
+      const permPromise = canPreflightPerm ? requestWebDAVOriginPermission(rawUrl) : null;
       webdavTestBtn.textContent = i18n('webdavTesting');
       webdavTestBtn.disabled = true;
       try {
-        await testWebDAVConnection({ allowPermissionPrompt: true, source: 'manual' });
+        let preflightHandled = false;
+        if (permPromise) {
+          const req = await permPromise;
+          if (req.supported) {
+            preflightHandled = true;
+            const targetOrigin = req.origin || getWebDAVOriginPattern(rawUrl);
+            if (!req.granted) {
+              await persistPendingPermissionState({
+                origin: targetOrigin,
+                source: 'manual',
+                reason: 'denied',
+              });
+              refreshWebDAVPermissionUi();
+              throw webdavError('webdavErrPermissionDenied', [displayOriginFromPattern(targetOrigin) || rawUrl]);
+            }
+            await clearPendingPermissionIfOrigin(targetOrigin);
+            refreshWebDAVPermissionUi();
+          }
+        }
+        await testWebDAVConnection({ allowPermissionPrompt: !preflightHandled, source: 'manual' });
         webdavTestBtn.textContent = i18n('webdavTestOk');
       } catch (e) {
         debugErr('WebDAV test failed', e);
@@ -1501,18 +1560,50 @@ export function bindSyncBackupUi() {
     });
     let backupNowLabelReset = null;
     backupNowBtn?.addEventListener('click', async () => {
-      const p = syncProviderSelect?.value || 'local';
+      const p = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
       // Same contract as the WebDAV test button above: disabled while the
       // request runs, previous label reset cancelled before scheduling a new
       // one, and every failure — including a synchronous backupToLocal() throw —
       // surfaces on the button instead of rejecting unhandled.
       if (backupNowLabelReset) { clearTimeout(backupNowLabelReset); backupNowLabelReset = null; }
+      const rawUrl = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
+      const rawUser = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
+      const hasPassOrEnvelope = Boolean(webdavPassInput?.value || layout.settings._encWebdavPass);
+      let urlCapOk = false;
+      if (p === 'webdav' && canRequestWebDAVUrlSynchronously(rawUrl)) {
+        try {
+          const { fileUrl } = resolveWebDAVFileUrl(rawUrl);
+          urlCapOk = Boolean(fileUrl && !fileUrlOverCap(fileUrl));
+        } catch (_) { urlCapOk = false; }
+      }
+      const canPreflightPerm = p === 'webdav' && urlCapOk && (!rawUser || hasPassOrEnvelope);
+      // Invoke permissions.request synchronously in click handler before any await (Firefox MV3).
+      const permPromise = canPreflightPerm ? requestWebDAVOriginPermission(rawUrl) : null;
       backupNowBtn.disabled = true;
       try {
         if (p === 'local') {
           backupToLocal();
         }
-        await performBackup({ userInitiated: true, source: 'manual' });
+        let preflightHandled = false;
+        if (permPromise) {
+          const req = await permPromise;
+          if (req.supported) {
+            preflightHandled = true;
+            const targetOrigin = req.origin || getWebDAVOriginPattern(rawUrl);
+            if (!req.granted) {
+              await persistPendingPermissionState({
+                origin: targetOrigin,
+                source: 'manual',
+                reason: 'denied',
+              });
+              refreshWebDAVPermissionUi();
+              throw webdavError('webdavErrPermissionDenied', [displayOriginFromPattern(targetOrigin) || rawUrl]);
+            }
+            await clearPendingPermissionIfOrigin(targetOrigin);
+            refreshWebDAVPermissionUi();
+          }
+        }
+        await performBackup({ userInitiated: true, allowPermissionPrompt: !preflightHandled, source: 'manual' });
       } catch (e) {
         // PR #109 review round 2: performBackup now propagates failures —
         // display the localized error on the button (known i18n error verbatim,
@@ -1643,7 +1734,8 @@ export function bindSyncBackupUi() {
 
     // Resolve live credentials for the remote delete: input first (typed this
     // session), otherwise decrypt the stored envelope (same install key).
-    async function deleteRemoteBackup() {
+    async function deleteRemoteBackup(opts = {}) {
+      const allowPermissionPrompt = opts && opts.allowPermissionPrompt !== undefined ? Boolean(opts.allowPermissionPrompt) : true;
       const provider = syncProviderSelect ? syncProviderSelect.value : 'local';
       if (provider === 'local') return { ok: false, error: dangerRemoteDeleteNoTarget };
       if (remoteDeleteStub) {
@@ -1680,6 +1772,10 @@ export function bindSyncBackupUi() {
         if (fileUrlOverCap(fileUrl)) {
           return { ok: false, reason: 'url-too-long', error: remoteDeleteFailureText('url-too-long') };
         }
+        // Ticket #123: fail closed on unsafe scheme/private-host URLs before requesting permission or decrypting.
+        if (!isSafeExtUrl(rawUrl)) {
+          return { ok: false, error: dangerRemoteDeleteFailed };
+        }
         const user = (webdavUserInput && webdavUserInput.value.trim()) || layout.settings.webdavUser || '';
         let pass = (webdavPassInput && webdavPassInput.value) || '';
         if (!pass && layout.settings._encWebdavPass) pass = (await decryptCredential(layout.settings._encWebdavPass)) || '';
@@ -1688,7 +1784,7 @@ export function bindSyncBackupUi() {
         }
         const delResp = await sendWebDAVViaBackground(
           { type: 'webdav-delete', url: fileUrl, user, pass },
-          { allowPermissionPrompt: true, source: 'remote-delete' }
+          { allowPermissionPrompt, source: 'remote-delete' }
         );
         // Server-side refusal: no reason — the transport result is deliberately not
         // surfaced, so this keeps the generic copy (ticket 116 closed allow-list).
@@ -1712,12 +1808,12 @@ export function bindSyncBackupUi() {
     }
 
     // Deletes stored sync credentials. Returns { ok, error? }.
-    async function deleteSyncCredentials() {
+    async function deleteSyncCredentials(opts = {}) {
       setDeleteStatus('', false);
       const deleteRemote = Boolean(deleteRemoteCheck && deleteRemoteCheck.checked);
       if (deleteRemote) {
         try {
-          const remote = await deleteRemoteBackup();
+          const remote = await deleteRemoteBackup(opts);
           if (!remote.ok) {
             // deleteRemoteBackup() already composes the localized text (ticket 116:
             // reason prefix + the unchanged failure copy when it knows the reason);
@@ -1793,9 +1889,43 @@ export function bindSyncBackupUi() {
     });
     deleteConfirmBtn?.addEventListener('click', async () => {
       if (deleteConfirmBtn.disabled) return;
+      const deleteRemote = Boolean(deleteRemoteCheck && deleteRemoteCheck.checked);
+      const provider = syncProviderSelect ? syncProviderSelect.value : 'local';
+      const rawUrl = (webdavUrlInput && webdavUrlInput.value.trim()) || layout.settings.webdavUrl || '';
+      const hasPassOrEnvelope = Boolean((webdavPassInput && webdavPassInput.value) || layout.settings._encWebdavPass);
+      let urlCapOk = false;
+      if (deleteRemote && provider === 'webdav' && !remoteDeleteStub && canRequestWebDAVUrlSynchronously(rawUrl)) {
+        try {
+          const { fileUrl } = resolveWebDAVFileUrl(rawUrl);
+          urlCapOk = Boolean(fileUrl && !fileUrlOverCap(fileUrl));
+        } catch (_) { urlCapOk = false; }
+      }
+      const canPreflightPerm = deleteRemote && provider === 'webdav' && !remoteDeleteStub && urlCapOk && hasPassOrEnvelope;
+      // Invoke permissions.request synchronously in click handler before any await (Firefox MV3).
+      const permPromise = canPreflightPerm ? requestWebDAVOriginPermission(rawUrl) : null;
       deleteConfirmBtn.disabled = true;
       try {
-        await deleteSyncCredentials();
+        let preflightHandled = false;
+        if (permPromise) {
+          const req = await permPromise;
+          if (req.supported) {
+            preflightHandled = true;
+            const targetOrigin = req.origin || getWebDAVOriginPattern(rawUrl);
+            if (!req.granted) {
+              await persistPendingPermissionState({
+                origin: targetOrigin,
+                source: 'remote-delete',
+                reason: 'denied',
+              });
+              refreshWebDAVPermissionUi();
+              setDeleteStatus(dangerRemoteDeleteFailed, true);
+              return;
+            }
+            await clearPendingPermissionIfOrigin(targetOrigin);
+            refreshWebDAVPermissionUi();
+          }
+        }
+        await deleteSyncCredentials({ allowPermissionPrompt: !preflightHandled });
       } finally {
         deleteConfirmBtn.disabled = false;
       }
