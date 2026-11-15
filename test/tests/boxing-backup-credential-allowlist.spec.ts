@@ -495,7 +495,8 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     const redactedPunctQuery = redactSensitiveLogText(
       'err1=https://dav.example/x?labels=a,b&access_token=' + SPEC_TOKEN +
       ' err2=https://dav.example/x?a=1;token=' + SPEC_PASS +
-      ' err3=(https://u:p@dav.example/x?q=(1,2);z=3&token=' + SPEC_TOKEN + '#frag,a;b(c))',
+      ' err3=(https://u:p@dav.example/x?q=(1,2);z=3&token=' + SPEC_TOKEN + '#frag,a;b(c))' +
+      ' err4=https://:' + SPEC_PASS + '@dav.example/x?k=v',
     );
     expect(redactedPunctQuery).not.toContain(SPEC_TOKEN);
     expect(redactedPunctQuery).not.toContain(SPEC_PASS);
@@ -505,6 +506,7 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     expect(redactedPunctQuery).toContain('err1=https://dav.example/x?***');
     expect(redactedPunctQuery).toContain('err2=https://dav.example/x?***');
     expect(redactedPunctQuery).toContain('err3=(https://***:***@dav.example/x?***#***)');
+    expect(redactedPunctQuery).toContain('err4=https://***:***@dav.example/x?***');
   });
 
   test('SW takePreUpdateSnapshot strips credentials/groups while preserving legacy shape and bgErr redacts logs', async () => {
@@ -547,9 +549,9 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
       'SW corrupt-array snapshot guard',
     );
 
-    // Trigger bgErr directly with sensitive payload (including punctuation in query) and verify bgErrLog redacts it.
+    // Trigger bgErr directly with sensitive payload (including punctuation in query and empty-username URL auth) and verify bgErrLog redacts it.
     harness1.sandbox.bgErr(
-      'PUT failed url=https://u:p@dav.example/f?labels=a,b;q=(1)&tok=' + SPEC_PASS + '#h,1 Bearer ' + SPEC_TOKEN + ' {"_encWebdavPass":{"v":3}}',
+      'PUT failed url=https://u:p@dav.example/f?labels=a,b;q=(1)&tok=' + SPEC_PASS + '#h,1 emptyUser=https://:' + SPEC_PASS + '@dav.example/x Bearer ' + SPEC_TOKEN + ' {"_encWebdavPass":{"v":3}}',
     );
     const bgLogText = JSON.stringify(harness1.store.bgErrLog);
     expect(bgLogText).not.toContain('u:p@');
@@ -558,6 +560,7 @@ test.describe('Ticket 122 (#120 T2) — Backup & Snapshot Credential Allowlist P
     expect(bgLogText).not.toContain(SPEC_TOKEN);
     expect(bgLogText).toContain('Bearer [REDACTED]');
     expect(bgLogText).toContain('https://***:***@dav.example/f?***#***');
+    expect(bgLogText).toContain('emptyUser=https://***:***@dav.example/x');
   });
 
   test('sync payloads, WebDAV/Gist pushes, local backup, plain/DR/conflict/sealed exports strip creds without mutating storage archives', async ({ page }) => {

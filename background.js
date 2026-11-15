@@ -24,7 +24,7 @@ function bgRedactUrlToken(rawUrl) {
     }
   }
   const redacted = urlPart
-    .replace(/(https?:\/\/)[^/\s:@?#]+:[^/\s@?#]*@/gi, '$1***:***@')
+    .replace(/(https?:\/\/)[^/\s:@?#]*:[^/\s@?#]*@/gi, '$1***:***@')
     .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
     .replace(/\?[^#]*/g, '?***')
     .replace(/#[\s\S]*/g, '#***');

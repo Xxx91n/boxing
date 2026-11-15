@@ -1146,7 +1146,7 @@ function redactUrlForLog(urlStr) {
     return u.protocol + '//' + authPart + u.host + u.pathname + queryPart + hashPart;
   } catch (_) {
     return trimmed
-      .replace(/(https?:\/\/)[^/\s:@?#]+:[^/\s@?#]*@/gi, '$1***:***@')
+      .replace(/(https?:\/\/)[^/\s:@?#]*:[^/\s@?#]*@/gi, '$1***:***@')
       .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
       .replace(/\?[^#\s]*/g, '?***')
       .replace(/#[^\s]*/g, '#***');
@@ -1174,7 +1174,7 @@ function redactUrlTokenForLog(rawUrl) {
     }
   }
   const redacted = urlPart
-    .replace(/(https?:\/\/)[^/\s:@?#]+:[^/\s@?#]*@/gi, '$1***:***@')
+    .replace(/(https?:\/\/)[^/\s:@?#]*:[^/\s@?#]*@/gi, '$1***:***@')
     .replace(/(https?:\/\/)[^/\s:@?#]+@/gi, '$1***@')
     .replace(/\?[^#]*/g, '?***')
     .replace(/#[\s\S]*/g, '#***');
