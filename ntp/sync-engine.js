@@ -1274,8 +1274,8 @@ export function initSyncEngineFacade(deps) {
 
     async function configureLocalAutoBackup(rawIntervalSec, optIn) {
       pendingLocalAutoBackupConfigs += 1;
+      const mySeq = ++localAutoBackupConfigSeq;
       try {
-        const mySeq = ++localAutoBackupConfigSeq;
         const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
         const intervalSec = core
           ? core.normalizeAutoBackupInterval(rawIntervalSec)
@@ -1316,8 +1316,21 @@ export function initSyncEngineFacade(deps) {
             if (mySeq !== localAutoBackupConfigSeq) {
               return { ok: false, stale: true };
             }
-            await refreshLocalAutoBackupUi();
-            return { ok: false, error: e && e.message ? e.message : String(e) };
+            const errMsg = ((e && e.message ? e.message : String(e || '')) || 'Failed to configure local auto-backup').slice(0, 240);
+            const persistedState = await getAutoBackupState();
+            if (mySeq !== localAutoBackupConfigSeq) {
+              return { ok: false, stale: true };
+            }
+            await refreshLocalAutoBackupUi({
+              ...persistedState,
+              local: {
+                ...(persistedState.local || {}),
+                status: 'error',
+                lastAttemptAt: Date.now(),
+                lastError: (persistedState.local && persistedState.local.lastError) || errMsg,
+              },
+            });
+            return { ok: false, error: errMsg };
           }
         }
 
@@ -1328,61 +1341,105 @@ export function initSyncEngineFacade(deps) {
         }
         const now = Date.now();
         const nextEpoch = (prev.epoch || 0) + 1;
-        if (!enable) {
-          const disabled = await setAutoBackupState({
+        try {
+          if (!enable) {
+            const disabled = await setAutoBackupState({
+              version: 1,
+              optIn: false,
+              intervalSec: 0,
+              epoch: nextEpoch,
+              nextScheduledAt: 0,
+              updatedAt: now,
+              local: {
+                ...(prev.local || {}),
+                status: (prev.local && (prev.local.lastSuccessAt > 0 || prev.local.lastError)) ? 'cancelled' : 'idle',
+              },
+              lock: null,
+            });
+            if (mySeq !== localAutoBackupConfigSeq) {
+              return { ok: false, stale: true };
+            }
+            await refreshLocalAutoBackupUi(disabled);
+            return { ok: true, state: disabled };
+          }
+
+          const ts = await saveSnapshot('auto-backup');
+          if (mySeq !== localAutoBackupConfigSeq) {
+            return { ok: false, stale: true };
+          }
+          const localState = ts
+            ? { status: 'ok', lastAttemptAt: now, lastSuccessAt: ts, lastSnapshotTs: ts, lastError: null }
+            : {
+                status: 'error',
+                lastAttemptAt: now,
+                lastSuccessAt: (prev.local && prev.local.lastSuccessAt) || 0,
+                lastSnapshotTs: (prev.local && prev.local.lastSnapshotTs) || 0,
+                lastError: 'Failed to save local snapshot',
+              };
+          const enabled = await setAutoBackupState({
             version: 1,
-            optIn: false,
-            intervalSec: 0,
+            optIn: true,
+            intervalSec,
             epoch: nextEpoch,
-            nextScheduledAt: 0,
+            nextScheduledAt: now + intervalSec * 1000,
             updatedAt: now,
-            local: {
-              ...(prev.local || {}),
-              status: (prev.local && (prev.local.lastSuccessAt > 0 || prev.local.lastError)) ? 'cancelled' : 'idle',
-            },
+            local: localState,
             lock: null,
           });
           if (mySeq !== localAutoBackupConfigSeq) {
             return { ok: false, stale: true };
           }
-          await refreshLocalAutoBackupUi(disabled);
-          return { ok: true, state: disabled };
+          await refreshLocalAutoBackupUi(enabled);
+          if (mySeq !== localAutoBackupConfigSeq) {
+            return { ok: false, stale: true };
+          }
+          if (typeof refreshSnapshotHealth === 'function') {
+            try { await refreshSnapshotHealth(); } catch (_) {}
+          }
+          return { ok: Boolean(ts), state: enabled };
+        } catch (e) {
+          debugWarn('local auto-backup configure failed', e);
+          if (mySeq !== localAutoBackupConfigSeq) {
+            return { ok: false, stale: true };
+          }
+          const errMsg = ((e && e.message ? e.message : String(e || '')) || 'Failed to save auto-backup state').slice(0, 240);
+          try {
+            await refreshLocalAutoBackupUi({
+              ...prev,
+              local: {
+                ...(prev.local || {}),
+                status: 'error',
+                lastAttemptAt: now,
+                lastError: errMsg,
+              },
+            });
+          } catch (uiErr) {
+            debugWarn('refreshLocalAutoBackupUi after failure failed', uiErr);
+          }
+          return { ok: false, error: errMsg };
         }
-
-        const ts = await saveSnapshot('auto-backup');
+      } catch (e) {
+        debugWarn('configureLocalAutoBackup unexpected error', e);
         if (mySeq !== localAutoBackupConfigSeq) {
           return { ok: false, stale: true };
         }
-        const localState = ts
-          ? { status: 'ok', lastAttemptAt: now, lastSuccessAt: ts, lastSnapshotTs: ts, lastError: null }
-          : {
+        const errMsg = ((e && e.message ? e.message : String(e || '')) || 'Failed to configure local auto-backup').slice(0, 240);
+        try {
+          const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+          const base = core ? core.defaultAutoBackupState() : { version: 1, optIn: false, intervalSec: 0, local: {} };
+          await refreshLocalAutoBackupUi({
+            ...base,
+            local: {
+              ...(base.local || {}),
               status: 'error',
-              lastAttemptAt: now,
-              lastSuccessAt: (prev.local && prev.local.lastSuccessAt) || 0,
-              lastSnapshotTs: (prev.local && prev.local.lastSnapshotTs) || 0,
-              lastError: 'Failed to save local snapshot',
-            };
-        const enabled = await setAutoBackupState({
-          version: 1,
-          optIn: true,
-          intervalSec,
-          epoch: nextEpoch,
-          nextScheduledAt: now + intervalSec * 1000,
-          updatedAt: now,
-          local: localState,
-          lock: null,
-        });
-        if (mySeq !== localAutoBackupConfigSeq) {
-          return { ok: false, stale: true };
+              lastAttemptAt: Date.now(),
+              lastError: errMsg,
+            },
+          });
+        } catch (uiErr) {
+          debugWarn('refreshLocalAutoBackupUi fallback failed', uiErr);
         }
-        await refreshLocalAutoBackupUi(enabled);
-        if (mySeq !== localAutoBackupConfigSeq) {
-          return { ok: false, stale: true };
-        }
-        if (typeof refreshSnapshotHealth === 'function') {
-          try { await refreshSnapshotHealth(); } catch (_) {}
-        }
-        return { ok: Boolean(ts), state: enabled };
+        return { ok: false, error: errMsg };
       } finally {
         pendingLocalAutoBackupConfigs -= 1;
       }
@@ -1769,7 +1826,11 @@ export function bindSyncBackupUi() {
     const autoBackupSelect = document.getElementById('auto-backup-interval');
     autoBackupSelect?.addEventListener('change', async () => {
       const intervalSec = parseInt(autoBackupSelect.value, 10) || 0;
-      await configureLocalAutoBackup(intervalSec, intervalSec >= 3600);
+      try {
+        await configureLocalAutoBackup(intervalSec, intervalSec >= 3600);
+      } catch (e) {
+        if (typeof debugWarn === 'function') debugWarn('autoBackupSelect change failed', e);
+      }
     });
     autoBackupActivateBtn?.addEventListener('click', async () => {
       if (autoBackupActivateBtn.disabled) return;
@@ -1778,6 +1839,8 @@ export function bindSyncBackupUi() {
       autoBackupActivateBtn.disabled = true;
       try {
         await configureLocalAutoBackup(curInterval, true);
+      } catch (e) {
+        if (typeof debugWarn === 'function') debugWarn('autoBackupActivateBtn click failed', e);
       } finally {
         autoBackupActivateBtn.disabled = false;
       }

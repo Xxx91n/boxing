@@ -406,6 +406,83 @@ test.describe('Ticket #124 — Background local auto-backup contracts (file:// +
     expect(store['snap.v1.1700000010000']).toBeTruthy();
     expect(store['snap.v1.1700000020000']).toBeTruthy();
   });
+
+  test('file://: setAutoBackupState write failure surfaces error UI without unhandled rejection and allows retry', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+
+    await bootFreshFileNtp(page);
+    await openSyncTab(page);
+
+    await page.evaluate(() => {
+      (window as any).__unhandledRejections = [];
+      window.addEventListener('unhandledrejection', (ev) => {
+        (window as any).__unhandledRejections.push(String(ev.reason?.message || ev.reason || 'unknown'));
+      });
+      const origSetItem = Storage.prototype.setItem;
+      (window as any).__origSetItem = origSetItem;
+      (window as any).__failAutoBackupStateWrite = true;
+      Storage.prototype.setItem = function (key: string, value: string) {
+        if ((window as any).__failAutoBackupStateWrite && key === 'bxstore:autoBackupState') {
+          throw new Error('Simulated autoBackupState quota failure');
+        }
+        return origSetItem.call(this, key, value);
+      };
+    });
+
+    try {
+      // 1) Selecting an interval triggers change handler; setAutoBackupState rejection must be handled cleanly.
+      await page.locator('#auto-backup-interval').selectOption('3600');
+      await expect
+        .poll(() => page.evaluate(() => (window as any).__boxingGetPendingAutoBackupConfigCount()), { timeout: 5000 })
+        .toBe(0);
+
+      await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'error');
+      await expect(page.locator('#local-auto-backup-error')).toBeVisible();
+      await expect(page.locator('#local-auto-backup-error')).toContainText('Simulated autoBackupState quota failure');
+      await expect(page.locator('#auto-backup-activate-btn')).toBeVisible();
+      await expect(page.locator('#auto-backup-activate-btn')).toBeEnabled();
+
+      // 2) Clicking activate button while failing also catches rejection, re-enables button, and keeps error visible.
+      await page.evaluate(() => document.getElementById('auto-backup-activate-btn')?.click());
+      await expect
+        .poll(() => page.evaluate(() => (window as any).__boxingGetPendingAutoBackupConfigCount()), { timeout: 5000 })
+        .toBe(0);
+
+      await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'error');
+      await expect(page.locator('#local-auto-backup-error')).toContainText('Simulated autoBackupState quota failure');
+      await expect(page.locator('#auto-backup-activate-btn')).toBeEnabled();
+
+      // 3) Once storage recovers, clicking activate succeeds and clears the error banner.
+      await page.evaluate(() => {
+        (window as any).__failAutoBackupStateWrite = false;
+      });
+      await page.evaluate(() => document.getElementById('auto-backup-activate-btn')?.click());
+      await expect
+        .poll(async () => {
+          const st = await readAutoBackupStateFromPage(page);
+          const pending = await page.evaluate(() => (window as any).__boxingGetPendingAutoBackupConfigCount());
+          return st.optIn === true && st.local?.status === 'ok' && pending === 0;
+        }, { timeout: 5000 })
+        .toBe(true);
+
+      await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'active');
+      await expect(page.locator('#local-auto-backup-error')).toBeHidden();
+      await expect(page.locator('#auto-backup-upgrade-box')).toBeHidden();
+
+      const rejections = await page.evaluate(() => (window as any).__unhandledRejections);
+      expect(rejections).toEqual([]);
+      expect(pageErrors).toEqual([]);
+    } finally {
+      await page
+        .evaluate(() => {
+          if ((window as any).__origSetItem) {
+            Storage.prototype.setItem = (window as any).__origSetItem;
+          }
+        })
+        .catch(() => {});
+    }
+  });
 });
 
 function verifyAndAttachSwNetworkAudit(ctx: any) {
