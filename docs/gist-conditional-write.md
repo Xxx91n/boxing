@@ -1,17 +1,18 @@
-# Gist conditional-write gate (ticket #128 / spec #120 D4)
+# Gist automatic-update decision (ticket #128 / spec #120 D4)
 
-**Status: release blocker. Automatic updates of an existing Gist are not enabled.**
+**Status: automatic updates of an existing Gist are not implemented. This is a product decision, not a release blocker.**
 
-Ticket #128 asked for repeated unattended Gist backups only if a verified write
-primitive can stop a competing writer from being overwritten. That primitive has
-not been proven, so this repository keeps the existing-Gist automatic path paused
-and records the blocker instead of shipping an unsafe PATCH.
+Ticket #128 originally asked for repeated unattended Gist backups only if a
+verified write primitive could stop a competing writer from being overwritten.
+The maintainer has decided not to pursue that feature. Boxing keeps the manual
+Gist path and the safe pause on the automatic path; the evidence gathered for
+the original gate is kept below so a future proposal can restart from facts.
 
 ## What is shipped
 
-- The unattended first create from #126 is unchanged and still safe: a durable
-  `pendingCreate` marker is written before the POST, a lost response stays
-  unconfirmed, and an existing/unknown target pauses.
+- The unattended first create from #126 is unchanged: a durable `pendingCreate`
+  marker is written before the POST, a lost response stays unconfirmed, and an
+  existing/unknown target pauses.
 - When a trusted Gist baseline exists, `planGistFirstCreate` returns
   `update-not-enabled` (`gistUpdateNotEnabled`). The background performs **zero**
   PATCH/POST requests in that state. The settings page shows the reason.
@@ -36,7 +37,14 @@ and records the blocker instead of shipping an unsafe PATCH.
   the current UI is deleting the stored sync credential, which also removes the
   saved target. This is the same limitation #126 shipped for the first create.
 
-## Evidence reviewed on 2026-11-16
+## Why automatic updates are not implemented
+
+GitHub's published API has no documented atomic write condition for Gist PATCH,
+and a real race has not been run against GitHub. Without that evidence an
+automatic PATCH could overwrite a competing writer, so the automatic path stays
+paused by decision rather than by an unresolved release gate.
+
+### Evidence reviewed on 2026-11-16
 
 1. GitHub's official OpenAPI description
    (`github/rest-api-description`, `descriptions/api.github.com/api.github.com.json`,
@@ -58,24 +66,23 @@ and records the blocker instead of shipping an unsafe PATCH.
    so it is supporting evidence rather than a Gist measurement.
    <https://github.com/cli/cli/issues/7167>
 
-## Test gap that keeps the gate closed
+### Race that was never run here
 
-The ticket requires a real race, not a mocked 412:
+The original ticket required a real race, not a mocked 412:
 
 1. Read the old Gist version and its ETag.
 2. Insert a competing writer's change (a second client or account).
 3. Send the backup PATCH with the old condition.
 4. Expect the write to be rejected **and the competing content to remain**.
 
-This environment has no valid GitHub credential (the configured `gh` token is
-invalid and no SSH key is present), and an anonymous token cannot create or
-PATCH a Gist. The race therefore could not be executed against the real GitHub
-API. A controlled mock returning 412 is explicitly not accepted as proof.
+This environment has no valid GitHub credential, and an anonymous token cannot
+create or PATCH a Gist. The race therefore was not executed against the real
+GitHub API. A controlled mock returning 412 is explicitly not accepted as proof.
 
-## Gate to reopen automatic updates
+## If automatic updates are proposed again
 
-Automatic updates of an existing Gist may be implemented only after all of the
-following are recorded in this file:
+A future proposal must record all of the following before enabling automatic
+PATCH of an existing Gist:
 
 - a real GitHub account/token (test account, not the user's data) executed the
   four-step race above;
@@ -86,5 +93,5 @@ following are recorded in this file:
 - the provider-neutral retry/unknown-result rules from #120 D6 are wired to the
   same result path.
 
-Until then the automatic path stays paused, the manual path remains available
-within the guards above, and this ticket must not be marked complete.
+Until such a proposal exists, the automatic path stays paused and the manual
+path remains available within the guards above.

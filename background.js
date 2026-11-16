@@ -1211,8 +1211,8 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
 
   // ── Background Gist first-create (ticket #126 / #120 T7) ──────────────
   // Only the FIRST unattended Gist is created here. Existing-Gist automatic
-  // updates stay paused (ticket #128 / #120 D4): no verified conditional write
-  // exists, so this function never PATCHes. Manual writes use the same queue via
+  // updates stay paused by product decision (ticket #128 / #120 D4), so this
+  // function never PATCHes. Manual writes use the same queue via
   // writeManualGistBackup below. The function returns the same {attempted, remote}
   // shape as the WebDAV path, and writes the durable pending marker before POST.
   const BG_GIST_API_BASE = 'https://api.github.com';
@@ -1646,8 +1646,8 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
   // The page no longer PATCHes/POSTs GitHub directly when an extension runtime
   // exists: every Gist write enters enqueueBgAutoBackup, so two tabs, a manual
   // click, and the unattended first create cannot run at the same time. The
-  // automatic UPDATE of an existing Gist stays blocked in planGistFirstCreate
-  // (no verified conditional write); this function is the user-driven path only.
+  // automatic UPDATE of an existing Gist stays disabled by product decision in
+  // planGistFirstCreate; this function is the user-driven path only.
   function bgGistWriteError(reasonCode, error, extra) {
     return { success: false, reasonCode, error: error || reasonCode, ...(extra || {}) };
   }

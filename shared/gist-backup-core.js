@@ -10,10 +10,10 @@
 //   - A saved Gist ID without a matching trusted baseline cannot be updated.
 //   - A changed account, file name, or pending unknown result stops creation.
 //   - Only a confirmed POST response with the expected file may become a baseline.
-//   - Automatic updates of an existing Gist stay blocked: GitHub's official API
-//     description declares no conditional write header for Gist PATCH, so there
-//     is no verified primitive that stops a competing writer from being
-//     overwritten (see docs/gist-conditional-write.md, #120 D4 release blocker).
+//   - Automatic updates of an existing Gist stay disabled by product decision:
+//     GitHub's official API description declares no conditional write header for
+//     Gist PATCH, so there is no verified primitive that stops a competing writer
+//     from being overwritten (see docs/gist-conditional-write.md, #120 D4).
 //   - Manual writes are still allowed, but the background serialises every Gist
 //     POST/PATCH in one queue so a manual click cannot race the unattended first
 //     create. A pending POST result blocks both paths.
@@ -162,10 +162,11 @@
       if (normalizeGistId(baseline.gistId) !== savedGistId || baseline.fileName !== fileName) {
         return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
       }
-      // Ticket #128 / #120 D4: this is a release blocker, not a "not built yet"
-      // placeholder. GitHub declares no conditional write header for Gist PATCH,
-      // and no real race test has proven one, so automatic overwrite of an existing
-      // Gist stays off until docs/gist-conditional-write.md's gate is cleared.
+      // Ticket #128 / #120 D4: automatic updates are disabled by product decision,
+      // not a "not built yet" placeholder. GitHub declares no conditional write
+      // header for Gist PATCH, and no real race test has proven one, so automatic
+      // overwrite of an existing Gist stays off until a future proposal clears
+      // docs/gist-conditional-write.md's gate.
       return {
         action: 'update-not-enabled',
         reasonCode: 'gistUpdateNotEnabled',
