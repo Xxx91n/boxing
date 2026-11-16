@@ -868,19 +868,23 @@ test.describe('Ticket #130 — bounded retry and off switch (controlled service)
     expect(state.remote.notBeforeAt - before).toBeGreaterThanOrEqual(1_800_000);
   });
 
-  test('the ordinary alarm also waits for the server Retry-After window', async () => {
+  test('the ordinary alarm waits for the server window but still takes its local snapshot', async () => {
     const world = createWorld({ webdav: { getBehavior: '503', retryAfter: '7200' } });
     const env = createSandbox({ world });
 
     await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
     const first = env.readState();
     expect(first.remote.notBeforeAt).toBeGreaterThan(Date.now() + 7_000_000);
+    const snapKeysBefore = Object.keys(env.store).filter((k) => k.startsWith('snap.v1.') && k !== 'snap.v1.index');
 
     const requestsBefore = world.requests.length;
     const second = await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
-    expect(second.skipped).toBe(true);
-    expect(second.reason).toBe('server-wait');
+    // No server request while the window is open, but the local snapshot still runs.
     expect(world.requests.length).toBe(requestsBefore);
+    expect(second.ok).toBe(true);
+    const snapKeysAfter = Object.keys(env.store).filter((k) => k.startsWith('snap.v1.') && k !== 'snap.v1.index');
+    expect(snapKeysAfter.length).toBe(snapKeysBefore.length + 1);
+    expect(env.readState().remote.notBeforeAt).toBeGreaterThan(Date.now() + 7_000_000);
   });
 
   test('a stopped automatic result keeps a newer manual WebDAV baseline', async () => {

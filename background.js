@@ -1261,7 +1261,9 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
           after = await bgWebDAVReadFileState(derived.fileUrl, user, pass, { autoBackup: true });
         } catch (e) {
           if (e && e.bgNotSent) {
-            return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+            // The PUT already succeeded; only this verification read was refused. The
+            // committed state is therefore unknown, not "never attempted".
+            return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
           }
           if (e && e.bgUserCancelled) {
             return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
@@ -2622,13 +2624,6 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
       if (expectedEpoch !== undefined && state.epoch !== expectedEpoch) {
         return { ok: false, cancelled: true, reason: 'epoch-changed', state };
       }
-      // Ticket #130: the server's Retry-After floor applies to every trigger, including
-      // the user's normal alarm, so nothing calls it earlier than it allowed.
-      const serverNotBefore = Number(state.remote && state.remote.notBeforeAt) || 0;
-      if (!forceImmediate && serverNotBefore > now) {
-        await bgSyncRetryAlarm(state.retry, now);
-        return { ok: false, skipped: true, reason: 'server-wait', state };
-      }
       const isInterruptedRecovery = Boolean(
         state.local &&
         state.local.status === 'running' &&
@@ -2736,7 +2731,14 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
       // snapshot settled, and its result stays independent from the local result.
       let remoteOutcome = null;
       const remoteProvider = rawLayout && rawLayout.settings ? rawLayout.settings.syncProvider : '';
-      if (rawLayout) {
+      // Ticket #130: the server's Retry-After floor applies to every trigger, including
+      // the user's normal alarm. It only holds back the remote upload; the local
+      // snapshot above has already run on its own schedule.
+      const serverNotBefore = Number(latestState.remote && latestState.remote.notBeforeAt) || 0;
+      const skipRemoteForServer = !forceImmediate && serverNotBefore > Date.now();
+      if (rawLayout && skipRemoteForServer) {
+        remoteOutcome = { attempted: false, skipped: 'server-wait', remote: latestState.remote };
+      } else if (rawLayout) {
         try {
           if (remoteProvider === 'webdav') {
             remoteOutcome = await runBackgroundWebDAVAutoBackup({
@@ -2798,16 +2800,18 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
       const countsAsAttempt = Boolean(
         remoteOutcome && remoteOutcome.attempted && !remoteOutcome.cancelled && !remoteOutcome.skipped
       );
-      const nextRetryPlan = countsAsAttempt
-        ? bgNextRetryPlan(
-            core,
-            latestState.retry,
-            remoteState,
-            finishedAt,
-            remoteTargetKey,
-            remoteOutcome.retryAfterMs,
-          )
-        : core.defaultAutoBackupRetryState();
+      const nextRetryPlan = skipRemoteForServer
+        ? core.normalizeAutoBackupRetryState(latestState.retry)
+        : (countsAsAttempt
+            ? bgNextRetryPlan(
+                core,
+                latestState.retry,
+                remoteState,
+                finishedAt,
+                remoteTargetKey,
+                remoteOutcome.retryAfterMs,
+              )
+            : core.defaultAutoBackupRetryState());
       // The stopped branch below records the same real result as the helper above.
       const stoppedRetryFloorMs = Number(remoteOutcome && remoteOutcome.retryAfterMs) || 0;
       const stoppedRemoteState = remoteState
@@ -2968,11 +2972,15 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
           };
         }
         // Ticket #130: remember the server's own floor on the result itself, so the next
-        // ordinary alarm cannot fire a request before it.
+        // ordinary alarm cannot fire a request before it. A run that only waited keeps
+        // the existing window instead of clearing it.
         const retryFloorMs = Number(remoteOutcome && remoteOutcome.retryAfterMs) || 0;
+        const notBeforeAt = retryFloorMs > 0
+          ? finishedAt + retryFloorMs
+          : Math.max(0, Number(latestState.remote && latestState.remote.notBeforeAt) || 0);
         finalRemote = {
           ...finalRemote,
-          notBeforeAt: retryFloorMs > 0 ? finishedAt + retryFloorMs : 0,
+          notBeforeAt: notBeforeAt > finishedAt ? notBeforeAt : 0,
         };
         return bgWriteAutoBackupState({
           ...fresh,
@@ -2981,6 +2989,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
             // Ticket #130: a server Retry-After that runs past the chosen interval still
             // wins, so the next normal cycle is never earlier than the server allows.
             finishedAt + (Number(remoteOutcome && remoteOutcome.retryAfterMs) || 0),
+            serverNotBefore,
           ),
           updatedAt: finishedAt,
           local: localResult,
