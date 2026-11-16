@@ -800,7 +800,9 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
     expect(remote.status).toBe('paused');
     expect(remote.lastErrorCode).toBe('conditional-unsupported');
     expect(remote.lastSuccessAt).toBe(1000);
-    expect(remote.baseline.version).toBe('"v1"');
+    // The probe rewrote the same bytes, so its new ETag becomes the baseline and
+    // the next retry reports the real reason instead of a false remote change.
+    expect(remote.baseline.version).toBe(webdav.etags.get(WEBDAV_FILE_URL));
   });
 
   test('a missing or weak trusted version stops before any WebDAV request', async () => {
@@ -856,6 +858,40 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
     expect(sent).toHaveLength(2);
     expect(sent[1].ifMatch).toBe(afterManual.baseline.version);
     expect(readRemote(env).status).toBe('ok');
+  });
+
+  test('a locked probe retries instead of blocking forever', async () => {
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE, putBehavior: '409' });
+    const env = updateEnv({
+      webdav,
+      baseline: trustedBaseline('"v1"', { conditionalVerifiedAt: 0 }),
+    });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    expect(puts(env)).toHaveLength(1);
+    const remote = readRemote(env);
+    expect(remote.status).toBe('error');
+    expect(remote.lastErrorCode).toBe('update-failed');
+    expect(remote.lastSuccessAt).toBe(1000);
+  });
+
+  test('a created file with no readable ETag pauses instead of pretending it can continue', async () => {
+    const webdav = createFakeWebdav({ omitPutEtag: true, getBehaviorAfterPut: '401' });
+    const env = createSandbox({ webdav });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    const first = readRemote(env);
+    expect(first.status).toBe('paused');
+    expect(first.lastErrorCode).toBe('baseline-unverified');
+    expect(first.lastSuccessAt).toBeGreaterThan(0);
+    expect(first.baseline.version).toBeNull();
+
+    const requestCount = webdav.requests.length;
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    expect(webdav.requests.length).toBe(requestCount);
+    expect(readRemote(env).lastErrorCode).toBe('baseline-unverified');
   });
 
   test('a sparse PUT response is completed by one GET for create and manual sync', async () => {
