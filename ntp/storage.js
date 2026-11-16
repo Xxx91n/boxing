@@ -102,6 +102,13 @@ export async function setAutoBackupState(state) {
   await layoutStorage.set({ [AUTO_BACKUP_STATE_KEY]: normalized });
   return normalized;
 }
+// Ticket #126: the manual Gist path must not treat a storage read failure as
+// "no pending create". This variant throws; callers stop before any network write.
+export async function getAutoBackupStateStrict() {
+  const core = getSnapshotCore();
+  const res = await layoutStorage.get({ [AUTO_BACKUP_STATE_KEY]: null });
+  return core.normalizeAutoBackupState(res && res[AUTO_BACKUP_STATE_KEY]);
+}
 
 // Ticket #123: webdavPendingPermission is a storage.local coordination key written
 // by the background SW (when no-gesture alarm lacks host permission) or NTP sync-engine

@@ -7,7 +7,7 @@
 // via ./state.js singletons (live bindings).
 
 import { layout, setLayout, writerId } from './state.js';
-import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, getAutoBackupState, setAutoBackupState, getWebDAVPendingPermission, setWebDAVPendingPermission, clearWebDAVPendingPermission, getGistPendingPermission, setGistPendingPermission, clearGistPendingPermission } from './storage.js';
+import { saveLayout, saveSnapshot, directSetBoxingLayout, stripGroupsForPersist, archiveConflictLayouts, getSyncBase, setSyncBase, getAutoBackupState, getAutoBackupStateStrict, setAutoBackupState, getWebDAVPendingPermission, setWebDAVPendingPermission, clearWebDAVPendingPermission, getGistPendingPermission, setGistPendingPermission, clearGistPendingPermission } from './storage.js';
 import { migrateLayout, mergeLayoutThreeWay, sanitizeLayoutForBackup, redactUrlForLog } from './utils.js';
 import { i18n } from './i18n.js';
 import { renderCanvas } from './render.js';
@@ -1195,7 +1195,12 @@ export function initSyncEngineFacade(deps) {
       // means a Gist may already exist; a trusted baseline is the real target even
       // before the settings field has been mirrored.
       let autoState = null;
-      try { autoState = await getAutoBackupState(); } catch (_) { autoState = null; }
+      try {
+        autoState = await getAutoBackupStateStrict();
+      } catch (e) {
+        debugErr('backupToGist: auto-backup state read failed', e);
+        throw new Error('Could not read auto-backup state');
+      }
       const remote = autoState && autoState.remote ? autoState.remote : {};
       if (remote.pendingCreate) throw new Error(i18n('gistAutoBackupErrUnknown'));
       const baselineId = remote.baseline && remote.baseline.service === 'gist' ? remote.baseline.gistId : '';

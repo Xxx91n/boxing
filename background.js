@@ -605,10 +605,15 @@ try {
     const pausedRemote = (code) => ({
       provider: 'webdav',
       status: bgRemoteStatusForCode(code),
+      generation: prevRemote.generation,
       lastAttemptAt: Date.now(),
       lastSuccessAt: prevRemote.lastSuccessAt || 0,
       lastErrorCode: code,
+      account: prevRemote.account,
       baseline: prevRemote.baseline || null,
+      // A Gist POST may still be unconfirmed; switching providers must not erase
+      // the marker, or switching back could create a second Gist.
+      pendingCreate: prevRemote.pendingCreate,
     });
 
     const derived = bgResolveWebDAVFileUrl(settings);
@@ -712,9 +717,12 @@ try {
           remote: {
             provider: 'webdav',
             status: 'ok',
+            generation: prevRemote.generation,
             lastAttemptAt: confirmedAt,
             lastSuccessAt: confirmedAt,
             lastErrorCode: null,
+            account: prevRemote.account,
+            pendingCreate: prevRemote.pendingCreate,
             baseline: {
               service: 'webdav',
               fileUrl: derived.fileUrl,
@@ -1103,7 +1111,7 @@ try {
       return finish(true, remote);
     }
 
-    if (resp.ok) {
+    if (resp.status === 201) {
       let json = null;
       try { json = JSON.parse(resp.text); } catch (_) { json = null; }
       const parsed = json ? gistCore.parseGistResponse(json, fileName) : null;
@@ -1294,19 +1302,25 @@ try {
           }
         } catch (e) {
           bgErr('Background ' + (remoteProvider || 'remote') + ' auto-backup failed (' + trigger + '):', e);
+          // A result write may have failed after the pending marker was saved. Re-read
+          // so the marker is never replaced by the pre-request snapshot.
+          let recovery = null;
+          try { recovery = await bgReadAutoBackupState(); } catch (_) { recovery = null; }
           remoteOutcome = {
             attempted: true,
-            remote: {
-              ...latestState.remote,
-              status: 'error',
-              lastAttemptAt: Date.now(),
-              lastErrorCode: 'internal-error',
-            },
+            remote: recovery
+              ? {
+                  ...recovery.remote,
+                  status: 'error',
+                  lastAttemptAt: Date.now(),
+                  lastErrorCode: 'internal-error',
+                }
+              : null,
           };
         }
       }
-      let remoteState = (remoteOutcome && remoteOutcome.remote) || latestState.remote;
       latestState = await bgReadAutoBackupState();
+      let remoteState = (remoteOutcome && remoteOutcome.remote) || latestState.remote;
       if (remoteProvider === 'gist') {
         const outcomeGeneration = Number(remoteState && remoteState.generation) || 0;
         const currentGeneration = Number(latestState.remote && latestState.remote.generation) || 0;

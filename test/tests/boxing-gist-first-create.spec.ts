@@ -205,6 +205,17 @@ async function makeBgSandbox(opts: {
           return Promise.resolve(out);
         },
         set(obj: Record<string, any>, cb?: () => void) {
+          if (store.__failAutoBackupStateWrite && Object.prototype.hasOwnProperty.call(obj, 'autoBackupState')) {
+            store.__failAutoBackupStateWrite = false;
+            const err = new Error('simulated autoBackupState write failure');
+            if (typeof cb === 'function') {
+              (chromeMock.runtime as any).lastError = { message: err.message };
+              cb();
+              (chromeMock.runtime as any).lastError = null;
+              return undefined;
+            }
+            return Promise.reject(err);
+          }
           for (const [k, v] of Object.entries(obj)) store[k] = clone(v);
           if (typeof cb === 'function') { cb(); return undefined; }
           return Promise.resolve();
@@ -303,6 +314,7 @@ async function makeBgSandbox(opts: {
     calls,
     permissionRequests,
     getBadge: () => badgeText,
+    failNextAutoBackupStateWrite: () => { store.__failAutoBackupStateWrite = true; },
     onAlarmHandler,
     onInstalledHandler,
     onStartupHandler,
@@ -718,6 +730,110 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(state.remote.pendingCreate.gistId).toBe('abc12345');
   });
 
+  test('HTTP 200 with a complete body is still unknown, never a success', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return jsonResponse(200, []);
+        if (call.method === 'POST' && call.url.endsWith('/gists')) {
+          return jsonResponse(200, {
+            id: 'abc12345',
+            files: { [GIST_FILE]: { filename: GIST_FILE, size: 123 } },
+            owner: { login: 'spec-user', id: 42 },
+            created_at: '2026-11-16T00:00:00Z',
+            updated_at: '2026-11-16T00:00:00Z',
+          });
+        }
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    const state = sandbox.store.autoBackupState;
+    expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastErrorCode).toBe('gistResultUnknown');
+    expect(state.remote.lastSuccessAt).toBe(0);
+    expect(state.remote.baseline).toBeNull();
+    expect(state.remote.pendingCreate).toBeTruthy();
+  });
+
+  test('a failed result write keeps the pending marker from storage', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return jsonResponse(200, []);
+        if (call.method === 'POST' && call.url.endsWith('/gists')) {
+          sandbox.failNextAutoBackupStateWrite();
+          return gistCreated();
+        }
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    const state = sandbox.store.autoBackupState;
+    expect(state.remote.pendingCreate).toBeTruthy();
+    expect(state.remote.lastSuccessAt).toBe(0);
+    expect(state.remote.baseline).toBeNull();
+    expect(state.remote.lastErrorCode).toBe('internal-error');
+  });
+
+  test('WebDAV settlement preserves an unconfirmed Gist create marker', async () => {
+    const store = await baseStore({}, {
+      provider: 'gist',
+      // Reconfiguring the interval can reset the status to idle while keeping the
+      // unconfirmed marker; the WebDAV run must not erase it.
+      status: 'idle',
+      generation: 3,
+      lastAttemptAt: 1,
+      lastSuccessAt: 0,
+      lastErrorCode: 'gistResultUnknown',
+      account: { login: 'spec-user', id: 42 },
+      baseline: null,
+      pendingCreate: {
+        provider: 'gist',
+        fileName: GIST_FILE,
+        description: 'Boxing extension backup',
+        startedAt: 1,
+        accountLogin: 'spec-user',
+        accountId: 42,
+        gistId: '',
+      },
+    });
+    store.boxingLayout = seedLayout(null, {
+      syncProvider: 'webdav',
+      webdavUrl: 'https://dav.example.com/boxing/',
+      webdavUser: '',
+      _encWebdavPass: 'plain-webdav-pass',
+      _encGistToken: undefined,
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.includes('dav.example.com')) {
+          return new Response('', { status: 404 });
+        }
+        if (call.method === 'PUT' && call.url.includes('dav.example.com')) {
+          return new Response('', { status: 201, headers: { etag: '"etag-1"' } });
+        }
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const outcome = await sandbox.bg.runBackgroundWebDAVAutoBackup({
+      state: sandbox.store.autoBackupState,
+      layout: sandbox.store.boxingLayout,
+      epoch: 1,
+      trigger: 'test',
+    });
+    expect(outcome.remote.status).toBe('ok');
+    expect(outcome.remote.provider).toBe('webdav');
+    expect(outcome.remote.generation).toBe(3);
+    expect(outcome.remote.pendingCreate).toBeTruthy();
+    expect(outcome.remote.pendingCreate.fileName).toBe(GIST_FILE);
+  });
+
   test('a reset during the POST discards the stale success write', async () => {
     const store = await baseStore();
     const sandbox = await makeBgSandbox({
@@ -930,17 +1046,35 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
         return Promise.reject(new Error('manual Gist backup must not fetch while a background create is pending'));
       };
       let message = '';
+      let readFailureMessage = '';
+      const origGetItem = Storage.prototype.getItem;
       try {
-        await (window as any).__bxSync.backupToGist();
-      } catch (e: any) {
-        message = String(e?.message || e);
+        try {
+          await (window as any).__bxSync.backupToGist();
+        } catch (e: any) {
+          message = String(e?.message || e);
+        }
+        // The strict coordination read must fail closed, not treat a storage
+        // error as "no pending create".
+        Storage.prototype.getItem = function (key: string) {
+          if (key === 'bxstore:autoBackupState') throw new Error('simulated read failure');
+          return origGetItem.call(this, key);
+        };
+        try {
+          await (window as any).__bxSync.backupToGist();
+        } catch (e: any) {
+          readFailureMessage = String(e?.message || e);
+        } finally {
+          Storage.prototype.getItem = origGetItem;
+        }
       } finally {
         window.fetch = realFetch;
       }
-      return { fetchCount, message };
+      return { fetchCount, message, readFailureMessage };
     });
     expect(result.fetchCount).toBe(0);
     expect(result.message).toContain('no confirmed result');
+    expect(result.readFailureMessage).toContain('Could not read auto-backup state');
   });
 
   test('a background-created Gist id is mirrored into the normal settings field', async ({ page }) => {
