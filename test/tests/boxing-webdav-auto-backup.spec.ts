@@ -116,6 +116,12 @@ function createFakeWebdav(opts: FakeWebdavOptions = {}) {
       return new Response(null, { status: 404 });
     }
 
+    if (req.method === 'DELETE') {
+      files.delete(url);
+      etags.delete(url);
+      return new Response(null, { status: 204 });
+    }
+
     if (req.method === 'PUT') {
       if (opts.putGate) await opts.putGate.wait;
       putCount += 1;
@@ -714,16 +720,19 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
     expect(res.ok).toBe(true);
 
     const sent = puts(env);
-    expect(sent).toHaveLength(2);
-    expect(sent[0].ifMatch, 'the probe refuses to trust a server without proof').toMatch(/^"boxing-conditional-probe-/);
-    expect(sent[0].body, 'the probe only rewrites the bytes just read').toBe(OLD_REMOTE);
-    expect(sent[1].ifMatch, 'the real update carries the trusted ETag').toBe('"v1"');
+    expect(sent).toHaveLength(3);
+    expect(sent[0].ifNoneMatch, 'the probe creates a throwaway sibling').toBe('*');
+    expect(sent[0].body).toBe('{}');
+    expect(sent[1].ifMatch, 'the probe refuses to trust a server without proof').toMatch(/^"boxing-conditional-probe-/);
+    expect(sent[1].body).toBe('{}');
+    expect(sent[2].ifMatch, 'the real update carries the trusted ETag').toBe('"v1"');
 
-    const body = JSON.parse(sent[1].body);
+    const body = JSON.parse(sent[2].body);
     expect(body.boxes[0].title).toBe('Work edited');
-    expect(sent[1].body).not.toContain('secret-pass');
-    expect(sent[1].body).not.toContain('"alice"');
-    expect(webdav.files.get(WEBDAV_FILE_URL)).toBe(sent[1].body);
+    expect(sent[2].body).not.toContain('secret-pass');
+    expect(sent[2].body).not.toContain('"alice"');
+    expect(webdav.files.get(WEBDAV_FILE_URL)).toBe(sent[2].body);
+    expect(webdav.files.size, 'the probe sibling is deleted').toBe(1);
 
     const remote = readRemote(env);
     expect(remote.status).toBe('ok');
@@ -793,16 +802,16 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
 
     const sent = puts(env);
     expect(sent).toHaveLength(1);
-    expect(sent[0].ifMatch).toMatch(/^"boxing-conditional-probe-/);
-    expect(sent[0].body, 'the ignored write only repeats the current remote bytes').toBe(OLD_REMOTE);
+    expect(sent[0].ifNoneMatch, 'the probe stops before touching the trusted file').toBe('*');
+    expect(sent[0].body).toBe('{}');
     expect(webdav.files.get(WEBDAV_FILE_URL)).toBe(OLD_REMOTE);
+    expect(webdav.files.size, 'the probe sibling is deleted').toBe(1);
     const remote = readRemote(env);
     expect(remote.status).toBe('paused');
     expect(remote.lastErrorCode).toBe('conditional-unsupported');
     expect(remote.lastSuccessAt).toBe(1000);
-    // The probe rewrote the same bytes, so its new ETag becomes the baseline and
-    // the next retry reports the real reason instead of a false remote change.
-    expect(remote.baseline.version).toBe(webdav.etags.get(WEBDAV_FILE_URL));
+    // The trusted file was never written, so its baseline is still the old version.
+    expect(remote.baseline.version).toBe('"v1"');
   });
 
   test('a missing or weak trusted version stops before any WebDAV request', async () => {

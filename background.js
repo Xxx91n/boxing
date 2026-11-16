@@ -587,6 +587,35 @@ try {
       Math.random().toString(36).slice(2, 10) + '"';
   }
 
+  // Capability probes must never touch the trusted backup file. Use a throwaway
+  // sibling in the same directory: create it, try a wrong If-Match, then delete it.
+  function bgWebDAVProbeSiblingUrl(fileUrl) {
+    try {
+      const u = new URL(fileUrl);
+      const slash = u.pathname.lastIndexOf('/');
+      const dir = u.pathname.slice(0, slash + 1);
+      u.pathname = dir + '.boxing-probe-' + Date.now().toString(36) + '-' +
+        Math.random().toString(36).slice(2, 8) + '.json';
+      return u.href.length <= 2048 ? u.href : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  async function bgWebDAVDeleteUrl(url, user, pass) {
+    const h = new Headers();
+    const auth = makeAuthHeader(user, pass);
+    if (auth) h.set('Authorization', auth);
+    const abort = bgWebDAVAbortHandle(BG_WEBDAV_TIMEOUT_MS);
+    try {
+      const resp = await fetch(url, { method: 'DELETE', headers: h, redirect: 'manual', signal: abort.signal });
+      if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') return { ok: false, status: 0 };
+      return { ok: resp.ok, status: resp.status };
+    } finally {
+      abort.done();
+    }
+  }
+
   // Update-only PUT. Unlike create-only (#125), the caller already read the remote
   // file and holds its ETag as the trusted baseline. The condition is the safety
   // story: a writer that got in first turns this into 412, never a silent overwrite.
@@ -890,22 +919,53 @@ try {
           };
         }
 
-        // Prove the server really enforces If-Match before the first update. The
-        // probe sends an impossible version with the exact bytes just read. A
-        // correct server answers 412 and writes nothing; a server that ignores the
-        // condition only rewrites identical content, and is then never trusted.
+        // Prove the server really enforces If-Match before the first update. The probe
+        // runs on a throwaway sibling, never on the trusted backup file: create it,
+        // send a wrong If-Match, then delete it. A correct server answers 412; a
+        // server that ignores the condition rewrites only the throwaway file.
         if (!baseline.conditionalVerifiedAt) {
-          let probe;
+          let probeUrl = '';
+          let created = null;
+          for (let attempt = 0; attempt < 2; attempt++) {
+            probeUrl = bgWebDAVProbeSiblingUrl(derived.fileUrl);
+            if (!probeUrl) break;
+            try {
+              const c = await bgWebDAVCreateOnly(probeUrl, user, pass, '{}');
+              if (c.status === 412) { created = null; continue; }
+              created = c;
+              break;
+            } catch (e) {
+              created = { threw: true };
+              break;
+            }
+          }
+          if (!created || created.threw) {
+            if (probeUrl) { try { await bgWebDAVDeleteUrl(probeUrl, user, pass); } catch (_) {} }
+            return { attempted: true, remote: pausedFrom(liveRemote, created && created.threw ? 'update-failed' : 'conditional-unsupported') };
+          }
+          if (created.status !== 201) {
+            if (probeUrl) { try { await bgWebDAVDeleteUrl(probeUrl, user, pass); } catch (_) {} }
+            const code = (created.status === 409 || created.status === 423 || created.status >= 500)
+              ? 'update-failed'
+              : 'conditional-unsupported';
+            return { attempted: true, remote: pausedFrom(liveRemote, code) };
+          }
+
+          let probe = null;
           try {
-            probe = await bgWebDAVUpdateOnly(derived.fileUrl, user, pass, current.body, bgWebDAVProbeTag());
+            probe = await bgWebDAVUpdateOnly(probeUrl, user, pass, '{}', bgWebDAVProbeTag());
           } catch (e) {
             bgErr('WebDAV auto-backup update: condition probe outcome unknown', e);
             return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
+          } finally {
+            try { await bgWebDAVDeleteUrl(probeUrl, user, pass); } catch (_) {}
           }
           if (probe.status === 401 || probe.status === 403) {
             return { attempted: true, remote: pausedFrom(liveRemote, 'auth-failed') };
           }
-          if (probe.status === 404) return { attempted: true, remote: pausedFrom(liveRemote, 'remote-missing') };
+          if (probe.status === 404) {
+            return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
+          }
           if (probe.status === 409 || probe.status === 423 || probe.status >= 500) {
             // A lock or a transient server error says nothing about condition
             // support; retry on the normal schedule instead of blocking forever.
@@ -914,23 +974,7 @@ try {
           if (probe.status !== 412) {
             // 2xx means the server ignored If-Match; 428/400 and anything else
             // did not prove conditional support. Never fall back to a plain PUT.
-            // The probe rewrote the bytes just read, so the content is unchanged,
-            // but its ETag moved. Adopt that version so a retry reports the real
-            // reason (no conditional support) instead of "another device changed".
-            let afterProbe = null;
-            try {
-              afterProbe = await bgWebDAVReadFileState(derived.fileUrl, user, pass, { includeBody: false });
-            } catch (_) { afterProbe = null; }
-            const paused = pausedFrom(liveRemote, 'conditional-unsupported');
-            if (afterProbe && afterProbe.kind === 'exists' && bgIsStrongETag(afterProbe.etag)) {
-              paused.baseline = {
-                ...baseline,
-                etag: afterProbe.etag,
-                version: afterProbe.etag,
-                verifiedAt: Date.now(),
-              };
-            }
-            return { attempted: true, remote: paused };
+            return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
           }
         }
 
