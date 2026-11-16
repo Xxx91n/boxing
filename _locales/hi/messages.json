@@ -1391,8 +1391,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "क्लाउड बैकअप बन गया",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "क्लाउड बैकअप सहेजा गया",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "क्लाउड बैकअप रुका हुआ — $reason$",
@@ -1449,8 +1449,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "सर्वर ने सिद्ध नहीं किया कि केवल-नया अपलोड लागू होता है, इसलिए अपने आप अपलोड रुक गया।",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "सर्वर ने यह साबित नहीं किया कि शर्तों वाली लेखन लागू होती है, इसलिए स्वचालित अपलोड रुक गया।",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "अपलोड का नतीजा अज्ञात है। रिमोट फ़ाइल जाँचें, फिर अपने आप बैकअप बंद और चालू करके दोबारा कोशिश करें।",
@@ -1531,5 +1531,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "बैकअप डेटा स्वचालित रूप से भेजने के लिए बहुत बड़ा है। स्वचालित Gist बैकअप रुका हुआ है।"
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "किसी दूसरे डिवाइस ने रिमोट फ़ाइल बदल दी, इसलिए यह बैकअप अपलोड नहीं हुआ। पहले मैन्युअल सिंक चलाकर इसे मिलाएँ।",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "इस ब्राउज़र के पास अभी रिमोट फ़ाइल का भरोसेमंद संस्करण नहीं है। एक बार मैन्युअल सिंक चलाएँ, फिर स्वचालित बैकअप जारी रह सकेगा।",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "रिमोट फ़ाइल अब मौजूद नहीं है। स्वचालित अपलोड रुक गया है और इसे अपने आप फिर से नहीं बनाएगा।",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "सर्वर ने यह बैकअप अपडेट अस्वीकार कर दिया।",
+    "description": "cloud backup error reason: server refused the update"
   }
 }

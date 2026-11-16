@@ -43,6 +43,11 @@
     'unknown-outcome',
     'target-changed',
     'internal-error',
+    // Ticket #127 (spec #120 T6). Stable codes; NTP owns the localized copy.
+    'remote-changed',
+    'baseline-unverified',
+    'remote-missing',
+    'update-failed',
     // Ticket #126 (Gist first-create). Stable codes; NTP owns the localized copy.
     'gistTokenMissing',
     'gistPermissionMissing',
@@ -64,6 +69,10 @@
     'conditional-unsupported',
     'invalid-target',
     'target-changed',
+    // Ticket #127: these need the user to look at the remote side first too.
+    'remote-changed',
+    'baseline-unverified',
+    'remote-missing',
     'gistTargetNeedsReview',
     'gistUnknownExisting',
     'gistUpdateNotEnabled',
@@ -394,12 +403,23 @@
     if (!isPlainObject(raw)) return null;
     if (raw.service === 'webdav') {
       if (typeof raw.fileUrl !== 'string' || !raw.fileUrl) return null;
+      const etag = typeof raw.etag === 'string' && raw.etag ? raw.etag.slice(0, 512) : null;
+      const version = typeof raw.version === 'string' && raw.version
+        ? raw.version.slice(0, 512)
+        : etag;
       return {
         service: 'webdav',
         fileUrl: raw.fileUrl.slice(0, 4096),
         account: typeof raw.account === 'string' ? raw.account.slice(0, 512) : '',
         createdAt: Math.max(0, Number(raw.createdAt) || 0),
-        etag: typeof raw.etag === 'string' ? raw.etag.slice(0, 512) : null,
+        etag,
+        // The exact remote version the last confirmed write produced. It is the
+        // If-Match value for the next automatic update; null means "not trusted".
+        version,
+        verifiedAt: Math.max(0, Number(raw.verifiedAt) || 0),
+        // Set only after a stale If-Match probe was refused: proof that the
+        // server enforces conditional writes for this target.
+        conditionalVerifiedAt: Math.max(0, Number(raw.conditionalVerifiedAt) || 0),
       };
     }
     if (raw.service === 'gist') {

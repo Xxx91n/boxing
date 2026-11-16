@@ -1391,8 +1391,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "Copia en la nube creada",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "Copia de seguridad en la nube guardada",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "Copia en la nube en pausa — $reason$",
@@ -1449,8 +1449,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "El servidor no demostró que se aplique la creación exclusiva, así que se detuvo la subida automática.",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "El servidor no demostró que aplique escrituras condicionales, así que la subida automática se detuvo.",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "El resultado de la subida es desconocido. Revisa el archivo remoto y desactiva y vuelve a activar la copia automática para reintentar.",
@@ -1531,5 +1531,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Los datos de copia son demasiado grandes para enviarlos automáticamente. La copia Gist automática está en pausa."
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "Otro dispositivo cambió el archivo remoto, así que esta copia no se subió. Ejecuta primero una sincronización manual para combinarlo.",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "Este navegador aún no tiene una versión de confianza del archivo remoto. Haz una sincronización manual una vez y la copia automática podrá continuar.",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "El archivo remoto ya no existe. La subida automática se detuvo y no lo creará de nuevo por sí sola.",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "El servidor rechazó esta actualización de la copia de seguridad.",
+    "description": "cloud backup error reason: server refused the update"
   }
 }

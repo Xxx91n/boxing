@@ -1391,8 +1391,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "クラウドバックアップを作成しました",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "クラウドバックアップを保存しました",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "クラウドバックアップを停止しました — $reason$",
@@ -1449,8 +1449,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "サーバーが新規作成のみの強制を証明できなかったため、自動アップロードを停止しました。",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "サーバーが条件付き書き込みを実施していることを確認できなかったため、自動アップロードを停止しました。",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "アップロードの結果が不明です。リモートファイルを確認し、自動バックアップをいったんオフにしてから再度オンにして再試行してください。",
@@ -1531,5 +1531,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "バックアップデータが大きすぎて自動送信できません。自動 Gist バックアップを停止しました。"
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "別の端末がリモートファイルを更新したため、このバックアップはアップロードしていません。先に手動同期で統合してください。",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "このブラウザにはリモートファイルの信頼できる版がまだありません。一度手動同期を行うと、自動バックアップを続けられます。",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "リモートファイルがありません。自動アップロードを停止し、勝手に作り直すことはありません。",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "サーバーがこのバックアップ更新を拒否しました。",
+    "description": "cloud backup error reason: server refused the update"
   }
 }

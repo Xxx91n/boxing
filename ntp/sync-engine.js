@@ -1313,6 +1313,11 @@ export function initSyncEngineFacade(deps) {
       'unknown-outcome': 'autoBackupCloudReasonUnknownOutcome',
       'target-changed': 'autoBackupCloudReasonTargetChanged',
       'internal-error': 'autoBackupCloudReasonError',
+      // Ticket #127 (WebDAV trusted-target updates) stable codes.
+      'remote-changed': 'autoBackupCloudReasonRemoteChanged',
+      'baseline-unverified': 'autoBackupCloudReasonBaselineUnverified',
+      'remote-missing': 'autoBackupCloudReasonRemoteMissing',
+      'update-failed': 'autoBackupCloudReasonUpdateFailed',
       // Ticket #126 (Gist first-create) stable codes.
       gistTokenMissing: 'gistAutoBackupErrToken',
       gistPermissionMissing: 'gistAutoBackupErrPermission',

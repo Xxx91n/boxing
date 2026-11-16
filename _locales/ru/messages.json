@@ -1391,8 +1391,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "Облачная копия создана",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "Облачная резервная копия сохранена",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "Облачная копия приостановлена — $reason$",
@@ -1449,8 +1449,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "Сервер не подтвердил, что создание только нового файла действительно применяется, поэтому автозагрузка остановлена.",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "Сервер не подтвердил, что условия записи действительно проверяются, поэтому автоматическая загрузка остановлена.",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "Результат загрузки неизвестен. Проверьте удалённый файл, затем выключите и снова включите авторезервное копирование.",
@@ -1531,5 +1531,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Данные резервной копии слишком велики для автоматической отправки. Автоматическое резервное копирование Gist приостановлено."
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "Другое устройство изменило удалённый файл, поэтому эта резервная копия не была загружена. Сначала выполните ручную синхронизацию и объедините изменения.",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "В этом браузере ещё нет доверенной версии удалённого файла. Выполните ручную синхронизацию один раз, после чего автоматическое резервное копирование сможет продолжиться.",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "Удалённый файл исчез. Автоматическая загрузка остановлена и не будет создавать его заново сама.",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "Сервер отклонил это обновление резервной копии.",
+    "description": "cloud backup error reason: server refused the update"
   }
 }

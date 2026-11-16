@@ -1391,8 +1391,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "تم إنشاء النسخة السحابية",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "تم حفظ النسخة الاحتياطية السحابية",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "تم إيقاف النسخة السحابية مؤقتًا — $reason$",
@@ -1449,8 +1449,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "لم يثبت الخادم أن الإنشاء الحصري مطبَّق، لذلك توقف الرفع التلقائي.",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "لم يثبت الخادم أنه يفرض الكتابة الشرطية، لذلك توقف الرفع التلقائي.",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "نتيجة الرفع غير معروفة. تحقق من الملف البعيد ثم أوقف النسخ التلقائي وشغّله من جديد لإعادة المحاولة.",
@@ -1531,5 +1531,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "بيانات النسخ الاحتياطي كبيرة جدًا للإرسال تلقائيًا. تم إيقاف النسخ الاحتياطي التلقائي لـ Gist."
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "غيّر جهاز آخر الملف البعيد، لذلك لم تُرفع هذه النسخة الاحتياطية. شغّل مزامنة يدوية لدمجه أولاً.",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "لا يملك هذا المتصفح نسخة موثوقة من الملف البعيد بعد. شغّل مزامنة يدوية مرة واحدة ليتمكن النسخ الاحتياطي التلقائي من المتابعة.",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "اختفى الملف البعيد. توقف الرفع التلقائي ولن يعيد إنشاءه من تلقاء نفسه.",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "رفض الخادم تحديث النسخة الاحتياطية هذا.",
+    "description": "cloud backup error reason: server refused the update"
   }
 }

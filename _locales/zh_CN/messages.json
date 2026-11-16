@@ -1394,8 +1394,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "已创建云端备份",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "云端备份已保存",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "云端备份已暂停 — $reason$",
@@ -1452,8 +1452,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "服务器没有证明支持仅新建写入，自动上传已停止。",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "服务器没有证明支持安全的条件写入，自动上传已停止。",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "上传结果未知。请检查远端文件，然后关闭再开启自动备份以重试。",
@@ -1534,5 +1534,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "备份数据太大，无法自动上传。自动 Gist 备份已暂停。"
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "远端文件已被另一台设备更新，这次备份没有上传。请先手动同步合并，再恢复自动备份。",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "本浏览器还没有远端文件的可信版本记录。请先手动同步一次，之后自动备份就能继续。",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "远端文件已不存在。自动上传已停止，不会自行重新创建。",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "服务器拒绝了这次备份更新。",
+    "description": "cloud backup error reason: server refused the update"
   }
 }
