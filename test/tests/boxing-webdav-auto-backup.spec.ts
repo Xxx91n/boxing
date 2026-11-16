@@ -913,6 +913,32 @@ test.describe('Ticket #129 — cloud failure, snapshot history, and pending stat
     expect(cancelled.local.lastSuccessAt).toBe(5);
   });
 
+  test('a manual result binds its cloud time to the provider and records the snapshot time', async () => {
+    const env = createSandbox({
+      store: {
+        autoBackupState: seedAutoBackupState({
+          remote: { provider: 'gist', status: 'ok', lastSuccessAt: 1700000000000, lastErrorCode: null, baseline: null },
+        }),
+      },
+    });
+
+    const resp = await env.sendMessage({
+      type: 'auto-backup-note-manual-result',
+      provider: 'webdav',
+      remoteSuccess: true,
+      snapshotTs: 1800000000000,
+    });
+    expect(resp.success).toBe(true);
+
+    const state = stateOf(env);
+    expect(state.local.lastSuccessAt).toBe(1800000000000);
+    expect(state.remote.provider).toBe('webdav');
+    expect(state.remote.lastSuccessAt, 'the old provider time is not reused').toBeGreaterThan(1700000000000);
+    // Status, pause reason and baseline stay owned by the automatic lane.
+    expect(state.remote.status).toBe('ok');
+    expect(state.remote.baseline).toBeNull();
+  });
+
   test('a Gist baseline is not mistaken for a WebDAV file, so the file is re-checked and created', async () => {
     const env = createSandbox({
       store: {
@@ -1131,6 +1157,87 @@ test.describe('Ticket #129 — cloud status line, manual entry, and its own succ
     expect(out.err, 'the failure is still reported to the Sync Now button').toBeTruthy();
     expect(out.after, 'a failed upload still leaves one recoverable snapshot').toBe(out.before + 1);
     expect(out.lastBackupAt, 'a failed upload is not a remote success').toBe(1700000000000);
+  });
+
+  test('a successful manual upload records both success times for the selected target', async ({ page }) => {
+    await page.addInitScript((seed) => {
+      localStorage.setItem('boxingLayout', JSON.stringify(seed));
+      (window as any).chrome = {
+        runtime: {
+          sendMessage: (msg: any, cb: (resp: any) => void) => {
+            if (msg.type === 'webdav-get') { cb({ success: true, status: 404, body: null }); return; }
+            if (msg.type === 'webdav-put') { cb({ success: true, status: 201, ok: true }); return; }
+            cb({ success: true });
+          },
+          getURL: (p: string) => p,
+          lastError: null,
+        },
+      };
+    }, seedLayout({
+      settings: { onboardingCompleted: true, syncProvider: 'webdav', webdavUrl: WEBDAV_BASE, webdavUser: 'alice', lastBackupAt: 0 },
+    }));
+
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+    await dismissOnboarding(page);
+
+    const out = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      await (window as any).__bxSync.performBackup({ userInitiated: true, source: 'manual' });
+      const raw = (await dbg.storageGet('autoBackupState')).autoBackupState;
+      const state = (window as any).__boxingSnapshotCore.normalizeAutoBackupState(raw);
+      return {
+        snapshots: (await dbg.listSnapshots()).length,
+        lastBackupAt: dbg.layout.settings.lastBackupAt,
+        cloud: state.remote,
+        local: state.local,
+      };
+    });
+
+    expect(out.snapshots).toBe(1);
+    expect(out.lastBackupAt).toBeGreaterThan(0);
+    // The cloud success time is tagged with the provider that earned it.
+    expect(out.cloud.provider).toBe('webdav');
+    expect(out.cloud.lastSuccessAt).toBeGreaterThan(0);
+    // The manual snapshot also updates the local success time.
+    expect(out.local.lastSuccessAt).toBeGreaterThan(0);
+  });
+
+  test('a Gist upload with no token is a local refusal and creates no snapshot', async ({ page }) => {
+    let downloads = 0;
+    page.on('download', () => { downloads++; });
+    await page.addInitScript((seed) => {
+      localStorage.setItem('boxingLayout', JSON.stringify(seed));
+    }, seedLayout({
+      settings: { onboardingCompleted: true, syncProvider: 'gist', webdavUrl: '', webdavUser: '', lastBackupAt: 1700000000000 },
+    }));
+
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+    await dismissOnboarding(page);
+
+    const out = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const before = (await dbg.listSnapshots()).length;
+      let err: string | null = null;
+      try {
+        await (window as any).__bxSync.performBackup({ userInitiated: true, source: 'manual' });
+      } catch (e: any) {
+        err = String((e && e.message) || e);
+      }
+      return {
+        before,
+        after: (await dbg.listSnapshots()).length,
+        lastBackupAt: dbg.layout.settings.lastBackupAt,
+        err,
+      };
+    });
+
+    expect(out.err).toContain('token');
+    // Nothing was sent, so the local lane is not touched either.
+    expect(out.after).toBe(out.before);
+    expect(out.lastBackupAt).toBe(1700000000000);
+    expect(downloads).toBe(0);
   });
 
   test('the new manual-entry label exists in all 14 locales', () => {

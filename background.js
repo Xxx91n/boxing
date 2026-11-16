@@ -1985,6 +1985,35 @@ try {
       } else if (msg.type === 'auto-backup-get-state') {
         const state = await bgReadAutoBackupState();
         return { success: true, state };
+      } else if (msg.type === 'auto-backup-note-manual-result') {
+        // Ticket #129: a manual Sync Now is a real result for the selected target.
+        // Record the snapshot's own success time and, when the upload worked, bind the
+        // cloud success time to that provider. Status, pause reason and baseline stay
+        // owned by the automatic path (T6/T8 build trusted baselines).
+        const snapshotTs = Math.max(0, Number(msg.snapshotTs) || 0);
+        const provider = msg.provider === 'webdav' || msg.provider === 'gist' ? msg.provider : '';
+        const remoteSucceeded = msg.remoteSuccess === true && provider !== '';
+        const next = await enqueueBgAutoBackup(async () => {
+          const latest = await bgReadAutoBackupState();
+          const now = Date.now();
+          const local = snapshotTs > 0
+            ? {
+                ...latest.local,
+                lastSuccessAt: Math.max(Number(latest.local.lastSuccessAt) || 0, snapshotTs),
+                lastSnapshotTs: Math.max(Number(latest.local.lastSnapshotTs) || 0, snapshotTs),
+              }
+            : latest.local;
+          const remote = remoteSucceeded
+            ? {
+                ...latest.remote,
+                provider,
+                lastAttemptAt: now,
+                lastSuccessAt: Math.max(bgSuccessAtForProvider(latest.remote, provider), now),
+              }
+            : latest.remote;
+          return bgWriteAutoBackupState({ ...latest, local, remote, updatedAt: now });
+        });
+        return { success: true, state: next };
       } else if (msg.type === 'auto-backup-reset-cloud') {
         // Ticket #126: explicit credential deletion removes the saved remote target.
         // Run inside the queue so it cannot interleave with a Gist read-modify-write,

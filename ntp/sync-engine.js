@@ -68,6 +68,10 @@ export function initSyncEngineFacade(deps) {
   ];
   function failedAfterRemoteAttempt(e) {
     if (!e) return false;
+    // Ticket #129 review: a provider path can refuse before sending anything (no
+    // Gist token, unreadable auto-backup state, unknown pending create). Those mark
+    // themselves so they stay "nothing was attempted" like the WebDAV pre-checks.
+    if (e.preflight === true) return false;
     // A non-WebDAV error (Gist rejection, fetch TypeError, storage error) came out
     // of a real attempt; only a known local pre-check key means "nothing was sent".
     if (!WEBDAV_ERROR_KEYS.includes(e.key)) return true;
@@ -152,18 +156,18 @@ export function initSyncEngineFacade(deps) {
       return Boolean(remote && REMOTE_TIME_UNPROVEN_CODES.includes(remote.lastErrorCode));
     }
     function updateLastBackupDisplay(autoState) {
-      const remoteAt = Number(layout.settings.lastBackupAt) || 0;
       const localAt = Number(autoState && autoState.local && autoState.local.lastSuccessAt) || 0;
       const remote = autoState && autoState.remote ? autoState.remote : null;
+      // Only the provider-tagged cloud success can stand for the selected target.
+      // The legacy lastBackupAt carries no target, so it is no longer shown as proof
+      // that the current target worked (manual success now writes this same field).
       const cloudAt = Number(remote && remote.lastSuccessAt) || 0;
       if (lastBackupTimeVal) {
         const provider = layout.settings.syncProvider || 'local';
-        // A timestamp only belongs to the target that produced it: after a provider
-        // switch the old record stays stored but cannot claim the new target worked.
         const remoteBelongsHere = !remote || !remote.provider || remote.provider === provider;
         const displayAt = provider === 'local'
           ? localAt
-          : ((!remoteBelongsHere || isRemoteTimeUnproven(remote)) ? 0 : Math.max(remoteAt, cloudAt));
+          : ((!remoteBelongsHere || isRemoteTimeUnproven(remote)) ? 0 : cloudAt);
         lastBackupTimeVal.textContent = displayAt > 0 ? new Date(displayAt).toLocaleString() : i18n('neverText');
       }
       if (localAutoBackupLastAtEl) {
@@ -1221,9 +1225,17 @@ export function initSyncEngineFacade(deps) {
     // Expose sync for debug + tests.
     window.__boxingSyncWebDAV = syncWithWebDAV;
 
+    // A local Gist refusal (missing token, unreadable state, unconfirmed create, bad
+    // id) never sends a request, so it must not look like a remote attempt (#129).
+    function gistPrecheckError(message) {
+      const e = new Error(message);
+      e.preflight = true;
+      return e;
+    }
+
     async function backupToGist() {
       const token = gistTokenInput?.value?.trim();
-      if (!token) throw new Error('GitHub token not configured');
+      if (!token) throw gistPrecheckError('GitHub token not configured');
       // Ticket #126: do not race the background first-create. A pending POST result
       // means a Gist may already exist; a trusted baseline is the real target even
       // before the settings field has been mirrored.
@@ -1232,13 +1244,13 @@ export function initSyncEngineFacade(deps) {
         autoState = await getAutoBackupStateStrict();
       } catch (e) {
         debugErr('backupToGist: auto-backup state read failed', e);
-        throw new Error('Could not read auto-backup state');
+        throw gistPrecheckError('Could not read auto-backup state');
       }
       const remote = autoState && autoState.remote ? autoState.remote : {};
-      if (remote.pendingCreate) throw new Error(i18n('gistAutoBackupErrUnknown'));
+      if (remote.pendingCreate) throw gistPrecheckError(i18n('gistAutoBackupErrUnknown'));
       const baselineId = remote.baseline && remote.baseline.service === 'gist' ? remote.baseline.gistId : '';
       const gistId = layout.settings.gistId || gistIdInput?.value?.trim() || baselineId;
-      if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw new Error('Invalid Gist ID');
+      if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw gistPrecheckError('Invalid Gist ID');
       const content = JSON.stringify(buildSyncPayload(), null, 2);
       // (Bug16): honor custom sync filename; default boxing-backup.json.
       const _rawName = (layout.settings.syncFileName || '').trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
@@ -1311,18 +1323,29 @@ export function initSyncEngineFacade(deps) {
       // upload threw, and its own result is never reported as a remote success.
       // A local pre-check refusal never left the browser, so #123 keeps its
       // "nothing was attempted, nothing changes" contract.
+      let snapshotTs = 0;
       if (!remoteError || failedAfterRemoteAttempt(remoteError)) {
         try {
-          await saveSnapshot(); // always save a versioned snapshot
+          snapshotTs = Number(await saveSnapshot()) || 0; // always save a versioned snapshot
         } catch (e) {
           debugErr('Backup snapshot failed', e);
         }
       }
       // lastBackupAt is a REMOTE success timestamp. Local-only mode keeps its history
       // in autoBackupState.local instead of pretending a remote backup happened.
-      if (p !== 'local' && !remoteError) {
+      const remoteSucceeded = p !== 'local' && !remoteError;
+      if (remoteSucceeded) {
         layout.settings.lastBackupAt = Date.now();
         saveLayout();
+      }
+      // Ticket #129: manual results are real results. Record both lanes in the same
+      // state the background uses, so a later provider switch can tell whose time it is.
+      if (remoteSucceeded || snapshotTs > 0) {
+        try {
+          await noteManualBackupResult(p, remoteSucceeded, snapshotTs);
+        } catch (e) {
+          debugWarn('note manual backup result failed', e);
+        }
       }
       try { await refreshLocalAutoBackupUi(); } catch (e) { debugWarn('refresh local auto-backup ui failed', e); }
       if (remoteError) throw remoteError;
@@ -1343,6 +1366,46 @@ export function initSyncEngineFacade(deps) {
         return true;
       }
       return false;
+    }
+
+    // Ticket #129: a manual Sync Now produces real local and cloud results. They are
+    // written to the same autoBackupState the automatic lane uses, so each success
+    // time stays attached to the target that earned it. The extension path goes
+    // through the background queue (#124 single writer); a bare page writes directly.
+    async function noteManualBackupResult(provider, remoteSucceeded, snapshotTs) {
+      const payload = {
+        type: 'auto-backup-note-manual-result',
+        provider: provider === 'webdav' || provider === 'gist' ? provider : '',
+        remoteSuccess: Boolean(remoteSucceeded),
+        snapshotTs: Math.max(0, Number(snapshotTs) || 0),
+      };
+      if (hasExtensionRuntime()) {
+        await sendToBackground(payload);
+        return;
+      }
+      const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+      if (!core) return;
+      const st = await getAutoBackupState();
+      const now = Date.now();
+      const local = payload.snapshotTs > 0
+        ? {
+            ...st.local,
+            lastSuccessAt: Math.max(Number(st.local.lastSuccessAt) || 0, payload.snapshotTs),
+            lastSnapshotTs: Math.max(Number(st.local.lastSnapshotTs) || 0, payload.snapshotTs),
+          }
+        : st.local;
+      const remote = payload.remoteSuccess && payload.provider
+        ? {
+            ...st.remote,
+            provider: payload.provider,
+            lastAttemptAt: now,
+            lastSuccessAt: Math.max(
+              st.remote.provider === payload.provider ? (Number(st.remote.lastSuccessAt) || 0) : 0,
+              now,
+            ),
+          }
+        : st.remote;
+      await setAutoBackupState({ ...st, local, remote, updatedAt: now });
     }
 
     // Ticket #125 (spec #120 T5) / #129 (D6): the cloud result line. It is separate
