@@ -1528,10 +1528,11 @@
     "message": "GitHub-Konto oder Gists konnten nicht geprüft werden. Die automatische Gist-Sicherung ist pausiert."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Der Gist existiert bereits. Automatische Aktualisierungen eines bestehenden Gists sind noch nicht aktiviert."
+    "message": "Dieser Gist existiert bereits. GitHub bietet keine geprüfte Möglichkeit, das Überschreiben eines anderen Schreibers zu verhindern; automatische Aktualisierungen bleiben deshalb pausiert. Manuelles Backup funktioniert weiterhin, solange Ziel und Dateiname gleich bleiben.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "Ein Gist mit diesem Dateinamen existiert bereits, ist aber nicht in Boxing erfasst. Die automatische Sicherung ist pausiert."
+    "message": "Ein Gist mit diesem Dateinamen existiert bereits, ist aber nicht in Boxing erfasst. Die automatische Sicherung ist pausiert. Trage die ID dieses Gists in das Gist-ID-Feld ein, um ihn weiterzuverwenden."
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Die Sicherungsdaten sind zu groß für den automatischen Upload. Die automatische Gist-Sicherung ist pausiert."
@@ -1551,5 +1552,21 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "Der Server hat dieses Backup-Update abgelehnt.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing konnte nicht alle Gists dieses Kontos prüfen, daher ist die Sicherung pausiert. Trage die vorhandene Gist-ID ein oder reduziere die Anzahl der Gists und versuche es erneut.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "Eine frühere Gist-Erstellung ist noch unbestätigt, aber der Backup-Dateiname hat sich geändert. Stelle den Dateinamen auf den damals verwendeten Namen zurück und versuche es erneut.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "Der unbestätigte Gist enthält die Backup-Datei nicht. Stelle die Datei auf GitHub wieder her oder lösche diesen Gist und versuche es erneut.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "Eine frühere Gist-Erstellung ist noch unbestätigt, aber eine andere Gist-ID wurde eingegeben. Bestätige oder entferne zuerst dieses offene Ergebnis, bevor du zu einem anderen Gist wechselst.",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

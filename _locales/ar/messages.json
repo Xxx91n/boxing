@@ -1528,10 +1528,11 @@
     "message": "تعذر التحقق من حساب GitHub أو Gists الخاصة به. تم إيقاف النسخ الاحتياطي التلقائي لـ Gist."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Gist موجود بالفعل. التحديث التلقائي لـ Gist موجود غير مفعّل بعد."
+    "message": "هذا الـ Gist موجود بالفعل. لا يوفّر GitHub طريقة مُثبتة تمنع الكتابة فوق تغييرات كاتب آخر، لذا يبقى التحديث التلقائي متوقفًا. ويمكن النسخ الاحتياطي اليدوي ما دام الهدف واسم الملف كما هما.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "يوجد Gist بهذا اسم الملف بالفعل لكن Boxing لا يتتبعه. تم إيقاف النسخ الاحتياطي التلقائي."
+    "message": "يوجد Gist بهذا اسم الملف بالفعل لكن Boxing لا يتتبعه. تم إيقاف النسخ الاحتياطي التلقائي. أدخل معرّف هذا الـ Gist في حقل Gist ID لاستخدامه مجددًا."
   },
   "gistAutoBackupErrTooLarge": {
     "message": "بيانات النسخ الاحتياطي كبيرة جدًا للإرسال تلقائيًا. تم إيقاف النسخ الاحتياطي التلقائي لـ Gist."
@@ -1551,5 +1552,21 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "رفض الخادم تحديث النسخة الاحتياطية هذا.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "تعذّر على Boxing فحص جميع الـ Gist في هذا الحساب، لذا تم إيقاف النسخ الاحتياطي مؤقتًا. أدخل معرّف الـ Gist الموجود أو قلّل عدد الـ Gist ثم حاول مرة أخرى.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "لا يزال إنشاء Gist السابق غير مؤكد، وقد تغيّر اسم ملف النسخة الاحتياطية. أعد اسم الملف الذي استُخدم في تلك المحاولة ثم حاول مرة أخرى.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "الـ Gist غير المؤكد لا يحتوي على ملف النسخة الاحتياطية. استعد هذا الملف على GitHub أو احذف هذا الـ Gist ثم حاول مرة أخرى.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "لا يزال إنشاء Gist السابق غير مؤكد، وقد أُدخل معرّف Gist مختلف. أكّد هذه النتيجة المعلّقة أو امسحها قبل الانتقال إلى Gist آخر.",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

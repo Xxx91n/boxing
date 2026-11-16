@@ -1531,10 +1531,11 @@
     "message": "无法核对 GitHub 账号或其 Gist，自动 Gist 备份已暂停。"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "该 Gist 已存在。暂不支持自动更新已有 Gist。"
+    "message": "这个 Gist 已经存在。GitHub 没有可验证的办法防止覆盖别处的改动，所以自动更新先暂停；只要目标和文件名不变，手动备份照常可用。",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "该文件名对应的 Gist 已存在，但 Boxing 没有记录它。自动备份已暂停。"
+    "message": "该文件名对应的 Gist 已存在，但 Boxing 没有记录它。自动备份已暂停。在 Gist ID 里填上这个 Gist 的 ID，就能继续用它。"
   },
   "gistAutoBackupErrTooLarge": {
     "message": "备份数据太大，无法自动上传。自动 Gist 备份已暂停。"
@@ -1554,5 +1555,21 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "服务器拒绝了这次备份更新。",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing 没能把这个账号里的 Gist 全部核对完，所以先暂停备份。请填写已有的 Gist ID，或减少 Gist 数量后再试。",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "上一次 Gist 创建还没确认，备份文件名却改了。把文件名改回那次用的名字，然后再试。",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "这个还没确认的 Gist 里没有备份文件。请先在 GitHub 上恢复该文件，或删掉这个 Gist，然后再试。",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "上一次 Gist 创建还没确认，但你填了另一个 Gist ID。先把那次结果确认或清掉，再换目标。",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

@@ -207,7 +207,9 @@ export function initSyncEngineFacade(deps) {
       if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.sendMessage) {
         return browser.runtime.sendMessage(msg).then(resp => {
           if (resp && (resp.success || resp.needPermission || resp.blocked)) return resp;
-          throw new Error(resp && resp.error ? resp.error : 'BG error');
+          const err = new Error(resp && resp.error ? resp.error : 'BG error');
+          if (resp && resp.reasonCode) err.reasonCode = resp.reasonCode;
+          throw err;
         });
       }
       // Fall back to callback-style (Chrome chrome.* API)
@@ -220,7 +222,11 @@ export function initSyncEngineFacade(deps) {
                 return;
               }
               if (resp && (resp.success || resp.needPermission || resp.blocked)) resolve(resp);
-              else if (resp && !resp.success) reject(new Error(resp.error || 'BG error'));
+              else if (resp && !resp.success) {
+                const err = new Error(resp.error || 'BG error');
+                if (resp.reasonCode) err.reasonCode = resp.reasonCode;
+                reject(err);
+              }
               else reject(new Error('No response from background'));
             });
           } catch (e) { reject(e); }
@@ -1237,8 +1243,7 @@ export function initSyncEngineFacade(deps) {
     }
 
     async function backupToGist() {
-      const token = gistTokenInput?.value?.trim();
-      if (!token) throw gistPrecheckError('GitHub token not configured');
+      const token = gistTokenInput?.value?.trim() || '';
       // Ticket #126: do not race the background first-create. A pending POST result
       // means a Gist may already exist; a trusted baseline is the real target even
       // before the settings field has been mirrored.
@@ -1250,7 +1255,12 @@ export function initSyncEngineFacade(deps) {
         throw gistPrecheckError('Could not read auto-backup state');
       }
       const remote = autoState && autoState.remote ? autoState.remote : {};
-      if (remote.pendingCreate) throw gistPrecheckError(i18n('gistAutoBackupErrUnknown'));
+      // A real extension lets the background decide: a pending marker with a known
+      // Gist id can be confirmed with a GET, and only an id-less marker pauses.
+      // The file:// fallback has no worker to do that, so it keeps the hard stop.
+      if (remote.pendingCreate && !hasExtensionRuntime()) {
+        throw gistPrecheckError(i18n('gistAutoBackupErrUnknown'));
+      }
       const baselineId = remote.baseline && remote.baseline.service === 'gist' ? remote.baseline.gistId : '';
       const gistId = layout.settings.gistId || gistIdInput?.value?.trim() || baselineId;
       if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw gistPrecheckError('Invalid Gist ID');
@@ -1258,6 +1268,42 @@ export function initSyncEngineFacade(deps) {
       // (Bug16): honor custom sync filename; default boxing-backup.json.
       const _rawName = (layout.settings.syncFileName || '').trim().replace(/[\\/]/g, '_').replace(/[\x00-\x1f]/g, '');
       const GIST_FILENAME = _rawName || 'boxing-backup.json';
+      // Ticket #128: a real extension sends every Gist write through the background
+      // queue. The page no longer PATCHes/POSTs GitHub itself, so two tabs and the
+      // unattended first create cannot overwrite each other.
+      if (hasExtensionRuntime()) {
+        let resp = null;
+        try {
+          resp = await sendToBackground({
+            type: 'gist-write',
+            gistId,
+            fileName: GIST_FILENAME,
+            content,
+            // A token typed just now may still be flushing to storage. Send it
+            // along so the background does not reject a valid click.
+            token,
+          });
+        } catch (e) {
+          const code = e && e.reasonCode;
+          if (code && REMOTE_REASON_META[code]) throw new Error(i18n(REMOTE_REASON_META[code].i18n));
+          throw e;
+        }
+        if (resp && resp.needPermission) throw new Error(i18n('gistAutoBackupErrPermission'));
+        if (!resp || !resp.success) {
+          const code = resp && resp.reasonCode;
+          if (code && REMOTE_REASON_META[code]) throw new Error(i18n(REMOTE_REASON_META[code].i18n));
+          throw new Error(i18n('gistBackupFail'));
+        }
+        if (resp.gistId && !layout.settings.gistId) {
+          layout.settings.gistId = resp.gistId;
+          if (gistIdInput) gistIdInput.value = resp.gistId;
+          saveLayout();
+        }
+        return true;
+      }
+      // Non-extension contexts (file:// tests, the standalone demo) keep the old
+      // direct request; there is no second extension context to serialise against.
+      if (!token) throw gistPrecheckError('GitHub token not configured');
       const h = new Headers({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' });
       let resp, result;
       if (gistId) {
@@ -1515,6 +1561,10 @@ export function initSyncEngineFacade(deps) {
       gistCheckFailed: { i18n: 'gistAutoBackupErrCheck' },
       gistUpdateNotEnabled: { i18n: 'gistAutoBackupErrUpdate' },
       gistPayloadTooLarge: { i18n: 'gistAutoBackupErrTooLarge' },
+      gistListTooMany: { i18n: 'gistAutoBackupErrListTooMany' },
+      gistPendingFileNameChanged: { i18n: 'gistAutoBackupErrPendingName' },
+      gistPendingFileMissing: { i18n: 'gistAutoBackupErrPendingFile' },
+      gistPendingTargetChanged: { i18n: 'gistAutoBackupErrPendingTarget' },
     };
 
     function formatRemoteAutoBackupState(remote, currentProvider) {

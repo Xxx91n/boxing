@@ -1528,10 +1528,11 @@
     "message": "Impossible de vérifier le compte GitHub ou ses Gists. La sauvegarde Gist automatique est en pause."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Le Gist existe déjà. La mise à jour automatique d’un Gist existant n’est pas encore activée."
+    "message": "Ce Gist existe déjà. GitHub ne fournit pas de moyen vérifié d’empêcher l’écrasement des modifications d’un autre auteur ; la mise à jour automatique reste donc en pause. La sauvegarde manuelle fonctionne toujours tant que la cible et le nom du fichier ne changent pas.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "Un Gist portant ce nom de fichier existe déjà mais n’est pas suivi par Boxing. La sauvegarde automatique est en pause."
+    "message": "Un Gist portant ce nom de fichier existe déjà mais n’est pas suivi par Boxing. La sauvegarde automatique est en pause. Saisissez l’ID de ce Gist dans le champ Gist ID pour le réutiliser."
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Les données de sauvegarde sont trop volumineuses pour un envoi automatique. La sauvegarde Gist automatique est en pause."
@@ -1551,5 +1552,21 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "Le serveur a refusé cette mise à jour de la sauvegarde.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing n’a pas pu vérifier tous les Gists de ce compte ; la sauvegarde est en pause. Saisissez l’ID du Gist existant ou réduisez le nombre de Gists, puis réessayez.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "Une création de Gist précédente n’est toujours pas confirmée et le nom du fichier de sauvegarde a changé. Remettez le nom utilisé lors de cette tentative, puis réessayez.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "Le Gist non confirmé ne contient pas le fichier de sauvegarde. Restaurez ce fichier sur GitHub ou supprimez ce Gist, puis réessayez.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "Une création de Gist précédente n’est toujours pas confirmée et un autre ID de Gist a été saisi. Confirmez ou effacez ce résultat en attente avant de passer à un autre Gist.",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

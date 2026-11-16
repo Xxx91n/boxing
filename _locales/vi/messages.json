@@ -1528,10 +1528,11 @@
     "message": "Không thể xác minh tài khoản GitHub hoặc các Gist của tài khoản. Sao lưu Gist tự động đã tạm dừng."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Gist đã tồn tại. Chưa hỗ trợ tự động cập nhật Gist hiện có."
+    "message": "Gist này đã tồn tại. GitHub không có cách đã được kiểm chứng để ngăn ghi đè thay đổi của người viết khác, nên tự động cập nhật vẫn tạm dừng. Sao lưu thủ công vẫn dùng được khi đích và tên tệp không đổi.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "Đã có Gist với tên tệp này nhưng Boxing không theo dõi nó. Sao lưu tự động đã tạm dừng."
+    "message": "Đã có Gist với tên tệp này nhưng Boxing không theo dõi nó. Sao lưu tự động đã tạm dừng. Nhập ID của Gist này vào ô Gist ID để dùng lại."
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Dữ liệu sao lưu quá lớn để gửi tự động. Sao lưu Gist tự động đã tạm dừng."
@@ -1551,5 +1552,21 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "Máy chủ đã từ chối bản cập nhật sao lưu này.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing không thể kiểm tra hết các Gist trong tài khoản này, nên bản sao lưu đang tạm dừng. Hãy nhập ID Gist đã có hoặc giảm số lượng Gist rồi thử lại.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "Lần tạo Gist trước vẫn chưa được xác nhận, nhưng tên tệp sao lưu đã đổi. Hãy đổi lại tên tệp đã dùng trong lần đó rồi thử lại.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "Gist chưa được xác nhận không có tệp sao lưu. Hãy khôi phục tệp đó trên GitHub hoặc xóa Gist này rồi thử lại.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "Lần tạo Gist trước vẫn chưa được xác nhận, nhưng một ID Gist khác đã được nhập. Hãy xác nhận hoặc xóa kết quả đang chờ đó trước khi chuyển sang Gist khác.",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

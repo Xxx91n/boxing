@@ -1594,7 +1594,7 @@
     "description": "Background Gist backup paused because the saved target changed"
   },
   "gistAutoBackupErrExisting": {
-    "message": "A Gist with this file name already exists but is not tracked by Boxing. Automatic backup is paused.",
+    "message": "A Gist with this file name already exists but is not tracked by Boxing. Automatic backup is paused. Enter that Gist's ID in the Gist ID field to reuse it.",
     "description": "Background Gist backup paused because the account already has an untracked Gist with the target file"
   },
   "gistAutoBackupErrUnknown": {
@@ -1614,8 +1614,8 @@
     "description": "Background Gist backup paused because the account check failed"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "The Gist already exists. Automatic updates of an existing Gist are not enabled yet.",
-    "description": "Background Gist backup stopped because only first creation is supported"
+    "message": "The Gist already exists. GitHub provides no verified way to stop a competing writer from being overwritten, so automatic updates stay paused. Manual backup still works while the target and file name stay the same.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "autoBackupCloudReasonRemoteChanged": {
     "message": "The remote file was changed by another device, so this backup was not uploaded. Run a manual sync to merge it first.",
@@ -1632,5 +1632,21 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "The server refused this backup update.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing could not check every Gist in this account, so the backup is paused. Enter the existing Gist ID, or reduce the number of Gists, then try again.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "An earlier Gist creation is still unconfirmed, and the backup file name has changed. Change the file name back to the one used for that attempt, then try again.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "The unconfirmed Gist does not contain the backup file. Restore that file on GitHub, or delete that Gist, then try again.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "An earlier Gist creation is still unconfirmed, and a different Gist ID was entered. Confirm or clear that pending result before switching to another Gist.",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

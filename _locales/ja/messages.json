@@ -1528,10 +1528,11 @@
     "message": "GitHub アカウントまたは Gist を確認できませんでした。自動 Gist バックアップを停止しました。"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "この Gist は既に存在します。既存 Gist の自動更新はまだ有効ではありません。"
+    "message": "この Gist は既に存在します。GitHub には、他の書き手の変更を上書きしないことを保証できる確認済みの方法がないため、自動更新は停止したままです。保存先とファイル名が変わらなければ、手動バックアップは引き続き使えます。",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "このファイル名の Gist は既に存在しますが、Boxing に記録されていません。自動バックアップを停止しました。"
+    "message": "このファイル名の Gist は既に存在しますが、Boxing に記録されていません。自動バックアップを停止しました。Gist ID 欄にこの Gist の ID を入力すると、そのまま使い続けられます。"
   },
   "gistAutoBackupErrTooLarge": {
     "message": "バックアップデータが大きすぎて自動送信できません。自動 Gist バックアップを停止しました。"
@@ -1551,5 +1552,21 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "サーバーがこのバックアップ更新を拒否しました。",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "このアカウントの Gist をすべて確認できなかったため、バックアップを停止しています。既存の Gist ID を入力するか、Gist の数を減らしてから再試行してください。",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "以前の Gist 作成がまだ確認できていないのに、バックアップのファイル名が変わっています。そのとき使ったファイル名に戻してから、もう一度お試しください。",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "未確認の Gist にバックアップファイルがありません。GitHub でそのファイルを復元するか、この Gist を削除してから、もう一度お試しください。",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "以前の Gist 作成がまだ確認できていないのに、別の Gist ID が入力されました。その未確認の結果を確認または消去してから、別の Gist に切り替えてください。",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

@@ -1528,10 +1528,11 @@
     "message": "ไม่สามารถตรวจสอบบัญชี GitHub หรือ Gist ของบัญชีได้ การสำรอง Gist อัตโนมัติหยุดชั่วคราว"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Gist มีอยู่แล้ว ยังไม่รองรับการอัปเดต Gist ที่มีอยู่โดยอัตโนมัติ"
+    "message": "Gist นี้มีอยู่แล้ว GitHub ไม่มีวิธีที่พิสูจน์แล้วว่าจะกันไม่ให้เขียนทับการแก้ไขของคนอื่นได้ การอัปเดตอัตโนมัติจึงยังหยุดอยู่ ส่วนการสำรองข้อมูลด้วยมือยังใช้ได้ตราบที่ปลายทางและชื่อไฟล์ไม่เปลี่ยน",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "มี Gist ที่ใช้ชื่อไฟล์นี้อยู่แล้ว แต่ Boxing ไม่ได้ติดตามไว้ การสำรองอัตโนมัติหยุดชั่วคราว"
+    "message": "มี Gist ที่ใช้ชื่อไฟล์นี้อยู่แล้ว แต่ Boxing ไม่ได้ติดตามไว้ การสำรองอัตโนมัติหยุดชั่วคราว กรอก ID ของ Gist นี้ในช่อง Gist ID เพื่อใช้ต่อ"
   },
   "gistAutoBackupErrTooLarge": {
     "message": "ข้อมูลสำรองมีขนาดใหญ่เกินกว่าจะส่งอัตโนมัติ การสำรอง Gist อัตโนมัติหยุดชั่วคราว"
@@ -1551,5 +1552,21 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "เซิร์ฟเวอร์ปฏิเสธการอัปเดตแบ็กอัปนี้",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing ตรวจสอบ Gist ทั้งหมดในบัญชีนี้ไม่ครบ จึงหยุดการสำรองข้อมูลไว้ก่อน กรอก ID ของ Gist ที่มีอยู่ หรือลดจำนวน Gist แล้วลองอีกครั้ง",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "การสร้าง Gist ครั้งก่อนยังไม่ได้ยืนยัน แต่ชื่อไฟล์สำรองเปลี่ยนไปแล้ว เปลี่ยนชื่อไฟล์กลับเป็นชื่อที่ใช้ตอนนั้น แล้วลองอีกครั้ง",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "Gist ที่ยังไม่ได้ยืนยันไม่มีไฟล์สำรอง กู้คืนไฟล์นั้นบน GitHub หรือลบ Gist นี้ แล้วลองอีกครั้ง",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "การสร้าง Gist ครั้งก่อนยังไม่ได้ยืนยัน แต่มีการกรอก Gist ID อื่น ยืนยันหรือล้างผลลัพธ์ที่ค้างอยู่นี้ก่อนจะเปลี่ยนไปใช้ Gist อื่น",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }
