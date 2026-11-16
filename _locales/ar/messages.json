@@ -1456,6 +1456,10 @@
     "message": "نتيجة الرفع غير معروفة. تحقق من الملف البعيد ثم أوقف النسخ التلقائي وشغّله من جديد لإعادة المحاولة.",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "الملف على الخادم مقفل أو مشغول. لم يُكتب شيء؛ أعد المحاولة بعد أن يتحرر.",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "تغيّر عنوان WebDAV أو الحساب أو اسم الملف. أكّد الهدف الجديد قبل استئناف النسخ التلقائي.",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "أوقف النسخ التلقائي ثم شغّله من جديد لإعادة المحاولة بعد إصلاح الجانب البعيد.",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "مشكلة في الشبكة. ستُعاد المحاولة تلقائيًا ($attempt$ من 3) بعد نحو $minutes$ دقيقة.",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "تحقّق ثم أعد المحاولة",

@@ -1456,6 +1456,10 @@
     "message": "अपलोड का नतीजा अज्ञात है। रिमोट फ़ाइल जाँचें, फिर अपने आप बैकअप बंद और चालू करके दोबारा कोशिश करें।",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "सर्वर पर फ़ाइल लॉक या व्यस्त है। कुछ भी नहीं लिखा गया; खाली होने पर फिर कोशिश करें।",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "WebDAV पता, खाता या फ़ाइल नाम बदल गया है। अपने आप बैकअप फिर शुरू करने से पहले नया लक्ष्य पुष्टि करें।",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "रिमोट साइड ठीक करने के बाद अपने आप बैकअप बंद करके फिर चालू करें, ताकि दोबारा कोशिश हो सके।",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "नेटवर्क में दिक्कत है। लगभग $minutes$ मिनट बाद अपने आप $attempt$ / 3 वीं कोशिश होगी।",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "जाँच करके फिर कोशिश करें",

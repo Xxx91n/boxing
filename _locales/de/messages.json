@@ -1456,6 +1456,10 @@
     "message": "Das Upload-Ergebnis ist unbekannt. Prüfe die Remote-Datei und schalte die automatische Sicherung aus und wieder ein, um es erneut zu versuchen.",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "Die Datei auf dem Server ist gesperrt oder belegt. Es wurde nichts geschrieben; versuche es später erneut.",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "WebDAV-Adresse, Konto oder Dateiname haben sich geändert. Bestätige das neue Ziel, bevor die automatische Sicherung weiterläuft.",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "Schalte die automatische Sicherung aus und wieder ein, um es nach dem Beheben der Remote-Seite erneut zu versuchen.",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "Netzwerkproblem. Automatischer Versuch $attempt$ von 3 in etwa $minutes$ Min.",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "Prüfen und erneut versuchen",

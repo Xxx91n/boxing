@@ -1456,6 +1456,10 @@
     "message": "Không rõ kết quả tải lên. Hãy kiểm tra tệp từ xa, rồi tắt và bật lại sao lưu tự động để thử lại.",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "Tệp trên máy chủ đang bị khóa hoặc đang bận. Không có gì được ghi; thử lại khi nó rảnh.",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "Địa chỉ, tài khoản hoặc tên tệp WebDAV đã thay đổi. Hãy xác nhận mục tiêu mới trước khi tiếp tục sao lưu tự động.",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "Tắt rồi bật lại sao lưu tự động để thử lại sau khi xử lý phía từ xa.",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "Mạng đang có vấn đề. Sẽ tự thử lại lần $attempt$/3 sau khoảng $minutes$ phút.",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "Kiểm tra rồi thử lại",

@@ -1456,6 +1456,10 @@
     "message": "アップロードの結果が不明です。リモートファイルを確認し、自動バックアップをいったんオフにしてから再度オンにして再試行してください。",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "サーバー上のファイルがロック中か使用中です。何も書き込んでいません。空いてからもう一度お試しください。",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "WebDAV のアドレス、アカウント、またはファイル名が変更されました。自動バックアップを再開する前に新しいターゲットを確認してください。",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "リモート側を直したあと、自動バックアップをいったんオフにしてから再度オンにすると再試行できます。",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "通信に問題があります。$minutes$ 分ほど後に自動で $attempt$ 回目の再試行をします（最大 3 回）。",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "確認してから再試行",

@@ -1550,6 +1550,8 @@ export function initSyncEngineFacade(deps) {
       'baseline-unverified': { i18n: 'autoBackupCloudReasonBaselineUnverified' },
       'remote-missing': { i18n: 'autoBackupCloudReasonRemoteMissing' },
       'update-failed': { i18n: 'autoBackupCloudReasonUpdateFailed' },
+      // Ticket #130: a locked/conflicting file pauses; it is not a network hiccup.
+      'remote-locked': { i18n: 'autoBackupCloudReasonRemoteLocked' },
       // Ticket #126 (Gist first-create) stable codes.
       gistTokenMissing: { i18n: 'gistAutoBackupErrToken', action: 'credentials' },
       gistPermissionMissing: { i18n: 'gistAutoBackupErrPermission', action: 'permission' },
@@ -1567,7 +1569,7 @@ export function initSyncEngineFacade(deps) {
       gistPendingTargetChanged: { i18n: 'gistAutoBackupErrPendingTarget' },
     };
 
-    function formatRemoteAutoBackupState(remote, currentProvider) {
+    function formatRemoteAutoBackupState(remote, currentProvider, retry) {
       if (!remote || remote.status === 'idle') return { text: '', state: 'idle', action: null };
       const meta = REMOTE_REASON_META[remote.lastErrorCode] || {};
       const reason = i18n(meta.i18n || 'autoBackupCloudReasonError');
@@ -1608,8 +1610,17 @@ export function initSyncEngineFacade(deps) {
           action: fixAction,
         };
       }
+      // Ticket #130: a temporary failure says when the next extra attempt happens,
+      // so the user does not have to guess whether anything is still running.
+      const retryAt = Math.max(0, Number(retry && retry.nextAt) || 0);
+      const retryHint = (retry && retry.code && retryAt > Date.now())
+        ? ' ' + i18n('autoBackupCloudRetryScheduled', [
+            String(Math.max(1, Math.min(3, Number(retry.attempt) || 1))),
+            String(Math.max(1, Math.ceil((retryAt - Date.now()) / 60000))),
+          ])
+        : '';
       return {
-        text: i18n('autoBackupCloudStatusError', [reason]) + lastSuffix,
+        text: i18n('autoBackupCloudStatusError', [reason]) + retryHint + lastSuffix,
         state: 'error',
         action: fixAction,
       };
@@ -1685,7 +1696,7 @@ export function initSyncEngineFacade(deps) {
       }
       if (autoBackupRemoteEl) {
         const provider = layout.settings.syncProvider || 'local';
-        const remoteLine = formatRemoteAutoBackupState(state && state.remote, provider);
+        const remoteLine = formatRemoteAutoBackupState(state && state.remote, provider, state && state.retry);
         autoBackupRemoteEl.textContent = remoteLine.text;
         autoBackupRemoteEl.hidden = !remoteLine.text;
         if (remoteLine.text) autoBackupRemoteEl.dataset.state = remoteLine.state;

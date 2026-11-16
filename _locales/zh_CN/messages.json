@@ -1459,6 +1459,10 @@
     "message": "上传结果未知。请检查远端文件，然后关闭再开启自动备份以重试。",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "云端文件被锁住或正忙，这次没有写入。等它空出来再试。",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "WebDAV 地址、账号或文件名已变更。请确认新目标后再恢复自动备份。",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1470,6 +1474,18 @@
   "autoBackupCloudRetryHint": {
     "message": "处理完远端后，把自动备份关一次再打开就能重试。",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "网络出了点问题，第 $attempt$ 次自动重试大约 $minutes$ 分钟后进行。",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "检查后重试",

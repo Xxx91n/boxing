@@ -874,7 +874,7 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
     expect(readRemote(env).status).toBe('ok');
   });
 
-  test('a locked probe retries instead of blocking forever', async () => {
+  test('a locked probe pauses for the user instead of burning retries', async () => {
     const webdav = createFakeWebdav({ existingBody: OLD_REMOTE, putBehavior: '409' });
     const env = updateEnv({
       webdav,
@@ -885,9 +885,14 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
 
     expect(puts(env)).toHaveLength(1);
     const remote = readRemote(env);
-    expect(remote.status).toBe('error');
-    expect(remote.lastErrorCode).toBe('update-failed');
+    // Ticket #130: a lock/conflict is not a network hiccup, so it is a readable pause
+    // with no automatic retry plan rather than a three-attempt error loop.
+    expect(remote.status).toBe('paused');
+    expect(remote.lastErrorCode).toBe('remote-locked');
     expect(remote.lastSuccessAt).toBe(1000);
+    const state = env.sandbox.__boxingSnapshotCore.normalizeAutoBackupState(env.store.autoBackupState);
+    expect(state.retry.nextAt).toBe(0);
+    expect(state.retry.attempt).toBe(0);
   });
 
   test('a created file with no readable ETag pauses instead of pretending it can continue', async () => {

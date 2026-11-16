@@ -1523,6 +1523,10 @@
     "message": "The upload result is unknown. Check the remote file, then turn auto-backup off and on to retry.",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "The file on the server is locked or busy. Nothing was written; try again after it frees up.",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "The WebDAV address, account, or file name changed. Confirm the new target before auto-backup resumes.",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1534,6 +1538,18 @@
   "autoBackupCloudRetryHint": {
     "message": "Turn auto-backup off and on to retry after fixing the remote side.",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "Network trouble. Automatic retry $attempt$ of 3 in about $minutes$ min.",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "Check and retry",

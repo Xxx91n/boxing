@@ -1456,6 +1456,10 @@
     "message": "Le résultat de l'envoi est inconnu. Vérifiez le fichier distant, puis désactivez et réactivez la sauvegarde automatique pour réessayer.",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "Le fichier distant est verrouillé ou occupé. Rien n'a été écrit ; réessayez quand il sera libre.",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "L'adresse, le compte ou le nom de fichier WebDAV ont changé. Confirmez la nouvelle cible avant de reprendre la sauvegarde automatique.",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "Désactivez puis réactivez la sauvegarde automatique pour réessayer après avoir corrigé le côté distant.",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "Problème réseau. Nouvelle tentative automatique $attempt$ sur 3 dans environ $minutes$ min.",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "Vérifier puis réessayer",
