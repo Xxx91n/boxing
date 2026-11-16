@@ -1363,7 +1363,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "Автоматически сохраняет локальные снимки в этом браузере, даже когда новая вкладка закрыта. Без загрузки файлов и отправки в сеть.",
+    "message": "Автоматически сохраняет локальные снимки в фоне этого браузера, даже когда новая вкладка закрыта. При выборе WebDAV первая облачная копия создаётся только при подтверждённой безопасности; существующий удалённый файл никогда не перезаписывается автоматически.",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1389,6 +1389,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "Пауза — нужно подтверждение",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "Облачная копия создана",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "Облачная копия приостановлена — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "Результат облачной копии неизвестен — проверьте удалённый файл перед повтором",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "Облачная копия не удалась — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "Последняя облачная копия",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "Доступ к WebDAV ещё не выдан. Нажмите кнопку разрешения выше и повторите попытку.",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "Удалённый файл уже существует и не подтверждён этим браузером, поэтому ничего не перезаписано.",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "Не удалось связаться с удалённым сервером.",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "Учётная запись или пароль WebDAV отклонены.",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "Сохранённый адрес WebDAV небезопасен для автоматической загрузки.",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "Не удалось прочитать сохранённый пароль WebDAV. Введите его заново, чтобы продолжить.",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "Другой писатель изменил удалённый файл во время создания.",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "Сервер не подтвердил, что создание только нового файла действительно применяется, поэтому автозагрузка остановлена.",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "Результат загрузки неизвестен. Проверьте удалённый файл, затем выключите и снова включите авторезервное копирование.",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "Адрес, учётная запись или имя файла WebDAV изменились. Подтвердите новую цель, прежде чем возобновить копирование.",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "Неожиданная ошибка при автоматической загрузке.",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "Выключите и снова включите авторезервное копирование, чтобы повторить попытку после исправления удалённой стороны.",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "Прежний интервал сохранён. Фоновое локальное автосохранение не запустится, пока вы не включите его здесь.",

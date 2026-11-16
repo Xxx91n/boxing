@@ -1363,7 +1363,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "Speichert lokale Schnappschüsse automatisch in diesem Browser, auch ohne geöffneten Neuen Tab. Lädt nichts hoch und lädt keine Dateien herunter.",
+    "message": "Speichert lokale Schnappschüsse automatisch im Hintergrund dieses Browsers, auch ohne geöffneten Neuen Tab. Bei ausgewähltem WebDAV wird die erste Cloud-Sicherung nur erstellt, wenn das sicher möglich ist; eine vorhandene Remote-Datei wird nie automatisch überschrieben.",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1389,6 +1389,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "Pausiert — Bestätigung nötig",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "Cloud-Sicherung erstellt",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "Cloud-Sicherung pausiert — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "Ergebnis der Cloud-Sicherung unbekannt — prüfe die Remote-Datei, bevor du es erneut versuchst",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "Cloud-Sicherung fehlgeschlagen — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "Letzte Cloud-Sicherung",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "WebDAV-Zugriff ist noch nicht erlaubt. Nutze die Berechtigungsschaltfläche oben und versuche es dann erneut.",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "Die Remote-Datei existiert bereits und ist in diesem Browser nicht bestätigt, daher wurde nichts überschrieben.",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "Der Remote-Server war nicht erreichbar.",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "WebDAV-Konto oder Passwort wurde abgelehnt.",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "Die gespeicherte WebDAV-Adresse ist für automatisches Hochladen nicht sicher.",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "Das gespeicherte WebDAV-Passwort konnte nicht gelesen werden. Gib es erneut ein, um fortzufahren.",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "Ein anderer Schreiber hat die Remote-Datei während der Erstellung geändert.",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "Der Server hat nicht nachgewiesen, dass nur-neu-Anlegen erzwungen wird; der automatische Upload wurde gestoppt.",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "Das Upload-Ergebnis ist unbekannt. Prüfe die Remote-Datei und schalte die automatische Sicherung aus und wieder ein, um es erneut zu versuchen.",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "WebDAV-Adresse, Konto oder Dateiname haben sich geändert. Bestätige das neue Ziel, bevor die automatische Sicherung weiterläuft.",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "Unerwarteter Fehler beim automatischen Hochladen.",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "Schalte die automatische Sicherung aus und wieder ein, um es nach dem Beheben der Remote-Seite erneut zu versuchen.",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "Ihr früheres Sicherungsintervall blieb erhalten. Die lokale Hintergrundsicherung startet erst, wenn Sie sie hier aktivieren.",
