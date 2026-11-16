@@ -101,11 +101,14 @@ function waitForAbort(signal?: AbortSignal): Promise<never> {
 interface WebdavOptions {
   existingBody?: string | null;
   existingEtag?: string;
-  getBehavior?: 'ok' | 'throw' | '401' | '503';
+  getBehavior?: 'ok' | 'throw' | '401' | '503' | '423';
   getHangs?: boolean;
   retryAfter?: string;
   putBehavior?: 'ok' | '409' | '409-locked' | 'lost-response';
   putHangs?: boolean;
+  /** Fixed status for every PUT (used to exercise the probe sibling). */
+  putStatus?: number;
+  putRetryAfter?: string;
   omitPutEtag?: boolean;
 }
 
@@ -188,6 +191,7 @@ function createWorld(opts: WorldOptions = {}) {
       if (wd.getHangs) await waitForAbort(init.signal);
       if (wd.getBehavior === 'throw') throw new TypeError('network down');
       if (wd.getBehavior === '401') return new Response(null, { status: 401 });
+      if (wd.getBehavior === '423') return new Response(null, { status: 423 });
       if (wd.getBehavior === '503') {
         const headers: Record<string, string> = {};
         if (wd.retryAfter) headers['Retry-After'] = wd.retryAfter;
@@ -217,6 +221,11 @@ function createWorld(opts: WorldOptions = {}) {
         files.set(url, req.body);
         etags.set(url, '"lost-1"');
         await waitForAbort(init.signal);
+      }
+      if (wd.putStatus) {
+        const headers: Record<string, string> = {};
+        if (wd.putRetryAfter) headers['Retry-After'] = wd.putRetryAfter;
+        return new Response(null, { status: wd.putStatus, headers });
       }
       if (wd.putBehavior === '409') return new Response(null, { status: 409 });
       if (wd.putBehavior === '409-locked') return new Response(null, { status: 423 });
@@ -766,5 +775,158 @@ test.describe('Ticket #130 — bounded retry and off switch (controlled service)
     expect(state.remote.status).toBe('unknown');
     expect(state.remote.lastErrorCode).toBe('gistResultUnknown');
     expect(world.gistCalls.filter((c) => c.method === 'POST')).toHaveLength(0);
+  });
+
+  test('a same-named Gist created just before the POST started is not confirmed either', async () => {
+    const startedAt = Date.now();
+    const list = [
+      {
+        id: 'abcdef123456',
+        files: { [GIST_FILE]: { filename: GIST_FILE, size: 200 } },
+        owner: { login: 'spec-user', id: 42 },
+        created_at: new Date(startedAt - 120_000).toISOString(),
+        updated_at: new Date(startedAt - 120_000).toISOString(),
+      },
+    ];
+    const world = createWorld({ gist: { list } });
+    const env = createSandbox({
+      world,
+      layout: seedLayout({
+        settings: {
+          syncProvider: 'gist',
+          _encGistToken: 'spec-token',
+          gistId: '',
+          syncFileName: GIST_FILE,
+        },
+      }),
+      state: seedState({
+        remote: {
+          provider: 'gist',
+          status: 'unknown',
+          lastAttemptAt: 1,
+          lastSuccessAt: 0,
+          lastErrorCode: 'gistResultUnknown',
+          account: { login: 'spec-user', id: 42 },
+          baseline: null,
+          pendingCreate: {
+            provider: 'gist',
+            fileName: GIST_FILE,
+            description: 'Boxing backup',
+            startedAt,
+            accountLogin: 'spec-user',
+            accountId: 42,
+            gistId: '',
+          },
+        },
+      }),
+    });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const state = env.readState();
+    expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastErrorCode).toBe('gistResultUnknown');
+    expect(world.gistCalls.filter((c) => c.method === 'POST')).toHaveLength(0);
+  });
+
+  test('a locked remote read pauses instead of planning retries', async () => {
+    const world = createWorld({ webdav: { getBehavior: '423' } });
+    const env = createSandbox({ world });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const state = env.readState();
+    expect(state.remote.lastErrorCode).toBe('remote-locked');
+    expect(state.retry.nextAt).toBe(0);
+    expect(world.requests.filter((r) => r.method === 'PUT')).toHaveLength(0);
+  });
+
+  test('a probe sibling that answers 503 keeps the server Retry-After', async () => {
+    const env = createSandbox({
+      world: createWorld({
+        webdav: { existingBody: '{"boxes":[]}', etag: '"v1"', putStatus: 503, putRetryAfter: '1800' },
+      }),
+      state: seedState({
+        remote: {
+          provider: 'webdav',
+          status: 'idle',
+          lastAttemptAt: 1,
+          lastSuccessAt: 1000,
+          lastErrorCode: null,
+          baseline: {
+            service: 'webdav', fileUrl: WEBDAV_FILE_URL, account: ACCOUNT,
+            createdAt: 1, etag: '"v1"', version: '"v1"', verifiedAt: 1, conditionalVerifiedAt: 0,
+          },
+        },
+      }),
+    });
+
+    const before = Date.now();
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const state = env.readState();
+    expect(state.remote.lastErrorCode).toBe('update-failed');
+    expect(state.retry.attempt).toBe(1);
+    expect(state.retry.nextAt - before).toBeGreaterThanOrEqual(1_800_000);
+    expect(state.remote.notBeforeAt - before).toBeGreaterThanOrEqual(1_800_000);
+  });
+
+  test('the ordinary alarm also waits for the server Retry-After window', async () => {
+    const world = createWorld({ webdav: { getBehavior: '503', retryAfter: '7200' } });
+    const env = createSandbox({ world });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const first = env.readState();
+    expect(first.remote.notBeforeAt).toBeGreaterThan(Date.now() + 7_000_000);
+
+    const requestsBefore = world.requests.length;
+    const second = await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    expect(second.skipped).toBe(true);
+    expect(second.reason).toBe('server-wait');
+    expect(world.requests.length).toBe(requestsBefore);
+  });
+
+  test('a stopped automatic result keeps a newer manual WebDAV baseline', async () => {
+    const world = createWorld({ webdav: { putBehavior: 'lost-response' } });
+    const env = createSandbox({ world });
+    const running = env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    await expect.poll(() => world.files.has(WEBDAV_FILE_URL), { timeout: 5000 }).toBe(true);
+
+    // A manual sync commits and advances the trusted version while the auto PUT hangs.
+    env.store.autoBackupState = {
+      ...env.store.autoBackupState,
+      remote: {
+        provider: 'webdav',
+        status: 'ok',
+        lastAttemptAt: 5,
+        lastSuccessAt: Date.now(),
+        lastErrorCode: null,
+        baseline: {
+          service: 'webdav', fileUrl: WEBDAV_FILE_URL, account: ACCOUNT,
+          createdAt: 1, etag: '"manual-9"', version: '"manual-9"', verifiedAt: 1, conditionalVerifiedAt: 1,
+        },
+      },
+    };
+    await env.bg.configureBackgroundAutoBackup({ optIn: false, intervalSec: 0 });
+    await running;
+
+    const state = env.readState();
+    expect(state.remote.baseline?.version).toBe('"manual-9"');
+    expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastErrorCode).toBe('unknown-outcome');
+  });
+
+  test('a queued enable cannot override a later disable', async () => {
+    const world = createWorld({ webdav: { putHangs: true } });
+    const env = createSandbox({ world });
+    const running = env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    await expect.poll(() => world.requests.some((r) => r.method === 'PUT'), { timeout: 5000 }).toBe(true);
+
+    const enabling = env.bg.configureBackgroundAutoBackup({ optIn: true, intervalSec: 3600 });
+    await env.bg.configureBackgroundAutoBackup({ optIn: false, intervalSec: 0 });
+    const enableResult = await enabling;
+    await running;
+
+    const state = env.readState();
+    expect(enableResult.stale).toBe(true);
+    expect(state.optIn).toBe(false);
+    expect(state.nextScheduledAt).toBe(0);
   });
 });

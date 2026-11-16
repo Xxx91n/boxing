@@ -368,6 +368,12 @@ try {
   // off switch aborts them immediately while bumping the epoch so the next write
   // step sees the stop before it runs.
   const bgAutoBackupAborts = new Set();
+  // Ticket #130: the off switch sets this synchronously before it aborts anything, so a
+  // task that passed its last state check cannot register a brand-new request afterwards.
+  let bgAutoBackupStopping = false;
+  // Every configuration request takes a ticket. A queued enable that was overtaken by a
+  // later disable must not write optIn back on when the queue finally reaches it.
+  let bgAutoBackupConfigSeq = 0;
   // Auto-backup state is read-modify-written by the local run, the manual-write
   // note, and privilege/status updates. Serialize those mutations so a fresh read
   // cannot be overtaken between the read and the storage write.
@@ -558,6 +564,12 @@ try {
   // `autoBackup` marks the handles the off switch may abort. A user-driven manual
   // backup keeps its own handle so turning the automatic switch off cannot kill it.
   function bgWebDAVAbortHandle(timeoutMs, autoBackup) {
+    if (autoBackup === true && bgAutoBackupStopping) {
+      const stopped = new Error('auto-backup stopped before the request');
+      stopped.bgUserCancelled = true;
+      stopped.bgNotSent = true;
+      throw stopped;
+    }
     if (typeof AbortController !== 'function') return { signal: undefined, done: () => {}, cancel: () => {} };
     const controller = new AbortController();
     let cancelledByUser = false;
@@ -613,6 +625,12 @@ try {
     }
     if (resp.status === 404) { abort.done(); return { kind: 'absent' }; }
     if (resp.status === 401 || resp.status === 403) { abort.done(); return { kind: 'auth' }; }
+    if (resp.status === 423) {
+      // A locked file is a conflict, not a temporary network problem: the caller keeps
+      // it as a readable pause instead of spending the three extra attempts.
+      abort.done();
+      return { kind: 'locked' };
+    }
     if (!resp.ok) {
       abort.done();
       return { kind: 'unreachable', status: resp.status, retryAfterMs: bgRetryAfterMs(resp) };
@@ -855,6 +873,7 @@ try {
       return { kind: 'unresolved', remote: prevRemote };
     }
     if (read.kind === 'auth') return { kind: 'unresolved', remote: prevRemote };
+    if (read.kind === 'locked') return { kind: 'unresolved', remote: prevRemote };
     if (read.kind === 'absent') {
       return { kind: 'not-written', remote: { ...prevRemote, status: 'idle', lastErrorCode: null } };
     }
@@ -1068,6 +1087,9 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
         try {
           current = await bgWebDAVReadFileState(derived.fileUrl, user, pass, { autoBackup: true });
         } catch (e) {
+          if (e && e.bgNotSent) {
+            return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+          }
           if (e && e.bgUserCancelled) {
             return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
           }
@@ -1077,6 +1099,7 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
         retryAfterMs = Math.max(retryAfterMs, Number(current.retryAfterMs) || 0);
         if (current.kind === 'absent') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-missing') };
         if (current.kind === 'auth') return { attempted: true, remote: pausedFrom(liveRemote, 'auth-failed') };
+        if (current.kind === 'locked') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-locked') };
         if (current.kind !== 'exists') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-unreachable') };
         if (!bgIsStrongETag(current.etag)) {
           return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
@@ -1136,6 +1159,9 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
               created = c;
               break;
             } catch (e) {
+              if (e && e.bgNotSent) {
+                return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+              }
               created = { threw: true };
               break;
             }
@@ -1146,6 +1172,8 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
           }
           if (created.status !== 201) {
             if (probeUrl) { try { await bgWebDAVDeleteUrl(probeUrl, user, pass); } catch (_) {} }
+            // Keep the server's own floor even when the probe sibling failed.
+            retryAfterMs = Math.max(retryAfterMs, Number(created.retryAfterMs) || 0);
             // A lock/conflict on the throwaway sibling is not a network hiccup, so it
             // pauses for the user instead of spending the three extra attempts.
             let code = 'conditional-unsupported';
@@ -1158,6 +1186,9 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
           try {
             probe = await bgWebDAVUpdateOnly(probeUrl, user, pass, '{}', bgWebDAVProbeTag());
           } catch (e) {
+            if (e && e.bgNotSent) {
+              return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+            }
             bgErr('WebDAV auto-backup update: condition probe outcome unknown', e);
             return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
           } finally {
@@ -1198,6 +1229,11 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
         try {
           updated = await bgWebDAVUpdateOnly(derived.fileUrl, user, pass, body, baselineVersion);
         } catch (e) {
+          if (e && e.bgNotSent) {
+            // The off switch landed just before this write was registered, so nothing
+            // reached the server: that is a cancellation, not an unknown outcome.
+            return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+          }
           // The PUT may have reached the server. Do not guess and do not retry.
           bgErr('WebDAV auto-backup update outcome unknown', e);
           return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
@@ -1224,6 +1260,9 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
         try {
           after = await bgWebDAVReadFileState(derived.fileUrl, user, pass, { autoBackup: true });
         } catch (e) {
+          if (e && e.bgNotSent) {
+            return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+          }
           if (e && e.bgUserCancelled) {
             return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
           }
@@ -1295,6 +1334,7 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
       retryAfterMs = Math.max(retryAfterMs, Number(fileState.retryAfterMs) || 0);
       if (fileState.kind === 'exists') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-exists-untrusted') };
       if (fileState.kind === 'auth') return { attempted: true, remote: pausedFrom(liveRemote, 'auth-failed') };
+      if (fileState.kind === 'locked') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-locked') };
       if (fileState.kind !== 'absent') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-unreachable') };
 
       let body;
@@ -1320,6 +1360,9 @@ const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
       try {
         created = await bgWebDAVCreateOnly(derived.fileUrl, user, pass, body);
       } catch (e) {
+        if (e && e.bgNotSent) {
+          return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+        }
         // The request may or may not have reached the server. Do not guess and do
         // not retry automatically; the user must re-check the target first.
         bgErr('WebDAV auto-backup: conditional create outcome unknown', e);
@@ -1430,6 +1473,12 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
 
   async function bgGistFetch(pathname, token, options) {
     const opts = options || {};
+    if (opts.autoBackup === true && bgAutoBackupStopping) {
+      const stopped = new Error('auto-backup stopped before the request');
+      stopped.bgUserCancelled = true;
+      stopped.bgNotSent = true;
+      throw stopped;
+    }
     const controller = new AbortController();
     let cancelledByUser = false;
     const timer = setTimeout(() => {
@@ -1646,7 +1695,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
     // A same-named Gist that already existed before this POST started belongs to an
     // earlier attempt or another tool; it is not proof that this interrupted create
     // landed. GitHub timestamps have second resolution, so allow a little skew.
-    const skewMs = 5 * 60000;
+    const skewMs = 60 * 1000;
     const createdAt = Number(parsed.createdAt) || 0;
     if (!createdAt || createdAt < (Number(pending.startedAt) || 0) - skewMs) {
       return { kind: 'unresolved', retryAfterMs: 0 };
@@ -1707,9 +1756,9 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
     const finishPause = async (code, fromRemote, extraPatch, retryAfterMs) => {
       const patch = {
         provider: 'gist',
-        // A failed check is a temporary error the bounded retry may help with; an
-        // unresolved write stays "unknown" and is never retried on its own.
-        status: code === 'gistResultUnknown' ? 'unknown' : (code === 'gistCheckFailed' ? 'error' : 'paused'),
+        // An unresolved write stays "unknown" and is never retried on its own; a failed
+        // check keeps the readable pause and is eligible for the bounded retry by code.
+        status: code === 'gistResultUnknown' ? 'unknown' : 'paused',
         lastAttemptAt: Date.now(),
         // Ticket #129: a WebDAV timestamp must not become the Gist target's
         // "last success" after a provider switch.
@@ -1890,6 +1939,22 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
     }
     const finishedAt = Date.now();
 
+    if (requestError && requestError.bgNotSent) {
+      // The off switch landed before the POST was registered. Nothing was created, so
+      // roll the pending marker back instead of leaving an unknown result behind.
+      const rolled = await bgPatchAutoBackupRemote({
+        provider: 'gist',
+        status: prevRemote.status,
+        lastErrorCode: prevRemote.lastErrorCode,
+        lastAttemptAt: prevRemote.lastAttemptAt,
+        pendingCreate: prevRemote.pendingCreate,
+      }, remoteGeneration);
+      return {
+        attempted: false,
+        cancelled: true,
+        remote: rolled ? rolled.remote : (await bgReadAutoBackupState()).remote,
+      };
+    }
     if (!resp) {
       const remote = await writePending();
       bgErr('Gist create result unknown (' + trigger + '):', requestError && requestError.message ? requestError.message : 'network error');
@@ -2483,8 +2548,36 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
   // Ticket #130: switching off while a real request is in flight must not erase what
   // the server actually answered. Only a run that really attempted a write reaches
   // here, and only while auto-backup is still off and the target generation matches.
-  async function bgCommitStoppedAutoBackupResult(core, remoteOutcome, remoteState, finishedAt) {
+  //
+  // A manual write may have advanced the trusted WebDAV version in the meantime (it
+  // does not bump the generation), so the newer baseline always wins; the automatic
+  // result still updates the status, the attempt time and the success time.
+  function bgMergeStoppedRemoteResult(fresh, settledRemote, baselineStartVersion) {
+    const freshBaseline = bgBaselineForProvider(fresh.remote, 'webdav');
+    const freshVersion = freshBaseline ? (freshBaseline.version || freshBaseline.etag) : null;
+    if (freshVersion && (!baselineStartVersion || freshVersion !== baselineStartVersion)) {
+      return {
+        ...fresh.remote,
+        status: settledRemote.status,
+        lastAttemptAt: settledRemote.lastAttemptAt,
+        lastErrorCode: settledRemote.lastErrorCode,
+        lastSuccessAt: Math.max(
+          Number(fresh.remote && fresh.remote.lastSuccessAt) || 0,
+          Number(settledRemote.lastSuccessAt) || 0,
+        ),
+        notBeforeAt: settledRemote.notBeforeAt,
+      };
+    }
+    return settledRemote;
+  }
+
+  async function bgCommitStoppedAutoBackupResult(core, remoteOutcome, remoteState, finishedAt, baselineStartVersion) {
     if (!remoteOutcome || !remoteOutcome.attempted || !remoteState) return null;
+    const retryFloorMs = Number(remoteOutcome.retryAfterMs) || 0;
+    const settledRemote = {
+      ...remoteState,
+      notBeforeAt: retryFloorMs > 0 ? finishedAt + retryFloorMs : 0,
+    };
     return enqueueBgStateMutation(async () => {
       const fresh = await bgReadAutoBackupState();
       if (core.isAutoBackupActive(fresh)) return null;
@@ -2494,7 +2587,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
       return bgWriteAutoBackupState({
         ...fresh,
         updatedAt: finishedAt,
-        remote: remoteState,
+        remote: bgMergeStoppedRemoteResult(fresh, settledRemote, baselineStartVersion),
         retry: core.defaultAutoBackupRetryState(),
         lock: null,
       });
@@ -2528,6 +2621,13 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
       }
       if (expectedEpoch !== undefined && state.epoch !== expectedEpoch) {
         return { ok: false, cancelled: true, reason: 'epoch-changed', state };
+      }
+      // Ticket #130: the server's Retry-After floor applies to every trigger, including
+      // the user's normal alarm, so nothing calls it earlier than it allowed.
+      const serverNotBefore = Number(state.remote && state.remote.notBeforeAt) || 0;
+      if (!forceImmediate && serverNotBefore > now) {
+        await bgSyncRetryAlarm(state.retry, now);
+        return { ok: false, skipped: true, reason: 'server-wait', state };
       }
       const isInterruptedRecovery = Boolean(
         state.local &&
@@ -2708,6 +2808,11 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
             remoteOutcome.retryAfterMs,
           )
         : core.defaultAutoBackupRetryState();
+      // The stopped branch below records the same real result as the helper above.
+      const stoppedRetryFloorMs = Number(remoteOutcome && remoteOutcome.retryAfterMs) || 0;
+      const stoppedRemoteState = remoteState
+        ? { ...remoteState, notBeforeAt: stoppedRetryFloorMs > 0 ? finishedAt + stoppedRetryFloorMs : 0 }
+        : remoteState;
 
       // The user may have disabled or reconfigured auto-backup while the remote create
       // was in flight. A changed epoch means the saved configuration may point at a
@@ -2777,7 +2882,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
         // even though the switch went off mid-flight: confirmed success, a definite
         // miss and an unknown outcome all stay visible instead of snapping back to idle.
         if (!core.isAutoBackupActive(latestState)) {
-          const recorded = await bgCommitStoppedAutoBackupResult(core, remoteOutcome, remoteState, finishedAt);
+          const recorded = await bgCommitStoppedAutoBackupResult(core, remoteOutcome, remoteState, finishedAt, baselineStartVersion);
           if (recorded) {
             await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
             await bgAlarmsClear(BG_AUTO_BACKUP_RETRY_ALARM_NAME);
@@ -2841,7 +2946,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
             return bgWriteAutoBackupState({
               ...fresh,
               updatedAt: finishedAt,
-              remote: remoteState,
+              remote: bgMergeStoppedRemoteResult(fresh, stoppedRemoteState, baselineStartVersion),
               retry: core.defaultAutoBackupRetryState(),
               lock: null,
             });
@@ -2862,6 +2967,13 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
             ),
           };
         }
+        // Ticket #130: remember the server's own floor on the result itself, so the next
+        // ordinary alarm cannot fire a request before it.
+        const retryFloorMs = Number(remoteOutcome && remoteOutcome.retryAfterMs) || 0;
+        finalRemote = {
+          ...finalRemote,
+          notBeforeAt: retryFloorMs > 0 ? finishedAt + retryFloorMs : 0,
+        };
         return bgWriteAutoBackupState({
           ...fresh,
           nextScheduledAt: Math.max(
@@ -2955,6 +3067,9 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
   // wait for the interrupted flow to finish.
   async function stopBackgroundAutoBackup(deps) {
     const core = (deps && deps.core) || await ensureSnapshotCore();
+    // Set the in-memory stop first: a task that already passed its last state check is
+    // then unable to register a new request, even before the epoch reaches storage.
+    bgAutoBackupStopping = true;
     bgCancelInFlightAutoBackupRequests();
     await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
     await bgAlarmsClear(BG_AUTO_BACKUP_RETRY_ALARM_NAME);
@@ -2994,12 +3109,18 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
     const core = await ensureSnapshotCore();
     const intervalSec = core.normalizeAutoBackupInterval(options.intervalSec);
     const optIn = Boolean(options.optIn) && intervalSec >= core.MIN_AUTO_BACKUP_INTERVAL_SEC;
+    const mySeq = ++bgAutoBackupConfigSeq;
 
     // The stop path is deliberately outside the backup queue, so a long upload can
     // never delay it; see stopBackgroundAutoBackup above.
     if (!optIn) return stopBackgroundAutoBackup({ core });
 
     return enqueueBgAutoBackup(async () => {
+      // A later configure call (usually the user switching off) has already won. Writing
+      // optIn back on now would silently undo the user's last choice.
+      if (mySeq !== bgAutoBackupConfigSeq) {
+        return { ok: false, stale: true, state: await bgReadAutoBackupState() };
+      }
       const prev = await bgReadAutoBackupState();
       const now = Date.now();
       const nextEpoch = (prev.epoch || 0) + 1;
@@ -3040,9 +3161,16 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
         delayInMinutes: periodInMinutes,
         periodInMinutes,
       });
+      // An explicit enable is the user saying "go": clear the in-memory stop so the
+      // immediate run below can register its requests.
+      bgAutoBackupStopping = false;
       return { ok: true, state: enabledState, shouldRunImmediate: true, epoch: nextEpoch };
     }).then(async (cfgResult) => {
+      if (cfgResult && cfgResult.stale) return cfgResult;
       if (cfgResult && cfgResult.shouldRunImmediate) {
+        if (mySeq !== bgAutoBackupConfigSeq) {
+          return { ok: false, stale: true, state: cfgResult.state };
+        }
         const execRes = await runBackgroundLocalAutoBackup({
           trigger: 'opt-in-immediate',
           expectedEpoch: cfgResult.epoch,

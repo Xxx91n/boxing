@@ -370,6 +370,9 @@
       // alone is not enough — two WebDAV addresses are different targets.
       lastSuccessTarget: '',
       pendingCreate: null,
+      // Ticket #130: the server's own "do not call me before this" floor (Retry-After).
+      // A normal alarm must respect it too, not only the extra attempts.
+      notBeforeAt: 0,
     };
   }
 
@@ -520,6 +523,7 @@
       baseline: normalizeRemoteBaseline(raw.baseline),
       lastSuccessTarget: typeof raw.lastSuccessTarget === 'string' ? raw.lastSuccessTarget.slice(0, 2048) : '',
       pendingCreate: normalizeRemotePendingCreate(raw.pendingCreate),
+      notBeforeAt: Math.max(0, Number(raw.notBeforeAt) || 0),
     };
   }
 
