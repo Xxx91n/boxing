@@ -1552,5 +1552,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "Le serveur a refusé cette mise à jour de la sauvegarde.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing n’a pas pu vérifier tous les Gists de ce compte ; la sauvegarde est en pause. Saisissez l’ID du Gist existant ou réduisez le nombre de Gists, puis réessayez.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "Une création de Gist précédente n’est toujours pas confirmée et le nom du fichier de sauvegarde a changé. Remettez le nom utilisé lors de cette tentative, puis réessayez.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "Le Gist non confirmé ne contient pas le fichier de sauvegarde. Restaurez ce fichier sur GitHub ou supprimez ce Gist, puis réessayez.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

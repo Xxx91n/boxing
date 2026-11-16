@@ -837,13 +837,14 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     });
 
     const res = await sandbox.bg.enqueueManualGistWrite({ fileName: GIST_FILE, content: '{"a":1}' });
-    expect(res).toMatchObject({ success: false, reasonCode: 'gistTargetNeedsReview' });
+    expect(res).toMatchObject({ success: false, reasonCode: 'gistPendingFileNameChanged' });
     expect(sandbox.calls.map((c) => c.method)).toEqual(['GET']);
     const state = sandbox.store.autoBackupState;
     // Switching the name back must still be able to confirm this known Gist.
     expect(state.remote.pendingCreate.gistId).toBe('abc12345');
     expect(state.remote.pendingCreate.fileName).toBe('old.json');
     expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastErrorCode).toBe('gistPendingFileNameChanged');
   });
 
   test('a pending Gist without the expected file keeps the marker unconfirmed', async () => {
@@ -872,11 +873,11 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     });
 
     const res = await sandbox.bg.enqueueManualGistWrite({ fileName: GIST_FILE, content: '{"a":1}' });
-    expect(res).toMatchObject({ success: false, resultUnknown: true, reasonCode: 'gistResultUnknown' });
+    expect(res).toMatchObject({ success: false, resultUnknown: true, reasonCode: 'gistPendingFileMissing' });
     const state = sandbox.store.autoBackupState;
     expect(state.remote.pendingCreate.gistId).toBe('abc12345');
     expect(state.remote.status).toBe('unknown');
-    expect(state.remote.lastErrorCode).toBe('gistResultUnknown');
+    expect(state.remote.lastErrorCode).toBe('gistPendingFileMissing');
   });
 
   test('a token from another GitHub account pauses before any write', async () => {

@@ -1552,5 +1552,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "सर्वर ने यह बैकअप अपडेट अस्वीकार कर दिया।",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing इस खाते के सभी Gist जाँच नहीं सका, इसलिए बैकअप रोक दिया गया है। मौजूदा Gist ID डालें या Gist की संख्या कम करके फिर कोशिश करें।",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "पिछला Gist बनाना अभी पुष्ट नहीं हुआ है, और बैकअप फ़ाइल का नाम बदल गया है। उस कोशिश में इस्तेमाल हुआ फ़ाइल नाम वापस रखें, फिर दोबारा कोशिश करें।",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "पुष्ट न हुए Gist में बैकअप फ़ाइल नहीं है। GitHub पर वह फ़ाइल बहाल करें या यह Gist हटाएँ, फिर दोबारा कोशिश करें।",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

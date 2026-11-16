@@ -26,9 +26,15 @@ and records the blocker instead of shipping an unsafe PATCH.
   records a trusted baseline, a 2xx PATCH refreshes it when the response carries
   the expected file, a lost response is reported as unknown and is never retried
   automatically. A pending POST that knows its Gist id can be confirmed with a
-  GET before the next manual write; a 404 clears the marker and pauses for
-  review, while a file-name change, a missing expected file, or a network failure
-  keeps it unconfirmed so switching the name back can still confirm it.
+  GET before the next manual write. A 404 clears the marker and pauses for
+  review; a file-name change or a missing expected file keeps the marker with
+  its own reason (`gistPendingFileNameChanged` / `gistPendingFileMissing`) so
+  the user can switch the name back or restore the file. A network failure also
+  keeps it unconfirmed.
+- A pending POST whose response carried **no** id cannot be confirmed
+  automatically. The settings page shows the unknown result; the only reset in
+  the current UI is deleting the stored sync credential, which also removes the
+  saved target. This is the same limitation #126 shipped for the first create.
 
 ## Evidence reviewed on 2026-11-16
 

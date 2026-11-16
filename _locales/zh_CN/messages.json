@@ -1555,5 +1555,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "服务器拒绝了这次备份更新。",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing 没能把这个账号里的 Gist 全部核对完，所以先暂停备份。请填写已有的 Gist ID，或减少 Gist 数量后再试。",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "上一次 Gist 创建还没确认，备份文件名却改了。把文件名改回那次用的名字，然后再试。",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "这个还没确认的 Gist 里没有备份文件。请先在 GitHub 上恢复该文件，或删掉这个 Gist，然后再试。",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

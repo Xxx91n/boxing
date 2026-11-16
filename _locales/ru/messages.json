@@ -1552,5 +1552,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "Сервер отклонил это обновление резервной копии.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing не смог проверить все Gist этого аккаунта, поэтому резервное копирование приостановлено. Укажите ID существующего Gist или уменьшите число Gist и повторите попытку.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "Предыдущее создание Gist всё ещё не подтверждено, а имя файла резервной копии изменилось. Верните имя, которое использовалось в той попытке, и повторите.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "В неподтверждённом Gist нет файла резервной копии. Восстановите этот файл на GitHub или удалите этот Gist и повторите попытку.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

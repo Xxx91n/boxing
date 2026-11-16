@@ -1552,5 +1552,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "サーバーがこのバックアップ更新を拒否しました。",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "このアカウントの Gist をすべて確認できなかったため、バックアップを停止しています。既存の Gist ID を入力するか、Gist の数を減らしてから再試行してください。",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "以前の Gist 作成がまだ確認できていないのに、バックアップのファイル名が変わっています。そのとき使ったファイル名に戻してから、もう一度お試しください。",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "未確認の Gist にバックアップファイルがありません。GitHub でそのファイルを復元するか、この Gist を削除してから、もう一度お試しください。",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

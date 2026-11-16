@@ -1552,5 +1552,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "서버가 이번 백업 업데이트를 거부했습니다.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "이 계정의 Gist를 모두 확인하지 못해 백업을 멈췄습니다. 기존 Gist ID를 입력하거나 Gist 수를 줄인 뒤 다시 시도하세요.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "이전 Gist 생성이 아직 확인되지 않았는데 백업 파일 이름이 바뀌었습니다. 그때 사용한 파일 이름으로 되돌린 뒤 다시 시도하세요.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "확인되지 않은 Gist에 백업 파일이 없습니다. GitHub에서 그 파일을 복구하거나 이 Gist를 삭제한 뒤 다시 시도하세요.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

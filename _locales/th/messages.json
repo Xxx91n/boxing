@@ -1552,5 +1552,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "เซิร์ฟเวอร์ปฏิเสธการอัปเดตแบ็กอัปนี้",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing ตรวจสอบ Gist ทั้งหมดในบัญชีนี้ไม่ครบ จึงหยุดการสำรองข้อมูลไว้ก่อน กรอก ID ของ Gist ที่มีอยู่ หรือลดจำนวน Gist แล้วลองอีกครั้ง",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "การสร้าง Gist ครั้งก่อนยังไม่ได้ยืนยัน แต่ชื่อไฟล์สำรองเปลี่ยนไปแล้ว เปลี่ยนชื่อไฟล์กลับเป็นชื่อที่ใช้ตอนนั้น แล้วลองอีกครั้ง",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "Gist ที่ยังไม่ได้ยืนยันไม่มีไฟล์สำรอง กู้คืนไฟล์นั้นบน GitHub หรือลบ Gist นี้ แล้วลองอีกครั้ง",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

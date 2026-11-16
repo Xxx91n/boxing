@@ -1552,5 +1552,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "Máy chủ đã từ chối bản cập nhật sao lưu này.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "Boxing không thể kiểm tra hết các Gist trong tài khoản này, nên bản sao lưu đang tạm dừng. Hãy nhập ID Gist đã có hoặc giảm số lượng Gist rồi thử lại.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "Lần tạo Gist trước vẫn chưa được xác nhận, nhưng tên tệp sao lưu đã đổi. Hãy đổi lại tên tệp đã dùng trong lần đó rồi thử lại.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "Gist chưa được xác nhận không có tệp sao lưu. Hãy khôi phục tệp đó trên GitHub hoặc xóa Gist này rồi thử lại.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

@@ -1552,5 +1552,17 @@
   "autoBackupCloudReasonUpdateFailed": {
     "message": "رفض الخادم تحديث النسخة الاحتياطية هذا.",
     "description": "cloud backup error reason: server refused the update"
+  },
+  "gistAutoBackupErrListTooMany": {
+    "message": "تعذّر على Boxing فحص جميع الـ Gist في هذا الحساب، لذا تم إيقاف النسخ الاحتياطي مؤقتًا. أدخل معرّف الـ Gist الموجود أو قلّل عدد الـ Gist ثم حاول مرة أخرى.",
+    "description": "Background backup paused because the Gist list exceeded the safe lookup cap"
+  },
+  "gistAutoBackupErrPendingName": {
+    "message": "لا يزال إنشاء Gist السابق غير مؤكد، وقد تغيّر اسم ملف النسخة الاحتياطية. أعد اسم الملف الذي استُخدم في تلك المحاولة ثم حاول مرة أخرى.",
+    "description": "Pending Gist write: the backup file name changed before confirmation"
+  },
+  "gistAutoBackupErrPendingFile": {
+    "message": "الـ Gist غير المؤكد لا يحتوي على ملف النسخة الاحتياطية. استعد هذا الملف على GitHub أو احذف هذا الـ Gist ثم حاول مرة أخرى.",
+    "description": "Pending Gist write: the expected backup file is missing from the Gist"
   }
 }

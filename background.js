@@ -1811,7 +1811,17 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
         // Keep the marker: the POST may have created that Gist, and the user can
         // switch the file name back to confirm it. Clearing it here would make the
         // old Gist untracked or cause a second Gist to be created.
-        return bgGistWriteError('gistTargetNeedsReview', 'The pending Gist file name changed');
+        await bgPatchAutoBackupRemote({
+          provider: 'gist',
+          status: 'unknown',
+          lastAttemptAt: Date.now(),
+          lastErrorCode: 'gistPendingFileNameChanged',
+          account,
+        }, generation);
+        return bgGistWriteError('gistPendingFileNameChanged', 'The pending Gist file name changed', {
+          resultUnknown: true,
+          gistId: targetGistId,
+        });
       }
 
       let confirmResp = null;
@@ -1859,10 +1869,10 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
           provider: 'gist',
           status: 'unknown',
           lastAttemptAt: Date.now(),
-          lastErrorCode: 'gistResultUnknown',
+          lastErrorCode: 'gistPendingFileMissing',
           account,
         }, generation);
-        return bgGistWriteError('gistResultUnknown', 'The pending Gist does not contain the expected file', {
+        return bgGistWriteError('gistPendingFileMissing', 'The pending Gist does not contain the expected file', {
           resultUnknown: true,
           gistId: targetGistId,
         });
