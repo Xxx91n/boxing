@@ -1754,15 +1754,9 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
 
     // Verify the token belongs to the account the target was bound to before any
     // write. A changed account never silently takes over an existing baseline.
-    let accountResult = await bgGistGetUser(token);
-    // A token left in the settings input may be stale while the stored envelope
-    // already holds the valid one; retry once with the stored token on 401/403.
-    if (!accountResult.ok &&
-        accountResult.reasonCode === 'gistRequestRejected' &&
-        pageToken && storedToken && storedToken !== pageToken) {
-      token = storedToken;
-      accountResult = await bgGistGetUser(token);
-    }
+    // Never fall back to a different saved credential here: a rejected page token
+    // must fail instead of uploading under another account.
+    const accountResult = await bgGistGetUser(token);
     if (!accountResult.ok) {
       await bgPatchAutoBackupRemote({
         provider: 'gist',
