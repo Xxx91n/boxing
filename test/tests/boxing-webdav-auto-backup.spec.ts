@@ -64,6 +64,9 @@ const NEW_I18N_KEYS = [
   'autoBackupCloudReasonRemoteMissing',
   'autoBackupCloudReasonUpdateFailed',
   'autoBackupCloudActionFix',
+  // Ticket #130: bounded retry and the locked/conflicting target pause.
+  'autoBackupCloudReasonRemoteLocked',
+  'autoBackupCloudRetryScheduled',
 ] as const;
 
 const PLACEHOLDER_KEYS = ['autoBackupCloudStatusPaused', 'autoBackupCloudStatusError'] as const;
@@ -437,7 +440,7 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
     expect(remote.baseline).toBeNull();
   });
 
-  test('GET network failure pauses without any PUT; PUT network failure records an unknown outcome that is not retried blindly', async () => {
+  test('GET network failure pauses without any PUT; a lost PUT outcome is re-checked before any retry', async () => {
     const getFail = createSandbox({ webdav: createFakeWebdav({ getBehavior: 'throw' }) });
     await getFail.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
     expect(getFail.webdav.requests.filter((r) => r.method === 'PUT')).toHaveLength(0);
@@ -451,10 +454,15 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
     expect(afterFail.lastErrorCode).toBe('unknown-outcome');
     expect(afterFail.lastSuccessAt).toBe(0);
 
-    // A later cycle must not send another PUT while the outcome is unknown.
+    // Ticket #130: a later cycle re-checks the real target once (a read, never a blind
+    // PUT). The controlled file is really absent, so the release permits one safe
+    // create; its response is lost again, so the honest record stays "unknown".
     const requestCount = putFailWebdav.requests.length;
     await putFail.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
-    expect(putFailWebdav.requests.length).toBe(requestCount);
+    const later = putFailWebdav.requests.slice(requestCount);
+    expect(later.filter((r) => r.method === 'GET')).toHaveLength(1);
+    expect(later.filter((r) => r.method === 'PUT')).toHaveLength(1);
+    expect(readRemote(putFail).status).toBe('unknown');
 
     // The user explicitly re-enables: the file committed after all, so the re-check
     // finds it and stops. Nothing is overwritten either way.
@@ -463,7 +471,7 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
     const afterReconfigure = readRemote(putFail);
     expect(afterReconfigure.status).toBe('paused');
     expect(afterReconfigure.lastErrorCode).toBe('remote-exists-untrusted');
-    expect(putFailWebdav.requests.filter((r) => r.method === 'PUT')).toHaveLength(1);
+    expect(putFailWebdav.requests.filter((r) => r.method === 'PUT')).toHaveLength(2);
   });
 
   test('missing host permission writes the #123 pending state, sends nothing, and never prompts', async () => {
@@ -970,7 +978,7 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
     expect(readRemote(env).lastSuccessAt).toBeGreaterThan(1000);
   });
 
-  test('a lost verification read marks the write unknown and is not retried blindly', async () => {
+  test('a lost verification read marks the write unknown and is re-checked, never re-written', async () => {
     const webdav = createFakeWebdav({ existingBody: OLD_REMOTE, getBehaviorAfterPut: 'throw' });
     const env = updateEnv({ webdav, baseline: trustedBaseline('"v1"') });
 
@@ -983,9 +991,14 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
     expect(remote.lastSuccessAt).toBe(1000);
     expect(remote.baseline.version).toBe('"v1"');
 
+    // Ticket #130: the next cycle performs the read-only re-check. The controlled
+    // service cannot answer that read either, so the hold stays and no PUT is sent.
     const requestCount = webdav.requests.length;
     await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
-    expect(webdav.requests.length).toBe(requestCount);
+    const later = webdav.requests.slice(requestCount);
+    expect(later.filter((r) => r.method === 'GET')).toHaveLength(1);
+    expect(later.filter((r) => r.method === 'PUT')).toHaveLength(0);
+    expect(readRemote(env).status).toBe('unknown');
   });
 
   test('a fresh worker restores the saved baseline and keeps updating the same target', async () => {
@@ -1024,7 +1037,7 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
 });
 
 test.describe('Ticket #125 — static contracts', () => {
-  test('22 cloud-status keys exist in all 14 locales with aligned placeholders', async () => {
+  test('24 cloud-status keys exist in all 14 locales with aligned placeholders', async () => {
     const locales = fs.readdirSync(path.join(ROOT_DIR, '_locales'));
     expect(locales.length).toBe(14);
     const en = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, '_locales', 'en', 'messages.json'), 'utf8'));
@@ -1039,6 +1052,9 @@ test.describe('Ticket #125 — static contracts', () => {
       for (const key of PLACEHOLDER_KEYS) {
         expect(data[key].placeholders?.reason?.content, `${locale} ${key} placeholder`).toBe('$1');
       }
+      // Ticket #130: the retry line has two named placeholders, in this order.
+      expect(data.autoBackupCloudRetryScheduled.placeholders?.attempt?.content, `${locale} attempt placeholder`).toBe('$1');
+      expect(data.autoBackupCloudRetryScheduled.placeholders?.minutes?.content, `${locale} minutes placeholder`).toBe('$2');
     }
   });
 

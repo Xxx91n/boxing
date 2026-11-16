@@ -912,7 +912,7 @@ try {
     const state = options.state;
     const rawLayout = options.layout;
     const activeEpoch = options.epoch;
-    let prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
+    const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
     // Ticket #130: an unknown result is re-checked against the real file before any
     // automatic write, so this run may resolve it and continue.
     const wasUnknown = prevRemote.status === 'unknown';
@@ -1026,7 +1026,7 @@ lastSuccessAt: bgSuccessAtForProvider(remote, 'webdav'),
       if (!released) {
         return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
       }
-      prevRemote = core.normalizeRemoteAutoBackupState(released.remote);
+      // The queued step below re-reads the saved state; the released copy is not used here.
     }
 
     const outcome = await enqueueBgWebDAVTargetWrite(derived.fileUrl, async () => {
