@@ -536,7 +536,9 @@ try {
         ? 'denied'
         : (reason || 'missing-permission');
       const permState = { needed: true, origin, source: 'background', reason: nextReason, updatedAt: Date.now() };
-      await api.storage.local.set({ [BG_WEBDAV_PERM_KEY]: permState });
+      // Literal key (not the constant) so the data-golden write-site tripwire can name
+      // the target key class on this line, same as the pre-#125 writer.
+      await api.storage.local.set({ webdavPendingPermission: permState });
       return permState;
     } catch (e) {
       bgErr('bgRecordWebDAVPendingPermission failed', e);
