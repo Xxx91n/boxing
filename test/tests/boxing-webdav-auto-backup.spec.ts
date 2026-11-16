@@ -1139,7 +1139,7 @@ test.describe('Ticket #125 — Settings cloud status line (file:// lane)', () =>
     await expect(line).toHaveAttribute('data-state', 'paused');
     await expect(line).toContainText(/another device|另一台设备/i);
 
-    await page.evaluate(() => {
+    await page.evaluate((fileUrl) => {
       (window as any).__boxingRefreshLocalAutoBackupUi({
         version: 1,
         optIn: true,
@@ -1153,11 +1153,11 @@ test.describe('Ticket #125 — Settings cloud status line (file:// lane)', () =>
           lastAttemptAt: 7,
           lastSuccessAt: 5,
           lastErrorCode: 'baseline-unverified',
-          baseline: { service: 'webdav', fileUrl: WEBDAV_FILE_URL, account: 'alice', createdAt: 1, etag: null, version: null },
+          baseline: { service: 'webdav', fileUrl, account: 'alice', createdAt: 1, etag: null, version: null },
         },
         lock: null,
       });
-    });
+    }, WEBDAV_FILE_URL);
     await expect(line).toHaveAttribute('data-state', 'paused');
     await expect(line).toContainText(/manual sync|手动同步/i);
   });
