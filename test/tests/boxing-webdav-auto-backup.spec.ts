@@ -460,8 +460,9 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
     const requestCount = putFailWebdav.requests.length;
     await putFail.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
     const later = putFailWebdav.requests.slice(requestCount);
-    expect(later.filter((r) => r.method === 'GET')).toHaveLength(1);
-    expect(later.filter((r) => r.method === 'PUT')).toHaveLength(1);
+    // Read first (the re-check), then one existence read for the safe create, then the
+    // create itself. A blind retry would put a second PUT first and no re-check read.
+    expect(later.map((r) => r.method)).toEqual(['GET', 'GET', 'PUT']);
     expect(readRemote(putFail).status).toBe('unknown');
 
     // The user explicitly re-enables: the file committed after all, so the re-check
