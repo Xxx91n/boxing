@@ -19,8 +19,11 @@ and records the blocker instead of shipping an unsafe PATCH.
   background queue (`gist-write` message), the same queue as the unattended first
   create, so two tabs and the background cannot write the same Gist at once.
 - Manual writes keep their existing user-driven semantics: a confirmed POST
-  records a trusted baseline, a confirmed PATCH refreshes it, a lost response is
-  reported as unknown and is never retried automatically.
+  records a trusted baseline, a 2xx PATCH refreshes it when the response carries
+  the expected file, a lost response is reported as unknown and is never retried
+  automatically. A pending POST that knows its Gist id can be confirmed with a
+  GET before the next manual write; a pending POST without an id stays paused
+  until a human checks GitHub.
 
 ## Evidence reviewed on 2026-11-16
 

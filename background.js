@@ -1670,12 +1670,18 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
       return bgGistWriteError('gistCheckFailed', 'Gist is not the selected sync provider');
     }
 
-    let token = '';
-    try {
-      token = await bgDecryptCredential(settings._encGistToken);
-    } catch (e) {
-      bgErr('Manual Gist token decrypt failed', e);
-      token = '';
+    // The settings page may have just received a token typed into its input; that
+    // value is preferred so a click does not race the asynchronous envelope flush.
+    // It only travels in the in-extension message, never to storage or logs.
+    const pageToken = typeof opts.token === 'string' ? opts.token.trim() : '';
+    let token = pageToken;
+    if (!token) {
+      try {
+        token = await bgDecryptCredential(settings._encGistToken);
+      } catch (e) {
+        bgErr('Manual Gist token decrypt failed', e);
+        token = '';
+      }
     }
     const tokenPresent = typeof token === 'string' && token.trim().length > 0;
 
@@ -1701,7 +1707,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
     const state = await bgReadAutoBackupState();
     const remote = state.remote || {};
     const generation = Number(remote.generation) || 0;
-    const baseline = remote.baseline && remote.baseline.service === 'gist' ? remote.baseline : null;
+    let baseline = remote.baseline && remote.baseline.service === 'gist' ? remote.baseline : null;
     const gistCore = await ensureGistCore();
     const plan = gistCore.planManualGistWrite({
       settings,
@@ -1715,13 +1721,85 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
     if (plan.action === 'pause') {
       return bgGistWriteError(plan.reasonCode, plan.reasonCode);
     }
-    if (plan.action !== 'post' && plan.action !== 'patch') {
+    if (plan.action !== 'post' && plan.action !== 'patch' && plan.action !== 'confirm-pending') {
       return bgGistWriteError('gistCheckFailed', 'Gist backup is not available');
     }
 
     const fileName = plan.fileName;
-    if (plan.action === 'patch') {
-      const gistId = plan.gistId;
+
+    // Verify the token belongs to the account the target was bound to before any
+    // write. A changed account never silently takes over an existing baseline.
+    const accountResult = await bgGistGetUser(token);
+    if (!accountResult.ok) {
+      return bgGistWriteError(accountResult.reasonCode || 'gistCheckFailed', 'GitHub account check failed');
+    }
+    const account = accountResult.account;
+    const boundAccountId = remote.pendingCreate && remote.pendingCreate.accountId
+      ? remote.pendingCreate.accountId
+      : (baseline && baseline.ownerId);
+    if (boundAccountId && String(boundAccountId) !== String(account.id)) {
+      return bgGistWriteError('gistAccountChanged', 'GitHub account changed');
+    }
+
+    let action = plan.action;
+    let targetGistId = plan.gistId;
+
+    // Recover a POST whose response carried the Gist id but not a usable body:
+    // GET that Gist, confirm the expected file, record the baseline, then PATCH.
+    // A marker without an id cannot be recovered safely and stays paused.
+    if (action === 'confirm-pending') {
+      let confirmResp = null;
+      try {
+        confirmResp = await bgGistFetch('/gists/' + encodeURIComponent(targetGistId), token, { method: 'GET' });
+      } catch (_) {
+        confirmResp = null;
+      }
+      if (!confirmResp) {
+        return bgGistWriteError('gistResultUnknown', 'Gist confirmation result unknown', { resultUnknown: true });
+      }
+      if (confirmResp.status === 404) {
+        return bgGistWriteError('gistTargetNeedsReview', 'The pending Gist no longer exists');
+      }
+      if (!confirmResp.ok) {
+        return bgGistWriteError('gistCheckFailed', 'GitHub API ' + confirmResp.status);
+      }
+      let confirmJson = null;
+      try { confirmJson = JSON.parse(confirmResp.text); } catch (_) { confirmJson = null; }
+      const confirmed = confirmJson ? gistCore.parseGistResponse(confirmJson, fileName) : null;
+      if (!confirmed) {
+        return bgGistWriteError('gistTargetNeedsReview', 'The pending Gist does not contain the expected file');
+      }
+      const verifiedAt = Date.now();
+      baseline = {
+        service: 'gist',
+        gistId: confirmed.gistId || targetGistId,
+        ownerLogin: confirmed.ownerLogin || account.login,
+        ownerId: confirmed.ownerId || account.id,
+        fileName,
+        createdAt: confirmed.createdAt || verifiedAt,
+        updatedAt: confirmed.updatedAt || verifiedAt,
+        verifiedAt,
+      };
+      const confirmedState = await bgPatchAutoBackupRemote({
+        provider: 'gist',
+        baseline,
+        account: { login: baseline.ownerLogin, id: baseline.ownerId },
+        pendingCreate: null,
+        lastErrorCode: remote.lastErrorCode || null,
+        status: remote.status === 'running' ? 'idle' : remote.status,
+      }, generation);
+      if (!confirmedState) {
+        return bgGistWriteError('gistResultUnknown', 'Gist confirmed but the local state changed', {
+          resultUnknown: true,
+          gistId: baseline.gistId,
+        });
+      }
+      action = 'patch';
+      targetGistId = baseline.gistId;
+    }
+
+    if (action === 'patch') {
+      const gistId = targetGistId;
       let resp = null;
       try {
         resp = await bgGistFetch('/gists/' + encodeURIComponent(gistId), token, {
@@ -1734,6 +1812,13 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
       if (!resp) {
         // The server may have committed the PATCH. Do not claim success, do not
         // retry automatically, and leave the trusted baseline untouched.
+        await bgPatchAutoBackupRemote({
+          provider: 'gist',
+          status: 'unknown',
+          lastAttemptAt: Date.now(),
+          lastErrorCode: 'gistResultUnknown',
+          account,
+        }, generation);
         return bgGistWriteError('gistResultUnknown', 'Gist update result unknown', { resultUnknown: true });
       }
       if (resp.status >= 200 && resp.status < 300) {
@@ -1745,8 +1830,8 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
           const nextBaseline = {
             service: 'gist',
             gistId: parsed.gistId || gistId,
-            ownerLogin: parsed.ownerLogin || (baseline && baseline.ownerLogin) || '',
-            ownerId: parsed.ownerId || (baseline && baseline.ownerId) || '',
+            ownerLogin: parsed.ownerLogin || (baseline && baseline.ownerLogin) || account.login,
+            ownerId: parsed.ownerId || (baseline && baseline.ownerId) || account.id,
             fileName,
             createdAt: parsed.createdAt || (baseline && baseline.createdAt) || verifiedAt,
             updatedAt: parsed.updatedAt || verifiedAt,
@@ -1758,31 +1843,55 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
             account: nextBaseline.ownerId
               ? { login: nextBaseline.ownerLogin, id: nextBaseline.ownerId }
               : (remote.account || null),
-            lastErrorCode: null,
-            // A manual write is not an unattended success; keep the auto-backup
-            // status but never leave a stale "running" marker behind.
+            // A manual write is not an unattended success: keep the automatic
+            // result and its reason exactly as they were.
+            lastErrorCode: remote.lastErrorCode || null,
             status: remote.status === 'running' ? 'idle' : remote.status,
           }, generation);
         }
         return { success: true, gistId: parsed ? parsed.gistId : gistId, created: false };
       }
       const failure = gistCore.classifyGistFailure(resp.status);
+      const code = resp.status === 404 ? 'gistTargetNeedsReview' : failure.reasonCode;
       if (failure.kind === 'unknown') {
-        return bgGistWriteError('gistResultUnknown', 'Gist update result unknown', { resultUnknown: true });
+        await bgPatchAutoBackupRemote({
+          provider: 'gist',
+          status: 'unknown',
+          lastAttemptAt: Date.now(),
+          lastErrorCode: code,
+          account,
+        }, generation);
+      } else {
+        await bgPatchAutoBackupRemote({
+          provider: 'gist',
+          status: 'paused',
+          lastAttemptAt: Date.now(),
+          lastErrorCode: code,
+          account,
+        }, generation);
       }
-      return bgGistWriteError(failure.reasonCode, 'GitHub API ' + resp.status);
+      return bgGistWriteError(code, 'GitHub API ' + resp.status);
     }
 
     // POST: the same durable pending marker as the unattended path, so a lost
     // response or a worker shutdown cannot turn into a second Gist.
+    const listResult = await bgGistListOwnGists(token);
+    if (!listResult.ok) {
+      return bgGistWriteError(listResult.reasonCode || 'gistCheckFailed', 'Gist list check failed');
+    }
+    const conflict = gistCore.findGistWithFile(listResult.gists, fileName);
+    if (conflict) {
+      return bgGistWriteError('gistUnknownExisting', 'A Gist with this file name already exists');
+    }
+
     const startedAt = Date.now();
     const pendingCreate = {
       provider: 'gist',
       fileName,
       description: gistCore.GIST_CREATE_DESCRIPTION,
       startedAt,
-      accountLogin: '',
-      accountId: '',
+      accountLogin: account.login,
+      accountId: account.id,
       gistId: '',
     };
     const markerState = await bgPatchAutoBackupRemote({
@@ -1840,8 +1949,9 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
             ? { login: nextBaseline.ownerLogin, id: nextBaseline.ownerId }
             : (remote.account || null),
           pendingCreate: null,
-          lastErrorCode: null,
-          // Manual create, not an unattended success: clear the running marker only.
+          // Manual create, not an unattended success: keep the automatic result
+          // and its reason, and only clear the running marker.
+          lastErrorCode: remote.lastErrorCode || null,
           status: remote.status === 'running' ? 'idle' : remote.status,
         }, generation);
         if (!next) {

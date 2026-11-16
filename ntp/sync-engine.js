@@ -1243,8 +1243,7 @@ export function initSyncEngineFacade(deps) {
     }
 
     async function backupToGist() {
-      const token = gistTokenInput?.value?.trim();
-      if (!token) throw gistPrecheckError('GitHub token not configured');
+      const token = gistTokenInput?.value?.trim() || '';
       // Ticket #126: do not race the background first-create. A pending POST result
       // means a Gist may already exist; a trusted baseline is the real target even
       // before the settings field has been mirrored.
@@ -1256,7 +1255,12 @@ export function initSyncEngineFacade(deps) {
         throw gistPrecheckError('Could not read auto-backup state');
       }
       const remote = autoState && autoState.remote ? autoState.remote : {};
-      if (remote.pendingCreate) throw gistPrecheckError(i18n('gistAutoBackupErrUnknown'));
+      // A real extension lets the background decide: a pending marker with a known
+      // Gist id can be confirmed with a GET, and only an id-less marker pauses.
+      // The file:// fallback has no worker to do that, so it keeps the hard stop.
+      if (remote.pendingCreate && !hasExtensionRuntime()) {
+        throw gistPrecheckError(i18n('gistAutoBackupErrUnknown'));
+      }
       const baselineId = remote.baseline && remote.baseline.service === 'gist' ? remote.baseline.gistId : '';
       const gistId = layout.settings.gistId || gistIdInput?.value?.trim() || baselineId;
       if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw gistPrecheckError('Invalid Gist ID');
@@ -1275,6 +1279,9 @@ export function initSyncEngineFacade(deps) {
             gistId,
             fileName: GIST_FILENAME,
             content,
+            // A token typed just now may still be flushing to storage. Send it
+            // along so the background does not reject a valid click.
+            token,
           });
         } catch (e) {
           const code = e && e.reasonCode;
@@ -1283,7 +1290,6 @@ export function initSyncEngineFacade(deps) {
         }
         if (resp && resp.needPermission) throw new Error(i18n('gistAutoBackupErrPermission'));
         if (!resp || !resp.success) {
-          if (resp && resp.resultUnknown) throw new Error(i18n('gistAutoBackupErrUnknown'));
           const code = resp && resp.reasonCode;
           if (code && REMOTE_REASON_I18N[code]) throw new Error(i18n(REMOTE_REASON_I18N[code]));
           throw new Error(i18n('gistBackupFail'));
@@ -1297,6 +1303,7 @@ export function initSyncEngineFacade(deps) {
       }
       // Non-extension contexts (file:// tests, the standalone demo) keep the old
       // direct request; there is no second extension context to serialise against.
+      if (!token) throw new Error('GitHub token not configured');
       const h = new Headers({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' });
       let resp, result;
       if (gistId) {

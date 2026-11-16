@@ -192,7 +192,7 @@
   // Pure manual-write decision for the background queue. "Manual" means the user
   // pressed Backup Now; it never enables unattended updates. The caller supplies
   // token/permission/size facts and the background performs one queued request.
-  //   Returns one of: skip, pause, post, patch.
+  //   Returns one of: skip, pause, post, patch, confirm-pending.
   function planManualGistWrite(input) {
     const opts = input || {};
     const settings = opts.settings || {};
@@ -203,12 +203,22 @@
     if (!opts.permission || opts.permission.ok !== true) {
       return { action: 'pause', reasonCode: 'gistPermissionMissing' };
     }
-    if (cloud.pendingCreate) return { action: 'pause', reasonCode: 'gistResultUnknown' };
     if (opts.payloadTooLarge === true) return { action: 'pause', reasonCode: 'gistPayloadTooLarge' };
 
     const fileName = sanitizeGistFileName(
       typeof opts.fileName === 'string' ? opts.fileName : settings.syncFileName
     );
+
+    // A pending POST can only be recovered when its response carried the Gist id.
+    // The background then GETs that Gist, confirms the expected file, records the
+    // baseline, and continues with a PATCH instead of POSTing a duplicate. A fully
+    // lost response (no id) stays paused for a human check.
+    const pendingId = cloud.pendingCreate ? normalizeGistId(cloud.pendingCreate.gistId) : '';
+    if (cloud.pendingCreate) {
+      if (pendingId) return { action: 'confirm-pending', gistId: pendingId, fileName };
+      return { action: 'pause', reasonCode: 'gistResultUnknown' };
+    }
+
     const baseline = cloud.baseline &&
       (cloud.baseline.provider === 'gist' || cloud.baseline.service === 'gist')
       ? cloud.baseline
@@ -222,6 +232,19 @@
     if (rawGistId && !explicitGistId) {
       return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
     }
+
+    if (baseline) {
+      const baselineId = normalizeGistId(baseline.gistId);
+      // A manual write must not silently move a known target or append a second
+      // file to the same Gist. Changing either needs an explicit re-target flow.
+      if (explicitGistId && baselineId && explicitGistId !== baselineId) {
+        return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
+      }
+      if (baseline.fileName && baseline.fileName !== fileName) {
+        return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
+      }
+    }
+
     // A second manual click that starts after the background created a Gist but
     // before the page mirrored its id must PATCH that Gist, not POST a duplicate.
     const gistId = explicitGistId || (baseline ? normalizeGistId(baseline.gistId) : '');
