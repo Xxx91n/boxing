@@ -156,7 +156,8 @@
       "boxing-wave11-1017.spec.ts",
       "boxing-backup-credential-allowlist.spec.ts",
       "boxing-bg-local-auto-backup.spec.ts",
-      "boxing-webdav-auto-backup.spec.ts"
+      "boxing-webdav-auto-backup.spec.ts",
+      "boxing-bg-auto-backup-retry.spec.ts"
     ],
     "ntp/credentials.js": [
       "boxing-cred-encrypt.spec.ts",
