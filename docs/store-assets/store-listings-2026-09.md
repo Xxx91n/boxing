@@ -47,7 +47,13 @@ URL: https://addons.mozilla.org/developers/addon/submit/
 | Screenshot | upload all 5 from docs/store-assets/screenshots/ (1280x800, AMO-recommended size) |
 | This add-on is experimental | leave UNCHECKED |
 | Privacy policy | CHECK, paste URL: https://boxing.xxx91n.com/privacy-policy.html (200 OK verified 2026-09-06, re-verify before submit) |
-| Notes for Reviewer | "New Tab override extension. All data stays local (storage.local); optional WebDAV/Gist backup only contacts servers the user configures themselves. Manifest declares host_permissions https://*/* solely so the optional WebDAV backup can reach the user's own server; no browsing data is read, transmitted, or shared. Favicon retrieval contacts third-party icon services (bytecook, DuckDuckGo, Google, favicon.im) with bookmark-site hostnames only, and the About screen performs an anonymous GitHub Releases API version check; no third-party code is executed. Source: https://github.com/Xxx91n/boxing (tag v2026.9.9)." |
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:0d11352d868fe10cdc089a25a9392829ede27f323e31242e2ae8bce469e28b49 -->
+
+**Notes for Reviewer:** New Tab override extension. All data stays local (storage.local); optional WebDAV/Gist backup only contacts servers the user configures themselves. Manifest declares host_permissions https://*/* solely so the optional WebDAV backup can reach the user's own server; no browsing data is read, transmitted, or shared. Favicon retrieval contacts third-party icon services (DuckDuckGo, Google including its gstatic redirect, favicon.im, icon.horse, Yandex) and the bookmark site’s own `https://<host>/favicon.ico` in parallel, using bookmark-site hostnames only. Failed lookups may be retried after 7 days, including up to 3 in the background per new-tab load, and the About screen performs an anonymous GitHub Releases API version check; no third-party code is executed. Source: https://github.com/Xxx91n/boxing (tag v2026.9.9).
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 **Summary (EN, 250-char limit — this is 236 chars):**
 
@@ -122,17 +128,23 @@ Microsoft developer account; free registration, no fee).
 
 7. **Submit** → Notes for certification:
 
-> This extension replaces the new tab page. It does not collect or transmit
-> user data; storage.local holds all bookmarks/settings locally. The
-> https://*/* host permission exists only so the user can optionally
-> configure their own WebDAV server for backups (off by default). Favicon
-> retrieval contacts third-party icon services (bytecook, DuckDuckGo,
-> Google, favicon.im) with bookmark-site hostnames only, and the About
-> screen performs an anonymous GitHub Releases API version check; no
-> third-party code is executed. Test:
-> install, open a new tab, double-click empty canvas to create a box, add a
-> bookmark, drag to connect two boxes, open Settings for theme/sync options.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:1ba8b4ff898c21fc1786065ab291c98afafef6d066104d1dfb51d5a4136a7d49 -->
+
+> Boxing replaces the new tab page and stores bookmarks and settings locally.
+> Optional WebDAV or Gist backup contacts the server the user chooses.
+> For icons, it sends bookmark-site hostnames to DuckDuckGo, Google (which
+> may redirect to gstatic), favicon.im, icon.horse and Yandex, and requests
+> `https://<host>/favicon.ico` from the bookmark site itself in parallel.
+> Failed icon lookups can be retried after 7 days; each new-tab load also
+> retries up to 3 of these in the background. The About screen anonymously
+> checks GitHub Releases. No third-party code runs in the extension.
+> To test: open a new tab, double-click the canvas to create a box, add a
+> bookmark, connect two boxes by dragging, then check Settings.
 > Privacy policy: https://boxing.xxx91n.com/privacy-policy.html
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 **Detailed description (EN, also reused for AMO long description — 1,876 chars):**
 

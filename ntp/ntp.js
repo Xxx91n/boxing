@@ -8,7 +8,7 @@
 // provenance; they are not the extension version.
 'use strict';
 // Ticket 03 (architecture-recovery): favicon cache block extracted verbatim to ./favicon.js — first ES module of the zero-build pipeline (spec.md).
-import { loadFavicon } from './favicon.js';
+import { loadFavicon, scheduleNegativeFaviconRetries } from './favicon.js';
 // Ticket 06 (architecture-recovery): shared mutable state moved verbatim to ./state.js —
 // single explicit state module (ESM live-binding singleton). Reads bind live; every write
 // goes through a set*() setter (imported bindings are read-only in ESM).
@@ -1222,6 +1222,7 @@ import { initOnboardingFacade, initOnboarding, initTourReplayEntry, initQuickHel
     try { initQuickHelpEntry(); } catch (e) { debugErr('quick help init', e); }
     try { initOnboarding({ reason: installReason }); } catch (e) { debugErr('onboarding init', e); }
     persistViewState(true);
+    scheduleNegativeFaviconRetries();
     debug('init complete ' + __boxingVersion(), { boxes: layout.boxes.length, lang: currentLang, zoom: canvasZoom, fontSize: layout.settings.fontSize, headerPinned, darkMode: layout.settings.darkMode });
   }
 

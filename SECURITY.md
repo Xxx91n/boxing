@@ -29,7 +29,13 @@ Include:
 
 Boxing is a client-only browser extension. All data is stored locally. Outbound network access is limited to:
 
-- **Favicon retrieval** from four third-party icon services (bytecook `ico.bytecook.io`, DuckDuckGo `icons.duckduckgo.com`, Google `www.google.com/s2/favicons`, favicon.im) and direct `favicon.ico` requests to bookmark-site hosts;
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:7537b1ebd756122884859e9ff6b7110cebe2f228048fb894039d1c71f58be7f9 -->
+
+- **Favicon retrieval** from five third-party icon services (DuckDuckGo `icons.duckduckgo.com`, Google `www.google.com/s2/favicons` with redirects to `t*.gstatic.com`, favicon.im, icon.horse, and Yandex `favicon.yandex.net`) and the bookmark site’s own `https://<host>/favicon.ico`, all requested in parallel. Failed lookups can be retried after 7 days, including up to 3 in the background per new-tab load;
+
+<!-- /coderabbit-ai-generated:v1 -->
 - **Version check** against the GitHub Releases API (`api.github.com`) with a fallback to `https://boxing.xxx91n.com/demo/version.json`;
 - **User-configured WebDAV or GitHub Gist backup** (off by default).
 

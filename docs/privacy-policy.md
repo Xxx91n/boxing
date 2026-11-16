@@ -1,6 +1,13 @@
 # Boxing Privacy Policy
 
-**Last updated:** 2026-11-01  
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:2fc818703e062b5a9b2d607afee4b25ce5b73b63d69f2148847a3c156fe59dc1 -->
+
+**Last updated:** 2026-11-15
+
+
+<!-- /coderabbit-ai-generated:v1 -->
 **Effective date:** 2026-08-08
 
 ## Introduction
@@ -43,7 +50,13 @@ No data ever leaves your device unless you explicitly configure optional cloud b
 
 Boxing is local-first: your bookmarks, layout, and settings stay on your device unless you enable backup. The extension does, however, make the following automatic or user-triggered outbound requests:
 
-**Favicon retrieval (automatic, on by default).** When displaying a bookmark whose icon is not yet cached, Boxing requests the site icon from all four third-party icon services in parallel: bytecook (`ico.bytecook.io`), DuckDuckGo (`icons.duckduckgo.com`), Google (`www.google.com/s2/favicons`), and favicon.im (`favicon.im`); it may also request the bookmark site's own `https://<host>/favicon.ico` directly. The first successful response is used and cached, but the other in-flight requests are not cancelled, and a session winner does not restrict later uncached hosts to a single service. Boxing intentionally places only the bookmark site's hostname (domain) in these request URLs — no bookmark titles, full URLs, or other data are included. As with any browser request, browser-controlled request metadata (such as your network address, referrer, or cookies) may also be transmitted; Boxing does not and cannot control those fields.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:64d3ba3d131fae4d4a600eb88ca4742a1f72931c693dff66e9bf3cc1270b00a7 -->
+
+**Favicon retrieval (automatic, on by default).** For an uncached icon or a cache refresh, Boxing requests all five third-party icon services and the bookmark site’s own `https://<host>/favicon.ico` in parallel. The services are DuckDuckGo (`icons.duckduckgo.com`), Google (`www.google.com/s2/favicons`, which can redirect to `t*.gstatic.com`), favicon.im (`favicon.im`), icon.horse (`icon.horse/icon/`), and Yandex (`favicon.yandex.net/favicon/v2/`). The first successful response is used and cached; the other requests are not cancelled. A session winner does not restrict later requests to one service. Failed lookups are retried when displayed after 7 days. Each new-tab load also retries up to 3 failed lookups older than 7 days in the background after the page has painted, including icons outside the current view. These requests include only the bookmark site’s hostname, never its title, full URL, or other bookmark data. As with any browser request, browser-controlled metadata (such as your network address, referrer, or cookies) may also be transmitted; Boxing does not and cannot control those fields.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 **Version check (automatic).** The About screen periodically queries the GitHub Releases API (`api.github.com/repos/Xxx91n/boxing/releases/latest`) to show whether a newer version is available, with a fallback to `https://boxing.xxx91n.com/demo/version.json`. This request is anonymous and does not include any local data.
 
