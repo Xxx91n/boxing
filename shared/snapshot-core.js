@@ -638,7 +638,8 @@
     // Ticket #130: an extra attempt whose time has come is due even when the normal
     // interval has not elapsed yet. One catch-up run is enough; the next plan is
     // computed from that run's result.
-    if (norm.retry.code && norm.retry.nextAt && now >= norm.retry.nextAt) return true;
+    if (norm.retry.code && norm.retry.nextAt && now >= norm.retry.nextAt &&
+        now >= (Number(norm.remote && norm.remote.notBeforeAt) || 0)) return true;
     if (!norm.nextScheduledAt) return true;
     return now >= norm.nextScheduledAt;
   }

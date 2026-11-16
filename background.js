@@ -2524,12 +2524,15 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
 
   // The extra attempt gets its own one-shot alarm; the user's normal period keeps
   // its own alarm untouched so a retry never looks like a new frequency setting.
-  async function bgSyncRetryAlarm(retry, nowMs) {
+  async function bgSyncRetryAlarm(retry, nowMs, notBeforeAt) {
     await bgAlarmsClear(BG_AUTO_BACKUP_RETRY_ALARM_NAME);
     const plan = retry || {};
     if (!plan.code || !plan.nextAt) return;
     const now = typeof nowMs === 'number' && Number.isFinite(nowMs) ? nowMs : Date.now();
-    const delayInMinutes = Math.max(1, Math.ceil((plan.nextAt - now) / 60000));
+    // Ticket #130: a server Retry-After window can outlast the retry time. Waking inside
+    // it would only take a local snapshot every minute and send nothing.
+    const target = Math.max(plan.nextAt, Number(notBeforeAt) || 0);
+    const delayInMinutes = Math.max(1, Math.ceil((target - now) / 60000));
     await bgAlarmsCreate(BG_AUTO_BACKUP_RETRY_ALARM_NAME, { delayInMinutes });
   }
 
@@ -2639,7 +2642,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
         if (trigger === 'retry' && !retryDue) {
           // The one-shot alarm fired early (or a restart lost it). Put the same planned
           // time back on the schedule instead of swallowing the extra attempt.
-          await bgSyncRetryAlarm(state.retry, now);
+          await bgSyncRetryAlarm(state.retry, now, state.remote && state.remote.notBeforeAt);
           return { ok: false, skipped: true, reason: 'retry-not-due', state };
         }
         if (trigger !== 'alarm' && !isInterruptedRecovery && !retryDue && !normalDue) {
@@ -2649,7 +2652,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
         if (state.lock && state.lock.expiresAt > now && state.lock.ownerId !== BG_WORKER_OWNER_ID) {
           // The lock holder finishes the run and reschedules; if it died, the lease
           // expires. Keep this pipeline alive either way.
-          await bgSyncRetryAlarm(state.retry, now);
+          await bgSyncRetryAlarm(state.retry, now, state.remote && state.remote.notBeforeAt);
           return { ok: false, skipped: true, reason: 'locked', state };
         }
       }
@@ -3012,7 +3015,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
         await bgAlarmsClear(BG_AUTO_BACKUP_RETRY_ALARM_NAME);
         return { ok: Boolean(snapOutcome && snapOutcome.ok), cancelled: true, state: settledState };
       }
-      await bgSyncRetryAlarm(settledState.retry, finishedAt);
+      await bgSyncRetryAlarm(settledState.retry, finishedAt, settledState.remote && settledState.remote.notBeforeAt);
       await setAutoBackupBadge(bgAutoBackupNeedsAttention(settledState.local, settledState.remote));
       if (snapOutcome && snapOutcome.ok) {
         bgLog('Background local auto-backup saved ts=' + snapOutcome.ts + ' trigger=' + trigger);
@@ -3053,7 +3056,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
     const periodInMinutes = Math.max(1, Math.ceil(state.intervalSec / 60));
     // Ticket #130: the retry alarm is rebuilt from the persisted plan, so a worker
     // restart (or a lost alarm) resumes the same bounded attempt instead of forgetting it.
-    await bgSyncRetryAlarm(state.retry, now);
+    await bgSyncRetryAlarm(state.retry, now, state.remote && state.remote.notBeforeAt);
     const existingAlarm = await bgAlarmsGet(BG_AUTO_BACKUP_ALARM_NAME);
     if (!existingAlarm || Number(existingAlarm.periodInMinutes) !== periodInMinutes) {
       const delayInMinutes = core.computeAlarmDelayMinutes(state, now);
