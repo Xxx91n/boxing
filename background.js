@@ -1766,7 +1766,9 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
     if (!accountResult.ok) {
       await bgPatchAutoBackupRemote({
         provider: 'gist',
-        status: 'paused',
+        // A pending POST still needs a human check; do not replace "unknown" with
+        // a different pause reason.
+        status: remote.pendingCreate ? 'unknown' : 'paused',
         lastAttemptAt: Date.now(),
         lastErrorCode: accountResult.reasonCode || 'gistCheckFailed',
       }, generation);
@@ -1806,9 +1808,9 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
         }, generation);
       };
       if (pendingFileName !== fileName) {
-        // The expected file changed while the POST result was unknown; confirming
-        // against the old name would not prove the current write target.
-        await clearPendingPause('gistTargetNeedsReview');
+        // Keep the marker: the POST may have created that Gist, and the user can
+        // switch the file name back to confirm it. Clearing it here would make the
+        // old Gist untracked or cause a second Gist to be created.
         return bgGistWriteError('gistTargetNeedsReview', 'The pending Gist file name changed');
       }
 
@@ -1834,23 +1836,36 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
         return bgGistWriteError('gistTargetNeedsReview', 'The pending Gist no longer exists');
       }
       if (!confirmResp.ok) {
+        const confirmCode = (confirmResp.status === 401 || confirmResp.status === 403)
+          ? 'gistRequestRejected'
+          : 'gistCheckFailed';
         await bgPatchAutoBackupRemote({
           provider: 'gist',
           status: 'unknown',
           lastAttemptAt: Date.now(),
-          lastErrorCode: 'gistCheckFailed',
+          lastErrorCode: confirmCode,
           account,
         }, generation);
-        return bgGistWriteError('gistCheckFailed', 'GitHub API ' + confirmResp.status);
+        return bgGistWriteError(confirmCode, 'GitHub API ' + confirmResp.status);
       }
       let confirmJson = null;
       try { confirmJson = JSON.parse(confirmResp.text); } catch (_) { confirmJson = null; }
       const confirmed = confirmJson ? gistCore.parseGistResponse(confirmJson, pendingFileName) : null;
       if (!confirmed) {
-        // The id exists but does not carry the file the pending POST was writing;
-        // clear the marker so the user can inspect GitHub and retry.
-        await clearPendingPause('gistTargetNeedsReview');
-        return bgGistWriteError('gistTargetNeedsReview', 'The pending Gist does not contain the expected file');
+        // The id exists but does not carry the file the pending POST was writing.
+        // Keep the marker (the write may still be confirmed after a human check)
+        // and report the unresolved result instead of silently re-POSTing.
+        await bgPatchAutoBackupRemote({
+          provider: 'gist',
+          status: 'unknown',
+          lastAttemptAt: Date.now(),
+          lastErrorCode: 'gistResultUnknown',
+          account,
+        }, generation);
+        return bgGistWriteError('gistResultUnknown', 'The pending Gist does not contain the expected file', {
+          resultUnknown: true,
+          gistId: targetGistId,
+        });
       }
       if (confirmed.ownerId && String(confirmed.ownerId) !== String(account.id)) {
         await clearPendingPause('gistTargetNeedsReview');

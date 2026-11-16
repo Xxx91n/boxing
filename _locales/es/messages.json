@@ -1528,11 +1528,11 @@
     "message": "No se pudo verificar la cuenta de GitHub ni sus Gists. La copia Gist automática está en pausa."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "El Gist ya existe. GitHub no ofrece una forma comprobada de evitar que se sobrescriban los cambios de otro escritor, así que la actualización automática sigue en pausa. La copia manual sigue funcionando.",
+    "message": "El Gist ya existe. GitHub no ofrece una forma comprobada de evitar que se sobrescriban los cambios de otro escritor, así que la actualización automática sigue en pausa. La copia manual sigue funcionando mientras el destino y el nombre del archivo no cambien.",
     "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "Ya existe un Gist con este nombre de archivo, pero Boxing no lo tiene registrado. La copia automática está en pausa."
+    "message": "Ya existe un Gist con este nombre de archivo, pero Boxing no lo tiene registrado. La copia automática está en pausa. Escribe el ID de ese Gist en el campo Gist ID para reutilizarlo."
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Los datos de copia son demasiado grandes para enviarlos automáticamente. La copia Gist automática está en pausa."

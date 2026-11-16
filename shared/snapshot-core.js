@@ -77,7 +77,6 @@
     'gistTargetNeedsReview',
     'gistUnknownExisting',
     'gistUpdateNotEnabled',
-    'gistListTooMany',
   ]);
 
   const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);

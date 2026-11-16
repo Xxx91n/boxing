@@ -1531,11 +1531,11 @@
     "message": "无法核对 GitHub 账号或其 Gist，自动 Gist 备份已暂停。"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "这个 Gist 已经存在。GitHub 没有可验证的办法防止覆盖别处的改动，所以自动更新先暂停；手动备份照常可用。",
+    "message": "这个 Gist 已经存在。GitHub 没有可验证的办法防止覆盖别处的改动，所以自动更新先暂停；只要目标和文件名不变，手动备份照常可用。",
     "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "该文件名对应的 Gist 已存在，但 Boxing 没有记录它。自动备份已暂停。"
+    "message": "该文件名对应的 Gist 已存在，但 Boxing 没有记录它。自动备份已暂停。在 Gist ID 里填上这个 Gist 的 ID，就能继续用它。"
   },
   "gistAutoBackupErrTooLarge": {
     "message": "备份数据太大，无法自动上传。自动 Gist 备份已暂停。"

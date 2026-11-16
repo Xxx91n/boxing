@@ -1528,11 +1528,11 @@
     "message": "Não foi possível verificar a conta do GitHub nem os Gists. O backup Gist automático está pausado."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "O Gist já existe. O GitHub não oferece uma forma comprovada de impedir que as alterações de outro autor sejam sobrescritas, então a atualização automática continua pausada. O backup manual continua funcionando.",
+    "message": "O Gist já existe. O GitHub não oferece uma forma comprovada de impedir que as alterações de outro autor sejam sobrescritas, então a atualização automática continua pausada. O backup manual continua funcionando enquanto o destino e o nome do arquivo não mudarem.",
     "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "Já existe um Gist com este nome de arquivo, mas o Boxing não o registra. O backup automático está pausado."
+    "message": "Já existe um Gist com este nome de arquivo, mas o Boxing não o registra. O backup automático está pausado. Informe o ID desse Gist no campo Gist ID para reutilizá-lo."
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Os dados de backup são grandes demais para envio automático. O backup Gist automático está pausado."

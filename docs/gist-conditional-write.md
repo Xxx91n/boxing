@@ -26,8 +26,9 @@ and records the blocker instead of shipping an unsafe PATCH.
   records a trusted baseline, a 2xx PATCH refreshes it when the response carries
   the expected file, a lost response is reported as unknown and is never retried
   automatically. A pending POST that knows its Gist id can be confirmed with a
-  GET before the next manual write; a 404 or a file mismatch clears the marker
-  and pauses for review, while a network failure keeps it unconfirmed.
+  GET before the next manual write; a 404 clears the marker and pauses for
+  review, while a file-name change, a missing expected file, or a network failure
+  keeps it unconfirmed so switching the name back can still confirm it.
 
 ## Evidence reviewed on 2026-11-16
 

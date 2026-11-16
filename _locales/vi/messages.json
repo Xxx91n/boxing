@@ -1528,11 +1528,11 @@
     "message": "Không thể xác minh tài khoản GitHub hoặc các Gist của tài khoản. Sao lưu Gist tự động đã tạm dừng."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Gist này đã tồn tại. GitHub không có cách đã được kiểm chứng để ngăn ghi đè thay đổi của người viết khác, nên tự động cập nhật vẫn tạm dừng. Sao lưu thủ công vẫn dùng được bình thường.",
+    "message": "Gist này đã tồn tại. GitHub không có cách đã được kiểm chứng để ngăn ghi đè thay đổi của người viết khác, nên tự động cập nhật vẫn tạm dừng. Sao lưu thủ công vẫn dùng được khi đích và tên tệp không đổi.",
     "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
-    "message": "Đã có Gist với tên tệp này nhưng Boxing không theo dõi nó. Sao lưu tự động đã tạm dừng."
+    "message": "Đã có Gist với tên tệp này nhưng Boxing không theo dõi nó. Sao lưu tự động đã tạm dừng. Nhập ID của Gist này vào ô Gist ID để dùng lại."
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Dữ liệu sao lưu quá lớn để gửi tự động. Sao lưu Gist tự động đã tạm dừng."

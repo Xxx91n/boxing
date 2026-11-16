@@ -818,6 +818,67 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(state.remote.lastErrorCode).toBe('gistTargetNeedsReview');
   });
 
+  test('a pending Gist keeps its marker when the file name changed', async () => {
+    const store = await baseStore({}, {
+      provider: 'gist', status: 'unknown', lastAttemptAt: 7, lastSuccessAt: 0,
+      lastErrorCode: 'gistResultUnknown', account: { login: 'spec-user', id: 42 },
+      baseline: null,
+      pendingCreate: {
+        provider: 'gist', fileName: 'old.json', description: 'Boxing extension backup',
+        startedAt: 7, accountLogin: 'spec-user', accountId: 42, gistId: 'abc12345',
+      },
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+
+    const res = await sandbox.bg.enqueueManualGistWrite({ fileName: GIST_FILE, content: '{"a":1}' });
+    expect(res).toMatchObject({ success: false, reasonCode: 'gistTargetNeedsReview' });
+    expect(sandbox.calls.map((c) => c.method)).toEqual(['GET']);
+    const state = sandbox.store.autoBackupState;
+    // Switching the name back must still be able to confirm this known Gist.
+    expect(state.remote.pendingCreate.gistId).toBe('abc12345');
+    expect(state.remote.pendingCreate.fileName).toBe('old.json');
+    expect(state.remote.status).toBe('unknown');
+  });
+
+  test('a pending Gist without the expected file keeps the marker unconfirmed', async () => {
+    const store = await baseStore({}, {
+      provider: 'gist', status: 'unknown', lastAttemptAt: 7, lastSuccessAt: 0,
+      lastErrorCode: 'gistResultUnknown', account: { login: 'spec-user', id: 42 },
+      baseline: null,
+      pendingCreate: {
+        provider: 'gist', fileName: GIST_FILE, description: 'Boxing extension backup',
+        startedAt: 7, accountLogin: 'spec-user', accountId: 42, gistId: 'abc12345',
+      },
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (call.method === 'GET' && call.url.endsWith('/gists/abc12345')) {
+          return jsonResponse(200, {
+            id: 'abc12345',
+            files: { 'other.json': { filename: 'other.json', size: 1 } },
+            owner: { login: 'spec-user', id: 42 },
+          });
+        }
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+
+    const res = await sandbox.bg.enqueueManualGistWrite({ fileName: GIST_FILE, content: '{"a":1}' });
+    expect(res).toMatchObject({ success: false, resultUnknown: true, reasonCode: 'gistResultUnknown' });
+    const state = sandbox.store.autoBackupState;
+    expect(state.remote.pendingCreate.gistId).toBe('abc12345');
+    expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastErrorCode).toBe('gistResultUnknown');
+  });
+
   test('a token from another GitHub account pauses before any write', async () => {
     const baseline = {
       service: 'gist', gistId: 'abc12345', fileName: GIST_FILE,

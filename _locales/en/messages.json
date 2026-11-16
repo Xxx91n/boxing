@@ -1594,7 +1594,7 @@
     "description": "Background Gist backup paused because the saved target changed"
   },
   "gistAutoBackupErrExisting": {
-    "message": "A Gist with this file name already exists but is not tracked by Boxing. Automatic backup is paused.",
+    "message": "A Gist with this file name already exists but is not tracked by Boxing. Automatic backup is paused. Enter that Gist's ID in the Gist ID field to reuse it.",
     "description": "Background Gist backup paused because the account already has an untracked Gist with the target file"
   },
   "gistAutoBackupErrUnknown": {
