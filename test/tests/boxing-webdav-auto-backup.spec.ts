@@ -58,6 +58,11 @@ const NEW_I18N_KEYS = [
   'autoBackupCloudReasonTargetChanged',
   'autoBackupCloudReasonError',
   'autoBackupCloudRetryHint',
+  // Ticket #127: trusted-target update reasons.
+  'autoBackupCloudReasonRemoteChanged',
+  'autoBackupCloudReasonBaselineUnverified',
+  'autoBackupCloudReasonRemoteMissing',
+  'autoBackupCloudReasonUpdateFailed',
   'autoBackupCloudActionFix',
 ] as const;
 
@@ -66,15 +71,23 @@ const PLACEHOLDER_KEYS = ['autoBackupCloudStatusPaused', 'autoBackupCloudStatusE
 interface FakeWebdavOptions {
   existingBody?: string | null;
   getBehavior?: 'ok' | 'throw' | '401' | '500';
+  getBehaviorAfterPut?: 'throw' | '401' | '500';
+  omitPutEtag?: boolean;
   putBehavior?: 'ok' | 'throw' | '401' | '409' | '428' | 'ignored';
-  onPut?: (ctx: { files: Map<string, string>; req: Record<string, string> }) => Promise<void> | void;
+  onPut?: (ctx: { files: Map<string, string>; etags: Map<string, string>; req: Record<string, string> }) => Promise<void> | void;
   putGate?: { wait: Promise<void> };
 }
 
 function createFakeWebdav(opts: FakeWebdavOptions = {}) {
   const files = new Map<string, string>();
-  if (opts.existingBody != null) files.set(WEBDAV_FILE_URL, opts.existingBody);
+  const etags = new Map<string, string>();
+  if (opts.existingBody != null) {
+    files.set(WEBDAV_FILE_URL, opts.existingBody);
+    etags.set(WEBDAV_FILE_URL, '"v1"');
+  }
   const requests: Array<Record<string, string>> = [];
+  let etagSeq = 1;
+  let putCount = 0;
 
   async function fetchImpl(input: any, init: any = {}) {
     const url = typeof input === 'string' ? input : String(input && input.url);
@@ -90,16 +103,29 @@ function createFakeWebdav(opts: FakeWebdavOptions = {}) {
     requests.push(req);
 
     if (req.method === 'GET') {
-      const behavior = opts.getBehavior || 'ok';
+      const late = putCount > 0 && opts.getBehaviorAfterPut ? opts.getBehaviorAfterPut : null;
+      const behavior = late || opts.getBehavior || 'ok';
       if (behavior === 'throw') throw new TypeError('network down');
       if (behavior === '401') return new Response(null, { status: 401 });
       if (behavior === '500') return new Response(null, { status: 500 });
-      if (files.has(url)) return new Response(files.get(url), { status: 200, headers: { ETag: '"v1"' } });
+      if (files.has(url)) {
+        return new Response(files.get(url), {
+          status: 200,
+          headers: { ETag: etags.get(url) || '"v1"' },
+        });
+      }
       return new Response(null, { status: 404 });
+    }
+
+    if (req.method === 'DELETE') {
+      files.delete(url);
+      etags.delete(url);
+      return new Response(null, { status: 204 });
     }
 
     if (req.method === 'PUT') {
       if (opts.putGate) await opts.putGate.wait;
+      putCount += 1;
       const behavior = opts.putBehavior || 'ok';
       if (behavior === 'throw') throw new TypeError('network down');
       if (behavior === '401') return new Response(null, { status: 401 });
@@ -107,20 +133,30 @@ function createFakeWebdav(opts: FakeWebdavOptions = {}) {
       if (behavior === '428') return new Response(null, { status: 428 });
       if (behavior === 'ignored') {
         files.set(url, req.body);
+        etags.set(url, '"ignored-' + (++etagSeq) + '"');
         return new Response(null, { status: 200 });
       }
-      if (opts.onPut) await opts.onPut({ files, req });
+      if (opts.onPut) await opts.onPut({ files, etags, req });
       if (req.ifNoneMatch === '*' && files.has(url)) {
         return new Response(null, { status: 412 });
       }
+      if (req.ifMatch && (!files.has(url) || (etags.get(url) || '"v1"') !== req.ifMatch)) {
+        return new Response(null, { status: 412 });
+      }
+      const existed = files.has(url);
       files.set(url, req.body);
-      return new Response(null, { status: 201, headers: { ETag: '"created-1"' } });
+      const nextEtag = existed ? '"updated-' + (++etagSeq) + '"' : '"created-1"';
+      etags.set(url, nextEtag);
+      return new Response(null, {
+        status: existed ? 204 : 201,
+        headers: opts.omitPutEtag ? {} : { ETag: nextEtag },
+      });
     }
 
     return new Response(null, { status: 405 });
   }
 
-  return { files, requests, fetch: fetchImpl };
+  return { files, etags, requests, fetch: fetchImpl };
 }
 
 function seedLayout(overrides: Record<string, any> = {}) {
@@ -353,11 +389,12 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
     expect(local.lastSuccessAt).toBeGreaterThan(0);
     expect(JSON.stringify(env.store.boxingLayout)).toBe(layoutBefore);
 
-    // T5 boundary: an unchanged known target is not updated on the next cycle.
-    const putCountBefore = webdav.requests.length;
+    // T6: an unchanged known target is read once more, but not uploaded again.
+    const requestCountBefore = webdav.requests.length;
     await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
-    expect(webdav.requests.filter((r) => r.method === 'PUT')).toHaveLength(1);
-    expect(webdav.requests.length).toBe(putCountBefore);
+    const newRequests = webdav.requests.slice(requestCountBefore);
+    expect(newRequests.filter((r) => r.method === 'PUT')).toHaveLength(0);
+    expect(newRequests.filter((r) => r.method === 'GET')).toHaveLength(1);
     expect(readRemote(env).status).toBe('ok');
   });
 
@@ -619,8 +656,370 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
   });
 });
 
+test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () => {
+  test.setTimeout(90_000);
+
+  const OLD_REMOTE = JSON.stringify({ version: 3.5, boxes: [{ id: 'OLD', title: 'Old remote' }] });
+  const RACER = JSON.stringify({ version: 3.5, boxes: [{ id: 'RACER', title: 'Concurrent' }] });
+
+  function editedLayout() {
+    const layout = seedLayout();
+    layout.boxes[0].title = 'Work edited';
+    return layout;
+  }
+
+  function trustedBaseline(etag: string | null = '"v1"', extra: Record<string, any> = {}) {
+    return {
+      service: 'webdav',
+      fileUrl: WEBDAV_FILE_URL,
+      account: 'alice',
+      createdAt: 1,
+      etag,
+      version: etag,
+      verifiedAt: 1,
+      conditionalVerifiedAt: 900,
+      ...extra,
+    };
+  }
+
+  function updateEnv(opts: {
+    webdav: ReturnType<typeof createFakeWebdav>;
+    baseline: Record<string, any>;
+    remote?: Record<string, any>;
+    local?: Record<string, any>;
+  }) {
+    return createSandbox({
+      webdav: opts.webdav,
+      store: {
+        boxingLayout: opts.local || editedLayout(),
+        autoBackupState: seedAutoBackupState({
+          remote: {
+            provider: 'webdav',
+            status: 'ok',
+            generation: 0,
+            lastAttemptAt: 1,
+            lastSuccessAt: 1000,
+            lastErrorCode: null,
+            account: null,
+            baseline: opts.baseline,
+            pendingCreate: null,
+            ...(opts.remote || {}),
+          },
+        }),
+      },
+    });
+  }
+
+  function puts(env: ReturnType<typeof createSandbox>) {
+    return env.webdav.requests.filter((r) => r.method === 'PUT');
+  }
+
+  test('first trusted update proves If-Match, uploads the edited layout, and advances the baseline', async () => {
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE });
+    const env = updateEnv({
+      webdav,
+      baseline: trustedBaseline('"v1"', { conditionalVerifiedAt: 0 }),
+    });
+
+    const res = await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    expect(res.ok).toBe(true);
+
+    const sent = puts(env);
+    expect(sent).toHaveLength(3);
+    expect(sent[0].ifNoneMatch, 'the probe creates a throwaway sibling').toBe('*');
+    expect(sent[0].body).toBe('{}');
+    expect(sent[1].ifMatch, 'the probe refuses to trust a server without proof').toMatch(/^"boxing-conditional-probe-/);
+    expect(sent[1].body).toBe('{}');
+    expect(sent[2].ifMatch, 'the real update carries the trusted ETag').toBe('"v1"');
+
+    const body = JSON.parse(sent[2].body);
+    expect(body.boxes[0].title).toBe('Work edited');
+    expect(sent[2].body).not.toContain('secret-pass');
+    expect(sent[2].body).not.toContain('"alice"');
+    expect(webdav.files.get(WEBDAV_FILE_URL)).toBe(sent[2].body);
+    expect(webdav.files.size, 'the probe sibling is deleted').toBe(1);
+
+    const remote = readRemote(env);
+    expect(remote.status).toBe('ok');
+    expect(remote.lastErrorCode).toBeNull();
+    expect(remote.lastSuccessAt).toBeGreaterThan(1000);
+    expect(remote.baseline.version).toBe(webdav.etags.get(WEBDAV_FILE_URL));
+    expect(remote.baseline.conditionalVerifiedAt).toBeGreaterThan(0);
+
+    // A later cycle with no local edit reads once and writes nothing.
+    const requestCount = webdav.requests.length;
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const next = webdav.requests.slice(requestCount);
+    expect(next.filter((r) => r.method === 'PUT')).toHaveLength(0);
+    expect(next.filter((r) => r.method === 'GET')).toHaveLength(1);
+    expect(readRemote(env).status).toBe('ok');
+  });
+
+  test('a remote changed by another device pauses with zero PUT and keeps the foreign file', async () => {
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE });
+    webdav.etags.set(WEBDAV_FILE_URL, '"v9"');
+    const env = updateEnv({ webdav, baseline: trustedBaseline('"v1"') });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    expect(puts(env)).toHaveLength(0);
+    expect(webdav.files.get(WEBDAV_FILE_URL)).toBe(OLD_REMOTE);
+    const remote = readRemote(env);
+    expect(remote.status).toBe('paused');
+    expect(remote.lastErrorCode).toBe('remote-changed');
+    expect(remote.lastSuccessAt).toBe(1000);
+    expect(remote.baseline.version).toBe('"v1"');
+  });
+
+  test('a writer racing between the read and the update gets 412; the other file survives', async () => {
+    let injected = false;
+    const webdav = createFakeWebdav({
+      existingBody: OLD_REMOTE,
+      onPut: ({ files, etags, req }) => {
+        if (req.ifMatch === '"v1"') {
+          files.set(WEBDAV_FILE_URL, RACER);
+          etags.set(WEBDAV_FILE_URL, '"v9"');
+          injected = true;
+        }
+      },
+    });
+    const env = updateEnv({ webdav, baseline: trustedBaseline('"v1"') });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    expect(injected).toBe(true);
+    expect(puts(env)).toHaveLength(1);
+    expect(webdav.files.get(WEBDAV_FILE_URL)).toBe(RACER);
+    const remote = readRemote(env);
+    expect(remote.status).toBe('paused');
+    expect(remote.lastErrorCode).toBe('remote-changed');
+    expect(remote.lastSuccessAt).toBe(1000);
+  });
+
+  test('a server that ignores If-Match is caught by the probe and never receives the local body', async () => {
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE, putBehavior: 'ignored' });
+    const env = updateEnv({
+      webdav,
+      baseline: trustedBaseline('"v1"', { conditionalVerifiedAt: 0 }),
+    });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    const sent = puts(env);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].ifNoneMatch, 'the probe stops before touching the trusted file').toBe('*');
+    expect(sent[0].body).toBe('{}');
+    expect(webdav.files.get(WEBDAV_FILE_URL)).toBe(OLD_REMOTE);
+    expect(webdav.files.size, 'the probe sibling is deleted').toBe(1);
+    const remote = readRemote(env);
+    expect(remote.status).toBe('paused');
+    expect(remote.lastErrorCode).toBe('conditional-unsupported');
+    expect(remote.lastSuccessAt).toBe(1000);
+    // The trusted file was never written, so its baseline is still the old version.
+    expect(remote.baseline.version).toBe('"v1"');
+  });
+
+  test('a missing or weak trusted version stops before any WebDAV request', async () => {
+    for (const baseline of [trustedBaseline(null), trustedBaseline('W/"weak"')]) {
+      const webdav = createFakeWebdav({ existingBody: OLD_REMOTE });
+      const env = updateEnv({ webdav, baseline });
+      await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+      expect(webdav.requests).toHaveLength(0);
+      const remote = readRemote(env);
+      expect(remote.status).toBe('paused');
+      expect(remote.lastErrorCode).toBe('baseline-unverified');
+      expect(remote.lastSuccessAt).toBe(1000);
+    }
+  });
+
+  test('a deleted remote file stops without creating it again', async () => {
+    const webdav = createFakeWebdav();
+    const env = updateEnv({ webdav, baseline: trustedBaseline('"v1"') });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    expect(puts(env)).toHaveLength(0);
+    expect(webdav.files.has(WEBDAV_FILE_URL)).toBe(false);
+    const remote = readRemote(env);
+    expect(remote.status).toBe('paused');
+    expect(remote.lastErrorCode).toBe('remote-missing');
+    expect(remote.lastSuccessAt).toBe(1000);
+  });
+
+  test('a confirmed manual PUT advances the baseline without claiming an automatic success', async () => {
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE });
+    const env = updateEnv({ webdav, baseline: trustedBaseline('"v1"') });
+    const manualBody = JSON.stringify({ version: 3.5, boxes: [{ id: 'MANUAL', title: 'Manual merge' }] });
+
+    const manual = await env.sendMessage({
+      type: 'webdav-put',
+      url: WEBDAV_FILE_URL,
+      user: 'alice',
+      pass: 'secret-pass',
+      body: manualBody,
+    });
+    expect(manual.success).toBe(true);
+
+    const afterManual = readRemote(env);
+    expect(afterManual.status).toBe('ok');
+    expect(afterManual.lastSuccessAt).toBe(1000);
+    expect(afterManual.baseline.version).toBe(webdav.etags.get(WEBDAV_FILE_URL));
+    expect(afterManual.baseline.version).not.toBe('"v1"');
+
+    env.store.boxingLayout = editedLayout();
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const sent = puts(env);
+    expect(sent).toHaveLength(2);
+    expect(sent[1].ifMatch).toBe(afterManual.baseline.version);
+    expect(readRemote(env).status).toBe('ok');
+  });
+
+  test('a locked probe retries instead of blocking forever', async () => {
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE, putBehavior: '409' });
+    const env = updateEnv({
+      webdav,
+      baseline: trustedBaseline('"v1"', { conditionalVerifiedAt: 0 }),
+    });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    expect(puts(env)).toHaveLength(1);
+    const remote = readRemote(env);
+    expect(remote.status).toBe('error');
+    expect(remote.lastErrorCode).toBe('update-failed');
+    expect(remote.lastSuccessAt).toBe(1000);
+  });
+
+  test('a created file with no readable ETag pauses instead of pretending it can continue', async () => {
+    const webdav = createFakeWebdav({ omitPutEtag: true, getBehaviorAfterPut: '401' });
+    const env = createSandbox({ webdav });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    const first = readRemote(env);
+    expect(first.status).toBe('paused');
+    expect(first.lastErrorCode).toBe('baseline-unverified');
+    expect(first.lastSuccessAt).toBeGreaterThan(0);
+    expect(first.baseline.version).toBeNull();
+
+    const requestCount = webdav.requests.length;
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    expect(webdav.requests.length).toBe(requestCount);
+    expect(readRemote(env).lastErrorCode).toBe('baseline-unverified');
+  });
+
+  test('a sparse PUT response is completed by one GET for create and manual sync', async () => {
+    const createWebdav = createFakeWebdav({ omitPutEtag: true });
+    const created = createSandbox({ webdav: createWebdav });
+    await created.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const createdRemote = readRemote(created);
+    expect(createdRemote.status).toBe('ok');
+    expect(createdRemote.baseline.version).toBe('"created-1"');
+    expect(createWebdav.requests.filter((r) => r.method === 'GET')).toHaveLength(2);
+
+    const manualWebdav = createFakeWebdav({ existingBody: OLD_REMOTE, omitPutEtag: true });
+    const env = updateEnv({ webdav: manualWebdav, baseline: trustedBaseline('"v1"') });
+    const manual = await env.sendMessage({
+      type: 'webdav-put',
+      url: WEBDAV_FILE_URL,
+      user: 'alice',
+      pass: 'secret-pass',
+      body: JSON.stringify({ version: 3.5, boxes: [] }),
+    });
+    expect(manual.success).toBe(true);
+    const afterManual = readRemote(env);
+    expect(afterManual.status).toBe('ok');
+    expect(afterManual.lastSuccessAt).toBe(1000);
+    expect(afterManual.baseline.version).toBe('"updated-2"');
+    expect(manualWebdav.requests.filter((r) => r.method === 'GET')).toHaveLength(1);
+  });
+
+  test('an automatic update and a manual PUT never interleave on the same target', async () => {
+    let releasePut!: () => void;
+    const gate = { wait: new Promise<void>((resolve) => { releasePut = resolve; }) };
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE, putGate: gate });
+    const env = updateEnv({ webdav, baseline: trustedBaseline('"v1"') });
+
+    const autoRun = env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    await expect.poll(() => webdav.requests.some((r) => r.method === 'PUT')).toBe(true);
+
+    let manualDone = false;
+    const manual = env.sendMessage({
+      type: 'webdav-put',
+      url: WEBDAV_FILE_URL,
+      user: 'alice',
+      pass: 'secret-pass',
+      body: JSON.stringify({ version: 3.5, boxes: [] }),
+    }).then((r) => { manualDone = true; return r; });
+
+    await new Promise((r) => setTimeout(r, 150));
+    expect(manualDone, 'the manual write waits behind the automatic update').toBe(false);
+
+    releasePut();
+    await autoRun;
+    const manualResp = await manual;
+    expect(manualResp.success).toBe(true);
+    const order = puts(env).map((r) => r.ifMatch ? 'auto-update' : 'manual-put');
+    expect(order).toEqual(['auto-update', 'manual-put']);
+    // The manual note only advances the baseline; the automatic success time stays.
+    expect(readRemote(env).lastSuccessAt).toBeGreaterThan(1000);
+  });
+
+  test('a lost verification read marks the write unknown and is not retried blindly', async () => {
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE, getBehaviorAfterPut: 'throw' });
+    const env = updateEnv({ webdav, baseline: trustedBaseline('"v1"') });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    expect(puts(env)).toHaveLength(1);
+    const remote = readRemote(env);
+    expect(remote.status).toBe('unknown');
+    expect(remote.lastErrorCode).toBe('unknown-outcome');
+    expect(remote.lastSuccessAt).toBe(1000);
+    expect(remote.baseline.version).toBe('"v1"');
+
+    const requestCount = webdav.requests.length;
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    expect(webdav.requests.length).toBe(requestCount);
+  });
+
+  test('a fresh worker restores the saved baseline and keeps updating the same target', async () => {
+    const webdav = createFakeWebdav();
+    const first = createSandbox({ webdav });
+    await first.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const createdAt = readRemote(first).lastSuccessAt;
+    expect(createdAt).toBeGreaterThan(0);
+
+    // New browser/worker lifetime: only persisted state and the remote survive.
+    const restored = createSandbox({ webdav, store: structuredClone(first.store) });
+    restored.store.boxingLayout = editedLayout();
+
+    await restored.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+
+    const remote = readRemote(restored);
+    expect(remote.status).toBe('ok');
+    expect(remote.lastSuccessAt).toBeGreaterThanOrEqual(createdAt);
+    expect(remote.baseline.version).toBe(webdav.etags.get(WEBDAV_FILE_URL));
+    const body = JSON.parse(webdav.files.get(WEBDAV_FILE_URL)!);
+    expect(body.boxes[0].title).toBe('Work edited');
+  });
+
+  test('duplicate alarm wake-ups do not double-write the same target', async () => {
+    const webdav = createFakeWebdav({ existingBody: OLD_REMOTE });
+    const env = updateEnv({ webdav, baseline: trustedBaseline('"v1"') });
+
+    await Promise.all([
+      env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' }),
+      env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' }),
+    ]);
+
+    expect(puts(env)).toHaveLength(1);
+    expect(readRemote(env).status).toBe('ok');
+  });
+});
+
 test.describe('Ticket #125 — static contracts', () => {
-  test('17 cloud-status keys exist in all 14 locales with aligned placeholders', async () => {
+  test('22 cloud-status keys exist in all 14 locales with aligned placeholders', async () => {
     const locales = fs.readdirSync(path.join(ROOT_DIR, '_locales'));
     expect(locales.length).toBe(14);
     const en = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, '_locales', 'en', 'messages.json'), 'utf8'));
@@ -737,6 +1136,44 @@ test.describe('Ticket #125 — Settings cloud status line (file:// lane)', () =>
     });
     await expect(line).toHaveAttribute('data-state', 'ok');
     await expect(line).toContainText(/cloud|云端|雲端/i);
+  });
+
+  test('T6 pause reasons render as their own actionable line', async ({ page }) => {
+    await bootWithState(page, seedAutoBackupState({
+      remote: {
+        status: 'paused',
+        lastAttemptAt: 6,
+        lastSuccessAt: 5,
+        lastErrorCode: 'remote-changed',
+        baseline: { service: 'webdav', fileUrl: WEBDAV_FILE_URL, account: 'alice', createdAt: 1, etag: '"v1"', version: '"v1"' },
+      },
+    }));
+    const line = page.locator('#auto-backup-remote-status');
+    await expect(line).toBeVisible();
+    await expect(line).toHaveAttribute('data-state', 'paused');
+    await expect(line).toContainText(/another device|另一台设备/i);
+
+    await page.evaluate((fileUrl) => {
+      (window as any).__boxingRefreshLocalAutoBackupUi({
+        version: 1,
+        optIn: true,
+        intervalSec: 3600,
+        epoch: 9,
+        nextScheduledAt: 0,
+        updatedAt: 1,
+        local: { status: 'ok', lastAttemptAt: 1, lastSuccessAt: 1, lastSnapshotTs: 1, lastError: null },
+        remote: {
+          status: 'paused',
+          lastAttemptAt: 7,
+          lastSuccessAt: 5,
+          lastErrorCode: 'baseline-unverified',
+          baseline: { service: 'webdav', fileUrl, account: 'alice', createdAt: 1, etag: null, version: null },
+        },
+        lock: null,
+      });
+    }, WEBDAV_FILE_URL);
+    await expect(line).toHaveAttribute('data-state', 'paused');
+    await expect(line).toContainText(/manual sync|手动同步/i);
   });
 });
 

@@ -1391,8 +1391,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "Cópia na nuvem criada",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "Backup na nuvem salvo",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "Cópia na nuvem pausada — $reason$",
@@ -1449,8 +1449,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "O servidor não comprovou que a criação exclusiva é aplicada, então o envio automático parou.",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "O servidor não comprovou que aplica gravações condicionais, então o envio automático foi interrompido.",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "O resultado do envio é desconhecido. Verifique o arquivo remoto e desligue e ligue a cópia automática para tentar de novo.",
@@ -1535,5 +1535,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Os dados de backup são grandes demais para envio automático. O backup Gist automático está pausado."
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "Outro dispositivo alterou o arquivo remoto, então este backup não foi enviado. Faça uma sincronização manual para mesclar primeiro.",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "Este navegador ainda não tem uma versão confiável do arquivo remoto. Faça uma sincronização manual uma vez e o backup automático poderá continuar.",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "O arquivo remoto não existe mais. O envio automático foi interrompido e não o criará de novo sozinho.",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "O servidor recusou esta atualização do backup.",
+    "description": "cloud backup error reason: server refused the update"
   }
 }

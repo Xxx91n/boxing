@@ -1386,7 +1386,7 @@ export function initSyncEngineFacade(deps) {
       return false;
     }
 
-    // Ticket #129: a navbar-level identity for the selected remote target. Two WebDAV
+// Ticket #129: a navbar-level identity for the selected remote target. Two WebDAV
     // addresses are different targets, so the provider alone is not enough.
     function currentRemoteTargetKey(provider) {
       if (provider === 'webdav') {
@@ -1499,6 +1499,11 @@ export function initSyncEngineFacade(deps) {
       'unknown-outcome': { i18n: 'autoBackupCloudReasonUnknownOutcome' },
       'target-changed': { i18n: 'autoBackupCloudReasonTargetChanged' },
       'internal-error': { i18n: 'autoBackupCloudReasonError' },
+      // Ticket #127 (WebDAV trusted-target updates) stable codes.
+      'remote-changed': { i18n: 'autoBackupCloudReasonRemoteChanged' },
+      'baseline-unverified': { i18n: 'autoBackupCloudReasonBaselineUnverified' },
+      'remote-missing': { i18n: 'autoBackupCloudReasonRemoteMissing' },
+      'update-failed': { i18n: 'autoBackupCloudReasonUpdateFailed' },
       // Ticket #126 (Gist first-create) stable codes.
       gistTokenMissing: { i18n: 'gistAutoBackupErrToken', action: 'credentials' },
       gistPermissionMissing: { i18n: 'gistAutoBackupErrPermission', action: 'permission' },

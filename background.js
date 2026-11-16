@@ -359,6 +359,16 @@ try {
   let bgAutoBackupQueue = Promise.resolve();
   let bgAutoBackupInFlightPromise = null;
   let bgSnapshotQueue = Promise.resolve();
+  // Auto-backup state is read-modify-written by the local run, the manual-write
+  // note, and privilege/status updates. Serialize those mutations so a fresh read
+  // cannot be overtaken between the read and the storage write.
+  let bgStateMutationQueue = Promise.resolve();
+
+  function enqueueBgStateMutation(fn) {
+    const run = bgStateMutationQueue.then(fn, fn);
+    bgStateMutationQueue = run.then(() => undefined, () => undefined);
+    return run;
+  }
 
   function enqueueBgAutoBackup(fn) {
     const run = bgAutoBackupQueue.then(fn, fn);
@@ -495,6 +505,19 @@ try {
     return { fileUrl };
   }
 
+  // The saved settings can change while a backup is in flight. Re-read them just
+  // before a write: if the target identity moved, stop instead of sending to the
+  // old fileUrl. (The epoch check remains the primary stop; this narrows the race
+  // caused by a configuration message queued behind a running backup.)
+  async function bgWebDAVTargetStillMatches(url, user) {
+    const stored = await bgStorageGet({ boxingLayout: null });
+    const settings = stored && stored.boxingLayout && stored.boxingLayout.settings;
+    if (!settings || settings.syncProvider !== 'webdav') return false;
+    const derived = bgResolveWebDAVFileUrl(settings);
+    const currentUser = typeof settings.webdavUser === 'string' ? settings.webdavUser.trim() : '';
+    return !derived.error && derived.fileUrl === url && currentUser === user;
+  }
+
   // Same allowlist boundary as the page (#122): only sanitized boxing data leaves,
   // syncLevel still decides what the user shares. Credentials never enter this body.
   function bgBuildWebDAVBackupBody(rawLayout) {
@@ -516,7 +539,8 @@ try {
     return { signal: controller.signal, done: () => clearTimeout(timer) };
   }
 
-  async function bgWebDAVReadFileState(url, user, pass) {
+  async function bgWebDAVReadFileState(url, user, pass, options) {
+    const opts = options || {};
     const h = new Headers();
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
@@ -524,15 +548,158 @@ try {
     let resp;
     try {
       resp = await fetch(url, { method: 'GET', headers: h, redirect: 'manual', signal: abort.signal });
+    } catch (e) {
+      abort.done();
+      throw e;
+    }
+    if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') { abort.done(); return { kind: 'unreachable' }; }
+    if (resp.status === 404) { abort.done(); return { kind: 'absent' }; }
+    if (resp.status === 401 || resp.status === 403) { abort.done(); return { kind: 'auth' }; }
+    if (!resp.ok) { abort.done(); return { kind: 'unreachable', status: resp.status }; }
+    const etag = resp.headers.get('etag') || null;
+    if (opts.includeBody === false) {
+      // The first-create path only needs existence; do not download a foreign file.
+      try { if (resp.body && typeof resp.body.cancel === 'function') await resp.body.cancel(); } catch (_) {}
+      abort.done();
+      return { kind: 'exists', etag };
+    }
+    let body = '';
+    try {
+      body = await readCappedBody(resp, 2 * 1024 * 1024);
+    } catch (_) {
+      return { kind: 'unreachable', status: resp.status };
+    } finally {
+      // Keep the abort timer alive through the body read: a server that stops
+      // sending after the headers must not hang the target queue forever.
+      abort.done();
+    }
+    return { kind: 'exists', etag, body };
+  }
+
+  // A usable If-Match value must be a strong ETag. Weak ETags (W/"...") are not
+  // allowed in If-Match, and a missing ETag cannot protect a later write.
+  function bgIsStrongETag(value) {
+    return typeof value === 'string' && value.length > 0 && value.length <= 512 && value !== '*' && !value.startsWith('W/');
+  }
+
+  function bgWebDAVProbeTag() {
+    return '"boxing-conditional-probe-' + Date.now().toString(36) + '-' +
+      Math.random().toString(36).slice(2, 10) + '"';
+  }
+
+  // Capability probes must never touch the trusted backup file. Use a throwaway
+  // sibling in the same directory: create it, try a wrong If-Match, then delete it.
+  function bgWebDAVProbeSiblingUrl(fileUrl) {
+    try {
+      const u = new URL(fileUrl);
+      const slash = u.pathname.lastIndexOf('/');
+      const dir = u.pathname.slice(0, slash + 1);
+      u.pathname = dir + '.boxing-probe-' + Date.now().toString(36) + '-' +
+        Math.random().toString(36).slice(2, 8) + '.json';
+      return u.href.length <= 2048 ? u.href : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  async function bgWebDAVDeleteUrl(url, user, pass) {
+    const h = new Headers();
+    const auth = makeAuthHeader(user, pass);
+    if (auth) h.set('Authorization', auth);
+    const abort = bgWebDAVAbortHandle(BG_WEBDAV_TIMEOUT_MS);
+    try {
+      const resp = await fetch(url, { method: 'DELETE', headers: h, redirect: 'manual', signal: abort.signal });
+      if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') return { ok: false, status: 0 };
+      return { ok: resp.ok, status: resp.status };
     } finally {
       abort.done();
     }
-    if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') return { kind: 'unreachable' };
-    try { if (resp.body && typeof resp.body.cancel === 'function') await resp.body.cancel(); } catch (_) {}
-    if (resp.status === 404) return { kind: 'absent' };
-    if (resp.status === 401 || resp.status === 403) return { kind: 'auth' };
-    if (resp.ok) return { kind: 'exists', etag: resp.headers.get('etag') || null };
-    return { kind: 'unreachable', status: resp.status };
+  }
+
+  // Update-only PUT. Unlike create-only (#125), the caller already read the remote
+  // file and holds its ETag as the trusted baseline. The condition is the safety
+  // story: a writer that got in first turns this into 412, never a silent overwrite.
+  async function bgWebDAVUpdateOnly(url, user, pass, body, ifMatch) {
+    const h = new Headers({
+      'Content-Type': 'application/json',
+      'Overwrite': 'T',
+      'If-Match': ifMatch,
+    });
+    const auth = makeAuthHeader(user, pass);
+    if (auth) h.set('Authorization', auth);
+    const abort = bgWebDAVAbortHandle(BG_WEBDAV_TIMEOUT_MS);
+    let resp;
+    try {
+      resp = await fetch(url, { method: 'PUT', headers: h, body, redirect: 'manual', signal: abort.signal });
+    } finally {
+      abort.done();
+    }
+    if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') throw new Error('webdav conditional update redirect blocked');
+    return { status: resp.status, ok: Boolean(resp.ok), etag: resp.headers.get('etag') || null };
+  }
+
+  // A successful manual WebDAV write through this worker also becomes the new
+  // trusted version for the same target. Without this, the next automatic cycle
+  // would see a different ETag and stop as if another device had written. The
+  // manual three-way merge and confirmation flow is untouched; only the stored
+  // baseline advances. Manual success never counts as an automatic success time.
+  async function bgNoteManualWebDAVWrite(url, responseEtag, user, pass, body) {
+    try {
+      const stored = await bgStorageGet({ boxingLayout: null });
+      const settings = stored && stored.boxingLayout && stored.boxingLayout.settings;
+      if (!settings || settings.syncProvider !== 'webdav') return null;
+      const currentDerived = bgResolveWebDAVFileUrl(settings);
+      const currentUser = typeof settings.webdavUser === 'string' ? settings.webdavUser.trim() : '';
+      if (currentDerived.error || currentDerived.fileUrl !== url) return null;
+
+      const before = await bgReadAutoBackupState();
+      const beforeBaseline = before.remote && before.remote.baseline;
+      if (!beforeBaseline || beforeBaseline.service !== 'webdav' || beforeBaseline.fileUrl !== url ||
+          beforeBaseline.account !== currentUser) {
+        return null;
+      }
+
+      if (!bgIsStrongETag(responseEtag)) {
+        // Some WebDAV servers omit ETag on PUT but return it on GET. Only adopt the
+        // ETag when the bytes on the server are the bytes we just wrote; otherwise
+        // another writer got in between and its version is not ours.
+        try {
+          const read = await bgWebDAVReadFileState(url, user || '', pass || '');
+          if (read.kind === 'exists' && bgIsStrongETag(read.etag) && read.body === body) {
+            responseEtag = read.etag;
+          }
+        } catch (_) { /* fall through: no trusted version yet */ }
+      }
+      if (!bgIsStrongETag(responseEtag)) return null;
+
+      // Patch only the fields this manual write really changes. The patch helper
+      // reads the current state again inside the mutation queue, so an automatic
+      // success time or a newer pause is not rolled back by a stale copy.
+      const next = await bgPatchAutoBackupRemote((remote) => {
+        const baseline = remote && remote.baseline;
+        if (!baseline || baseline.service !== 'webdav' || baseline.fileUrl !== url ||
+            baseline.account !== currentUser) {
+          return null;
+        }
+        const cleared = remote.status !== 'ok';
+        return {
+          provider: 'webdav',
+          status: cleared ? 'idle' : remote.status,
+          lastErrorCode: cleared ? null : remote.lastErrorCode,
+          baseline: {
+            ...baseline,
+            etag: responseEtag,
+            version: responseEtag,
+            verifiedAt: Date.now(),
+          },
+        };
+      }, before.remote.generation);
+      if (next) await setAutoBackupBadge(bgAutoBackupNeedsAttention(next.local, next.remote));
+      return next;
+    } catch (e) {
+      bgErr('WebDAV manual write baseline note failed', e);
+      return null;
+    }
   }
 
   // Create-only PUT. The header is the whole safety story: on a correct server a
@@ -572,7 +739,7 @@ try {
   }
 
   function bgRemoteStatusForCode(code) {
-    if (code === 'remote-unreachable' || code === 'create-failed' || code === 'internal-error') return 'error';
+    if (code === 'remote-unreachable' || code === 'create-failed' || code === 'update-failed' || code === 'internal-error') return 'error';
     if (code === 'unknown-outcome') return 'unknown';
     return 'paused';
   }
@@ -615,6 +782,9 @@ try {
     // that wrote them. Provider switches keep the old record for a later switch back,
     // but must never hand it to the new target.
     const webdavBaseline = bgBaselineForProvider(prevRemote, 'webdav');
+    // Ticket #127: the WebDAV baseline this run actually started from. A manual
+    // write can land between the caller's snapshot and this run's queue turn.
+    let baselineUsed = webdavBaseline;
 
     if (!settings || settings.syncProvider !== 'webdav') {
       // Not a WebDAV target: cloud auto-backup is off. Keep the trusted baseline
@@ -626,36 +796,26 @@ try {
       };
     }
 
-    const pausedRemote = (code) => ({
+    const pausedFrom = (remote, code) => ({
       provider: 'webdav',
       status: bgRemoteStatusForCode(code),
-      generation: prevRemote.generation,
+      generation: remote.generation,
       lastAttemptAt: Date.now(),
-      lastSuccessAt: bgSuccessAtForProvider(prevRemote, 'webdav'),
+lastSuccessAt: bgSuccessAtForProvider(remote, 'webdav'),
       lastErrorCode: code,
-      account: prevRemote.account,
-      // Keep whatever baseline was there (it belongs to the previous provider) so a
-      // switch back still finds its trusted target; the WebDAV branch above only
-      // treats a WebDAV baseline as its own.
-      baseline: prevRemote.baseline,
+      lastSuccessTarget: remote.lastSuccessTarget || '',
+      account: remote.account,
+      baseline: remote.baseline,
       // A Gist POST may still be unconfirmed; switching providers must not erase
       // the marker, or switching back could create a second Gist.
-      pendingCreate: prevRemote.pendingCreate,
+      pendingCreate: remote.pendingCreate,
     });
+    const pausedRemote = (code) => pausedFrom(prevRemote, code);
 
     const derived = bgResolveWebDAVFileUrl(settings);
     const user = typeof settings.webdavUser === 'string' ? settings.webdavUser.trim() : '';
 
-    if (webdavBaseline) {
-      if (derived.error) return { attempted: false, remote: pausedRemote('invalid-target') };
-      if (webdavBaseline.fileUrl !== derived.fileUrl || webdavBaseline.account !== user) {
-        return { attempted: false, remote: pausedRemote('target-changed') };
-      }
-      // Known + unchanged target: T5 never writes it. T6 owns periodic updates.
-      return { attempted: false, skipped: 'baseline-present', remote: { ...prevRemote, status: 'ok', lastErrorCode: null } };
-    }
-
-    // A previous create whose response was lost must not be retried blindly. The
+// A previous request whose response was lost must not be retried blindly. The
     // user clears this only by changing the auto-backup setting (an explicit action).
     if (prevRemote.status === 'unknown') {
       return { attempted: false, skipped: 'unknown-outcome', remote: prevRemote };
@@ -667,6 +827,16 @@ try {
     // is a normal user action elsewhere in Settings.
     if (prevRemote.status === 'paused' && core.AUTO_BACKUP_REMOTE_BLOCKING_REASONS.includes(prevRemote.lastErrorCode)) {
       return { attempted: false, skipped: 'paused', remote: prevRemote };
+    }
+
+    // A saved baseline binds auto-backup to one real target. Any address, account or
+    // file-name change stops writes to both the old and the new target until the user
+    // confirms the new configuration.
+    if (webdavBaseline) {
+      if (derived.error) return { attempted: false, remote: pausedRemote('invalid-target') };
+      if (webdavBaseline.fileUrl !== derived.fileUrl || webdavBaseline.account !== user) {
+        return { attempted: false, remote: pausedRemote('target-changed') };
+      }
     }
 
     if (derived.error) return { attempted: false, remote: pausedRemote('invalid-target') };
@@ -692,29 +862,251 @@ try {
       if (!core.isAutoBackupActive(live) || live.epoch !== activeEpoch) {
         return { attempted: false, cancelled: true, remote: live.remote };
       }
-      if (bgBaselineForProvider(live.remote, 'webdav')) {
-        return { attempted: false, skipped: 'baseline-present', remote: { ...live.remote, status: 'ok', lastErrorCode: null } };
+const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
+      const liveBaseline = bgBaselineForProvider(liveRemote, 'webdav');
+      baselineUsed = liveBaseline;
+      // A manual sync may have committed a new layout and baseline after this run
+      // captured its local layout. Writing that older layout now would erase the
+      // merged result, so stop and let the next cycle use the fresh layout.
+      const expectedBaselineVersion = options.expectedBaselineVersion;
+      const liveVersion = liveBaseline
+        ? (liveBaseline.version || liveBaseline.etag)
+        : null;
+      if (expectedBaselineVersion !== undefined && liveVersion !== expectedBaselineVersion) {
+        return { attempted: false, skipped: 'baseline-changed', remote: liveRemote };
       }
-      if (live.remote && live.remote.status === 'unknown') {
-        return { attempted: false, skipped: 'unknown-outcome', remote: live.remote };
+      if (liveRemote.status === 'unknown') {
+        return { attempted: false, skipped: 'unknown-outcome', remote: liveRemote };
       }
 
+      // ── Ticket #127: a known, trusted target is updated in place ──
+      const baseline = liveBaseline;
+      if (baseline) {
+        if (baseline.fileUrl !== derived.fileUrl || baseline.account !== user) {
+          return { attempted: false, remote: pausedFrom(liveRemote, 'target-changed') };
+        }
+        const baselineVersion = baseline.version || baseline.etag;
+        if (!bgIsStrongETag(baselineVersion)) {
+          // No strong ETag came with the last confirmed write. The server cannot
+          // protect this update, so wait for a manual sync to establish one.
+          return { attempted: false, remote: pausedFrom(liveRemote, 'baseline-unverified') };
+        }
+
+        let current;
+        try {
+          current = await bgWebDAVReadFileState(derived.fileUrl, user, pass);
+        } catch (e) {
+          bgErr('WebDAV auto-backup update: remote read failed', e);
+          return { attempted: true, remote: pausedFrom(liveRemote, 'remote-unreachable') };
+        }
+        if (current.kind === 'absent') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-missing') };
+        if (current.kind === 'auth') return { attempted: true, remote: pausedFrom(liveRemote, 'auth-failed') };
+        if (current.kind !== 'exists') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-unreachable') };
+        if (!bgIsStrongETag(current.etag)) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
+        }
+        // Different from the version this browser last wrote: another client changed
+        // the remote in the meantime. Pause instead of overwriting or pulling.
+        if (current.etag !== baselineVersion) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'remote-changed') };
+        }
+
+        // Re-check cancellation before the probe. The body build after this point is
+        // synchronous, so the probe follows the remote read as closely as possible
+        // (the probe window is minimized, not eliminated).
+        const liveBeforeProbe = await bgReadAutoBackupState();
+        if (!core.isAutoBackupActive(liveBeforeProbe) || liveBeforeProbe.epoch !== activeEpoch) {
+          return { attempted: false, cancelled: true, remote: liveBeforeProbe.remote };
+        }
+        if (!(await bgWebDAVTargetStillMatches(derived.fileUrl, user))) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'target-changed') };
+        }
+
+        let body;
+        try {
+          body = bgBuildWebDAVBackupBody(rawLayout);
+        } catch (_) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'internal-error') };
+        }
+        // Ordinary local edits change this body; an unchanged one is not a conflict.
+        // When the remote already holds the same JSON there is nothing to upload.
+        if (current.body === body) {
+          return {
+            attempted: false,
+            skipped: 'unchanged',
+            remote: {
+              ...liveRemote,
+              provider: 'webdav',
+              status: 'ok',
+              lastErrorCode: null,
+              baseline: { ...baseline, verifiedAt: Date.now() },
+            },
+          };
+        }
+
+        // Prove the server really enforces If-Match before the first update. The probe
+        // runs on a throwaway sibling, never on the trusted backup file: create it,
+        // send a wrong If-Match, then delete it. A correct server answers 412; a
+        // server that ignores the condition rewrites only the throwaway file.
+        if (!baseline.conditionalVerifiedAt) {
+          let probeUrl = '';
+          let created = null;
+          for (let attempt = 0; attempt < 2; attempt++) {
+            probeUrl = bgWebDAVProbeSiblingUrl(derived.fileUrl);
+            if (!probeUrl) break;
+            try {
+              const c = await bgWebDAVCreateOnly(probeUrl, user, pass, '{}');
+              if (c.status === 412) { created = null; continue; }
+              created = c;
+              break;
+            } catch (e) {
+              created = { threw: true };
+              break;
+            }
+          }
+          if (!created || created.threw) {
+            if (probeUrl) { try { await bgWebDAVDeleteUrl(probeUrl, user, pass); } catch (_) {} }
+            return { attempted: true, remote: pausedFrom(liveRemote, created && created.threw ? 'update-failed' : 'conditional-unsupported') };
+          }
+          if (created.status !== 201) {
+            if (probeUrl) { try { await bgWebDAVDeleteUrl(probeUrl, user, pass); } catch (_) {} }
+            const code = (created.status === 409 || created.status === 423 || created.status >= 500)
+              ? 'update-failed'
+              : 'conditional-unsupported';
+            return { attempted: true, remote: pausedFrom(liveRemote, code) };
+          }
+
+          let probe = null;
+          try {
+            probe = await bgWebDAVUpdateOnly(probeUrl, user, pass, '{}', bgWebDAVProbeTag());
+          } catch (e) {
+            bgErr('WebDAV auto-backup update: condition probe outcome unknown', e);
+            return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
+          } finally {
+            try { await bgWebDAVDeleteUrl(probeUrl, user, pass); } catch (_) {}
+          }
+          if (probe.status === 401 || probe.status === 403) {
+            return { attempted: true, remote: pausedFrom(liveRemote, 'auth-failed') };
+          }
+          if (probe.status === 404) {
+            return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
+          }
+          if (probe.status === 409 || probe.status === 423 || probe.status >= 500) {
+            // A lock or a transient server error says nothing about condition
+            // support; retry on the normal schedule instead of blocking forever.
+            return { attempted: true, remote: pausedFrom(liveRemote, 'update-failed') };
+          }
+          if (probe.status !== 412) {
+            // 2xx means the server ignored If-Match; 428/400 and anything else
+            // did not prove conditional support. Never fall back to a plain PUT.
+            return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
+          }
+        }
+
+        const liveBeforeWrite = await bgReadAutoBackupState();
+        if (!core.isAutoBackupActive(liveBeforeWrite) || liveBeforeWrite.epoch !== activeEpoch) {
+          return { attempted: false, cancelled: true, remote: liveBeforeWrite.remote };
+        }
+        if (!(await bgWebDAVTargetStillMatches(derived.fileUrl, user))) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'target-changed') };
+        }
+
+        let updated;
+        try {
+          updated = await bgWebDAVUpdateOnly(derived.fileUrl, user, pass, body, baselineVersion);
+        } catch (e) {
+          // The PUT may have reached the server. Do not guess and do not retry.
+          bgErr('WebDAV auto-backup update outcome unknown', e);
+          return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
+        }
+        if (updated.status === 412 || updated.status === 409) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'remote-changed') };
+        }
+        if (updated.status === 401 || updated.status === 403) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'auth-failed') };
+        }
+        if (updated.status === 428) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
+        }
+        if (updated.status === 201) return { attempted: true, remote: pausedFrom(liveRemote, 'remote-changed') };
+        if (!updated.ok) return { attempted: true, remote: pausedFrom(liveRemote, 'update-failed') };
+
+        // Read the committed version back so the trusted baseline and the success
+        // time describe the bytes the server actually holds, not the request.
+        let after;
+        try {
+          after = await bgWebDAVReadFileState(derived.fileUrl, user, pass);
+        } catch (e) {
+          bgErr('WebDAV auto-backup update: verification read failed', e);
+          return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
+        }
+        if (after.kind !== 'exists') {
+          // The PUT was accepted but the committed file can no longer be read, so
+          // the final state is unknown rather than "conditional unsupported".
+          return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
+        }
+        if (!bgIsStrongETag(after.etag)) {
+          // The conditional PUT was accepted but the server exposes no strong
+          // version to pin the next update to. Keep the data, drop the stale
+          // version, and ask for a manual sync rather than calling this success.
+          const paused = pausedFrom(liveRemote, 'baseline-unverified');
+          paused.baseline = {
+            ...baseline,
+            etag: null,
+            version: null,
+            verifiedAt: Date.now(),
+          };
+          return { attempted: true, remote: paused };
+        }
+        if (after.etag === baselineVersion) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
+        }
+        if (after.body !== body) {
+          // Another writer replaced the file right after our PUT. The write is no
+          // longer the remote state, so it cannot be recorded as a success.
+          return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
+        }
+
+        const confirmedAt = Date.now();
+        return {
+          attempted: true,
+          updated: true,
+          remote: {
+            ...liveRemote,
+            provider: 'webdav',
+            status: 'ok',
+            lastAttemptAt: confirmedAt,
+            lastSuccessAt: confirmedAt,
+            lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
+            lastErrorCode: null,
+            baseline: {
+              ...baseline,
+              etag: after.etag,
+              version: after.etag,
+              verifiedAt: confirmedAt,
+              conditionalVerifiedAt: baseline.conditionalVerifiedAt || confirmedAt,
+            },
+          },
+        };
+      }
+
+      // ── Ticket #125: first create, only when the remote is verifiably absent ──
       let fileState;
       try {
-        fileState = await bgWebDAVReadFileState(derived.fileUrl, user, pass);
+        fileState = await bgWebDAVReadFileState(derived.fileUrl, user, pass, { includeBody: false });
       } catch (e) {
         bgErr('WebDAV auto-backup: remote check failed', e);
-        return { attempted: true, remote: pausedRemote('remote-unreachable') };
+        return { attempted: true, remote: pausedFrom(liveRemote, 'remote-unreachable') };
       }
-      if (fileState.kind === 'exists') return { attempted: true, remote: pausedRemote('remote-exists-untrusted') };
-      if (fileState.kind === 'auth') return { attempted: true, remote: pausedRemote('auth-failed') };
-      if (fileState.kind !== 'absent') return { attempted: true, remote: pausedRemote('remote-unreachable') };
+      if (fileState.kind === 'exists') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-exists-untrusted') };
+      if (fileState.kind === 'auth') return { attempted: true, remote: pausedFrom(liveRemote, 'auth-failed') };
+      if (fileState.kind !== 'absent') return { attempted: true, remote: pausedFrom(liveRemote, 'remote-unreachable') };
 
       let body;
       try {
         body = bgBuildWebDAVBackupBody(rawLayout);
       } catch (_) {
-        return { attempted: true, remote: pausedRemote('internal-error') };
+        return { attempted: true, remote: pausedFrom(liveRemote, 'internal-error') };
       }
 
       // The user may have disabled auto-backup while the remote check was in flight.
@@ -725,6 +1117,9 @@ try {
       if (bgBaselineForProvider(liveBeforeWrite.remote, 'webdav')) {
         return { attempted: false, skipped: 'baseline-present', remote: { ...liveBeforeWrite.remote, status: 'ok', lastErrorCode: null } };
       }
+      if (!(await bgWebDAVTargetStillMatches(derived.fileUrl, user))) {
+        return { attempted: true, remote: pausedFrom(liveRemote, 'target-changed') };
+      }
 
       let created;
       try {
@@ -733,42 +1128,75 @@ try {
         // The request may or may not have reached the server. Do not guess and do
         // not retry automatically; the user must re-check the target first.
         bgErr('WebDAV auto-backup: conditional create outcome unknown', e);
-        return { attempted: true, remote: pausedRemote('unknown-outcome') };
+        return { attempted: true, remote: pausedFrom(liveRemote, 'unknown-outcome') };
       }
 
       if (created.status === 201) {
         const confirmedAt = Date.now();
+        // Some servers omit ETag on PUT but return it on GET. Read it once so the
+        // first trusted baseline is not lost just because the create response was
+        // sparse; a missing ETag everywhere still leaves version=null and pauses.
+        let createdEtag = created.etag;
+        let createdOverwritten = false;
+        if (!bgIsStrongETag(createdEtag)) {
+          try {
+            const readBack = await bgWebDAVReadFileState(derived.fileUrl, user, pass);
+            if (readBack.kind === 'exists' && bgIsStrongETag(readBack.etag)) {
+              if (readBack.body === body) createdEtag = readBack.etag;
+              else createdOverwritten = true;
+            }
+          } catch (_) { /* keep the sparse create response */ }
+        }
+        if (createdOverwritten) {
+          const lost = pausedFrom(liveRemote, 'remote-changed');
+          lost.lastAttemptAt = confirmedAt;
+          lost.lastSuccessAt = confirmedAt;
+          lost.baseline = {
+            service: 'webdav',
+            fileUrl: derived.fileUrl,
+            account: user,
+            createdAt: confirmedAt,
+            etag: null,
+            version: null,
+            verifiedAt: confirmedAt,
+            conditionalVerifiedAt: 0,
+          };
+          return { attempted: true, remote: lost };
+        }
         return {
           attempted: true,
           created: true,
           remote: {
             provider: 'webdav',
-            status: 'ok',
-            generation: prevRemote.generation,
+            status: bgIsStrongETag(createdEtag) ? 'ok' : 'paused',
+            generation: liveRemote.generation,
             lastAttemptAt: confirmedAt,
             lastSuccessAt: confirmedAt,
-            lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
-            lastErrorCode: null,
-            account: prevRemote.account,
-            pendingCreate: prevRemote.pendingCreate,
+lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
+            lastErrorCode: bgIsStrongETag(createdEtag) ? null : 'baseline-unverified',
+            account: liveRemote.account,
+            pendingCreate: liveRemote.pendingCreate,
             baseline: {
               service: 'webdav',
               fileUrl: derived.fileUrl,
               account: user,
               createdAt: confirmedAt,
-              etag: created.etag || null,
+              etag: createdEtag || null,
+              version: createdEtag || null,
+              verifiedAt: confirmedAt,
+              conditionalVerifiedAt: 0,
             },
           },
         };
       }
-      if (created.status === 412) return { attempted: true, remote: pausedRemote('remote-exists-unknown') };
-      if (created.status === 409) return { attempted: true, remote: pausedRemote('create-conflict') };
-      if (created.status === 401 || created.status === 403) return { attempted: true, remote: pausedRemote('auth-failed') };
-      if (created.status === 428) return { attempted: true, remote: pausedRemote('conditional-unsupported') };
+      if (created.status === 412) return { attempted: true, remote: pausedFrom(liveRemote, 'remote-exists-unknown') };
+      if (created.status === 409) return { attempted: true, remote: pausedFrom(liveRemote, 'create-conflict') };
+      if (created.status === 401 || created.status === 403) return { attempted: true, remote: pausedFrom(liveRemote, 'auth-failed') };
+      if (created.status === 428) return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
       // A plain 200/204 means the server did not prove create-only behaviour — a
       // server that ignores If-None-Match could have overwritten a file. Fail closed.
-      if (created.ok) return { attempted: true, remote: pausedRemote('conditional-unsupported') };
-      return { attempted: true, remote: pausedRemote('create-failed') };
+      if (created.ok) return { attempted: true, remote: pausedFrom(liveRemote, 'conditional-unsupported') };
+      return { attempted: true, remote: pausedFrom(liveRemote, 'create-failed') };
     });
 
     bgLog('WebDAV auto-backup result:', JSON.stringify({
@@ -778,7 +1206,7 @@ try {
       status: outcome && outcome.remote ? outcome.remote.status : null,
       code: outcome && outcome.remote ? outcome.remote.lastErrorCode : null,
     }));
-    return outcome;
+    return { ...outcome, baselineBefore: baselineUsed };
   }
 
   // ── Background Gist first-create (ticket #126 / #120 T7) ──────────────
@@ -930,15 +1358,19 @@ try {
   }
 
   async function bgPatchAutoBackupRemote(patch, expectedGeneration) {
-    const latest = await bgReadAutoBackupState();
-    const currentGeneration = Number(latest.remote && latest.remote.generation) || 0;
-    if (expectedGeneration !== undefined && currentGeneration !== expectedGeneration) {
-      return null;
-    }
-    const now = Date.now();
-    const remote = { ...(latest.remote || {}), ...patch };
-    const next = await bgWriteAutoBackupState({ ...latest, remote, updatedAt: now });
-    return next;
+    return enqueueBgStateMutation(async () => {
+      const latest = await bgReadAutoBackupState();
+      const currentGeneration = Number(latest.remote && latest.remote.generation) || 0;
+      if (expectedGeneration !== undefined && currentGeneration !== expectedGeneration) {
+        return null;
+      }
+      const resolved = typeof patch === 'function' ? patch(latest.remote || {}, latest) : patch;
+      if (!resolved) return null;
+      const now = Date.now();
+      const remote = { ...(latest.remote || {}), ...resolved };
+      const next = await bgWriteAutoBackupState({ ...latest, remote, updatedAt: now });
+      return next;
+    });
   }
 
   function bgGistConfigStillMatches(capturedSettings, freshLayout) {
@@ -1222,6 +1654,12 @@ try {
       const core = await ensureSnapshotCore();
       const now = Date.now();
       let state = await bgReadAutoBackupState();
+      // Ticket #127: capture the remote version before reading the local layout.
+      // A manual sync that finishes after this point must win over the older layout
+      // this run is about to snapshot.
+      const baselineVersionAtStart = state.remote && state.remote.baseline
+        ? (state.remote.baseline.version || state.remote.baseline.etag)
+        : null;
 
       if (!core.isAutoBackupActive(state)) {
         await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
@@ -1250,21 +1688,28 @@ try {
       const activeEpoch = state.epoch;
       const prevLocal = state.local || core.defaultAutoBackupState().local;
       // Do NOT advance nextScheduledAt until the snapshot settles; an interrupted SW wakeup must retry.
-      const claimedState = await bgWriteAutoBackupState({
-        ...state,
-        updatedAt: now,
-        local: {
-          ...prevLocal,
-          status: 'running',
-          lastAttemptAt: now,
-        },
-        lock: {
-          ownerId: BG_WORKER_OWNER_ID,
-          epoch: activeEpoch,
-          acquiredAt: now,
-          expiresAt: now + core.AUTO_BACKUP_LOCK_TTL_MS,
-        },
+      const claimedState = await enqueueBgStateMutation(async () => {
+        const fresh = await bgReadAutoBackupState();
+        if (!core.isAutoBackupActive(fresh) || fresh.epoch !== activeEpoch) return null;
+        return bgWriteAutoBackupState({
+          ...fresh,
+          updatedAt: now,
+          local: {
+            ...(fresh.local || prevLocal),
+            status: 'running',
+            lastAttemptAt: now,
+          },
+          lock: {
+            ownerId: BG_WORKER_OWNER_ID,
+            epoch: activeEpoch,
+            acquiredAt: now,
+            expiresAt: now + core.AUTO_BACKUP_LOCK_TTL_MS,
+          },
+        });
       });
+      if (!claimedState) {
+        return { ok: false, cancelled: true, reason: 'cancelled-before-claim', state: await bgReadAutoBackupState() };
+      }
 
       let snapOutcome = null;
       let errMessage = null;
@@ -1325,6 +1770,7 @@ try {
               layout: rawLayout,
               epoch: activeEpoch,
               trigger,
+              expectedBaselineVersion: baselineVersionAtStart,
             });
           } else if (remoteProvider === 'gist') {
             remoteOutcome = await runBackgroundGistAutoBackup({
@@ -1355,6 +1801,11 @@ try {
       }
       latestState = await bgReadAutoBackupState();
       let remoteState = (remoteOutcome && remoteOutcome.remote) || latestState.remote;
+      const baselineStartVersion = remoteOutcome && Object.prototype.hasOwnProperty.call(remoteOutcome, 'baselineBefore')
+        ? (remoteOutcome.baselineBefore
+            ? (remoteOutcome.baselineBefore.version || remoteOutcome.baselineBefore.etag)
+            : null)
+        : baselineVersionAtStart;
       if (remoteProvider === 'gist') {
         const outcomeGeneration = Number(remoteState && remoteState.generation) || 0;
         const currentGeneration = Number(latestState.remote && latestState.remote.generation) || 0;
@@ -1370,7 +1821,7 @@ try {
       // different target, so the old outcome is not merged into it — except for a
       // confirmed create whose target still matches, which must keep its baseline.
       if (latestState.epoch !== activeEpoch) {
-        const createdTarget = remoteState && remoteState.baseline;
+        const createdTarget = remoteState && bgBaselineForProvider(remoteState, 'webdav');
         if (createdTarget) {
           try {
             const current = await bgStorageGet({ boxingLayout: null });
@@ -1385,20 +1836,38 @@ try {
                 currentUser === createdTarget.account) {
               // Compare-and-set: a concurrent configuration write must win over the
               // older snapshot this run read before the network call.
-              const beforeMerge = await bgReadAutoBackupState();
-              if (beforeMerge.epoch !== latestState.epoch) {
+              const merged = await enqueueBgStateMutation(async () => {
+                const beforeMerge = await bgReadAutoBackupState();
+                if (beforeMerge.epoch !== latestState.epoch) return null;
+                const beforeBaseline = bgBaselineForProvider(beforeMerge.remote, 'webdav');
+                const beforeVersion = beforeBaseline
+                  ? (beforeBaseline.version || beforeBaseline.etag)
+                  : null;
+                let mergedRemote = remoteState;
+                if (beforeVersion && (!baselineStartVersion || beforeVersion !== baselineStartVersion)) {
+                  mergedRemote = {
+                    ...beforeMerge.remote,
+                    lastSuccessAt: Math.max(
+                      Number(beforeMerge.remote && beforeMerge.remote.lastSuccessAt) || 0,
+                      Number(remoteState && remoteState.lastSuccessAt) || 0,
+                    ),
+                  };
+                }
+                return bgWriteAutoBackupState({
+                  ...beforeMerge,
+                  updatedAt: finishedAt,
+                  remote: mergedRemote,
+                  lock: null,
+                });
+              });
+              if (!merged) {
+                const cancelledState = await bgReadAutoBackupState();
                 return {
                   ok: Boolean(snapOutcome && snapOutcome.ok),
                   cancelled: true,
-                  state: beforeMerge,
+                  state: cancelledState,
                 };
               }
-              const merged = await bgWriteAutoBackupState({
-                ...latestState,
-                updatedAt: finishedAt,
-                remote: remoteState,
-                lock: null,
-              });
               if (!core.isAutoBackupActive(merged)) {
                 await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
               }
@@ -1430,43 +1899,62 @@ try {
       }
 
       const settledIntervalMs = latestState.intervalSec * 1000;
-      if (snapOutcome && snapOutcome.ok) {
-        const savedState = await bgWriteAutoBackupState({
-          ...latestState,
-          nextScheduledAt: finishedAt + settledIntervalMs,
-          updatedAt: finishedAt,
-          local: {
+      const localResult = (snapOutcome && snapOutcome.ok)
+        ? {
             status: 'ok',
             lastAttemptAt: claimedState.local.lastAttemptAt,
             lastSuccessAt: snapOutcome.ts,
             lastSnapshotTs: snapOutcome.ts,
             lastError: null,
-          },
-          remote: remoteState,
+          }
+        : {
+            // Failure: NEVER update lastSuccessAt or lastSnapshotTs.
+            status: 'error',
+            lastAttemptAt: claimedState.local.lastAttemptAt,
+            lastSuccessAt: prevLocal.lastSuccessAt || 0,
+            lastSnapshotTs: prevLocal.lastSnapshotTs || 0,
+            lastError: errMessage || 'Failed to save local snapshot',
+          };
+      // Serialize this result with manual-write notes and re-read inside the
+      // mutation. Ticket #127: a manual PUT can commit a newer remote version
+      // after this run read the target but before the result is saved; never move
+      // the trusted baseline backwards, and keep the newest success time.
+      const committed = await enqueueBgStateMutation(async () => {
+        const fresh = await bgReadAutoBackupState();
+        if (fresh.epoch !== activeEpoch) return null;
+        let finalRemote = remoteState;
+        const freshBaseline = bgBaselineForProvider(fresh.remote, 'webdav');
+        const freshVersion = freshBaseline
+          ? (freshBaseline.version || freshBaseline.etag)
+          : null;
+        if (freshVersion && (!baselineStartVersion || freshVersion !== baselineStartVersion)) {
+          finalRemote = {
+            ...fresh.remote,
+            lastSuccessAt: Math.max(
+              Number(fresh.remote && fresh.remote.lastSuccessAt) || 0,
+              Number(remoteState && remoteState.lastSuccessAt) || 0,
+            ),
+          };
+        }
+        return bgWriteAutoBackupState({
+          ...fresh,
+          nextScheduledAt: finishedAt + settledIntervalMs,
+          updatedAt: finishedAt,
+          local: localResult,
+          remote: finalRemote,
           lock: null,
         });
-        await setAutoBackupBadge(bgAutoBackupNeedsAttention(savedState.local, savedState.remote));
-        bgLog('Background local auto-backup saved ts=' + snapOutcome.ts + ' trigger=' + trigger);
-        return { ok: true, ts: snapOutcome.ts, state: savedState, remote: savedState.remote };
-      }
-
-      // Failure: NEVER update lastSuccessAt or lastSnapshotTs.
-      const failState = await bgWriteAutoBackupState({
-        ...latestState,
-        nextScheduledAt: finishedAt + settledIntervalMs,
-        updatedAt: finishedAt,
-        local: {
-          status: 'error',
-          lastAttemptAt: claimedState.local.lastAttemptAt,
-          lastSuccessAt: prevLocal.lastSuccessAt || 0,
-          lastSnapshotTs: prevLocal.lastSnapshotTs || 0,
-          lastError: errMessage || 'Failed to save local snapshot',
-        },
-        remote: remoteState,
-        lock: null,
       });
-      await setAutoBackupBadge(true);
-      return { ok: false, error: failState.local.lastError, state: failState, remote: failState.remote };
+      if (!committed) {
+        const cancelledState = await bgReadAutoBackupState();
+        return { ok: Boolean(snapOutcome && snapOutcome.ok), cancelled: true, state: cancelledState };
+      }
+      await setAutoBackupBadge(bgAutoBackupNeedsAttention(committed.local, committed.remote));
+      if (snapOutcome && snapOutcome.ok) {
+        bgLog('Background local auto-backup saved ts=' + snapOutcome.ts + ' trigger=' + trigger);
+        return { ok: true, ts: snapOutcome.ts, state: committed, remote: committed.remote };
+      }
+      return { ok: false, error: committed.local.lastError, state: committed, remote: committed.remote };
     });
 
     if (!forceImmediate) {
@@ -1531,46 +2019,57 @@ try {
         // Ticket #129: switching auto-backup off is an explicit stop, so the badge
         // stops too. The stored cloud success/pause record stays for Settings.
         await setAutoBackupBadge(false);
-        const disabledState = await bgWriteAutoBackupState({
-          version: 1,
-          optIn: false,
-          intervalSec: 0,
-          epoch: nextEpoch,
-          nextScheduledAt: 0,
-          updatedAt: now,
-          local: {
-            ...prevLocal,
-            status: prevLocal.lastSuccessAt > 0 || prevLocal.lastError ? 'cancelled' : 'idle',
-          },
-          // Cloud success/pause history is not erased by turning auto-backup off.
-          remote: prev.remote,
-          lock: null,
+        const disabledState = await enqueueBgStateMutation(async () => {
+          const fresh = await bgReadAutoBackupState();
+          const freshLocal = fresh.local || prevLocal;
+          return bgWriteAutoBackupState({
+            ...fresh,
+            version: 1,
+            optIn: false,
+            intervalSec: 0,
+            epoch: nextEpoch,
+            nextScheduledAt: 0,
+            updatedAt: now,
+            local: {
+              ...freshLocal,
+              status: freshLocal.lastSuccessAt > 0 || freshLocal.lastError ? 'cancelled' : 'idle',
+            },
+            // Cloud success/pause history is not erased by turning auto-backup off.
+            remote: fresh.remote,
+            lock: null,
+          });
         });
         return { ok: true, state: disabledState };
       }
 
       const periodInMinutes = Math.max(1, Math.ceil(intervalSec / 60));
-      const enabledState = await bgWriteAutoBackupState({
-        version: 1,
-        optIn: true,
-        intervalSec,
-        epoch: nextEpoch,
-        nextScheduledAt: 0,
-        updatedAt: now,
-        local: {
-          ...prevLocal,
-          status: 'running',
-          lastError: null,
-        },
-        // Ticket #125: an explicit user re-enable/reconfigure is the acknowledgement
-        // that releases a held pause or unknown outcome; the next attempt re-checks the
-        // remote file before writing anything.
-        remote: prev.remote ? {
-          ...prev.remote,
-          status: (prev.remote.status === 'unknown' || prev.remote.status === 'paused') ? 'idle' : prev.remote.status,
-          lastErrorCode: (prev.remote.status === 'unknown' || prev.remote.status === 'paused') ? null : prev.remote.lastErrorCode,
-        } : undefined,
-        lock: null,
+      const enabledState = await enqueueBgStateMutation(async () => {
+        const fresh = await bgReadAutoBackupState();
+        const freshLocal = fresh.local || prevLocal;
+        const freshRemote = fresh.remote || prev.remote;
+        return bgWriteAutoBackupState({
+          ...fresh,
+          version: 1,
+          optIn: true,
+          intervalSec,
+          epoch: nextEpoch,
+          nextScheduledAt: 0,
+          updatedAt: now,
+          local: {
+            ...freshLocal,
+            status: 'running',
+            lastError: null,
+          },
+          // Ticket #125: an explicit user re-enable/reconfigure is the acknowledgement
+          // that releases a held pause or unknown outcome; the next attempt re-checks the
+          // remote file before writing anything.
+          remote: freshRemote ? {
+            ...freshRemote,
+            status: (freshRemote.status === 'unknown' || freshRemote.status === 'paused') ? 'idle' : freshRemote.status,
+            lastErrorCode: (freshRemote.status === 'unknown' || freshRemote.status === 'paused') ? null : freshRemote.lastErrorCode,
+          } : undefined,
+          lock: null,
+        });
       });
       await bgAlarmsCreate(BG_AUTO_BACKUP_ALARM_NAME, {
         delayInMinutes: periodInMinutes,
@@ -1877,7 +2376,9 @@ try {
     if (resp.status === 0 || resp.type === 'opaqueredirect') {
       return { status: 0, ok: false, error: 'webdav redirect blocked' };
     }
-    return { status: resp.status, ok: resp.ok };
+    const etag = resp.headers.get('etag') || null;
+    if (resp.ok) await bgNoteManualWebDAVWrite(url, etag, user, pass, body);
+    return { status: resp.status, ok: resp.ok, etag };
   }
 
   // Ticket 99 (T13): DELETE the cloud backup file when the user chooses to
@@ -2011,6 +2512,7 @@ try {
           ? msg.errorCode
           : 'internal-error';
         const next = await enqueueBgAutoBackup(async () => {
+          return enqueueBgStateMutation(async () => {
           const latest = await bgReadAutoBackupState();
           const now = Date.now();
           const local = snapshotTs > 0
@@ -2048,6 +2550,7 @@ try {
           const written = await bgWriteAutoBackupState({ ...latest, local, remote, updatedAt: now });
           await setAutoBackupBadge(bgAutoBackupNeedsAttention(written.local, written.remote));
           return written;
+          });
         });
         return { success: true, state: next };
       } else if (msg.type === 'auto-backup-reset-cloud') {
@@ -2056,12 +2559,14 @@ try {
         // and bump the generation so stale in-flight results are dropped.
         const next = await enqueueBgAutoBackup(async () => {
           const core = await ensureSnapshotCore();
-          const latest = await bgReadAutoBackupState();
-          const nextGeneration = (Number(latest.remote && latest.remote.generation) || 0) + 1;
-          return bgWriteAutoBackupState({
-            ...latest,
-            remote: { ...core.defaultRemoteAutoBackupState(), generation: nextGeneration },
-            updatedAt: Date.now(),
+          return enqueueBgStateMutation(async () => {
+            const latest = await bgReadAutoBackupState();
+            const nextGeneration = (Number(latest.remote && latest.remote.generation) || 0) + 1;
+            return bgWriteAutoBackupState({
+              ...latest,
+              remote: { ...core.defaultRemoteAutoBackupState(), generation: nextGeneration },
+              updatedAt: Date.now(),
+            });
           });
         });
         await bgClearGistPendingPermission();

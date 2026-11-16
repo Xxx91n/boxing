@@ -1391,8 +1391,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "สร้างสำรองบนคลาวด์แล้ว",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "บันทึกสำรองข้อมูลบนคลาวด์แล้ว",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "สำรองบนคลาวด์หยุดชั่วคราว — $reason$",
@@ -1449,8 +1449,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "เซิร์ฟเวอร์ไม่ได้ยืนยันว่าบังคับใช้การสร้างใหม่เท่านั้น การอัปโหลดอัตโนมัติจึงหยุด",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "เซิร์ฟเวอร์ไม่ได้ยืนยันว่าบังคับใช้การเขียนแบบมีเงื่อนไข การอัปโหลดอัตโนมัติจึงหยุด",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "ไม่ทราบผลการอัปโหลด ตรวจสอบไฟล์ระยะไกล แล้วปิดและเปิดสำรองอัตโนมัติใหม่เพื่อลองอีกครั้ง",
@@ -1535,5 +1535,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "ข้อมูลสำรองมีขนาดใหญ่เกินกว่าจะส่งอัตโนมัติ การสำรอง Gist อัตโนมัติหยุดชั่วคราว"
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "อุปกรณ์อื่นเปลี่ยนไฟล์ระยะไกลแล้ว จึงไม่ได้อัปโหลดแบ็กอัปนี้ ให้รันการซิงค์ด้วยตนเองเพื่อรวมก่อน",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "เบราว์เซอร์นี้ยังไม่มีเวอร์ชันที่เชื่อถือได้ของไฟล์ระยะไกล ให้รันการซิงค์ด้วยตนเองหนึ่งครั้ง แล้วแบ็กอัปอัตโนมัติจะทำงานต่อได้",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "ไฟล์ระยะไกลหายไปแล้ว การอัปโหลดอัตโนมัติหยุดและจะไม่สร้างใหม่เอง",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "เซิร์ฟเวอร์ปฏิเสธการอัปเดตแบ็กอัปนี้",
+    "description": "cloud backup error reason: server refused the update"
   }
 }

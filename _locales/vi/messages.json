@@ -1391,8 +1391,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "Đã tạo bản sao lưu đám mây",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "Đã lưu bản sao lưu trên đám mây",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "Sao lưu đám mây tạm dừng — $reason$",
@@ -1449,8 +1449,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "Máy chủ không chứng minh được rằng chỉ tạo mới được thực thi, nên tải lên tự động đã dừng.",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "Máy chủ không chứng minh được rằng có áp dụng ghi có điều kiện, nên tự động tải lên đã dừng.",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "Không rõ kết quả tải lên. Hãy kiểm tra tệp từ xa, rồi tắt và bật lại sao lưu tự động để thử lại.",
@@ -1535,5 +1535,21 @@
   },
   "gistAutoBackupErrTooLarge": {
     "message": "Dữ liệu sao lưu quá lớn để gửi tự động. Sao lưu Gist tự động đã tạm dừng."
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "Thiết bị khác đã thay đổi tệp từ xa, nên lần sao lưu này không được tải lên. Hãy chạy đồng bộ thủ công để gộp trước.",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "Trình duyệt này chưa có phiên bản đáng tin cậy của tệp từ xa. Hãy chạy đồng bộ thủ công một lần, sau đó tự động sao lưu có thể tiếp tục.",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "Tệp từ xa không còn nữa. Tự động tải lên đã dừng và sẽ không tự tạo lại.",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "Máy chủ đã từ chối bản cập nhật sao lưu này.",
+    "description": "cloud backup error reason: server refused the update"
   }
 }

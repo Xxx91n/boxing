@@ -1015,7 +1015,7 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
       };
       await (window as any).__boxingRefreshLocalAutoBackupUi(state);
     });
-    await expect(page.locator('#auto-backup-remote-status')).toContainText('Cloud backup created');
+    await expect(page.locator('#auto-backup-remote-status')).toContainText('Cloud backup saved');
     await expect(page.locator('#local-auto-backup-error')).toBeHidden();
   });
 

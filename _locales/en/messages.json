@@ -1458,8 +1458,8 @@
     "description": "Status badge when legacy interval requires explicit opt-in"
   },
   "autoBackupCloudStatusOk": {
-    "message": "Cloud backup created",
-    "description": "Status line when the background WebDAV backup was created successfully"
+    "message": "Cloud backup saved",
+    "description": "Status line when the background WebDAV backup was saved successfully"
   },
   "autoBackupCloudStatusPaused": {
     "message": "Cloud backup paused — $reason$",
@@ -1516,8 +1516,8 @@
     "description": "Cloud backup pause reason: remote write conflict"
   },
   "autoBackupCloudReasonConditional": {
-    "message": "The server did not prove that create-only upload is enforced, so automatic upload stopped.",
-    "description": "Cloud backup pause reason: conditional create support unproven"
+    "message": "The server did not prove that conditional writes are enforced, so automatic upload stopped.",
+    "description": "Cloud backup pause reason: conditional write support unproven"
   },
   "autoBackupCloudReasonUnknownOutcome": {
     "message": "The upload result is unknown. Check the remote file, then turn auto-backup off and on to retry.",
@@ -1616,5 +1616,21 @@
   "gistAutoBackupErrUpdate": {
     "message": "The Gist already exists. Automatic updates of an existing Gist are not enabled yet.",
     "description": "Background Gist backup stopped because only first creation is supported"
+  },
+  "autoBackupCloudReasonRemoteChanged": {
+    "message": "The remote file was changed by another device, so this backup was not uploaded. Run a manual sync to merge it first.",
+    "description": "cloud backup pause reason: remote changed on another device"
+  },
+  "autoBackupCloudReasonBaselineUnverified": {
+    "message": "This browser has no trusted version of the remote file yet. Run a manual sync once and auto-backup can continue.",
+    "description": "cloud backup pause reason: no trusted remote version yet"
+  },
+  "autoBackupCloudReasonRemoteMissing": {
+    "message": "The remote file is gone. Automatic upload stopped and will not create it again by itself.",
+    "description": "cloud backup pause reason: remote file disappeared"
+  },
+  "autoBackupCloudReasonUpdateFailed": {
+    "message": "The server refused this backup update.",
+    "description": "cloud backup error reason: server refused the update"
   }
 }
