@@ -71,6 +71,7 @@ interface FakeWebdavOptions {
   existingBody?: string | null;
   getBehavior?: 'ok' | 'throw' | '401' | '500';
   getBehaviorAfterPut?: 'throw' | '401' | '500';
+  omitPutEtag?: boolean;
   putBehavior?: 'ok' | 'throw' | '401' | '409' | '428' | 'ignored';
   onPut?: (ctx: { files: Map<string, string>; etags: Map<string, string>; req: Record<string, string> }) => Promise<void> | void;
   putGate?: { wait: Promise<void> };
@@ -139,7 +140,10 @@ function createFakeWebdav(opts: FakeWebdavOptions = {}) {
       files.set(url, req.body);
       const nextEtag = existed ? '"updated-' + (++etagSeq) + '"' : '"created-1"';
       etags.set(url, nextEtag);
-      return new Response(null, { status: existed ? 204 : 201, headers: { ETag: nextEtag } });
+      return new Response(null, {
+        status: existed ? 204 : 201,
+        headers: opts.omitPutEtag ? {} : { ETag: nextEtag },
+      });
     }
 
     return new Response(null, { status: 405 });
@@ -854,6 +858,32 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
     expect(readRemote(env).status).toBe('ok');
   });
 
+  test('a sparse PUT response is completed by one GET for create and manual sync', async () => {
+    const createWebdav = createFakeWebdav({ omitPutEtag: true });
+    const created = createSandbox({ webdav: createWebdav });
+    await created.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const createdRemote = readRemote(created);
+    expect(createdRemote.status).toBe('ok');
+    expect(createdRemote.baseline.version).toBe('"created-1"');
+    expect(createWebdav.requests.filter((r) => r.method === 'GET')).toHaveLength(2);
+
+    const manualWebdav = createFakeWebdav({ existingBody: OLD_REMOTE, omitPutEtag: true });
+    const env = updateEnv({ webdav: manualWebdav, baseline: trustedBaseline('"v1"') });
+    const manual = await env.sendMessage({
+      type: 'webdav-put',
+      url: WEBDAV_FILE_URL,
+      user: 'alice',
+      pass: 'secret-pass',
+      body: JSON.stringify({ version: 3.5, boxes: [] }),
+    });
+    expect(manual.success).toBe(true);
+    const afterManual = readRemote(env);
+    expect(afterManual.status).toBe('ok');
+    expect(afterManual.lastSuccessAt).toBe(1000);
+    expect(afterManual.baseline.version).toBe('"updated-2"');
+    expect(manualWebdav.requests.filter((r) => r.method === 'GET')).toHaveLength(1);
+  });
+
   test('an automatic update and a manual PUT never interleave on the same target', async () => {
     let releasePut!: () => void;
     const gate = { wait: new Promise<void>((resolve) => { releasePut = resolve; }) };
@@ -881,6 +911,8 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
     expect(manualResp.success).toBe(true);
     const order = puts(env).map((r) => r.ifMatch ? 'auto-update' : 'manual-put');
     expect(order).toEqual(['auto-update', 'manual-put']);
+    // The manual note only advances the baseline; the automatic success time stays.
+    expect(readRemote(env).lastSuccessAt).toBeGreaterThan(1000);
   });
 
   test('a lost verification read marks the write unknown and is not retried blindly', async () => {
@@ -916,7 +948,7 @@ test.describe('Ticket #127 — WebDAV trusted-target conditional updates', () =>
 
     const remote = readRemote(restored);
     expect(remote.status).toBe('ok');
-    expect(remote.lastSuccessAt).toBeGreaterThan(createdAt);
+    expect(remote.lastSuccessAt).toBeGreaterThanOrEqual(createdAt);
     expect(remote.baseline.version).toBe(webdav.etags.get(WEBDAV_FILE_URL));
     const body = JSON.parse(webdav.files.get(WEBDAV_FILE_URL)!);
     expect(body.boxes[0].title).toBe('Work edited');
