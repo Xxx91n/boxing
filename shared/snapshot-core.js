@@ -43,6 +43,17 @@
     'unknown-outcome',
     'target-changed',
     'internal-error',
+    // Ticket #126 (Gist first-create). Stable codes; NTP owns the localized copy.
+    'gistTokenMissing',
+    'gistPermissionMissing',
+    'gistAccountChanged',
+    'gistTargetNeedsReview',
+    'gistUnknownExisting',
+    'gistResultUnknown',
+    'gistRequestRejected',
+    'gistCheckFailed',
+    'gistUpdateNotEnabled',
+    'gistPayloadTooLarge',
   ]);
   // Pauses that need the user to inspect the remote side first. They do not retry on
   // their own; permission/auth/credential/reachability problems stay retryable.
@@ -53,6 +64,9 @@
     'conditional-unsupported',
     'invalid-target',
     'target-changed',
+    'gistTargetNeedsReview',
+    'gistUnknownExisting',
+    'gistUpdateNotEnabled',
   ]);
 
   const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);
@@ -309,11 +323,15 @@
 
   function defaultRemoteAutoBackupState() {
     return {
+      provider: '',
       status: 'idle',
+      generation: 0,
       lastAttemptAt: 0,
       lastSuccessAt: 0,
       lastErrorCode: null,
+      account: null,
       baseline: null,
+      pendingCreate: null,
     };
   }
 
@@ -337,19 +355,71 @@
     };
   }
 
-  // Trusted cloud baseline: binds the auto-backup writer to ONE real remote file and
-  // account. No credential material is ever stored here.
+  const REMOTE_GIST_ID_RE = /^[a-f0-9]{5,64}$/i;
+  const REMOTE_DEFAULT_GIST_FILE = 'boxing-backup.json';
+
+  function normalizeRemoteAccount(raw) {
+    if (!isPlainObject(raw)) return null;
+    const login = typeof raw.login === 'string' ? raw.login.trim().slice(0, 100) : '';
+    const id = (typeof raw.id === 'number' && Number.isFinite(raw.id))
+      ? raw.id
+      : (typeof raw.id === 'string' && /^\d{1,20}$/.test(raw.id) ? raw.id : '');
+    return { login, id };
+  }
+
+  function normalizeRemotePendingCreate(raw) {
+    if (!isPlainObject(raw) || raw.provider !== 'gist') return null;
+    const fileName = typeof raw.fileName === 'string' && raw.fileName.trim()
+      ? raw.fileName.trim().slice(0, 512)
+      : REMOTE_DEFAULT_GIST_FILE;
+    const gistId = typeof raw.gistId === 'string' && REMOTE_GIST_ID_RE.test(raw.gistId)
+      ? raw.gistId.toLowerCase()
+      : '';
+    return {
+      provider: 'gist',
+      fileName,
+      description: typeof raw.description === 'string' ? raw.description.slice(0, 200) : '',
+      startedAt: Math.max(0, Number(raw.startedAt) || 0),
+      accountLogin: typeof raw.accountLogin === 'string' ? raw.accountLogin.slice(0, 100) : '',
+      accountId: (typeof raw.accountId === 'number' && Number.isFinite(raw.accountId))
+        ? raw.accountId
+        : (typeof raw.accountId === 'string' && /^\d{1,20}$/.test(raw.accountId) ? raw.accountId : ''),
+      gistId,
+    };
+  }
+
+  // Trusted cloud baseline: binds the auto-backup writer to ONE real remote target
+  // and account. No credential material is ever stored here.
   function normalizeRemoteBaseline(raw) {
     if (!isPlainObject(raw)) return null;
-    if (raw.service !== 'webdav') return null;
-    if (typeof raw.fileUrl !== 'string' || !raw.fileUrl) return null;
-    return {
-      service: 'webdav',
-      fileUrl: raw.fileUrl.slice(0, 4096),
-      account: typeof raw.account === 'string' ? raw.account.slice(0, 512) : '',
-      createdAt: Math.max(0, Number(raw.createdAt) || 0),
-      etag: typeof raw.etag === 'string' ? raw.etag.slice(0, 512) : null,
-    };
+    if (raw.service === 'webdav') {
+      if (typeof raw.fileUrl !== 'string' || !raw.fileUrl) return null;
+      return {
+        service: 'webdav',
+        fileUrl: raw.fileUrl.slice(0, 4096),
+        account: typeof raw.account === 'string' ? raw.account.slice(0, 512) : '',
+        createdAt: Math.max(0, Number(raw.createdAt) || 0),
+        etag: typeof raw.etag === 'string' ? raw.etag.slice(0, 512) : null,
+      };
+    }
+    if (raw.service === 'gist') {
+      const gistId = typeof raw.gistId === 'string' && REMOTE_GIST_ID_RE.test(raw.gistId)
+        ? raw.gistId.toLowerCase()
+        : '';
+      const fileName = typeof raw.fileName === 'string' ? raw.fileName.trim().slice(0, 512) : '';
+      const owner = normalizeRemoteAccount({ login: raw.ownerLogin, id: raw.ownerId });
+      return {
+        service: 'gist',
+        gistId,
+        fileName,
+        ownerLogin: owner ? owner.login : '',
+        ownerId: owner ? owner.id : '',
+        createdAt: Math.max(0, Number(raw.createdAt) || 0),
+        updatedAt: Math.max(0, Number(raw.updatedAt) || 0),
+        verifiedAt: Math.max(0, Number(raw.verifiedAt) || 0),
+      };
+    }
+    return null;
   }
 
   function normalizeRemoteAutoBackupState(raw) {
@@ -359,12 +429,17 @@
     const code = typeof raw.lastErrorCode === 'string' && AUTO_BACKUP_REMOTE_REASONS.includes(raw.lastErrorCode)
       ? raw.lastErrorCode
       : null;
+    const provider = raw.provider === 'webdav' || raw.provider === 'gist' ? raw.provider : '';
     return {
+      provider,
       status,
+      generation: Math.max(0, Math.floor(Number(raw.generation) || 0)),
       lastAttemptAt: Math.max(0, Number(raw.lastAttemptAt) || 0),
       lastSuccessAt: Math.max(0, Number(raw.lastSuccessAt) || 0),
       lastErrorCode: code,
+      account: normalizeRemoteAccount(raw.account),
       baseline: normalizeRemoteBaseline(raw.baseline),
+      pendingCreate: normalizeRemotePendingCreate(raw.pendingCreate),
     };
   }
 

@@ -1482,5 +1482,57 @@
   "titleInputLabel": {
     "message": "盒子標題",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "背景 Gist 備份需要存取 $origin$ 的權限。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "存取 $origin$ 的權限被拒絕。在您授予權限前，背景 Gist 備份會保持暫停。",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "已暫停 — 需要您處理"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "結果待確認"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "缺少 GitHub Token。請先在 Gist 設定中填寫。"
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "尚未授予 GitHub API 存取權限。請在此設定頁面授權。"
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "目前的 GitHub Token 與已儲存的備份目標不屬於同一個帳號。"
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "Gist 目標或檔名與可信基準不一致，自動備份已暫停。"
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "上次建立 Gist 的結果未確認。重試前請先到 GitHub 核對。"
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub 拒絕了請求。請檢查 Token、gist 權限範圍和目標。"
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "無法核對 GitHub 帳號或其 Gist，自動 Gist 備份已暫停。"
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "此 Gist 已存在。目前不支援自動更新既有 Gist。"
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "此檔名對應的 Gist 已存在，但 Boxing 沒有記錄它。自動備份已暫停。"
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "備份資料太大，無法自動上傳。自動 Gist 備份已暫停。"
   }
 }

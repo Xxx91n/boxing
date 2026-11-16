@@ -244,6 +244,8 @@ test.describe('Ticket #124 — Background local auto-backup contracts (file:// +
     expect(fs.existsSync(corePath)).toBe(true);
     const bgCode = fs.readFileSync(bgPath, 'utf8');
     expect(bgCode).toContain("import('./shared/snapshot-core.js')");
+    // Ticket #126: the Firefox ESM background also lazy-loads the Gist protocol core.
+    expect(bgCode).toContain("import('./shared/gist-backup-core.js')");
 
     // Verify shared/snapshot-core.js loads cleanly in Node CJS and exposes expected API
     const core = require(corePath);

@@ -37,6 +37,7 @@ let debug, debugErr, debugWarn, persistViewState, pruneConnArrays, rebuildBoxMap
 // Facade injection is the established pattern for exactly this constraint.
 let applyDarkMode = null;
 let onWebDAVPendingPermissionChanged = null;
+let onGistPendingPermissionChanged = null;
 let onAutoBackupStateChanged = null;
 
 function getSnapshotCore() {
@@ -54,6 +55,7 @@ export function initStorageFacade(deps) {
   mirrorWriter = deps.mirrorWriter; // ticket 60: boot mirror writer (localStorage, sync-readable first paint)
   applyDarkMode = deps.applyDarkMode; // single dark-mode apply path (persist.js)
   onWebDAVPendingPermissionChanged = deps.onWebDAVPendingPermissionChanged || null;
+  onGistPendingPermissionChanged = deps.onGistPendingPermissionChanged || null;
   onAutoBackupStateChanged = deps.onAutoBackupStateChanged || null;
   debug = deps.debug;
   debugErr = deps.debugErr;
@@ -100,6 +102,13 @@ export async function setAutoBackupState(state) {
   await layoutStorage.set({ [AUTO_BACKUP_STATE_KEY]: normalized });
   return normalized;
 }
+// Ticket #126: the manual Gist path must not treat a storage read failure as
+// "no pending create". This variant throws; callers stop before any network write.
+export async function getAutoBackupStateStrict() {
+  const core = getSnapshotCore();
+  const res = await layoutStorage.get({ [AUTO_BACKUP_STATE_KEY]: null });
+  return core.normalizeAutoBackupState(res && res[AUTO_BACKUP_STATE_KEY]);
+}
 
 // Ticket #123: webdavPendingPermission is a storage.local coordination key written
 // by the background SW (when no-gesture alarm lacks host permission) or NTP sync-engine
@@ -121,6 +130,24 @@ export function clearWebDAVPendingPermission() {
   return layoutStorage.remove(WEBDAV_PENDING_PERM_KEY);
 }
 
+// Ticket #126: gistPendingPermission mirrors the WebDAV coordination key for the
+// GitHub API origin. Only origin/reason metadata; never a token or account value.
+const GIST_PENDING_PERM_KEY = 'gistPendingPermission';
+export async function getGistPendingPermission() {
+  try {
+    const res = await layoutStorage.get({ [GIST_PENDING_PERM_KEY]: null });
+    return (res && res[GIST_PENDING_PERM_KEY]) || null;
+  } catch (_) {
+    return null;
+  }
+}
+export function setGistPendingPermission(state) {
+  return layoutStorage.set({ [GIST_PENDING_PERM_KEY]: state });
+}
+export function clearGistPendingPermission() {
+  return layoutStorage.remove(GIST_PENDING_PERM_KEY);
+}
+
 // storage.onChanged listener registration — moved verbatim from ntp.js init() (same
 // registration point in the boot sequence). External boxingLayout changes feed
 // applyExternalLayout, whose applyingExternalLayout guard below prevents
@@ -131,6 +158,9 @@ export function registerStorageOnChanged() {
       if (areaName !== expectedArea) return;
       if (changes.webdavPendingPermission && typeof onWebDAVPendingPermissionChanged === 'function') {
         try { onWebDAVPendingPermissionChanged(changes.webdavPendingPermission.newValue || null); } catch (_) {}
+      }
+      if (changes.gistPendingPermission && typeof onGistPendingPermissionChanged === 'function') {
+        try { onGistPendingPermissionChanged(changes.gistPendingPermission.newValue || null); } catch (_) {}
       }
       if (changes.autoBackupState && typeof onAutoBackupStateChanged === 'function') {
         try {

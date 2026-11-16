@@ -106,7 +106,13 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **remote-delete reason** — (ticket 116) The closed allow-list on `deleteRemoteBackup`'s result, carried as `reason` next to the unchanged `{ ok, error }` shape: `query-fragment` (ticket 114 base-URL rule), `url-too-long` (ticket 108 derived-`fileUrl` cap), `embedded-credentials` (the derivation would strip userinfo and delete under another account) and `missing-password` (nothing to authenticate the DELETE). The status line composes `<reason text> — <deleteSyncCredentialRemoteFailed>` and mirrors the reason onto `data-reason`. Each reason reuses an existing `webdavErr*` key, so the ticket adds no new translations. A transport or stub failure is never a reason: it keeps the plain copy and carries no `reason`, which is what keeps raw transport text out of the UI.
 
-**autoBackupDue** — Storage flag written by the service worker's alarm listener and consumed by the NTP, which runs the backup and clears it.
+**autoBackupState** — The `storage.local` coordination record owned by the background service worker: opt-in, interval, epoch, lock, the local snapshot result, and a separate remote result. NTP reads it through the storage facade and never runs its own auto-backup loop.
+
+**remote backup state** — `autoBackupState.remote`: provider, status, generation, last real success time, stable error code, verified GitHub account (Gist), trusted baseline (WebDAV or Gist), and pending Gist-create marker. It never holds a token, password, or backup body.
+
+**trusted baseline (Gist)** — The persisted record binding a background-created Gist to its id, owner account, file name, and confirmed timestamps. Automatic writes may only proceed when the saved target matches this record; an existing Gist without one is an unknown target and pauses.
+
+**pending Gist create** — A durable marker written before the first Gist POST. If the response is lost or the worker dies, it keeps automatic backup paused and forbids another POST, so a retry cannot create a duplicate Gist.
 
 **MAX_SNAPSHOT_COUNT** — Hard ceiling of 30 snapshots; older snapshots are physically deleted beyond it.
 

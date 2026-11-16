@@ -62,7 +62,8 @@
       "boxing-conflict-field-adjudication.spec.ts",
       "boxing-about-quick-entries.spec.ts",
       "boxing-webdav-permission.spec.ts",
-      "boxing-backup-credential-allowlist.spec.ts"
+      "boxing-backup-credential-allowlist.spec.ts",
+      "boxing-gist-first-create.spec.ts"
     ],
     "ntp/render.js": [
       "boxing-auto-expand.spec.ts",

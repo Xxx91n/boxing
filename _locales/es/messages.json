@@ -1479,5 +1479,57 @@
   "titleInputLabel": {
     "message": "Título de la caja",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "La copia de seguridad Gist en segundo plano necesita acceso a $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "Se denegó el acceso a $origin$. La copia Gist seguirá en pausa hasta que lo concedas.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "En pausa — requiere tu acción"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "Resultado sin confirmar"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "Falta el token de GitHub. Añádelo en los ajustes de Gist."
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "No se ha concedido acceso a la API de GitHub. Concédelo desde esta página de ajustes."
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "El token de GitHub pertenece a otra cuenta distinta del destino de copia guardado."
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "El destino Gist o el nombre de archivo no coincide con la base de confianza. La copia automática está en pausa."
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "Una creación Gist anterior no tiene resultado confirmado. Revisa GitHub antes de reintentar."
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub rechazó la solicitud. Revisa el token, el alcance gist y el destino."
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "No se pudo verificar la cuenta de GitHub ni sus Gists. La copia Gist automática está en pausa."
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "El Gist ya existe. La actualización automática de un Gist existente aún no está activada."
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "Ya existe un Gist con este nombre de archivo, pero Boxing no lo tiene registrado. La copia automática está en pausa."
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "Los datos de copia son demasiado grandes para enviarlos automáticamente. La copia Gist automática está en pausa."
   }
 }

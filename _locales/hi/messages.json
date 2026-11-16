@@ -1479,5 +1479,57 @@
   "titleInputLabel": {
     "message": "बॉक्स का शीर्षक",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "बैकग्राउंड Gist बैकअप को $origin$ तक पहुंच चाहिए।",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "$origin$ तक पहुंच अस्वीकार की गई। जब तक आप अनुमति नहीं देते, Gist बैकअप रुका रहेगा।",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "रुका हुआ — आपकी कार्रवाई चाहिए"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "परिणाम असत्यापित"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "GitHub टोकन मौजूद नहीं है। इसे Gist सेटिंग्स में जोड़ें।"
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "GitHub API की पहुंच नहीं दी गई है। इसे इस सेटिंग्स पेज से अनुमति दें।"
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "GitHub टोकन सहेजे गए बैकअप लक्ष्य से अलग खाते का है।"
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "Gist लक्ष्य या फ़ाइल नाम विश्वसनीय आधार से मेल नहीं खाता। स्वचालित बैकअप रुक गया है।"
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "पिछली Gist रचना का परिणाम असत्यापित है। फिर कोशिश करने से पहले GitHub देखें।"
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub ने अनुरोध अस्वीकार किया। टोकन, gist स्कोप और लक्ष्य जांचें।"
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "GitHub खाते या उसके Gists की जांच नहीं हो सकी। स्वचालित Gist बैकअप रुका हुआ है।"
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "Gist पहले से मौजूद है। मौजूदा Gist का स्वचालित अपडेट अभी उपलब्ध नहीं है।"
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "इस फ़ाइल नाम वाला Gist पहले से मौजूद है, लेकिन Boxing इसे ट्रैक नहीं करता। स्वचालित बैकअप रुका हुआ है।"
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "बैकअप डेटा स्वचालित रूप से भेजने के लिए बहुत बड़ा है। स्वचालित Gist बैकअप रुका हुआ है।"
   }
 }

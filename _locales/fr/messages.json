@@ -1479,5 +1479,57 @@
   "titleInputLabel": {
     "message": "Titre de la boîte",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "La sauvegarde Gist en arrière-plan a besoin d’accéder à $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "L’accès à $origin$ a été refusé. La sauvegarde Gist reste en pause jusqu’à votre autorisation.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "En pause — action requise"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "Résultat non confirmé"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "Le jeton GitHub est absent. Ajoutez-le dans les réglages Gist."
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "L’accès à l’API GitHub n’est pas accordé. Autorisez-le depuis cette page de réglages."
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "Le jeton GitHub appartient à un autre compte que la cible de sauvegarde enregistrée."
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "La cible Gist ou le nom de fichier ne correspond pas à la référence de confiance. La sauvegarde automatique est en pause."
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "La création Gist précédente n’a pas de résultat confirmé. Vérifiez GitHub avant de réessayer."
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub a refusé la requête. Vérifiez le jeton, la portée gist et la cible."
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "Impossible de vérifier le compte GitHub ou ses Gists. La sauvegarde Gist automatique est en pause."
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "Le Gist existe déjà. La mise à jour automatique d’un Gist existant n’est pas encore activée."
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "Un Gist portant ce nom de fichier existe déjà mais n’est pas suivi par Boxing. La sauvegarde automatique est en pause."
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "Les données de sauvegarde sont trop volumineuses pour un envoi automatique. La sauvegarde Gist automatique est en pause."
   }
 }

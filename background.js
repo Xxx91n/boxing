@@ -101,6 +101,14 @@ try {
       bgErr('Failed to importScripts shared/credential-core.js', e);
     }
   }
+  // Ticket #126: the pure Gist first-create protocol core, classic-SW path.
+  if (typeof importScripts === 'function' && !root.__boxingGistBackupCore) {
+    try {
+      importScripts('shared/gist-backup-core.js');
+    } catch (e) {
+      bgErr('Failed to importScripts shared/gist-backup-core.js', e);
+    }
+  }
 
   let _corePromise = null;
   async function ensureSnapshotCore() {
@@ -135,6 +143,23 @@ try {
       });
     }
     return _credCorePromise;
+  }
+
+  let _gistCorePromise = null;
+  async function ensureGistCore() {
+    if (root.__boxingGistBackupCore) return root.__boxingGistBackupCore;
+    if (!_gistCorePromise) {
+      _gistCorePromise = import('./shared/gist-backup-core.js').then((mod) => {
+        const candidate = root.__boxingGistBackupCore || (mod && (mod.default || mod));
+        const core = candidate && typeof candidate.planGistFirstCreate === 'function' ? candidate : null;
+        if (core && !root.__boxingGistBackupCore) root.__boxingGistBackupCore = core;
+        return core;
+      }).catch((e) => {
+        _gistCorePromise = null;
+        throw e;
+      });
+    }
+    return _gistCorePromise;
   }
 
   // ── Cross-browser storage / alarms / badge helpers ────────
@@ -578,11 +603,17 @@ try {
     }
 
     const pausedRemote = (code) => ({
+      provider: 'webdav',
       status: bgRemoteStatusForCode(code),
+      generation: prevRemote.generation,
       lastAttemptAt: Date.now(),
       lastSuccessAt: prevRemote.lastSuccessAt || 0,
       lastErrorCode: code,
+      account: prevRemote.account,
       baseline: prevRemote.baseline || null,
+      // A Gist POST may still be unconfirmed; switching providers must not erase
+      // the marker, or switching back could create a second Gist.
+      pendingCreate: prevRemote.pendingCreate,
     });
 
     const derived = bgResolveWebDAVFileUrl(settings);
@@ -684,10 +715,14 @@ try {
           attempted: true,
           created: true,
           remote: {
+            provider: 'webdav',
             status: 'ok',
+            generation: prevRemote.generation,
             lastAttemptAt: confirmedAt,
             lastSuccessAt: confirmedAt,
             lastErrorCode: null,
+            account: prevRemote.account,
+            pendingCreate: prevRemote.pendingCreate,
             baseline: {
               service: 'webdav',
               fileUrl: derived.fileUrl,
@@ -716,6 +751,427 @@ try {
       code: outcome && outcome.remote ? outcome.remote.lastErrorCode : null,
     }));
     return outcome;
+  }
+
+  // ── Background Gist first-create (ticket #126 / #120 T7) ──────────────
+  // Only the FIRST unattended Gist is created here; updating an existing Gist is
+  // ticket #128. The function returns the same {attempted, remote} shape as the
+  // WebDAV path, and writes the durable pending marker before the POST.
+  const BG_GIST_API_BASE = 'https://api.github.com';
+  const BG_GIST_REQUEST_TIMEOUT_MS = 20000;
+  const BG_GIST_LIST_MAX_PAGES = 3;
+
+  function bgGistHeaders(token) {
+    return new Headers({
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    });
+  }
+
+  async function bgGistFetch(pathname, token, options) {
+    const opts = options || {};
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      try { controller.abort(); } catch (_) { /* already settled */ }
+    }, BG_GIST_REQUEST_TIMEOUT_MS);
+    const headers = bgGistHeaders(token);
+    if (opts.body !== undefined) headers.set('Content-Type', 'application/json');
+    try {
+      const resp = await fetch(BG_GIST_API_BASE + pathname, {
+        method: opts.method || 'GET',
+        headers,
+        body: opts.body,
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+      if (resp.status === 0 || resp.type === 'opaqueredirect') {
+        const e = new Error('gist redirect blocked');
+        e.gistUnknown = true;
+        throw e;
+      }
+      let text = '';
+      try {
+        text = await resp.text();
+      } catch (e) {
+        const bodyErr = new Error('gist response body unreadable');
+        bodyErr.gistUnknown = true;
+        throw bodyErr;
+      }
+      return { status: resp.status, ok: resp.ok, headers: resp.headers, text };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function bgNormalizeAccountId(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    return typeof value === 'string' && /^\d{1,20}$/.test(value) ? value : '';
+  }
+
+  async function bgGistGetUser(token) {
+    let resp;
+    try {
+      resp = await bgGistFetch('/user', token, { method: 'GET' });
+    } catch (e) {
+      return { ok: false, reasonCode: 'gistCheckFailed' };
+    }
+    if (resp.status === 401 || resp.status === 403) {
+      return { ok: false, reasonCode: 'gistRequestRejected' };
+    }
+    if (!resp.ok) return { ok: false, reasonCode: 'gistCheckFailed' };
+    let json;
+    try { json = JSON.parse(resp.text); } catch (_) { return { ok: false, reasonCode: 'gistCheckFailed' }; }
+    const login = json && json.login;
+    const normalizedId = bgNormalizeAccountId(json && json.id);
+    if (!normalizedId || typeof login !== 'string' || !login) {
+      return { ok: false, reasonCode: 'gistCheckFailed' };
+    }
+    return { ok: true, account: { login: login.slice(0, 100), id: normalizedId } };
+  }
+
+  async function bgGistListOwnGists(token) {
+    const all = [];
+    for (let page = 1; page <= BG_GIST_LIST_MAX_PAGES; page++) {
+      let resp;
+      try {
+        resp = await bgGistFetch('/gists?per_page=100&page=' + page, token, { method: 'GET' });
+      } catch (e) {
+        return { ok: false, reasonCode: 'gistCheckFailed' };
+      }
+      if (resp.status === 401 || resp.status === 403) {
+        return { ok: false, reasonCode: 'gistRequestRejected' };
+      }
+      if (!resp.ok) return { ok: false, reasonCode: 'gistCheckFailed' };
+      let json;
+      try { json = JSON.parse(resp.text); } catch (_) { return { ok: false, reasonCode: 'gistCheckFailed' }; }
+      if (!Array.isArray(json)) return { ok: false, reasonCode: 'gistCheckFailed' };
+      for (const gist of json) all.push(gist);
+      const link = resp.headers && typeof resp.headers.get === 'function' ? resp.headers.get('link') : '';
+      const hasNext = typeof link === 'string' && /rel="next"/i.test(link);
+      if (!hasNext) return { ok: true, gists: all };
+    }
+    return { ok: false, reasonCode: 'gistCheckFailed' };
+  }
+
+  async function bgRecordGistPendingPermission(origin, reason) {
+    if (!origin || !api.storage || !api.storage.local || !api.storage.local.set) return null;
+    try {
+      const stored = await bgStorageGet({ [BG_GIST_PENDING_PERM_KEY]: null });
+      const prev = stored && stored[BG_GIST_PENDING_PERM_KEY];
+      const nextReason = (reason === 'missing-permission' && prev && prev.needed && prev.origin === origin && prev.reason === 'denied')
+        ? 'denied'
+        : (reason || 'missing-permission');
+      const permState = { needed: true, origin, source: 'background', reason: nextReason, updatedAt: Date.now() };
+      await api.storage.local.set({ gistPendingPermission: permState });
+      return permState;
+    } catch (e) {
+      bgErr('bgRecordGistPendingPermission failed', e);
+      return null;
+    }
+  }
+
+  async function bgClearGistPendingPermission(origin) {
+    try {
+      const stored = await bgStorageGet({ [BG_GIST_PENDING_PERM_KEY]: null });
+      const pending = stored && stored[BG_GIST_PENDING_PERM_KEY];
+      if (!pending) return;
+      if (!origin || pending.origin === origin) {
+        await bgStorageRemoveValidated(BG_GIST_PENDING_PERM_KEY);
+      }
+    } catch (e) {
+      bgErr('bgClearGistPendingPermission failed', e);
+    }
+  }
+
+  async function inspectAndRecordBackgroundGistPermission() {
+    try {
+      const stored = await bgStorageGet({ boxingLayout: null, [BG_GIST_PENDING_PERM_KEY]: null });
+      const settings = stored && stored.boxingLayout && stored.boxingLayout.settings;
+      if (!settings || settings.syncProvider !== 'gist') return null;
+      const perm = await ensureGistApiPermission();
+      if (!perm.ok && perm.needPermission) {
+        return await bgRecordGistPendingPermission(perm.origin, 'missing-permission');
+      }
+      if (perm.ok) await bgClearGistPendingPermission(perm.origin);
+      return null;
+    } catch (e) {
+      bgErr('inspectAndRecordBackgroundGistPermission error', e);
+      return null;
+    }
+  }
+
+  async function bgPatchAutoBackupRemote(patch, expectedGeneration) {
+    const latest = await bgReadAutoBackupState();
+    const currentGeneration = Number(latest.remote && latest.remote.generation) || 0;
+    if (expectedGeneration !== undefined && currentGeneration !== expectedGeneration) {
+      return null;
+    }
+    const now = Date.now();
+    const remote = { ...(latest.remote || {}), ...patch };
+    const next = await bgWriteAutoBackupState({ ...latest, remote, updatedAt: now });
+    return next;
+  }
+
+  function bgGistConfigStillMatches(capturedSettings, freshLayout) {
+    if (!swIsPlausibleLayout(freshLayout)) return false;
+    const fresh = freshLayout.settings || {};
+    return fresh.syncProvider === 'gist' &&
+      JSON.stringify(fresh._encGistToken || null) === JSON.stringify(capturedSettings._encGistToken || null) &&
+      String(fresh.syncFileName || '') === String(capturedSettings.syncFileName || '') &&
+      String(fresh.syncLevel || 'full') === String(capturedSettings.syncLevel || 'full') &&
+      String(fresh.gistId || '') === String(capturedSettings.gistId || '');
+  }
+
+  async function runBackgroundGistAutoBackup(opts) {
+    const options = opts || {};
+    const trigger = String(options.trigger || 'alarm');
+    const expectedEpoch = options.epoch;
+    const core = await ensureSnapshotCore();
+    const gistCore = await ensureGistCore();
+    let state = options.state || await bgReadAutoBackupState();
+    let rawLayout = options.layout || null;
+    if (!rawLayout) {
+      const stored = await bgStorageGet({ boxingLayout: null });
+      rawLayout = stored && stored.boxingLayout;
+    }
+    const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
+    const remoteGeneration = Number(prevRemote.generation) || 0;
+    const settings = rawLayout && rawLayout.settings ? rawLayout.settings : null;
+    if (!settings || settings.syncProvider !== 'gist') {
+      return { attempted: false, skipped: 'not-gist', remote: prevRemote };
+    }
+
+    const finish = async (attempted, remote) => {
+      const nextRemote = remote || (await bgReadAutoBackupState()).remote;
+      await setAutoBackupBadge(bgAutoBackupNeedsAttention(null, nextRemote));
+      return { attempted, remote: nextRemote };
+    };
+
+    const finishPause = async (code, fromRemote, extraPatch) => {
+      const patch = {
+        provider: 'gist',
+        status: code === 'gistResultUnknown' ? 'unknown' : 'paused',
+        lastAttemptAt: Date.now(),
+        lastSuccessAt: Number(fromRemote && fromRemote.lastSuccessAt) || 0,
+        lastErrorCode: code,
+        ...extraPatch,
+      };
+      const next = await bgPatchAutoBackupRemote(patch, remoteGeneration);
+      if (!next) {
+        return { attempted: true, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+      }
+      bgLog('Gist first-create paused: ' + code + ' trigger=' + trigger);
+      return finish(true, next.remote);
+    };
+
+    let token = '';
+    try {
+      token = await bgDecryptCredential(settings._encGistToken);
+    } catch (e) {
+      bgErr('Gist token decrypt failed', e);
+      token = '';
+    }
+    const tokenPresent = typeof token === 'string' && token.trim().length > 0;
+
+    let permission = { ok: false, needPermission: true, origin: BG_GIST_API_ORIGIN };
+    if (tokenPresent) {
+      permission = await ensureGistApiPermission();
+      if (!permission.ok && permission.needPermission) {
+        await bgRecordGistPendingPermission(permission.origin);
+      } else if (permission.ok) {
+        await bgClearGistPendingPermission(permission.origin);
+      }
+    }
+    if (!tokenPresent) return finishPause('gistTokenMissing', prevRemote);
+    if (!permission.ok) return finishPause('gistPermissionMissing', prevRemote);
+
+    if (prevRemote.pendingCreate) return finishPause('gistResultUnknown', prevRemote);
+
+    const accountResult = await bgGistGetUser(token);
+    if (!accountResult.ok) {
+      return finishPause(accountResult.reasonCode || 'gistCheckFailed', prevRemote);
+    }
+    const account = accountResult.account;
+
+    const remoteBaseline = prevRemote.baseline && prevRemote.baseline.service === 'gist'
+      ? {
+          provider: 'gist',
+          gistId: prevRemote.baseline.gistId,
+          fileName: prevRemote.baseline.fileName,
+          ownerLogin: prevRemote.baseline.ownerLogin,
+          ownerId: prevRemote.baseline.ownerId,
+        }
+      : null;
+    const plan = gistCore.planGistFirstCreate({
+      settings,
+      cloud: {
+        pendingCreate: prevRemote.pendingCreate,
+        baseline: remoteBaseline,
+        account: prevRemote.account,
+      },
+      account,
+      tokenPresent: true,
+      permission: { ok: true },
+    });
+
+    const sameAccountPatch = (!prevRemote.account || String(prevRemote.account.id) === String(account.id))
+      ? { account }
+      : {};
+
+    if (plan.action === 'pause') {
+      return finishPause(plan.reasonCode, prevRemote, sameAccountPatch);
+    }
+    if (plan.action === 'update-not-enabled') {
+      return finishPause('gistUpdateNotEnabled', prevRemote, sameAccountPatch);
+    }
+    if (plan.action !== 'create') {
+      return { attempted: false, skipped: plan.action, remote: prevRemote };
+    }
+
+    const listResult = await bgGistListOwnGists(token);
+    if (!listResult.ok) {
+      return finishPause(listResult.reasonCode || 'gistCheckFailed', prevRemote, sameAccountPatch);
+    }
+    const conflict = gistCore.findGistWithFile(listResult.gists, plan.fileName);
+    if (conflict) {
+      return finishPause('gistUnknownExisting', prevRemote, sameAccountPatch);
+    }
+
+    const beforePost = await bgReadAutoBackupState();
+    const freshStored = await bgStorageGet({ boxingLayout: null });
+    const freshLayout = freshStored && freshStored.boxingLayout;
+    const freshGeneration = Number(beforePost.remote && beforePost.remote.generation) || 0;
+    if (!core.isAutoBackupActive(beforePost) ||
+        (expectedEpoch !== undefined && beforePost.epoch !== expectedEpoch) ||
+        freshGeneration !== remoteGeneration ||
+        !bgGistConfigStillMatches(settings, freshLayout)) {
+      if (!core.isAutoBackupActive(beforePost)) await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+      return { attempted: false, cancelled: true, remote: beforePost.remote };
+    }
+
+    const fileName = plan.fileName;
+    const content = bgBuildWebDAVBackupBody(freshLayout);
+    if (content.length > BG_MAX_BODY) {
+      return finishPause('gistPayloadTooLarge', prevRemote, sameAccountPatch);
+    }
+    const body = gistCore.buildGistCreateBody(fileName, content);
+    const startedAt = Date.now();
+    const pendingCreate = {
+      provider: 'gist',
+      fileName,
+      description: body.description,
+      startedAt,
+      accountLogin: account.login,
+      accountId: account.id,
+      gistId: '',
+    };
+
+    const markerState = await bgPatchAutoBackupRemote({
+      provider: 'gist',
+      status: 'running',
+      lastAttemptAt: startedAt,
+      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastErrorCode: null,
+      account,
+      pendingCreate,
+    }, remoteGeneration);
+    if (!markerState) {
+      return { attempted: false, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+    }
+
+    const pendingPatch = (extra) => ({
+      provider: 'gist',
+      status: 'unknown',
+      lastAttemptAt: startedAt,
+      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastErrorCode: 'gistResultUnknown',
+      account,
+      pendingCreate,
+      ...extra,
+    });
+    const writePending = async (extra) => {
+      const next = await bgPatchAutoBackupRemote(pendingPatch(extra), remoteGeneration);
+      return next ? next.remote : null;
+    };
+
+    let resp = null;
+    let requestError = null;
+    try {
+      resp = await bgGistFetch('/gists', token, { method: 'POST', body: JSON.stringify(body) });
+    } catch (e) {
+      requestError = e;
+    }
+    const finishedAt = Date.now();
+
+    if (!resp) {
+      const remote = await writePending();
+      bgErr('Gist create result unknown (' + trigger + '):', requestError && requestError.message ? requestError.message : 'network error');
+      if (!remote) return { attempted: true, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+      return finish(true, remote);
+    }
+
+    if (resp.status === 201) {
+      let json = null;
+      try { json = JSON.parse(resp.text); } catch (_) { json = null; }
+      const parsed = json ? gistCore.parseGistResponse(json, fileName) : null;
+      if (parsed) {
+        const baseline = {
+          service: 'gist',
+          gistId: parsed.gistId,
+          ownerLogin: parsed.ownerLogin || account.login,
+          ownerId: parsed.ownerId || account.id,
+          fileName,
+          createdAt: parsed.createdAt || finishedAt,
+          updatedAt: parsed.updatedAt || finishedAt,
+          verifiedAt: finishedAt,
+        };
+        const next = await bgPatchAutoBackupRemote({
+          provider: 'gist',
+          status: 'ok',
+          lastAttemptAt: startedAt,
+          lastSuccessAt: finishedAt,
+          lastErrorCode: null,
+          account: { login: baseline.ownerLogin, id: baseline.ownerId },
+          baseline,
+          pendingCreate: null,
+        }, remoteGeneration);
+        if (!next) {
+          bgLog('Gist first-create confirmed but discarded after reset id=' + baseline.gistId + ' trigger=' + trigger);
+          return { attempted: true, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+        }
+        bgLog('Gist first-create confirmed id=' + baseline.gistId + ' trigger=' + trigger);
+        return finish(true, next.remote);
+      }
+      const knownId = json ? gistCore.normalizeGistId(json.id) : '';
+      const remote = await writePending({ pendingCreate: { ...pendingCreate, gistId: knownId } });
+      bgErr('Gist create response incomplete (' + trigger + ')');
+      if (!remote) return { attempted: true, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+      return finish(true, remote);
+    }
+
+    const failure = gistCore.classifyGistFailure(resp.status);
+    if (failure.kind === 'unknown') {
+      const remote = await writePending({ lastErrorCode: failure.reasonCode });
+      bgErr('Gist create returned HTTP ' + resp.status + ' (' + trigger + '); result treated as unknown');
+      if (!remote) return { attempted: true, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+      return finish(true, remote);
+    }
+
+    const next = await bgPatchAutoBackupRemote({
+      provider: 'gist',
+      status: 'paused',
+      lastAttemptAt: startedAt,
+      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastErrorCode: failure.reasonCode,
+      account,
+      pendingCreate: null,
+    }, remoteGeneration);
+    if (!next) {
+      return { attempted: true, cancelled: true, remote: (await bgReadAutoBackupState()).remote };
+    }
+    bgLog('Gist first-create rejected HTTP ' + resp.status + ' trigger=' + trigger);
+    return finish(true, next.remote);
   }
 
   async function runBackgroundLocalAutoBackup(opts) {
@@ -826,29 +1282,53 @@ try {
       // Ticket #125: the cloud (WebDAV) first-create attempt runs only after the local
       // snapshot settled, and its result stays independent from the local result.
       let remoteOutcome = null;
+      const remoteProvider = rawLayout && rawLayout.settings ? rawLayout.settings.syncProvider : '';
       if (rawLayout) {
         try {
-          remoteOutcome = await runBackgroundWebDAVAutoBackup({
-            state: latestState,
-            layout: rawLayout,
-            epoch: activeEpoch,
-            trigger,
-          });
+          if (remoteProvider === 'webdav') {
+            remoteOutcome = await runBackgroundWebDAVAutoBackup({
+              state: latestState,
+              layout: rawLayout,
+              epoch: activeEpoch,
+              trigger,
+            });
+          } else if (remoteProvider === 'gist') {
+            remoteOutcome = await runBackgroundGistAutoBackup({
+              state: latestState,
+              layout: rawLayout,
+              epoch: activeEpoch,
+              trigger,
+            });
+          }
         } catch (e) {
-          bgErr('Background WebDAV auto-backup failed (' + trigger + '):', e);
+          bgErr('Background ' + (remoteProvider || 'remote') + ' auto-backup failed (' + trigger + '):', e);
+          // A result write may have failed after the pending marker was saved. Re-read
+          // so the marker is never replaced by the pre-request snapshot.
+          let recovery = null;
+          try { recovery = await bgReadAutoBackupState(); } catch (_) { recovery = null; }
           remoteOutcome = {
             attempted: true,
-            remote: {
-              ...latestState.remote,
-              status: 'error',
-              lastAttemptAt: Date.now(),
-              lastErrorCode: 'internal-error',
-            },
+            remote: recovery
+              ? {
+                  ...recovery.remote,
+                  status: 'error',
+                  lastAttemptAt: Date.now(),
+                  lastErrorCode: 'internal-error',
+                }
+              : null,
           };
         }
       }
-      const remoteState = (remoteOutcome && remoteOutcome.remote) || latestState.remote;
       latestState = await bgReadAutoBackupState();
+      let remoteState = (remoteOutcome && remoteOutcome.remote) || latestState.remote;
+      if (remoteProvider === 'gist') {
+        const outcomeGeneration = Number(remoteState && remoteState.generation) || 0;
+        const currentGeneration = Number(latestState.remote && latestState.remote.generation) || 0;
+        if (outcomeGeneration !== currentGeneration) {
+          // A credential reset won the race; never write the stale Gist outcome back.
+          remoteState = latestState.remote;
+        }
+      }
       const finishedAt = Date.now();
 
       // The user may have disabled or reconfigured auto-backup while the remote create
@@ -1108,6 +1588,7 @@ try {
       // permissions.contains and persist pending state if ungranted — never prompt
       // or send a WebDAV request without permission.
       inspectAndRecordBackgroundWebDAVPermission();
+      inspectAndRecordBackgroundGistPermission();
     });
   }
 
@@ -1117,6 +1598,7 @@ try {
         bgErr('onStartup auto-backup reconcile error', e);
       });
       inspectAndRecordBackgroundWebDAVPermission();
+      inspectAndRecordBackgroundGistPermission();
     });
   }
 
@@ -1126,7 +1608,9 @@ try {
     configureBackgroundAutoBackup,
     getAutoBackupState: bgReadAutoBackupState,
     inspectAndRecordBackgroundWebDAVPermission,
+    inspectAndRecordBackgroundGistPermission,
     runBackgroundWebDAVAutoBackup,
+    runBackgroundGistAutoBackup,
     readWebDAVFileState: bgWebDAVReadFileState,
     decryptCredential: bgDecryptCredential,
     resolveWebDAVFileUrl: bgResolveWebDAVFileUrl,
@@ -1227,11 +1711,8 @@ try {
     });
   }
 
-  async function ensureWebDAVPermission(url) {
-    const origin = getWebDAVOriginPattern(url);
-    if (!origin) {
-      return { ok: false, needPermission: false, origin: '', error: 'invalid WebDAV origin' };
-    }
+  async function ensureOriginPermission(origin) {
+    if (!origin) return { ok: false, needPermission: false, origin: '', error: 'invalid origin' };
     try {
       const apiNs = typeof browser !== 'undefined' ? browser : chrome;
       if (!apiNs || !apiNs.permissions || typeof apiNs.permissions.contains !== 'function') {
@@ -1243,6 +1724,23 @@ try {
     } catch (e) {
       return { ok: false, needPermission: true, origin, error: e && e.message ? e.message : String(e) };
     }
+  }
+
+  async function ensureWebDAVPermission(url) {
+    const origin = getWebDAVOriginPattern(url);
+    if (!origin) {
+      return { ok: false, needPermission: false, origin: '', error: 'invalid WebDAV origin' };
+    }
+    return ensureOriginPermission(origin);
+  }
+
+  // Ticket #126: the GitHub API origin used by the unattended Gist first-create.
+  // The background only reads permissions.contains; the user gesture request lives
+  // in the NTP settings page.
+  const BG_GIST_API_ORIGIN = 'https://api.github.com/*';
+  const BG_GIST_PENDING_PERM_KEY = 'gistPendingPermission';
+  async function ensureGistApiPermission() {
+    return ensureOriginPermission(BG_GIST_API_ORIGIN);
   }
 
   // BX-AUD-01: only messages sent from our own extension (sender.id === our runtime id) may use the WebDAV proxy.
@@ -1456,6 +1954,22 @@ try {
       } else if (msg.type === 'auto-backup-get-state') {
         const state = await bgReadAutoBackupState();
         return { success: true, state };
+      } else if (msg.type === 'auto-backup-reset-cloud') {
+        // Ticket #126: explicit credential deletion removes the saved remote target.
+        // Run inside the queue so it cannot interleave with a Gist read-modify-write,
+        // and bump the generation so stale in-flight results are dropped.
+        const next = await enqueueBgAutoBackup(async () => {
+          const core = await ensureSnapshotCore();
+          const latest = await bgReadAutoBackupState();
+          const nextGeneration = (Number(latest.remote && latest.remote.generation) || 0) + 1;
+          return bgWriteAutoBackupState({
+            ...latest,
+            remote: { ...core.defaultRemoteAutoBackupState(), generation: nextGeneration },
+            updatedAt: Date.now(),
+          });
+        });
+        await bgClearGistPendingPermission();
+        return { success: true, state: next };
       } else if (msg.type === 'webdav-permission-inspect') {
         const pending = await inspectAndRecordBackgroundWebDAVPermission();
         return { success: true, pending };

@@ -1479,5 +1479,57 @@
   "titleInputLabel": {
     "message": "Название контейнера",
     "description": "Accessible name for the editable box title field"
+  },
+  "gistPermPendingHint": {
+    "message": "Фоновой резервной копии Gist нужен доступ к $origin$.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistPermDeniedHint": {
+    "message": "В доступе к $origin$ отказано. Резервное копирование Gist останется на паузе, пока вы не разрешите доступ.",
+    "placeholders": {
+      "origin": {
+        "content": "$1"
+      }
+    }
+  },
+  "gistAutoBackupStatusPaused": {
+    "message": "Пауза — требуется ваше действие"
+  },
+  "gistAutoBackupStatusPending": {
+    "message": "Результат не подтверждён"
+  },
+  "gistAutoBackupErrToken": {
+    "message": "Токен GitHub отсутствует. Добавьте его в настройках Gist."
+  },
+  "gistAutoBackupErrPermission": {
+    "message": "Доступ к API GitHub не предоставлен. Разрешите его на этой странице настроек."
+  },
+  "gistAutoBackupErrAccount": {
+    "message": "Токен GitHub относится к другой учётной записи, чем сохранённая цель резервной копии."
+  },
+  "gistAutoBackupErrTarget": {
+    "message": "Цель Gist или имя файла не совпадает с доверенной базой. Автоматическое резервное копирование приостановлено."
+  },
+  "gistAutoBackupErrUnknown": {
+    "message": "Результат предыдущего создания Gist не подтверждён. Проверьте GitHub перед повтором."
+  },
+  "gistAutoBackupErrRejected": {
+    "message": "GitHub отклонил запрос. Проверьте токен, область gist и цель."
+  },
+  "gistAutoBackupErrCheck": {
+    "message": "Не удалось проверить учётную запись GitHub или её Gists. Автоматическое резервное копирование Gist приостановлено."
+  },
+  "gistAutoBackupErrUpdate": {
+    "message": "Gist уже существует. Автоматическое обновление существующего Gist пока не включено."
+  },
+  "gistAutoBackupErrExisting": {
+    "message": "Gist с таким именем файла уже существует, но Boxing о нём не знает. Автоматическое резервное копирование приостановлено."
+  },
+  "gistAutoBackupErrTooLarge": {
+    "message": "Данные резервной копии слишком велики для автоматической отправки. Автоматическое резервное копирование Gist приостановлено."
   }
 }
