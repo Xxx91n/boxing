@@ -1285,13 +1285,13 @@ export function initSyncEngineFacade(deps) {
           });
         } catch (e) {
           const code = e && e.reasonCode;
-          if (code && REMOTE_REASON_I18N[code]) throw new Error(i18n(REMOTE_REASON_I18N[code]));
+          if (code && REMOTE_REASON_META[code]) throw new Error(i18n(REMOTE_REASON_META[code].i18n));
           throw e;
         }
         if (resp && resp.needPermission) throw new Error(i18n('gistAutoBackupErrPermission'));
         if (!resp || !resp.success) {
           const code = resp && resp.reasonCode;
-          if (code && REMOTE_REASON_I18N[code]) throw new Error(i18n(REMOTE_REASON_I18N[code]));
+          if (code && REMOTE_REASON_META[code]) throw new Error(i18n(REMOTE_REASON_META[code].i18n));
           throw new Error(i18n('gistBackupFail'));
         }
         if (resp.gistId && !layout.settings.gistId) {
@@ -1303,7 +1303,7 @@ export function initSyncEngineFacade(deps) {
       }
       // Non-extension contexts (file:// tests, the standalone demo) keep the old
       // direct request; there is no second extension context to serialise against.
-      if (!token) throw new Error('GitHub token not configured');
+      if (!token) throw gistPrecheckError('GitHub token not configured');
       const h = new Headers({ Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' });
       let resp, result;
       if (gistId) {
@@ -1561,6 +1561,10 @@ export function initSyncEngineFacade(deps) {
       gistCheckFailed: { i18n: 'gistAutoBackupErrCheck' },
       gistUpdateNotEnabled: { i18n: 'gistAutoBackupErrUpdate' },
       gistPayloadTooLarge: { i18n: 'gistAutoBackupErrTooLarge' },
+      gistListTooMany: { i18n: 'gistAutoBackupErrListTooMany' },
+      gistPendingFileNameChanged: { i18n: 'gistAutoBackupErrPendingName' },
+      gistPendingFileMissing: { i18n: 'gistAutoBackupErrPendingFile' },
+      gistPendingTargetChanged: { i18n: 'gistAutoBackupErrPendingTarget' },
     };
 
     function formatRemoteAutoBackupState(remote, currentProvider) {

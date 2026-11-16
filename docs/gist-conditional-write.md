@@ -15,15 +15,19 @@ and records the blocker instead of shipping an unsafe PATCH.
 - When a trusted Gist baseline exists, `planGistFirstCreate` returns
   `update-not-enabled` (`gistUpdateNotEnabled`). The background performs **zero**
   PATCH/POST requests in that state. The settings page shows the reason.
-- Manual Backup Now still works. In a real extension it now runs inside the
-  background queue (`gist-write` message), the same queue as the unattended first
-  create, so two tabs and the background cannot write the same Gist at once.
+- Manual Backup Now stays available when the saved target, file name, account,
+  and pending result all pass the same guards. It pauses instead when the target
+  Gist id or file name no longer matches the trusted baseline, the token belongs
+  to a different account, a pending POST has no known id, or the own-Gist listing
+  cannot be completed. The listing is capped at three pages, so a very large
+  account pauses with `gistListTooMany` instead of guessing that the target is
+  absent.
 - Manual writes keep their existing user-driven semantics: a confirmed POST
   records a trusted baseline, a 2xx PATCH refreshes it when the response carries
   the expected file, a lost response is reported as unknown and is never retried
   automatically. A pending POST that knows its Gist id can be confirmed with a
-  GET before the next manual write; a pending POST without an id stays paused
-  until a human checks GitHub.
+  GET before the next manual write; a 404 or a file mismatch clears the marker
+  and pauses for review, while a network failure keeps it unconfirmed.
 
 ## Evidence reviewed on 2026-11-16
 
@@ -75,5 +79,5 @@ following are recorded in this file:
 - the provider-neutral retry/unknown-result rules from #120 D6 are wired to the
   same result path.
 
-Until then the automatic path stays paused, the manual path remains available,
-and this ticket must not be marked complete.
+Until then the automatic path stays paused, the manual path remains available
+within the guards above, and this ticket must not be marked complete.

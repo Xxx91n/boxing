@@ -59,6 +59,7 @@
     'gistCheckFailed',
     'gistUpdateNotEnabled',
     'gistPayloadTooLarge',
+    'gistListTooMany',
   ]);
   // Pauses that need the user to inspect the remote side first. They do not retry on
   // their own; permission/auth/credential/reachability problems stay retryable.
@@ -76,6 +77,7 @@
     'gistTargetNeedsReview',
     'gistUnknownExisting',
     'gistUpdateNotEnabled',
+    'gistListTooMany',
   ]);
 
   const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);

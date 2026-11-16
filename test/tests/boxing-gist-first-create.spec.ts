@@ -781,6 +781,118 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     const state = sandbox.store.autoBackupState;
     expect(state.remote.pendingCreate).toBeNull();
     expect(state.remote.baseline.gistId).toBe('abc12345');
+    // The unknown result is resolved by the GET + PATCH, so the paused/unknown
+    // status and reason must not stick.
+    expect(state.remote.status).toBe('idle');
+    expect(state.remote.lastErrorCode).toBeNull();
+  });
+
+  test('a pending Gist that no longer exists clears the marker and pauses', async () => {
+    const store = await baseStore({}, {
+      provider: 'gist', status: 'unknown', lastAttemptAt: 7, lastSuccessAt: 0,
+      lastErrorCode: 'gistResultUnknown', account: { login: 'spec-user', id: 42 },
+      baseline: null,
+      pendingCreate: {
+        provider: 'gist', fileName: GIST_FILE, description: 'Boxing extension backup',
+        startedAt: 7, accountLogin: 'spec-user', accountId: 42, gistId: 'abc12345',
+      },
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (call.method === 'GET' && call.url.endsWith('/gists/abc12345')) return jsonResponse(404, {});
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+
+    const res = await sandbox.bg.enqueueManualGistWrite({ fileName: GIST_FILE, content: '{"a":1}' });
+    expect(res).toMatchObject({ success: false, reasonCode: 'gistTargetNeedsReview' });
+    expect(sandbox.calls.map((c) => c.method + ' ' + new URL(c.url).pathname)).toEqual([
+      'GET /user', 'GET /gists/abc12345',
+    ]);
+    const state = sandbox.store.autoBackupState;
+    expect(state.remote.pendingCreate).toBeNull();
+    expect(state.remote.baseline).toBeNull();
+    expect(state.remote.status).toBe('paused');
+    expect(state.remote.lastErrorCode).toBe('gistTargetNeedsReview');
+  });
+
+  test('a token from another GitHub account pauses before any write', async () => {
+    const baseline = {
+      service: 'gist', gistId: 'abc12345', fileName: GIST_FILE,
+      ownerLogin: 'spec-user', ownerId: 42,
+      createdAt: 1, updatedAt: 1, verifiedAt: 1,
+    };
+    const store = await baseStore({ gistId: 'abc12345' }, {
+      provider: 'gist', status: 'paused', lastSuccessAt: 9,
+      lastErrorCode: 'gistUpdateNotEnabled', account: { login: 'spec-user', id: 42 },
+      baseline, pendingCreate: null,
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser(99, 'other-user');
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+
+    const res = await sandbox.bg.enqueueManualGistWrite({ gistId: 'abc12345', fileName: GIST_FILE, content: '{"a":1}' });
+    expect(res).toMatchObject({ success: false, reasonCode: 'gistAccountChanged' });
+    expect(sandbox.calls.map((c) => c.method)).toEqual(['GET']);
+    expect(sandbox.store.autoBackupState.remote.baseline.gistId).toBe('abc12345');
+  });
+
+  test('an own-Gist listing over the page cap pauses with a dedicated reason', async () => {
+    const store = await baseStore();
+    const pageWithNext = () => new Response('[]', {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        link: '<https://api.github.com/gists?per_page=100&page=2>; rel="next"',
+      },
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return pageWithNext();
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+
+    const res = await sandbox.bg.enqueueManualGistWrite({ fileName: GIST_FILE, content: '{"a":1}' });
+    expect(res).toMatchObject({ success: false, reasonCode: 'gistListTooMany' });
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(sandbox.calls.filter(isGistListCall)).toHaveLength(3);
+  });
+
+  test('a failed manual PATCH records the unknown result without moving success time', async () => {
+    const baseline = {
+      service: 'gist', gistId: 'abc12345', fileName: GIST_FILE,
+      ownerLogin: 'spec-user', ownerId: 42,
+      createdAt: 1, updatedAt: 1, verifiedAt: 1,
+    };
+    const store = await baseStore({ gistId: 'abc12345' }, {
+      provider: 'gist', status: 'paused', lastSuccessAt: 9,
+      lastErrorCode: 'gistUpdateNotEnabled', account: { login: 'spec-user', id: 42 },
+      baseline, pendingCreate: null,
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (call.method === 'PATCH' && call.url.endsWith('/gists/abc12345')) return jsonResponse(500, {});
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+
+    const res = await sandbox.bg.enqueueManualGistWrite({ gistId: 'abc12345', fileName: GIST_FILE, content: '{"a":1}' });
+    expect(res).toMatchObject({ success: false, resultUnknown: true, reasonCode: 'gistResultUnknown' });
+    const state = sandbox.store.autoBackupState;
+    expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastErrorCode).toBe('gistResultUnknown');
+    expect(state.remote.lastSuccessAt).toBe(9);
   });
 
   test('an existing trusted Gist stays untouched by unattended runs after local edits', async () => {

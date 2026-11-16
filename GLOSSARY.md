@@ -112,7 +112,7 @@ Boxing is a vanilla-JS Manifest V3 extension (Chrome + Firefox) that organizes b
 
 **trusted baseline (Gist)** — The persisted record binding a background-created Gist to its id, owner account, file name, and confirmed timestamps. Automatic writes may only proceed when the saved target matches this record; an existing Gist without one is an unknown target and pauses.
 
-**Gist conditional-write gate** — (ticket #128 / spec D4) The release gate that keeps automatic updates of an existing Gist disabled. GitHub's published API description declares no conditional write header for Gist PATCH, and no real race has proven one, so the background pauses with `gistUpdateNotEnabled` instead of PATCHing. Manual Backup Now stays available (unless a POST result is still unconfirmed) and runs in the same background queue as the unattended first create. See `docs/gist-conditional-write.md`.
+**Gist conditional-write gate** — (ticket #128 / spec D4) The release gate that keeps automatic updates of an existing Gist disabled. GitHub's published API description declares no conditional write header for Gist PATCH, and no real race has proven one, so the background pauses with `gistUpdateNotEnabled` instead of PATCHing. Manual Backup Now stays available (unless a POST result is still unconfirmed) and runs in the same background queue as the unattended first create; it pauses on a changed target/file name, a changed account, or an own-Gist listing over the three-page cap (`gistListTooMany`). See `docs/gist-conditional-write.md`.
 
 **pending Gist create** — A durable marker written before the first Gist POST. If the response is lost or the worker dies, it keeps automatic backup paused and forbids another POST, so a retry cannot create a duplicate Gist.
 

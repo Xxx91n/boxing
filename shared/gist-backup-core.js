@@ -213,16 +213,22 @@
     // The background then GETs that Gist, confirms the expected file, records the
     // baseline, and continues with a PATCH instead of POSTing a duplicate. A fully
     // lost response (no id) stays paused for a human check.
-    const pendingId = cloud.pendingCreate ? normalizeGistId(cloud.pendingCreate.gistId) : '';
-    if (cloud.pendingCreate) {
-      if (pendingId) return { action: 'confirm-pending', gistId: pendingId, fileName };
-      return { action: 'pause', reasonCode: 'gistResultUnknown' };
-    }
-
     const baseline = cloud.baseline &&
       (cloud.baseline.provider === 'gist' || cloud.baseline.service === 'gist')
       ? cloud.baseline
       : null;
+    const pendingId = cloud.pendingCreate ? normalizeGistId(cloud.pendingCreate.gistId) : '';
+    if (cloud.pendingCreate) {
+      if (pendingId) {
+        const knownBaselineId = baseline ? normalizeGistId(baseline.gistId) : '';
+        if (knownBaselineId && knownBaselineId !== pendingId) {
+          return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
+        }
+        return { action: 'confirm-pending', gistId: pendingId, fileName };
+      }
+      return { action: 'pause', reasonCode: 'gistResultUnknown' };
+    }
+
     const rawGistId = typeof opts.gistId === 'string'
       ? opts.gistId.trim()
       : (typeof settings.gistId === 'string' ? settings.gistId.trim() : '');
@@ -235,9 +241,12 @@
 
     if (baseline) {
       const baselineId = normalizeGistId(baseline.gistId);
+      // An unreadable baseline id cannot prove the target; never fall through to
+      // "patch whatever id the page supplied".
+      if (!baselineId) return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
       // A manual write must not silently move a known target or append a second
       // file to the same Gist. Changing either needs an explicit re-target flow.
-      if (explicitGistId && baselineId && explicitGistId !== baselineId) {
+      if (explicitGistId && explicitGistId !== baselineId) {
         return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
       }
       if (baseline.fileName && baseline.fileName !== fileName) {
