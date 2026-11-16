@@ -922,21 +922,54 @@ test.describe('Ticket #129 — cloud failure, snapshot history, and pending stat
       },
     });
 
+    const targetKey = 'webdav|' + WEBDAV_FILE_URL + '|alice';
     const resp = await env.sendMessage({
       type: 'auto-backup-note-manual-result',
       provider: 'webdav',
-      remoteSuccess: true,
+      outcome: 'ok',
+      targetKey,
       snapshotTs: 1800000000000,
     });
     expect(resp.success).toBe(true);
 
     const state = stateOf(env);
     expect(state.local.lastSuccessAt).toBe(1800000000000);
+    expect(state.local.status).toBe('ok');
+    expect(state.local.lastError).toBeNull();
     expect(state.remote.provider).toBe('webdav');
     expect(state.remote.lastSuccessAt, 'the old provider time is not reused').toBeGreaterThan(1700000000000);
+    expect(state.remote.lastSuccessTarget).toBe(targetKey);
     // Status, pause reason and baseline stay owned by the automatic lane.
     expect(state.remote.status).toBe('ok');
     expect(state.remote.baseline).toBeNull();
+
+    // A sent-and-failed request is persisted too, keeping the last real success.
+    const failedAt = state.remote.lastSuccessAt;
+    await env.sendMessage({
+      type: 'auto-backup-note-manual-result',
+      provider: 'webdav',
+      outcome: 'failed',
+      targetKey,
+      errorCode: 'auth-failed',
+      snapshotTs: 0,
+    });
+    const afterFail = stateOf(env);
+    expect(afterFail.remote.status).toBe('paused');
+    expect(afterFail.remote.lastErrorCode).toBe('auth-failed');
+    expect(afterFail.remote.lastSuccessAt, 'a failure keeps the previous success time').toBe(failedAt);
+    expect(afterFail.remote.lastSuccessTarget).toBe(targetKey);
+
+    // A pre-check refusal ("skipped") writes no cloud result at all.
+    await env.sendMessage({
+      type: 'auto-backup-note-manual-result',
+      provider: 'webdav',
+      outcome: 'skipped',
+      targetKey,
+      snapshotTs: 0,
+    });
+    const afterSkip = stateOf(env);
+    expect(afterSkip.remote.lastErrorCode).toBe('auth-failed');
+    expect(afterSkip.remote.lastAttemptAt).toBe(afterFail.remote.lastAttemptAt);
   });
 
   test('a Gist baseline is not mistaken for a WebDAV file, so the file is re-checked and created', async () => {
@@ -1085,6 +1118,30 @@ test.describe('Ticket #129 — cloud status line, manual entry, and its own succ
     expect(shown.remoteZone).toBe(shown.never);
   });
 
+  test('the same provider with a different address does not inherit the old success time', async ({ page }) => {
+    await bootCloudState(page, {
+      autoState: seedAutoBackupState({
+        remote: {
+          provider: 'webdav',
+          status: 'ok',
+          lastAttemptAt: 6,
+          lastSuccessAt: 1700000000000,
+          lastErrorCode: null,
+          baseline: null,
+          lastSuccessTarget: 'webdav|https://old.example.test/dav/boxing-backup.json|alice',
+        },
+      }),
+    });
+
+    const shown = await page.evaluate(() => ({
+      remoteZone: document.getElementById('last-backup-time-value')?.textContent || '',
+      never: document.getElementById('local-auto-backup-last-at')?.textContent || '',
+      line: document.getElementById('auto-backup-remote-status')?.textContent || '',
+    }));
+    expect(shown.remoteZone).toBe(shown.never);
+    expect(shown.line).not.toContain('2023');
+  });
+
   test('switching to Local keeps the failed cloud line visible but offers no action and sends nothing', async ({ page }) => {
     const requests: string[] = [];
     const downloads: number[] = [];
@@ -1150,6 +1207,9 @@ test.describe('Ticket #129 — cloud status line, manual entry, and its own succ
         before,
         after: (await dbg.listSnapshots()).length,
         lastBackupAt: dbg.layout.settings.lastBackupAt,
+        cloud: (window as any).__boxingSnapshotCore.normalizeAutoBackupState(
+          (await dbg.storageGet('autoBackupState')).autoBackupState,
+        ).remote,
         err,
       };
     });
@@ -1157,6 +1217,10 @@ test.describe('Ticket #129 — cloud status line, manual entry, and its own succ
     expect(out.err, 'the failure is still reported to the Sync Now button').toBeTruthy();
     expect(out.after, 'a failed upload still leaves one recoverable snapshot').toBe(out.before + 1);
     expect(out.lastBackupAt, 'a failed upload is not a remote success').toBe(1700000000000);
+    // The failure is persisted, so Settings and the badge do not keep claiming "ok".
+    expect(out.cloud.lastErrorCode).toBe('auth-failed');
+    expect(out.cloud.lastSuccessAt).toBe(0);
+    expect(out.cloud.lastSuccessTarget).toBe('');
   });
 
   test('a successful manual upload records both success times for the selected target', async ({ page }) => {
@@ -1196,9 +1260,10 @@ test.describe('Ticket #129 — cloud status line, manual entry, and its own succ
 
     expect(out.snapshots).toBe(1);
     expect(out.lastBackupAt).toBeGreaterThan(0);
-    // The cloud success time is tagged with the provider that earned it.
+    // The cloud success time is tagged with the provider AND the concrete target.
     expect(out.cloud.provider).toBe('webdav');
     expect(out.cloud.lastSuccessAt).toBeGreaterThan(0);
+    expect(out.cloud.lastSuccessTarget).toBe('webdav|' + WEBDAV_FILE_URL + '|alice');
     // The manual snapshot also updates the local success time.
     expect(out.local.lastSuccessAt).toBeGreaterThan(0);
   });

@@ -164,7 +164,10 @@ export function initSyncEngineFacade(deps) {
       const cloudAt = Number(remote && remote.lastSuccessAt) || 0;
       if (lastBackupTimeVal) {
         const provider = layout.settings.syncProvider || 'local';
-        const remoteBelongsHere = !remote || !remote.provider || remote.provider === provider;
+        const remoteBelongsHere = !remote || (
+          (!remote.provider || remote.provider === provider) &&
+          (!remote.lastSuccessTarget || remote.lastSuccessTarget === currentRemoteTargetKey(provider))
+        );
         const displayAt = provider === 'local'
           ? localAt
           : ((!remoteBelongsHere || isRemoteTimeUnproven(remote)) ? 0 : cloudAt);
@@ -1301,14 +1304,15 @@ export function initSyncEngineFacade(deps) {
         : userInitiated;
       const source = (opts && opts.source) || (userInitiated ? 'manual' : 'background');
       let remoteError = null;
+      let syncResult = null;
       try {
         if (p === 'webdav') {
-          const res = await syncWithWebDAV({ allowPermissionPrompt, source });
-          debug('WebDAV sync ok', res && res.direction ? { direction: res.direction, conflicts: res.conflicts || 0 } : undefined);
+          syncResult = await syncWithWebDAV({ allowPermissionPrompt, source });
+          debug('WebDAV sync ok', syncResult && syncResult.direction ? { direction: syncResult.direction, conflicts: syncResult.conflicts || 0 } : undefined);
           // Ticket 91: box-level AND child-level conflict copies land in the
           // ticket-79 Settings > Data readout automatically (same archive key
           // family) — surface the pointer instead of leaving the count invisible.
-          if (res && res.conflicts) debugWarn('WebDAV sync archived ' + res.conflicts + ' conflict copy(ies) - review under Settings > Data > Conflict copies');
+          if (syncResult && syncResult.conflicts) debugWarn('WebDAV sync archived ' + syncResult.conflicts + ' conflict copy(ies) - review under Settings > Data > Conflict copies');
         }
         else if (p === 'gist') { await backupToGist(); debug('Gist backup ok'); }
       } catch (e) {
@@ -1331,18 +1335,32 @@ export function initSyncEngineFacade(deps) {
           debugErr('Backup snapshot failed', e);
         }
       }
+      // Only a real upload counts as a cloud success. A pull or a merge never sent the
+      // local copy to the remote file, so it must not advance the success time.
+      let outcome = 'skipped';
+      if (!remoteError && p !== 'local') {
+        if (p === 'gist') outcome = 'ok';
+        else if (syncResult && syncResult.direction === 'push') outcome = 'ok';
+      } else if (remoteError && failedAfterRemoteAttempt(remoteError)) {
+        outcome = 'failed';
+      }
       // lastBackupAt is a REMOTE success timestamp. Local-only mode keeps its history
       // in autoBackupState.local instead of pretending a remote backup happened.
-      const remoteSucceeded = p !== 'local' && !remoteError;
-      if (remoteSucceeded) {
+      if (outcome === 'ok') {
         layout.settings.lastBackupAt = Date.now();
         saveLayout();
       }
       // Ticket #129: manual results are real results. Record both lanes in the same
-      // state the background uses, so a later provider switch can tell whose time it is.
-      if (remoteSucceeded || snapshotTs > 0) {
+      // state the background uses, so a later target switch can tell whose time it is.
+      if (outcome !== 'skipped' || snapshotTs > 0) {
         try {
-          await noteManualBackupResult(p, remoteSucceeded, snapshotTs);
+          await noteManualBackupResult(
+            p,
+            outcome,
+            snapshotTs,
+            currentRemoteTargetKey(p),
+            manualFailureCode(p, remoteError),
+          );
         } catch (e) {
           debugWarn('note manual backup result failed', e);
         }
@@ -1368,15 +1386,50 @@ export function initSyncEngineFacade(deps) {
       return false;
     }
 
-    // Ticket #129: a manual Sync Now produces real local and cloud results. They are
-    // written to the same autoBackupState the automatic lane uses, so each success
-    // time stays attached to the target that earned it. The extension path goes
-    // through the background queue (#124 single writer); a bare page writes directly.
-    async function noteManualBackupResult(provider, remoteSucceeded, snapshotTs) {
+    // Ticket #129: a navbar-level identity for the selected remote target. Two WebDAV
+    // addresses are different targets, so the provider alone is not enough.
+    function currentRemoteTargetKey(provider) {
+      if (provider === 'webdav') {
+        const url = (layout.settings.webdavUrl || webdavUrlInput?.value || '').trim();
+        if (!url) return '';
+        let resolved;
+        try { resolved = resolveWebDAVFileUrl(url); } catch (_) { return ''; }
+        if (!resolved || resolved.error) return '';
+        const user = (layout.settings.webdavUser || webdavUserInput?.value || '').trim();
+        return 'webdav|' + resolved.fileUrl + '|' + user;
+      }
+      if (provider === 'gist') {
+        const id = layout.settings.gistId || '';
+        return id ? 'gist|' + id : '';
+      }
+      return '';
+    }
+
+    // A manual failure still has to say WHY in Settings. Map the page error to the
+    // shared closed reason list (the background rejects anything outside it).
+    const MANUAL_WEBDAV_FAILURE_CODES = {
+      webdavErrAuth: 'auth-failed',
+      webdavErrNetwork: 'remote-unreachable',
+      webdavErrConflict: 'create-conflict',
+      webdavErrStatus: 'create-failed',
+      webdavErrPut: 'create-failed',
+    };
+    function manualFailureCode(provider, error) {
+      if (provider === 'gist') return 'gistRequestRejected';
+      return (error && MANUAL_WEBDAV_FAILURE_CODES[error.key]) || 'internal-error';
+    }
+
+    // Ticket #129: a manual Sync Now produces real results. They are written to the
+    // same autoBackupState the automatic lane uses, so each success time stays
+    // attached to the target that earned it. The extension path goes through the
+    // background queue (#124 single writer); a bare page writes directly.
+    async function noteManualBackupResult(provider, outcome, snapshotTs, targetKey, errorCode) {
       const payload = {
         type: 'auto-backup-note-manual-result',
         provider: provider === 'webdav' || provider === 'gist' ? provider : '',
-        remoteSuccess: Boolean(remoteSucceeded),
+        outcome,
+        targetKey: targetKey || '',
+        errorCode: errorCode || '',
         snapshotTs: Math.max(0, Number(snapshotTs) || 0),
       };
       if (hasExtensionRuntime()) {
@@ -1390,21 +1443,37 @@ export function initSyncEngineFacade(deps) {
       const local = payload.snapshotTs > 0
         ? {
             ...st.local,
+            status: 'ok',
             lastSuccessAt: Math.max(Number(st.local.lastSuccessAt) || 0, payload.snapshotTs),
             lastSnapshotTs: Math.max(Number(st.local.lastSnapshotTs) || 0, payload.snapshotTs),
+            lastError: null,
           }
         : st.local;
-      const remote = payload.remoteSuccess && payload.provider
-        ? {
-            ...st.remote,
-            provider: payload.provider,
-            lastAttemptAt: now,
-            lastSuccessAt: Math.max(
-              st.remote.provider === payload.provider ? (Number(st.remote.lastSuccessAt) || 0) : 0,
-              now,
-            ),
-          }
-        : st.remote;
+      let remote = st.remote;
+      const code = core.AUTO_BACKUP_REMOTE_REASONS.includes(payload.errorCode) ? payload.errorCode : 'internal-error';
+      if (payload.provider && payload.outcome === 'ok') {
+        remote = {
+          ...st.remote,
+          provider: payload.provider,
+          status: 'ok',
+          lastAttemptAt: now,
+          lastSuccessAt: Math.max(
+            st.remote.provider === payload.provider ? (Number(st.remote.lastSuccessAt) || 0) : 0,
+            now,
+          ),
+          lastSuccessTarget: payload.targetKey,
+          lastErrorCode: null,
+        };
+      } else if (payload.provider && payload.outcome === 'failed') {
+        remote = {
+          ...st.remote,
+          provider: payload.provider,
+          status: ['remote-unreachable', 'create-failed', 'internal-error'].includes(code) ? 'error' : 'paused',
+          lastAttemptAt: now,
+          lastSuccessAt: st.remote.provider === payload.provider ? (Number(st.remote.lastSuccessAt) || 0) : 0,
+          lastErrorCode: code,
+        };
+      }
       await setAutoBackupState({ ...st, local, remote, updatedAt: now });
     }
 
@@ -1450,10 +1519,11 @@ export function initSyncEngineFacade(deps) {
       if (remote.status === 'running') {
         return { text: i18n('localAutoBackupStatusRunning'), state: 'active', action: null };
       }
-      // Only a value that belongs to the CURRENT provider may be shown as this
-      // target's success: switching WebDAV ↔ Gist keeps the old record but must not
-      // hand its timestamp to the new target.
-      const sameTarget = !remote.provider || remote.provider === currentProvider;
+      // Only a value that belongs to the CURRENT provider AND the current concrete
+      // target may be shown as its success: switching WebDAV ↔ Gist or changing an
+      // address keeps the old record but must not hand its timestamp to the new one.
+      const sameTarget = (!remote.provider || remote.provider === currentProvider) &&
+        (!remote.lastSuccessTarget || remote.lastSuccessTarget === currentRemoteTargetKey(currentProvider));
       const lastAt = Math.max(0, Number(remote.lastSuccessAt) || 0);
       const lastSuffix = sameTarget && lastAt > 0 && !isRemoteTimeUnproven(remote)
         ? ' · ' + i18n('autoBackupCloudLastLabel') + ': ' + new Date(lastAt).toLocaleString()

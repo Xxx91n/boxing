@@ -594,6 +594,14 @@ try {
       ? remote.baseline
       : null;
   }
+  // The display side compares this exact string, so an address change cannot inherit
+  // the previous address's success time.
+  function bgWebDAVSuccessTarget(fileUrl, account) {
+    return 'webdav|' + String(fileUrl || '') + '|' + String(account || '');
+  }
+  function bgGistSuccessTarget(gistId) {
+    return gistId ? 'gist|' + String(gistId) : '';
+  }
 
   async function runBackgroundWebDAVAutoBackup(opts) {
     const options = opts || {};
@@ -739,6 +747,7 @@ try {
             generation: prevRemote.generation,
             lastAttemptAt: confirmedAt,
             lastSuccessAt: confirmedAt,
+            lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
             lastErrorCode: null,
             account: prevRemote.account,
             pendingCreate: prevRemote.pendingCreate,
@@ -1155,6 +1164,7 @@ try {
           status: 'ok',
           lastAttemptAt: startedAt,
           lastSuccessAt: finishedAt,
+          lastSuccessTarget: bgGistSuccessTarget(baseline.gistId),
           lastErrorCode: null,
           account: { login: baseline.ownerLogin, id: baseline.ownerId },
           baseline,
@@ -1987,31 +1997,57 @@ try {
         return { success: true, state };
       } else if (msg.type === 'auto-backup-note-manual-result') {
         // Ticket #129: a manual Sync Now is a real result for the selected target.
-        // Record the snapshot's own success time and, when the upload worked, bind the
-        // cloud success time to that provider. Status, pause reason and baseline stay
-        // owned by the automatic path (T6/T8 build trusted baselines).
+        //   ok      -> the upload really happened: bind provider + target + time
+        //   failed  -> a request was sent and failed: record reason, keep old success
+        //   skipped -> pre-check refusal / pull / merge / local only: write no cloud result
+        // The local lane records the snapshot time and clears a resolved local error.
+        // Status, pause reason and baseline stay owned by the automatic path (T6/T8).
         const snapshotTs = Math.max(0, Number(msg.snapshotTs) || 0);
         const provider = msg.provider === 'webdav' || msg.provider === 'gist' ? msg.provider : '';
-        const remoteSucceeded = msg.remoteSuccess === true && provider !== '';
+        const targetKey = typeof msg.targetKey === 'string' ? msg.targetKey.slice(0, 2048) : '';
+        const outcome = msg.outcome === 'ok' || msg.outcome === 'failed' ? msg.outcome : 'skipped';
+        const core = await ensureSnapshotCore();
+        const errorCode = typeof msg.errorCode === 'string' && core.AUTO_BACKUP_REMOTE_REASONS.includes(msg.errorCode)
+          ? msg.errorCode
+          : 'internal-error';
         const next = await enqueueBgAutoBackup(async () => {
           const latest = await bgReadAutoBackupState();
           const now = Date.now();
           const local = snapshotTs > 0
             ? {
                 ...latest.local,
+                // A real snapshot is a real local success; a resolved error must not
+                // keep showing in Settings or keep the badge lit.
+                status: 'ok',
                 lastSuccessAt: Math.max(Number(latest.local.lastSuccessAt) || 0, snapshotTs),
                 lastSnapshotTs: Math.max(Number(latest.local.lastSnapshotTs) || 0, snapshotTs),
+                lastError: null,
               }
             : latest.local;
-          const remote = remoteSucceeded
-            ? {
-                ...latest.remote,
-                provider,
-                lastAttemptAt: now,
-                lastSuccessAt: Math.max(bgSuccessAtForProvider(latest.remote, provider), now),
-              }
-            : latest.remote;
-          return bgWriteAutoBackupState({ ...latest, local, remote, updatedAt: now });
+          let remote = latest.remote;
+          if (provider && outcome === 'ok') {
+            remote = {
+              ...latest.remote,
+              provider,
+              status: 'ok',
+              lastAttemptAt: now,
+              lastSuccessAt: Math.max(bgSuccessAtForProvider(latest.remote, provider), now),
+              lastSuccessTarget: targetKey,
+              lastErrorCode: null,
+            };
+          } else if (provider && outcome === 'failed') {
+            remote = {
+              ...latest.remote,
+              provider,
+              status: bgRemoteStatusForCode(errorCode),
+              lastAttemptAt: now,
+              lastSuccessAt: bgSuccessAtForProvider(latest.remote, provider),
+              lastErrorCode: errorCode,
+            };
+          }
+          const written = await bgWriteAutoBackupState({ ...latest, local, remote, updatedAt: now });
+          await setAutoBackupBadge(bgAutoBackupNeedsAttention(written.local, written.remote));
+          return written;
         });
         return { success: true, state: next };
       } else if (msg.type === 'auto-backup-reset-cloud') {
