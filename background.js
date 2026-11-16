@@ -825,8 +825,9 @@ try {
           return { attempted: true, remote: pausedFrom(liveRemote, 'remote-changed') };
         }
 
-        // Re-check cancellation now, then go straight from the freshly read bytes
-        // to the probe. No async step sits between the read and the probe write.
+        // Re-check cancellation before the probe. The body build after this point is
+        // synchronous, so the probe follows the remote read as closely as possible
+        // (the probe window is minimized, not eliminated).
         const liveBeforeProbe = await bgReadAutoBackupState();
         if (!core.isAutoBackupActive(liveBeforeProbe) || liveBeforeProbe.epoch !== activeEpoch) {
           return { attempted: false, cancelled: true, remote: liveBeforeProbe.remote };
@@ -1543,21 +1544,28 @@ try {
       const activeEpoch = state.epoch;
       const prevLocal = state.local || core.defaultAutoBackupState().local;
       // Do NOT advance nextScheduledAt until the snapshot settles; an interrupted SW wakeup must retry.
-      const claimedState = await bgWriteAutoBackupState({
-        ...state,
-        updatedAt: now,
-        local: {
-          ...prevLocal,
-          status: 'running',
-          lastAttemptAt: now,
-        },
-        lock: {
-          ownerId: BG_WORKER_OWNER_ID,
-          epoch: activeEpoch,
-          acquiredAt: now,
-          expiresAt: now + core.AUTO_BACKUP_LOCK_TTL_MS,
-        },
+      const claimedState = await enqueueBgStateMutation(async () => {
+        const fresh = await bgReadAutoBackupState();
+        if (!core.isAutoBackupActive(fresh) || fresh.epoch !== activeEpoch) return null;
+        return bgWriteAutoBackupState({
+          ...fresh,
+          updatedAt: now,
+          local: {
+            ...(fresh.local || prevLocal),
+            status: 'running',
+            lastAttemptAt: now,
+          },
+          lock: {
+            ownerId: BG_WORKER_OWNER_ID,
+            epoch: activeEpoch,
+            acquiredAt: now,
+            expiresAt: now + core.AUTO_BACKUP_LOCK_TTL_MS,
+          },
+        });
       });
+      if (!claimedState) {
+        return { ok: false, cancelled: true, reason: 'cancelled-before-claim', state: await bgReadAutoBackupState() };
+      }
 
       let snapOutcome = null;
       let errMessage = null;
@@ -1862,46 +1870,57 @@ try {
       if (!optIn) {
         await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
         await setAutoBackupBadge(false);
-        const disabledState = await bgWriteAutoBackupState({
-          version: 1,
-          optIn: false,
-          intervalSec: 0,
-          epoch: nextEpoch,
-          nextScheduledAt: 0,
-          updatedAt: now,
-          local: {
-            ...prevLocal,
-            status: prevLocal.lastSuccessAt > 0 || prevLocal.lastError ? 'cancelled' : 'idle',
-          },
-          // Cloud success/pause history is not erased by turning auto-backup off.
-          remote: prev.remote,
-          lock: null,
+        const disabledState = await enqueueBgStateMutation(async () => {
+          const fresh = await bgReadAutoBackupState();
+          const freshLocal = fresh.local || prevLocal;
+          return bgWriteAutoBackupState({
+            ...fresh,
+            version: 1,
+            optIn: false,
+            intervalSec: 0,
+            epoch: nextEpoch,
+            nextScheduledAt: 0,
+            updatedAt: now,
+            local: {
+              ...freshLocal,
+              status: freshLocal.lastSuccessAt > 0 || freshLocal.lastError ? 'cancelled' : 'idle',
+            },
+            // Cloud success/pause history is not erased by turning auto-backup off.
+            remote: fresh.remote,
+            lock: null,
+          });
         });
         return { ok: true, state: disabledState };
       }
 
       const periodInMinutes = Math.max(1, Math.ceil(intervalSec / 60));
-      const enabledState = await bgWriteAutoBackupState({
-        version: 1,
-        optIn: true,
-        intervalSec,
-        epoch: nextEpoch,
-        nextScheduledAt: 0,
-        updatedAt: now,
-        local: {
-          ...prevLocal,
-          status: 'running',
-          lastError: null,
-        },
-        // Ticket #125: an explicit user re-enable/reconfigure is the acknowledgement
-        // that releases a held pause or unknown outcome; the next attempt re-checks the
-        // remote file before writing anything.
-        remote: prev.remote ? {
-          ...prev.remote,
-          status: (prev.remote.status === 'unknown' || prev.remote.status === 'paused') ? 'idle' : prev.remote.status,
-          lastErrorCode: (prev.remote.status === 'unknown' || prev.remote.status === 'paused') ? null : prev.remote.lastErrorCode,
-        } : undefined,
-        lock: null,
+      const enabledState = await enqueueBgStateMutation(async () => {
+        const fresh = await bgReadAutoBackupState();
+        const freshLocal = fresh.local || prevLocal;
+        const freshRemote = fresh.remote || prev.remote;
+        return bgWriteAutoBackupState({
+          ...fresh,
+          version: 1,
+          optIn: true,
+          intervalSec,
+          epoch: nextEpoch,
+          nextScheduledAt: 0,
+          updatedAt: now,
+          local: {
+            ...freshLocal,
+            status: 'running',
+            lastError: null,
+          },
+          // Ticket #125: an explicit user re-enable/reconfigure is the acknowledgement
+          // that releases a held pause or unknown outcome; the next attempt re-checks the
+          // remote file before writing anything.
+          remote: freshRemote ? {
+            ...freshRemote,
+            status: (freshRemote.status === 'unknown' || freshRemote.status === 'paused') ? 'idle' : freshRemote.status,
+            lastErrorCode: (freshRemote.status === 'unknown' || freshRemote.status === 'paused') ? null : freshRemote.lastErrorCode,
+          } : undefined,
+          lock: null,
+        });
       });
       await bgAlarmsCreate(BG_AUTO_BACKUP_ALARM_NAME, {
         delayInMinutes: periodInMinutes,
@@ -2334,12 +2353,14 @@ try {
         // and bump the generation so stale in-flight results are dropped.
         const next = await enqueueBgAutoBackup(async () => {
           const core = await ensureSnapshotCore();
-          const latest = await bgReadAutoBackupState();
-          const nextGeneration = (Number(latest.remote && latest.remote.generation) || 0) + 1;
-          return bgWriteAutoBackupState({
-            ...latest,
-            remote: { ...core.defaultRemoteAutoBackupState(), generation: nextGeneration },
-            updatedAt: Date.now(),
+          return enqueueBgStateMutation(async () => {
+            const latest = await bgReadAutoBackupState();
+            const nextGeneration = (Number(latest.remote && latest.remote.generation) || 0) + 1;
+            return bgWriteAutoBackupState({
+              ...latest,
+              remote: { ...core.defaultRemoteAutoBackupState(), generation: nextGeneration },
+              updatedAt: Date.now(),
+            });
           });
         });
         await bgClearGistPendingPermission();
