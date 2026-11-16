@@ -627,6 +627,31 @@ test.describe('Ticket #130 — bounded retry and off switch (controlled service)
     expect(state.remote.lastErrorCode).toBe('unknown-outcome');
   });
 
+  test('an unknown first create whose file is really absent is released and created', async () => {
+    const world = createWorld();
+    const env = createSandbox({
+      world,
+      state: seedState({
+        remote: {
+          provider: 'webdav',
+          status: 'unknown',
+          lastAttemptAt: 1,
+          lastSuccessAt: 0,
+          lastErrorCode: 'unknown-outcome',
+          baseline: null,
+        },
+      }),
+    });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const state = env.readState();
+    // The re-check found no file, so the earlier create never landed. The hold is
+    // released and exactly one create is attempted.
+    expect(state.remote.status).toBe('ok');
+    expect(world.requests.filter((r) => r.method === 'PUT')).toHaveLength(1);
+    expect(state.remote.baseline).toMatchObject({ service: 'webdav', fileUrl: WEBDAV_FILE_URL });
+  });
+
   test('a local snapshot success never hides the cloud failure', async () => {
     const world = createWorld({ webdav: { getBehavior: 'throw' } });
     const env = createSandbox({ world });
@@ -690,5 +715,56 @@ test.describe('Ticket #130 — bounded retry and off switch (controlled service)
     // The list was read; no second Gist was created.
     expect(world.gistCalls.filter((c) => c.method === 'POST')).toHaveLength(0);
     expect(world.gistCalls.some((c) => c.method === 'GET' && c.url.includes('/gists?'))).toBe(true);
+  });
+
+  test('a same-named Gist that predates the interrupted POST is not counted as success', async () => {
+    const list = [
+      {
+        id: 'abcdef123456',
+        files: { [GIST_FILE]: { filename: GIST_FILE, size: 200 } },
+        owner: { login: 'spec-user', id: 42 },
+        created_at: '2020-01-01T00:00:00Z',
+        updated_at: '2020-01-01T00:00:00Z',
+      },
+    ];
+    const world = createWorld({ gist: { list } });
+    const env = createSandbox({
+      world,
+      layout: seedLayout({
+        settings: {
+          syncProvider: 'gist',
+          _encGistToken: 'spec-token',
+          gistId: '',
+          syncFileName: GIST_FILE,
+        },
+      }),
+      state: seedState({
+        remote: {
+          provider: 'gist',
+          status: 'unknown',
+          lastAttemptAt: 1,
+          lastSuccessAt: 0,
+          lastErrorCode: 'gistResultUnknown',
+          account: { login: 'spec-user', id: 42 },
+          baseline: null,
+          pendingCreate: {
+            provider: 'gist',
+            fileName: GIST_FILE,
+            description: 'Boxing backup',
+            startedAt: 1_700_000_000_000,
+            accountLogin: 'spec-user',
+            accountId: 42,
+            gistId: '',
+          },
+        },
+      }),
+    });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const state = env.readState();
+    // An old file with the same name is not the result of this POST; the hold stays.
+    expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastErrorCode).toBe('gistResultUnknown');
+    expect(world.gistCalls.filter((c) => c.method === 'POST')).toHaveLength(0);
   });
 });
