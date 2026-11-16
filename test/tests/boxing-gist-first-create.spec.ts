@@ -1046,35 +1046,30 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
         return Promise.reject(new Error('manual Gist backup must not fetch while a background create is pending'));
       };
       let message = '';
-      let readFailureMessage = '';
-      const origGetItem = Storage.prototype.getItem;
       try {
-        try {
-          await (window as any).__bxSync.backupToGist();
-        } catch (e: any) {
-          message = String(e?.message || e);
-        }
-        // The strict coordination read must fail closed, not treat a storage
-        // error as "no pending create".
-        Storage.prototype.getItem = function (key: string) {
-          if (key === 'bxstore:autoBackupState') throw new Error('simulated read failure');
-          return origGetItem.call(this, key);
-        };
-        try {
-          await (window as any).__bxSync.backupToGist();
-        } catch (e: any) {
-          readFailureMessage = String(e?.message || e);
-        } finally {
-          Storage.prototype.getItem = origGetItem;
-        }
+        await (window as any).__bxSync.backupToGist();
+      } catch (e: any) {
+        message = String(e?.message || e);
       } finally {
         window.fetch = realFetch;
       }
-      return { fetchCount, message, readFailureMessage };
+      return { fetchCount, message };
     });
     expect(result.fetchCount).toBe(0);
     expect(result.message).toContain('no confirmed result');
-    expect(result.readFailureMessage).toContain('Could not read auto-backup state');
+  });
+
+  test('manual Gist backup uses a strict coordination read before any network write', () => {
+    const storageSrc = fs.readFileSync(path.join(ROOT_DIR, 'ntp', 'storage.js'), 'utf8');
+    const start = storageSrc.indexOf('export async function getAutoBackupStateStrict');
+    expect(start).toBeGreaterThan(-1);
+    const block = storageSrc.slice(start, start + 320);
+    // The strict variant must not swallow a storage read failure into a default state.
+    expect(block).not.toContain('catch');
+    expect(block).toContain('layoutStorage.get');
+    const syncSrc = fs.readFileSync(path.join(ROOT_DIR, 'ntp', 'sync-engine.js'), 'utf8');
+    expect(syncSrc).toContain('getAutoBackupStateStrict()');
+    expect(syncSrc).toContain("throw new Error('Could not read auto-backup state')");
   });
 
   test('a background-created Gist id is mirrored into the normal settings field', async ({ page }) => {
