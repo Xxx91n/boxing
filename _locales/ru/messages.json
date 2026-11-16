@@ -1456,6 +1456,10 @@
     "message": "Результат загрузки неизвестен. Проверьте удалённый файл, затем выключите и снова включите авторезервное копирование.",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "Файл на сервере заблокирован или занят. Ничего не записано; повторите попытку позже.",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "Адрес, учётная запись или имя файла WebDAV изменились. Подтвердите новую цель, прежде чем возобновить копирование.",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "Выключите и снова включите авторезервное копирование, чтобы повторить попытку после исправления удалённой стороны.",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "Проблема с сетью. Автоматическая попытка $attempt$ из 3 примерно через $minutes$ мин.",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "Проверить и повторить",

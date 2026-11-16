@@ -1456,6 +1456,10 @@
     "message": "ไม่ทราบผลการอัปโหลด ตรวจสอบไฟล์ระยะไกล แล้วปิดและเปิดสำรองอัตโนมัติใหม่เพื่อลองอีกครั้ง",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "ไฟล์บนเซิร์ฟเวอร์ถูกล็อกหรือไม่ว่าง จึงยังไม่ได้เขียนอะไร ลองใหม่เมื่อว่างแล้ว",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "ที่อยู่ บัญชี หรือชื่อไฟล์ WebDAV เปลี่ยนไป ยืนยันเป้าหมายใหม่ก่อนเริ่มสำรองอัตโนมัติอีกครั้ง",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "ปิดแล้วเปิดสำรองอัตโนมัติใหม่เพื่อลองอีกครั้งหลังแก้ไขฝั่งระยะไกล",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "เครือข่ายมีปัญหา จะลองใหม่อัตโนมัติครั้งที่ $attempt$ จาก 3 ในอีกประมาณ $minutes$ นาที",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "ตรวจสอบแล้วลองอีกครั้ง",

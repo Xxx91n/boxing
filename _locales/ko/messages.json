@@ -1456,6 +1456,10 @@
     "message": "업로드 결과를 알 수 없습니다. 원격 파일을 확인한 뒤 자동 백업을 껐다 켜서 다시 시도하세요.",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "서버의 파일이 잠겨 있거나 사용 중입니다. 아무것도 쓰지 않았습니다. 잠금이 풀린 뒤 다시 시도하세요.",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "WebDAV 주소, 계정 또는 파일 이름이 바뀌었습니다. 자동 백업을 다시 시작하기 전에 새 대상을 확인하세요.",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "원격 쪽을 고친 뒤 자동 백업을 껐다 켜면 다시 시도합니다.",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "네트워크 문제가 있습니다. 약 $minutes$분 뒤에 자동으로 $attempt$번째 재시도(최대 3회)를 합니다.",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "확인 후 다시 시도",

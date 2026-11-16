@@ -1456,6 +1456,10 @@
     "message": "El resultado de la subida es desconocido. Revisa el archivo remoto y desactiva y vuelve a activar la copia automática para reintentar.",
     "description": "Cloud backup reason: commit outcome unknown"
   },
+  "autoBackupCloudReasonRemoteLocked": {
+    "message": "El archivo remoto está bloqueado u ocupado. No se escribió nada; inténtalo cuando quede libre.",
+    "description": "Cloud backup reason: remote file is locked or busy"
+  },
   "autoBackupCloudReasonTargetChanged": {
     "message": "La dirección, la cuenta o el nombre de archivo de WebDAV cambiaron. Confirma el nuevo destino antes de reanudar la copia automática.",
     "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
@@ -1467,6 +1471,18 @@
   "autoBackupCloudRetryHint": {
     "message": "Desactiva y vuelve a activar la copia automática para reintentar después de arreglar el lado remoto.",
     "description": "Hint on how to release a blocking cloud backup pause"
+  },
+  "autoBackupCloudRetryScheduled": {
+    "message": "Problema de red. Reintento automático $attempt$ de 3 en unos $minutes$ min.",
+    "description": "Transient network failure: the bounded automatic retry that is planned next",
+    "placeholders": {
+      "attempt": {
+        "content": "$1"
+      },
+      "minutes": {
+        "content": "$2"
+      }
+    }
   },
   "autoBackupCloudActionFix": {
     "message": "Comprobar y reintentar",

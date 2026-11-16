@@ -23,6 +23,24 @@
   const AUTO_BACKUP_LOCK_TTL_MS = 30000;
   const MIN_AUTO_BACKUP_INTERVAL_SEC = 3600;
 
+  // Ticket #130 (spec #120 D6/T3): only short-lived network trouble gets extra
+  // attempts. Five / fifteen / sixty minutes count from the failure that just
+  // happened, with a little jitter so two installs do not retry at the same second.
+  // A failure that needs the user (auth, permission, conflicts, unknown outcome)
+  // never uses this path.
+  const AUTO_BACKUP_RETRY_DELAYS_MS = Object.freeze([5 * 60000, 15 * 60000, 60 * 60000]);
+  const AUTO_BACKUP_MAX_RETRIES = AUTO_BACKUP_RETRY_DELAYS_MS.length;
+  const AUTO_BACKUP_RETRY_JITTER_RATIO = 0.1;
+  // A server may ask us to wait longer than the fixed delay; never earlier than that.
+  const AUTO_BACKUP_MAX_RETRY_AFTER_MS = 24 * 3600 * 1000;
+  // Closed list of failure codes that describe "try again later", not "the user must
+  // look at this first". Everything else clears the retry plan.
+  const AUTO_BACKUP_TRANSIENT_REASONS = Object.freeze([
+    'remote-unreachable',
+    'update-failed',
+    'gistCheckFailed',
+  ]);
+
   // Ticket #125 (spec #120 T5): cloud (WebDAV) result is tracked separately from the
   // local snapshot result. A local snapshot success never turns into a cloud success,
   // and a cloud pause/unknown never erases the local success time.
@@ -48,6 +66,9 @@
     'baseline-unverified',
     'remote-missing',
     'update-failed',
+    // Ticket #130: the file is locked or in a conflicting state. That is a conflict,
+    // not a network hiccup, so it pauses instead of burning retries.
+    'remote-locked',
     // Ticket #126 (Gist first-create). Stable codes; NTP owns the localized copy.
     'gistTokenMissing',
     'gistPermissionMissing',
@@ -77,6 +98,7 @@
     'remote-changed',
     'baseline-unverified',
     'remote-missing',
+    'remote-locked',
     'gistTargetNeedsReview',
     'gistUnknownExisting',
     'gistUpdateNotEnabled',
@@ -348,6 +370,38 @@
       // alone is not enough — two WebDAV addresses are different targets.
       lastSuccessTarget: '',
       pendingCreate: null,
+      // Ticket #130: the server's own "do not call me before this" floor (Retry-After).
+      // A normal alarm must respect it too, not only the extra attempts.
+      notBeforeAt: 0,
+    };
+  }
+
+  function defaultAutoBackupRetryState() {
+    return {
+      // How many extra attempts have already been used for the current failure run.
+      attempt: 0,
+      // When the next extra attempt is allowed (0 = none planned).
+      nextAt: 0,
+      // The transient code that justified the plan; cleared for user-action problems.
+      code: null,
+      // The concrete target the plan belongs to. A target change makes it stale.
+      target: '',
+    };
+  }
+
+  function normalizeAutoBackupRetryState(raw) {
+    const dflt = defaultAutoBackupRetryState();
+    if (!isPlainObject(raw)) return dflt;
+    const attempt = Math.min(AUTO_BACKUP_MAX_RETRIES, Math.max(0, Math.floor(Number(raw.attempt) || 0)));
+    const code = typeof raw.code === 'string' && AUTO_BACKUP_TRANSIENT_REASONS.includes(raw.code)
+      ? raw.code
+      : null;
+    if (!code || attempt <= 0) return dflt;
+    return {
+      attempt,
+      nextAt: Math.max(0, Number(raw.nextAt) || 0),
+      code,
+      target: typeof raw.target === 'string' ? raw.target.slice(0, 2048) : '',
     };
   }
 
@@ -367,6 +421,7 @@
         lastError: null,
       },
       remote: defaultRemoteAutoBackupState(),
+      retry: defaultAutoBackupRetryState(),
       lock: null,
     };
   }
@@ -468,6 +523,7 @@
       baseline: normalizeRemoteBaseline(raw.baseline),
       lastSuccessTarget: typeof raw.lastSuccessTarget === 'string' ? raw.lastSuccessTarget.slice(0, 2048) : '',
       pendingCreate: normalizeRemotePendingCreate(raw.pendingCreate),
+      notBeforeAt: Math.max(0, Number(raw.notBeforeAt) || 0),
     };
   }
 
@@ -504,8 +560,66 @@
         lastError: typeof rawLocal.lastError === 'string' && rawLocal.lastError ? rawLocal.lastError : null,
       },
       remote: normalizeRemoteAutoBackupState(raw.remote),
+      // Ticket #130: the retry plan is part of the durable schedule, so a worker
+      // restart resumes the same bounded attempt counter instead of starting over.
+      retry: optIn ? normalizeAutoBackupRetryState(raw.retry) : defaultAutoBackupRetryState(),
       lock,
     };
+  }
+
+  // How long to wait before extra attempt number `attempt` (1-based), with jitter.
+  // `random` is injectable so tests can pin the value.
+  function autoBackupRetryDelayMs(attempt, random) {
+    const n = Math.floor(Number(attempt) || 0);
+    const idx = Math.min(AUTO_BACKUP_MAX_RETRIES - 1, Math.max(0, n - 1));
+    const base = AUTO_BACKUP_RETRY_DELAYS_MS[idx];
+    const raw = typeof random === 'function' ? Number(random()) : Math.random();
+    const ratio = Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 0.5;
+    const offset = (ratio * 2 - 1) * AUTO_BACKUP_RETRY_JITTER_RATIO;
+    return Math.max(60000, Math.round(base * (1 + offset)));
+  }
+
+  // Build the next retry plan after a transient failure. `retryAfterMs` is the
+  // server's own Retry-After (already in ms); we never wake earlier than it.
+  // Once the three extra attempts are used up, nextAt stays 0 and the normal
+  // interval is the only thing left.
+  function computeAutoBackupRetryPlan(input) {
+    const opts = input || {};
+    const used = Math.max(0, Math.floor(Number(opts.attempt) || 0));
+    const failureAt = Math.max(0, Number(opts.failureAt) || 0);
+    const retryAfterMs = Math.max(0, Number(opts.retryAfterMs) || 0);
+    const nextAttempt = used + 1;
+    if (!failureAt || nextAttempt > AUTO_BACKUP_MAX_RETRIES) {
+      return { attempt: Math.min(used, AUTO_BACKUP_MAX_RETRIES), nextAt: 0, code: null, target: '' };
+    }
+    const wait = Math.max(autoBackupRetryDelayMs(nextAttempt, opts.random), retryAfterMs);
+    return {
+      attempt: nextAttempt,
+      nextAt: failureAt + wait,
+      code: typeof opts.code === 'string' ? opts.code : null,
+      target: typeof opts.target === 'string' ? opts.target.slice(0, 2048) : '',
+    };
+  }
+
+  // Parse an RFC 9110 Retry-After value (delta seconds or HTTP date) into ms.
+  function parseRetryAfterMs(value, nowMs) {
+    if (typeof value !== 'string' || !value.trim()) return 0;
+    const now = typeof nowMs === 'number' && Number.isFinite(nowMs) ? nowMs : Date.now();
+    const text = value.trim();
+    if (/^\d+$/.test(text)) {
+      return Math.min(Math.max(0, Number(text) * 1000), AUTO_BACKUP_MAX_RETRY_AFTER_MS);
+    }
+    const at = Date.parse(text);
+    if (!Number.isFinite(at)) return 0;
+    return Math.min(Math.max(0, at - now), AUTO_BACKUP_MAX_RETRY_AFTER_MS);
+  }
+
+  function isAutoBackupRetryDue(state, nowMs) {
+    const norm = normalizeAutoBackupState(state);
+    if (!isAutoBackupActive(norm)) return false;
+    if (!norm.retry.code || !norm.retry.nextAt) return false;
+    const now = typeof nowMs === 'number' && Number.isFinite(nowMs) ? nowMs : Date.now();
+    return now >= norm.retry.nextAt;
   }
 
   function isAutoBackupActive(state) {
@@ -521,6 +635,11 @@
     if (norm.local.status === 'running' && (!norm.lock || norm.lock.expiresAt <= now)) {
       return true;
     }
+    // Ticket #130: an extra attempt whose time has come is due even when the normal
+    // interval has not elapsed yet. One catch-up run is enough; the next plan is
+    // computed from that run's result.
+    if (norm.retry.code && norm.retry.nextAt && now >= norm.retry.nextAt &&
+        now >= (Number(norm.remote && norm.remote.notBeforeAt) || 0)) return true;
     if (!norm.nextScheduledAt) return true;
     return now >= norm.nextScheduledAt;
   }
@@ -552,6 +671,9 @@
     ALLOWED_AUTO_BACKUP_INTERVALS,
     AUTO_BACKUP_LOCK_TTL_MS,
     MIN_AUTO_BACKUP_INTERVAL_SEC,
+    AUTO_BACKUP_RETRY_DELAYS_MS,
+    AUTO_BACKUP_MAX_RETRIES,
+    AUTO_BACKUP_TRANSIENT_REASONS,
     AUTO_BACKUP_REMOTE_STATUSES,
     AUTO_BACKUP_REMOTE_REASONS,
     AUTO_BACKUP_REMOTE_BLOCKING_REASONS,
@@ -568,6 +690,12 @@
     defaultRemoteAutoBackupState,
     normalizeRemoteAutoBackupState,
     normalizeAutoBackupState,
+    defaultAutoBackupRetryState,
+    normalizeAutoBackupRetryState,
+    autoBackupRetryDelayMs,
+    computeAutoBackupRetryPlan,
+    parseRetryAfterMs,
+    isAutoBackupRetryDue,
     isAutoBackupActive,
     isAutoBackupOverdue,
     computeAlarmDelayMinutes,
