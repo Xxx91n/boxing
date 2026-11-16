@@ -1,16 +1,22 @@
-// Boxing — shared Gist first-create protocol core (ticket #126 / spec #120 T7).
+// Boxing — shared Gist backup protocol core (tickets #126 / #128, spec #120 T7/T8).
 //
-// Pure decisions and payload/response shapes for the FIRST unattended Gist
-// backup. No fetch, no storage, no DOM: the background service worker supplies
-// the token/account/permission results and performs the request, and the same
-// functions run in Node tests against controlled Gist API samples.
+// Pure decisions and payload/response shapes for Gist backups. No fetch, no
+// storage, no DOM: the background service worker supplies the token/account/
+// permission results and performs the request, and the same functions run in
+// Node tests against controlled Gist API samples.
 //
-// Safety rules encoded here (spec D4/D5, ticket #126):
+// Safety rules encoded here (spec D4/D5):
 //   - An existing Gist is never treated as a newly creatable file.
 //   - A saved Gist ID without a matching trusted baseline cannot be updated.
 //   - A changed account, file name, or pending unknown result stops creation.
 //   - Only a confirmed POST response with the expected file may become a baseline.
-// Long-term PATCH/PUT updates of an existing Gist belong to later tickets.
+//   - Automatic updates of an existing Gist stay blocked: GitHub's official API
+//     description declares no conditional write header for Gist PATCH, so there
+//     is no verified primitive that stops a competing writer from being
+//     overwritten (see docs/gist-conditional-write.md, #120 D4 release blocker).
+//   - Manual writes are still allowed, but the background serialises every Gist
+//     POST/PATCH in one queue so a manual click cannot race the unattended first
+//     create. A pending POST result blocks both paths.
 (function (root) {
   'use strict';
 
@@ -39,6 +45,10 @@
       public: false,
       files: { [fileName]: { content } },
     };
+  }
+
+  function buildGistUpdateBody(fileName, content) {
+    return { files: { [fileName]: { content } } };
   }
 
   function safeTimestamp(value) {
@@ -152,6 +162,10 @@
       if (normalizeGistId(baseline.gistId) !== savedGistId || baseline.fileName !== fileName) {
         return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
       }
+      // Ticket #128 / #120 D4: this is a release blocker, not a "not built yet"
+      // placeholder. GitHub declares no conditional write header for Gist PATCH,
+      // and no real race test has proven one, so automatic overwrite of an existing
+      // Gist stays off until docs/gist-conditional-write.md's gate is cleared.
       return {
         action: 'update-not-enabled',
         reasonCode: 'gistUpdateNotEnabled',
@@ -175,6 +189,46 @@
     return { action: 'create', fileName };
   }
 
+  // Pure manual-write decision for the background queue. "Manual" means the user
+  // pressed Backup Now; it never enables unattended updates. The caller supplies
+  // token/permission/size facts and the background performs one queued request.
+  //   Returns one of: skip, pause, post, patch.
+  function planManualGistWrite(input) {
+    const opts = input || {};
+    const settings = opts.settings || {};
+    const cloud = opts.cloud || {};
+
+    if (settings.syncProvider !== 'gist') return { action: 'skip', reasonCode: null };
+    if (opts.tokenPresent !== true) return { action: 'pause', reasonCode: 'gistTokenMissing' };
+    if (!opts.permission || opts.permission.ok !== true) {
+      return { action: 'pause', reasonCode: 'gistPermissionMissing' };
+    }
+    if (cloud.pendingCreate) return { action: 'pause', reasonCode: 'gistResultUnknown' };
+    if (opts.payloadTooLarge === true) return { action: 'pause', reasonCode: 'gistPayloadTooLarge' };
+
+    const fileName = sanitizeGistFileName(
+      typeof opts.fileName === 'string' ? opts.fileName : settings.syncFileName
+    );
+    const baseline = cloud.baseline &&
+      (cloud.baseline.provider === 'gist' || cloud.baseline.service === 'gist')
+      ? cloud.baseline
+      : null;
+    const rawGistId = typeof opts.gistId === 'string'
+      ? opts.gistId.trim()
+      : (typeof settings.gistId === 'string' ? settings.gistId.trim() : '');
+    const explicitGistId = normalizeGistId(rawGistId);
+    // A non-empty but unparseable id is an explicit bad target; never silently
+    // fall back to creating a new Gist or to the baseline.
+    if (rawGistId && !explicitGistId) {
+      return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
+    }
+    // A second manual click that starts after the background created a Gist but
+    // before the page mirrored its id must PATCH that Gist, not POST a duplicate.
+    const gistId = explicitGistId || (baseline ? normalizeGistId(baseline.gistId) : '');
+    if (gistId) return { action: 'patch', gistId, fileName };
+    return { action: 'post', fileName };
+  }
+
   const exported = {
     GIST_CREATE_DESCRIPTION,
     DEFAULT_GIST_FILE_NAME,
@@ -182,10 +236,12 @@
     normalizeGistId,
     sanitizeGistFileName,
     buildGistCreateBody,
+    buildGistUpdateBody,
     parseGistResponse,
     findGistWithFile,
     classifyGistFailure,
     planGistFirstCreate,
+    planManualGistWrite,
   };
 
   if (root) root.__boxingGistBackupCore = exported;

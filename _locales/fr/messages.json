@@ -1528,7 +1528,8 @@
     "message": "Impossible de vérifier le compte GitHub ou ses Gists. La sauvegarde Gist automatique est en pause."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Le Gist existe déjà. La mise à jour automatique d’un Gist existant n’est pas encore activée."
+    "message": "Ce Gist existe déjà. GitHub ne fournit pas de moyen vérifié d’empêcher l’écrasement des modifications d’un autre auteur ; la mise à jour automatique reste donc en pause. La sauvegarde manuelle fonctionne toujours.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
     "message": "Un Gist portant ce nom de fichier existe déjà mais n’est pas suivi par Boxing. La sauvegarde automatique est en pause."

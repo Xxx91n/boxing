@@ -1528,7 +1528,8 @@
     "message": "GitHub 계정 또는 Gist를 확인할 수 없습니다. 자동 Gist 백업을 중지했습니다."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Gist가 이미 있습니다. 기존 Gist 자동 업데이트는 아직 지원되지 않습니다."
+    "message": "이 Gist는 이미 있습니다. GitHub에는 다른 작성자의 변경을 덮어쓰지 않는다고 확인된 방법이 없어 자동 업데이트를 계속 멈춰 둡니다. 수동 백업은 그대로 사용할 수 있습니다.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
     "message": "이 파일 이름의 Gist가 이미 있지만 Boxing에 기록되어 있지 않습니다. 자동 백업을 중지했습니다."

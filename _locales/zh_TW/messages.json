@@ -1531,7 +1531,8 @@
     "message": "無法核對 GitHub 帳號或其 Gist，自動 Gist 備份已暫停。"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "此 Gist 已存在。目前不支援自動更新既有 Gist。"
+    "message": "這個 Gist 已經存在。GitHub 沒有可驗證的辦法避免覆蓋別處的修改，所以自動更新先暫停；手動備份照常可用。",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
     "message": "此檔名對應的 Gist 已存在，但 Boxing 沒有記錄它。自動備份已暫停。"

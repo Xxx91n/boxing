@@ -1614,8 +1614,8 @@
     "description": "Background Gist backup paused because the account check failed"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "The Gist already exists. Automatic updates of an existing Gist are not enabled yet.",
-    "description": "Background Gist backup stopped because only first creation is supported"
+    "message": "The Gist already exists. GitHub provides no verified way to stop a competing writer from being overwritten, so automatic updates stay paused. Manual backup still works while the target and file name stay the same.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "autoBackupCloudReasonRemoteChanged": {
     "message": "The remote file was changed by another device, so this backup was not uploaded. Run a manual sync to merge it first.",

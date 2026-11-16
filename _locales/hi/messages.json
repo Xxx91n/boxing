@@ -1528,7 +1528,8 @@
     "message": "GitHub खाते या उसके Gists की जांच नहीं हो सकी। स्वचालित Gist बैकअप रुका हुआ है।"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Gist पहले से मौजूद है। मौजूदा Gist का स्वचालित अपडेट अभी उपलब्ध नहीं है।"
+    "message": "यह Gist पहले से मौजूद है। GitHub के पास किसी दूसरे लेखक के बदलावों को लिखे जाने से रोकने का जाँचा हुआ तरीका नहीं है, इसलिए स्वचालित अपडेट रुका हुआ रहेगा। मैन्युअल बैकअप अभी भी काम करता है।",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
     "message": "इस फ़ाइल नाम वाला Gist पहले से मौजूद है, लेकिन Boxing इसे ट्रैक नहीं करता। स्वचालित बैकअप रुका हुआ है।"

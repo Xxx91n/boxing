@@ -1528,7 +1528,8 @@
     "message": "GitHub-Konto oder Gists konnten nicht geprüft werden. Die automatische Gist-Sicherung ist pausiert."
   },
   "gistAutoBackupErrUpdate": {
-    "message": "Der Gist existiert bereits. Automatische Aktualisierungen eines bestehenden Gists sind noch nicht aktiviert."
+    "message": "Dieser Gist existiert bereits. GitHub bietet keine geprüfte Möglichkeit, das Überschreiben eines anderen Schreibers zu verhindern; automatische Aktualisierungen bleiben deshalb pausiert. Manuelles Backup funktioniert weiterhin.",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
     "message": "Ein Gist mit diesem Dateinamen existiert bereits, ist aber nicht in Boxing erfasst. Die automatische Sicherung ist pausiert."

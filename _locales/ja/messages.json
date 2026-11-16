@@ -1528,7 +1528,8 @@
     "message": "GitHub アカウントまたは Gist を確認できませんでした。自動 Gist バックアップを停止しました。"
   },
   "gistAutoBackupErrUpdate": {
-    "message": "この Gist は既に存在します。既存 Gist の自動更新はまだ有効ではありません。"
+    "message": "この Gist は既に存在します。GitHub には、他の書き手の変更を上書きしないことを保証できる確認済みの方法がないため、自動更新は停止したままです。手動バックアップは引き続き使えます。",
+    "description": "Background Gist backup paused: GitHub provides no verified conditional write for an existing Gist"
   },
   "gistAutoBackupErrExisting": {
     "message": "このファイル名の Gist は既に存在しますが、Boxing に記録されていません。自動バックアップを停止しました。"
