@@ -243,7 +243,9 @@ test.describe('Ticket #124 — Background local auto-backup contracts (file:// +
     expect(manifest.background?.scripts).toContain('background.js');
     expect(fs.existsSync(corePath)).toBe(true);
     const bgCode = fs.readFileSync(bgPath, 'utf8');
-    expect(bgCode).toContain("import('./shared/snapshot-core.js')");
+    // Ticket #126: the lazy loader is shared by snapshot/credential/gist cores;
+    // the Firefox ESM background still dynamic-imports the snapshot core by path.
+    expect(bgCode).toContain("ensureSharedModule('__boxingSnapshotCore', 'shared/snapshot-core.js'");
 
     // Verify shared/snapshot-core.js loads cleanly in Node CJS and exposes expected API
     const core = require(corePath);

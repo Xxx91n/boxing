@@ -282,6 +282,7 @@
     return {
       provider: '',
       status: 'idle',
+      generation: 0,
       lastAttemptAt: 0,
       lastSuccessAt: 0,
       lastErrorCode: null,
@@ -361,6 +362,7 @@
     return {
       provider,
       status,
+      generation: Math.max(0, Math.floor(Number(raw.generation) || 0)),
       lastAttemptAt: Math.max(0, Number(raw.lastAttemptAt) || 0),
       lastSuccessAt: Math.max(0, Number(raw.lastSuccessAt) || 0),
       lastErrorCode: typeof raw.lastErrorCode === 'string' && raw.lastErrorCode ? raw.lastErrorCode.slice(0, 64) : null,

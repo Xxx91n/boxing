@@ -1192,7 +1192,15 @@ export function initSyncEngineFacade(deps) {
     async function backupToGist() {
       const token = gistTokenInput?.value?.trim();
       if (!token) throw new Error('GitHub token not configured');
-      const gistId = layout.settings.gistId || gistIdInput?.value?.trim();
+      // Ticket #126: do not race the background first-create. A pending POST result
+      // means a Gist may already exist; a trusted baseline is the real target even
+      // before the settings field has been mirrored.
+      let autoState = null;
+      try { autoState = await getAutoBackupState(); } catch (_) { autoState = null; }
+      const cloud = autoState && autoState.cloud ? autoState.cloud : {};
+      if (cloud.pendingCreate) throw new Error(i18n('gistAutoBackupErrUnknown'));
+      const baselineId = cloud.baseline && cloud.baseline.provider === 'gist' ? cloud.baseline.gistId : '';
+      const gistId = layout.settings.gistId || gistIdInput?.value?.trim() || baselineId;
       if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw new Error('Invalid Gist ID');
       const content = JSON.stringify(buildSyncPayload(), null, 2);
       // (Bug16): honor custom sync filename; default boxing-backup.json.
@@ -1383,6 +1391,7 @@ export function initSyncEngineFacade(deps) {
         // An unconfirmed result stays visible after a provider switch or disable;
         // every other cloud pause only belongs to the current, active Gist target.
         const cloudErr = state && state.cloud &&
+          (state.cloud.status === 'paused' || state.cloud.status === 'pending') &&
           (state.cloud.status === 'pending' || (isActive && cloudMatchesProvider))
           ? cloudErrorMessage(state.cloud)
           : '';
@@ -2050,8 +2059,10 @@ export function bindSyncBackupUi() {
         backupNowLabelReset = setTimeout(() => { backupNowBtn.textContent = i18n('syncNow'); }, 4000);
       }
     });
+    let autoBackupSelectSeq = 0;
     const autoBackupSelect = document.getElementById('auto-backup-interval');
     autoBackupSelect?.addEventListener('change', async () => {
+      const mySeq = ++autoBackupSelectSeq;
       const intervalSec = parseInt(autoBackupSelect.value, 10) || 0;
       const provider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
       const wantsGist = provider === 'gist' && intervalSec >= 3600;
@@ -2060,6 +2071,7 @@ export function bindSyncBackupUi() {
       try {
         if (gistPermPromise) {
           const req = await gistPermPromise;
+          if (mySeq !== autoBackupSelectSeq) return;
           if (req && req.granted) {
             await clearGistPendingPermissionIfOrigin(req.origin || GIST_API_ORIGIN);
           } else {
@@ -2069,6 +2081,7 @@ export function bindSyncBackupUi() {
               reason: req && req.supported ? 'denied' : 'missing-permission',
             });
           }
+          if (mySeq !== autoBackupSelectSeq) return;
           await refreshGistPermissionUi();
         }
         // The user may have just typed the Gist token and clicked this select;
@@ -2076,6 +2089,7 @@ export function bindSyncBackupUi() {
         if (provider === 'gist') {
           try { await flushUnsavedCredentials(); } catch (e) { debugWarn('pre-auto-backup Gist credential flush failed', e); }
         }
+        if (mySeq !== autoBackupSelectSeq) return;
         await configureLocalAutoBackup(intervalSec, intervalSec >= 3600);
       } catch (e) {
         if (typeof debugWarn === 'function') debugWarn('autoBackupSelect change failed', e);

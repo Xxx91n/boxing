@@ -718,6 +718,52 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(state.cloud.pendingCreate.gistId).toBe('abc12345');
   });
 
+  test('a reset during the POST discards the stale success write', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) return jsonResponse(200, []);
+        if (call.method === 'POST' && call.url.endsWith('/gists')) {
+          // Simulate credential deletion/reset while the POST is in flight.
+          const cur = sandbox.store.autoBackupState;
+          sandbox.store.autoBackupState = {
+            ...cur,
+            cloud: { ...cur.cloud, generation: (Number(cur.cloud.generation) || 0) + 1 },
+          };
+          return gistCreated();
+        }
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.cloud.cancelled).toBe(true);
+    expect(res.cloud.reason).toBe('cloud-generation-changed');
+    expect(sandbox.store.autoBackupState.cloud.generation).toBe(1);
+    expect(sandbox.store.autoBackupState.cloud.baseline).toBeNull();
+    expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+  });
+
+  test('a provider switch during the list check cancels before POST', async () => {
+    const store = await baseStore();
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: (call) => {
+        if (call.method === 'GET' && call.url.endsWith('/user')) return apiUser();
+        if (isGistListCall(call)) {
+          sandbox.store.boxingLayout.settings.syncProvider = 'local';
+          return jsonResponse(200, []);
+        }
+        throw new Error('unexpected call ' + call.method + ' ' + call.url);
+      },
+    });
+    const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
+    expect(res.cloud.cancelled).toBe(true);
+    expect(res.cloud.reason).toBe('cancelled-before-post');
+    expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+  });
+
   test('a payload over the request cap pauses as too large without POST', async () => {
     const store = await baseStore();
     store.boxingLayout.boxes[0].title = 'X'.repeat(2_200_000);
@@ -831,6 +877,70 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
     await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'paused');
     await expect(page.locator('#local-auto-backup-status-text')).toHaveText('Result unconfirmed');
     await expect(page.locator('#local-auto-backup-error')).toContainText('no confirmed result');
+
+    // A confirmed cloud success must not show the generic paused copy.
+    await page.evaluate(async () => {
+      const state = {
+        ...(window as any).__boxingSnapshotCore.defaultAutoBackupState(),
+        optIn: true,
+        intervalSec: 3600,
+        epoch: 1,
+        local: { status: 'ok', lastAttemptAt: 1, lastSuccessAt: 1, lastSnapshotTs: 1, lastError: null },
+        cloud: {
+          provider: 'gist',
+          status: 'ok',
+          lastAttemptAt: 3,
+          lastSuccessAt: 3,
+          lastErrorCode: null,
+          account: { login: 'spec-user', id: 42 },
+          baseline: null,
+          pendingCreate: null,
+        },
+      };
+      await (window as any).__boxingRefreshLocalAutoBackupUi(state);
+    });
+    await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'active');
+    await expect(page.locator('#local-auto-backup-error')).toBeHidden();
+  });
+
+  test('manual Gist backup refuses to race a pending background create', async ({ page }) => {
+    await bootFileNtp(page);
+    const result = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const core = (window as any).__boxingSnapshotCore;
+      dbg.layout.settings.syncProvider = 'gist';
+      dbg.layout.settings.syncFileName = 'boxing-backup.json';
+      await dbg.saveLayout();
+      const tokenInput = document.getElementById('gist-token') as HTMLInputElement | null;
+      if (tokenInput) tokenInput.value = 'ghp_manual_token';
+      const state = core.defaultAutoBackupState();
+      state.cloud = {
+        ...state.cloud,
+        provider: 'gist',
+        status: 'pending',
+        generation: 0,
+        pendingCreate: { provider: 'gist', fileName: 'boxing-backup.json' },
+      };
+      await dbg.storageSet({ autoBackupState: state });
+
+      const realFetch = window.fetch;
+      let fetchCount = 0;
+      (window as any).fetch = function (..._args: any[]) {
+        fetchCount++;
+        return Promise.reject(new Error('manual Gist backup must not fetch while a background create is pending'));
+      };
+      let message = '';
+      try {
+        await (window as any).__bxSync.backupToGist();
+      } catch (e: any) {
+        message = String(e?.message || e);
+      } finally {
+        window.fetch = realFetch;
+      }
+      return { fetchCount, message };
+    });
+    expect(result.fetchCount).toBe(0);
+    expect(result.message).toContain('no confirmed result');
   });
 
   test('a background-created Gist id is mirrored into the normal settings field', async ({ page }) => {

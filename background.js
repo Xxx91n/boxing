@@ -695,6 +695,9 @@ try {
     });
   }
 
+  // Reads the body inside the timeout window: fetch() resolves on headers, so
+  // clearing the timer before resp.text()/json() would let a stalled body hold the
+  // auto-backup queue forever.
   async function bgGistFetch(pathname, token, options) {
     const opts = options || {};
     const controller = new AbortController();
@@ -716,7 +719,15 @@ try {
         e.gistUnknown = true;
         throw e;
       }
-      return resp;
+      let text = '';
+      try {
+        text = await resp.text();
+      } catch (e) {
+        const bodyErr = new Error('gist response body unreadable');
+        bodyErr.gistUnknown = true;
+        throw bodyErr;
+      }
+      return { status: resp.status, ok: resp.ok, headers: resp.headers, text };
     } finally {
       clearTimeout(timer);
     }
@@ -739,7 +750,7 @@ try {
     }
     if (!resp.ok) return { ok: false, reasonCode: 'gistCheckFailed' };
     let json;
-    try { json = await resp.json(); } catch (_) { return { ok: false, reasonCode: 'gistCheckFailed' }; }
+    try { json = JSON.parse(resp.text); } catch (_) { return { ok: false, reasonCode: 'gistCheckFailed' }; }
     const login = json && json.login;
     const normalizedId = bgNormalizeAccountId(json && json.id);
     if (!normalizedId || typeof login !== 'string' || !login) {
@@ -764,7 +775,7 @@ try {
       }
       if (!resp.ok) return { ok: false, reasonCode: 'gistCheckFailed' };
       let json;
-      try { json = await resp.json(); } catch (_) { return { ok: false, reasonCode: 'gistCheckFailed' }; }
+      try { json = JSON.parse(resp.text); } catch (_) { return { ok: false, reasonCode: 'gistCheckFailed' }; }
       if (!Array.isArray(json)) return { ok: false, reasonCode: 'gistCheckFailed' };
       for (const gist of json) all.push(gist);
       const link = resp.headers && typeof resp.headers.get === 'function' ? resp.headers.get('link') : '';
@@ -775,8 +786,14 @@ try {
     return { ok: false, reasonCode: 'gistCheckFailed' };
   }
 
-  async function bgPatchAutoBackupCloud(patch) {
+  async function bgPatchAutoBackupCloud(patch, expectedGeneration) {
     const latest = await bgReadAutoBackupState();
+    const currentGeneration = Number(latest.cloud && latest.cloud.generation) || 0;
+    if (expectedGeneration !== undefined && currentGeneration !== expectedGeneration) {
+      // A reset or target change won the race; the in-flight result must not
+      // restore the cloud identity or uncertainty state that was just cleared.
+      return null;
+    }
     const now = Date.now();
     const cloud = { ...(latest.cloud || {}), ...patch };
     const next = await bgWriteAutoBackupState({ ...latest, cloud, updatedAt: now });
@@ -829,6 +846,16 @@ try {
     }
   }
 
+  function bgGistConfigStillMatches(capturedSettings, freshLayout) {
+    if (!swIsPlausibleLayout(freshLayout)) return false;
+    const fresh = freshLayout.settings || {};
+    return fresh.syncProvider === 'gist' &&
+      JSON.stringify(fresh._encGistToken || null) === JSON.stringify(capturedSettings._encGistToken || null) &&
+      String(fresh.syncFileName || '') === String(capturedSettings.syncFileName || '') &&
+      String(fresh.syncLevel || 'full') === String(capturedSettings.syncLevel || 'full') &&
+      String(fresh.gistId || '') === String(capturedSettings.gistId || '');
+  }
+
   async function runBackgroundGistAutoBackup(options) {
     const opts = options || {};
     const trigger = String(opts.trigger || 'alarm');
@@ -855,6 +882,7 @@ try {
     }
 
     const cloud = state.cloud || core.defaultCloudState();
+    const cloudGeneration = Number(cloud.generation) || 0;
     let token = '';
     try {
       token = await bgDecryptStoredCredential(settings._encGistToken);
@@ -884,7 +912,10 @@ try {
         lastErrorCode: reasonCode,
         ...extraPatch,
       };
-      const next = await bgPatchAutoBackupCloud(patch);
+      const next = await bgPatchAutoBackupCloud(patch, cloudGeneration);
+      if (!next) {
+        return { ok: false, cancelled: true, reason: 'cloud-generation-changed', state: await bgReadAutoBackupState() };
+      }
       await setAutoBackupBadge(true);
       bgLog('Gist first-create paused: ' + reasonCode + ' trigger=' + trigger);
       return { ok: false, paused: true, reasonCode, state: next };
@@ -936,15 +967,23 @@ try {
       return finishPause('gistUnknownExisting', cloud, sameAccountPatch);
     }
 
-    // Re-check cancellation immediately before the one irreversible step.
+    // Re-check cancellation, target identity, and the cloud generation immediately
+    // before the one irreversible step. A provider switch, credential edit, reset,
+    // or file-name change during the account/list requests must cancel this POST.
     const beforePost = await bgReadAutoBackupState();
-    if (!core.isAutoBackupActive(beforePost) || (expectedEpoch !== undefined && beforePost.epoch !== expectedEpoch)) {
+    const freshStored = await bgStorageGet({ boxingLayout: null });
+    const freshLayout = freshStored && freshStored.boxingLayout;
+    const freshGeneration = Number(beforePost.cloud && beforePost.cloud.generation) || 0;
+    if (!core.isAutoBackupActive(beforePost) ||
+        (expectedEpoch !== undefined && beforePost.epoch !== expectedEpoch) ||
+        freshGeneration !== cloudGeneration ||
+        !bgGistConfigStillMatches(settings, freshLayout)) {
       if (!core.isAutoBackupActive(beforePost)) await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
       return { ok: false, cancelled: true, reason: 'cancelled-before-post', state: beforePost };
     }
 
     const fileName = plan.fileName;
-    const payload = swBuildSyncPayload(rawLayout);
+    const payload = swBuildSyncPayload(freshLayout);
     const content = JSON.stringify(payload, null, 2);
     if (content.length > BG_MAX_BODY) {
       return finishPause('gistPayloadTooLarge', cloud, sameAccountPatch);
@@ -963,7 +1002,7 @@ try {
 
     // Persist the unknown-result marker BEFORE sending the POST. If the worker dies
     // mid-request, the next run must pause instead of creating a second Gist.
-    await bgPatchAutoBackupCloud({
+    const markerState = await bgPatchAutoBackupCloud({
       provider: 'gist',
       status: 'running',
       lastAttemptAt: startedAt,
@@ -971,7 +1010,10 @@ try {
       lastErrorCode: null,
       account,
       pendingCreate,
-    });
+    }, cloudGeneration);
+    if (!markerState) {
+      return { ok: false, cancelled: true, reason: 'cloud-generation-changed', state: await bgReadAutoBackupState() };
+    }
 
     const pendingPatch = (extra) => ({
       provider: 'gist',
@@ -983,6 +1025,12 @@ try {
       pendingCreate,
       ...extra,
     });
+    const writePending = async (extra) => {
+      const next = await bgPatchAutoBackupCloud(pendingPatch(extra), cloudGeneration);
+      if (!next) return null;
+      await setAutoBackupBadge(true);
+      return next;
+    };
 
     let resp = null;
     let requestError = null;
@@ -997,15 +1045,15 @@ try {
     const finishedAt = Date.now();
 
     if (!resp) {
-      const next = await bgPatchAutoBackupCloud(pendingPatch());
-      await setAutoBackupBadge(true);
+      const next = await writePending();
       bgErr('Gist create result unknown (' + trigger + '):', requestError && requestError.message ? requestError.message : 'network error');
+      if (!next) return { ok: false, cancelled: true, reason: 'cloud-generation-changed', state: await bgReadAutoBackupState() };
       return { ok: false, pending: true, reasonCode: 'gistResultUnknown', state: next };
     }
 
     if (resp.ok) {
       let json = null;
-      try { json = await resp.json(); } catch (_) { json = null; }
+      try { json = JSON.parse(resp.text); } catch (_) { json = null; }
       const parsed = json ? gistCore.parseGistResponse(json, fileName) : null;
       if (parsed) {
         const baseline = {
@@ -1027,7 +1075,11 @@ try {
           account: { login: baseline.ownerLogin, id: baseline.ownerId },
           baseline,
           pendingCreate: null,
-        });
+        }, cloudGeneration);
+        if (!next) {
+          bgLog('Gist first-create confirmed but discarded after reset id=' + baseline.gistId + ' trigger=' + trigger);
+          return { ok: false, cancelled: true, reason: 'cloud-generation-changed', state: await bgReadAutoBackupState() };
+        }
         await setAutoBackupBadge(false);
         bgLog('Gist first-create confirmed id=' + baseline.gistId + ' trigger=' + trigger);
         return { ok: true, created: true, gistId: baseline.gistId, state: next };
@@ -1035,19 +1087,19 @@ try {
       // GitHub said 2xx but the body is unusable. The object may exist; keep the
       // pending marker (and any id we can see) so no second POST is sent.
       const knownId = json ? gistCore.normalizeGistId(json.id) : '';
-      const next = await bgPatchAutoBackupCloud(pendingPatch({
+      const next = await writePending({
         pendingCreate: { ...pendingCreate, gistId: knownId },
-      }));
-      await setAutoBackupBadge(true);
+      });
       bgErr('Gist create response incomplete (' + trigger + ')');
+      if (!next) return { ok: false, cancelled: true, reason: 'cloud-generation-changed', state: await bgReadAutoBackupState() };
       return { ok: false, pending: true, reasonCode: 'gistResultUnknown', state: next };
     }
 
     const failure = gistCore.classifyGistFailure(resp.status);
     if (failure.kind === 'unknown') {
-      const next = await bgPatchAutoBackupCloud(pendingPatch({ lastErrorCode: failure.reasonCode }));
-      await setAutoBackupBadge(true);
+      const next = await writePending({ lastErrorCode: failure.reasonCode });
       bgErr('Gist create returned HTTP ' + resp.status + ' (' + trigger + '); result treated as unknown');
+      if (!next) return { ok: false, cancelled: true, reason: 'cloud-generation-changed', state: await bgReadAutoBackupState() };
       return { ok: false, pending: true, reasonCode: failure.reasonCode, state: next };
     }
 
@@ -1059,7 +1111,10 @@ try {
       lastErrorCode: failure.reasonCode,
       account,
       pendingCreate: null,
-    });
+    }, cloudGeneration);
+    if (!next) {
+      return { ok: false, cancelled: true, reason: 'cloud-generation-changed', state: await bgReadAutoBackupState() };
+    }
     await setAutoBackupBadge(true);
     bgLog('Gist first-create rejected HTTP ' + resp.status + ' trigger=' + trigger);
     return { ok: false, paused: true, reasonCode: failure.reasonCode, state: next };
@@ -1467,9 +1522,10 @@ try {
         // Clear only cloud identity; local snapshot history and the opt-in stay.
         const core = await ensureSnapshotCore();
         const latest = await bgReadAutoBackupState();
+        const nextGeneration = (Number(latest.cloud && latest.cloud.generation) || 0) + 1;
         const next = await bgWriteAutoBackupState({
           ...latest,
-          cloud: core.defaultCloudState(),
+          cloud: { ...core.defaultCloudState(), generation: nextGeneration },
           updatedAt: Date.now(),
         });
         await bgClearGistPendingPermission();
