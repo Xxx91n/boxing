@@ -250,6 +250,7 @@ I18N_FALLBACK.autoBackupCloudReasonUnknownOutcome = 'The upload result is unknow
 I18N_FALLBACK.autoBackupCloudReasonTargetChanged = 'The WebDAV address, account, or file name changed. Confirm the new target before auto-backup resumes.';
 I18N_FALLBACK.autoBackupCloudReasonError = 'Unexpected failure during automatic upload.';
 I18N_FALLBACK.autoBackupCloudRetryHint = 'Turn auto-backup off and on to retry after fixing the remote side.';
+I18N_FALLBACK.autoBackupCloudActionFix = 'Check and retry';
 I18N_FALLBACK.autoBackupUpgradeHint = 'You previously kept an auto-backup interval. Background local auto-backup stays off until you enable it here.';
 I18N_FALLBACK.autoBackupActivateBtn = 'Enable local auto-backup';
 I18N_FALLBACK.gistPermPendingHint = 'Background Gist backup needs access to $1$.';

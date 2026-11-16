@@ -1468,6 +1468,10 @@
     "message": "ปิดแล้วเปิดสำรองอัตโนมัติใหม่เพื่อลองอีกครั้งหลังแก้ไขฝั่งระยะไกล",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "ตรวจสอบแล้วลองอีกครั้ง",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "คงค่าระยะเวลาเดิมไว้แล้ว การสำรองข้อมูลอัตโนมัติในพื้นหลังจะยังไม่เริ่มจนกว่าคุณจะเปิดใช้งานที่นี่",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

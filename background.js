@@ -583,6 +583,26 @@ try {
     return rs === 'paused' || rs === 'unknown' || rs === 'error';
   }
 
+  // Ticket #129: a success time and a trusted baseline only describe the provider
+  // that wrote them. Provider switches keep the old record for a later switch back,
+  // but must never hand it to the new target.
+  function bgSuccessAtForProvider(remote, provider) {
+    return remote && remote.provider === provider ? (Number(remote.lastSuccessAt) || 0) : 0;
+  }
+  function bgBaselineForProvider(remote, service) {
+    return remote && remote.baseline && remote.baseline.service === service
+      ? remote.baseline
+      : null;
+  }
+  // The display side compares this exact string, so an address change cannot inherit
+  // the previous address's success time.
+  function bgWebDAVSuccessTarget(fileUrl, account) {
+    return 'webdav|' + String(fileUrl || '') + '|' + String(account || '');
+  }
+  function bgGistSuccessTarget(gistId) {
+    return gistId ? 'gist|' + String(gistId) : '';
+  }
+
   async function runBackgroundWebDAVAutoBackup(opts) {
     const options = opts || {};
     const core = await ensureSnapshotCore();
@@ -591,6 +611,10 @@ try {
     const activeEpoch = options.epoch;
     const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
     const settings = rawLayout && rawLayout.settings ? rawLayout.settings : null;
+    // Ticket #129: a success time and a trusted baseline only describe the provider
+    // that wrote them. Provider switches keep the old record for a later switch back,
+    // but must never hand it to the new target.
+    const webdavBaseline = bgBaselineForProvider(prevRemote, 'webdav');
 
     if (!settings || settings.syncProvider !== 'webdav') {
       // Not a WebDAV target: cloud auto-backup is off. Keep the trusted baseline
@@ -607,10 +631,13 @@ try {
       status: bgRemoteStatusForCode(code),
       generation: prevRemote.generation,
       lastAttemptAt: Date.now(),
-      lastSuccessAt: prevRemote.lastSuccessAt || 0,
+      lastSuccessAt: bgSuccessAtForProvider(prevRemote, 'webdav'),
       lastErrorCode: code,
       account: prevRemote.account,
-      baseline: prevRemote.baseline || null,
+      // Keep whatever baseline was there (it belongs to the previous provider) so a
+      // switch back still finds its trusted target; the WebDAV branch above only
+      // treats a WebDAV baseline as its own.
+      baseline: prevRemote.baseline,
       // A Gist POST may still be unconfirmed; switching providers must not erase
       // the marker, or switching back could create a second Gist.
       pendingCreate: prevRemote.pendingCreate,
@@ -619,9 +646,9 @@ try {
     const derived = bgResolveWebDAVFileUrl(settings);
     const user = typeof settings.webdavUser === 'string' ? settings.webdavUser.trim() : '';
 
-    if (prevRemote.baseline) {
+    if (webdavBaseline) {
       if (derived.error) return { attempted: false, remote: pausedRemote('invalid-target') };
-      if (prevRemote.baseline.fileUrl !== derived.fileUrl || prevRemote.baseline.account !== user) {
+      if (webdavBaseline.fileUrl !== derived.fileUrl || webdavBaseline.account !== user) {
         return { attempted: false, remote: pausedRemote('target-changed') };
       }
       // Known + unchanged target: T5 never writes it. T6 owns periodic updates.
@@ -665,7 +692,7 @@ try {
       if (!core.isAutoBackupActive(live) || live.epoch !== activeEpoch) {
         return { attempted: false, cancelled: true, remote: live.remote };
       }
-      if (live.remote && live.remote.baseline) {
+      if (bgBaselineForProvider(live.remote, 'webdav')) {
         return { attempted: false, skipped: 'baseline-present', remote: { ...live.remote, status: 'ok', lastErrorCode: null } };
       }
       if (live.remote && live.remote.status === 'unknown') {
@@ -695,7 +722,7 @@ try {
       if (!core.isAutoBackupActive(liveBeforeWrite) || liveBeforeWrite.epoch !== activeEpoch) {
         return { attempted: false, cancelled: true, remote: liveBeforeWrite.remote };
       }
-      if (liveBeforeWrite.remote && liveBeforeWrite.remote.baseline) {
+      if (bgBaselineForProvider(liveBeforeWrite.remote, 'webdav')) {
         return { attempted: false, skipped: 'baseline-present', remote: { ...liveBeforeWrite.remote, status: 'ok', lastErrorCode: null } };
       }
 
@@ -720,6 +747,7 @@ try {
             generation: prevRemote.generation,
             lastAttemptAt: confirmedAt,
             lastSuccessAt: confirmedAt,
+            lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
             lastErrorCode: null,
             account: prevRemote.account,
             pendingCreate: prevRemote.pendingCreate,
@@ -937,6 +965,7 @@ try {
     }
     const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
     const remoteGeneration = Number(prevRemote.generation) || 0;
+    const prevGistSuccessAt = bgSuccessAtForProvider(prevRemote, 'gist');
     const settings = rawLayout && rawLayout.settings ? rawLayout.settings : null;
     if (!settings || settings.syncProvider !== 'gist') {
       return { attempted: false, skipped: 'not-gist', remote: prevRemote };
@@ -953,7 +982,11 @@ try {
         provider: 'gist',
         status: code === 'gistResultUnknown' ? 'unknown' : 'paused',
         lastAttemptAt: Date.now(),
-        lastSuccessAt: Number(fromRemote && fromRemote.lastSuccessAt) || 0,
+        // Ticket #129: a WebDAV timestamp must not become the Gist target's
+        // "last success" after a provider switch.
+        lastSuccessAt: (fromRemote && fromRemote.provider === 'gist')
+          ? (Number(fromRemote.lastSuccessAt) || 0)
+          : 0,
         lastErrorCode: code,
         ...extraPatch,
       };
@@ -1071,7 +1104,7 @@ try {
       provider: 'gist',
       status: 'running',
       lastAttemptAt: startedAt,
-      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastSuccessAt: prevGistSuccessAt,
       lastErrorCode: null,
       account,
       pendingCreate,
@@ -1084,7 +1117,7 @@ try {
       provider: 'gist',
       status: 'unknown',
       lastAttemptAt: startedAt,
-      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastSuccessAt: prevGistSuccessAt,
       lastErrorCode: 'gistResultUnknown',
       account,
       pendingCreate,
@@ -1131,6 +1164,7 @@ try {
           status: 'ok',
           lastAttemptAt: startedAt,
           lastSuccessAt: finishedAt,
+          lastSuccessTarget: bgGistSuccessTarget(baseline.gistId),
           lastErrorCode: null,
           account: { login: baseline.ownerLogin, id: baseline.ownerId },
           baseline,
@@ -1162,7 +1196,7 @@ try {
       provider: 'gist',
       status: 'paused',
       lastAttemptAt: startedAt,
-      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastSuccessAt: prevGistSuccessAt,
       lastErrorCode: failure.reasonCode,
       account,
       pendingCreate: null,
@@ -1457,6 +1491,11 @@ try {
       return { ok: true, active: false, state };
     }
 
+    // Ticket #129: the toolbar badge does not survive a browser restart, so a pending
+    // local/cloud problem must be restored from the persisted state on startup/install
+    // instead of waiting for the next alarm.
+    await setAutoBackupBadge(bgAutoBackupNeedsAttention(state.local, state.remote));
+
     const now = Date.now();
     const periodInMinutes = Math.max(1, Math.ceil(state.intervalSec / 60));
     const existingAlarm = await bgAlarmsGet(BG_AUTO_BACKUP_ALARM_NAME);
@@ -1489,6 +1528,8 @@ try {
 
       if (!optIn) {
         await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+        // Ticket #129: switching auto-backup off is an explicit stop, so the badge
+        // stops too. The stored cloud success/pause record stays for Settings.
         await setAutoBackupBadge(false);
         const disabledState = await bgWriteAutoBackupState({
           version: 1,
@@ -1954,6 +1995,61 @@ try {
       } else if (msg.type === 'auto-backup-get-state') {
         const state = await bgReadAutoBackupState();
         return { success: true, state };
+      } else if (msg.type === 'auto-backup-note-manual-result') {
+        // Ticket #129: a manual Sync Now is a real result for the selected target.
+        //   ok      -> the upload really happened: bind provider + target + time
+        //   failed  -> a request was sent and failed: record reason, keep old success
+        //   skipped -> pre-check refusal / pull / merge / local only: write no cloud result
+        // The local lane records the snapshot time and clears a resolved local error.
+        // Status, pause reason and baseline stay owned by the automatic path (T6/T8).
+        const snapshotTs = Math.max(0, Number(msg.snapshotTs) || 0);
+        const provider = msg.provider === 'webdav' || msg.provider === 'gist' ? msg.provider : '';
+        const targetKey = typeof msg.targetKey === 'string' ? msg.targetKey.slice(0, 2048) : '';
+        const outcome = msg.outcome === 'ok' || msg.outcome === 'failed' ? msg.outcome : 'skipped';
+        const core = await ensureSnapshotCore();
+        const errorCode = typeof msg.errorCode === 'string' && core.AUTO_BACKUP_REMOTE_REASONS.includes(msg.errorCode)
+          ? msg.errorCode
+          : 'internal-error';
+        const next = await enqueueBgAutoBackup(async () => {
+          const latest = await bgReadAutoBackupState();
+          const now = Date.now();
+          const local = snapshotTs > 0
+            ? {
+                ...latest.local,
+                // A real snapshot is a real local success; a resolved error must not
+                // keep showing in Settings or keep the badge lit.
+                status: 'ok',
+                lastSuccessAt: Math.max(Number(latest.local.lastSuccessAt) || 0, snapshotTs),
+                lastSnapshotTs: Math.max(Number(latest.local.lastSnapshotTs) || 0, snapshotTs),
+                lastError: null,
+              }
+            : latest.local;
+          let remote = latest.remote;
+          if (provider && outcome === 'ok') {
+            remote = {
+              ...latest.remote,
+              provider,
+              status: 'ok',
+              lastAttemptAt: now,
+              lastSuccessAt: Math.max(bgSuccessAtForProvider(latest.remote, provider), now),
+              lastSuccessTarget: targetKey,
+              lastErrorCode: null,
+            };
+          } else if (provider && outcome === 'failed') {
+            remote = {
+              ...latest.remote,
+              provider,
+              status: bgRemoteStatusForCode(errorCode),
+              lastAttemptAt: now,
+              lastSuccessAt: bgSuccessAtForProvider(latest.remote, provider),
+              lastErrorCode: errorCode,
+            };
+          }
+          const written = await bgWriteAutoBackupState({ ...latest, local, remote, updatedAt: now });
+          await setAutoBackupBadge(bgAutoBackupNeedsAttention(written.local, written.remote));
+          return written;
+        });
+        return { success: true, state: next };
       } else if (msg.type === 'auto-backup-reset-cloud') {
         // Ticket #126: explicit credential deletion removes the saved remote target.
         // Run inside the queue so it cannot interleave with a Gist read-modify-write,

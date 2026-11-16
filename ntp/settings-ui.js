@@ -1339,6 +1339,9 @@ export function bindSettingsUi() {
      // __boxingFlushCredentials above.
      try { const refresh = window.__boxingRefreshQuickHelp; if (typeof refresh === 'function') refresh(); } catch (e) { debugWarn('quick help refresh', e); }
      try { const refreshPerm = window.__boxingRefreshWebDAVPermissionUi; if (typeof refreshPerm === 'function') refreshPerm(); } catch (_) {}
+     // Ticket #129: the cloud status line and its manual entry are built by JS, not by
+     // [data-i18n], so re-render them in the new language through the same window contract.
+     try { const refreshAuto = window.__boxingRefreshLocalAutoBackupUi; if (typeof refreshAuto === 'function') refreshAuto(); } catch (_) {}
      // Re-apply the action tooltip/aria-label in the new language (the header button
      // no longer carries a static data-i18n-title). Kept even though saveLayout above
      // already replays the apply path: a failed persist must not leave a stale label.

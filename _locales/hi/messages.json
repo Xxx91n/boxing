@@ -1468,6 +1468,10 @@
     "message": "रिमोट साइड ठीक करने के बाद अपने आप बैकअप बंद करके फिर चालू करें, ताकि दोबारा कोशिश हो सके।",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "जाँच करके फिर कोशिश करें",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "आपका पिछला ऑटो-बैकअप अंतराल सुरक्षित है। जब तक आप इसे यहाँ चालू नहीं करते, बैकग्राउंड स्थानीय ऑटो-बैकअप बंद रहेगा।",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

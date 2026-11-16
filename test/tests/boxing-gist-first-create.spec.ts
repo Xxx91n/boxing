@@ -1069,7 +1069,7 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
     expect(block).toContain('layoutStorage.get');
     const syncSrc = fs.readFileSync(path.join(ROOT_DIR, 'ntp', 'sync-engine.js'), 'utf8');
     expect(syncSrc).toContain('getAutoBackupStateStrict()');
-    expect(syncSrc).toContain("throw new Error('Could not read auto-backup state')");
+    expect(syncSrc).toContain("gistPrecheckError('Could not read auto-backup state')");
   });
 
   test('a background-created Gist id is mirrored into the normal settings field', async ({ page }) => {
