@@ -1564,5 +1564,9 @@
   "gistAutoBackupErrPendingFile": {
     "message": "الـ Gist غير المؤكد لا يحتوي على ملف النسخة الاحتياطية. استعد هذا الملف على GitHub أو احذف هذا الـ Gist ثم حاول مرة أخرى.",
     "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "لا يزال إنشاء Gist السابق غير مؤكد، وقد أُدخل معرّف Gist مختلف. أكّد هذه النتيجة المعلّقة أو امسحها قبل الانتقال إلى Gist آخر.",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

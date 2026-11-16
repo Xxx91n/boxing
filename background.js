@@ -1982,7 +1982,7 @@ lastSuccessTarget: bgWebDAVSuccessTarget(derived.fileUrl, user),
           account,
         }, generation);
       }
-      return bgGistWriteError(code, 'GitHub API ' + resp.status);
+      return bgGistWriteError(code, 'GitHub API ' + resp.status, failure.kind === 'unknown' ? { resultUnknown: true } : undefined);
     }
 
     // POST: the same durable pending marker as the unattended path, so a lost

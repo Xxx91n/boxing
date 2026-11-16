@@ -374,6 +374,12 @@ test.describe('Ticket #126 — Gist first-create protocol core', () => {
       ...base,
       cloud: { ...cloud, pendingCreate: { provider: 'gist', fileName: GIST_FILE, gistId: 'abc12345' } },
     })).toEqual({ action: 'confirm-pending', gistId: 'abc12345', fileName: GIST_FILE });
+    // A queued request that names another Gist must not PATCH the pending one.
+    expect(gistCore.planManualGistWrite({
+      ...base,
+      gistId: 'deadbeef',
+      cloud: { ...cloud, pendingCreate: { provider: 'gist', fileName: GIST_FILE, gistId: 'abc12345' } },
+    })).toMatchObject({ action: 'pause', reasonCode: 'gistPendingTargetChanged' });
     expect(gistCore.planManualGistWrite({ ...base, tokenPresent: false }))
       .toMatchObject({ action: 'pause', reasonCode: 'gistTokenMissing' });
     expect(gistCore.planManualGistWrite({ ...base, permission: { ok: false } }))
@@ -816,6 +822,32 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(state.remote.baseline).toBeNull();
     expect(state.remote.status).toBe('paused');
     expect(state.remote.lastErrorCode).toBe('gistTargetNeedsReview');
+  });
+
+  test('a pending Gist with a different explicit id pauses without a PATCH', async () => {
+    const store = await baseStore({}, {
+      provider: 'gist', status: 'unknown', lastAttemptAt: 7, lastSuccessAt: 0,
+      lastErrorCode: 'gistResultUnknown', account: { login: 'spec-user', id: 42 },
+      baseline: null,
+      pendingCreate: {
+        provider: 'gist', fileName: GIST_FILE, description: 'Boxing extension backup',
+        startedAt: 7, accountLogin: 'spec-user', accountId: 42, gistId: 'abc12345',
+      },
+    });
+    const sandbox = await makeBgSandbox({
+      store,
+      fetchImpl: () => { throw new Error('network must not be touched'); },
+    });
+
+    const res = await sandbox.bg.enqueueManualGistWrite({
+      gistId: 'deadbeef', fileName: GIST_FILE, content: '{"a":1}',
+    });
+    expect(res).toMatchObject({ success: false, reasonCode: 'gistPendingTargetChanged' });
+    expect(sandbox.calls).toEqual([]);
+    const state = sandbox.store.autoBackupState;
+    // The first POST's target must stay recoverable.
+    expect(state.remote.pendingCreate.gistId).toBe('abc12345');
+    expect(state.remote.status).toBe('unknown');
   });
 
   test('a pending Gist keeps its marker when the file name changed', async () => {
@@ -1488,6 +1520,9 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
     // Ticket #128: a real extension must route the manual write through the worker
     // queue, and the direct PATCH fallback must sit after that gate.
     expect(syncSrc).toContain("type: 'gist-write'");
+    // The extension path must let the background recover a known pending id;
+    // only the file:// fallback keeps the hard stop.
+    expect(syncSrc).toContain('remote.pendingCreate && !hasExtensionRuntime()');
     const extensionGate = syncSrc.indexOf('if (hasExtensionRuntime())');
     const directPatch = syncSrc.indexOf("method: 'PATCH'");
     expect(extensionGate).toBeGreaterThan(-1);

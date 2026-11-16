@@ -1564,5 +1564,9 @@
   "gistAutoBackupErrPendingFile": {
     "message": "पुष्ट न हुए Gist में बैकअप फ़ाइल नहीं है। GitHub पर वह फ़ाइल बहाल करें या यह Gist हटाएँ, फिर दोबारा कोशिश करें।",
     "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "पिछला Gist बनाना अभी पुष्ट नहीं हुआ, और कोई दूसरा Gist ID डाला गया है। दूसरे Gist पर जाने से पहले उस अधूरे नतीजे को पुष्ट करें या हटाएँ।",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

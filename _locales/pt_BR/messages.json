@@ -1564,5 +1564,9 @@
   "gistAutoBackupErrPendingFile": {
     "message": "O Gist não confirmado não contém o arquivo de backup. Restaure esse arquivo no GitHub ou exclua esse Gist e tente novamente.",
     "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "Uma criação anterior de Gist ainda não foi confirmada e outro ID de Gist foi informado. Confirme ou limpe esse resultado pendente antes de mudar para outro Gist.",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

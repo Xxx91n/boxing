@@ -217,9 +217,18 @@
       (cloud.baseline.provider === 'gist' || cloud.baseline.service === 'gist')
       ? cloud.baseline
       : null;
+    const rawGistId = typeof opts.gistId === 'string'
+      ? opts.gistId.trim()
+      : (typeof settings.gistId === 'string' ? settings.gistId.trim() : '');
+    const explicitGistId = normalizeGistId(rawGistId);
     const pendingId = cloud.pendingCreate ? normalizeGistId(cloud.pendingCreate.gistId) : '';
     if (cloud.pendingCreate) {
       if (pendingId) {
+        // A queued request that names a different target must not be silently
+        // PATCHed into the previous pending Gist.
+        if ((rawGistId && !explicitGistId) || (explicitGistId && explicitGistId !== pendingId)) {
+          return { action: 'pause', reasonCode: 'gistPendingTargetChanged' };
+        }
         const knownBaselineId = baseline ? normalizeGistId(baseline.gistId) : '';
         if (knownBaselineId && knownBaselineId !== pendingId) {
           return { action: 'pause', reasonCode: 'gistTargetNeedsReview' };
@@ -228,11 +237,6 @@
       }
       return { action: 'pause', reasonCode: 'gistResultUnknown' };
     }
-
-    const rawGistId = typeof opts.gistId === 'string'
-      ? opts.gistId.trim()
-      : (typeof settings.gistId === 'string' ? settings.gistId.trim() : '');
-    const explicitGistId = normalizeGistId(rawGistId);
     // A non-empty but unparseable id is an explicit bad target; never silently
     // fall back to creating a new Gist or to the baseline.
     if (rawGistId && !explicitGistId) {

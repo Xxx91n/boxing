@@ -1564,5 +1564,9 @@
   "gistAutoBackupErrPendingFile": {
     "message": "Gist ที่ยังไม่ได้ยืนยันไม่มีไฟล์สำรอง กู้คืนไฟล์นั้นบน GitHub หรือลบ Gist นี้ แล้วลองอีกครั้ง",
     "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "การสร้าง Gist ครั้งก่อนยังไม่ได้ยืนยัน แต่มีการกรอก Gist ID อื่น ยืนยันหรือล้างผลลัพธ์ที่ค้างอยู่นี้ก่อนจะเปลี่ยนไปใช้ Gist อื่น",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

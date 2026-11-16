@@ -1564,5 +1564,9 @@
   "gistAutoBackupErrPendingFile": {
     "message": "未確認の Gist にバックアップファイルがありません。GitHub でそのファイルを復元するか、この Gist を削除してから、もう一度お試しください。",
     "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "以前の Gist 作成がまだ確認できていないのに、別の Gist ID が入力されました。その未確認の結果を確認または消去してから、別の Gist に切り替えてください。",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

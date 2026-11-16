@@ -62,6 +62,7 @@
     'gistListTooMany',
     'gistPendingFileNameChanged',
     'gistPendingFileMissing',
+    'gistPendingTargetChanged',
   ]);
   // Pauses that need the user to inspect the remote side first. They do not retry on
   // their own; permission/auth/credential/reachability problems stay retryable.

@@ -1564,5 +1564,9 @@
   "gistAutoBackupErrPendingFile": {
     "message": "Gist chưa được xác nhận không có tệp sao lưu. Hãy khôi phục tệp đó trên GitHub hoặc xóa Gist này rồi thử lại.",
     "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "Lần tạo Gist trước vẫn chưa được xác nhận, nhưng một ID Gist khác đã được nhập. Hãy xác nhận hoặc xóa kết quả đang chờ đó trước khi chuyển sang Gist khác.",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }

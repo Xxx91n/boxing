@@ -1567,5 +1567,9 @@
   "gistAutoBackupErrPendingFile": {
     "message": "这个还没确认的 Gist 里没有备份文件。请先在 GitHub 上恢复该文件，或删掉这个 Gist，然后再试。",
     "description": "Pending Gist write: the expected backup file is missing from the Gist"
+  },
+  "gistAutoBackupErrPendingTarget": {
+    "message": "上一次 Gist 创建还没确认，但你填了另一个 Gist ID。先把那次结果确认或清掉，再换目标。",
+    "description": "Pending Gist write: a different Gist ID was entered before confirmation"
   }
 }
