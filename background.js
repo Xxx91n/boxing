@@ -583,6 +583,18 @@ try {
     return rs === 'paused' || rs === 'unknown' || rs === 'error';
   }
 
+  // Ticket #129: a success time and a trusted baseline only describe the provider
+  // that wrote them. Provider switches keep the old record for a later switch back,
+  // but must never hand it to the new target.
+  function bgSuccessAtForProvider(remote, provider) {
+    return remote && remote.provider === provider ? (Number(remote.lastSuccessAt) || 0) : 0;
+  }
+  function bgBaselineForProvider(remote, service) {
+    return remote && remote.baseline && remote.baseline.service === service
+      ? remote.baseline
+      : null;
+  }
+
   async function runBackgroundWebDAVAutoBackup(opts) {
     const options = opts || {};
     const core = await ensureSnapshotCore();
@@ -591,12 +603,10 @@ try {
     const activeEpoch = options.epoch;
     const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
     const settings = rawLayout && rawLayout.settings ? rawLayout.settings : null;
-    // Ticket #129: a saved baseline only proves THIS provider's target. A Gist
-    // baseline must not be read as a WebDAV file, or the WebDAV path would sit in
-    // "target changed" forever instead of re-checking the file.
-    const webdavBaseline = prevRemote.baseline && prevRemote.baseline.service === 'webdav'
-      ? prevRemote.baseline
-      : null;
+    // Ticket #129: a success time and a trusted baseline only describe the provider
+    // that wrote them. Provider switches keep the old record for a later switch back,
+    // but must never hand it to the new target.
+    const webdavBaseline = bgBaselineForProvider(prevRemote, 'webdav');
 
     if (!settings || settings.syncProvider !== 'webdav') {
       // Not a WebDAV target: cloud auto-backup is off. Keep the trusted baseline
@@ -613,10 +623,13 @@ try {
       status: bgRemoteStatusForCode(code),
       generation: prevRemote.generation,
       lastAttemptAt: Date.now(),
-      lastSuccessAt: prevRemote.provider === 'webdav' ? (Number(prevRemote.lastSuccessAt) || 0) : 0,
+      lastSuccessAt: bgSuccessAtForProvider(prevRemote, 'webdav'),
       lastErrorCode: code,
       account: prevRemote.account,
-      baseline: webdavBaseline,
+      // Keep whatever baseline was there (it belongs to the previous provider) so a
+      // switch back still finds its trusted target; the WebDAV branch above only
+      // treats a WebDAV baseline as its own.
+      baseline: prevRemote.baseline,
       // A Gist POST may still be unconfirmed; switching providers must not erase
       // the marker, or switching back could create a second Gist.
       pendingCreate: prevRemote.pendingCreate,
@@ -671,7 +684,7 @@ try {
       if (!core.isAutoBackupActive(live) || live.epoch !== activeEpoch) {
         return { attempted: false, cancelled: true, remote: live.remote };
       }
-      if (live.remote && live.remote.baseline && live.remote.baseline.service === 'webdav') {
+      if (bgBaselineForProvider(live.remote, 'webdav')) {
         return { attempted: false, skipped: 'baseline-present', remote: { ...live.remote, status: 'ok', lastErrorCode: null } };
       }
       if (live.remote && live.remote.status === 'unknown') {
@@ -701,7 +714,7 @@ try {
       if (!core.isAutoBackupActive(liveBeforeWrite) || liveBeforeWrite.epoch !== activeEpoch) {
         return { attempted: false, cancelled: true, remote: liveBeforeWrite.remote };
       }
-      if (liveBeforeWrite.remote && liveBeforeWrite.remote.baseline && liveBeforeWrite.remote.baseline.service === 'webdav') {
+      if (bgBaselineForProvider(liveBeforeWrite.remote, 'webdav')) {
         return { attempted: false, skipped: 'baseline-present', remote: { ...liveBeforeWrite.remote, status: 'ok', lastErrorCode: null } };
       }
 
@@ -943,11 +956,7 @@ try {
     }
     const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
     const remoteGeneration = Number(prevRemote.generation) || 0;
-    // Ticket #129: only a Gist success time belongs to the Gist target. A WebDAV
-    // timestamp carried over from a provider switch must not be shown as Gist's.
-    const prevGistSuccessAt = prevRemote.provider === 'gist'
-      ? (Number(prevRemote.lastSuccessAt) || 0)
-      : 0;
+    const prevGistSuccessAt = bgSuccessAtForProvider(prevRemote, 'gist');
     const settings = rawLayout && rawLayout.settings ? rawLayout.settings : null;
     if (!settings || settings.syncProvider !== 'gist') {
       return { attempted: false, skipped: 'not-gist', remote: prevRemote };
@@ -1509,6 +1518,8 @@ try {
 
       if (!optIn) {
         await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
+        // Ticket #129: switching auto-backup off is an explicit stop, so the badge
+        // stops too. The stored cloud success/pause record stays for Settings.
         await setAutoBackupBadge(false);
         const disabledState = await bgWriteAutoBackupState({
           version: 1,

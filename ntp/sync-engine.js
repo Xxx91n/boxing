@@ -157,9 +157,13 @@ export function initSyncEngineFacade(deps) {
       const remote = autoState && autoState.remote ? autoState.remote : null;
       const cloudAt = Number(remote && remote.lastSuccessAt) || 0;
       if (lastBackupTimeVal) {
-        const displayAt = (layout.settings.syncProvider || 'local') === 'local'
+        const provider = layout.settings.syncProvider || 'local';
+        // A timestamp only belongs to the target that produced it: after a provider
+        // switch the old record stays stored but cannot claim the new target worked.
+        const remoteBelongsHere = !remote || !remote.provider || remote.provider === provider;
+        const displayAt = provider === 'local'
           ? localAt
-          : (isRemoteTimeUnproven(remote) ? 0 : Math.max(remoteAt, cloudAt));
+          : ((!remoteBelongsHere || isRemoteTimeUnproven(remote)) ? 0 : Math.max(remoteAt, cloudAt));
         lastBackupTimeVal.textContent = displayAt > 0 ? new Date(displayAt).toLocaleString() : i18n('neverText');
       }
       if (localAutoBackupLastAtEl) {
@@ -1305,7 +1309,9 @@ export function initSyncEngineFacade(deps) {
 
       // The Time Machine snapshot is its own lane: it still runs when the remote
       // upload threw, and its own result is never reported as a remote success.
-      if (!(remoteError && !failedAfterRemoteAttempt(remoteError))) {
+      // A local pre-check refusal never left the browser, so #123 keeps its
+      // "nothing was attempted, nothing changes" contract.
+      if (!remoteError || failedAfterRemoteAttempt(remoteError)) {
         try {
           await saveSnapshot(); // always save a versioned snapshot
         } catch (e) {

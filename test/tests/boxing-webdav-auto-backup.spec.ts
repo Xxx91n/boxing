@@ -882,7 +882,35 @@ test.describe('Ticket #129 — cloud failure, snapshot history, and pending stat
     expect(remote.provider).toBe('webdav');
     expect(remote.lastErrorCode).toBe('auth-failed');
     expect(remote.lastSuccessAt, 'the Gist success time does not belong to this target').toBe(0);
+    // The old provider record survives, so switching back still finds its target.
+    expect(remote.baseline && remote.baseline.service).toBe('gist');
     expect(env.store.boxingLayout.settings.syncProvider).toBe('webdav');
+  });
+
+  test('every pending cloud status survives a restart normalisation', async () => {
+    const core = createSandbox().sandbox.__boxingSnapshotCore;
+    const cases = [
+      ['paused', 'need-permission'],
+      ['paused', 'credential-unreadable'],
+      ['paused', 'target-changed'],
+      ['unknown', 'unknown-outcome'],
+      ['error', 'remote-unreachable'],
+      ['paused', 'gistResultUnknown'],
+    ];
+    for (const [status, code] of cases) {
+      const raw = JSON.parse(JSON.stringify(seedAutoBackupState({
+        remote: { provider: 'webdav', status, lastAttemptAt: 9, lastSuccessAt: 0, lastErrorCode: code, baseline: null },
+      })));
+      const norm = core.normalizeAutoBackupState(raw);
+      expect(norm.remote.status, `${code} status`).toBe(status);
+      expect(norm.remote.lastErrorCode, `${code} code kept`).toBe(code);
+    }
+    // A cancelled local run is a real record, not a silent idle.
+    const cancelled = core.normalizeAutoBackupState(seedAutoBackupState({
+      local: { status: 'cancelled', lastAttemptAt: 9, lastSuccessAt: 5, lastSnapshotTs: 5, lastError: null },
+    }));
+    expect(cancelled.local.status).toBe('cancelled');
+    expect(cancelled.local.lastSuccessAt).toBe(5);
   });
 
   test('a Gist baseline is not mistaken for a WebDAV file, so the file is re-checked and created', async () => {
@@ -1022,6 +1050,13 @@ test.describe('Ticket #129 — cloud status line, manual entry, and its own succ
     await expect(line).toBeVisible();
     await expect(line).not.toContainText(/Last cloud backup|上次云端备份|上次雲端備份/i);
     await expect(page.locator('#auto-backup-remote-action')).toBeHidden();
+
+    // The shared "Last backup" line must not pass the old target's time off either.
+    const shown = await page.evaluate(() => ({
+      remoteZone: document.getElementById('last-backup-time-value')?.textContent || '',
+      never: document.getElementById('local-auto-backup-last-at')?.textContent || '',
+    }));
+    expect(shown.remoteZone).toBe(shown.never);
   });
 
   test('switching to Local keeps the failed cloud line visible but offers no action and sends nothing', async ({ page }) => {
