@@ -1363,7 +1363,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "บันทึกสแนปช็อตภายในเบราว์เซอร์นี้อัตโนมัติแม้ไม่ได้เปิดแท็บใหม่ ไม่มีการอัปโหลดหรือดาวน์โหลดไฟล์",
+    "message": "บันทึกสแนปช็อตในเครื่องเป็นเบื้องหลังของเบราว์เซอร์นี้อัตโนมัติแม้ไม่ได้เปิดแท็บใหม่ เมื่อเลือก WebDAV จะสร้างสำรองบนคลาวด์ครั้งแรกเฉพาะเมื่อปลอดภัยเท่านั้น และจะไม่เขียนทับไฟล์ระยะไกลที่มีอยู่โดยอัตโนมัติ",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1389,6 +1389,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "หยุดชั่วคราว — ต้องยืนยัน",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "สร้างสำรองบนคลาวด์แล้ว",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "สำรองบนคลาวด์หยุดชั่วคราว — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "ไม่ทราบผลของสำรองบนคลาวด์ — ตรวจสอบไฟล์ระยะไกลก่อนลองใหม่",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "สำรองบนคลาวด์ล้มเหลว — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "สำรองบนคลาวด์ล่าสุด",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "ยังไม่ได้รับอนุญาตให้เข้าถึง WebDAV ใช้ปุ่มอนุญาตด้านบนแล้วลองใหม่",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "ไฟล์ระยะไกลมีอยู่แล้วและเบราว์เซอร์นี้ยังไม่ได้ยืนยัน จึงไม่ได้เขียนทับสิ่งใด",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "เชื่อมต่อเซิร์ฟเวอร์ระยะไกลไม่ได้",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "บัญชีหรือรหัสผ่าน WebDAV ถูกปฏิเสธ",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "ที่อยู่ WebDAV ที่บันทึกไว้ไม่ปลอดภัยสำหรับการอัปโหลดอัตโนมัติ",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "อ่านรหัสผ่าน WebDAV ที่บันทึกไว้ไม่ได้ กรอกใหม่เพื่อดำเนินการต่อ",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "ผู้เขียนรายอื่นเปลี่ยนไฟล์ระยะไกลระหว่างการสร้าง",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "เซิร์ฟเวอร์ไม่ได้ยืนยันว่าบังคับใช้การสร้างใหม่เท่านั้น การอัปโหลดอัตโนมัติจึงหยุด",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "ไม่ทราบผลการอัปโหลด ตรวจสอบไฟล์ระยะไกล แล้วปิดและเปิดสำรองอัตโนมัติใหม่เพื่อลองอีกครั้ง",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "ที่อยู่ บัญชี หรือชื่อไฟล์ WebDAV เปลี่ยนไป ยืนยันเป้าหมายใหม่ก่อนเริ่มสำรองอัตโนมัติอีกครั้ง",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "เกิดข้อผิดพลาดที่ไม่คาดคิดระหว่างการอัปโหลดอัตโนมัติ",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "ปิดแล้วเปิดสำรองอัตโนมัติใหม่เพื่อลองอีกครั้งหลังแก้ไขฝั่งระยะไกล",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "คงค่าระยะเวลาเดิมไว้แล้ว การสำรองข้อมูลอัตโนมัติในพื้นหลังจะยังไม่เริ่มจนกว่าคุณจะเปิดใช้งานที่นี่",

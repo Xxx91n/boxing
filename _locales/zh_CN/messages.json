@@ -1366,7 +1366,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "按周期在浏览器本地自动保存快照，未打开新标签页也能照常执行；绝不会上传服务器，也不会弹出下载文件。",
+    "message": "按周期在浏览器后台自动保存本地快照，未打开新标签页也能照常执行。选择 WebDAV 时，只在确认安全的前提下创建第一次云端备份；远端已有文件时绝不自动覆盖。",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1392,6 +1392,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "待确认开启",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "已创建云端备份",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "云端备份已暂停 — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "云端备份结果未知 — 请先检查远端文件再重试",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "云端备份失败 — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "上次云端备份",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "尚未获得 WebDAV 访问权限。请先点上面的授权按钮，然后重试。",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "远端文件已存在，且本浏览器没有它的可信记录，所以没有覆盖任何内容。",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "无法连接远端服务器。",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "WebDAV 账号或密码被拒绝。",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "已保存的 WebDAV 地址不能安全地自动上传。",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "无法读取已保存的 WebDAV 密码，请重新输入后继续。",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "创建过程中有其他写入者修改了远端文件。",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "服务器没有证明支持仅新建写入，自动上传已停止。",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "上传结果未知。请检查远端文件，然后关闭再开启自动备份以重试。",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "WebDAV 地址、账号或文件名已变更。请确认新目标后再恢复自动备份。",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "自动上传时发生意外错误。",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "处理完远端后，把自动备份关一次再打开就能重试。",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "你之前设置过自动备份周期。升级后后台本地自动备份默认暂停，需要你在这里确认开启才会运行。",

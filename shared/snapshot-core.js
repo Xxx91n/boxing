@@ -23,6 +23,52 @@
   const AUTO_BACKUP_LOCK_TTL_MS = 30000;
   const MIN_AUTO_BACKUP_INTERVAL_SEC = 3600;
 
+  // Ticket #125 (spec #120 T5): cloud (WebDAV) result is tracked separately from the
+  // local snapshot result. A local snapshot success never turns into a cloud success,
+  // and a cloud pause/unknown never erases the local success time.
+  // Status vocabulary is closed: 'idle' | 'running' | 'ok' | 'paused' | 'unknown' | 'error'.
+  const AUTO_BACKUP_REMOTE_STATUSES = Object.freeze(['idle', 'running', 'ok', 'paused', 'unknown', 'error']);
+  // Reason codes are a closed allow-list; NTP maps each to a localized line.
+  const AUTO_BACKUP_REMOTE_REASONS = Object.freeze([
+    'need-permission',
+    'remote-exists-untrusted',
+    'remote-exists-unknown',
+    'remote-unreachable',
+    'auth-failed',
+    'invalid-target',
+    'credential-unreadable',
+    'create-conflict',
+    'create-failed',
+    'conditional-unsupported',
+    'unknown-outcome',
+    'target-changed',
+    'internal-error',
+    // Ticket #126 (Gist first-create). Stable codes; NTP owns the localized copy.
+    'gistTokenMissing',
+    'gistPermissionMissing',
+    'gistAccountChanged',
+    'gistTargetNeedsReview',
+    'gistUnknownExisting',
+    'gistResultUnknown',
+    'gistRequestRejected',
+    'gistCheckFailed',
+    'gistUpdateNotEnabled',
+    'gistPayloadTooLarge',
+  ]);
+  // Pauses that need the user to inspect the remote side first. They do not retry on
+  // their own; permission/auth/credential/reachability problems stay retryable.
+  const AUTO_BACKUP_REMOTE_BLOCKING_REASONS = Object.freeze([
+    'remote-exists-untrusted',
+    'remote-exists-unknown',
+    'create-conflict',
+    'conditional-unsupported',
+    'invalid-target',
+    'target-changed',
+    'gistTargetNeedsReview',
+    'gistUnknownExisting',
+    'gistUpdateNotEnabled',
+  ]);
+
   const hourlyBucket = (ts) => Math.floor(ts / HOUR_MS);
   const dailyBucket = (ts) => Math.floor(ts / DAY_MS);
   const weeklyBucket = (ts) => Math.floor(ts / (7 * DAY_MS));
@@ -275,10 +321,7 @@
     return ALLOWED_AUTO_BACKUP_INTERVALS.includes(n) ? n : 0;
   }
 
-  // Cloud result is independent from the local snapshot result (ticket #126 /
-  // spec #120 D6). Only fields needed to resume or explain an unattended Gist
-  // first-create live here; no credential, token, or backup body ever enters it.
-  function defaultCloudState() {
+  function defaultRemoteAutoBackupState() {
     return {
       provider: '',
       status: 'idle',
@@ -289,86 +332,6 @@
       account: null,
       baseline: null,
       pendingCreate: null,
-    };
-  }
-
-  // A present-but-malformed Gist baseline/pending object still normalizes to a
-  // marker, so corrupt local state cannot re-open the "create a fresh Gist" branch.
-  // A non-object or non-Gist baseline belongs to another target and is ignored.
-  function normalizeAccountId(value) {
-    if (typeof value === 'number' && Number.isFinite(value)) return value;
-    return typeof value === 'string' && /^\d{1,20}$/.test(value) ? value : '';
-  }
-
-  function normalizeCloudAccount(raw) {
-    if (!isPlainObject(raw)) return null;
-    const login = typeof raw.login === 'string' ? raw.login.trim().slice(0, 100) : '';
-    return { login, id: normalizeAccountId(raw.id) };
-  }
-
-  const CLOUD_GIST_ID_RE = /^[a-f0-9]{5,64}$/i;
-  // Must match shared/gist-backup-core.js DEFAULT_GIST_FILE_NAME. The background
-  // load order and classic-SW boundary keep these modules independent; the spec
-  // asserts the literal stays in sync.
-  const CLOUD_DEFAULT_GIST_FILE = 'boxing-backup.json';
-
-  function normalizeCloudBaseline(raw) {
-    if (!isPlainObject(raw)) return null;
-    if (raw.provider !== 'gist') return null;
-    const gistId = typeof raw.gistId === 'string' && CLOUD_GIST_ID_RE.test(raw.gistId)
-      ? raw.gistId.toLowerCase()
-      : '';
-    const fileName = typeof raw.fileName === 'string' ? raw.fileName.trim().slice(0, 512) : '';
-    const owner = normalizeCloudAccount({ login: raw.ownerLogin, id: raw.ownerId });
-    return {
-      provider: 'gist',
-      gistId,
-      fileName,
-      ownerLogin: owner ? owner.login : '',
-      ownerId: owner ? owner.id : '',
-      createdAt: Math.max(0, Number(raw.createdAt) || 0),
-      updatedAt: Math.max(0, Number(raw.updatedAt) || 0),
-      verifiedAt: Math.max(0, Number(raw.verifiedAt) || 0),
-    };
-  }
-
-  function normalizeCloudPendingCreate(raw) {
-    if (!isPlainObject(raw) || raw.provider !== 'gist') return null;
-    // Keep the marker even if its file name is missing; the plan only needs the
-    // marker to pause, and a malformed marker must not authorize a second POST.
-    const fileName = typeof raw.fileName === 'string' && raw.fileName.trim()
-      ? raw.fileName.trim().slice(0, 512)
-      : CLOUD_DEFAULT_GIST_FILE;
-    const gistId = typeof raw.gistId === 'string' && CLOUD_GIST_ID_RE.test(raw.gistId)
-      ? raw.gistId.toLowerCase()
-      : '';
-    return {
-      provider: 'gist',
-      fileName,
-      description: typeof raw.description === 'string' ? raw.description.slice(0, 200) : '',
-      startedAt: Math.max(0, Number(raw.startedAt) || 0),
-      accountLogin: typeof raw.accountLogin === 'string' ? raw.accountLogin.slice(0, 100) : '',
-      accountId: normalizeAccountId(raw.accountId),
-      gistId,
-    };
-  }
-
-  function normalizeCloudState(raw) {
-    const dflt = defaultCloudState();
-    if (!isPlainObject(raw)) return dflt;
-    const provider = raw.provider === 'gist' ? raw.provider : '';
-    const allowedStatus = ['idle', 'running', 'ok', 'paused', 'pending'];
-    const status = allowedStatus.includes(raw.status) ? raw.status : 'idle';
-    return {
-      provider,
-      status,
-      generation: Math.max(0, Math.floor(Number(raw.generation) || 0)),
-      lastAttemptAt: Math.max(0, Number(raw.lastAttemptAt) || 0),
-      lastSuccessAt: Math.max(0, Number(raw.lastSuccessAt) || 0),
-      lastErrorCode: typeof raw.lastErrorCode === 'string' && raw.lastErrorCode ? raw.lastErrorCode.slice(0, 64) : null,
-      account: normalizeCloudAccount(raw.account),
-      baseline: normalizeCloudBaseline(raw.baseline),
-      pendingCreate: normalizeCloudPendingCreate(raw.pendingCreate),
     };
   }
 
@@ -387,8 +350,96 @@
         lastSnapshotTs: 0,
         lastError: null,
       },
-      cloud: defaultCloudState(),
+      remote: defaultRemoteAutoBackupState(),
       lock: null,
+    };
+  }
+
+  const REMOTE_GIST_ID_RE = /^[a-f0-9]{5,64}$/i;
+  const REMOTE_DEFAULT_GIST_FILE = 'boxing-backup.json';
+
+  function normalizeRemoteAccount(raw) {
+    if (!isPlainObject(raw)) return null;
+    const login = typeof raw.login === 'string' ? raw.login.trim().slice(0, 100) : '';
+    const id = (typeof raw.id === 'number' && Number.isFinite(raw.id))
+      ? raw.id
+      : (typeof raw.id === 'string' && /^\d{1,20}$/.test(raw.id) ? raw.id : '');
+    return { login, id };
+  }
+
+  function normalizeRemotePendingCreate(raw) {
+    if (!isPlainObject(raw) || raw.provider !== 'gist') return null;
+    const fileName = typeof raw.fileName === 'string' && raw.fileName.trim()
+      ? raw.fileName.trim().slice(0, 512)
+      : REMOTE_DEFAULT_GIST_FILE;
+    const gistId = typeof raw.gistId === 'string' && REMOTE_GIST_ID_RE.test(raw.gistId)
+      ? raw.gistId.toLowerCase()
+      : '';
+    return {
+      provider: 'gist',
+      fileName,
+      description: typeof raw.description === 'string' ? raw.description.slice(0, 200) : '',
+      startedAt: Math.max(0, Number(raw.startedAt) || 0),
+      accountLogin: typeof raw.accountLogin === 'string' ? raw.accountLogin.slice(0, 100) : '',
+      accountId: (typeof raw.accountId === 'number' && Number.isFinite(raw.accountId))
+        ? raw.accountId
+        : (typeof raw.accountId === 'string' && /^\d{1,20}$/.test(raw.accountId) ? raw.accountId : ''),
+      gistId,
+    };
+  }
+
+  // Trusted cloud baseline: binds the auto-backup writer to ONE real remote target
+  // and account. No credential material is ever stored here.
+  function normalizeRemoteBaseline(raw) {
+    if (!isPlainObject(raw)) return null;
+    if (raw.service === 'webdav') {
+      if (typeof raw.fileUrl !== 'string' || !raw.fileUrl) return null;
+      return {
+        service: 'webdav',
+        fileUrl: raw.fileUrl.slice(0, 4096),
+        account: typeof raw.account === 'string' ? raw.account.slice(0, 512) : '',
+        createdAt: Math.max(0, Number(raw.createdAt) || 0),
+        etag: typeof raw.etag === 'string' ? raw.etag.slice(0, 512) : null,
+      };
+    }
+    if (raw.service === 'gist') {
+      const gistId = typeof raw.gistId === 'string' && REMOTE_GIST_ID_RE.test(raw.gistId)
+        ? raw.gistId.toLowerCase()
+        : '';
+      const fileName = typeof raw.fileName === 'string' ? raw.fileName.trim().slice(0, 512) : '';
+      const owner = normalizeRemoteAccount({ login: raw.ownerLogin, id: raw.ownerId });
+      return {
+        service: 'gist',
+        gistId,
+        fileName,
+        ownerLogin: owner ? owner.login : '',
+        ownerId: owner ? owner.id : '',
+        createdAt: Math.max(0, Number(raw.createdAt) || 0),
+        updatedAt: Math.max(0, Number(raw.updatedAt) || 0),
+        verifiedAt: Math.max(0, Number(raw.verifiedAt) || 0),
+      };
+    }
+    return null;
+  }
+
+  function normalizeRemoteAutoBackupState(raw) {
+    const dflt = defaultRemoteAutoBackupState();
+    if (!isPlainObject(raw)) return dflt;
+    const status = AUTO_BACKUP_REMOTE_STATUSES.includes(raw.status) ? raw.status : 'idle';
+    const code = typeof raw.lastErrorCode === 'string' && AUTO_BACKUP_REMOTE_REASONS.includes(raw.lastErrorCode)
+      ? raw.lastErrorCode
+      : null;
+    const provider = raw.provider === 'webdav' || raw.provider === 'gist' ? raw.provider : '';
+    return {
+      provider,
+      status,
+      generation: Math.max(0, Math.floor(Number(raw.generation) || 0)),
+      lastAttemptAt: Math.max(0, Number(raw.lastAttemptAt) || 0),
+      lastSuccessAt: Math.max(0, Number(raw.lastSuccessAt) || 0),
+      lastErrorCode: code,
+      account: normalizeRemoteAccount(raw.account),
+      baseline: normalizeRemoteBaseline(raw.baseline),
+      pendingCreate: normalizeRemotePendingCreate(raw.pendingCreate),
     };
   }
 
@@ -424,7 +475,7 @@
         lastSnapshotTs: Math.max(0, Number(rawLocal.lastSnapshotTs) || 0),
         lastError: typeof rawLocal.lastError === 'string' && rawLocal.lastError ? rawLocal.lastError : null,
       },
-      cloud: normalizeCloudState(raw.cloud),
+      remote: normalizeRemoteAutoBackupState(raw.remote),
       lock,
     };
   }
@@ -473,6 +524,9 @@
     ALLOWED_AUTO_BACKUP_INTERVALS,
     AUTO_BACKUP_LOCK_TTL_MS,
     MIN_AUTO_BACKUP_INTERVAL_SEC,
+    AUTO_BACKUP_REMOTE_STATUSES,
+    AUTO_BACKUP_REMOTE_REASONS,
+    AUTO_BACKUP_REMOTE_BLOCKING_REASONS,
     readIndexWithAdapter,
     writeIndexWithAdapter,
     rotateAndWriteIndexWithAdapter,
@@ -483,8 +537,8 @@
     getLatestSnapshotWithAdapter,
     normalizeAutoBackupInterval,
     defaultAutoBackupState,
-    defaultCloudState,
-    normalizeCloudState,
+    defaultRemoteAutoBackupState,
+    normalizeRemoteAutoBackupState,
     normalizeAutoBackupState,
     isAutoBackupActive,
     isAutoBackupOverdue,

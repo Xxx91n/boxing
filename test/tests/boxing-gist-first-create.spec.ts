@@ -116,7 +116,7 @@ function seedLayout(envelope: any, overrides: Record<string, any> = {}) {
   };
 }
 
-function activeState(cloud?: any) {
+function activeState(remote?: any) {
   return {
     version: 1,
     optIn: true,
@@ -131,7 +131,7 @@ function activeState(cloud?: any) {
       lastSnapshotTs: 0,
       lastError: null,
     },
-    cloud: cloud || undefined,
+    remote: remote || undefined,
     lock: null,
   };
 }
@@ -375,11 +375,9 @@ test.describe('Ticket #126 — Gist first-create protocol core', () => {
   });
 
   test('background and NTP copies keep the same credential secret, API origin, and default file name', () => {
-    const credentialSrc = fs.readFileSync(path.join(ROOT_DIR, 'ntp', 'credentials.js'), 'utf8');
     const credentialCore = fs.readFileSync(path.join(ROOT_DIR, 'shared', 'credential-core.js'), 'utf8');
-    const secretMatch = /CRED_OBFUSCATION_SECRET = '([^']+)'/.exec(credentialSrc);
-    expect(secretMatch).not.toBeNull();
-    expect(credentialCore).toContain("CRED_OBFUSCATION_SECRET = '" + secretMatch![1] + "'");
+    // Ticket #125 moved the one legacy literal into the shared core; #126 reuses it.
+    expect(credentialCore).toContain("const CRED_OBFUSCATION_SECRET = 'boxing-sync-cred-v2-app-secret-2024'");
 
     const backgroundSrc = fs.readFileSync(path.join(ROOT_DIR, 'background.js'), 'utf8');
     const syncEngineSrc = fs.readFileSync(path.join(ROOT_DIR, 'ntp', 'sync-engine.js'), 'utf8');
@@ -390,27 +388,29 @@ test.describe('Ticket #126 — Gist first-create protocol core', () => {
     const snapshotCoreSrc = fs.readFileSync(path.join(ROOT_DIR, 'shared', 'snapshot-core.js'), 'utf8');
     const defaultFileMatch = /DEFAULT_GIST_FILE_NAME = '([^']+)'/.exec(gistCoreSrc);
     expect(defaultFileMatch).not.toBeNull();
-    expect(snapshotCoreSrc).toContain("CLOUD_DEFAULT_GIST_FILE = '" + defaultFileMatch![1] + "'");
+    expect(snapshotCoreSrc).toContain("REMOTE_DEFAULT_GIST_FILE = '" + defaultFileMatch![1] + "'");
   });
 
   test('shared credential decrypt reads v3 envelopes and fails closed without the install key', async () => {
     const credCore = loadUmd('shared/credential-core.js');
     const env = await encryptV3('hello-gist', PIK);
-    expect(await credCore.decryptCredential(env, { getPerInstallKeyB64: async () => PIK })).toBe('hello-gist');
-    expect(await credCore.decryptCredential(env, { getPerInstallKeyB64: async () => { throw new Error('missing'); } })).toBe('');
-    expect(await credCore.decryptCredential('plain-token', {})).toBe('plain-token');
+    const okCore = credCore.createCredentialCore({ getPerInstallKeyB64: async () => PIK });
+    expect(await okCore.decrypt(env)).toBe('hello-gist');
+    const missingCore = credCore.createCredentialCore({ getPerInstallKeyB64: async () => { throw new Error('missing'); } });
+    expect(await missingCore.decrypt(env)).toBe('');
+    expect(await credCore.createCredentialCore({}).decrypt('plain-token')).toBe('plain-token');
   });
 });
 
 test.describe('Ticket #126 — background Gist first-create VM lane', () => {
   test.setTimeout(60_000);
 
-  async function baseStore(overrides: Record<string, any> = {}, stateCloud?: any) {
+  async function baseStore(overrides: Record<string, any> = {}, stateRemote?: any) {
     const env = await encryptV3(TOKEN, PIK);
     return {
       boxingLayout: seedLayout(env, overrides),
       'boxingCredKey.v1': PIK,
-      autoBackupState: activeState(stateCloud),
+      autoBackupState: activeState(stateRemote),
     };
   }
 
@@ -448,17 +448,17 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(content.boxes[0].title).toBe('Alpha');
 
     const state = sandbox.store.autoBackupState;
-    expect(state.cloud.status).toBe('ok');
-    expect(state.cloud.baseline).toMatchObject({
-      provider: 'gist',
+    expect(state.remote.status).toBe('ok');
+    expect(state.remote.baseline).toMatchObject({
+      service: 'gist',
       gistId: 'abc12345',
       ownerLogin: 'spec-user',
       ownerId: 42,
       fileName: GIST_FILE,
     });
-    expect(state.cloud.lastSuccessAt).toBeGreaterThan(0);
-    expect(state.cloud.pendingCreate).toBeNull();
-    expect(state.cloud.account).toMatchObject({ login: 'spec-user', id: 42 });
+    expect(state.remote.lastSuccessAt).toBeGreaterThan(0);
+    expect(state.remote.pendingCreate).toBeNull();
+    expect(state.remote.account).toMatchObject({ login: 'spec-user', id: 42 });
     expect(JSON.stringify(state)).not.toContain(TOKEN);
 
     // Background never writes boxingLayout.
@@ -473,15 +473,15 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(snapJson).not.toContain(PIK);
 
     // Second alarm run must not POST a second Gist after a confirmed baseline.
-    const firstSuccessAt = state.cloud.lastSuccessAt;
+    const firstSuccessAt = state.remote.lastSuccessAt;
     const res2 = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(res2.ok).toBe(true);
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(1);
     const state2 = sandbox.store.autoBackupState;
-    expect(state2.cloud.status).toBe('paused');
-    expect(state2.cloud.lastErrorCode).toBe('gistUpdateNotEnabled');
-    expect(state2.cloud.baseline.gistId).toBe('abc12345');
-    expect(state2.cloud.lastSuccessAt).toBe(firstSuccessAt);
+    expect(state2.remote.status).toBe('paused');
+    expect(state2.remote.lastErrorCode).toBe('gistUpdateNotEnabled');
+    expect(state2.remote.baseline.gistId).toBe('abc12345');
+    expect(state2.remote.lastSuccessAt).toBe(firstSuccessAt);
   });
 
   test('a later permission revocation pauses with no API call and keeps the real success time', async () => {
@@ -496,7 +496,7 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
       },
     });
     await first.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
-    const successAt = first.store.autoBackupState.cloud.lastSuccessAt;
+    const successAt = first.store.autoBackupState.remote.lastSuccessAt;
     expect(successAt).toBeGreaterThan(0);
 
     const revoked = await makeBgSandbox({
@@ -506,23 +506,23 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     });
     await revoked.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(revoked.calls).toEqual([]);
-    expect(revoked.store.autoBackupState.cloud.status).toBe('paused');
-    expect(revoked.store.autoBackupState.cloud.lastErrorCode).toBe('gistPermissionMissing');
-    expect(revoked.store.autoBackupState.cloud.lastSuccessAt).toBe(successAt);
+    expect(revoked.store.autoBackupState.remote.status).toBe('paused');
+    expect(revoked.store.autoBackupState.remote.lastErrorCode).toBe('gistPermissionMissing');
+    expect(revoked.store.autoBackupState.remote.lastSuccessAt).toBe(successAt);
     expect(revoked.store.gistPendingPermission).toMatchObject({ needed: true, origin: 'https://api.github.com/*' });
   });
 
   test('reconfiguring the interval preserves the cloud baseline and pending marker', async () => {
     const store = await baseStore({ syncProvider: 'local' }, {
       provider: 'gist',
-      status: 'pending',
+      status: 'unknown',
       lastAttemptAt: 5,
       lastSuccessAt: 9,
       lastError: null,
       lastErrorCode: 'gistResultUnknown',
       account: { login: 'spec-user', id: 42 },
       baseline: {
-        provider: 'gist',
+        service: 'gist',
         gistId: 'abc12345',
         fileName: GIST_FILE,
         ownerLogin: 'spec-user',
@@ -549,15 +549,15 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     await sandbox.bg.configureBackgroundAutoBackup({ optIn: true, intervalSec: 86400 });
     let state = sandbox.store.autoBackupState;
     expect(state.optIn).toBe(true);
-    expect(state.cloud.baseline.gistId).toBe('abc12345');
-    expect(state.cloud.pendingCreate).toBeTruthy();
-    expect(state.cloud.account).toMatchObject({ login: 'spec-user', id: 42 });
+    expect(state.remote.baseline.gistId).toBe('abc12345');
+    expect(state.remote.pendingCreate).toBeTruthy();
+    expect(state.remote.account).toMatchObject({ login: 'spec-user', id: 42 });
 
     await sandbox.bg.configureBackgroundAutoBackup({ optIn: false, intervalSec: 0 });
     state = sandbox.store.autoBackupState;
     expect(state.optIn).toBe(false);
-    expect(state.cloud.baseline.gistId).toBe('abc12345');
-    expect(state.cloud.pendingCreate).toBeTruthy();
+    expect(state.remote.baseline.gistId).toBe('abc12345');
+    expect(state.remote.pendingCreate).toBeTruthy();
     expect(sandbox.calls).toEqual([]);
   });
 
@@ -573,9 +573,9 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(res.ok).toBe(true);
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
-    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
-    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistTargetNeedsReview');
-    expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+    expect(sandbox.store.autoBackupState.remote.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.remote.lastErrorCode).toBe('gistTargetNeedsReview');
+    expect(sandbox.store.autoBackupState.remote.lastSuccessAt).toBe(0);
   });
 
   test('an untracked Gist with the target file name pauses without POST', async () => {
@@ -597,9 +597,9 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(res.ok).toBe(true);
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
-    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
-    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistUnknownExisting');
-    expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+    expect(sandbox.store.autoBackupState.remote.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.remote.lastErrorCode).toBe('gistUnknownExisting');
+    expect(sandbox.store.autoBackupState.remote.lastSuccessAt).toBe(0);
   });
 
   test('a failed account Gist list check pauses without POST', async () => {
@@ -615,8 +615,8 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(res.ok).toBe(true);
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
-    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
-    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistCheckFailed');
+    expect(sandbox.store.autoBackupState.remote.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.remote.lastErrorCode).toBe('gistCheckFailed');
   });
 
   test('token account change pauses without POST or layout writes', async () => {
@@ -633,9 +633,9 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(res.ok).toBe(true);
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
-    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
-    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistAccountChanged');
-    expect(sandbox.store.autoBackupState.cloud.account).toMatchObject({ login: 'old-user', id: 1 });
+    expect(sandbox.store.autoBackupState.remote.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.remote.lastErrorCode).toBe('gistAccountChanged');
+    expect(sandbox.store.autoBackupState.remote.account).toMatchObject({ login: 'old-user', id: 1 });
   });
 
   test('missing host permission pauses with zero API calls and records pending permission', async () => {
@@ -654,8 +654,8 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
       origin: 'https://api.github.com/*',
       source: 'background',
     });
-    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
-    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistPermissionMissing');
+    expect(sandbox.store.autoBackupState.remote.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.remote.lastErrorCode).toBe('gistPermissionMissing');
     expect(sandbox.getBadge()).toBe('!');
   });
 
@@ -669,7 +669,7 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(res.ok).toBe(true);
     expect(sandbox.calls).toEqual([]);
-    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistPermissionMissing');
+    expect(sandbox.store.autoBackupState.remote.lastErrorCode).toBe('gistPermissionMissing');
   });
 
   test('lost POST response stays pending and a later run never sends a second POST', async () => {
@@ -687,16 +687,16 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     expect(res.ok).toBe(true);
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(1);
     const state = sandbox.store.autoBackupState;
-    expect(state.cloud.status).toBe('pending');
-    expect(state.cloud.lastErrorCode).toBe('gistResultUnknown');
-    expect(state.cloud.pendingCreate).toMatchObject({ provider: 'gist', fileName: GIST_FILE });
-    expect(state.cloud.lastSuccessAt).toBe(0);
+    expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastErrorCode).toBe('gistResultUnknown');
+    expect(state.remote.pendingCreate).toMatchObject({ provider: 'gist', fileName: GIST_FILE });
+    expect(state.remote.lastSuccessAt).toBe(0);
     expect(sandbox.getBadge()).toBe('!');
 
     await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(1);
-    expect(sandbox.store.autoBackupState.cloud.status).toBe('pending');
-    expect(sandbox.store.autoBackupState.cloud.baseline).toBeNull();
+    expect(sandbox.store.autoBackupState.remote.status).toBe('unknown');
+    expect(sandbox.store.autoBackupState.remote.baseline).toBeNull();
   });
 
   test('2xx with an unusable body is pending, never a success', async () => {
@@ -712,10 +712,10 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     });
     await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     const state = sandbox.store.autoBackupState;
-    expect(state.cloud.status).toBe('pending');
-    expect(state.cloud.lastSuccessAt).toBe(0);
-    expect(state.cloud.baseline).toBeNull();
-    expect(state.cloud.pendingCreate.gistId).toBe('abc12345');
+    expect(state.remote.status).toBe('unknown');
+    expect(state.remote.lastSuccessAt).toBe(0);
+    expect(state.remote.baseline).toBeNull();
+    expect(state.remote.pendingCreate.gistId).toBe('abc12345');
   });
 
   test('a reset during the POST discards the stale success write', async () => {
@@ -730,7 +730,7 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
           const cur = sandbox.store.autoBackupState;
           sandbox.store.autoBackupState = {
             ...cur,
-            cloud: { ...cur.cloud, generation: (Number(cur.cloud.generation) || 0) + 1 },
+            remote: { ...cur.remote, generation: (Number(cur.remote.generation) || 0) + 1 },
           };
           return gistCreated();
         }
@@ -738,11 +738,10 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
       },
     });
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
-    expect(res.cloud.cancelled).toBe(true);
-    expect(res.cloud.reason).toBe('cloud-generation-changed');
-    expect(sandbox.store.autoBackupState.cloud.generation).toBe(1);
-    expect(sandbox.store.autoBackupState.cloud.baseline).toBeNull();
-    expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+    expect(res.ok).toBe(true);
+    expect(sandbox.store.autoBackupState.remote.generation).toBe(1);
+    expect(sandbox.store.autoBackupState.remote.baseline).toBeNull();
+    expect(sandbox.store.autoBackupState.remote.lastSuccessAt).toBe(0);
   });
 
   test('a provider switch during the list check cancels before POST', async () => {
@@ -759,9 +758,10 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
       },
     });
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
-    expect(res.cloud.cancelled).toBe(true);
-    expect(res.cloud.reason).toBe('cancelled-before-post');
+    expect(res.ok).toBe(true);
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+    expect(sandbox.store.autoBackupState.remote.baseline).toBeNull();
+    expect(sandbox.store.autoBackupState.remote.status).not.toBe('ok');
   });
 
   test('a payload over the request cap pauses as too large without POST', async () => {
@@ -778,9 +778,9 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     const res = await sandbox.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm', forceImmediate: true });
     expect(res.ok).toBe(false);
     expect(sandbox.calls.filter((c) => c.method === 'POST')).toHaveLength(0);
-    expect(sandbox.store.autoBackupState.cloud.status).toBe('paused');
-    expect(sandbox.store.autoBackupState.cloud.lastErrorCode).toBe('gistPayloadTooLarge');
-    expect(sandbox.store.autoBackupState.cloud.lastSuccessAt).toBe(0);
+    expect(sandbox.store.autoBackupState.remote.status).toBe('paused');
+    expect(sandbox.store.autoBackupState.remote.lastErrorCode).toBe('gistPayloadTooLarge');
+    expect(sandbox.store.autoBackupState.remote.lastSuccessAt).toBe(0);
   });
 
   test('missing token pauses without network and keeps local snapshot success independent', async () => {
@@ -802,9 +802,9 @@ test.describe('Ticket #126 — background Gist first-create VM lane', () => {
     const state = sandbox.store.autoBackupState;
     expect(state.local.status).toBe('ok');
     expect(state.local.lastSuccessAt).toBeGreaterThan(0);
-    expect(state.cloud.status).toBe('paused');
-    expect(state.cloud.lastErrorCode).toBe('gistTokenMissing');
-    expect(state.cloud.lastSuccessAt).toBe(0);
+    expect(state.remote.status).toBe('paused');
+    expect(state.remote.lastErrorCode).toBe('gistTokenMissing');
+    expect(state.remote.lastSuccessAt).toBe(0);
   });
 });
 
@@ -828,7 +828,7 @@ async function openSyncTab(page: Page) {
 test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
   test.setTimeout(60_000);
 
-  test('paused and pending cloud results reuse the existing status/error area', async ({ page }) => {
+  test('paused and unknown remote results appear in the remote status line', async ({ page }) => {
     await bootFileNtp(page);
     await page.evaluate(async (state) => {
       const dbg = (window as any).__boxingDebug;
@@ -849,10 +849,10 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
     });
 
     await openSyncTab(page);
-    await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'paused');
-    await expect(page.locator('#local-auto-backup-status-text')).toHaveText('Paused — needs your action');
-    await expect(page.locator('#local-auto-backup-error')).toBeVisible();
-    await expect(page.locator('#local-auto-backup-error')).toContainText('Gist target or file name');
+    await expect(page.locator('#auto-backup-remote-status')).toBeVisible();
+    await expect(page.locator('#auto-backup-remote-status')).toContainText('Cloud backup paused');
+    await expect(page.locator('#auto-backup-remote-status')).toContainText('Gist target or file name');
+    await expect(page.locator('#local-auto-backup-error')).toBeHidden();
 
     await page.evaluate(async () => {
       const state = {
@@ -861,9 +861,9 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
         intervalSec: 3600,
         epoch: 1,
         local: { status: 'ok', lastAttemptAt: 1, lastSuccessAt: 1, lastSnapshotTs: 1, lastError: null },
-        cloud: {
+        remote: {
           provider: 'gist',
-          status: 'pending',
+          status: 'unknown',
           lastAttemptAt: 2,
           lastSuccessAt: 0,
           lastErrorCode: 'gistResultUnknown',
@@ -874,9 +874,9 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
       };
       await (window as any).__boxingRefreshLocalAutoBackupUi(state);
     });
-    await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'paused');
-    await expect(page.locator('#local-auto-backup-status-text')).toHaveText('Result unconfirmed');
-    await expect(page.locator('#local-auto-backup-error')).toContainText('no confirmed result');
+    await expect(page.locator('#auto-backup-remote-status')).toBeVisible();
+    await expect(page.locator('#auto-backup-remote-status')).toContainText('Cloud backup result unknown');
+    await expect(page.locator('#local-auto-backup-error')).toBeHidden();
 
     // A confirmed cloud success must not show the generic paused copy.
     await page.evaluate(async () => {
@@ -886,7 +886,7 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
         intervalSec: 3600,
         epoch: 1,
         local: { status: 'ok', lastAttemptAt: 1, lastSuccessAt: 1, lastSnapshotTs: 1, lastError: null },
-        cloud: {
+        remote: {
           provider: 'gist',
           status: 'ok',
           lastAttemptAt: 3,
@@ -899,7 +899,7 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
       };
       await (window as any).__boxingRefreshLocalAutoBackupUi(state);
     });
-    await expect(page.locator('#local-auto-backup-status-text')).toHaveAttribute('data-state', 'active');
+    await expect(page.locator('#auto-backup-remote-status')).toContainText('Cloud backup created');
     await expect(page.locator('#local-auto-backup-error')).toBeHidden();
   });
 
@@ -914,10 +914,10 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
       const tokenInput = document.getElementById('gist-token') as HTMLInputElement | null;
       if (tokenInput) tokenInput.value = 'ghp_manual_token';
       const state = core.defaultAutoBackupState();
-      state.cloud = {
-        ...state.cloud,
+      state.remote = {
+        ...state.remote,
         provider: 'gist',
-        status: 'pending',
+        status: 'unknown',
         generation: 0,
         pendingCreate: { provider: 'gist', fileName: 'boxing-backup.json' },
       };
@@ -959,7 +959,7 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
         optIn: true,
         intervalSec: 3600,
         epoch: 1,
-        cloud: {
+        remote: {
           provider: 'gist',
           status: 'ok',
           lastAttemptAt: 10,
@@ -967,7 +967,7 @@ test.describe('Ticket #126 — NTP Gist auto-backup status', () => {
           lastErrorCode: null,
           account: { login: 'spec-user', id: 42 },
           baseline: {
-            provider: 'gist',
+            service: 'gist',
             gistId: 'abc12345',
             fileName: 'boxing-backup.json',
             ownerLogin: 'spec-user',
@@ -1103,8 +1103,8 @@ test.describe('Ticket #126 — real Chrome extension', () => {
       });
       expect(run.res.ok).toBe(true);
       expect(apiRequests).toEqual([]);
-      expect(run.state.cloud.status).toBe('paused');
-      expect(run.state.cloud.lastErrorCode).toBe('gistPermissionMissing');
+      expect(run.state.remote.status).toBe('paused');
+      expect(run.state.remote.lastErrorCode).toBe('gistPermissionMissing');
       expect(run.pending).toMatchObject({ needed: true, origin: 'https://api.github.com/*' });
       expect(run.badge).toBe('!');
     } finally {
@@ -1182,15 +1182,15 @@ test.describe('Ticket #126 — real Chrome extension', () => {
       expect(Object.keys(body.files)).toEqual([GIST_FILE]);
       expect(JSON.parse(body.files[GIST_FILE].content).settings._encGistToken).toBeUndefined();
 
-      expect(run.state.cloud.status).toBe('ok');
-      expect(run.state.cloud.baseline).toMatchObject({
-        provider: 'gist',
+      expect(run.state.remote.status).toBe('ok');
+      expect(run.state.remote.baseline).toMatchObject({
+        service: 'gist',
         gistId: 'abc12345',
         ownerLogin: 'spec-user',
         ownerId: 42,
         fileName: GIST_FILE,
       });
-      expect(run.state.cloud.lastSuccessAt).toBeGreaterThan(0);
+      expect(run.state.remote.lastSuccessAt).toBeGreaterThan(0);
       expect(run.badge).toBe('');
       expect(run.snapJson).not.toContain(TOKEN);
       expect(run.snapJson).not.toContain('_encGistToken');

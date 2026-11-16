@@ -19,7 +19,7 @@ const DIST_FIREFOX = path.resolve(__dirname, '..', '..', 'dist', 'boxing-firefox
 
 const FIXTURE_HOST = 'pixel-fixture.test';
 const CDN_URL = `https://icons.duckduckgo.com/ip3/${FIXTURE_HOST}.ico`;
-const EXTERNAL_FAVICON_RE = /https:\/\/(ico\.bytecook\.io|icons\.duckduckgo\.com|www\.google\.com|favicon\.im)\//;
+const EXTERNAL_FAVICON_RE = /https:\/\/(icons\.duckduckgo\.com|www\.google\.com|favicon\.im|icon\.horse|favicon\.yandex\.net)\//;
 const PIXEL_KEY = 'boxingFaviconPixels.v1';
 const URL_KEY = 'boxingFaviconCache.v1';
 const PIXEL_PREFIX = 'data:image/png;base64,';
@@ -378,7 +378,7 @@ test.describe('#58 favicon pixel layer — controlled responses', () => {
     await expectRowPainted(page);
     await page.waitForTimeout(1000);
     // The URL hit was refreshed more recently than the pixel; a refused capture must not
-    // make every load pay for another five-token probe.
+    // make every load pay for another source probe.
     expect(probes).toBe(0);
     expect((await rowState(page)).src.startsWith(PIXEL_PREFIX)).toBe(true);
   });

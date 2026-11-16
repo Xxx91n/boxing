@@ -243,9 +243,9 @@ test.describe('Ticket #124 — Background local auto-backup contracts (file:// +
     expect(manifest.background?.scripts).toContain('background.js');
     expect(fs.existsSync(corePath)).toBe(true);
     const bgCode = fs.readFileSync(bgPath, 'utf8');
-    // Ticket #126: the lazy loader is shared by snapshot/credential/gist cores;
-    // the Firefox ESM background still dynamic-imports the snapshot core by path.
-    expect(bgCode).toContain("ensureSharedModule('__boxingSnapshotCore', 'shared/snapshot-core.js'");
+    expect(bgCode).toContain("import('./shared/snapshot-core.js')");
+    // Ticket #126: the Firefox ESM background also lazy-loads the Gist protocol core.
+    expect(bgCode).toContain("import('./shared/gist-backup-core.js')");
 
     // Verify shared/snapshot-core.js loads cleanly in Node CJS and exposes expected API
     const core = require(corePath);
@@ -713,7 +713,10 @@ test.describe('Ticket #124 — Real Chrome extension background local auto-backu
           },
         ];
         dbg.layout.nextLargeIndex = 2;
-        dbg.layout.settings.syncProvider = 'webdav';
+        // Ticket #125: keep the WebDAV fields to prove they never leak into snapshots,
+        // but leave the provider on Local so this #124 spec still isolates the local
+        // snapshot lane (cloud auto-backup now has its own spec: boxing-webdav-auto-backup).
+        dbg.layout.settings.syncProvider = 'local';
         dbg.layout.settings.webdavUrl = 'https://dav.example.com/private/';
         dbg.layout.settings.webdavUser = 'secret-account';
         dbg.layout.settings._encWebdavPass = { v: 1, iv: 'iv1', ct: 'CIPHER_SHOULD_NOT_LEAK' };

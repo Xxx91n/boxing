@@ -20,6 +20,7 @@ let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInpu
 let webdavPermissionBanner, webdavPermissionMsg, webdavPermissionBtn;
 let gistPermissionBanner, gistPermissionMsg, gistPermissionBtn;
 let localAutoBackupStatusEl, localAutoBackupLastAtEl, localAutoBackupErrorEl, autoBackupUpgradeBox, autoBackupActivateBtn;
+let autoBackupRemoteEl;
 // Ticket 99 (T13): stored-credential danger zone refs — assigned in bindSyncBackupUi
 // before updateSyncConfigVisibility() first runs so the visibility toggle is safe.
 let syncCredentialDangerZone, deleteOpenBtn, deletePanel, deleteCancelBtn, deleteConfirmBtn, deleteRemoteCheck, deleteStatusEl;
@@ -127,7 +128,7 @@ export function initSyncEngineFacade(deps) {
     function updateLastBackupDisplay(autoState) {
       const remoteAt = Number(layout.settings.lastBackupAt) || 0;
       const localAt = Number(autoState && autoState.local && autoState.local.lastSuccessAt) || 0;
-      const cloudAt = Number(autoState && autoState.cloud && autoState.cloud.lastSuccessAt) || 0;
+      const cloudAt = Number(autoState && autoState.remote && autoState.remote.lastSuccessAt) || 0;
       if (lastBackupTimeVal) {
         const displayAt = Math.max(remoteAt, localAt, cloudAt);
         lastBackupTimeVal.textContent = displayAt > 0 ? new Date(displayAt).toLocaleString() : i18n('neverText');
@@ -493,8 +494,6 @@ export function initSyncEngineFacade(deps) {
       return hide();
     }
     const matchesPending = Boolean(pending && pending.needed && pending.origin === GIST_API_ORIGIN);
-    // Only surface the banner once the user has actually configured a token or
-    // asked for auto-backup; an empty Gist tab should not nag on first open.
     const hasToken = Boolean(gistTokenInput?.value?.trim() || layout.settings._encGistToken);
     if (!matchesPending && !(check.supported && hasToken)) return hide();
     const isDenied = matchesPending && pending.reason === 'denied';
@@ -1197,9 +1196,9 @@ export function initSyncEngineFacade(deps) {
       // before the settings field has been mirrored.
       let autoState = null;
       try { autoState = await getAutoBackupState(); } catch (_) { autoState = null; }
-      const cloud = autoState && autoState.cloud ? autoState.cloud : {};
-      if (cloud.pendingCreate) throw new Error(i18n('gistAutoBackupErrUnknown'));
-      const baselineId = cloud.baseline && cloud.baseline.provider === 'gist' ? cloud.baseline.gistId : '';
+      const remote = autoState && autoState.remote ? autoState.remote : {};
+      if (remote.pendingCreate) throw new Error(i18n('gistAutoBackupErrUnknown'));
+      const baselineId = remote.baseline && remote.baseline.service === 'gist' ? remote.baseline.gistId : '';
       const gistId = layout.settings.gistId || gistIdInput?.value?.trim() || baselineId;
       if (gistId && !/^[a-f0-9]{5,64}$/i.test(gistId)) throw new Error('Invalid Gist ID');
       const content = JSON.stringify(buildSyncPayload(), null, 2);
@@ -1292,9 +1291,24 @@ export function initSyncEngineFacade(deps) {
       return false;
     }
 
-    // Ticket #126: stable background error codes -> localized sentences. An
-    // unknown code falls back to the generic paused label rather than a raw message.
-    const GIST_REASON_I18N = {
+    // Ticket #125 (spec #120 T5): the cloud result line. It is separate from the
+    // local snapshot result on purpose — a local snapshot success never claims the
+    // cloud side worked, and a cloud pause keeps its own reason visible here.
+    const REMOTE_REASON_I18N = {
+      'need-permission': 'autoBackupCloudReasonNeedPermission',
+      'remote-exists-untrusted': 'autoBackupCloudReasonRemoteExists',
+      'remote-exists-unknown': 'autoBackupCloudReasonRemoteExists',
+      'remote-unreachable': 'autoBackupCloudReasonUnreachable',
+      'auth-failed': 'autoBackupCloudReasonAuth',
+      'invalid-target': 'autoBackupCloudReasonInvalidTarget',
+      'credential-unreadable': 'autoBackupCloudReasonCredential',
+      'create-conflict': 'autoBackupCloudReasonConflict',
+      'create-failed': 'autoBackupCloudReasonError',
+      'conditional-unsupported': 'autoBackupCloudReasonConditional',
+      'unknown-outcome': 'autoBackupCloudReasonUnknownOutcome',
+      'target-changed': 'autoBackupCloudReasonTargetChanged',
+      'internal-error': 'autoBackupCloudReasonError',
+      // Ticket #126 (Gist first-create) stable codes.
       gistTokenMissing: 'gistAutoBackupErrToken',
       gistPermissionMissing: 'gistAutoBackupErrPermission',
       gistAccountChanged: 'gistAutoBackupErrAccount',
@@ -1302,31 +1316,39 @@ export function initSyncEngineFacade(deps) {
       gistUnknownExisting: 'gistAutoBackupErrExisting',
       gistResultUnknown: 'gistAutoBackupErrUnknown',
       gistRequestRejected: 'gistAutoBackupErrRejected',
-      gistPayloadTooLarge: 'gistAutoBackupErrTooLarge',
       gistCheckFailed: 'gistAutoBackupErrCheck',
       gistUpdateNotEnabled: 'gistAutoBackupErrUpdate',
+      gistPayloadTooLarge: 'gistAutoBackupErrTooLarge',
     };
-    function cloudErrorMessage(cloud) {
-      if (!cloud) return '';
-      const key = cloud.lastErrorCode && GIST_REASON_I18N[cloud.lastErrorCode];
-      return i18n(key || 'gistAutoBackupStatusPaused');
+
+    function formatRemoteAutoBackupState(remote) {
+      if (!remote || remote.status === 'idle') return { text: '', state: 'idle' };
+      const reason = i18n(REMOTE_REASON_I18N[remote.lastErrorCode] || 'autoBackupCloudReasonError');
+      if (remote.status === 'running') {
+        return { text: i18n('localAutoBackupStatusRunning'), state: 'active' };
+      }
+      if (remote.status === 'ok') {
+        const when = remote.lastSuccessAt > 0 ? new Date(remote.lastSuccessAt).toLocaleString() : '';
+        const suffix = when ? ' · ' + i18n('autoBackupCloudLastLabel') + ': ' + when : '';
+        return { text: i18n('autoBackupCloudStatusOk') + suffix, state: 'ok' };
+      }
+      if (remote.status === 'unknown') {
+        return { text: i18n('autoBackupCloudStatusUnknown'), state: 'unknown' };
+      }
+      if (remote.status === 'paused') {
+        // Only the shared list decides which pauses get the retry hint; an absent
+        // core simply shows no hint instead of keeping a second copy of the list.
+        const core = typeof globalThis !== 'undefined' ? globalThis.__boxingSnapshotCore : null;
+        const blocking = core && Array.isArray(core.AUTO_BACKUP_REMOTE_BLOCKING_REASONS)
+          ? core.AUTO_BACKUP_REMOTE_BLOCKING_REASONS
+          : [];
+        const hint = blocking.includes(remote.lastErrorCode) ? ' ' + i18n('autoBackupCloudRetryHint') : '';
+        return { text: i18n('autoBackupCloudStatusPaused', [reason]) + hint, state: 'paused' };
+      }
+      return { text: i18n('autoBackupCloudStatusError', [reason]), state: 'error' };
     }
 
     function formatAutoBackupStateLabel(state, isActive, needsOptIn) {
-      // While auto-backup is off or the provider moved away from Gist, the badge
-      // reflects the current provider, not a historical cloud pause. An unknown
-      // result still stays visible in the error line below.
-      const currentProvider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
-      const cloud = isActive && state && state.cloud &&
-        state.cloud.provider === 'gist' && currentProvider === 'gist'
-        ? state.cloud
-        : null;
-      if (cloud && cloud.status === 'pending') {
-        return { text: i18n('gistAutoBackupStatusPending'), badgeState: 'paused' };
-      }
-      if (cloud && cloud.status === 'paused') {
-        return { text: i18n('gistAutoBackupStatusPaused'), badgeState: 'paused' };
-      }
       const st = state && state.local ? state.local.status : 'idle';
       if (st === 'error' && (isActive || (state && state.local && state.local.lastError))) {
         return { text: i18n('localAutoBackupStatusError'), badgeState: 'error' };
@@ -1366,13 +1388,12 @@ export function initSyncEngineFacade(deps) {
       updateLastBackupDisplay(state);
 
       // A background-created Gist id is the real target. Mirror it into the normal
-      // settings field once, through the layout facade (the background never writes
-      // boxingLayout itself).
-      const baseline = state && state.cloud && state.cloud.baseline;
-      if (baseline && baseline.provider === 'gist' && baseline.gistId &&
+      // settings field once, through the layout facade (background never writes layout).
+      const remoteBaseline = state && state.remote && state.remote.baseline;
+      if (remoteBaseline && remoteBaseline.service === 'gist' && remoteBaseline.gistId &&
           layout.settings.syncProvider === 'gist' && !layout.settings.gistId) {
-        layout.settings.gistId = baseline.gistId;
-        if (gistIdInput) gistIdInput.value = baseline.gistId;
+        layout.settings.gistId = remoteBaseline.gistId;
+        if (gistIdInput) gistIdInput.value = remoteBaseline.gistId;
         try {
           await saveLayout({ preserveUpdatedAt: true });
         } catch (e) {
@@ -1386,25 +1407,21 @@ export function initSyncEngineFacade(deps) {
         localAutoBackupStatusEl.dataset.state = badge.badgeState;
       }
       if (localAutoBackupErrorEl) {
-        const currentProvider = syncProviderSelect?.value || layout.settings.syncProvider || 'local';
-        const cloudMatchesProvider = state && state.cloud && state.cloud.provider === 'gist' && currentProvider === 'gist';
-        // An unconfirmed result stays visible after a provider switch or disable;
-        // every other cloud pause only belongs to the current, active Gist target.
-        const cloudErr = state && state.cloud &&
-          (state.cloud.status === 'paused' || state.cloud.status === 'pending') &&
-          (state.cloud.status === 'pending' || (isActive && cloudMatchesProvider))
-          ? cloudErrorMessage(state.cloud)
-          : '';
-        const errMsg = cloudErr || (state && state.local && state.local.lastError);
-        const localErrorVisible = state && state.local &&
-          (state.local.status === 'error' || isActive);
-        if (errMsg && (cloudErr || localErrorVisible)) {
+        const errMsg = state && state.local && state.local.lastError;
+        if (errMsg && (state.local.status === 'error' || isActive)) {
           localAutoBackupErrorEl.textContent = errMsg;
           localAutoBackupErrorEl.hidden = false;
         } else {
           localAutoBackupErrorEl.textContent = '';
           localAutoBackupErrorEl.hidden = true;
         }
+      }
+      if (autoBackupRemoteEl) {
+        const remoteLine = formatRemoteAutoBackupState(state && state.remote);
+        autoBackupRemoteEl.textContent = remoteLine.text;
+        autoBackupRemoteEl.hidden = !remoteLine.text;
+        if (remoteLine.text) autoBackupRemoteEl.dataset.state = remoteLine.state;
+        else delete autoBackupRemoteEl.dataset.state;
       }
       if (autoBackupUpgradeBox) {
         autoBackupUpgradeBox.hidden = !needsLegacyOptIn;
@@ -1414,8 +1431,8 @@ export function initSyncEngineFacade(deps) {
     window.__boxingRefreshLocalAutoBackupUi = refreshLocalAutoBackupUi;
 
     // Ticket #126: deleting stored sync credentials explicitly drops the saved
-    // target. Clear the background cloud baseline/account/pending marker so a later
-    // reconnect is a fresh first-create, not an "account changed" dead end.
+    // target. Clear the background remote baseline/account/pending marker and bump
+    // its generation so an in-flight Gist result cannot restore the old target.
     async function resetAutoBackupCloudTarget() {
       try {
         if (hasExtensionRuntime()) {
@@ -1429,7 +1446,11 @@ export function initSyncEngineFacade(deps) {
           return;
         }
         const st = await getAutoBackupState();
-        const next = await setAutoBackupState({ ...st, cloud: core.defaultCloudState() });
+        const nextGeneration = (Number(st.remote && st.remote.generation) || 0) + 1;
+        const next = await setAutoBackupState({
+          ...st,
+          remote: { ...core.defaultRemoteAutoBackupState(), generation: nextGeneration },
+        });
         await refreshLocalAutoBackupUi(next);
       } catch (e) {
         debugWarn('resetAutoBackupCloudTarget failed', e);
@@ -1522,6 +1543,8 @@ export function initSyncEngineFacade(deps) {
                 ...(prev.local || {}),
                 status: (prev.local && (prev.local.lastSuccessAt > 0 || prev.local.lastError)) ? 'cancelled' : 'idle',
               },
+              // Ticket #125: cloud history survives the switch-off.
+              remote: prev.remote,
               lock: null,
             });
             if (mySeq !== localAutoBackupConfigSeq) {
@@ -1552,6 +1575,7 @@ export function initSyncEngineFacade(deps) {
             nextScheduledAt: now + intervalSec * 1000,
             updatedAt: now,
             local: localState,
+            remote: prev.remote,
             lock: null,
           });
           if (mySeq !== localAutoBackupConfigSeq) {
@@ -1634,6 +1658,7 @@ export function bindSyncBackupUi() {
     localAutoBackupStatusEl = document.getElementById('local-auto-backup-status-text');
     localAutoBackupLastAtEl = document.getElementById('local-auto-backup-last-at');
     localAutoBackupErrorEl = document.getElementById('local-auto-backup-error');
+    autoBackupRemoteEl = document.getElementById('auto-backup-remote-status');
     autoBackupUpgradeBox = document.getElementById('auto-backup-upgrade-box');
     autoBackupActivateBtn = document.getElementById('auto-backup-activate-btn');
 
@@ -1759,7 +1784,6 @@ export function bindSyncBackupUi() {
     gistPermissionBtn?.addEventListener('click', async () => {
       if (gistPermissionBtn.disabled) return;
       gistPermissionBtn.disabled = true;
-      // Call permissions.request synchronously inside the click gesture before any await.
       const reqPromise = requestWebDAVOriginPermission(GIST_API_ORIGIN);
       try {
         const req = await reqPromise;
@@ -2084,8 +2108,6 @@ export function bindSyncBackupUi() {
           if (mySeq !== autoBackupSelectSeq) return;
           await refreshGistPermissionUi();
         }
-        // The user may have just typed the Gist token and clicked this select;
-        // commit the encrypted envelope before the background immediate run reads it.
         if (provider === 'gist') {
           try { await flushUnsavedCredentials(); } catch (e) { debugWarn('pre-auto-backup Gist credential flush failed', e); }
         }

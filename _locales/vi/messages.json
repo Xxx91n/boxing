@@ -1363,7 +1363,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "Tự động lưu ảnh chụp cục bộ trong trình duyệt này ngay cả khi không mở Tab mới. Không tải lên máy chủ hay tải tệp về.",
+    "message": "Tự động lưu ảnh chụp cục bộ trong nền trình duyệt này ngay cả khi không mở Tab mới. Khi chọn WebDAV, bản sao lưu đám mây đầu tiên chỉ được tạo khi chắc chắn an toàn; tệp từ xa đã có sẽ không bao giờ bị ghi đè tự động.",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1389,6 +1389,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "Tạm dừng — cần xác nhận",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "Đã tạo bản sao lưu đám mây",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "Sao lưu đám mây tạm dừng — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "Không rõ kết quả sao lưu đám mây — hãy kiểm tra tệp từ xa trước khi thử lại",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "Sao lưu đám mây thất bại — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "Lần sao lưu đám mây gần nhất",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "Chưa được cấp quyền truy cập WebDAV. Hãy dùng nút cấp quyền ở trên rồi thử lại.",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "Tệp từ xa đã tồn tại và trình duyệt này chưa xác minh nó, nên không có gì bị ghi đè.",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "Không kết nối được máy chủ từ xa.",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "Tài khoản hoặc mật khẩu WebDAV bị từ chối.",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "Địa chỉ WebDAV đã lưu không an toàn để tải lên tự động.",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "Không đọc được mật khẩu WebDAV đã lưu. Hãy nhập lại để tiếp tục.",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "Người ghi khác đã thay đổi tệp từ xa trong lúc tạo.",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "Máy chủ không chứng minh được rằng chỉ tạo mới được thực thi, nên tải lên tự động đã dừng.",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "Không rõ kết quả tải lên. Hãy kiểm tra tệp từ xa, rồi tắt và bật lại sao lưu tự động để thử lại.",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "Địa chỉ, tài khoản hoặc tên tệp WebDAV đã thay đổi. Hãy xác nhận mục tiêu mới trước khi tiếp tục sao lưu tự động.",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "Lỗi không mong đợi khi tải lên tự động.",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "Tắt rồi bật lại sao lưu tự động để thử lại sau khi xử lý phía từ xa.",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "Chu kỳ sao lưu trước đó của bạn được giữ nguyên. Sao lưu cục bộ tự động dưới nền chỉ chạy khi bạn bật tại đây.",

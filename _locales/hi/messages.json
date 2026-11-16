@@ -1363,7 +1363,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "नया टैब खुले बिना भी इस ब्राउज़र में स्थानीय स्नैपशॉट स्वतः सहेजता है। न सर्वर पर अपलोड होता है, न फ़ाइल डाउनलोड होती है।",
+    "message": "नया टैब खुले बिना भी इस ब्राउज़र के बैकग्राउंड में स्थानीय स्नैपशॉट अपने आप सहेजता है। WebDAV चुनने पर पहला क्लाउड बैकअप तभी बनाया जाता है जब वह सुरक्षित हो; मौजूद रिमोट फ़ाइल को कभी अपने आप नहीं बदला जाता।",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1389,6 +1389,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "रुका हुआ — पुष्टि आवश्यक",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "क्लाउड बैकअप बन गया",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "क्लाउड बैकअप रुका हुआ — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "क्लाउड बैकअप का नतीजा अज्ञात — दोबारा कोशिश करने से पहले रिमोट फ़ाइल जाँचें",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "क्लाउड बैकअप विफल — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "पिछला क्लाउड बैकअप",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "WebDAV पहुँच अभी नहीं दी गई है। ऊपर दिया अनुमति बटन दबाएँ, फिर दोबारा कोशिश करें।",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "रिमोट फ़ाइल पहले से मौजूद है और इस ब्राउज़र ने उसे सत्यापित नहीं किया, इसलिए कुछ भी नहीं बदला गया।",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "रिमोट सर्वर से संपर्क नहीं हो सका।",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "WebDAV खाता या पासवर्ड अस्वीकार हुआ।",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "सहेजा गया WebDAV पता अपने आप अपलोड के लिए सुरक्षित नहीं है।",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "सहेजा गया WebDAV पासवर्ड पढ़ा नहीं जा सका। जारी रखने के लिए उसे दोबारा डालें।",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "बनाने के दौरान किसी दूसरे लेखक ने रिमोट फ़ाइल बदली।",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "सर्वर ने सिद्ध नहीं किया कि केवल-नया अपलोड लागू होता है, इसलिए अपने आप अपलोड रुक गया।",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "अपलोड का नतीजा अज्ञात है। रिमोट फ़ाइल जाँचें, फिर अपने आप बैकअप बंद और चालू करके दोबारा कोशिश करें।",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "WebDAV पता, खाता या फ़ाइल नाम बदल गया है। अपने आप बैकअप फिर शुरू करने से पहले नया लक्ष्य पुष्टि करें।",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "अपने आप अपलोड के दौरान अनपेक्षित विफलता।",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "रिमोट साइड ठीक करने के बाद अपने आप बैकअप बंद करके फिर चालू करें, ताकि दोबारा कोशिश हो सके।",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "आपका पिछला ऑटो-बैकअप अंतराल सुरक्षित है। जब तक आप इसे यहाँ चालू नहीं करते, बैकग्राउंड स्थानीय ऑटो-बैकअप बंद रहेगा।",

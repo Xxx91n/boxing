@@ -393,12 +393,13 @@
                 <option value="86400" data-i18n="backupDaily">Daily</option>
                 <option value="604800" data-i18n="backupWeekly">Weekly</option>
               </select>
-              <p class="modal__hint" data-i18n="localAutoBackupHint">Saves local snapshots inside this browser automatically, even with no New Tab open. Never uploads to a server or downloads files.</p>
+              <p class="modal__hint" data-i18n="localAutoBackupHint">Saves local snapshots inside this browser automatically, even with no New Tab open. With WebDAV selected, the first cloud backup is created only when it is safe to do so; an existing remote file is never overwritten automatically.</p>
               <div class="local-auto-backup__status" id="local-auto-backup-status-row">
                 <span class="local-auto-backup__badge" id="local-auto-backup-status-text" data-i18n="localAutoBackupStatusOff">Off</span>
                 <span class="modal__hint"><span data-i18n="localAutoBackupLastLabel">Last local snapshot</span>: <span id="local-auto-backup-last-at">Never</span></span>
               </div>
               <p class="modal__hint local-auto-backup__error" id="local-auto-backup-error" hidden></p>
+              <p class="modal__hint local-auto-backup__remote" id="auto-backup-remote-status" hidden role="status" aria-live="polite"></p>
               <div class="local-auto-backup__upgrade" id="auto-backup-upgrade-box" hidden>
                 <p class="modal__hint" id="auto-backup-upgrade-hint" data-i18n="autoBackupUpgradeHint">You previously kept an auto-backup interval. Background local auto-backup stays off until you enable it here.</p>
                 <button type="button" id="auto-backup-activate-btn" class="btn" data-i18n="autoBackupActivateBtn">Enable local auto-backup</button>
@@ -687,6 +688,10 @@
     <ul class="quick-help__list" id="quick-help-list"></ul>
   </section>
   <script src="../shared/snapshot-core.js"></script>
+  <!-- Ticket #125: one credential-envelope implementation shared by the page and the
+       background worker (see shared/credential-core.js). Classic script so it is ready
+       before the deferred ntp.js module runs. -->
+  <script src="../shared/credential-core.js"></script>
   <!-- Ticket 03 (architecture-recovery): ESM switch — type="module" defers by default (V8/MDN), ntp.js now imports ./favicon.js (first module, spec.md strangler-fig). -->
   <script type="module" src="ntp.js"></script>
 </body>

@@ -1430,7 +1430,7 @@
     "description": "Confirmation status after WebDAV host permission is granted"
   },
   "localAutoBackupHint": {
-    "message": "Saves local snapshots inside this browser automatically, even with no New Tab open. Never uploads to a server or downloads files.",
+    "message": "Saves local snapshots inside this browser automatically, even with no New Tab open. With WebDAV selected, the first cloud backup is created only when it is safe to do so; an existing remote file is never overwritten automatically.",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1456,6 +1456,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "Paused — confirmation needed",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "Cloud backup created",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "Cloud backup paused — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely; $reason$ is one of the reason strings"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "Cloud backup result unknown — check the remote file before retrying",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "Cloud backup failed — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed; $reason$ is one of the reason strings"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "Last cloud backup",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "WebDAV access is not granted yet. Use the permission button above, then try again.",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "The remote file already exists and is not verified by this browser, so nothing was overwritten.",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "The remote server could not be reached.",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "The WebDAV account or password was rejected.",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "The saved WebDAV address is not safe for automatic upload.",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "The stored WebDAV password could not be read. Re-enter it to resume.",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "Another writer changed the remote file during creation.",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "The server did not prove that create-only upload is enforced, so automatic upload stopped.",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "The upload result is unknown. Check the remote file, then turn auto-backup off and on to retry.",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "The WebDAV address, account, or file name changed. Confirm the new target before auto-backup resumes.",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "Unexpected failure during automatic upload.",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "Turn auto-backup off and on to retry after fixing the remote side.",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "You previously kept an auto-backup interval. Background local auto-backup stays off until you enable it here.",

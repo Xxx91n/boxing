@@ -1363,7 +1363,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "새 탭이 열려 있지 않아도 브라우저 내부에 로컬 스냅샷을 자동으로 저장합니다. 서버 업로드나 파일 다운로드는 하지 않습니다.",
+    "message": "새 탭이 열려 있지 않아도 이 브라우저의 백그라운드에서 로컬 스냅샷을 자동으로 저장합니다. WebDAV를 선택하면 안전이 확인된 경우에만 첫 클라우드 백업을 만듭니다. 기존 원격 파일은 자동으로 덮어쓰지 않습니다.",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1389,6 +1389,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "일시 중지 — 확인 필요",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "클라우드 백업을 만들었습니다",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "클라우드 백업 일시 중지 — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "클라우드 백업 결과를 알 수 없습니다 — 다시 시도하기 전에 원격 파일을 확인하세요",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "클라우드 백업 실패 — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "최근 클라우드 백업",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "WebDAV 접근 권한이 아직 없습니다. 위의 권한 버튼을 누른 뒤 다시 시도하세요.",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "원격 파일이 이미 있고 이 브라우저가 확인한 기록이 없어 아무것도 덮어쓰지 않았습니다.",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "원격 서버에 연결할 수 없습니다.",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "WebDAV 계정 또는 비밀번호가 거부되었습니다.",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "저장된 WebDAV 주소는 자동 업로드에 안전하지 않습니다.",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "저장된 WebDAV 비밀번호를 읽을 수 없습니다. 다시 입력한 뒤 계속하세요.",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "만드는 동안 다른 작성자가 원격 파일을 변경했습니다.",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "서버가 새로 만들기 전용 동작을 보장한다고 증명하지 못해 자동 업로드를 중지했습니다.",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "업로드 결과를 알 수 없습니다. 원격 파일을 확인한 뒤 자동 백업을 껐다 켜서 다시 시도하세요.",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "WebDAV 주소, 계정 또는 파일 이름이 바뀌었습니다. 자동 백업을 다시 시작하기 전에 새 대상을 확인하세요.",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "자동 업로드 중 예기치 않은 오류가 발생했습니다.",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "원격 쪽을 고친 뒤 자동 백업을 껐다 켜면 다시 시도합니다.",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "이전 자동 백업 주기가 유지되었습니다. 여기서 켜기 전까지 백그라운드 로컬 자동 백업은 꺼진 상태로 유지됩니다.",

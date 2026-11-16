@@ -1439,6 +1439,14 @@ body.box-resizing {
 .local-auto-backup__error[hidden] {
   display: none;
 }
+.local-auto-backup__remote[hidden] {
+  display: none;
+}
+.local-auto-backup__remote[data-state="paused"],
+.local-auto-backup__remote[data-state="unknown"],
+.local-auto-backup__remote[data-state="error"] {
+  color: var(--color-danger);
+}
 .local-auto-backup__upgrade {
   display: flex;
   flex-direction: column;

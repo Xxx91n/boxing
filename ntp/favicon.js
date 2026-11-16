@@ -1,9 +1,10 @@
 // v2: Fastest-CDN race — probe all sources on first request, lock winner for session
 const FAVICON_SOURCES = [
-  { name: 'bytecook', url: (h) => `https://ico.bytecook.io/${h}` },
   { name: 'duckduckgo', url: (h) => `https://icons.duckduckgo.com/ip3/${h}.ico` },
   { name: 'google', url: (h) => `https://www.google.com/s2/favicons?domain=${h}&sz=32` },
   { name: 'faviconim', url: (h) => `https://favicon.im/${h}` },
+  { name: 'iconhorse', url: (h) => `https://icon.horse/icon/${h}` },
+  { name: 'yandex', url: (h) => `https://favicon.yandex.net/favicon/v2/${h}?size=32` },
 ];
 let fastestCDN = null; // session-locked winner after race
 let cdnRaceDone = false;
@@ -67,16 +68,15 @@ const faviconCache = new Map(); // volatile: cleared on browser restart (session
 const _faviconHotPool = new Map(); // host -> HTMLImageElement
 // (Bug12): persistent favicon URL cache in localStorage with TTLs.
 //   hit  (url != null) → 7-day TTL
-//   miss (url == null) → 90-day TTL (avoid re-racing 404 sites)
+//   miss (url == null) → 7-day TTL (retry after temporary network failures)
 // BX ticket 12: expired entries stay usable as stale within the SWR ceilings below.
 const FAV_CACHE_KEY = 'boxingFaviconCache.v1';
 const FAV_HIT_TTL = 7 * 24 * 3600 * 1000;     // 7 days
-const FAV_MISS_TTL = 90 * 24 * 3600 * 1000;   // 90 days
+const FAV_MISS_TTL = 7 * 24 * 3600 * 1000;    // 7 days
 const FAV_MAX_ENTRIES = 2000; // bounded — no unbounded localStorage growth
 // BX ticket 12 (SWR): past the fresh TTL an entry stays paintable as stale until the SWR
 // ceiling; hydrate keeps stale entries and loadFavicon revalidates them once in background.
-// Hit: fresh 7d then stale 7–90d. Miss: fresh 90d then stale 90–180d (hard expiry per the
-// atomcode favicon research; the 7d/90d fresh windows themselves are unchanged).
+// Hit: fresh 7d then stale 7–90d. Miss: fresh 7d then stale 7–180d.
 const FAV_HIT_SWR_TTL = 90 * 24 * 3600 * 1000;   // stale-while-revalidate ceiling for hits
 const FAV_MISS_SWR_TTL = 180 * 24 * 3600 * 1000; // hard expiry for negative-cache entries
 function favFreshTtl(url) { return url === null ? FAV_MISS_TTL : FAV_HIT_TTL; }
@@ -94,6 +94,9 @@ function loadFaviconCacheFromStorage() {
       const e = entries[host];
       if (!e || typeof e.ts !== 'number') continue;
       if (e.url !== null && typeof e.url !== 'string') continue; // malformed entry — drop
+      // Retired providers must not be contacted through an older cached URL either.
+      if (e.url !== null && e.url !== `https://${host}/favicon.ico` &&
+          !FAVICON_SOURCES.some((src) => src.url(host) === e.url)) continue;
       // BX ticket 12 (SWR hydrate): keep expired-but-within-ceiling entries as stale — they
       // paint immediately and get one background refresh. Past the ceiling: drop, re-race lazily.
       if (now - e.ts > favStaleCeiling(e.url)) continue;
@@ -309,13 +312,19 @@ function paintFaviconPixel(img, host, pixel) {
   });
 }
 
+const faviconPaintVersions = new WeakMap();
 function applyDecodedFavicon(img, host, src) {
+  // A slow decode of a stale URL must not overwrite a newer refresh for this row.
+  const version = (faviconPaintVersions.get(img) || 0) + 1;
+  faviconPaintVersions.set(img, version);
   const probe = new Image();
   probe.src = src;
   return probe.decode().then(() => {
+    if (faviconPaintVersions.get(img) !== version) return false;
     paintProbeImage(img, host, probe);
     return true;
   }).catch(() => {
+    if (faviconPaintVersions.get(img) !== version) return false;
     img.classList.remove('is-loading');
     img.style.display = 'none';
     return false;
@@ -366,7 +375,7 @@ async function loadFavicon(img, url, opts) {
         // Refresh off the newer of the pixel and the URL entry (a negative refresh still
         // spaces probes out): a refused capture must not add a probe on every load.
         const refreshedAt = Math.max(pixel.ts, entry ? Number(entry.ts) : 0);
-        if (Date.now() - refreshedAt > FAV_HIT_TTL && !inflight.has(host)) {
+        if (Date.now() - refreshedAt > FAV_HIT_TTL) {
           loadFavicon(img, url, { background: true });
         }
         return;
@@ -391,7 +400,8 @@ async function loadFavicon(img, url, opts) {
           applyDecodedFavicon(img, host, entry.url);
         }
       }
-      if (Date.now() - entry.ts > favFreshTtl(entry.url) && !inflight.has(host)) {
+      if (Date.now() - entry.ts > favFreshTtl(entry.url)) {
+        // Every visible row joins the shared probe so all rows repaint on recovery.
         loadFavicon(img, url, { background: true });
       }
       return;
@@ -427,7 +437,7 @@ async function loadFavicon(img, url, opts) {
         faviconCache.set(host, { url: winningUrl, ts: Date.now() }); try { persistFaviconCacheDebounced(); } catch (e) { /* silent: favicon cache persist, debounced retry */ }
         return winningUrl;
       } catch (_) {
-        // All tokens failed — negative-cache the miss with 90-day TTL so we do not re-race dead hosts.
+        // Retry a failed host after 7 days; a brief outage must not hide it for months.
         faviconCache.set(host, { url: null, ts: Date.now() }); try { persistFaviconCacheDebounced(); } catch (e) { /* silent: favicon cache persist, debounced retry */ }
         return null;
       }
@@ -452,4 +462,29 @@ async function loadFavicon(img, url, opts) {
   }
 }
 
-export { loadFavicon };
+let negativeRetriesScheduled = false;
+function scheduleNegativeFaviconRetries() {
+  if (negativeRetriesScheduled) return;
+  negativeRetriesScheduled = true;
+  // Give the restored view a paint before considering off-screen misses. Never await
+  // these requests from init or the first-entry favicon display path.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const retrySample = () => {
+      let started = 0;
+      const now = Date.now();
+      const entries = Array.from(faviconCache.entries()).sort((a, b) => a[1].ts - b[1].ts);
+      for (const [host, entry] of entries) {
+        if (entry.url !== null || now - entry.ts <= FAV_MISS_TTL ||
+            now - entry.ts > FAV_MISS_SWR_TTL || inflight.has(host)) continue;
+        const url = `https://${host}/favicon.ico`;
+        if (!isValidPublicUrl(url)) continue;
+        loadFavicon(new Image(), url, { background: true });
+        if (++started === 3) break;
+      }
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(retrySample, { timeout: 1000 });
+    else setTimeout(retrySample, 0);
+  }));
+}
+
+export { loadFavicon, scheduleNegativeFaviconRetries };

@@ -1363,7 +1363,7 @@
     }
   },
   "localAutoBackupHint": {
-    "message": "يحفظ لقطات محلية داخل هذا المتصفح تلقائيًا حتى دون فتح علامة تبويب جديدة. لا يرفع إلى خادم ولا ينزل ملفات.",
+    "message": "يحفظ لقطات محلية في خلفية هذا المتصفح تلقائيًا حتى دون فتح علامة تبويب جديدة. عند اختيار WebDAV تُنشأ أول نسخة سحابية فقط عندما يكون ذلك آمنًا؛ ولا يُستبدل ملف بعيد موجود تلقائيًا أبدًا.",
     "description": "Hint explaining background local auto-backup snapshots"
   },
   "localAutoBackupLastLabel": {
@@ -1389,6 +1389,84 @@
   "localAutoBackupStatusNeedsOptIn": {
     "message": "متوقف مؤقتًا — يلزم التأكيد",
     "description": "Status badge when legacy interval requires explicit opt-in"
+  },
+  "autoBackupCloudStatusOk": {
+    "message": "تم إنشاء النسخة السحابية",
+    "description": "Status line when the background WebDAV backup was created successfully"
+  },
+  "autoBackupCloudStatusPaused": {
+    "message": "تم إيقاف النسخة السحابية مؤقتًا — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup stopped safely"
+  },
+  "autoBackupCloudStatusUnknown": {
+    "message": "نتيجة النسخة السحابية غير معروفة — تحقق من الملف البعيد قبل إعادة المحاولة",
+    "description": "Status line when a background WebDAV upload may or may not have been committed"
+  },
+  "autoBackupCloudStatusError": {
+    "message": "فشلت النسخة السحابية — $reason$",
+    "placeholders": {
+      "reason": {
+        "content": "$1"
+      }
+    },
+    "description": "Status line when background WebDAV backup failed"
+  },
+  "autoBackupCloudLastLabel": {
+    "message": "آخر نسخة سحابية",
+    "description": "Label for the last confirmed cloud backup timestamp"
+  },
+  "autoBackupCloudReasonNeedPermission": {
+    "message": "لم يُمنح وصول WebDAV بعد. استخدم زر التفويض أعلاه ثم أعد المحاولة.",
+    "description": "Cloud backup pause reason: host permission missing"
+  },
+  "autoBackupCloudReasonRemoteExists": {
+    "message": "الملف البعيد موجود بالفعل وليس موثوقًا في هذا المتصفح، لذلك لم يُستبدل أي شيء.",
+    "description": "Cloud backup pause reason: remote file exists without a trusted baseline"
+  },
+  "autoBackupCloudReasonUnreachable": {
+    "message": "تعذر الوصول إلى الخادم البعيد.",
+    "description": "Cloud backup reason: network or server failure"
+  },
+  "autoBackupCloudReasonAuth": {
+    "message": "تم رفض حساب WebDAV أو كلمة المرور.",
+    "description": "Cloud backup pause reason: authentication failed"
+  },
+  "autoBackupCloudReasonInvalidTarget": {
+    "message": "عنوان WebDAV المحفوظ غير آمن للرفع التلقائي.",
+    "description": "Cloud backup pause reason: invalid or unsafe target URL"
+  },
+  "autoBackupCloudReasonCredential": {
+    "message": "تعذرت قراءة كلمة مرور WebDAV المحفوظة. أعد إدخالها للمتابعة.",
+    "description": "Cloud backup pause reason: stored credential unreadable"
+  },
+  "autoBackupCloudReasonConflict": {
+    "message": "غيّر كاتب آخر الملف البعيد أثناء الإنشاء.",
+    "description": "Cloud backup pause reason: remote write conflict"
+  },
+  "autoBackupCloudReasonConditional": {
+    "message": "لم يثبت الخادم أن الإنشاء الحصري مطبَّق، لذلك توقف الرفع التلقائي.",
+    "description": "Cloud backup pause reason: conditional create support unproven"
+  },
+  "autoBackupCloudReasonUnknownOutcome": {
+    "message": "نتيجة الرفع غير معروفة. تحقق من الملف البعيد ثم أوقف النسخ التلقائي وشغّله من جديد لإعادة المحاولة.",
+    "description": "Cloud backup reason: commit outcome unknown"
+  },
+  "autoBackupCloudReasonTargetChanged": {
+    "message": "تغيّر عنوان WebDAV أو الحساب أو اسم الملف. أكّد الهدف الجديد قبل استئناف النسخ التلقائي.",
+    "description": "Cloud backup pause reason: configured target no longer matches the trusted baseline"
+  },
+  "autoBackupCloudReasonError": {
+    "message": "حدث خطأ غير متوقع أثناء الرفع التلقائي.",
+    "description": "Cloud backup reason: uncategorized failure"
+  },
+  "autoBackupCloudRetryHint": {
+    "message": "أوقف النسخ التلقائي ثم شغّله من جديد لإعادة المحاولة بعد إصلاح الجانب البعيد.",
+    "description": "Hint on how to release a blocking cloud backup pause"
   },
   "autoBackupUpgradeHint": {
     "message": "تم الاحتفاظ بفاصل النسخ الاحتياطي السابق. يظل النسخ المحلي التلقائي في الخلفية متوقفًا حتى تفعّله هنا.",
