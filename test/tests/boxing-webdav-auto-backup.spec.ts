@@ -203,6 +203,9 @@ function createSandbox(opts: SandboxOptions = {}) {
   let onMessageHandler: ((msg: any, sender: any, sendResponse: any) => any) | null = null;
   let onAlarmHandler: ((alarm: any) => void) | null = null;
   const permissionCalls: any[] = [];
+  // Ticket #129: the toolbar badge is part of the observable surface, so every
+  // setBadgeText call is recorded in order.
+  const badgeCalls: string[] = [];
 
   const chromeMock = {
     storage: {
@@ -236,7 +239,7 @@ function createSandbox(opts: SandboxOptions = {}) {
       onAlarm: { addListener: (fn: any) => { onAlarmHandler = fn; } },
     },
     action: {
-      setBadgeText: () => Promise.resolve(),
+      setBadgeText: (details: any) => { badgeCalls.push(details && details.text ? details.text : ''); return Promise.resolve(); },
       setBadgeBackgroundColor: () => Promise.resolve(),
     },
     permissions: {
@@ -300,6 +303,7 @@ function createSandbox(opts: SandboxOptions = {}) {
     bg: sandbox.__boxingBgAutoBackup,
     get onAlarmHandler() { return onAlarmHandler; },
     permissionCalls,
+    badgeCalls,
   };
 }
 
@@ -732,5 +736,306 @@ test.describe('Ticket #125 — Settings cloud status line (file:// lane)', () =>
     });
     await expect(line).toHaveAttribute('data-state', 'ok');
     await expect(line).toContainText(/cloud|云端|雲端/i);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Ticket #129 (#120 T9): a failed cloud upload keeps the local history, both
+// success times stay separate, and the user can see and clear the real state.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function stateOf(env: ReturnType<typeof createSandbox>) {
+  return env.sandbox.__boxingSnapshotCore.normalizeAutoBackupState(env.store.autoBackupState);
+}
+
+function snapKeys(env: ReturnType<typeof createSandbox>) {
+  return Object.keys(env.store).filter((k) => k.startsWith('snap.v1.') && k !== 'snap.v1.index');
+}
+
+test.describe('Ticket #129 — cloud failure still saves the local snapshot (VM)', () => {
+  test.setTimeout(90_000);
+
+  test('a rejected upload leaves a real local snapshot, keeps the cloud failure, and shows the badge', async () => {
+    const env = createSandbox({ webdav: createFakeWebdav({ getBehavior: '401' }) });
+
+    const res = await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const state = stateOf(env);
+
+    // Local lane succeeded on its own.
+    expect(res.ok).toBe(true);
+    expect(state.local.status).toBe('ok');
+    expect(state.local.lastSuccessAt).toBeGreaterThan(0);
+    expect(state.local.lastSnapshotTs).toBe(state.local.lastSuccessAt);
+    expect(snapKeys(env).length).toBe(1);
+
+    // Cloud lane failed and was never rewritten as a success.
+    expect(state.remote.status).toBe('paused');
+    expect(state.remote.lastErrorCode).toBe('auth-failed');
+    expect(state.remote.lastSuccessAt).toBe(0);
+    expect(env.badgeCalls[env.badgeCalls.length - 1]).toBe('!');
+  });
+
+  test('an oversize snapshot keeps the previous local success and never clears the cloud failure', async () => {
+    const env = createSandbox({ webdav: createFakeWebdav({ getBehavior: '401' }) });
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const first = stateOf(env);
+    expect(first.local.status).toBe('ok');
+    const localSuccessAt = first.local.lastSuccessAt;
+
+    // Second cycle with a layout that exceeds the 2 MiB single-snapshot cap.
+    const huge = seedLayout();
+    huge.boxes[0].children[0].bookmarks[0].title = 'x'.repeat(2 * 1024 * 1024 + 1024);
+    env.store.boxingLayout = huge;
+    const prevState = env.store.autoBackupState;
+    prevState.nextScheduledAt = 0;
+
+    const res = await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const state = stateOf(env);
+
+    expect(res.ok).toBe(false);
+    expect(state.local.status).toBe('error');
+    // A failed snapshot is not a new local success.
+    expect(state.local.lastSuccessAt).toBe(localSuccessAt);
+    expect(state.local.lastSnapshotTs).toBe(first.local.lastSnapshotTs);
+    // The cloud failure survives the local failure.
+    expect(state.remote.lastErrorCode).toBe('auth-failed');
+    expect(state.remote.lastSuccessAt).toBe(0);
+    expect(env.badgeCalls[env.badgeCalls.length - 1]).toBe('!');
+  });
+
+  test('a paused cloud state survives a background restart and restores the badge on reconcile', async () => {
+    const paused = seedAutoBackupState({
+      remote: {
+        provider: 'webdav',
+        status: 'paused',
+        lastAttemptAt: 11,
+        lastSuccessAt: 0,
+        lastErrorCode: 'remote-exists-untrusted',
+        baseline: null,
+      },
+    });
+    const env = createSandbox({ store: { autoBackupState: paused }, webdav: createFakeWebdav() });
+
+    // A fresh worker reads the same store: the pause and its code are still there.
+    expect(readRemote(env)).toMatchObject({
+      status: 'paused',
+      lastErrorCode: 'remote-exists-untrusted',
+    });
+
+    await env.bg.reconcileAutoBackupSchedule({ runCatchup: false });
+    expect(env.badgeCalls[env.badgeCalls.length - 1], 'pending cloud problem re-lights the badge after restart').toBe('!');
+
+    // Resolving it clears the badge on the next reconcile.
+    const okState = seedAutoBackupState({ remote: { status: 'ok', lastSuccessAt: 12, lastErrorCode: null, baseline: null } });
+    env.store.autoBackupState = okState;
+    await env.bg.reconcileAutoBackupSchedule({ runCatchup: false });
+    expect(env.badgeCalls[env.badgeCalls.length - 1]).toBe('');
+  });
+
+  test('a changed target pauses, keeps the old baseline, and never rewrites the provider', async () => {
+    const env = createSandbox({
+      store: {
+        autoBackupState: seedAutoBackupState({
+          remote: {
+            provider: 'webdav',
+            status: 'ok',
+            lastSuccessAt: 1700000000000,
+            lastErrorCode: null,
+            baseline: { service: 'webdav', fileUrl: WEBDAV_FILE_URL, account: 'alice', createdAt: 1, etag: '"v1"' },
+          },
+        }),
+      },
+      webdav: createFakeWebdav(),
+    });
+    env.store.boxingLayout.settings.webdavUrl = WEBDAV_BASE + 'other/';
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const remote = readRemote(env);
+
+    expect(remote.status).toBe('paused');
+    expect(remote.lastErrorCode).toBe('target-changed');
+    expect(remote.baseline && remote.baseline.fileUrl).toBe(WEBDAV_FILE_URL);
+    expect(env.store.boxingLayout.settings.syncProvider).toBe('webdav');
+    expect(env.webdav.requests.filter((r) => r.method === 'PUT')).toHaveLength(0);
+  });
+});
+
+test.describe('Ticket #129 — cloud status line, manual entry, and its own success time (file:// lane)', () => {
+  async function bootCloudState(page: Page, opts: { provider?: string; lastBackupAt?: number; autoState: Record<string, any> }) {
+    await page.addInitScript((seed) => {
+      localStorage.setItem('boxingLayout', JSON.stringify(seed.layout));
+      localStorage.setItem('bxstore:autoBackupState', JSON.stringify(seed.autoState));
+    }, {
+      layout: seedLayout({
+        settings: {
+          onboardingCompleted: true,
+          syncProvider: opts.provider || 'webdav',
+          webdavUrl: WEBDAV_BASE,
+          webdavUser: 'alice',
+          lastBackupAt: opts.lastBackupAt || 0,
+        },
+      }),
+      autoState: opts.autoState,
+    });
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+    await dismissOnboarding(page);
+    await page.evaluate(() => document.getElementById('settings-btn')?.click());
+    await expect(page.locator('#settings-modal')).toBeVisible();
+    await page.evaluate(() => {
+      (document.querySelector('.settings-nav__item[data-tab="sync"]') as HTMLElement | null)?.click();
+    });
+    await expect(page.locator('#tab-sync')).toBeVisible();
+  }
+
+  test('a paused cloud line shows its reason, its own last success time, and a manual entry', async ({ page }) => {
+    await bootCloudState(page, {
+      autoState: seedAutoBackupState({
+        local: { status: 'ok', lastAttemptAt: 5, lastSuccessAt: 1800000000000, lastSnapshotTs: 1800000000000, lastError: null },
+        remote: {
+          provider: 'webdav',
+          status: 'paused',
+          lastAttemptAt: 6,
+          lastSuccessAt: 1700000000000,
+          lastErrorCode: 'auth-failed',
+          baseline: null,
+        },
+      }),
+    });
+
+    const line = page.locator('#auto-backup-remote-status');
+    await expect(line).toBeVisible();
+    await expect(line).toHaveAttribute('data-state', 'paused');
+    await expect(line).toContainText(/rejected|password|密碼|密码/i);
+    await expect(line).toContainText(/Last cloud backup|上次云端备份|上次雲端備份/i);
+
+    // The remote-zone timestamp is the cloud one, never the newer local snapshot.
+    const shown = await page.evaluate(() => ({
+      remoteZone: document.getElementById('last-backup-time-value')?.textContent || '',
+      expected: new Date(1700000000000).toLocaleString(),
+      localOnly: new Date(1800000000000).toLocaleString(),
+    }));
+    expect(shown.remoteZone).toBe(shown.expected);
+    expect(shown.remoteZone).not.toBe(shown.localOnly);
+
+    // A rejected password is fixed at the stored-credential field.
+    const action = page.locator('#auto-backup-remote-action');
+    await expect(action).toBeVisible();
+    await expect(action).toHaveAttribute('data-action', 'credentials');
+    await action.click();
+    expect(await page.evaluate(() => document.activeElement && document.activeElement.id)).toBe('webdav-pass');
+  });
+
+  test('a changed target does not pass an old timestamp off as the new target success', async ({ page }) => {
+    await bootCloudState(page, {
+      lastBackupAt: 1700000000000,
+      autoState: seedAutoBackupState({
+        remote: {
+          provider: 'webdav',
+          status: 'paused',
+          lastAttemptAt: 6,
+          lastSuccessAt: 1700000000000,
+          lastErrorCode: 'target-changed',
+          baseline: null,
+        },
+      }),
+    });
+
+    const shown = await page.evaluate(() => ({
+      remoteZone: document.getElementById('last-backup-time-value')?.textContent || '',
+      never: document.getElementById('local-auto-backup-last-at')?.textContent || '',
+      line: document.getElementById('auto-backup-remote-status')?.textContent || '',
+    }));
+    // Same "never" copy as the untouched local line, and no stale cloud timestamp.
+    expect(shown.remoteZone).toBe(shown.never);
+    expect(shown.line).not.toContain('2023');
+  });
+
+  test('switching to Local keeps the failed cloud line visible but offers no action and sends nothing', async ({ page }) => {
+    const requests: string[] = [];
+    const downloads: number[] = [];
+    page.on('request', (r) => { if (/^https?:/i.test(r.url())) requests.push(r.url()); });
+    page.on('download', () => { downloads.push(1); });
+
+    await bootCloudState(page, {
+      provider: 'local',
+      autoState: seedAutoBackupState({
+        remote: {
+          provider: 'webdav',
+          status: 'paused',
+          lastAttemptAt: 6,
+          lastSuccessAt: 0,
+          lastErrorCode: 'remote-exists-untrusted',
+          baseline: null,
+        },
+      }),
+    });
+
+    const line = page.locator('#auto-backup-remote-status');
+    await expect(line).toBeVisible();
+    await expect(line).toHaveAttribute('data-state', 'paused');
+    await expect(page.locator('#auto-backup-remote-action')).toBeHidden();
+    await expect(page.locator('#remote-backup-zone')).toBeHidden();
+    expect(requests).toEqual([]);
+    expect(downloads).toEqual([]);
+    expect(await page.evaluate(() => (window as any).__boxingDebug.layout.settings.syncProvider)).toBe('local');
+  });
+
+  test('a failed manual upload still leaves a Time Machine snapshot and keeps lastBackupAt untouched', async ({ page }) => {
+    await page.route('https://dav.boxing-test.invalid/**', (route) => route.fulfill({ status: 401, body: '' }));
+    await page.addInitScript((seed) => {
+      localStorage.setItem('boxingLayout', JSON.stringify(seed));
+      (window as any).chrome = {
+        runtime: {
+          sendMessage: (msg: any, cb: (resp: any) => void) => {
+            (window as any).__bgMsgs = ((window as any).__bgMsgs || []).concat(msg && msg.type);
+            cb({ success: false, error: 'Unauthorized' });
+          },
+          getURL: (p: string) => p,
+          lastError: null,
+        },
+      };
+    }, seedLayout({
+      settings: { onboardingCompleted: true, syncProvider: 'webdav', webdavUrl: WEBDAV_BASE, webdavUser: 'alice', lastBackupAt: 1700000000000 },
+    }));
+
+    await page.goto(NTP_URL, { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => Boolean((window as any).__boxingDebug))).toBe(true);
+    await dismissOnboarding(page);
+
+    const out = await page.evaluate(async () => {
+      const dbg = (window as any).__boxingDebug;
+      const before = (await dbg.listSnapshots()).length;
+      let err: string | null = null;
+      try {
+        await (window as any).__bxSync.performBackup({ userInitiated: true, source: 'manual' });
+      } catch (e: any) {
+        err = String((e && e.message) || e);
+      }
+      return {
+        before,
+        after: (await dbg.listSnapshots()).length,
+        lastBackupAt: dbg.layout.settings.lastBackupAt,
+        err,
+      };
+    });
+
+    expect(out.err, 'the failure is still reported to the Sync Now button').toBeTruthy();
+    expect(out.after, 'a failed upload still leaves one recoverable snapshot').toBe(out.before + 1);
+    expect(out.lastBackupAt, 'a failed upload is not a remote success').toBe(1700000000000);
+  });
+
+  test('the new manual-entry label exists in all 14 locales', () => {
+    const key = 'autoBackupCloudActionFix';
+    const en = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, '_locales', 'en', 'messages.json'), 'utf8'));
+    expect(en[key]?.message).toBeTruthy();
+    for (const loc of fs.readdirSync(path.join(ROOT_DIR, '_locales'))) {
+      if (loc === 'en') continue;
+      const p = path.join(ROOT_DIR, '_locales', loc, 'messages.json');
+      if (!fs.existsSync(p)) continue;
+      const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+      expect(data[key]?.message, `${loc} is missing ${key}`).toBeTruthy();
+      expect(data[key].message, `${loc} must translate ${key}`).not.toBe(en[key].message);
+    }
   });
 });

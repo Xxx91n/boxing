@@ -1468,6 +1468,10 @@
     "message": "Tắt rồi bật lại sao lưu tự động để thử lại sau khi xử lý phía từ xa.",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "Kiểm tra rồi thử lại",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "Chu kỳ sao lưu trước đó của bạn được giữ nguyên. Sao lưu cục bộ tự động dưới nền chỉ chạy khi bạn bật tại đây.",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

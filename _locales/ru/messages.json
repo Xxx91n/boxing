@@ -1468,6 +1468,10 @@
     "message": "Выключите и снова включите авторезервное копирование, чтобы повторить попытку после исправления удалённой стороны.",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "Проверить и повторить",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "Прежний интервал сохранён. Фоновое локальное автосохранение не запустится, пока вы не включите его здесь.",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

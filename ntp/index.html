@@ -400,6 +400,10 @@
               </div>
               <p class="modal__hint local-auto-backup__error" id="local-auto-backup-error" hidden></p>
               <p class="modal__hint local-auto-backup__remote" id="auto-backup-remote-status" hidden role="status" aria-live="polite"></p>
+              <!-- Ticket #129: one manual entry next to the cloud status line. It reuses the
+                   existing permission/credential entry points and never sends anything by itself. -->
+              <button type="button" id="auto-backup-remote-action" class="btn local-auto-backup__action"
+                data-i18n="autoBackupCloudActionFix" hidden></button>
               <div class="local-auto-backup__upgrade" id="auto-backup-upgrade-box" hidden>
                 <p class="modal__hint" id="auto-backup-upgrade-hint" data-i18n="autoBackupUpgradeHint">You previously kept an auto-backup interval. Background local auto-backup stays off until you enable it here.</p>
                 <button type="button" id="auto-backup-activate-btn" class="btn" data-i18n="autoBackupActivateBtn">Enable local auto-backup</button>

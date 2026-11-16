@@ -1468,6 +1468,10 @@
     "message": "Desligue e ligue a cópia automática para tentar de novo depois de corrigir o lado remoto.",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "Verificar e tentar de novo",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "Seu intervalo anterior foi mantido. O backup local automático em segundo plano fica pausado até você ativar aqui.",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

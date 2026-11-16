@@ -1468,6 +1468,10 @@
     "message": "Désactivez puis réactivez la sauvegarde automatique pour réessayer après avoir corrigé le côté distant.",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "Vérifier puis réessayer",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "Votre intervalle précédent a été conservé. La sauvegarde locale en arrière-plan reste arrêtée tant que vous ne l’activez pas ici.",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

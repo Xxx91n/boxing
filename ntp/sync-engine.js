@@ -20,7 +20,7 @@ let syncProviderSelect, webdavConfig, gistConfig, webdavUrlInput, webdavUserInpu
 let webdavPermissionBanner, webdavPermissionMsg, webdavPermissionBtn;
 let gistPermissionBanner, gistPermissionMsg, gistPermissionBtn;
 let localAutoBackupStatusEl, localAutoBackupLastAtEl, localAutoBackupErrorEl, autoBackupUpgradeBox, autoBackupActivateBtn;
-let autoBackupRemoteEl;
+let autoBackupRemoteEl, autoBackupRemoteActionEl;
 // Ticket 99 (T13): stored-credential danger zone refs — assigned in bindSyncBackupUi
 // before updateSyncConfigVisibility() first runs so the visibility toggle is safe.
 let syncCredentialDangerZone, deleteOpenBtn, deletePanel, deleteCancelBtn, deleteConfirmBtn, deleteRemoteCheck, deleteStatusEl;
@@ -57,6 +57,15 @@ export function initSyncEngineFacade(deps) {
     e.key = key;
     return e;
   }
+  // Ticket #129 (spec #120 D6): a pre-check refusal never leaves the browser, so
+  // #123's "nothing was attempted, nothing changes" contract still holds and no
+  // snapshot side effect is created. Every other failure (network, auth, 409/412,
+  // Gist rejection) is a real remote attempt and keeps the local history lane.
+  const PRE_REQUEST_REFUSAL_KEYS = [
+    'webdavErrNoUrl', 'webdavErrHttps', 'webdavErrEmbedded', 'webdavErrNoPass',
+    'webdavErrUrlTooLong', 'webdavErrBlockedHost', 'webdavErrQuery',
+    'webdavErrPermission', 'webdavErrPermissionDenied',
+  ];
   function isKnownWebDAVError(e) {
     if (e && WEBDAV_ERROR_KEYS.includes(e.key)) return true;
     // Legacy fallback: compares against the UNinterpolated i18n(k), so only
@@ -124,13 +133,20 @@ export function initSyncEngineFacade(deps) {
     return u.search !== '' || u.hash !== '';
   }
 
-    // Show last backup time (only real confirmed timestamps; never synthesize success)
+    // Ticket #129 (spec #120 D6): "#last-backup-time-value" sits in the remote backup
+    // zone, so only a real remote success may fill it. A local Time Machine snapshot
+    // keeps its own line (#local-auto-backup-last-at) and never stands in for the cloud.
+    // A changed or unsafe target means the stored timestamps describe a DIFFERENT
+    // remote file, so they cannot prove the current target ever succeeded.
+    const REMOTE_TIME_UNPROVEN_CODES = ['target-changed', 'invalid-target'];
     function updateLastBackupDisplay(autoState) {
       const remoteAt = Number(layout.settings.lastBackupAt) || 0;
       const localAt = Number(autoState && autoState.local && autoState.local.lastSuccessAt) || 0;
-      const cloudAt = Number(autoState && autoState.remote && autoState.remote.lastSuccessAt) || 0;
+      const remote = autoState && autoState.remote ? autoState.remote : null;
+      const cloudAt = Number(remote && remote.lastSuccessAt) || 0;
+      const remoteUnproven = Boolean(remote && REMOTE_TIME_UNPROVEN_CODES.includes(remote.lastErrorCode));
       if (lastBackupTimeVal) {
-        const displayAt = Math.max(remoteAt, localAt, cloudAt);
+        const displayAt = remoteUnproven ? 0 : Math.max(remoteAt, cloudAt);
         lastBackupTimeVal.textContent = displayAt > 0 ? new Date(displayAt).toLocaleString() : i18n('neverText');
       }
       if (localAutoBackupLastAtEl) {
@@ -1255,6 +1271,7 @@ export function initSyncEngineFacade(deps) {
         ? Boolean(opts.allowPermissionPrompt)
         : userInitiated;
       const source = (opts && opts.source) || (userInitiated ? 'manual' : 'background');
+      let remoteError = null;
       try {
         if (p === 'webdav') {
           const res = await syncWithWebDAV({ allowPermissionPrompt, source });
@@ -1265,19 +1282,32 @@ export function initSyncEngineFacade(deps) {
           if (res && res.conflicts) debugWarn('WebDAV sync archived ' + res.conflicts + ' conflict copy(ies) - review under Settings > Data > Conflict copies');
         }
         else if (p === 'gist') { await backupToGist(); debug('Gist backup ok'); }
-        await saveSnapshot(); // always save a versioned snapshot
-        // Local mode auto-backup strictly converges to a silent snapshot, never calls backupToLocal()
+      } catch (e) {
+        // Ticket #129: a failed upload no longer skips the local history. The single
+        // exception is a local pre-check refusal — nothing was sent, so #123 keeps its
+        // "no attempt, no side effect" contract.
+        debugErr('Backup failed', e);
+        remoteError = e;
+      }
+
+      // The Time Machine snapshot is its own lane: it still runs when the remote
+      // upload threw, and its own result is never reported as a remote success.
+      if (!(remoteError && PRE_REQUEST_REFUSAL_KEYS.includes(remoteError.key))) {
+        try {
+          await saveSnapshot(); // always save a versioned snapshot
+        } catch (e) {
+          debugErr('Backup snapshot failed', e);
+        }
+      }
+      // lastBackupAt is a REMOTE success timestamp. Local-only mode keeps its history
+      // in autoBackupState.local instead of pretending a remote backup happened.
+      if (p !== 'local' && !remoteError) {
         layout.settings.lastBackupAt = Date.now();
         saveLayout();
-        await refreshLocalAutoBackupUi();
-      } catch (e) {
-        // PR #109 review round 2: keep the diagnostic log, then propagate — the
-        // Sync Now handler surfaces the localized failure, the alarm/catch-up
-        // callers log it, and the success-only bookkeeping above (snapshot,
-        // lastBackupAt) is skipped when the remote sync failed.
-        debugErr('Backup failed', e);
-        throw e;
       }
+      try { await refreshLocalAutoBackupUi(); } catch (e) { debugWarn('refresh local auto-backup ui failed', e); }
+      if (remoteError) throw remoteError;
+      return true;
     }
 
     // ── Background local auto-backup coordination (#124 / #120 T4) ──
@@ -1326,20 +1356,41 @@ export function initSyncEngineFacade(deps) {
       gistPayloadTooLarge: 'gistAutoBackupErrTooLarge',
     };
 
+    // Ticket #129: every pending state tells the user how to move on. "permission"
+    // reuses the real grant button, "credentials" focuses the stored-credential field,
+    // everything else asks the user to confirm the remote side and re-check once.
+    const REMOTE_FIX_ACTIONS = {
+      'need-permission': 'permission',
+      gistPermissionMissing: 'permission',
+      'auth-failed': 'credentials',
+      'credential-unreadable': 'credentials',
+      gistTokenMissing: 'credentials',
+      gistAccountChanged: 'credentials',
+      gistRequestRejected: 'credentials',
+    };
+
     function formatRemoteAutoBackupState(remote) {
-      if (!remote || remote.status === 'idle') return { text: '', state: 'idle' };
+      if (!remote || remote.status === 'idle') return { text: '', state: 'idle', action: null };
       const reason = i18n(REMOTE_REASON_I18N[remote.lastErrorCode] || 'autoBackupCloudReasonError');
       if (remote.status === 'running') {
-        return { text: i18n('localAutoBackupStatusRunning'), state: 'active' };
+        return { text: i18n('localAutoBackupStatusRunning'), state: 'active', action: null };
       }
+      const lastAt = Math.max(0, Number(remote.lastSuccessAt) || 0);
+      // A changed/unsafe target means that timestamp belongs to a different file.
+      const lastSuffix = lastAt > 0 && !REMOTE_TIME_UNPROVEN_CODES.includes(remote.lastErrorCode)
+        ? ' · ' + i18n('autoBackupCloudLastLabel') + ': ' + new Date(lastAt).toLocaleString()
+        : '';
       if (remote.status === 'ok') {
-        const when = remote.lastSuccessAt > 0 ? new Date(remote.lastSuccessAt).toLocaleString() : '';
-        const suffix = when ? ' · ' + i18n('autoBackupCloudLastLabel') + ': ' + when : '';
-        return { text: i18n('autoBackupCloudStatusOk') + suffix, state: 'ok' };
+        return { text: i18n('autoBackupCloudStatusOk') + lastSuffix, state: 'ok', action: null };
       }
       if (remote.status === 'unknown') {
-        return { text: i18n('autoBackupCloudStatusUnknown'), state: 'unknown' };
+        return {
+          text: i18n('autoBackupCloudStatusUnknown') + lastSuffix,
+          state: 'unknown',
+          action: 'recheck',
+        };
       }
+      const fixAction = REMOTE_FIX_ACTIONS[remote.lastErrorCode] || 'recheck';
       if (remote.status === 'paused') {
         // Only the shared list decides which pauses get the retry hint; an absent
         // core simply shows no hint instead of keeping a second copy of the list.
@@ -1348,9 +1399,17 @@ export function initSyncEngineFacade(deps) {
           ? core.AUTO_BACKUP_REMOTE_BLOCKING_REASONS
           : [];
         const hint = blocking.includes(remote.lastErrorCode) ? ' ' + i18n('autoBackupCloudRetryHint') : '';
-        return { text: i18n('autoBackupCloudStatusPaused', [reason]) + hint, state: 'paused' };
+        return {
+          text: i18n('autoBackupCloudStatusPaused', [reason]) + hint + lastSuffix,
+          state: 'paused',
+          action: fixAction,
+        };
       }
-      return { text: i18n('autoBackupCloudStatusError', [reason]), state: 'error' };
+      return {
+        text: i18n('autoBackupCloudStatusError', [reason]) + lastSuffix,
+        state: 'error',
+        action: fixAction,
+      };
     }
 
     function formatAutoBackupStateLabel(state, isActive, needsOptIn) {
@@ -1427,6 +1486,21 @@ export function initSyncEngineFacade(deps) {
         autoBackupRemoteEl.hidden = !remoteLine.text;
         if (remoteLine.text) autoBackupRemoteEl.dataset.state = remoteLine.state;
         else delete autoBackupRemoteEl.dataset.state;
+        // Ticket #129: the cloud line carries its own manual entry so the user does
+        // not have to guess which field or button releases the pause.
+        if (autoBackupRemoteActionEl) {
+          const provider = layout.settings.syncProvider || 'local';
+          const showFix = Boolean(remoteLine.action) && provider !== 'local';
+          autoBackupRemoteActionEl.hidden = !showFix;
+          if (showFix) {
+            autoBackupRemoteActionEl.dataset.action = remoteLine.action;
+            autoBackupRemoteActionEl.textContent = remoteLine.action === 'permission'
+              ? i18n('webdavAuthorizeBtn')
+              : i18n('autoBackupCloudActionFix');
+          } else {
+            delete autoBackupRemoteActionEl.dataset.action;
+          }
+        }
       }
       if (autoBackupUpgradeBox) {
         autoBackupUpgradeBox.hidden = !needsLegacyOptIn;
@@ -1434,6 +1508,39 @@ export function initSyncEngineFacade(deps) {
       return state;
     }
     window.__boxingRefreshLocalAutoBackupUi = refreshLocalAutoBackupUi;
+
+    // Ticket #129: one click and no hidden request. A permission pause reuses the
+    // real grant button, a credential problem focuses the stored-credential field,
+    // and every other pause asks for one explicit re-check through the existing
+    // re-enable path (#125/#126 already treat that as the user's acknowledgement).
+    async function handleRemoteAutoBackupAction() {
+      const action = autoBackupRemoteActionEl && autoBackupRemoteActionEl.dataset.action;
+      if (!action) return;
+      const provider = layout.settings.syncProvider || 'local';
+      if (action === 'permission') {
+        const grantBtn = provider === 'gist' ? gistPermissionBtn : webdavPermissionBtn;
+        if (grantBtn && !grantBtn.hidden) {
+          grantBtn.click();
+          return;
+        }
+      }
+      if (action === 'permission' || action === 'credentials') {
+        const field = provider === 'gist' ? gistTokenInput : webdavPassInput;
+        if (field) {
+          field.focus();
+          if (typeof field.select === 'function') field.select();
+        }
+        return;
+      }
+      // recheck: only a running auto-backup may re-check; while it is off there is
+      // nothing to resume automatically, so point at the manual Sync Now button.
+      const st = await getAutoBackupState();
+      if (!st.optIn) {
+        backupNowBtn?.focus();
+        return;
+      }
+      await configureLocalAutoBackup(Number(st.intervalSec) || 0, true);
+    }
 
     // Ticket #126: deleting stored sync credentials explicitly drops the saved
     // target. Clear the background remote baseline/account/pending marker and bump
@@ -1664,6 +1771,7 @@ export function bindSyncBackupUi() {
     localAutoBackupLastAtEl = document.getElementById('local-auto-backup-last-at');
     localAutoBackupErrorEl = document.getElementById('local-auto-backup-error');
     autoBackupRemoteEl = document.getElementById('auto-backup-remote-status');
+    autoBackupRemoteActionEl = document.getElementById('auto-backup-remote-action');
     autoBackupUpgradeBox = document.getElementById('auto-backup-upgrade-box');
     autoBackupActivateBtn = document.getElementById('auto-backup-activate-btn');
 
@@ -1754,6 +1862,18 @@ export function bindSyncBackupUi() {
     updateSyncConfigVisibility();
     refreshWebDAVPermissionUi();
     refreshGistPermissionUi();
+
+    autoBackupRemoteActionEl?.addEventListener('click', async () => {
+      if (autoBackupRemoteActionEl.disabled) return;
+      autoBackupRemoteActionEl.disabled = true;
+      try {
+        await handleRemoteAutoBackupAction();
+      } catch (e) {
+        debugWarn('auto-backup cloud action failed', e);
+      } finally {
+        autoBackupRemoteActionEl.disabled = false;
+      }
+    });
 
     webdavPermissionBtn?.addEventListener('click', async () => {
       if (webdavPermissionBtn.disabled) return;

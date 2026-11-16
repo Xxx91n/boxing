@@ -1457,6 +1457,11 @@ try {
       return { ok: true, active: false, state };
     }
 
+    // Ticket #129: the toolbar badge does not survive a browser restart, so a pending
+    // local/cloud problem must be restored from the persisted state on startup/install
+    // instead of waiting for the next alarm.
+    await setAutoBackupBadge(bgAutoBackupNeedsAttention(state.local, state.remote));
+
     const now = Date.now();
     const periodInMinutes = Math.max(1, Math.ceil(state.intervalSec / 60));
     const existingAlarm = await bgAlarmsGet(BG_AUTO_BACKUP_ALARM_NAME);
