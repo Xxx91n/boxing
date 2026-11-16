@@ -1324,7 +1324,16 @@ try {
     const h = new Headers({ 'Content-Type': 'application/json', 'Overwrite': 'T' });
     const auth = makeAuthHeader(user, pass);
     if (auth) h.set('Authorization', auth);
-    const resp = await fetch(url, { method: 'PUT', headers: h, body, redirect: 'manual' });
+    // Ticket #125 review: this PUT runs inside the per-target queue, so a hung
+    // request must release the queue. A timeout is an unknown outcome for the
+    // caller, never a success.
+    const abort = bgWebDAVAbortHandle(BG_WEBDAV_TIMEOUT_MS);
+    let resp;
+    try {
+      resp = await fetch(url, { method: 'PUT', headers: h, body, redirect: 'manual', signal: abort.signal });
+    } finally {
+      abort.done();
+    }
     bgLog('WebDAV PUT response:', resp.status);
     if (resp.status === 0 || resp.type === 'opaqueredirect') {
       return { status: 0, ok: false, error: 'webdav redirect blocked' };
