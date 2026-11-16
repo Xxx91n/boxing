@@ -596,6 +596,21 @@ test.describe('Ticket #125 — background WebDAV first-create auto backup (contr
     };
     expect(await env.bg.decryptCredential(v3Env)).toBe(plain);
     expect(await env.bg.decryptCredential({ v: 3, s: 'bad', iv: 'bad', d: 'bad' })).toBe('');
+
+    // v2 legacy bridge: two records with different per-record salts must each use
+    // their own derived key (the cache is keyed by salt, not "first salt wins").
+    const nodeCrypto = require('crypto');
+    const legacySecret = env.sandbox.__boxingCredentialCore.CRED_OBFUSCATION_SECRET;
+    const v2Envelope = (text: string) => {
+      const salt = nodeCrypto.randomBytes(16);
+      const derivedV2 = nodeCrypto.pbkdf2Sync(Buffer.from(legacySecret, 'utf8'), salt, 100000, 32, 'sha256');
+      const iv = nodeCrypto.randomBytes(12);
+      const cipher = nodeCrypto.createCipheriv('aes-256-gcm', derivedV2, iv);
+      const ct = Buffer.concat([cipher.update(text, 'utf8'), cipher.final(), cipher.getAuthTag()]);
+      return { v: 2, s: salt.toString('base64'), iv: iv.toString('base64'), d: ct.toString('base64') };
+    };
+    expect(await env.bg.decryptCredential(v2Envelope('first-v2'))).toBe('first-v2');
+    expect(await env.bg.decryptCredential(v2Envelope('second-v2'))).toBe('second-v2');
   });
 });
 

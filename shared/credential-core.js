@@ -67,13 +67,14 @@
         v3Cache = { saltB64: u8ToB64(salt), key };
         return key;
       }
-      if (legacyCache) return legacyCache;
-      const baseKey = await subtle.importKey('raw', new TextEncoder().encode(CRED_OBFUSCATION_SECRET), 'PBKDF2', false, ['deriveKey']);
-      const key = await subtle.deriveKey(
-        { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-        baseKey, { name: ENC_ALGO, length: ENC_KEY_LEN }, false, ['decrypt']);
-      legacyCache = key;
-      return key;
+      if (!legacyCache || legacyCache.saltB64 !== u8ToB64(salt)) {
+        const baseKey = await subtle.importKey('raw', new TextEncoder().encode(CRED_OBFUSCATION_SECRET), 'PBKDF2', false, ['deriveKey']);
+        const key = await subtle.deriveKey(
+          { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+          baseKey, { name: ENC_ALGO, length: ENC_KEY_LEN }, false, ['decrypt']);
+        legacyCache = { saltB64: u8ToB64(salt), key };
+      }
+      return legacyCache.key;
     }
 
     async function encrypt(plaintext) {
