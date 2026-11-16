@@ -591,6 +591,12 @@ try {
     const activeEpoch = options.epoch;
     const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
     const settings = rawLayout && rawLayout.settings ? rawLayout.settings : null;
+    // Ticket #129: a saved baseline only proves THIS provider's target. A Gist
+    // baseline must not be read as a WebDAV file, or the WebDAV path would sit in
+    // "target changed" forever instead of re-checking the file.
+    const webdavBaseline = prevRemote.baseline && prevRemote.baseline.service === 'webdav'
+      ? prevRemote.baseline
+      : null;
 
     if (!settings || settings.syncProvider !== 'webdav') {
       // Not a WebDAV target: cloud auto-backup is off. Keep the trusted baseline
@@ -607,10 +613,10 @@ try {
       status: bgRemoteStatusForCode(code),
       generation: prevRemote.generation,
       lastAttemptAt: Date.now(),
-      lastSuccessAt: prevRemote.lastSuccessAt || 0,
+      lastSuccessAt: prevRemote.provider === 'webdav' ? (Number(prevRemote.lastSuccessAt) || 0) : 0,
       lastErrorCode: code,
       account: prevRemote.account,
-      baseline: prevRemote.baseline || null,
+      baseline: webdavBaseline,
       // A Gist POST may still be unconfirmed; switching providers must not erase
       // the marker, or switching back could create a second Gist.
       pendingCreate: prevRemote.pendingCreate,
@@ -619,9 +625,9 @@ try {
     const derived = bgResolveWebDAVFileUrl(settings);
     const user = typeof settings.webdavUser === 'string' ? settings.webdavUser.trim() : '';
 
-    if (prevRemote.baseline) {
+    if (webdavBaseline) {
       if (derived.error) return { attempted: false, remote: pausedRemote('invalid-target') };
-      if (prevRemote.baseline.fileUrl !== derived.fileUrl || prevRemote.baseline.account !== user) {
+      if (webdavBaseline.fileUrl !== derived.fileUrl || webdavBaseline.account !== user) {
         return { attempted: false, remote: pausedRemote('target-changed') };
       }
       // Known + unchanged target: T5 never writes it. T6 owns periodic updates.
@@ -665,7 +671,7 @@ try {
       if (!core.isAutoBackupActive(live) || live.epoch !== activeEpoch) {
         return { attempted: false, cancelled: true, remote: live.remote };
       }
-      if (live.remote && live.remote.baseline) {
+      if (live.remote && live.remote.baseline && live.remote.baseline.service === 'webdav') {
         return { attempted: false, skipped: 'baseline-present', remote: { ...live.remote, status: 'ok', lastErrorCode: null } };
       }
       if (live.remote && live.remote.status === 'unknown') {
@@ -695,7 +701,7 @@ try {
       if (!core.isAutoBackupActive(liveBeforeWrite) || liveBeforeWrite.epoch !== activeEpoch) {
         return { attempted: false, cancelled: true, remote: liveBeforeWrite.remote };
       }
-      if (liveBeforeWrite.remote && liveBeforeWrite.remote.baseline) {
+      if (liveBeforeWrite.remote && liveBeforeWrite.remote.baseline && liveBeforeWrite.remote.baseline.service === 'webdav') {
         return { attempted: false, skipped: 'baseline-present', remote: { ...liveBeforeWrite.remote, status: 'ok', lastErrorCode: null } };
       }
 
@@ -937,6 +943,11 @@ try {
     }
     const prevRemote = core.normalizeRemoteAutoBackupState(state && state.remote);
     const remoteGeneration = Number(prevRemote.generation) || 0;
+    // Ticket #129: only a Gist success time belongs to the Gist target. A WebDAV
+    // timestamp carried over from a provider switch must not be shown as Gist's.
+    const prevGistSuccessAt = prevRemote.provider === 'gist'
+      ? (Number(prevRemote.lastSuccessAt) || 0)
+      : 0;
     const settings = rawLayout && rawLayout.settings ? rawLayout.settings : null;
     if (!settings || settings.syncProvider !== 'gist') {
       return { attempted: false, skipped: 'not-gist', remote: prevRemote };
@@ -953,7 +964,11 @@ try {
         provider: 'gist',
         status: code === 'gistResultUnknown' ? 'unknown' : 'paused',
         lastAttemptAt: Date.now(),
-        lastSuccessAt: Number(fromRemote && fromRemote.lastSuccessAt) || 0,
+        // Ticket #129: a WebDAV timestamp must not become the Gist target's
+        // "last success" after a provider switch.
+        lastSuccessAt: (fromRemote && fromRemote.provider === 'gist')
+          ? (Number(fromRemote.lastSuccessAt) || 0)
+          : 0,
         lastErrorCode: code,
         ...extraPatch,
       };
@@ -1071,7 +1086,7 @@ try {
       provider: 'gist',
       status: 'running',
       lastAttemptAt: startedAt,
-      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastSuccessAt: prevGistSuccessAt,
       lastErrorCode: null,
       account,
       pendingCreate,
@@ -1084,7 +1099,7 @@ try {
       provider: 'gist',
       status: 'unknown',
       lastAttemptAt: startedAt,
-      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastSuccessAt: prevGistSuccessAt,
       lastErrorCode: 'gistResultUnknown',
       account,
       pendingCreate,
@@ -1162,7 +1177,7 @@ try {
       provider: 'gist',
       status: 'paused',
       lastAttemptAt: startedAt,
-      lastSuccessAt: Number(prevRemote.lastSuccessAt) || 0,
+      lastSuccessAt: prevGistSuccessAt,
       lastErrorCode: failure.reasonCode,
       account,
       pendingCreate: null,

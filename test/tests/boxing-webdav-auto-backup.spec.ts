@@ -58,6 +58,7 @@ const NEW_I18N_KEYS = [
   'autoBackupCloudReasonTargetChanged',
   'autoBackupCloudReasonError',
   'autoBackupCloudRetryHint',
+  'autoBackupCloudActionFix',
 ] as const;
 
 const PLACEHOLDER_KEYS = ['autoBackupCloudStatusPaused', 'autoBackupCloudStatusError'] as const;
@@ -752,7 +753,7 @@ function snapKeys(env: ReturnType<typeof createSandbox>) {
   return Object.keys(env.store).filter((k) => k.startsWith('snap.v1.') && k !== 'snap.v1.index');
 }
 
-test.describe('Ticket #129 — cloud failure still saves the local snapshot (VM)', () => {
+test.describe('Ticket #129 — cloud failure, snapshot history, and pending state (VM)', () => {
   test.setTimeout(90_000);
 
   test('a rejected upload leaves a real local snapshot, keeps the cloud failure, and shows the badge', async () => {
@@ -858,6 +859,57 @@ test.describe('Ticket #129 — cloud failure still saves the local snapshot (VM)
     expect(env.store.boxingLayout.settings.syncProvider).toBe('webdav');
     expect(env.webdav.requests.filter((r) => r.method === 'PUT')).toHaveLength(0);
   });
+
+  test('a WebDAV pause never inherits a Gist success timestamp', async () => {
+    const env = createSandbox({
+      store: {
+        autoBackupState: seedAutoBackupState({
+          remote: {
+            provider: 'gist',
+            status: 'ok',
+            lastSuccessAt: 1700000000000,
+            lastErrorCode: null,
+            baseline: { service: 'gist', gistId: 'abcdef', fileName: 'boxing-backup.json', ownerLogin: 'alice', ownerId: '1' },
+          },
+        }),
+      },
+      webdav: createFakeWebdav({ getBehavior: '401' }),
+    });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const remote = readRemote(env);
+
+    expect(remote.provider).toBe('webdav');
+    expect(remote.lastErrorCode).toBe('auth-failed');
+    expect(remote.lastSuccessAt, 'the Gist success time does not belong to this target').toBe(0);
+    expect(env.store.boxingLayout.settings.syncProvider).toBe('webdav');
+  });
+
+  test('a Gist baseline is not mistaken for a WebDAV file, so the file is re-checked and created', async () => {
+    const env = createSandbox({
+      store: {
+        autoBackupState: seedAutoBackupState({
+          remote: {
+            provider: 'gist',
+            status: 'ok',
+            lastSuccessAt: 1700000000000,
+            lastErrorCode: null,
+            baseline: { service: 'gist', gistId: 'abcdef', fileName: 'boxing-backup.json', ownerLogin: 'alice', ownerId: '1' },
+          },
+        }),
+      },
+    });
+
+    await env.bg.runBackgroundLocalAutoBackup({ trigger: 'alarm' });
+    const remote = readRemote(env);
+
+    expect(remote.provider).toBe('webdav');
+    expect(remote.status).toBe('ok');
+    expect(remote.lastErrorCode).toBeNull();
+    expect(remote.lastSuccessAt).toBeGreaterThan(1700000000000);
+    expect(remote.baseline && remote.baseline.service).toBe('webdav');
+    expect(env.webdav.requests.filter((r) => r.method === 'PUT')).toHaveLength(1);
+  });
 });
 
 test.describe('Ticket #129 — cloud status line, manual entry, and its own success time (file:// lane)', () => {
@@ -951,6 +1003,27 @@ test.describe('Ticket #129 — cloud status line, manual entry, and its own succ
     expect(shown.line).not.toContain('2023');
   });
 
+  test('switching provider keeps the old record but does not lend its time or action to the new target', async ({ page }) => {
+    await bootCloudState(page, {
+      provider: 'gist',
+      autoState: seedAutoBackupState({
+        remote: {
+          provider: 'webdav',
+          status: 'paused',
+          lastAttemptAt: 6,
+          lastSuccessAt: 1700000000000,
+          lastErrorCode: 'auth-failed',
+          baseline: null,
+        },
+      }),
+    });
+
+    const line = page.locator('#auto-backup-remote-status');
+    await expect(line).toBeVisible();
+    await expect(line).not.toContainText(/Last cloud backup|上次云端备份|上次雲端備份/i);
+    await expect(page.locator('#auto-backup-remote-action')).toBeHidden();
+  });
+
   test('switching to Local keeps the failed cloud line visible but offers no action and sends nothing', async ({ page }) => {
     const requests: string[] = [];
     const downloads: number[] = [];
@@ -1027,15 +1100,16 @@ test.describe('Ticket #129 — cloud status line, manual entry, and its own succ
 
   test('the new manual-entry label exists in all 14 locales', () => {
     const key = 'autoBackupCloudActionFix';
+    const locales = fs.readdirSync(path.join(ROOT_DIR, '_locales'));
+    expect(locales.length).toBe(14);
     const en = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, '_locales', 'en', 'messages.json'), 'utf8'));
     expect(en[key]?.message).toBeTruthy();
-    for (const loc of fs.readdirSync(path.join(ROOT_DIR, '_locales'))) {
-      if (loc === 'en') continue;
-      const p = path.join(ROOT_DIR, '_locales', loc, 'messages.json');
-      if (!fs.existsSync(p)) continue;
-      const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+    for (const loc of locales) {
+      const data = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, '_locales', loc, 'messages.json'), 'utf8'));
       expect(data[key]?.message, `${loc} is missing ${key}`).toBeTruthy();
-      expect(data[key].message, `${loc} must translate ${key}`).not.toBe(en[key].message);
+      if (loc !== 'en') {
+        expect(data[key].message, `${loc} must translate ${key}`).not.toBe(en[key].message);
+      }
     }
   });
 });
