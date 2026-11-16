@@ -403,9 +403,9 @@
     if (!isPlainObject(raw)) return null;
     if (raw.service === 'webdav') {
       if (typeof raw.fileUrl !== 'string' || !raw.fileUrl) return null;
-      const etag = typeof raw.etag === 'string' && raw.etag ? raw.etag.slice(0, 512) : null;
+      const etag = typeof raw.etag === 'string' && raw.etag && raw.etag.length <= 4096 ? raw.etag : null;
       const version = typeof raw.version === 'string' && raw.version
-        ? raw.version.slice(0, 512)
+        ? (raw.version.length <= 4096 ? raw.version : null)
         : etag;
       return {
         service: 'webdav',

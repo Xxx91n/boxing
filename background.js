@@ -505,6 +505,19 @@ try {
     return { fileUrl };
   }
 
+  // The saved settings can change while a backup is in flight. Re-read them just
+  // before a write: if the target identity moved, stop instead of sending to the
+  // old fileUrl. (The epoch check remains the primary stop; this narrows the race
+  // caused by a configuration message queued behind a running backup.)
+  async function bgWebDAVTargetStillMatches(url, user) {
+    const stored = await bgStorageGet({ boxingLayout: null });
+    const settings = stored && stored.boxingLayout && stored.boxingLayout.settings;
+    if (!settings || settings.syncProvider !== 'webdav') return false;
+    const derived = bgResolveWebDAVFileUrl(settings);
+    const currentUser = typeof settings.webdavUser === 'string' ? settings.webdavUser.trim() : '';
+    return !derived.error && derived.fileUrl === url && currentUser === user;
+  }
+
   // Same allowlist boundary as the page (#122): only sanitized boxing data leaves,
   // syncLevel still decides what the user shares. Credentials never enter this body.
   function bgBuildWebDAVBackupBody(rawLayout) {
@@ -535,17 +548,19 @@ try {
     let resp;
     try {
       resp = await fetch(url, { method: 'GET', headers: h, redirect: 'manual', signal: abort.signal });
-    } finally {
+    } catch (e) {
       abort.done();
+      throw e;
     }
-    if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') return { kind: 'unreachable' };
-    if (resp.status === 404) return { kind: 'absent' };
-    if (resp.status === 401 || resp.status === 403) return { kind: 'auth' };
-    if (!resp.ok) return { kind: 'unreachable', status: resp.status };
+    if (!resp || resp.status === 0 || resp.type === 'opaqueredirect') { abort.done(); return { kind: 'unreachable' }; }
+    if (resp.status === 404) { abort.done(); return { kind: 'absent' }; }
+    if (resp.status === 401 || resp.status === 403) { abort.done(); return { kind: 'auth' }; }
+    if (!resp.ok) { abort.done(); return { kind: 'unreachable', status: resp.status }; }
     const etag = resp.headers.get('etag') || null;
     if (opts.includeBody === false) {
       // The first-create path only needs existence; do not download a foreign file.
       try { if (resp.body && typeof resp.body.cancel === 'function') await resp.body.cancel(); } catch (_) {}
+      abort.done();
       return { kind: 'exists', etag };
     }
     let body = '';
@@ -553,6 +568,10 @@ try {
       body = await readCappedBody(resp, 2 * 1024 * 1024);
     } catch (_) {
       return { kind: 'unreachable', status: resp.status };
+    } finally {
+      // Keep the abort timer alive through the body read: a server that stops
+      // sending after the headers must not hang the target queue forever.
+      abort.done();
     }
     return { kind: 'exists', etag, body };
   }
@@ -595,7 +614,7 @@ try {
   // would see a different ETag and stop as if another device had written. The
   // manual three-way merge and confirmation flow is untouched; only the stored
   // baseline advances. Manual success never counts as an automatic success time.
-  async function bgNoteManualWebDAVWrite(url, responseEtag, user, pass) {
+  async function bgNoteManualWebDAVWrite(url, responseEtag, user, pass, body) {
     try {
       const stored = await bgStorageGet({ boxingLayout: null });
       const settings = stored && stored.boxingLayout && stored.boxingLayout.settings;
@@ -612,11 +631,14 @@ try {
       }
 
       if (!bgIsStrongETag(responseEtag)) {
-        // Some WebDAV servers omit ETag on PUT but return it on GET. Read it once so
-        // the manual sync can still establish the trusted version.
+        // Some WebDAV servers omit ETag on PUT but return it on GET. Only adopt the
+        // ETag when the bytes on the server are the bytes we just wrote; otherwise
+        // another writer got in between and its version is not ours.
         try {
-          const read = await bgWebDAVReadFileState(url, user || '', pass || '', { includeBody: false });
-          if (read.kind === 'exists' && bgIsStrongETag(read.etag)) responseEtag = read.etag;
+          const read = await bgWebDAVReadFileState(url, user || '', pass || '');
+          if (read.kind === 'exists' && bgIsStrongETag(read.etag) && read.body === body) {
+            responseEtag = read.etag;
+          }
         } catch (_) { /* fall through: no trusted version yet */ }
       }
       if (!bgIsStrongETag(responseEtag)) return null;
@@ -789,6 +811,16 @@ try {
       }
       const liveRemote = core.normalizeRemoteAutoBackupState(live.remote);
       baselineUsed = liveRemote.baseline || null;
+      // A manual sync may have committed a new layout and baseline after this run
+      // captured its local layout. Writing that older layout now would erase the
+      // merged result, so stop and let the next cycle use the fresh layout.
+      const expectedBaselineVersion = options.expectedBaselineVersion;
+      const liveVersion = liveRemote.baseline
+        ? (liveRemote.baseline.version || liveRemote.baseline.etag)
+        : null;
+      if (expectedBaselineVersion !== undefined && liveVersion !== expectedBaselineVersion) {
+        return { attempted: false, skipped: 'baseline-changed', remote: liveRemote };
+      }
       if (liveRemote.status === 'unknown') {
         return { attempted: false, skipped: 'unknown-outcome', remote: liveRemote };
       }
@@ -831,6 +863,9 @@ try {
         const liveBeforeProbe = await bgReadAutoBackupState();
         if (!core.isAutoBackupActive(liveBeforeProbe) || liveBeforeProbe.epoch !== activeEpoch) {
           return { attempted: false, cancelled: true, remote: liveBeforeProbe.remote };
+        }
+        if (!(await bgWebDAVTargetStillMatches(derived.fileUrl, user))) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'target-changed') };
         }
 
         let body;
@@ -902,6 +937,9 @@ try {
         const liveBeforeWrite = await bgReadAutoBackupState();
         if (!core.isAutoBackupActive(liveBeforeWrite) || liveBeforeWrite.epoch !== activeEpoch) {
           return { attempted: false, cancelled: true, remote: liveBeforeWrite.remote };
+        }
+        if (!(await bgWebDAVTargetStillMatches(derived.fileUrl, user))) {
+          return { attempted: true, remote: pausedFrom(liveRemote, 'target-changed') };
         }
 
         let updated;
@@ -1009,6 +1047,9 @@ try {
       if (liveBeforeWrite.remote && liveBeforeWrite.remote.baseline) {
         return { attempted: false, skipped: 'baseline-present', remote: { ...liveBeforeWrite.remote, status: 'ok', lastErrorCode: null } };
       }
+      if (!(await bgWebDAVTargetStillMatches(derived.fileUrl, user))) {
+        return { attempted: true, remote: pausedFrom(liveRemote, 'target-changed') };
+      }
 
       let created;
       try {
@@ -1026,11 +1067,31 @@ try {
         // first trusted baseline is not lost just because the create response was
         // sparse; a missing ETag everywhere still leaves version=null and pauses.
         let createdEtag = created.etag;
+        let createdOverwritten = false;
         if (!bgIsStrongETag(createdEtag)) {
           try {
-            const readBack = await bgWebDAVReadFileState(derived.fileUrl, user, pass, { includeBody: false });
-            if (readBack.kind === 'exists' && bgIsStrongETag(readBack.etag)) createdEtag = readBack.etag;
+            const readBack = await bgWebDAVReadFileState(derived.fileUrl, user, pass);
+            if (readBack.kind === 'exists' && bgIsStrongETag(readBack.etag)) {
+              if (readBack.body === body) createdEtag = readBack.etag;
+              else createdOverwritten = true;
+            }
           } catch (_) { /* keep the sparse create response */ }
+        }
+        if (createdOverwritten) {
+          const lost = pausedFrom(liveRemote, 'remote-changed');
+          lost.lastAttemptAt = confirmedAt;
+          lost.lastSuccessAt = confirmedAt;
+          lost.baseline = {
+            service: 'webdav',
+            fileUrl: derived.fileUrl,
+            account: user,
+            createdAt: confirmedAt,
+            etag: null,
+            version: null,
+            verifiedAt: confirmedAt,
+            conditionalVerifiedAt: 0,
+          };
+          return { attempted: true, remote: lost };
         }
         return {
           attempted: true,
@@ -1516,6 +1577,12 @@ try {
       const core = await ensureSnapshotCore();
       const now = Date.now();
       let state = await bgReadAutoBackupState();
+      // Ticket #127: capture the remote version before reading the local layout.
+      // A manual sync that finishes after this point must win over the older layout
+      // this run is about to snapshot.
+      const baselineVersionAtStart = state.remote && state.remote.baseline
+        ? (state.remote.baseline.version || state.remote.baseline.etag)
+        : null;
 
       if (!core.isAutoBackupActive(state)) {
         await bgAlarmsClear(BG_AUTO_BACKUP_ALARM_NAME);
@@ -1618,11 +1685,6 @@ try {
       // snapshot settled, and its result stays independent from the local result.
       let remoteOutcome = null;
       const remoteProvider = rawLayout && rawLayout.settings ? rawLayout.settings.syncProvider : '';
-      // Ticket #127: remember the remote version this run started from, so a later
-      // read can tell a concurrent manual write apart from the pre-run baseline.
-      const baselineVersionAtStart = latestState.remote && latestState.remote.baseline
-        ? (latestState.remote.baseline.version || latestState.remote.baseline.etag)
-        : null;
       if (rawLayout) {
         try {
           if (remoteProvider === 'webdav') {
@@ -1631,6 +1693,7 @@ try {
               layout: rawLayout,
               epoch: activeEpoch,
               trigger,
+              expectedBaselineVersion: baselineVersionAtStart,
             });
           } else if (remoteProvider === 'gist') {
             remoteOutcome = await runBackgroundGistAutoBackup({
@@ -2228,7 +2291,7 @@ try {
       return { status: 0, ok: false, error: 'webdav redirect blocked' };
     }
     const etag = resp.headers.get('etag') || null;
-    if (resp.ok) await bgNoteManualWebDAVWrite(url, etag, user, pass);
+    if (resp.ok) await bgNoteManualWebDAVWrite(url, etag, user, pass, body);
     return { status: resp.status, ok: resp.ok, etag };
   }
 
