@@ -1535,6 +1535,10 @@
     "message": "Turn auto-backup off and on to retry after fixing the remote side.",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "Check and retry",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "You previously kept an auto-backup interval. Background local auto-backup stays off until you enable it here.",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

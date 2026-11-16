@@ -254,6 +254,7 @@ I18N_FALLBACK.autoBackupCloudReasonBaselineUnverified = 'This browser has no tru
 I18N_FALLBACK.autoBackupCloudReasonRemoteMissing = 'The remote file is gone. Automatic upload stopped and will not create it again by itself.';
 I18N_FALLBACK.autoBackupCloudReasonUpdateFailed = 'The server refused this backup update.';
 I18N_FALLBACK.autoBackupCloudRetryHint = 'Turn auto-backup off and on to retry after fixing the remote side.';
+I18N_FALLBACK.autoBackupCloudActionFix = 'Check and retry';
 I18N_FALLBACK.autoBackupUpgradeHint = 'You previously kept an auto-backup interval. Background local auto-backup stays off until you enable it here.';
 I18N_FALLBACK.autoBackupActivateBtn = 'Enable local auto-backup';
 I18N_FALLBACK.gistPermPendingHint = 'Background Gist backup needs access to $1$.';

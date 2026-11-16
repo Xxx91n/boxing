@@ -1468,6 +1468,10 @@
     "message": "リモート側を直したあと、自動バックアップをいったんオフにしてから再度オンにすると再試行できます。",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "確認してから再試行",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "以前の自動バックアップ間隔が保持されています。ここを有効にするまでバックグラウンドの自動保存は開始されません。",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

@@ -340,6 +340,9 @@
       lastErrorCode: null,
       account: null,
       baseline: null,
+      // Ticket #129: which concrete remote target produced lastSuccessAt. A provider
+      // alone is not enough — two WebDAV addresses are different targets.
+      lastSuccessTarget: '',
       pendingCreate: null,
     };
   }
@@ -459,6 +462,7 @@
       lastErrorCode: code,
       account: normalizeRemoteAccount(raw.account),
       baseline: normalizeRemoteBaseline(raw.baseline),
+      lastSuccessTarget: typeof raw.lastSuccessTarget === 'string' ? raw.lastSuccessTarget.slice(0, 2048) : '',
       pendingCreate: normalizeRemotePendingCreate(raw.pendingCreate),
     };
   }

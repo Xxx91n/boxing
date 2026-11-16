@@ -1468,6 +1468,10 @@
     "message": "Schalte die automatische Sicherung aus und wieder ein, um es nach dem Beheben der Remote-Seite erneut zu versuchen.",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "Prüfen und erneut versuchen",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "Ihr früheres Sicherungsintervall blieb erhalten. Die lokale Hintergrundsicherung startet erst, wenn Sie sie hier aktivieren.",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

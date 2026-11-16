@@ -1468,6 +1468,10 @@
     "message": "원격 쪽을 고친 뒤 자동 백업을 껐다 켜면 다시 시도합니다.",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "확인 후 다시 시도",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "이전 자동 백업 주기가 유지되었습니다. 여기서 켜기 전까지 백그라운드 로컬 자동 백업은 꺼진 상태로 유지됩니다.",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"

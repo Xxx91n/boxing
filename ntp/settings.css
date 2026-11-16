@@ -1447,6 +1447,14 @@ body.box-resizing {
 .local-auto-backup__remote[data-state="error"] {
   color: var(--color-danger);
 }
+/* Ticket #129: the manual entry sits under the cloud status line, left-aligned. */
+.local-auto-backup__action {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+.local-auto-backup__action[hidden] {
+  display: none;
+}
 .local-auto-backup__upgrade {
   display: flex;
   flex-direction: column;

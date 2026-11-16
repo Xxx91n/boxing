@@ -1471,6 +1471,10 @@
     "message": "處理完遠端後，把自動備份關一次再開啟即可重試。",
     "description": "Hint on how to release a blocking cloud backup pause"
   },
+  "autoBackupCloudActionFix": {
+    "message": "檢查後重試",
+    "description": "Button that opens the existing fix path for a paused cloud backup"
+  },
   "autoBackupUpgradeHint": {
     "message": "你先前設定過自動備份週期。升級後背景本機自動備份預設暫停，需在此確認啟用才會執行。",
     "description": "Hint shown to upgraded users with non-zero legacy interval needing explicit opt-in"
