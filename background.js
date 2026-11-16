@@ -1520,13 +1520,15 @@ try {
       } else if (msg.type === 'auto-backup-reset-cloud') {
         // Ticket #126: an explicit credential deletion removes the saved target.
         // Clear only cloud identity; local snapshot history and the opt-in stay.
-        const core = await ensureSnapshotCore();
-        const latest = await bgReadAutoBackupState();
-        const nextGeneration = (Number(latest.cloud && latest.cloud.generation) || 0) + 1;
-        const next = await bgWriteAutoBackupState({
-          ...latest,
-          cloud: { ...core.defaultCloudState(), generation: nextGeneration },
-          updatedAt: Date.now(),
+        const next = await enqueueBgAutoBackup(async () => {
+          const core = await ensureSnapshotCore();
+          const latest = await bgReadAutoBackupState();
+          const nextGeneration = (Number(latest.cloud && latest.cloud.generation) || 0) + 1;
+          return bgWriteAutoBackupState({
+            ...latest,
+            cloud: { ...core.defaultCloudState(), generation: nextGeneration },
+            updatedAt: Date.now(),
+          });
         });
         await bgClearGistPendingPermission();
         return { success: true, state: next };
