@@ -149,6 +149,10 @@ npx playwright test --config=test/playwright.config.ts \
 | 4 | 1 | 1399 passed / 0 failed / 17 skipped | 63.7 分钟，全绿 |
 | 5 | 1 | **1399 passed / 0 failed / 17 skipped** | 审查改完后重跑，52.8 分钟；**上面那块证据就来自这一遍** |
 
+第 5 遍之后，审查又要求给用例 1 补一条「产物版本必须等于本仓 `package.json`」的断言，
+免得拿旧 dist 也能过门禁。这条不改变用例条数，单独复跑（chromium 2 passed、firefox
+2 skipped）就通过了；**没有为它再整跑一遍全量**，这里如实写明。
+
 第三遍那条 EPERM 是真问题，虽然是测试自己的毛病：`fs.rmSync` 没等浏览器松开目录。
 已经改成带重试的清理，并且清理失败不再让用例变红（临时目录本来就该由系统回收）。
 修完复跑通过。
