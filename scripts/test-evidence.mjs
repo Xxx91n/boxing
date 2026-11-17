@@ -46,6 +46,31 @@ function sh(cmd, args, opts) {
   return r;
 }
 
+// Playwright flushes the json reporter as its process exits. A full-suite report
+// is ~1.8 MB, so the file can land a moment AFTER spawnSync returns; checking
+// once made a healthy run look like "report missing" and silently skipped the
+// evidence block (ticket #131 hit this twice). Wait for it, then give up.
+function waitForFile(file, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (fs.existsSync(file)) return true;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+  }
+  return fs.existsSync(file);
+}
+
+// Local runs follow the config's fixed worker cap (2 since issue #36). The old
+// label hardcoded "4 (local)" and contradicted the config, which defeats the
+// point of a machine-readable block — read the value instead.
+function configWorkers() {
+  try {
+    const m = /^\s*workers:\s*(\d+)/m.exec(fs.readFileSync(path.join(ROOT, CONFIG_REL), "utf8"));
+    return m ? m[1] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function gitInfo() {
   const head = sh("git", ["rev-parse", "HEAD"]);
   const dirty = sh("git", ["status", "--porcelain"]);
@@ -127,9 +152,9 @@ function main() {
   const wIdx = extra.findIndex((a) => a === "--workers" || a.startsWith("--workers="));
   const workersLabel = wIdx >= 0
     ? (extra[wIdx].includes("=") ? extra[wIdx].split("=")[1] : extra[wIdx + 1] || "?") + " (arg)"
-    : process.env.CI ? "2 (CI)" : "4 (local)";
+    : process.env.CI ? "2 (CI)" : ((configWorkers() || "?") + " (config)");
 
-  if (!fs.existsSync(jsonOut)) {
+  if (!waitForFile(jsonOut, 5000)) {
     console.error("[test-evidence] playwright json report missing — run failed before reporting (exit " + exitCode + ")");
     process.exit(exitCode || 1);
   }
