@@ -44,8 +44,9 @@ function sh(cmd, args, opts) {
     // A full two-project run takes ~60 minutes on a contended desktop. The old
     // 30-minute cap returned early, reported "report missing", and left the
     // Playwright grandchild running to completion on its own (ticket #131).
-    // Override with EVIDENCE_TIMEOUT_MS; note test-mutex's stale-lock window is
-    // shorter than a full run, so a second local run waits rather than steals.
+    // Override with EVIDENCE_TIMEOUT_MS. A full run outlasts test-mutex's 30-minute
+    // stale-lock window, and a concurrent local run is refused (exit 75) rather
+    // than queued — run one at a time, do not rely on the lock to serialise.
     timeout: o.timeout || Number(process.env.EVIDENCE_TIMEOUT_MS) || 180 * 60 * 1000,
   });
   return r;
