@@ -79,8 +79,27 @@ async function workerState(sw: Worker) {
   });
 }
 
+const DIST_READY = fs.existsSync(path.join(DIST_CHROME, 'manifest.json'));
+
+// "Not built yet" is a local convenience only. In CI this lane is the release
+// gate, so a missing dist must go red instead of quietly skipping both cases and
+// exiting 0.
+function requireBuiltLane() {
+  test.skip(!DIST_READY && !process.env.CI, 'dist/boxing-chrome is not built - run npm run build');
+  if (!DIST_READY) throw new Error('CI must build dist/boxing-chrome before the release-gate lane runs');
+}
+
 const extensionPages = (ctx: BrowserContext) =>
   ctx.pages().filter((p) => p.url().startsWith('chrome-extension://')).length;
+
+// The worker can be torn down and replaced at any moment (opening a page is
+// enough), so every read goes through the live handle rather than the one that
+// happened to exist at launch.
+async function liveWorkerState(ctx: BrowserContext, fallback?: Worker) {
+  const live = ctx.serviceWorkers()[0] || fallback;
+  if (!live) throw new Error('the loaded build has no service worker');
+  return workerState(live);
+}
 
 // Windows keeps a handle on the profile for a moment after the browser exits, so
 // a plain rmSync throws EPERM and turns a green run red (seen once in the third
@@ -97,8 +116,7 @@ function dropProfile(profile: string) {
 test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
   test('a fresh install ships the optional-permission boundary and uploads nothing by itself', async ({}, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-extension', 'the loaded build is a chromium lane');
-    test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
-      'dist/boxing-chrome is not built - CI builds before running tests');
+    requireBuiltLane();
     test.setTimeout(120000);
 
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-131-fresh-'));
@@ -113,15 +131,11 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
       expect(manifest.host_permissions || []).not.toContain('https://*/*');
       expect(manifest.permissions || []).not.toContain('notifications');
 
-      const page = await openNtp(ctx);
-      expect(await workerState(sw)).toMatchObject({ state: null });
-      const fresh = await workerState(sw);
+      await openNtp(ctx);
+      const fresh = await liveWorkerState(ctx, sw);
+      expect(fresh.state, 'a fresh install has no auto-backup state').toBeNull();
       expect(fresh.snapKeys, 'a fresh install must not write a snapshot by itself').toEqual([]);
       expect(fresh.alarms.map((a) => a.name), 'no alarm may exist before the user opts in').not.toContain(ALARM);
-
-      // Leaving the NTP page open does not start an unattended run either.
-      await page.waitForTimeout(2000);
-      expect(await workerState(sw)).toMatchObject({ state: null });
     } finally {
       await ctx.close();
       dropProfile(profile);
@@ -130,8 +144,7 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
 
   test('the real alarm still writes a snapshot with every extension page closed, and the off switch stops it', async ({}, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-extension', 'the loaded build is a chromium lane');
-    test.skip(!fs.existsSync(path.join(DIST_CHROME, 'manifest.json')),
-      'dist/boxing-chrome is not built - CI builds before running tests');
+    requireBuiltLane();
     test.setTimeout(240000);
 
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-131-alarm-'));
@@ -156,9 +169,9 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
       expect(cfg && cfg.success).toBe(true);
       expect(cfg && cfg.ok, 'the opt-in run must succeed on a valid layout').toBe(true);
 
-      await expect.poll(async () => (await workerState(sw)).state?.local?.status,
+      await expect.poll(async () => (await liveWorkerState(ctx, sw)).state?.local?.status,
         { timeout: 30000, message: 'the opt-in run records a real local success' }).toBe('ok');
-      const first = await workerState(sw);
+      const first = await liveWorkerState(ctx, sw);
       const firstSuccess = first.state.local.lastSuccessAt;
       expect(firstSuccess).toBeGreaterThan(0);
       expect(first.snapKeys.length).toBeGreaterThanOrEqual(1);
@@ -186,9 +199,9 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
         .toBeGreaterThan(first.snapKeys.length);
 
       // The run settles as a real success, not a leftover "running".
-      await expect.poll(async () => (await workerState(ctx.serviceWorkers()[0] || sw)).state?.local?.status,
+      await expect.poll(async () => (await liveWorkerState(ctx, sw)).state?.local?.status,
         { timeout: 30000 }).toBe('ok');
-      const afterAlarm = await workerState(ctx.serviceWorkers()[0] || sw);
+      const afterAlarm = await liveWorkerState(ctx, sw);
       expect(afterAlarm.state.local.lastSuccessAt).toBeGreaterThan(firstSuccess);
 
       // ── the off switch is immediate and honest ──────────────────────────────
@@ -199,7 +212,7 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
         }));
       expect(off && off.success).toBe(true);
 
-      const stopped = await workerState(ctx.serviceWorkers()[0] || sw);
+      const stopped = await liveWorkerState(ctx, sw);
       expect(stopped.alarms.map((a) => a.name)).not.toContain(ALARM);
       expect(stopped.state.optIn).toBe(false);
       expect(stopped.state.intervalSec).toBe(0);

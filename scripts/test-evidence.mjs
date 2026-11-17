@@ -41,22 +41,34 @@ function sh(cmd, args, opts) {
     encoding: "utf8",
     stdio: o.inherit ? "inherit" : ["ignore", "pipe", "pipe"],
     env: o.env,
-    timeout: o.timeout || 30 * 60 * 1000,
+    // A full two-project run takes ~60 minutes on a contended desktop. The old
+    // 30-minute cap returned early, reported "report missing", and left the
+    // Playwright grandchild running to completion on its own (ticket #131).
+    timeout: o.timeout || 180 * 60 * 1000,
   });
   return r;
 }
 
-// Playwright flushes the json reporter as its process exits. A full-suite report
-// is ~1.8 MB, so the file can land a moment AFTER spawnSync returns; checking
-// once made a healthy run look like "report missing" and silently skipped the
-// evidence block (ticket #131 hit this twice). Wait for it, then give up.
-function waitForFile(file, timeoutMs) {
+// Playwright writes the json report as its process exits, so a single check can
+// miss a report that has not landed yet — and a half-written file makes
+// JSON.parse throw with no useful message, which used to drop the run's own exit
+// code on the floor (ticket #131). Retry until the payload actually parses.
+function readJsonReport(file, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (fs.existsSync(file)) return true;
+  let lastError = null;
+  for (;;) {
+    try {
+      return JSON.parse(fs.readFileSync(file, "utf8"));
+    } catch (e) {
+      lastError = e;
+    }
+    if (Date.now() >= deadline) break;
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
   }
-  return fs.existsSync(file);
+  if (lastError && lastError.code !== "ENOENT") {
+    console.error("[test-evidence] report unreadable: " + lastError.message);
+  }
+  return null;
 }
 
 // Local runs follow the config's fixed worker cap (2 since issue #36). The old
@@ -64,7 +76,11 @@ function waitForFile(file, timeoutMs) {
 // point of a machine-readable block — read the value instead.
 function configWorkers() {
   try {
-    const m = /^\s*workers:\s*(\d+)/m.exec(fs.readFileSync(path.join(ROOT, CONFIG_REL), "utf8"));
+    // Strip // comments first, same as headedStates() below: a commented-out
+    // "// workers: 4" must never win.
+    const text = fs.readFileSync(path.join(ROOT, CONFIG_REL), "utf8")
+      .split("\n").map((l) => l.replace(/\/\/.*$/, "")).join("\n");
+    const m = /^\s*workers:\s*(\d+)/m.exec(text);
     return m ? m[1] : null;
   } catch (e) {
     return null;
@@ -148,17 +164,21 @@ function main() {
   const exitCode = run.status === null ? 1 : run.status;
 
   // Workers label: reflect a --workers passthrough when present, else the
-  // config policy (CI?2:4) — the block must not contradict the args echo.
+  // config's own cap. CI no longer hardcodes a number — that is exactly how the
+  // old "4 (local)" label drifted away from the config.
   const wIdx = extra.findIndex((a) => a === "--workers" || a.startsWith("--workers="));
+  const configuredWorkers = configWorkers();
   const workersLabel = wIdx >= 0
     ? (extra[wIdx].includes("=") ? extra[wIdx].split("=")[1] : extra[wIdx + 1] || "?") + " (arg)"
-    : process.env.CI ? "2 (CI)" : ((configWorkers() || "?") + " (config)");
+    : configuredWorkers
+      ? configuredWorkers + (process.env.CI ? " (CI)" : " (config)")
+      : "?";
 
-  if (!waitForFile(jsonOut, 5000)) {
+  const report = readJsonReport(jsonOut, 30000);
+  if (!report) {
     console.error("[test-evidence] playwright json report missing — run failed before reporting (exit " + exitCode + ")");
     process.exit(exitCode || 1);
   }
-  const report = JSON.parse(fs.readFileSync(jsonOut, "utf8"));
   try { fs.unlinkSync(jsonOut); } catch (e) { /* temp cleanup best-effort */ }
 
   const acc = walkSpecs({ specs: [], suites: report.suites || [] }, null, {});

@@ -46,7 +46,7 @@ GitHub Release 里那份 zip 现算（清单第 0 步写的就是这个），两
 | D2 | 自动备份由后台独占执行，NTP 只是看板 | #124 `999a978` | `boxing-bg-local-auto-backup.spec.ts` ✅<br>`boxing-release-gate-loaded-build.spec.ts` 用例 2 ✅ |
 | D3 | 默认关闭，开了才开始；周期最短 1 小时；重启只补一次 | #124 `999a978` | `boxing-bg-local-auto-backup.spec.ts`、`boxing-bg-auto-backup-retry.spec.ts` ✅ |
 | D4 | 远端不认识就不覆盖；首次创建和已有目标更新都走条件写 | #125 `061271c`、#126 `9f4f2a0`、#127 `a5a2ed3`、#128 `e420ea7` | `boxing-webdav-auto-backup.spec.ts`、`boxing-gist-first-create.spec.ts`（受控 WebDAV 服务）✅<br>Gist 已有备份自动更新：不做，见第 5 节 |
-| D5 | 缺权限不外发、不弹框、不越权；产物权限按浏览器分开 | #123 `4ab5252` | `boxing-webdav-permission.spec.ts` 静态断言真产物 ✅<br>新 spec 用例 1 在运行期再查一次 manifest ✅ |
+| D5 | 缺权限不外发、不弹框、不越权；产物权限按浏览器分开 | #123 `4ab5252` | `boxing-webdav-permission.spec.ts`：真产物 manifest 断言 + 真实 Chrome 构建里「未授权 origin 被拒」的运行时用例 ✅<br>新 spec 用例 1 再在运行期查一次 manifest ✅ |
 | D6 | 最多再试 3 次（约 5/15/60 分钟）、关掉立刻停、结果不许糊弄 | #129 `c0e913b`、#130 `946d1ab` | `boxing-webdav-auto-backup.spec.ts`、`boxing-bg-auto-backup-retry.spec.ts` ✅<br>新 spec 用例 2 验证"关掉即清 alarm、记 cancelled、旧成功时间还在" ✅ |
 | D7 | 备份、快照、导出、日志里不许出现凭据或别的标签页数据 | #122 `d1f18e5` | `boxing-backup-credential-allowlist.spec.ts` ✅ |
 | T1 | 用真用户能看到的东西做判据，不删老断言 | 全部 | 老 spec 全量跑过（第 4 节），新 spec 只加不减 ✅ |
@@ -70,35 +70,63 @@ GitHub Release 里那份 zip 现算（清单第 0 步写的就是这个），两
 - 全量 Playwright（两个 project）：结果见下面的证据块。最后这次是 `--workers=1`
   跑的——原因见 4.1，不是为了让数字好看。CI 仍按配置用 2 worker 加失败重试。
 
-## Test evidence — 2026-11-17 00:36Z
+## Test evidence — 2026-11-17 03:30Z
 
 | field | value |
 |---|---|
-| git HEAD | `946d1ab4cd8a1e2136fd8d7eb955c573f66dedd3 (dirty)` |
-| playwright args | `--workers=1 (full suite)` |
-| duration | 63.7 min |
+| git HEAD | `6f98ff44b34be0909b9d391db53166b16b477209 (dirty)` |
+| playwright args | `--workers=1` |
+| duration | 52.8 min |
 | workers | 1 (arg) |
 
 | project | headed | passed | failed | skipped | flaky |
 |---|---|---|---|---|---|
 | firefox-extension | headless | 692 | 0 | 16 | 0 |
-| chromium-extension | headed | 707 | 0 | 1 | 0 |
+| chromium-extension | headed (default) | 707 | 0 | 1 | 0 |
 
-跳过的那 17 条全是 lane 隔离：16 条是"只跑真实 Chrome 构建"的用例在 Firefox
-lane 上跳过（那个 lane 压根没装插件），1 条是 Firefox 专属的 keep-alive 探针在
-Chromium lane 上跳过。一条产品断言都没被拿掉。
+### firefox-extension — skipped (16)
+- AC1/AC2/AC4/AC8: copy results, diagnostics jump and canvas clicks in the loaded build
+- AC1-AC6: runs with zero NTP tabs open, deduplicates concurrent catch-ups, cleans up on disable, isolates failures + badge, and rolls back via Time Machine
+- Crash recovery: interrupted running state with expired or missing lock and future nextScheduledAt still catches up immediately
+- Cross-context serialization: concurrent SW auto-backup and NTP saveSnapshot preserve all snapshots in snap.v1.index and Time Machine
+- autoBackupState updates refresh Time Machine snapshots without clearing open conflict comparison panels
+- AC-real: an explicit add writes through the real chrome.storage.local and renders
+- AC-real: compare and adopt inside the loaded extension write to real chrome.storage.local
+- gate 3: undici keep-alive reuse across two syncs
+- stored pixels paint as a data URI in a new process with the network gone
+- shipped build with optional host permission pauses without any GitHub request
+- pre-granted test build creates exactly one Gist through the real service worker
+- a fresh install ships the optional-permission boundary and uploads nothing by itself
+- the real alarm still writes a snapshot with every extension page closed, and the off switch stops it
+- AC-real: first paint, live OS following, the three-state control, quick toggle and the persisted preference in dist/boxing-chrome
+- first click selects all, second click places the caret, Enter saves, reload keeps it
+- AC-real: SW rejects ungranted HTTPS origin with needPermission, blocks private host, and boot catch-up writes webdavPendingPermission + surfaces banner
 
-（这份表是把那次全量跑的 Playwright JSON 报告按 `scripts/test-evidence.mjs` 的同一套
-口径汇总的。顺带说一句，那个脚本这回暴露了两个小毛病——判定"报告文件缺失"抢在
-Playwright 落盘之前，以及 workers 标签写死 `4 (local)` 而配置其实是 2——都在本票里
-修了。HEAD 标 `(dirty)` 是因为跑的时候本票的改动还没提交，正常。）
+### chromium-extension — skipped (1)
+- gate 3: undici keep-alive reuse across two syncs
+
+跳过的 17 条是这么来的，别一笔带过：
+
+- Firefox lane 的 16 条 = **15 条**「只跑真实 Chrome 构建」的用例（那个 lane 没装插件，
+  跑了也没意义）+ **1 条** `boxing-data-golden.spec.ts` 的 `gate 3: undici keep-alive`；
+- Chromium lane 的 1 条 = 就是那条 `gate 3`，它在两个 lane 都跳。
+
+`gate 3` 是 #45 验收时写明的显式跳过：WebDAV/Gist 走的是浏览器 fetch（MV3 网络栈），
+Node 侧根本看不到 undici 的连接池，Playwright 也没法从 Resource Timing 观察。
+这条从 #45 就这样，**这次一条新跳都没加**。
+
+（上面这块是 `scripts/test-evidence.mjs` 原样吐出来的，不是手抄。这个脚本这回也栽了
+三次：抢在 Playwright 落盘前判「报告不存在」、workers 标签写死 `4 (local)` 而配置是 2、
+以及最要命的——`spawnSync` 30 分钟硬超时，全量要跑 60 分钟，父进程先死了而 Playwright
+孙子进程还在一路跑完。三处都在本票修掉了。块里的 HEAD 还是提交前的 `6f98ff4`、带
+`(dirty)`，因为它是改动全部落盘、还没 commit 时跑的；提交后以 `git log` 为准。）
 
 真构建专项（单独再跑一遍，方便直接看结论）：
 
 ```
 npx playwright test --config=test/playwright.config.ts \
   test/tests/boxing-release-gate-loaded-build.spec.ts --project=chromium-extension
-  2 passed (22.5s)
+  2 passed (约 20 秒)
 npx playwright test --config=test/playwright.config.ts \
   test/tests/boxing-release-gate-loaded-build.spec.ts --project=firefox-extension
   2 skipped
@@ -109,18 +137,19 @@ npx playwright test --config=test/playwright.config.ts \
 
 ### 4.1 跑的过程中出过的问题（不藏着）
 
-同一天同一份代码，全量跑了四遍。为什么跑四遍，见下：
+同一天同一份代码，全量跑了五遍。为什么跑五遍，见下：
 
 | 遍 | worker | 结果 | 备注 |
 |---|---|---|---|
 | 1 | 2 | 1398 passed / 1 failed / 17 skipped | 失败：连线的「跨标签星标」。单独重跑 7.7 秒通过 |
 | 2 | 2 | 1396 passed / 3 failed / 17 skipped | 又多了 Time Machine 取消、状态并发两条；6 条失败全量重跑全过 |
 | 3 | 2 | 1394 passed / 5 failed / 17 skipped | 其中一条是**本票新用例**：Windows 上关浏览器后立刻删临时 profile 报 EPERM；另外几条是 timeout |
-| 4 | 1 | **1399 passed / 0 failed / 17 skipped** | 证据块就来自这一遍 |
+| 4 | 1 | 1399 passed / 0 failed / 17 skipped | 63.7 分钟，全绿 |
+| 5 | 1 | **1399 passed / 0 failed / 17 skipped** | 审查改完后重跑，52.8 分钟；**上面那块证据就来自这一遍** |
 
 第三遍那条 EPERM 是真问题，虽然是测试自己的毛病：`fs.rmSync` 没等浏览器松开目录。
 已经改成带重试的清理，并且清理失败不再让用例变红（临时目录本来就该由系统回收）。
-修完单独复跑两遍都是绿的。
+修完复跑通过。
 
 其余几次失败全是 2 worker 在台式机上抢 CPU：Firefox 那边 15/20 秒的用例超时，Chromium
 那边 60/120 秒的用例超时，全是 timeout，没有一条断言失败。这批超时跟仓库 issue #36
@@ -136,9 +165,13 @@ worker 就当作 CI 也能过，那是自欺。CI 上是 2 worker 加 `retries: 
 ### 5.1 Gist 已有备份的自动更新——产品决定不做，不算阻塞
 
 票面原来写着"必须有真 API 竞争写入证据，缺了就阻塞"。这条已经在 #128 被更新了：
-GitHub 没给 Gist PATCH 提供任何可用的条件写，所以自动更新**整个不做**，自动路径
-遇到已有 Gist 直接停（`gistUpdateNotEnabled`），后台一个 PATCH 都不发。
-决定和证据都记在 `docs/gist-conditional-write.md` 里。
+GitHub 的官方 API 描述里，Gist PATCH 没有任何条件写参数；真刀真枪的竞态也没在这台
+机器上跑过（没有可用的测试账号）。所以**自动更新整个不做**，自动路径遇到已有 Gist
+直接停（`gistUpdateNotEnabled`），后台一个 PATCH 都不发。决定和当时看过的材料都记在
+`docs/gist-conditional-write.md` 里。
+
+注意措辞：不是"已经证明 PATCH 不安全"，而是"官方没记录这个能力、我们也没实测过"。
+正因为证不了，才不做。别哪天把它当成"已证事实"引用。
 
 所以现在这一项**不是**发布阻塞。真要哪天重开这个功能，门槛原样还在：得用真
 GitHub 测试账号把"读旧版 → 别人改 → 带旧条件写 → 被拒且对方内容还在"这四步跑完，
@@ -168,7 +201,7 @@ Firefox 的结论只能来自：
 两条都做完、都绿，才算 Firefox 有证据。记录里要写版本号、zip sha256、浏览器版本、
 执行人和日期。
 
-### 5.5 老用户的自动备份设置怎么迁——还没人拍板
+### 5.5 🟡 老用户的自动备份设置怎么迁——还没人拍板
 
 spec D3 说得很清楚：老配置不能直接当成"用户同意后台上传"，但也**不许**擅自重置。
 现在的做法是安全下限：不删老配置，不默认开，没有可核实的主动开启记录就不启动后台
@@ -198,8 +231,10 @@ npm run build
 # 3. 守卫 + 全量测试
 npm test
 
-# 4. 带机器证据块的全量跑（报告里那段就是它生成的，输出写到 test-results/，不进库）
+# 4. 全量跑 + 机器证据块（上面那块就是这条命令的 stdout；test-results/ 不进库）
+#    实测本机 2 worker 会抖，要干净结果就加 -- --workers=1（约 60 分钟）
 npm run evidence
+node scripts/test-evidence.mjs -- --workers=1
 
 # 5. 只跑真构建的发布门槛用例
 npx playwright test --config=test/playwright.config.ts \

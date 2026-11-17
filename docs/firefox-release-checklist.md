@@ -3,8 +3,9 @@
 > 来源：治理决议 #68（B — 声明局限并人工门控）；落地票 #69。
 >
 > **为什么需要这份清单**：CI 的 `firefox-extension` Playwright 项目不安装插件，所有
-> 「实际扩展构建」断言只在 Chromium lane 运行（每个 OS job 有 5 条
-> `the loaded build is a chromium lane` skip）。CI 绿**不构成 Firefox 证据**；
+> 「实际扩展构建」断言只在 Chromium lane 运行（那些用例在 Firefox lane 上按
+> `the loaded build is a chromium lane` 跳过，条数会随票增加，别按老数字记）。
+> CI 绿**不构成 Firefox 证据**；
 > Firefox 侧实际构建验证由本清单人工承担，纳入发行门禁（见
 > `docs/publishing-guide.md`「发版强制规程」）。
 
@@ -195,8 +196,12 @@ const s = await browser.storage.local.get(null);
       10 秒内再查 `snap.v1.*` 应该多一条、`lastSuccessAt` 前进。**没有任何 NTP 页
       参与**，这就是后台独立执行的证据。
 - [ ] **重启浏览器只补一次**：把自动备份改成「每小时」，等它跑过一次后彻底退出
-      Firefox。隔一段时间（或把系统时间往后拨过周期）重开同一 profile：到点后只
-      多一条快照、只跑一次。连开两个 NTP 标签也不会变成两次。
+      Firefox，隔一段时间（或把系统时间往后拨过周期）重开同一 profile。重开那一刻
+      后台就会**立刻**补一条（不是等下一个整点），`nextScheduledAt` 顺延一小时；
+      之后走的是正常周期，不是又补一次。**重开后马上数一次就好，别等一小时再数**，
+      否则会把「补做的那条」和「周期到点的那条」加在一起，误判成补了两次。
+- [ ] **多开页面不会多跑**：补做完后同时开两个 NTP 标签，等一个周期，快照只多一条。
+      （后台独占执行，标签数本来就不该影响次数；这一步是确认没有退回页面驱动。）
 - [ ] **关掉开关立刻停**：把开关拨回「关闭」。后台页 `alarms` 里
       `boxing-auto-backup` 和 `boxing-auto-backup-retry` 都没了，`auto.optIn` 为
       `false`、`intervalSec` 为 `0`、`auto.local.status` 是 `cancelled`；上次成功的
@@ -206,14 +211,23 @@ const s = await browser.storage.local.get(null);
       设置页必须显示「待授权」一类的原因；后台 `auto.remote.status` 是暂停，
       `lastErrorCode` 指向权限；**不能出现任何新上传，也不能自己弹授权框**。
       手动点「测试连接」应能正常发起授权请求，授予后自动路径恢复。
-- [ ] **云端挂了，本地不能跟着瞎报**：把 WebDAV 地址改成一台连不上的测试主机（或
-      直接停掉你的测试服务），等一个周期。本地快照照常有新条目、
+- [ ] **云端挂了，本地不能跟着瞎报**：**保持地址、账号、文件名一个字都不改**，只把
+      WebDAV 服务停掉（或拔网线），再等一个周期。本地快照照常有新条目、
       `auto.local.lastSuccessAt` 前进；`auto.remote.status` 是失败/暂停，
       `auto.remote.lastSuccessAt` **不动**。设置页两条状态各自独立显示，不是一句笼统
       「备份失败」。
-- [ ] **有限重试与 Retry-After**：上面的失败发生后，十分钟内不要再手动折腾，观察
-      `auto.retry` 的 `attempt` / `nextAt`：最多再试 3 次，间隔大约 5 / 15 / 60 分钟；
-      服务端给了 `Retry-After` 时不会早于它。三次用完后回到正常周期，不是无限刷。
+      > 这里千万别改地址来制造失败：改地址走的是「目标变了」，那是**直接暂停、一次都
+      > 不重试**的另一条路。混在一起就测不出重试。
+- [ ] **有限重试**：接着上一步的断网状态，不要再动设置。`auto.retry` 的 `attempt`
+      从 0 开始涨，`nextAt` 大约落在 +5、+15、+60 分钟（有 ±10% 抖动），最多 3 次，
+      用完回到正常周期，不会无限刷。**要看完三次得盯约 80 分钟**；没这个耐心就只记
+      第一次（约 5 分钟）的 `nextAt`，剩下两次以
+      `boxing-bg-auto-backup-retry.spec.ts` 的受控用例为准，并在记录里写明"只观察了
+      第一次"。
+      `Retry-After` 这条不在人工清单里搭台子：普通的 WebDAV 服务不会主动吐
+      503/429 + `Retry-After`，要验得临时起个返回该头部的桩服务。**本条默认由
+      `boxing-bg-auto-backup-retry.spec.ts` 覆盖**，人工不重复做；要做就在记录里写
+      明用了什么桩。
       鉴权失败（401/403）、地址无效、目标被外部改过这类情况**一次都不重试**，直接
       带原因暂停。
 - [ ] **换了目标就停手**：把 WebDAV 地址、路径、账号或文件名改一项，等一个周期。
