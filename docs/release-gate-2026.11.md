@@ -113,13 +113,14 @@ GitHub Release 里那份 zip 现算（清单第 0 步写的就是这个），两
 
 `gate 3` 是 #45 验收时写明的显式跳过：WebDAV/Gist 走的是浏览器 fetch（MV3 网络栈），
 Node 侧根本看不到 undici 的连接池，Playwright 也没法从 Resource Timing 观察。
-这条从 #45 就这样，**这次一条新跳都没加**。
+它不是这次新加的；这次新加的两条跳过都是 lane 守卫（上面那 15 条里就有它们）。
 
-（上面这块是 `scripts/test-evidence.mjs` 原样吐出来的，不是手抄。这个脚本这回也栽了
-三次：抢在 Playwright 落盘前判「报告不存在」、workers 标签写死 `4 (local)` 而配置是 2、
-以及最要命的——`spawnSync` 30 分钟硬超时，全量要跑 60 分钟，父进程先死了而 Playwright
-孙子进程还在一路跑完。三处都在本票修掉了。块里的 HEAD 还是提交前的 `6f98ff4`、带
-`(dirty)`，因为它是改动全部落盘、还没 commit 时跑的；提交后以 `git log` 为准。）
+（上面这块是 `scripts/test-evidence.mjs` 原样吐出来的，不是手抄。这个脚本这回栽在
+`spawnSync` 的 30 分钟硬超时上：全量要跑 60 分钟，父进程先死了，Playwright 孙子进程
+还在往下跑，于是每次都判成「报告不存在」。顺带还暴露了两处——workers 标签写死
+`4 (local)` 而配置是 2；读到半截 JSON 会直接抛异常，把原本该透传的退出码也丢了。
+三处都在本票修掉了。块里的 HEAD 还是提交前的 `6f98ff4`、带 `(dirty)`，因为它是改动
+全部落盘、还没 commit 时跑的；提交后以 `git log` 为准。）
 
 真构建专项（单独再跑一遍，方便直接看结论）：
 
@@ -137,7 +138,8 @@ npx playwright test --config=test/playwright.config.ts \
 
 ### 4.1 跑的过程中出过的问题（不藏着）
 
-同一天同一份代码，全量跑了五遍。为什么跑五遍，见下：
+同一天跑了五遍。第 5 遍是审查改完之后重跑的，所以数值和第 4 遍不完全一样（测试条数
+一样，耗时不同）。为什么跑五遍，见下：
 
 | 遍 | worker | 结果 | 备注 |
 |---|---|---|---|
@@ -231,9 +233,8 @@ npm run build
 # 3. 守卫 + 全量测试
 npm test
 
-# 4. 全量跑 + 机器证据块（上面那块就是这条命令的 stdout；test-results/ 不进库）
-#    实测本机 2 worker 会抖，要干净结果就加 -- --workers=1（约 60 分钟）
-npm run evidence
+# 4. 全量跑 + 机器证据块。上面那块就是这条命令的 stdout（test-results/ 不进库）。
+#    不加 --workers=1 时本机会抖，且块里的 workers 会变成 2 (config)；要一模一样就照抄
 node scripts/test-evidence.mjs -- --workers=1
 
 # 5. 只跑真构建的发布门槛用例

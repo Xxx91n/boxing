@@ -81,6 +81,12 @@ async function workerState(sw: Worker) {
 
 const DIST_READY = fs.existsSync(path.join(DIST_CHROME, 'manifest.json'));
 
+// A gate must not pass on a stale dist: an old build would "prove" permissions
+// from bytes nobody is shipping. Compare the built manifest with this tree.
+const PACKAGE_VERSION: string = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, '..', '..', 'package.json'), 'utf8'),
+).version;
+
 // "Not built yet" is a local convenience only. In CI this lane is the release
 // gate, so a missing dist must go red instead of quietly skipping both cases and
 // exiting 0.
@@ -130,6 +136,8 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
       expect(manifest.optional_host_permissions || []).toContain('https://*/*');
       expect(manifest.host_permissions || []).not.toContain('https://*/*');
       expect(manifest.permissions || []).not.toContain('notifications');
+      expect(manifest.version, 'the loaded build must come from this tree, not an old dist')
+        .toBe(PACKAGE_VERSION);
 
       await openNtp(ctx);
       const fresh = await liveWorkerState(ctx, sw);

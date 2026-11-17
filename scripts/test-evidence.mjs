@@ -44,15 +44,17 @@ function sh(cmd, args, opts) {
     // A full two-project run takes ~60 minutes on a contended desktop. The old
     // 30-minute cap returned early, reported "report missing", and left the
     // Playwright grandchild running to completion on its own (ticket #131).
-    timeout: o.timeout || 180 * 60 * 1000,
+    // Override with EVIDENCE_TIMEOUT_MS; note test-mutex's stale-lock window is
+    // shorter than a full run, so a second local run waits rather than steals.
+    timeout: o.timeout || Number(process.env.EVIDENCE_TIMEOUT_MS) || 180 * 60 * 1000,
   });
   return r;
 }
 
-// Playwright writes the json report as its process exits, so a single check can
-// miss a report that has not landed yet — and a half-written file makes
-// JSON.parse throw with no useful message, which used to drop the run's own exit
-// code on the floor (ticket #131). Retry until the payload actually parses.
+// A single read can land on a half-written or empty file, and the parse error
+// then aborts the script before its own exit code is reported (ticket #131).
+// Retry briefly until the payload parses; a genuinely missing report still ends
+// as "missing" with the run's exit code preserved.
 function readJsonReport(file, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
@@ -174,7 +176,7 @@ function main() {
       ? configuredWorkers + (process.env.CI ? " (CI)" : " (config)")
       : "?";
 
-  const report = readJsonReport(jsonOut, 30000);
+  const report = readJsonReport(jsonOut, 10000);
   if (!report) {
     console.error("[test-evidence] playwright json report missing — run failed before reporting (exit " + exitCode + ")");
     process.exit(exitCode || 1);
