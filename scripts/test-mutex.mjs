@@ -75,11 +75,20 @@ export function isLockStale(lockDir = DEFAULT_LOCK_DIR, maxAgeMs = STALE_MS) {
   const info = readLockInfo(lockDir);
   const now = Date.now();
   const age = info && info.createdAt ? now - Number(info.createdAt) : maxAgeMs + 1;
+  // A live holder owns the lock no matter how old it is. A full two-project run
+  // lasts longer than the 30-minute age window (ticket #131), so age alone would
+  // hand a running suite's lock to a second run — two Playwright runs on the same
+  // dist/ and browser state, which is exactly what this mutex exists to prevent.
+  // Age stays as the fallback for a lock with no usable PID (readLockInfo's
+  // metadata-less fallback), which still needs reclaiming.
+  if (info && typeof info.pid === 'number') {
+    if (!isPidAlive(info.pid)) {
+      return { stale: true, reason: 'holding PID ' + info.pid + ' is dead', info };
+    }
+    return { stale: false, age, info };
+  }
   if (age > maxAgeMs) {
     return { stale: true, reason: 'age ' + Math.round(age / 1000) + 's exceeds ' + Math.round(maxAgeMs / 1000) + 's', info };
-  }
-  if (info && typeof info.pid === 'number' && !isPidAlive(info.pid)) {
-    return { stale: true, reason: 'holding PID ' + info.pid + ' is dead', info };
   }
   return { stale: false, age, info };
 }

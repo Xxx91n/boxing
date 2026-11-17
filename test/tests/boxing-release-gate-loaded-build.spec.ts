@@ -214,6 +214,14 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
 
       // ── the off switch is immediate and honest ──────────────────────────────
       const back = await openNtp(ctx);
+      // Opening the page sends `auto-backup-ensure` asynchronously, which puts the
+      // periodic alarm back. Wait for it before testing the switch: otherwise
+      // "no alarm after off" passes simply because the alarm never came back.
+      await expect.poll(async () => {
+        const s = await liveWorkerState(ctx, sw);
+        return s.alarms.find((a) => a.name === ALARM)?.periodInMinutes;
+      }, { timeout: 30000, message: 'the periodic alarm must exist before the off switch is tested' })
+        .toBe(60);
       const off = await back.evaluate(async () =>
         await (globalThis as any).chrome.runtime.sendMessage({
           type: 'auto-backup-configure', optIn: false, intervalSec: 0,

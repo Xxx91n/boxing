@@ -89,6 +89,27 @@ try {
   assert(!existsSync(testLockDir), 'lock directory must be deleted on release');
   console.log('  PASS: dead PID stale lock recovered and released');
 
+  // Ticket #131: a full two-project run outlasts the 30-minute age window, so a
+  // live holder must keep its lock past it; otherwise a second run steals it
+  // mid-suite. Age-only reclaim survives for metadata-less locks only.
+  console.log('[mutex-verify] 3b. Testing a live holder past the age window keeps the lock...');
+  mkdirSync(testLockDir);
+  writeFileSync(path.join(testLockDir, 'lock.json'), JSON.stringify({
+    pid: process.pid,
+    createdAt: Date.now() - 45 * 60 * 1000,
+    command: 'long-running-suite'
+  }), 'utf8');
+
+  const agedLive = isLockStale(testLockDir);
+  assert.strictEqual(agedLive.stale, false, 'a live holder must not be stale just because the lock is old');
+  const steal = acquireLock(testLockDir);
+  assert.strictEqual(steal.ok, false, 'a second acquire must not steal a long-running live holder');
+  assert.strictEqual(steal.busy, true, 'a stolen attempt would report busy instead');
+
+  releaseLock(testLockDir);
+  assert(!existsSync(testLockDir), 'the long-running lock must be released and deleted');
+  console.log('  PASS: long-running live holder keeps its lock');
+
   // Probe payload: writes marker, exits 0. Real execution target for tests 4/5.
   const probeLines = [
     "import { writeFileSync } from 'node:fs';",
@@ -160,7 +181,7 @@ try {
   assert(existsSync(testLockDir), 'CI bypass must not touch the held lock directory');
   console.log('  PASS: CI bypass executes directly without acquiring the local mutex');
 
-  console.log('\n[mutex-verify] ALL 5 PROGRAMMATIC TESTS PASSED VERIFIED.');
+  console.log('\n[mutex-verify] ALL PROGRAMMATIC TESTS PASSED VERIFIED.');
 } finally {
   clean();
 }
