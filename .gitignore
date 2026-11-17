@@ -121,3 +121,6 @@ ntp/ntp.css
 /spec[0-9]*.txt
 /pretest_out.txt
 /.atomcode/
+
+# Agent tooling state (opencode) — local only, never commit
+/.opencode/

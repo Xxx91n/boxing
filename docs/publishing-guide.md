@@ -140,8 +140,8 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 8. **整轮改造的发布门槛报告**：标题输入框迁移 + 后台自动备份（spec #120）这一轮，
    发行前按 `docs/release-gate-2026.11.md` 对一遍。报告里标 🟡 的人工项没做完，
    或者 ⛔ 项还在，就不算通过，别拿"CI 全绿"顶上去。
-   其中 5.7 那条（验的 zip 和发的 zip 是不是同一份）要先拍板，否则验收只能发生在
-   Release 公开之后。
+   5.7 说明验收通常发生在 Release 公开之后，这是既定口径；记录里必须写清 run、
+   sha256 和验收时点。
 
 ## 附录 — 发行检查单模板（原 WORKFLOW §4.4）
 
