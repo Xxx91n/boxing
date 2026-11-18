@@ -33,6 +33,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const NL = String.fromCharCode(10);
 const CONFIG_REL = "test/playwright.config.ts";
+const RUN_TIMEOUT_MS = Number(process.env.EVIDENCE_TIMEOUT_MS) || 180 * 60 * 1000;
 
 function sh(cmd, args, opts) {
   const o = opts || {};
@@ -41,27 +42,47 @@ function sh(cmd, args, opts) {
     encoding: "utf8",
     stdio: o.inherit ? "inherit" : ["ignore", "pipe", "pipe"],
     env: o.env,
-    // A full two-project run takes ~60 minutes on a contended desktop. The old
-    // 30-minute cap returned early, reported "report missing", and left the
-    // Playwright grandchild running to completion on its own (ticket #131).
-    // Override with EVIDENCE_TIMEOUT_MS. A full run outlasts test-mutex's 30-minute
-    // stale-lock window, and a concurrent local run is refused (exit 75) rather
-    // than queued — run one at a time, do not rely on the lock to serialise.
-    timeout: o.timeout || Number(process.env.EVIDENCE_TIMEOUT_MS) || 180 * 60 * 1000,
+    // A full two-project run takes about an hour on a busy desktop. Cutting it
+    // off earlier leaves Playwright mid-write, so the report looks missing even
+    // when the suite was fine. Raise it with EVIDENCE_TIMEOUT_MS.
+    timeout: o.timeout || RUN_TIMEOUT_MS,
   });
   return r;
 }
 
+// spawnSync stops only the process it started: here that is test-mutex, whose
+// child is Playwright, whose children are browsers. Killing the middle process
+// leaves the tree running, and the next run then collides with it. Stop the
+// whole tree where the OS offers it, and report what actually happened.
+function killProcessTree(pid) {
+  if (!pid) return false;
+  try {
+    if (process.platform === "win32") {
+      return spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" }).status === 0;
+    }
+    process.kill(pid, "SIGKILL");
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 // A single read can land on a half-written or empty file, and the parse error
-// then aborts the script before its own exit code is reported (ticket #131).
-// Retry briefly until the payload parses; a genuinely missing report still ends
-// as "missing" with the run's exit code preserved.
+// then aborts the script before its own exit code is reported. Retry briefly
+// until the payload parses; a genuinely missing report still ends as "missing"
+// with the run's exit code preserved.
 function readJsonReport(file, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
   for (;;) {
     try {
-      return JSON.parse(fs.readFileSync(file, "utf8"));
+      const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+      // Playwright writes the report in one shot when the run ends. A payload
+      // without a suites array is a half-written file, not a finished run;
+      // returning it would silently count zero tests, which is worse than
+      // failing loudly.
+      if (Array.isArray(parsed.suites)) return parsed;
+      lastError = new Error("report has no suites array");
     } catch (e) {
       lastError = e;
     }
@@ -74,9 +95,9 @@ function readJsonReport(file, timeoutMs) {
   return null;
 }
 
-// Local runs follow the config's fixed worker cap (2 since issue #36). The old
-// label hardcoded "4 (local)" and contradicted the config, which defeats the
-// point of a machine-readable block — read the value instead.
+// Local runs follow the config's fixed worker cap. The old label hardcoded
+// "4 (local)" and contradicted the config, which defeats the point of a
+// machine-readable block — read the value instead.
 function configWorkers() {
   try {
     // Strip // comments first, same as headedStates() below: a commented-out
@@ -165,6 +186,20 @@ function main() {
     env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut },
   });
   const exitCode = run.status === null ? 1 : run.status;
+  // A timeout is not "the report went missing": it means the wrapped run was
+  // cut off, and its descendants may still be alive. Say that plainly instead
+  // of letting the next run trip over an old Playwright that is still going.
+  const timedOut = Boolean(run.error && run.error.code === "ETIMEDOUT");
+  if (timedOut) {
+    const killed = killProcessTree(run.pid);
+    console.error("[test-evidence] the run hit the " + Math.round(RUN_TIMEOUT_MS / 60000) + "-minute limit.");
+    console.error("[test-evidence] test-mutex was stopped" + (killed
+      ? "; its Playwright and browser descendants were killed too."
+      : "; Playwright and browser child processes may still be running."));
+    if (!killed) {
+      console.error("[test-evidence] wait for the leftover run to exit (or stop it by hand) before rerunning, or raise EVIDENCE_TIMEOUT_MS.");
+    }
+  }
 
   // Workers label: reflect a --workers passthrough when present, else the
   // config's own cap. CI no longer hardcodes a number — that is exactly how the
@@ -179,7 +214,8 @@ function main() {
 
   const report = readJsonReport(jsonOut, 10000);
   if (!report) {
-    console.error("[test-evidence] playwright json report missing — run failed before reporting (exit " + exitCode + ")");
+    console.error("[test-evidence] playwright json report missing — the run failed before reporting (exit " + exitCode + ")" +
+      (timedOut ? "; it was cut off by the timeout above" : ""));
     process.exit(exitCode || 1);
   }
   try { fs.unlinkSync(jsonOut); } catch (e) { /* temp cleanup best-effort */ }

@@ -89,9 +89,9 @@ try {
   assert(!existsSync(testLockDir), 'lock directory must be deleted on release');
   console.log('  PASS: dead PID stale lock recovered and released');
 
-  // Ticket #131: a full two-project run outlasts the 30-minute age window, so a
-  // live holder must keep its lock past it; otherwise a second run steals it
-  // mid-suite. Age-only reclaim survives for metadata-less locks only.
+  // A full two-project run outlasts the 30-minute age window, so a live holder
+  // must keep its lock past it; otherwise a second run steals it mid-suite.
+  // Age-only reclaim survives for metadata-less locks only.
   console.log('[mutex-verify] 3b. Testing a live holder past the age window keeps the lock...');
   mkdirSync(testLockDir);
   writeFileSync(path.join(testLockDir, 'lock.json'), JSON.stringify({
@@ -109,6 +109,26 @@ try {
   releaseLock(testLockDir);
   assert(!existsSync(testLockDir), 'the long-running lock must be released and deleted');
   console.log('  PASS: long-running live holder keeps its lock');
+
+  // A live PID is not proof of ownership forever: the OS can hand that number
+  // to an unrelated process, and then the lock would never expire. The hard
+  // cap (8x the stale window) exists to break exactly that case.
+  console.log('[mutex-verify] 3c. Testing a recycled PID past the hard cap is reclaimed...');
+  mkdirSync(testLockDir);
+  writeFileSync(path.join(testLockDir, 'lock.json'), JSON.stringify({
+    pid: process.pid,
+    createdAt: Date.now() - 5 * 60 * 60 * 1000,
+    command: 'recycled-pid'
+  }), 'utf8');
+
+  const recycled = isLockStale(testLockDir);
+  assert.strictEqual(recycled.stale, true, 'a live PID older than the hard cap must be treated as recycled');
+  const reclaimed = acquireLock(testLockDir, { test: 'hard-cap' });
+  assert.strictEqual(reclaimed.ok, true, 'a recycled-PID lock must be reclaimable');
+  assert.strictEqual(reclaimed.recovered, true, 'acquire should report recovered=true');
+  releaseLock(testLockDir);
+  assert(!existsSync(testLockDir), 'the reclaimed lock must be released and deleted');
+  console.log('  PASS: recycled PID past the hard cap reclaimed');
 
   // Probe payload: writes marker, exits 0. Real execution target for tests 4/5.
   const probeLines = [

@@ -13,8 +13,11 @@
  * - Stale lock recovery:
  *     1. If the recorded PID is no longer running (process.kill(pid, 0) fails
  *        with ESRCH), the previous holder died uncleanly -> lock stolen.
- *     2. If the lock directory is older than TEST_MUTEX_STALE_MS (default: 30 min,
- *        matching workflow timeout), it is considered abandoned -> lock stolen.
+ *     2. If the lock is older than eight times TEST_MUTEX_STALE_MS, it is
+ *        reclaimed anyway: a PID that old is far more likely to have been
+ *        recycled by an unrelated long-lived process than to be a real run.
+ *     3. A lock with no usable PID is reclaimed once it is older than
+ *        TEST_MUTEX_STALE_MS.
  * - Concurrency policy:
  *     1. Default non-blocking mode: second process is observably rejected immediately
  *        with exit code 75 (EX_TEMPFAIL / lock busy) and actionable error diagnostics
@@ -40,6 +43,12 @@ const root = path.resolve(import.meta.dirname, '..');
 export const DEFAULT_LOCK_DIR = path.join(root, '.test-mutex');
 
 const STALE_MS = Number(process.env.TEST_MUTEX_STALE_MS) || 30 * 60 * 1000;
+// A live PID is trusted without an age limit during a normal run, but not
+// forever: a recycled PID would otherwise pin the lock until someone deletes
+// the directory by hand. Eight stale windows (four hours by default) stays
+// above the evidence script's three-hour cap, so a real full run is never
+// cut off, while a recycled PID still recovers without manual cleanup.
+const HARD_STALE_FACTOR = 8;
 const WAIT_TIMEOUT_MS = Number(process.env.TEST_MUTEX_TIMEOUT_MS) || 300 * 1000;
 const POLL_INTERVAL_MS = Number(process.env.TEST_MUTEX_POLL_MS) || 500;
 
@@ -76,14 +85,17 @@ export function isLockStale(lockDir = DEFAULT_LOCK_DIR, maxAgeMs = STALE_MS) {
   const now = Date.now();
   const age = info && info.createdAt ? now - Number(info.createdAt) : maxAgeMs + 1;
   // A live holder owns the lock no matter how old it is. A full two-project run
-  // lasts longer than the 30-minute age window (ticket #131), so age alone would
-  // hand a running suite's lock to a second run — two Playwright runs on the same
-  // dist/ and browser state, which is exactly what this mutex exists to prevent.
-  // Age stays as the fallback for a lock with no usable PID (readLockInfo's
-  // metadata-less fallback), which still needs reclaiming.
+  // lasts longer than the 30-minute age window, so age alone would hand a
+  // running suite's lock to a second run — two Playwright runs on the same
+  // dist/ and browser state, which is exactly what this mutex exists to
+  // prevent. Age stays as the fallback for a lock with no usable PID
+  // (readLockInfo's metadata-less fallback), which still needs reclaiming.
   if (info && typeof info.pid === 'number') {
     if (!isPidAlive(info.pid)) {
       return { stale: true, reason: 'holding PID ' + info.pid + ' is dead', info };
+    }
+    if (age > maxAgeMs * HARD_STALE_FACTOR) {
+      return { stale: true, reason: 'age ' + Math.round(age / 1000) + 's exceeds the hard cap', info };
     }
     return { stale: false, age, info };
   }
