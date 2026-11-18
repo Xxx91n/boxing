@@ -47,7 +47,7 @@ function launch(profile: string): Promise<BrowserContext> {
 
 // The worker can be torn down and replaced while a test runs, so always read the
 // live one instead of pinning the first handle.
-async function worker(ctx: BrowserContext): Promise<Worker> {
+async function waitForWorker(ctx: BrowserContext): Promise<Worker> {
   for (let i = 0; i < 80; i++) {
     const live = ctx.serviceWorkers()[0];
     if (live) return live;
@@ -128,7 +128,7 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-131-fresh-'));
     const ctx = await launch(profile);
     try {
-      const sw = await worker(ctx);
+      const sw = await waitForWorker(ctx);
       const manifest = await sw.evaluate(() => chrome.runtime.getManifest());
 
       // The real runtime manifest, not the source file: Chrome keeps
@@ -158,7 +158,7 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'boxing-131-alarm-'));
     const ctx = await launch(profile);
     try {
-      let sw = await worker(ctx);
+      let sw = await waitForWorker(ctx);
       const page = await openNtp(ctx);
 
       // Real content, created through the app's own entry point, so the worker
@@ -213,7 +213,7 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
       expect(afterAlarm.state.local.lastSuccessAt).toBeGreaterThan(firstSuccess);
 
       // ── the off switch is immediate and honest ──────────────────────────────
-      const back = await openNtp(ctx);
+      const reopened = await openNtp(ctx);
       // Opening the page sends `auto-backup-ensure` asynchronously, which puts the
       // periodic alarm back. Wait for it before testing the switch: otherwise
       // "no alarm after off" passes simply because the alarm never came back.
@@ -222,7 +222,7 @@ test.describe('Ticket 131 - release gate in the loaded Chrome build', () => {
         return s.alarms.find((a) => a.name === ALARM)?.periodInMinutes;
       }, { timeout: 30000, message: 'the periodic alarm must exist before the off switch is tested' })
         .toBe(60);
-      const off = await back.evaluate(async () =>
+      const off = await reopened.evaluate(async () =>
         await (globalThis as any).chrome.runtime.sendMessage({
           type: 'auto-backup-configure', optIn: false, intervalSec: 0,
         }));

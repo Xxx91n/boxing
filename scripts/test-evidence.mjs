@@ -34,6 +34,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const NL = String.fromCharCode(10);
 const CONFIG_REL = "test/playwright.config.ts";
 const RUN_TIMEOUT_MS = Number(process.env.EVIDENCE_TIMEOUT_MS) || 180 * 60 * 1000;
+// Keep this below test-mutex's hard stale cap (8 x TEST_MUTEX_STALE_MS by
+// default): a run that outlives its own lock has the lock reclaimed under it.
+const REPORT_READ_TIMEOUT_MS = 10000;
 
 function sh(cmd, args, opts) {
   const o = opts || {};
@@ -212,7 +215,7 @@ function main() {
       ? configuredWorkers + (process.env.CI ? " (CI)" : " (config)")
       : "?";
 
-  const report = readJsonReport(jsonOut, 10000);
+  const report = readJsonReport(jsonOut, REPORT_READ_TIMEOUT_MS);
   if (!report) {
     console.error("[test-evidence] playwright json report missing — the run failed before reporting (exit " + exitCode + ")" +
       (timedOut ? "; it was cut off by the timeout above" : ""));
