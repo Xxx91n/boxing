@@ -39,8 +39,13 @@ const CONFIG_REL = "test/playwright.config.ts";
 // cannot drift from the lock's real behaviour.
 const LOCK_CAP_MS = hardStaleCapMs();
 const envTimeout = Number(process.env.EVIDENCE_TIMEOUT_MS);
+if (Number.isFinite(envTimeout) && envTimeout > 0 && envTimeout < 60 * 1000) {
+  console.error("[test-evidence] EVIDENCE_TIMEOUT_MS is in milliseconds; " + envTimeout +
+    "ms is under a minute. Did you mean minutes?");
+}
 const RUN_TIMEOUT_MS = Number.isFinite(envTimeout) && envTimeout > 0 ? envTimeout : 180 * 60 * 1000;
-// CI bypasses test-mutex entirely, so there is no lock to outlive there.
+// In CI test-mutex bypasses the lock entirely, so the cap only applies to
+// local runs (which pass --no-wait above and therefore queue for nothing).
 if (!process.env.CI && RUN_TIMEOUT_MS > LOCK_CAP_MS) {
   console.error("[test-evidence] EVIDENCE_TIMEOUT_MS (" + Math.round(RUN_TIMEOUT_MS / 60000) +
     " min) is longer than test-mutex's lock cap (" + Math.round(LOCK_CAP_MS / 60000) +
