@@ -38,8 +38,10 @@ const CONFIG_REL = "test/playwright.config.ts";
 // cap comes from test-mutex itself (env vars included), so the check below
 // cannot drift from the lock's real behaviour.
 const LOCK_CAP_MS = hardStaleCapMs();
-const RUN_TIMEOUT_MS = Number(process.env.EVIDENCE_TIMEOUT_MS) || 180 * 60 * 1000;
-if (RUN_TIMEOUT_MS > LOCK_CAP_MS) {
+const envTimeout = Number(process.env.EVIDENCE_TIMEOUT_MS);
+const RUN_TIMEOUT_MS = Number.isFinite(envTimeout) && envTimeout > 0 ? envTimeout : 180 * 60 * 1000;
+// CI bypasses test-mutex entirely, so there is no lock to outlive there.
+if (!process.env.CI && RUN_TIMEOUT_MS > LOCK_CAP_MS) {
   console.error("[test-evidence] EVIDENCE_TIMEOUT_MS (" + Math.round(RUN_TIMEOUT_MS / 60000) +
     " min) is longer than test-mutex's lock cap (" + Math.round(LOCK_CAP_MS / 60000) +
     " min); a long run would lose its lock mid-suite.");
@@ -184,7 +186,7 @@ function main() {
   const git = gitInfo();
   const startedAt = new Date();
 
-  const run = sh("node", ["scripts/test-mutex.mjs", "playwright", "test", `--config=${CONFIG_REL}`, "--reporter=json", ...extra], {
+  const run = sh("node", ["scripts/test-mutex.mjs", "--no-wait", "playwright", "test", `--config=${CONFIG_REL}`, "--reporter=json", ...extra], {
     inherit: true,
     env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut },
   });
@@ -199,7 +201,8 @@ function main() {
     console.error("[test-evidence] wait for them to exit (or stop them by hand) before rerunning, or raise EVIDENCE_TIMEOUT_MS.");
     // A timed-out run has no trustworthy verdict. Even a complete-looking
     // report would describe a run that was cut off, so do not emit evidence.
-    process.exit(1);
+    // 124 is the usual "timed out" code, distinct from a test failure (1).
+    process.exit(124);
   }
 
   // Workers label: reflect a --workers passthrough when present, else the

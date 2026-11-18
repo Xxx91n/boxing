@@ -43,21 +43,31 @@ import process from 'node:process';
 const root = path.resolve(import.meta.dirname, '..');
 export const DEFAULT_LOCK_DIR = path.join(root, '.test-mutex');
 
-const STALE_MS = Number(process.env.TEST_MUTEX_STALE_MS) || 30 * 60 * 1000;
+// Numeric env vars are read here once. A typo, a negative value or NaN must
+// fall back to the documented default instead of sticking a broken timeout
+// into the lock math (age > NaN is always false, so the lock would never cap).
+function positiveEnvMs(name, fallback) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+const STALE_MS = positiveEnvMs('TEST_MUTEX_STALE_MS', 30 * 60 * 1000);
 // A live PID is trusted without an age limit during a normal run, but not
 // forever: a recycled PID would otherwise pin the lock until someone deletes
 // the directory by hand. The hard cap is the larger of eight stale windows and
 // a four-hour floor, so lowering TEST_MUTEX_STALE_MS cannot move the cap below
 // a realistic full run. Override the floor with TEST_MUTEX_HARD_STALE_MS.
 const HARD_STALE_FACTOR = 8;
-const HARD_STALE_FLOOR_MS = Number(process.env.TEST_MUTEX_HARD_STALE_MS) || 4 * 60 * 60 * 1000;
+const HARD_STALE_FLOOR_MS = positiveEnvMs('TEST_MUTEX_HARD_STALE_MS', 4 * 60 * 60 * 1000);
 
 export function hardStaleCapMs(maxAgeMs = STALE_MS) {
   return Math.max(maxAgeMs * HARD_STALE_FACTOR, HARD_STALE_FLOOR_MS);
 }
 
-const WAIT_TIMEOUT_MS = Number(process.env.TEST_MUTEX_TIMEOUT_MS) || 300 * 1000;
-const POLL_INTERVAL_MS = Number(process.env.TEST_MUTEX_POLL_MS) || 500;
+const WAIT_TIMEOUT_MS = positiveEnvMs('TEST_MUTEX_TIMEOUT_MS', 300 * 1000);
+const POLL_INTERVAL_MS = positiveEnvMs('TEST_MUTEX_POLL_MS', 500);
 
 export function isPidAlive(pid) {
   if (typeof pid !== 'number' || !Number.isInteger(pid) || pid <= 0) return false;
