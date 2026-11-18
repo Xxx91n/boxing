@@ -41,7 +41,8 @@ const LOCK_CAP_MS = hardStaleCapMs();
 const envTimeout = Number(process.env.EVIDENCE_TIMEOUT_MS);
 if (Number.isFinite(envTimeout) && envTimeout > 0 && envTimeout < 60 * 1000) {
   console.error("[test-evidence] EVIDENCE_TIMEOUT_MS is in milliseconds; " + envTimeout +
-    "ms is under a minute. Did you mean minutes?");
+    "ms is under a minute. Did you mean minutes? Refusing to run.");
+  process.exit(2);
 }
 const RUN_TIMEOUT_MS = Number.isFinite(envTimeout) && envTimeout > 0 ? envTimeout : 180 * 60 * 1000;
 // In CI test-mutex bypasses the lock entirely, so the cap only applies to

@@ -43,18 +43,23 @@ import process from 'node:process';
 const root = path.resolve(import.meta.dirname, '..');
 export const DEFAULT_LOCK_DIR = path.join(root, '.test-mutex');
 
+const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename);
+
 // Numeric env vars are read here once. A typo, a negative value or NaN must
 // fall back to the documented default instead of sticking a broken timeout
 // into the lock math (age > NaN is always false, so the lock would never cap).
-// Say so on stderr when that happens, rather than silently ignoring the value.
+// Only the CLI says so on stderr: importers (verify, evidence) just read the
+// computed cap and must not add noise to their own output.
 // `allowZero` is for knobs where 0 has a real meaning (a zero wait timeout).
 function envMs(name, fallback, allowZero) {
   const raw = process.env[name];
   if (raw === undefined || raw === '') return fallback;
   const n = Number(raw);
   if (Number.isFinite(n) && (allowZero ? n >= 0 : n > 0)) return n;
-  console.error('[test-mutex] ' + name + '="' + raw + '" is not a ' +
-    (allowZero ? 'non-negative' : 'positive') + ' number; using default ' + fallback + 'ms');
+  if (isDirectExecution) {
+    console.error('[test-mutex] ' + name + '="' + raw + '" is not a ' +
+      (allowZero ? 'non-negative' : 'positive') + ' number; using default ' + fallback + 'ms');
+  }
   return fallback;
 }
 
@@ -206,8 +211,6 @@ export function releaseLock(lockDir = DEFAULT_LOCK_DIR) {
 }
 
 // CLI execution path
-const isDirectExecution = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.filename);
-
 if (isDirectExecution) {
   let rawArgs = process.argv.slice(2);
   const lockDir = process.env.TEST_MUTEX_DIR ? path.resolve(process.env.TEST_MUTEX_DIR) : DEFAULT_LOCK_DIR;
