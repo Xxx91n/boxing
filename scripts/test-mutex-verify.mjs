@@ -70,7 +70,7 @@ try {
   }), 'utf8');
 
   const moduleUrl = pathToFileURL(path.join(root, 'scripts', 'test-mutex.mjs')).href;
-  const { isLockStale, acquireLock, releaseLock, readLockInfo } = await import(moduleUrl);
+  const { isLockStale, acquireLock, releaseLock, readLockInfo, hardStaleCapMs } = await import(moduleUrl);
   const staleCheck = isLockStale(testLockDir);
   assert.strictEqual(staleCheck.stale, true, 'dead PID must be marked stale');
 
@@ -111,13 +111,13 @@ try {
   console.log('  PASS: long-running live holder keeps its lock');
 
   // A live PID is not proof of ownership forever: the OS can hand that number
-  // to an unrelated process, and then the lock would never expire. The hard
-  // cap (8x the stale window) exists to break exactly that case.
+  // to an unrelated process, and then the lock would never expire. The hard cap
+  // (8 stale windows or 4 hours, whichever is longer) breaks that case.
   console.log('[mutex-verify] 3c. Testing a recycled PID past the hard cap is reclaimed...');
   mkdirSync(testLockDir);
   writeFileSync(path.join(testLockDir, 'lock.json'), JSON.stringify({
     pid: process.pid,
-    createdAt: Date.now() - 5 * 60 * 60 * 1000,
+    createdAt: Date.now() - hardStaleCapMs() - 60 * 1000,
     command: 'recycled-pid'
   }), 'utf8');
 

@@ -29,13 +29,23 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { hardStaleCapMs } from "./test-mutex.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const NL = String.fromCharCode(10);
 const CONFIG_REL = "test/playwright.config.ts";
-// Keep this below test-mutex's hard stale cap (8 x TEST_MUTEX_STALE_MS by
-// default): a run that outlives its own lock has the lock reclaimed under it.
+// A run that outlives its own lock can have the lock reclaimed under it. The
+// cap comes from test-mutex itself (env vars included), so the check below
+// cannot drift from the lock's real behaviour.
+const LOCK_CAP_MS = hardStaleCapMs();
 const RUN_TIMEOUT_MS = Number(process.env.EVIDENCE_TIMEOUT_MS) || 180 * 60 * 1000;
+if (RUN_TIMEOUT_MS > LOCK_CAP_MS) {
+  console.error("[test-evidence] EVIDENCE_TIMEOUT_MS (" + Math.round(RUN_TIMEOUT_MS / 60000) +
+    " min) is longer than test-mutex's lock cap (" + Math.round(LOCK_CAP_MS / 60000) +
+    " min); a long run would lose its lock mid-suite.");
+  console.error("[test-evidence] lower EVIDENCE_TIMEOUT_MS or raise TEST_MUTEX_HARD_STALE_MS.");
+  process.exit(2);
+}
 // After the run ends, wait this long for the half-written JSON report to parse.
 const REPORT_READ_TIMEOUT_MS = 10000;
 
@@ -55,21 +65,10 @@ function sh(cmd, args, opts) {
 }
 
 // spawnSync stops only the process it started: here that is test-mutex, whose
-// child is Playwright, whose children are browsers. Killing the middle process
-// leaves the tree running, and the next run then collides with it. Stop the
-// whole tree where the OS offers it, and report what actually happened.
-function killProcessTree(pid) {
-  if (!pid) return false;
-  try {
-    if (process.platform === "win32") {
-      return spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" }).status === 0;
-    }
-    process.kill(pid, "SIGKILL");
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
+// child is Playwright, whose children are browsers. Once spawnSync returns
+// from a timeout the direct child is already gone, so there is no reliable
+// handle on the grandchildren (and a bare PID may already have been recycled).
+// Do not pretend to clean them up; the caller warns instead.
 
 // A single read can land on a half-written or empty file, and the parse error
 // then aborts the script before its own exit code is reported. Retry briefly
@@ -195,14 +194,12 @@ function main() {
   // of letting the next run trip over an old Playwright that is still going.
   const timedOut = Boolean(run.error && run.error.code === "ETIMEDOUT");
   if (timedOut) {
-    const killed = killProcessTree(run.pid);
     console.error("[test-evidence] the run hit the " + Math.round(RUN_TIMEOUT_MS / 60000) + "-minute limit.");
-    console.error("[test-evidence] test-mutex was stopped" + (killed
-      ? "; its Playwright and browser descendants were killed too."
-      : "; Playwright and browser child processes may still be running."));
-    if (!killed) {
-      console.error("[test-evidence] wait for the leftover run to exit (or stop it by hand) before rerunning, or raise EVIDENCE_TIMEOUT_MS.");
-    }
+    console.error("[test-evidence] the wrapped process was stopped, but its Playwright and browser descendants may still be running.");
+    console.error("[test-evidence] wait for them to exit (or stop them by hand) before rerunning, or raise EVIDENCE_TIMEOUT_MS.");
+    // A timed-out run has no trustworthy verdict. Even a complete-looking
+    // report would describe a run that was cut off, so do not emit evidence.
+    process.exit(1);
   }
 
   // Workers label: reflect a --workers passthrough when present, else the
@@ -218,8 +215,7 @@ function main() {
 
   const report = readJsonReport(jsonOut, REPORT_READ_TIMEOUT_MS);
   if (!report) {
-    console.error("[test-evidence] playwright json report missing — the run failed before reporting (exit " + exitCode + ")" +
-      (timedOut ? "; it was cut off by the timeout above" : ""));
+    console.error("[test-evidence] playwright json report missing — the run failed before reporting (exit " + exitCode + ")");
     process.exit(exitCode || 1);
   }
   try { fs.unlinkSync(jsonOut); } catch (e) { /* temp cleanup best-effort */ }

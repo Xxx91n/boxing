@@ -13,9 +13,10 @@
  * - Stale lock recovery:
  *     1. If the recorded PID is no longer running (process.kill(pid, 0) fails
  *        with ESRCH), the previous holder died uncleanly -> lock stolen.
- *     2. If the lock is older than eight times TEST_MUTEX_STALE_MS, it is
- *        reclaimed anyway: a PID that old is far more likely to have been
- *        recycled by an unrelated long-lived process than to be a real run.
+ *     2. If the lock is older than eight stale windows or four hours,
+ *        whichever is longer, it is reclaimed anyway: a PID that old is far
+ *        more likely to have been recycled by an unrelated long-lived process
+ *        than to be a real run.
  *     3. A lock with no usable PID is reclaimed once it is older than
  *        TEST_MUTEX_STALE_MS.
  * - Concurrency policy:
@@ -45,10 +46,16 @@ export const DEFAULT_LOCK_DIR = path.join(root, '.test-mutex');
 const STALE_MS = Number(process.env.TEST_MUTEX_STALE_MS) || 30 * 60 * 1000;
 // A live PID is trusted without an age limit during a normal run, but not
 // forever: a recycled PID would otherwise pin the lock until someone deletes
-// the directory by hand. Eight stale windows (four hours by default) stays
-// above the evidence script's three-hour cap, so a real full run is never
-// cut off, while a recycled PID still recovers without manual cleanup.
+// the directory by hand. The hard cap is the larger of eight stale windows and
+// a four-hour floor, so lowering TEST_MUTEX_STALE_MS cannot move the cap below
+// a realistic full run. Override the floor with TEST_MUTEX_HARD_STALE_MS.
 const HARD_STALE_FACTOR = 8;
+const HARD_STALE_FLOOR_MS = Number(process.env.TEST_MUTEX_HARD_STALE_MS) || 4 * 60 * 60 * 1000;
+
+export function hardStaleCapMs(maxAgeMs = STALE_MS) {
+  return Math.max(maxAgeMs * HARD_STALE_FACTOR, HARD_STALE_FLOOR_MS);
+}
+
 const WAIT_TIMEOUT_MS = Number(process.env.TEST_MUTEX_TIMEOUT_MS) || 300 * 1000;
 const POLL_INTERVAL_MS = Number(process.env.TEST_MUTEX_POLL_MS) || 500;
 
@@ -94,8 +101,9 @@ export function isLockStale(lockDir = DEFAULT_LOCK_DIR, maxAgeMs = STALE_MS) {
     if (!isPidAlive(info.pid)) {
       return { stale: true, reason: 'holding PID ' + info.pid + ' is dead', info };
     }
-    if (age > maxAgeMs * HARD_STALE_FACTOR) {
-      return { stale: true, reason: 'age ' + Math.round(age / 1000) + 's exceeds the hard cap', info };
+    const hardCap = hardStaleCapMs(maxAgeMs);
+    if (age > hardCap) {
+      return { stale: true, reason: 'age ' + Math.round(age / 1000) + 's exceeds the hard cap of ' + Math.round(hardCap / 60000) + ' min', info };
     }
     return { stale: false, age, info };
   }
