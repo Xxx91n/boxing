@@ -5,13 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project used SemVer until v3.7.0, then switched to CalVer (YYYY.M.D) starting v2026.8.21.
 
-## [Unreleased]
+## [2026.11.19] - 2026-11-19
 
 ### Fixed
 - **Background auto-backup rides out a short outage, and stops the moment you turn it off** — a dropped connection or timeout gets at most three extra attempts, about 5, 15 and 60 minutes after each failure (never earlier than the server's `Retry-After`), then back to your chosen interval. Conflicts, rejected credentials, missing permission, a changed target and an unconfirmed upload never retry on their own and keep a plain-language reason. Turning auto-backup off now stops the upload in flight instead of waiting behind it; a confirmed upload, a definite miss and an unknown result are each saved as what they really are, and a file whose result was unknown is checked again before anything can overwrite it.
 
 ### Changed
 - **Box titles are native text fields now** — the large-box title, the small-box title and the title on the inner page are single-line inputs instead of editable spans. The first click still selects the whole name, the second click drops the caret exactly where you clicked, and Enter / Esc / clicking away still commit, cancel or save as before. Pasting keeps plain text only (line breaks become spaces), and an empty title falls back to that box type's default name.
+
+### Internal
+- Added a loaded-build Chromium release-gate lane that runs the real `dist/boxing-chrome` with a real MV3 service worker and no NTP page; `docs/release-gate-2026.11.md` maps spec #120 D1–D7 / T1–T5 to their evidence.
+- `docs/firefox-release-checklist.md` section 7 now covers the background alarm, revoked permission, cloud failure, bounded retry, restart catch-up and the data boundary.
+- `scripts/test-evidence.mjs` rejects a half-written JSON report and exits 124 on timeout; `scripts/test-mutex.mjs` keeps a live lock past the old 30-minute age window and reclaims a recycled PID after a hard cap.
 
 ## [2026.11.1] - 2026-11-01
 
