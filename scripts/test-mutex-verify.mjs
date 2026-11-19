@@ -70,7 +70,7 @@ try {
   }), 'utf8');
 
   const moduleUrl = pathToFileURL(path.join(root, 'scripts', 'test-mutex.mjs')).href;
-  const { isLockStale, acquireLock, releaseLock, readLockInfo } = await import(moduleUrl);
+  const { isLockStale, acquireLock, releaseLock, readLockInfo, hardStaleCapMs } = await import(moduleUrl);
   const staleCheck = isLockStale(testLockDir);
   assert.strictEqual(staleCheck.stale, true, 'dead PID must be marked stale');
 
@@ -88,6 +88,47 @@ try {
   releaseLock(testLockDir);
   assert(!existsSync(testLockDir), 'lock directory must be deleted on release');
   console.log('  PASS: dead PID stale lock recovered and released');
+
+  // A full two-project run outlasts the 30-minute age window, so a live holder
+  // must keep its lock past it; otherwise a second run steals it mid-suite.
+  // Age-only reclaim survives for metadata-less locks only.
+  console.log('[mutex-verify] 3b. Testing a live holder past the age window keeps the lock...');
+  mkdirSync(testLockDir);
+  writeFileSync(path.join(testLockDir, 'lock.json'), JSON.stringify({
+    pid: process.pid,
+    createdAt: Date.now() - 45 * 60 * 1000,
+    command: 'long-running-suite'
+  }), 'utf8');
+
+  const agedLive = isLockStale(testLockDir);
+  assert.strictEqual(agedLive.stale, false, 'a live holder must not be stale just because the lock is old');
+  const steal = acquireLock(testLockDir);
+  assert.strictEqual(steal.ok, false, 'a second acquire must not steal a long-running live holder');
+  assert.strictEqual(steal.busy, true, 'a stolen attempt would report busy instead');
+
+  releaseLock(testLockDir);
+  assert(!existsSync(testLockDir), 'the long-running lock must be released and deleted');
+  console.log('  PASS: long-running live holder keeps its lock');
+
+  // A live PID is not proof of ownership forever: the OS can hand that number
+  // to an unrelated process, and then the lock would never expire. The hard cap
+  // (8 stale windows or 4 hours, whichever is longer) breaks that case.
+  console.log('[mutex-verify] 3c. Testing a recycled PID past the hard cap is reclaimed...');
+  mkdirSync(testLockDir);
+  writeFileSync(path.join(testLockDir, 'lock.json'), JSON.stringify({
+    pid: process.pid,
+    createdAt: Date.now() - hardStaleCapMs() - 60 * 1000,
+    command: 'recycled-pid'
+  }), 'utf8');
+
+  const recycled = isLockStale(testLockDir);
+  assert.strictEqual(recycled.stale, true, 'a live PID older than the hard cap must be treated as recycled');
+  const reclaimed = acquireLock(testLockDir, { test: 'hard-cap' });
+  assert.strictEqual(reclaimed.ok, true, 'a recycled-PID lock must be reclaimable');
+  assert.strictEqual(reclaimed.recovered, true, 'acquire should report recovered=true');
+  releaseLock(testLockDir);
+  assert(!existsSync(testLockDir), 'the reclaimed lock must be released and deleted');
+  console.log('  PASS: recycled PID past the hard cap reclaimed');
 
   // Probe payload: writes marker, exits 0. Real execution target for tests 4/5.
   const probeLines = [
@@ -160,7 +201,7 @@ try {
   assert(existsSync(testLockDir), 'CI bypass must not touch the held lock directory');
   console.log('  PASS: CI bypass executes directly without acquiring the local mutex');
 
-  console.log('\n[mutex-verify] ALL 5 PROGRAMMATIC TESTS PASSED VERIFIED.');
+  console.log('\n[mutex-verify] ALL PROGRAMMATIC TESTS PASSED VERIFIED.');
 } finally {
   clean();
 }

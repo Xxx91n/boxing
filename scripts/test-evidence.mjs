@@ -29,10 +29,33 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { hardStaleCapMs } from "./test-mutex.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const NL = String.fromCharCode(10);
 const CONFIG_REL = "test/playwright.config.ts";
+// A run that outlives its own lock can have the lock reclaimed under it. The
+// cap comes from test-mutex itself (env vars included), so the check below
+// cannot drift from the lock's real behaviour.
+const LOCK_CAP_MS = hardStaleCapMs();
+const envTimeout = Number(process.env.EVIDENCE_TIMEOUT_MS);
+if (Number.isFinite(envTimeout) && envTimeout > 0 && envTimeout < 60 * 1000) {
+  console.error("[test-evidence] EVIDENCE_TIMEOUT_MS is in milliseconds; " + envTimeout +
+    "ms is under a minute. Did you mean minutes? Refusing to run.");
+  process.exit(2);
+}
+const RUN_TIMEOUT_MS = Number.isFinite(envTimeout) && envTimeout > 0 ? envTimeout : 180 * 60 * 1000;
+// In CI test-mutex bypasses the lock entirely, so the cap only applies to
+// local runs (which pass --no-wait above and therefore queue for nothing).
+if (!process.env.CI && RUN_TIMEOUT_MS > LOCK_CAP_MS) {
+  console.error("[test-evidence] EVIDENCE_TIMEOUT_MS (" + Math.round(RUN_TIMEOUT_MS / 60000) +
+    " min) is longer than test-mutex's lock cap (" + Math.round(LOCK_CAP_MS / 60000) +
+    " min); a long run would lose its lock mid-suite.");
+  console.error("[test-evidence] lower EVIDENCE_TIMEOUT_MS or raise TEST_MUTEX_HARD_STALE_MS.");
+  process.exit(2);
+}
+// After the run ends, wait this long for the half-written JSON report to parse.
+const REPORT_READ_TIMEOUT_MS = 10000;
 
 function sh(cmd, args, opts) {
   const o = opts || {};
@@ -41,9 +64,62 @@ function sh(cmd, args, opts) {
     encoding: "utf8",
     stdio: o.inherit ? "inherit" : ["ignore", "pipe", "pipe"],
     env: o.env,
-    timeout: o.timeout || 30 * 60 * 1000,
+    // A full two-project run takes about an hour on a busy desktop. Cutting it
+    // off earlier leaves Playwright mid-write, so the report looks missing even
+    // when the suite was fine. Raise it with EVIDENCE_TIMEOUT_MS.
+    timeout: o.timeout || RUN_TIMEOUT_MS,
   });
   return r;
+}
+
+// spawnSync stops only the process it started: here that is test-mutex, whose
+// child is Playwright, whose children are browsers. Once spawnSync returns
+// from a timeout the direct child is already gone, so there is no reliable
+// handle on the grandchildren (and a bare PID may already have been recycled).
+// Do not pretend to clean them up; the caller warns instead.
+
+// A single read can land on a half-written or empty file, and the parse error
+// then aborts the script before its own exit code is reported. Retry briefly
+// until the payload parses; a genuinely missing report still ends as "missing"
+// with the run's exit code preserved.
+function readJsonReport(file, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
+  for (;;) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+      // Playwright writes the report in one shot when the run ends. A payload
+      // without a suites array is a half-written file, not a finished run;
+      // returning it would silently count zero tests, which is worse than
+      // failing loudly.
+      if (Array.isArray(parsed.suites)) return parsed;
+      lastError = new Error("report has no suites array");
+    } catch (e) {
+      lastError = e;
+    }
+    if (Date.now() >= deadline) break;
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+  }
+  if (lastError && lastError.code !== "ENOENT") {
+    console.error("[test-evidence] report unreadable: " + lastError.message);
+  }
+  return null;
+}
+
+// Local runs follow the config's fixed worker cap. The old label hardcoded
+// "4 (local)" and contradicted the config, which defeats the point of a
+// machine-readable block — read the value instead.
+function configWorkers() {
+  try {
+    // Strip // comments first, same as headedStates() below: a commented-out
+    // "// workers: 4" must never win.
+    const text = fs.readFileSync(path.join(ROOT, CONFIG_REL), "utf8")
+      .split("\n").map((l) => l.replace(/\/\/.*$/, "")).join("\n");
+    const m = /^\s*workers:\s*(\d+)/m.exec(text);
+    return m ? m[1] : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 function gitInfo() {
@@ -116,24 +192,41 @@ function main() {
   const git = gitInfo();
   const startedAt = new Date();
 
-  const run = sh("node", ["scripts/test-mutex.mjs", "playwright", "test", `--config=${CONFIG_REL}`, "--reporter=json", ...extra], {
+  const run = sh("node", ["scripts/test-mutex.mjs", "--no-wait", "playwright", "test", `--config=${CONFIG_REL}`, "--reporter=json", ...extra], {
     inherit: true,
     env: { ...process.env, PLAYWRIGHT_JSON_OUTPUT_FILE: jsonOut },
   });
   const exitCode = run.status === null ? 1 : run.status;
+  // A timeout is not "the report went missing": it means the wrapped run was
+  // cut off, and its descendants may still be alive. Say that plainly instead
+  // of letting the next run trip over an old Playwright that is still going.
+  const timedOut = Boolean(run.error && run.error.code === "ETIMEDOUT");
+  if (timedOut) {
+    console.error("[test-evidence] the run hit the " + Math.round(RUN_TIMEOUT_MS / 60000) + "-minute limit.");
+    console.error("[test-evidence] the wrapped process was stopped, but its Playwright and browser descendants may still be running.");
+    console.error("[test-evidence] wait for them to exit (or stop them by hand) before rerunning, or raise EVIDENCE_TIMEOUT_MS.");
+    // A timed-out run has no trustworthy verdict. Even a complete-looking
+    // report would describe a run that was cut off, so do not emit evidence.
+    // 124 is the usual "timed out" code, distinct from a test failure (1).
+    process.exit(124);
+  }
 
   // Workers label: reflect a --workers passthrough when present, else the
-  // config policy (CI?2:4) — the block must not contradict the args echo.
+  // config's own cap. CI no longer hardcodes a number — that is exactly how the
+  // old "4 (local)" label drifted away from the config.
   const wIdx = extra.findIndex((a) => a === "--workers" || a.startsWith("--workers="));
+  const configuredWorkers = configWorkers();
   const workersLabel = wIdx >= 0
     ? (extra[wIdx].includes("=") ? extra[wIdx].split("=")[1] : extra[wIdx + 1] || "?") + " (arg)"
-    : process.env.CI ? "2 (CI)" : "4 (local)";
+    : configuredWorkers
+      ? configuredWorkers + (process.env.CI ? " (CI)" : " (config)")
+      : "?";
 
-  if (!fs.existsSync(jsonOut)) {
-    console.error("[test-evidence] playwright json report missing — run failed before reporting (exit " + exitCode + ")");
+  const report = readJsonReport(jsonOut, REPORT_READ_TIMEOUT_MS);
+  if (!report) {
+    console.error("[test-evidence] playwright json report missing — the run failed before reporting (exit " + exitCode + ")");
     process.exit(exitCode || 1);
   }
-  const report = JSON.parse(fs.readFileSync(jsonOut, "utf8"));
   try { fs.unlinkSync(jsonOut); } catch (e) { /* temp cleanup best-effort */ }
 
   const acc = walkSpecs({ specs: [], suites: report.suites || [] }, null, {});

@@ -137,6 +137,12 @@ npx web-ext lint --source-dir dist/boxing-firefox/release/firefox/boxing
 7. **Firefox 人工核验（发行门禁，治理 #68 决议 B，#69 落地）**：上传 `boxing-firefox-<ver>.zip` 前，
    执行并记录 `docs/firefox-release-checklist.md`；任一步失败 = 阻塞。
    CI 绿**不构成 Firefox 证据**——CI 的 `firefox-extension` lane 不装插件。
+8. **整轮改造的发布门槛报告**：标题输入框迁移 + 后台自动备份（spec #120）这一轮，
+   发行前按 `docs/release-gate-2026.11.md` 对一遍。报告里标 🟡 的人工项没做完，
+   或者 ⛔ 项还在，就不算通过，别拿"CI 全绿"顶上去。
+   5.7 那个「验收的 zip 和发布的 zip 是不是同一份」还没拍板：按现在的流程，验收通常
+   发生在 Release 公开之后，只能用来决定要不要撤回或补发，不能写成发布前已通过。
+   发布负责人要么接受这个顺序并在发行记录里签字，要么先把流程改成 draft 先验再发。
 
 ## 附录 — 发行检查单模板（原 WORKFLOW §4.4）
 

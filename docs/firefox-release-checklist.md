@@ -3,19 +3,24 @@
 > 来源：治理决议 #68（B — 声明局限并人工门控）；落地票 #69。
 >
 > **为什么需要这份清单**：CI 的 `firefox-extension` Playwright 项目不安装插件，所有
-> 「实际扩展构建」断言只在 Chromium lane 运行（每个 OS job 有 5 条
-> `the loaded build is a chromium lane` skip）。CI 绿**不构成 Firefox 证据**；
+> 「实际扩展构建」断言只在 Chromium lane 运行（那些用例在 Firefox lane 上按
+> `the loaded build is a chromium lane` 跳过，条数会随票增加，别按老数字记）。
+> CI 绿**不构成 Firefox 证据**；
 > Firefox 侧实际构建验证由本清单人工承担，纳入发行门禁（见
 > `docs/publishing-guide.md`「发版强制规程」）。
 
 ## 执行准备
 
-- [ ] **构建与校验**：从当次 **GitHub Release** 下载**将要上传商店的**
-      `boxing-firefox-<ver>.zip` 及同 Release 的 `SHA256SUMS.txt`，核对校验值并在发行票
-      记录（版本号＋sha256＋CI run URL；证据绑定到实际产物，不是本地重建）。
-      `SHA256SUMS.txt` 只随 Release 发布、不在 build 工件中；若 Release 尚未发布，
-      退取同一 CI run 的 build 工件 zip，本地 `sha256sum` 计算并记录。
-      解压得到的目录即下文「构建目录」。
+- [ ] **构建与校验**：验收对象是**这一次要上传商店的那份 zip**，不是本地重建的，也不是
+      另一次 run 的产物。按当前流程取：
+      - Release 已公开 → 下 `boxing-firefox-<ver>.zip` 和 `SHA256SUMS.txt`，核对并记录版本
+        号、sha256、Release URL。**这意味着验收发生在公开之后**（见下）。
+      - Release 还没公开 → 取**同一次 CI run** 的 build 工件 zip，本地 `sha256sum`，把
+        run URL 和哈希一起记进发行票。
+      两条都必须落进发行票；解压得到的目录即下文「构建目录」。
+      > 验收多半发生在公开之后，因为公开前拿不到最终字节。但这不是「已经定好、不用管」
+      > 的事：发布负责人得明确选一条路——接受公开后验收并在发行记录里签字，或者改成
+      > draft 先验再发。公开后验收只能决定要不要撤回或补发，不能当成发布前的通过证据。
 - [ ] **安装**：按步骤选择加载方式——
       - 第 4 步含**重启核验**：`web-ext run`／`about:debugging` 装的临时扩展重启即被
         卸载；标准发行（`amo_sign=true`）下工件 `.xpi` 未签名，普通发行版 Firefox
@@ -164,10 +169,135 @@ Chrome 侧由该 spec 的 `Ticket 121 - title inputs in the loaded Chrome build`
 - [ ] 显式选「明/暗」：不随 OS；页头快捷切换会在 system 下改为相反有效态的显式偏好。
 - [ ] 重启同一 profile：偏好按保存值恢复。
 
+### 7. 无人值守的自动备份（#124–#130 / spec #120 D2/D3/D5/D6）
+
+来源断言：`boxing-bg-local-auto-backup.spec.ts`、`boxing-webdav-auto-backup.spec.ts`、
+`boxing-gist-first-create.spec.ts`、`boxing-bg-auto-backup-retry.spec.ts` 的 VM 用例，
+以及 Chrome 侧 `boxing-release-gate-loaded-build.spec.ts`（真构建、真后台、零 NTP 页）。
+Firefox 侧这些断言只能在本清单人工做——CI 的 Firefox lane 不装插件，`file://` 页
+更没有后台可言。**这一步没做过，就没有 Firefox 后台证据，发行不放行。**
+
+准备：用专用测试 profile，先在本机起一个自己可控的 WebDAV 服务（或指向一台你能改、
+能停的测试服务器）。**不要拿真实网盘当试验场**，本步会故意制造失败和改地址。
+
+后台状态都在扩展自己的存储里，观察方式：`about:debugging#/runtime/this-firefox`
+→ 本扩展 → 「检查」，在后台页 Console 里执行
+
+```js
+const s = await browser.storage.local.get(null);
+({ keys: Object.keys(s), auto: s.autoBackupState, alarms: await browser.alarms.getAll() });
+```
+
+- [ ] **全新安装，什么都没开**：`keys` 里没有 `autoBackupState`、没有 `snap.v1.*`，
+      `alarms` 为空。等 2 分钟再查一次，仍然没有——默认关闭，零自动上传。
+- [ ] **刚打开开关就备份一次**：设置 → 同步 → 自动备份选「每天」打开。后台页里
+      `auto.local.status` 变 `ok`、`lastSuccessAt` 是刚才的时间，`keys` 里出现
+      `snap.v1.<ts>` 和 `snap.v1.index`，`alarms` 里出现 `boxing-auto-backup`
+      （周期 1440 分钟）。这一步证明「开关打开 ≠ 成功」也证明「开了就立刻试一次」。
+- [ ] **把 WebDAV 目标配好，让自动备份自己建出第一份文件**：设置 → 同步 → 选 WebDAV，
+      填你起的测试服务地址、账号、文件名，先点「测试连接」确认能通。测试服务器上这个
+      路径要**没有文件**。然后到后台页 Console 强制跑一次自动备份：
+      `await browser.alarms.create('boxing-auto-backup', { when: Date.now() + 1000 })`。
+      远端应该真的出现备份文件；后台 `auto.remote.status` 是 `ok`、`remote.lastSuccessAt`
+      有值、`remote.provider` 是 `webdav`，`auto.remote.baseline` 里的 `etag`/`version`
+      都不是空的。**这里别用「立即备份」建第一份文件**：手动写成功只会推进已经存在的
+      可信基线，空目标上手动写出来的文件没有基线，下一轮自动备份看到文件就会按
+      `remote-exists-untrusted` 停下，后面的撤权、断网、条件写全都没法测。
+      **没有这一步，后面看到的"没有上传"都是假绿**：目标都没绑上，后台当然什么都不会试。
+- [ ] **关掉所有 Boxing 页面，照样会备份**：把 NTP 标签全关，只剩这个测试 profile。
+      想马上验证就到后台页 Console 执行
+      `await browser.alarms.create('boxing-auto-backup', { when: Date.now() + 1000 })`。
+      10 秒内再查 `snap.v1.*` 应该多一条、`lastSuccessAt` 前进。**没有任何 NTP 页
+      参与**，这就是后台独立执行的证据。
+- [ ] **重启浏览器只补一次**：把自动备份改成「每小时」，等它跑过一次后彻底退出
+      Firefox，隔一段时间（或把系统时间往后拨过周期）重开同一 profile。重开那一刻
+      后台就会**立刻**补一条（不是等下一个整点），`nextScheduledAt` 顺延一小时；
+      之后走的是正常周期，不是又补一次。**重开后马上数一次就好，别等一小时再数**，
+      否则会把「补做的那条」和「周期到点的那条」加在一起，误判成补了两次。
+- [ ] **多开页面不会多跑**：补做完后同时开两个 NTP 标签，等一个周期，快照只多一条。
+      （后台独占执行，标签数本来就不该影响次数；这一步是确认没有退回页面驱动。）
+- [ ] **关掉开关立刻停**：把开关拨回「关闭」。后台页 `alarms` 里
+      `boxing-auto-backup` 和 `boxing-auto-backup-retry` 都没了，`auto.optIn` 为
+      `false`、`intervalSec` 为 `0`、`auto.local.status` 是 `cancelled`；上次成功的
+      `lastSuccessAt` **还在**，没被抹掉，也不会被改写成一个假的成功。
+      > **测完这一步，把开关重新打开，等它成功一次，再往下走。** 下面几步都要自动备份
+      > 真的在试：开关关着时 alarm 已经清掉，你等一年也不会发生任何事，签出来的结果全是假的。
+- [ ] **权限被收走就不许偷偷发请求**（开关已重新打开）：Firefox 里把本扩展的
+      `https://*/*` 主机权限撤掉（或在 `about:addons` 里关掉站点访问），保持 WebDAV
+      目标不变，等一个周期。
+      设置页必须显示「待授权」一类的原因；后台 `auto.remote.status` 是暂停，
+      `lastErrorCode` 指向权限；**不能出现任何新上传，也不能自己弹授权框**。
+      手动点「测试连接」应能正常发起授权请求，授予后自动路径恢复。
+- [ ] **先把周期拉长，再制造云端故障**（开关已重新打开）：趁服务还正常，把自动备份改成
+      「每天」（1440 分钟），等这次立即备份成功一次。然后**保持地址、账号、文件名一个字
+      都不改**，只把 WebDAV 服务停掉（或拔网线），到后台页 Console 强制跑一次：
+      `await browser.alarms.create('boxing-auto-backup', { when: Date.now() + 1000 })`。
+      本地快照照常有新条目、`auto.local.lastSuccessAt` 前进；`auto.remote.status` 是
+      失败/暂停，`auto.remote.lastSuccessAt` **不动**。设置页两条状态各自独立显示，不是
+      一句笼统「备份失败」。
+      > 这里千万别改地址来制造失败：改地址走的是「目标变了」，那是**直接暂停、一次都
+      > 不重试**的另一条路。混在一起就测不出重试。
+      > 为什么先把周期改成「每天」：周期还是一小时的话，失败后第 60 分钟那个正常周期
+      > 也会真发一次请求、算一次重试，第三次重试会被推到约第 120 分钟。下面按 80 分钟
+      > 看，就会以为第三次没跑。周期拉长，正常周期才不会插进重试窗口。
+- [ ] **有限重试**（开关已重新打开）：看到上一步那次失败的同时**立刻**记下
+      `auto.retry.nextAt`（约 +5 分钟），别先去等整个周期，否则第一次重试早就过去了。
+      之后 `attempt` 从 0 开始涨，`nextAt` 大约落在 +5、+15、+60 分钟（有 ±10% 抖动），
+      最多 3 次，用完回到正常周期，不会无限刷。**这条要盯着后台真跑完三次，约 80 分钟**
+      （周期已经拉成「每天」，正常周期不会插进来）。
+      VM 用例（`boxing-bg-auto-backup-retry.spec.ts`）验的是同一份 `background.js` 的
+      逻辑，能补充细节，但**不能替代"Firefox 后台真的重试了三次并停下"这个证据**。
+      没看完就写"只观察到第 N 次"，这条按**未完成**记，不能签通过。
+      `Retry-After` 这条不在人工清单里搭台子：普通的 WebDAV 服务不会主动吐
+      503/429 + `Retry-After`，要验得临时起个返回该头部的桩服务。要验就写明用了什么桩；
+      不验就在记录里写"Retry-After 未覆盖"，别默认它没问题。
+      鉴权失败（401/403）、地址无效、目标被外部改过这类情况**一次都不重试**，直接
+      带原因暂停。
+- [ ] **换了目标就停手**（开关已重新打开）：把 WebDAV 地址、路径、账号或文件名改一项，
+      等一个周期。
+      后台不会往新目标传、也不会往旧目标继续传；设置页提示需要重新确认。旧服务器上
+      的备份文件**还在**，没有被删除或覆盖。
+- [ ] **先把远端基线恢复回来**：上一步换过目标、前面还停过服务。把服务开起来、把地址/
+      路径/账号/文件名改回原来那组，点「立即备份」成功一次，确认 `auto.remote.status`
+      回到 `ok`、远端文件就是这一版。**这一步不做，下一步看到"暂停"分不清是远端被改还是
+      目标还没确认回来。**
+- [ ] **远端有别人的东西就不覆盖**（开关已重新打开）：在上一步恢复好的基线上，手动改一下
+      备份文件内容（模拟另一台设备写过），再等一个周期（或后台 Console 强制跑一次）。
+      后台必须停下并说明远端已变（`lastErrorCode` 是 `remote-changed`），远端文件一个字
+      都不许被盖掉。
+- [ ] **恢复可信基线后，再测服务器不认条件写**（开关已重新打开）：后台因 `remote-changed`
+      暂停后是直接跳过的，不会再读远端；这时候关掉条件写支持，看到的还是同一个暂停原因，
+      证明不了它真去试过条件写。所以先在测试服务器上把备份文件删掉，点「立即备份」成功
+      一次，确认 `auto.remote.status` 回到 `ok`、`auto.remote.baseline.etag` 是新文件的
+      ETag。然后改一下本地内容（比如拖一下书签），再把条件写支持关掉（或换一个不认
+      `If-Match` 的假服务），强制跑一次自动备份。后台必须在探测后停下，
+      `lastErrorCode` 指向条件写不受支持（`conditional-unsupported`），不能退回无条件
+      PUT，远端文件也不能被改。
+- [ ] **Gist 这边只做首次创建**（开关已重新打开）：已有 Gist 的情况下开启自动备份，
+      `auto.remote` 应停在「不自动更新」的暂停原因，后台零 POST/PATCH。手动「立即
+      备份」仍可正常写入。
+      （已有 Gist 的自动更新是产品决定不做，见 `docs/gist-conditional-write.md`。）
+- [ ] **角标安静但要看得见**：上面任一失败/暂停后，工具栏图标角标出现提示；问题处理完
+      （或手动备份成功）后角标自动消失；自始至终**没有系统通知弹窗**，manifest 里也
+      没有 `notifications` 权限。
+- [ ] **数据边界没被撑破**：随便打开一份新生成的 `snap.v1.<ts>` 和云端备份正文，搜
+      `_encWebdavPass`、`_encGistToken`、`boxingCredKey`、密码、token、其他标签页标题
+      或浏览历史——一项都不许出现。
+
 ## 结果记录
 
-把结果写回当次发行票/报告（执行人、日期、构建 zip 版本、逐步 ✅/❌ 与备注）。
-**任一步失败 = 发行阻塞**，不发布；记录实际现象与复现步骤。
+把结果写回当次发行票/报告，**每一项都要有**：
+
+| 字段 | 写什么 |
+|---|---|
+| 版本号 | 本次 zip 的 `manifest.json` 版本，例如 `2026.11.1` |
+| zip sha256 | 当次要上传的那个 zip 现算的哈希（不是本地重建的） |
+| 浏览器版本 | 例如 Firefox 142.0（含渠道：Release / Developer Edition / Nightly） |
+| 执行人 | 真名或固定 ID，别写"我" |
+| 日期 | 年-月-日 |
+| 每一步结果 | 逐条 ✅ / ❌，失败写实际现象和复现步骤 |
+
+**任一步失败 = 发行阻塞**，不发布。别用"其他步都过了"来抵消。
 
 ## 边界
 
