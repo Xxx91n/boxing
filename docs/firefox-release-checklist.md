@@ -290,7 +290,7 @@ const s = await browser.storage.local.get(null);
 
 | 字段 | 写什么 |
 |---|---|
-| 版本号 | 本次 zip 的 `manifest.json` 版本，例如 `2026.11.1` |
+| 版本号 | 本次 zip 的 `manifest.json` 版本（以包内 `version` 为准，不抄别处的旧号） |
 | zip sha256 | 当次要上传的那个 zip 现算的哈希（不是本地重建的） |
 | 浏览器版本 | 例如 Firefox 142.0（含渠道：Release / Developer Edition / Nightly） |
 | 执行人 | 真名或固定 ID，别写"我" |
